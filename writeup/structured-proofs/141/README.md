@@ -42,7 +42,7 @@ not in this workspace). Lemma triage: 83 argument, 45 one-step, 28 automation, 4
 - **Binders** follow the text reading of `rb.py signature` and await comparison with `#check @Name`.
   Across 42 members, 80 entries are marked `listed by the text reading only`. Of these, 78 are section variables that the
   reader expects Lean to omit. Two further entries in `IsAdmissibleEval` flag the section type `q` and its
-  `Fintype q` instance for comparison with the elaborated signature. Seven duplicate entries in four members
+  `Fintype q` instance for comparison with the elaborated signature. Eleven duplicate entries in four members
   come from `variable (x) in` prefixes (ArrowPair, IsSplitLevel.diagN, translateSum, coverMultiplicity).
   Fifteen members carry a `binders_note` about arguments the text reading misses. Examples include the split-level
   instance through `liftFn`/`diagNInv`/`embedGL`, `p`, `[Fact p.Prime]` and `[PadicPlace p]` through `ιₚ`,
