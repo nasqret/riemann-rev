@@ -193,3 +193,58 @@ now carries an import's optional `literature` record into `unit.json`) and the d
   quoted: 74 of 74; arguments accounted for: 3066 of 3066
 - Changed records: 21 member texts (one also its binders, one a new binders_note), 2 import texts (one with a
   `literature` record), 31 step claims, 2 proof summaries, the unit summary and the binder note of `gen/meta.py`.
+
+## 2026-11-26 — Pass 8: the reader guide's counts (a second-reader message) and the seesaw passages (a second-reader message)
+
+Correction reader: a Claude agent (Opus 5.5), the only writer of this folder during this pass. Messages: the second reader's
+a second-reader message (second reading of the revised dossier `e0f402b5…`, the present one: the uniform scalar and the cutoff) and
+a second-reader message (the README's binder counts, with the tested patch `unit-141-reader-guide.patch`). Each item was checked
+against the pin (`grh-compact/src` at `72fead10`) and the present `unit.json`; nothing was built. The dossier
+(`unit.json`, proofs) is unchanged; only the hand-written README changed.
+
+### Applied (old → new)
+
+1. a second-reader message, README.md “What I am unsure of”, the Binders item. `git apply --check` passed, then `git apply` as sent.
+   Old: “Binders follow the text reading of `rb.py signature`; nothing was compared with `#check @Name`. 78 arguments in
+   42 members are marked "[listed by the text reading only; Lean does not take this argument: …]" (…); 7 duplicates
+   come from `variable (x) in` prefixes (…). 14 members carry `binders_note`: arguments Lean takes that the text reading
+   misses (…; E, X, X′, X₀ after the statement's `let` in `integral_theta_eq_lift₂`).” New: “Binders follow the text
+   reading of `rb.py signature` and await comparison with `#check @Name`. Across 42 members, 80 entries are marked
+   `listed by the text reading only`. Of these, 78 are section variables that the reader expects Lean to omit. Two
+   further entries in `IsAdmissibleEval` flag the section type `q` and its `Fintype q` instance for comparison with the
+   elaborated signature. Seven duplicate entries in four members come from `variable (x) in` prefixes (…). Fifteen
+   members carry a `binders_note` about arguments the text reading misses. Examples include … E, X, X′ and X₀ in
+   `integral_theta_eq_lift₂`, and P and D in `Data.exists_stage_cut`. See `unit.json` under `notes.binders` for the
+   current account.” Checked: a second-reader message's own counting script on 8221bb5, b3ba963, HEAD and the working tree gives
+   (flags, members, duplicates, notes) = (78, 42, 7, 14), (80, 42, 7, 15), (80, 42, 7, 15), (80, 42, 7, 15); of the 80
+   flags, 78 read “Lean does not take this argument” and 2 read “text-inferred pending Lean's elaborated signature”
+   (`IsAdmissibleEval`: the section type q and the instance on it; AdmissibleEvaluation.lean 67–72, the definition binds
+   its own q in `∀ n q`); all 15 notes name arguments that the text reading misses, the new one
+   `Data.exists_stage_cut` ({P} and (D : Data P); SeesawTheorem.lean 30, 39–43).
+
+### Verified and already present (a second-reader message)
+
+- `Data.seesaw` (SeesawTheorem.lean 135–136): one c ∈ ℂˣ chosen before the twists, for each ϑ one Ψ with
+  IsGoodDatum(ϑ, Ψ), the identity for every ramified column — present in the text.
+- `Data.exists_stage_cut` (SeesawTheorem.lean 39–43): the level A first, columnLevel(k) ≤ inclXFin⁻¹(A), then for
+  each ϑ its own finite cut T — present in the text.
+- `coverMultiplicity` (IntegralAsCosetSum.lean 15–17): the number of cosets r(S ∩ A) whose translate rT contains t,
+  0 if infinite — present in the text.
+- `Grading.exists_integral_eq_sum_over_cut` (IntegralAsCosetSum.lean 80, 101–107): ψ = 1_T/m with 1/0 = 0 (step 5,
+  step 14); the average over B_f is 1 where m ≠ 0 and 0 where m = 0, also at points outside T (step 13); only the
+  denominator is B_f-invariant (coverMultiplicity_smul), 1_T only under B_f ∩ A (step 14); the branch m ≠ 0 is the
+  hypothesis of measure_union_cosets (step 15) — present.
+
+### Not applied
+
+- Nothing refused.
+
+### Digests and check
+
+- Cost: about 25 minutes of wall time for the nine units of pass 8 together (about 15:45Z–16:10Z by `date -u`, the
+  start estimated from the first backup at 15:51Z), shared among them; tokens not reported by the client.
+- dossier digest unchanged `e0f402b5dd80710777b6792120455ff3afc153a4c3a2a7eb7ac62aa413a06d6b` (the README is not part
+  of it).
+- `python3 tools/rb.py check 141`: exit 0 — unit 141: 312 of 312 statements at their lines; 83 structured proofs, 550
+  steps, 503 leaves (longest 8 lines, bound 8), 550 steps quote their lines; typed facts in the source: 68 of 68;
+  imports quoted: 74 of 74; arguments accounted for: 3066 of 3066

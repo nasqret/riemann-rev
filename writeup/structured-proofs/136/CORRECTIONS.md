@@ -111,3 +111,30 @@ Correction reader: a Claude agent (Opus 5.5), the only writer of 136 and its chu
 - `python3 tools/rb.py check 136`: exit 0 — 141 of 141 statements at their lines; 69 structured proofs, 430 steps, 375 leaves (longest 8 lines, bound 8); typed facts 34 of 34; imports quoted 148 of 148; arguments accounted for 1409 of 1409 (1 member by Lean's own signature, which this check cannot confirm: universalSide). `check 136-a`, `136-b`: exit 0.
 
 Cost: about 75 minutes of wall time for the five units 148, 132, 138, 136 and 147 together (about 09:20Z–10:35Z by the clock, the start estimated from the first backup at 09:47Z and the reading before it), shared among them; tokens not reported by the client.
+
+## 2026-11-26 — Pass 8: a second-reader message and a second-reader message, and the rounding in step 5.2
+
+Correction reader: a Claude agent (Opus 5.5), the only writer of 136 and 136-b during this pass (136-a untouched). Messages: the second reader's a second-reader message (tame ramification and change of coefficient ring, verified on `97661ebe…`) and a second-reader message (the upward multiple and both explicit filter arguments, verified on `be353f4e…`, the present dossier). Each item was read against the pin (`grh-compact/src` at `72fead10`); nothing was built. The change is an exact replacement made by a new module `136-b/gen/pass8.py` (with `gen/fixlib.py`; log `gen/pass8.log.json`), called by `gen/build.py` after `gen/pass3.py`; 136-b was emitted again, checked, and the unit merged with `book/plan/merge_chunks.py 136`.
+
+### Applied (old → new)
+
+1. `Lift.KummerChart.PairingSide.exists_relLength_deepConstants_le`, step 5.2 (chunk 136-b; FewLowJumps.lean 130–131: `obtain ⟨q, h₀, -⟩ := existsUnique_add_zsmul_mem_Ico (natCast_pos.2 p.pos_of_neZero) 0 (b i + W + 2 * a)`, i.e. 0 + q • p ∈ Ico (b i + W + 2a) (b i + W + 2a + p) with q an integer; `(q * p).toNat` at line 140): “ε(i) ≠ 1: write b(i) + W + 2a = qp + ρ with 0 ≤ ρ < p;” → “ε(i) ≠ 1: take the integer q with b(i) + W + 2a ≤ qp < b(i) + W + 2a + p, i.e. qp is the least multiple of p that is ≥ b(i) + W + 2a (existsUnique_add_zsmul_mem_Ico; not the quotient of a Euclidean division, which rounds down);”. From a second-reader message, which verified that the dossier places qp in [b(i) + W + 2a, b(i) + W + 2a + p): pass 6 had corrected the proof summary only, and the head of step 5.2 still gave the Euclidean division (qp ≤ b(i) + W + 2a), against the summary and the source.
+
+### Verified and already present
+
+- a second-reader message, `differentExp` (Lib/PadicHodge/WachKisin/KummerChartExists.lean 161–162: 0 if e = 1, else v_p(e) + 1, so 1 for a tame chart with e > 1): `tame_types_exponent` step 8 keeps the different term and checks both cases (ExponentTheorems.lean 131–139) — present.
+- a second-reader message, the filter hypothesis hF : map k.Γ'.subtype ⊤ ≤ F (ExponentTheorems.lean 31–34: every member of F contains Γ'; F = ⊤ allowed), in the texts and binders of `universalSide` and `mem_cupOrthogonal_of_scaledCupBounds` — present.
+- a second-reader message, `few_low_jumps` step 2: length over ℤ_p = length over O times [k_O : F_p] (length_restrictScalars; ExponentTheorems.lean 76–87) — present.
+- a second-reader message, the proof summary of `exists_relLength_deepConstants_le` (the least multiple of p, pass 6) and hF as an explicit argument of `universalSide` between ζ and h (ExponentTheorems.lean 50–58, pass 6) — present.
+
+### Not applied
+
+- Nothing refused.
+
+### Digests and checks
+
+- dossier digest of 136: old `be353f4efee4e4b2693285236b5782e4144fb6029f07bae9dff573f05a368d2a` → new `ffdfbaf551389850ccc939610049ae523c3f7497fdc49628eca7b127d11d4a69`
+- chunks: 136-a unchanged `d298509e999e024117abec02a8a492f5cb13b7a052cf0223c0bac028bdf8021d`; 136-b `7b4f46c93c61ff50465fdfac31b3479d89171ef0ff43eddd8e16549719a3fd9d` → `5b18071f48d2aec7f3c733192f7bccf21bb0ea933aff2b40ad9bd8717beafc6f`
+- `python3 tools/rb.py check 136-b`, `check 136` (after the merge): exit 0 — 141 of 141 statements at their lines; 69 structured proofs, 430 steps, 375 leaves (longest 8 lines, bound 8); typed facts 34 of 34; imports quoted 148 of 148; arguments accounted for 1409 of 1409 (1 member by Lean's own signature, which this check cannot confirm: universalSide). `check 136-a`: exit 0.
+
+Cost: about 25 minutes of wall time for the nine units of pass 8 together (about 15:45Z–16:10Z by `date -u`, the start estimated from the first backup at 15:51Z), shared among them; tokens not reported by the client.

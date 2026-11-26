@@ -116,3 +116,24 @@ The changes were made in the generator's inputs (`gen/spec_*.py`) and the dossie
 
 Cost: about 30 minutes of wall time for this pass on 145 and 133 together (after 08:15Z, the time of the last check
 before it, to 08:45Z by `date -u`); tokens not reported by the client.
+
+## 2026-11-26 — Pass 8: a second-reader message (verified; nothing to apply)
+
+Correction reader: a Claude agent (Opus 5.5). the second reader's a second-reader message verified the revised dossier `415c29c6…`, which is still
+the present one, and gave the statement it would use for Chapter V; it asks for no change. Each passage was re-read in
+the present dossier and at the pin (`grh-compact/src` at `72fead10`):
+
+- `Data.exists_indexDvd_Bmu_divisible` text: β < g(p) − allowedLoss(p) + 1 with g(p) = gain(p) at non-split primes and
+  0 otherwise; one l ≤ allowedLoss(p)·dim Column and one submodule S; IndexDvd quantified over every finite family of
+  integral columns, with one square A, det A ∣ p^l and the combination in S for every row i; the same l and S for every
+  twist prime to p, every good Ψ and every ramified φ ∈ S (LocalStatement.lean 285–288; Core/ModuleIndex.lean 17–20) —
+  present, as a second-reader message states it.
+- `Data.admissibleTranslations`: every entry of π_G·t_k integral at the places not dividing q, the conjugation already
+  inside piGBar (ChainValuation.lean 267–269; IndexTypes.lean 37) — present.
+- `Data.IsGoodDatum.exists_move_markOperator`, clause (a): a in all of G_f, b ∈ K_f (LocalStatement.lean 148–151) —
+  present.
+- `Data.IsMarked.valuation_p`: exp(−1) in ℤₘ₀, additive order one (JetExponentBound.lean 96–97) — present.
+- the two endgame calls (Endgame/ShortAndEnough.lean 149–156): evidence of use, no dossier change asked.
+
+Dossier unchanged (`415c29c6a95420d3e4c1eac9609c829edb452aa5051ab3f2400e0bc6554c40d8`); `python3 tools/rb.py check 145`:
+exit 0.

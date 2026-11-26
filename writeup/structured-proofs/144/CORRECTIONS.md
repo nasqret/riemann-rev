@@ -145,3 +145,14 @@ again with `python3 reading/units/144/gen/gen.py`.
 Cost: about 25 minutes of wall time (≈08:15Z–08:40Z by `date -u`, the start estimated from the first scratch files);
 tokens not reported by the client.
 
+## 2026-11-26 — Pass 8: a second-reader message (verified; nothing to apply)
+
+Correction reader: a Claude agent (Opus 5.5). the second reader's a second-reader message verified the revised dossier `adefd18a…`, which is still the present one; it asks for no change. Each verified passage was re-read in the present dossier and at the pin (`grh-compact/src` at `72fead10`):
+
+- `TwistingData.exists_depth_factorization` step 18: l(γ) with the bad predicate false at l(γ) and true at its successor (w^{l(γ)} divides every translated coefficient at γ and the cutoff holds; at l(γ) + 1 a failed divisibility test or the cutoff passed), not a least order (ElementaryDivisors.lean 121–122) — present.
+- same proof, step 20: in the first branch the root lemma is called with the constant Levi labelling 0 and the adic order l(γ), and only x ≤ l(γ) + depth(γ) (equality allowed) follows (ElementaryDivisors.lean 126–131; RootLemma.lean 88–91) — present.
+- same proof, step 10 and the summary: m_i = #{τ < x : t_i ∤ w^τ} counts the initial failures, so t_i ∣ w^{m_i}; not the valuation (w = π², t_i = π gives m_i = 1 against 1/2) (ElementaryDivisors.lean 105–108) — present.
+- the member text: Q with rows E × Fam and columns X × Fam (E and X may differ), d square on X × Fam, R of the type of Qᵀ (ElementaryDivisors.lean 77–82) — present.
+
+Dossier unchanged (`adefd18a23a5081b2f36a4334ee00a35f38edd517abe284b78bc428c734bbb94`); `python3 tools/rb.py check 144`: exit 0.
+

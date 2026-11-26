@@ -171,3 +171,52 @@ import and the pinned file. The import texts were rewritten from the Lean statem
 - `python3 tools/rb.py check 150`: exit 0 — unit 150: 89 of 89 statements at their lines; 36 structured proofs, 435
   steps, 407 leaves (longest 9 lines, bound 8), 435 steps quote their lines; typed facts in the source: 39 of 39;
   imports quoted: 73 of 73; arguments accounted for: 768 of 768
+
+## 2026-11-26 — Pass 8: two wording corrections (a second-reader message, a second-reader message)
+
+Correction reader: a Claude agent (Opus 5.5), the only writer of this folder during this pass. Messages: the second reader's
+a second-reader message (second reading of the corrected dossier `c8c9fac7…`, which was still the present one: "two phrases still need a
+change") and a second-reader message (cross-check against the published edition: both edits are confined to the structured records;
+the note already uses the weak inequality and names the coefficient of X^{m+1}). Each item was read against the pin
+(`grh-compact/src` at `72fead10`) before it was written; nothing was built. The changes are in the generator's inputs
+(`gen/spec_DepthPairs.py`, `gen/spec_FormalParameter.py`); the dossier was emitted again with `python3 gen/gen.py` (the
+unchanged generator was run first and reproduced the dossier byte for byte). Only these two strings changed.
+
+### Applied (old → new)
+
+1. `Data.exists_isFrobPacking`, step 8.5 (a second-reader message item 1, a second-reader message row 1; DepthPairs.lean 54–56:
+   `v (factorial_dvd_factorial le_tsub_add)`, `← factorial_mul_ascFactorial`, only `grw`, i.e. inequalities):
+   “(an equality only when n_s ≥ c)” → “(equality holds when n_s ≥ c, where l + c = n_s; it can also hold when n_s < c,
+   and only the inequality is used)”. Checked: with l = n_s ∸ c, l + c = n_s exactly when n_s ≥ c; for n_s < c the
+   two valuations can still agree (p = 13, n_s = 13, c = 14: v_13(13!) = v_13(14!) = 1), so “only when” was false. The
+   packing argument uses only v_p(n_s!) ≤ v_p((l + c)!).
+2. `CMLattice.exists_formal_parameter`, proof summary (a second-reader message item 2, a second-reader message row 2; FormalParameter.lean 164
+   (`Z1`: coeff 1 Z = 1), 170–172 (`hX`: the coefficients of Z − X vanish below degree m + 1, `X_pow_dvd_iff.2 hX`),
+   172–173 (ϖ from `IsAIC.exists_pow_eq m (-coeff (m + 1) Z)⁻¹`), 181 (`τt : coeff (m + 1) Z = -(ϖ ^ m)⁻¹`)): “its
+   inverse Z has only degrees ≡ 1 mod m, and the leading coefficient Z_{m+1} = −(ϖ^m)⁻¹ defines ϖ” → “its inverse Z has
+   only degrees ≡ 1 mod m, linear coefficient 1 and X^{m+1} ∣ Z − X, and the coefficient of X^{m+1}, Z_{m+1} =
+   −(ϖ^m)⁻¹ (the first nonlinear coefficient), defines ϖ”. Z is a power series; Z_{m+1} is the first coefficient after
+   the linear one, not a leading coefficient.
+
+### Verified and already present
+
+- a second-reader message, third paragraph (the pair (a, a^{p+1}) and the weight a^{−(p+1)} of the rotation average, the integral
+  transformed theta series, |product| ≤ |det M| in the jet bound, the sign of the factorial exponent, k! times the k-th
+  Taylor coefficient, the quantifier on shifts, the size of the vacuum expansion, the four literature records): the
+  corrections of the a second-reader message pass above; present, unchanged.
+- a second-reader message, row 3 (the Gaussian scale T = N log β of the discrete-series note): unit 133, not this unit; nothing here.
+
+### Not applied
+
+- Nothing refused. Native binder lists (a second-reader message's evidence paragraph: 16 lists) still await Lean's output.
+
+### Digests and check
+
+- dossier digest: old `c8c9fac7a678429697450b6607c60da32fa27ed915ba2392b0488f520e826b50` → new
+  `2e0090ec8a535e43e369f8d281078c0d125228b73378af3d071e6d7c88b2b710`
+- `python3 tools/rb.py check 150`: exit 0 — unit 150: 89 of 89 statements at their lines; 36 structured proofs, 435
+  steps, 407 leaves (longest 9 lines, bound 8), 435 steps quote their lines; typed facts in the source: 39 of 39;
+  imports quoted: 73 of 73; arguments accounted for: 768 of 768
+
+Cost: about 25 minutes of wall time for the nine units of pass 8 together (about 15:45Z–16:10Z by `date -u`, the start
+estimated from the first backup at 15:51Z), shared among them; tokens not reported by the client.

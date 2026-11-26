@@ -160,3 +160,14 @@ Chunk 143-b:
   confirm).
 
 Cost: about 35 minutes of wall time for the three units 143, 147 and 132 together (08:22Z–08:57Z by `date -u`, the start estimated from the first command), shared among them; tokens not reported by the client.
+
+## 2026-11-26 — Pass 8: a second-reader message (verified; nothing to apply)
+
+Correction reader: a Claude agent (Opus 5.5). the second reader's a second-reader message verified the revised dossier `0fdd0ee6…`, which is still the present one; it asks for no change. Each verified passage was re-read in the present dossier and at the pin (`grh-compact/src` at `72fead10`):
+
+- `descentsVanish_hypSum`: S is the complement of the conjugate closure of the places of O; the datum is the vacuum outside the chosen and twist places and their conjugates (MemberOrthogonality.lean 35–36; DescentsVanishDef.lean 9–13) — present.
+- `stdClassSum_period_eq_zero` step 8: the same complement in the projected data hφ (MemberOrthogonality.lean 78–80) — present.
+- `posFockVector`: a × n matrices, Hom(V_j, I_a), (g, h) acting by X ↦ hXg⁻¹ (Lib/Weil/Construction/PairDefs.lean 255–258; RealMatching.lean 43) — present.
+- `Data.heightLe_liftVolume_ratio` steps 1.10–1.11: the local exponent at ι is rowDim·r·β_ℓ with no factor log ℓ (the height predicate already sums the local exponents, Heights.lean 19–23); Σ_{ℓ∈T} β_ℓ ≤ B₀ for every finite set T (g); the exponent of the modulus at line 123 is 0 (LiftVolumeHeight.lean 117–127) — present.
+
+Dossier unchanged (`0fdd0ee61a46d42964293ded98ccbafb82c7bc8daf768deca979b9ae6e423d6b`); `python3 tools/rb.py check 143`: exit 0.

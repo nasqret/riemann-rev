@@ -1,6 +1,6 @@
 # Unit 136: Lifting crystalline extension classes in large weight: Kisin modules with exponents, cokernel killers and cup products that vanish up to a power of p
 
-Merged from the chunks 136-a, 136-b by `book/plan/merge_chunks.py` (2026-11-26 10:26 UTC). Each chunk was read by its own reader (`book/plan/SPLIT.md`); their notes follow.
+Merged from the chunks 136-a, 136-b by `book/plan/merge_chunks.py` (2026-11-26 15:58 UTC). Each chunk was read by its own reader (`book/plan/SPLIT.md`); their notes follow.
 
 ## Chunk 136-a
 

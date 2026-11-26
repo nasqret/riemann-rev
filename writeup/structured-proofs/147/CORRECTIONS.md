@@ -360,3 +360,14 @@ Correction reader: a Claude agent (Opus 5.5), the only writer of 147 and its chu
 - `python3 tools/rb.py check 147`: exit 0 — 305 of 305 statements at their lines; 122 structured proofs, 933 steps, 879 leaves (longest 9 lines, an indivisible leaf; bound 8); typed facts 68 of 68; imports quoted 241 of 241; arguments accounted for 2627 of 2627 (72 members by Lean's own signature, which this check cannot confirm). `check 147-a`, `147-b`, `147-c`: exit 0.
 
 Cost: about 75 minutes of wall time for the five units 148, 132, 138, 136 and 147 together (about 09:20Z–10:35Z by the clock, the start estimated from the first backup at 09:47Z and the reading before it), shared among them; tokens not reported by the client.
+
+## 2026-11-26 — Pass 8: a second-reader message, a second-reader message, a second-reader message (verified; nothing to apply)
+
+Correction reader: a Claude agent (Opus 5.5). the second reader's a second-reader message (on `6c7d75fd…`) and a second-reader message (on `298bf3bd…`, the present dossier) verify passages and ask for no change; a second-reader message is an acknowledgement that corrects the second reader's own count. Each passage was re-read in the present dossier and at the pin (`grh-compact/src` at `72fead10`):
+
+- a second-reader message, `exchange_theorem` text: C and the rapid datum x chosen before (𝔪, ν, χ); for each tame triple one c ≠ 0 serving every pair of partners and every g; |c|² = C·(∏_{w∈S} Nw)^{e²}·∏_{j=1}^{e} |L^{S∪S̄}(j, BC ν)|², the Euler factors omitted at the conjugate closure, both products 1 at e = 0 (ExchangeTheorem.lean 16–21; Lib/SiegelWeil/Tower/LargeSideConstantTerm.lean 22–25; Lib/ClassField/HeckeL/AutCharLFunction.lean 49–51) — present.
+- a second-reader message, `exchange_theorem` steps 11–14: π goes from the integral local product O_S to the modulus ring, π∘evalPlaces = reduction, the data are pulled back along π (ExchangeTheorem.lean 31–40) — present.
+- a second-reader message, σ : b ⊔ (b ⊔ m) ≃ n, the columns (L | K | I) reindexed by σ⁻¹ to a square n × n matrix, against the defining order (K | I | L) (StableSpaces.lean 13–21; Lib/Weil/GaussSum/ShearInvariance.lean 103–110) — present since pass 6.
+- a second-reader message: 72 members of 147 stand on hand-derived lists whose descriptions begin “not printed by Lean” (counted again: 72); no change asked.
+
+Dossier unchanged (`298bf3bd9d2506241a5c9cbc2b13e9dbb026cc1e71b42dbd324f55759483a76f`); `python3 tools/rb.py check 147`: exit 0.

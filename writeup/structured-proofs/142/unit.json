@@ -174,9 +174,9 @@
    "file": "Lib/Weil/Fock/FockTensor.lean",
    "lines": [
     77,
-    77
+    85
    ],
-   "lean": "def polyVector ε : MvPolynomial ι ℂ →ₗ[ℂ] @fockSpace ι _ ε := .codRestrict _ (.pi fun x ↦",
+   "lean": "def polyVector ε : MvPolynomial ι ℂ →ₗ[ℂ] @fockSpace ι _ ε := .codRestrict _ (.pi fun x ↦\n    (aeval (holCoord ε x)).toLinearMap.smulRight (realVac x)) (by\n  induction · using induction_on\n  convert (‹_› • vacVector).2; ext; simp; aesop\n  convert have D c := (IsVacuum.modelSubmodule _).smul_mem (c / 2) (exists_hasDerivAt_realHeisOp\n      (holCoord ε (Pi.single ‹_› c)) ‹_›).1\n    add_mem (D 1) (D I)\n  ext; simp_all [heisDeriv, holCoord_eq, Finset.sum_eq_single ‹ι›]\n  split <;> simp_all [units_ne_iff_eq_neg, raiseOp, lowerOp] <;> grind [I_sq])",
    "unit": "35",
    "text": "polyVector(eps, P) = v_P: v_P(x) = P(zeta(x)) exp(-|x|^2/2), zeta(x)_i the conjugate of x_i at positive and x_i at negative coordinates."
   },
@@ -200,9 +200,9 @@
    "file": "Lib/Weil/Fock/FockAction.lean",
    "lines": [
     29,
-    29
+    51
    ],
-   "lean": "noncomputable def realAction ε : (realHeis ε).MultiplierAction (realMeasure ι) realVac (USign ε) :=",
+   "lean": "noncomputable def realAction ε : (realHeis ε).MultiplierAction (realMeasure ι) realVac (USign ε) :=\n  ⟨by simp [↓form_mulVec_mulVec], (⟨by fun_prop, by simp [map_mulVec_haar ·.1.det_ne_zero]⟩),\n  realMultiplier, by fun_prop [realMultiplier], by simp, by simp [↓principalMinor_coe_inv],\n  fun g h ↦ by\n  set k := g * h; let T x := posProj ε + (1 - posProj ε) * x; let J := h.1.1.fromBlocks 0 0 k.1.1\n  have := (integral_gauss (A :=\n    ofReal 2⁻¹ • (Jᴴ * J + fromBlocks 1 (1 + signMatrix ε) (1 - signMatrix ε) 1)) ?P 0).symm\n  rw [(realCoordSum (e := .refl _) (ε ⊕ᵥ ε).comp_id).integral_eq_integral_prod,\n    ← mul_eq_one_iff_inv_eq₀ (IsAccretive.det_ne_zero\n    ?P), MeasureTheory.integral_prod _ (.of_integral_ne_zero (by aesop))] at *\n  convert! this using 6\n  rw [show _ • _ = ((T h).fromBlocks (1 - posProj ε) 0 (T ↑k⁻¹ * k.1.1))ᴴ * (posProj ε).fromBlocks\n    (posProj ε - 1) 1 1 * fromBlocks 1 1 (-T h) (-T h + T ↑g⁻¹ * k.1.1) by\n    linear_combination (norm := (\n      simp +zetaDelta [mul_sub, mul_add, add_mul, signMatrix_eq_posProj_sub, sub_mul,\n        ← mul_assoc (posProj _) (posProj _)]; split_ands <;> module))\n      congr(ofReal 2⁻¹ • fromBlocks $(h.2) 0 0 (-$(k.2)))]\n  all_goals simp [J, T, ↓det_mul, -conjTranspose_add, ← principalMinor_coe_inv, field, realCoordSum,\n    ← principalMinor_sign_eq_det, IsAccretive, conj_mul', ← exp_add, fromBlocks_mulVec,\n    star_mulVec_dotProduct, Function.star_sumElim]\n  ring\n  convert (PosDef.conjTranspose_mul_self J ?_).add_posSemidef (.submatrix .one (id ⊕ᵥ id)) <;>\n    simp [J, ← ext_iff, mulVec_injective_iff_isUnit]; grind⟩",
    "unit": "35",
    "text": "realAction(eps): the linear action of U(eps) on C^iota, preserving beta and the measure, with multiplier conj(det d) (d the negative-negative block) and trivial cocycle for the Gaussian (the composition identity is proved inside the definition by a complex Gaussian integral).",
    "literature": {

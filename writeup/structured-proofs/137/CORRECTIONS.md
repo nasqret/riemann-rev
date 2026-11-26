@@ -53,3 +53,39 @@ and that the group sum and the factor 2·|n|! must be kept, is already true of t
 - New: `063710f9078921c971ee7d9dea8087e062c3b08182c19ca27e1849dd9e99a597`
 - `python3 tools/rb.py check 137` exits 0: 10 of 10 statements, 144 steps, 122 leaves, 22 of 22 typed facts, 91 of 91
   imports quoted, 226 of 226 arguments.
+
+## Pass 7 (2026-11-26): a second-reader message, the exponent in the local reciprocity gloss
+
+Correction reader: a Claude agent (Opus 5.5), the only writer of this folder during the pass. Message: a second-reader message (second
+reader's check of the revised 137, dossier `063710f9…`). It confirms the character-test implication, the truncated
+valuation, the full tie (span [96, 1, 103, 90], SHA-256 `d220ee26…`) and the six named imports, and requests one
+correction: the reading of `IsPlaceOver.exists_localArtin_eq` called g a geometric Frobenius for every n ≥ 0. Checked
+against the pinned source (`lsernau/grh-lean` @ `72fead1`, `grh-compact/src`): `Lib/ClassField/Local/ArtinMapAtPlace.lean`
+144–147 (`hs : IsFrob A q g⁻¹`, `(n : ℕ)`, `e : q = w.q ^ n`; conclusion `v x.1 = exp (-↑n)` and the class of g),
+`Lib/ClassField/Places/GaloisDefs.lean` 74–76 (`IsFrob A q σ`: σ in the decomposition group and σx ≡ x^q modulo the
+maximal ideal of A; for n = 0, q = 1, so σ acts trivially on residues, i.e. lies in inertia), and
+`New/Patching/OnePrimeTie.lean` 104–108 (the tie uses `exists_localArtin_eq θ.isFrob 1`, n = 1, so the step that applies
+it was right). Changed in `gen/content.py` and re-emitted with `gen/build.py` (which first reproduced the old dossier
+byte for byte). Nothing was built.
+
+### Change (old → new)
+
+- Import `IsPlaceOver.exists_localArtin_eq` (unit 89), text: “… if g⁻¹ is a Frobenius at A for q = q_w^n (n ≥ 0; g is a
+  geometric Frobenius), then …” → “… if g⁻¹ is a Frobenius at A for q = q_w^n (n ≥ 0: g⁻¹ lies in the decomposition group
+  of A and acts on the residues of A as the q_w^n-th power, so g induces the n-th power of the geometric Frobenius on
+  residues; g is a geometric Frobenius only for n = 1, and for n = 0 it lies in the inertia group of A), then …” (the
+  rest — the class of g, v(x) = e^{−n}, additive order n, the literature record — unchanged).
+
+The same correction was carried to unit 138's reading of this import (138-a, pass 7 there), and chunk 138-c, which reads
+this import in dossier 137 by name, took the new text when it was re-emitted.
+
+### Not applied
+
+Nothing else: a second-reader message requests no other correction.
+
+### Digests and check
+
+- `dossier_sha256`: old `063710f9078921c971ee7d9dea8087e062c3b08182c19ca27e1849dd9e99a597` → new
+  `92531c23f202fc8ec689605afd84f8800851b7ba07fe687e045401835980869d` (only that import text changed; proofs unchanged).
+- `python3 tools/rb.py check 137`: exit 0 — 10 of 10 statements, 6 structured proofs, 144 steps, 122 leaves, typed facts
+  22 of 22, imports quoted 91 of 91, arguments 226 of 226.
