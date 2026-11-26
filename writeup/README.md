@@ -29,7 +29,7 @@ final theorems down through every unit of the argument, with classical results q
 | `handout.pdf` | overview, the notes in the order of the argument, condensed catalogue, record of checks |
 | `catalogue-full.pdf` | the complete catalogue of quoted results |
 | `overview.tex` | the overview's LaTeX source |
-| `notes/<slug>/` | every note's LaTeX source (`<slug>.tex`, `data.tex`), its account of declarations (`spec.json`), its concordance with the Lean (`concordance.json`) and its reader index (`reader.json`) |
+| `notes/<slug>/` | every note's LaTeX source (`<slug>.tex`, `data.tex`), its account of declarations (`spec.json`), its concordance with the Lean (`concordance.json`) and its reader index (`reader.json`). Seven notes also load a macro file of their own from the same folder (`macros148.tex` for four Filling notes, `othermacros.tex` for the three RealPlace notes); with it, each note's source builds alone with LuaLaTeX (`latexmk -lualatex <slug>.tex` in its folder). |
 | `structured-proofs/<unit>/` | for every unit of the formal text: `unit.json` (every declaration, its statement in words, its arguments), `proofs/*.json` (each proof as a tree of small steps, each quoting the exact Lean lines it renders), `check.json` (the program check), `CORRECTIONS.md` (what the second reading changed) |
 | `catalogue/` | the catalogue as JSON, and the second reader's comparison of each named theorem with its published statement |
 | `MANIFEST.json` | the pin, the edition, the counts, and the SHA-256 of every file |

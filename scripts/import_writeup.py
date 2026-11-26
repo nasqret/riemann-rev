@@ -10,7 +10,8 @@ agent needs, and nothing else:
 * handout.pdf (overview, the notes in the order of the argument, the condensed catalogue, the record of checks),
   catalogue-full.pdf, and overview.tex;
 * the sources of every note whose last build reported no problem other than overfull lines:
-  notes/<slug>/{<slug>.tex, data.tex, spec.json, concordance.json, reader.json};
+  notes/<slug>/{<slug>.tex, data.tex, spec.json, concordance.json, reader.json} and the macro files the manuscript
+  loads from its folder (so that each source builds alone);
 * the structured proofs of every unit: structured-proofs/<id>/{unit.json, check.json, README.md, CORRECTIONS.md,
   proofs/*.json} (the merged units, not their chunks; not the generators);
 * catalogue/catalogue.json (every background declaration the argument uses, classified) and
@@ -81,6 +82,24 @@ def check_public_dossiers(ws: Path, config: dict, units: list[dict]) -> None:
             unit["check_problems"] = len(check["problems"])
 
 
+def local_inputs(folder: Path, manuscript: Path) -> list[str]:
+    """The files that a note's manuscript loads with \\input or \\include from its own folder (comments stripped),
+    other than data.tex, which is copied anyway. A name that leaves the folder is refused."""
+    if not manuscript.is_file():
+        return []
+    text = "\n".join(re.sub(r"(?<!\\)%.*", "", line) for line in manuscript.read_text(encoding="utf-8").splitlines())
+    found = []
+    for name in re.findall(r"\\(?:input|include)\s*\{([^}]+)\}", text):
+        name = name.strip()
+        rel = name if name.endswith(".tex") else name + ".tex"
+        target = (folder / rel).resolve()
+        if folder.resolve() not in target.parents:
+            sys.exit(f"import_writeup: {manuscript} loads {name!r}, outside its folder; not imported")
+        if rel != "data.tex" and target.is_file() and rel not in found:
+            found.append(rel)
+    return found
+
+
 def main() -> int:
     cfg = json.loads((ROOT / "private" / "config.json").read_text(encoding="utf-8"))
     WS = Path(cfg["writeup_workspace"])
@@ -110,6 +129,8 @@ def main() -> int:
         for f in (f"{N.name}.tex", "data.tex", "spec.json", "concordance.json", "reader.json"):
             if (N / f).exists():
                 copy_text(N / f, OUT / "notes" / N.name / f)
+        for f in local_inputs(N, N / f"{N.name}.tex"):   # the note's own macro files, so that the source builds alone
+            copy_text(N / f, OUT / "notes" / N.name / f)
         notes.append({"slug": N.name, "unit": str(s.get("unit")), "title": s.get("title")})
 
     # the structured proofs of every unit (merged units only)
