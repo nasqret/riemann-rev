@@ -1,0 +1,1478 @@
+% !TEX program = lualatex
+% ---------------------------------------------------------------------------------------------
+%  Readback note 47: Crystalline classes with few low weights, sparse large weights and tame types: a length bound and rank-free exponents
+%
+%  Build:  python3 tools/rb.py note <slug>
+%
+%  One unit of a Lean artifact, rewritten as ordinary mathematics. The prose is hand-written. Lean names,
+%  line ranges and counts come from data.tex; quoted Lean statements are copied from the artifact by the build.
+%
+%  Rules of the text: standard terminology; every symbol is explained where it first appears and listed again
+%  in the notation at the end; no letter has two meanings; a proof is complete or says what it takes for granted;
+%  Lean names appear only in the LEAN lines and in the concordance.
+%
+%  The signature rule (the build enforces it): a function, relation or predicate that the artifact defines is
+%  written only through its notation macro, which the build makes from the spec (`notation`) with one slot for
+%  each explicit argument of the Lean definition. No argument is fixed and dropped, also not "for brevity" and
+%  not for one section. Every argument and every hypothesis of a stated declaration stands inside its
+%  statement, or in a Setting that the statement cites by number; only implicit and instance arguments (the
+%  ambient objects) may stand in the conventions.
+% ---------------------------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\ifdefined\pdfvariable\pdfvariable suppressoptionalinfo \numexpr 1+2+4+8\relax\fi
+\usepackage[a4paper,hmargin=35mm,top=22mm,bottom=27mm,footskip=12mm,nohead]{geometry}
+
+\usepackage{fontspec}
+\directlua{
+  luaotfload.add_fallback("gfallback", {"STIXTwoMath-Regular.otf:mode=node;", "DejaVuSans.ttf:mode=node;"})
+  luaotfload.add_fallback("gmonofallback", {"DejaVuSansMono.ttf:mode=node;", "STIXTwoMath-Regular.otf:mode=node;"})
+}
+\setmainfont{NewCM10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookItalic,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldItalic,SmallCapsFont=*-Book,SmallCapsFeatures={Letters=SmallCaps},
+  RawFeature={fallback=gfallback}]
+\setsansfont{NewCMSans10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookOblique,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldOblique,RawFeature={fallback=gfallback}]
+\setmonofont{JetBrainsMono}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,Scale=MatchLowercase,
+  RawFeature={-calt;-liga;fallback=gmonofallback}]
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage[math-style=TeX]{unicode-math}
+\setmathfont{NewCMMath-Book.otf}
+\emergencystretch=2.5em\relax
+
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows.meta,positioning,backgrounds}
+\usepackage[protrusion=true,expansion=true]{microtype}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{multicol}
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+
+\definecolor{ink}{HTML}{0F172A}
+\definecolor{inksoft}{HTML}{475569}
+\definecolor{inkfaint}{HTML}{94A3B8}
+\definecolor{rulegrey}{HTML}{CBD5E1}
+\definecolor{arith}{HTML}{C2410C}
+\definecolor{est}{HTML}{7C3AED}
+\definecolor{ana}{HTML}{0891B2}
+\definecolor{ok}{HTML}{047857}
+\definecolor{leancol}{HTML}{3730A3}
+
+\title{Crystalline classes with few low weights, sparse large weights and tame types: a length bound and rank-free exponents}
+\author{grh-compact}
+\date{}
+
+% ------------------------------------------------------------------------------------- macros
+\newcommand{\leanfont}{\ttfamily\fontsize{8.6}{10.5}\selectfont\color{leancol}}
+\newcommand{\lean}[1]{\csname LN@#1\endcsname}
+\newcommand{\fillin}[1]{{\color{arith}\itshape[#1]}}  % a place of the template that is not written yet; the build reports every one that is left
+\newcommand{\leanquote}[1]{\csname LQ@#1\endcsname}
+\input{data.tex}
+
+\linespread{1.08}                       % 11 pt on 14.7 pt
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt plus 1.5pt minus 0.5pt}
+\setlength{\abovedisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\belowdisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\abovedisplayshortskip}{3pt plus 2pt}
+\setlength{\belowdisplayshortskip}{6pt plus 2pt minus 2pt}
+\emergencystretch=1.5em
+\clubpenalty=10000 \widowpenalty=10000 \displaywidowpenalty=10000
+\relpenalty=7000 \binoppenalty=9000
+\raggedbottom
+\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\sffamily\fontsize{7.6}{9}\selectfont\color{inkfaint}\thepage\,/\,\pageref*{LastPage}}
+\setlist{topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=4pt,leftmargin=2.1em,labelsep=0.55em}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\len}{\operatorname{len}}
+\newcommand{\cok}{\operatorname{cok}}
+\newcommand{\End}{\operatorname{End}}
+\newcommand{\Hom}{\operatorname{Hom}}
+\newcommand{\Gal}{\operatorname{Gal}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\kw}[1]{\emph{#1}}
+\newcommand{\m}[1]{\mbox{$#1$}}        % a short formula that must not be broken across lines
+\newcommand{\head}[1]{\par\addvspace{17pt plus 4pt minus 2pt}\Needspace{6\baselineskip}%
+  \noindent{\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\sect}[2]{\refstepcounter{section}\label{#2}\par\addvspace{19pt plus 4pt minus 2pt}\Needspace{7\baselineskip}%
+  \noindent\llap{{\fontsize{13.2}{16}\selectfont\bfseries\color{inkfaint}\thesection}\hspace{9pt}}%
+  {\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\subhead}[1]{\par\addvspace{9pt plus 2pt}\Needspace{4\baselineskip}\noindent\textbf{#1}\enspace\ignorespaces}
+% where a statement lives in the Lean archive
+\newcommand{\leantag}{{\sffamily\bfseries\fontsize{6.3}{8}\selectfont\color{leancol}\addfontfeatures{LetterSpace=7}LEAN}}
+\newcommand{\sep}{\unskip\nobreak\hspace{5pt}{\color{inkfaint}\textperiodcentered}\hspace{5pt plus 2pt}\ignorespaces}
+\newcommand{\leanline}[1]{\par\nopagebreak\vspace{-2.5pt}{\fontsize{8.9}{12.4}\selectfont\color{inksoft}\raggedright
+  \noindent\llap{\leantag\hspace{9pt}}#1\par}\vspace{1pt}}
+% a displayed statement in a tinted box: #1 colour, #2 text
+\newcommand{\statement}[2]{\par\addvspace{7pt}\begingroup\setlength{\fboxsep}{8.5pt}\setlength{\fboxrule}{0.6pt}%
+  \noindent\fcolorbox{#1!30!white}{#1!3!white}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{#2}}%
+  \endgroup\par\addvspace{7pt}}
+\newcommand{\nt}[2]{\par\noindent\hangindent=1.1em\hangafter=1 #1\enspace{\color{inksoft}#2}\par\vspace{1pt}}
+\newcommand{\legdot}[1]{\tikz[baseline=-0.62ex]\fill[#1] (0,0) circle (2.5pt);\hspace{3pt}}
+\newcommand{\crow}[4]{\csname CS@#1\endcsname & #2 & \textcolor{inksoft}{#3} & \textcolor{inksoft}{#4}\\}
+\newcommand{\leanquoteline}[2]{\par\noindent\hangindent=\dimexpr#1\fontdimen2\font+2.2em\relax\hangafter=1
+  \hspace*{#1\fontdimen2\font}#2}
+\newcommand{\quoted}[1]{\par\vspace{3pt}{\ttfamily\fontsize{7.5}{10.4}\selectfont\color{leancol}\raggedright
+  \setlength{\parskip}{0pt}\leanquote{#1}\par}\vspace{4pt}}
+\newcommand{\bx}[3]{{\sffamily\bfseries\fontsize{7.3}{9.2}\selectfont\color{#1!82!black}#2}\\[1.5pt]#3}
+\newcommand{\cs}[2]{\expandafter\newcommand\csname CS@#1\endcsname{#2}}
+
+% theorems
+\newtheoremstyle{plainx}{7pt plus 2pt}{7pt plus 2pt}{\itshape}{}{\bfseries}{.}{0.5em}{}
+\newtheoremstyle{uprightx}{7pt plus 2pt}{7pt plus 2pt}{}{}{\bfseries}{.}{0.5em}{}
+\theoremstyle{plainx}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{uprightx}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{setting}[theorem]{Setting}          % hypotheses shared by several statements; each of them cites it by number
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\renewcommand{\qedsymbol}{{\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.5pt}\fbox{\rule{0pt}{0.46em}\hspace{0.46em}}}}
+% what holds throughout the note: the ambient objects only (implicit and instance arguments), never a hypothesis
+\newenvironment{conventions}{\par\addvspace{5pt}\noindent\textbf{Conventions.}\enspace\ignorespaces}{\par\addvspace{3pt}}
+\makeatletter
+\renewenvironment{proof}[1][Proof]{\par\pushQED{\qed}\normalfont\topsep0pt\partopsep0pt
+  \trivlist\item[\hskip\labelsep\itshape #1.]\ignorespaces}{\popQED\endtrivlist\@endpefalse}
+\makeatother
+
+% where each declaration of the concordance is treated: \cs{key}{place}
+\cs{fewlowjumps}{Theorem A}
+\cs{tametypesexponent}{Theorem B}
+\cs{scaledCupBoundssparsethick}{Theorem C}
+\cs{scaledCupBoundstwosizes}{Theorem D}
+\cs{deepConstants}{Definition~\ref{d:dc}}
+\cs{TameChart}{Definition~\ref{d:tame}}
+\cs{IsTameType}{Definition~\ref{d:univ}}
+\cs{letterJumps}{Definition~\ref{d:univ}}
+\cs{universalSide}{Definition~\ref{d:univ}}
+\cs{relLengthdeepConstantsle}{Lemma~\ref{l:rel}}
+\cs{existsrelLengthdeepConstantsle}{Lemma~\ref{l:col}}
+\cs{existsscaledCupBoundsfewlowjumps}{Proposition~\ref{p:few}}
+\cs{existszsmuleqsumtameGen}{Lemma~\ref{l:zsum}}
+\cs{aevallinearFrobextLatticeeqzero}{Lemma~\ref{l:extkill}}
+\cs{killsCokernelofisKilledBy}{Proposition~\ref{p:tamekill}}
+\cs{existstameChart}{Proposition~\ref{p:tameexist}}
+\cs{killsCokernelatcut}{Lemma~\ref{l:atcut}}
+\cs{scaledCupBoundsofcutwindows}{Proposition~\ref{p:cuts}}
+\cs{memcupOrthogonalofscaledCupBounds}{Lemma~\ref{l:orth}}
+% ---------- common symbols of the notes on unit 136
+\providecommand{\Zp}{\mathbb{Z}_p}\providecommand{\Qp}{\mathbb{Q}_p}\providecommand{\GQp}{G_{\mathbb{Q}_p}}
+\providecommand{\Ainf}{A_{\inf}}\providecommand{\WC}{W(C^{\flat})}\providecommand{\BdR}{B_{\mathrm{dR}}}
+\providecommand{\Fil}{\operatorname{Fil}}\providecommand{\fS}{\mathfrak{S}}\providecommand{\cE}{\mathcal{E}}
+\providecommand{\cO}{\mathcal{O}}\providecommand{\fc}{\mathfrak{c}}\providecommand{\fd}{\mathfrak{d}}
+\providecommand{\WW}{\mathbb{W}}\providecommand{\Per}{\operatorname{Per}}\providecommand{\pr}{\operatorname{pr}}
+\providecommand{\Minf}{\mathfrak{M}^{\inf}}\providecommand{\Mloc}{\mathfrak{M}_{\mathrm{loc}}}
+\providecommand{\Mlocinf}{\mathfrak{M}^{\inf}_{\mathrm{loc}}}\providecommand{\std}{\operatorname{std}}
+\providecommand{\ret}{\operatorname{ret}}
+\providecommand{\inputbox}[1]{\statement{inksoft}{#1}}
+% ---------- notations of definitions that Part 1 owns (same forms as there)
+\providecommand{\cost}[2]{\operatorname{cost}(#1,#2)}
+\providecommand{\wExp}[3]{\mathfrak{X}_{#1}(#2;#3)}
+\providecommand{\locLP}[2]{\mathfrak{N}_{#1,#2}}
+\providecommand{\locKP}[1]{(#1)_{\fS}}
+\providecommand{\invMod}[1]{\operatorname{Inv}(#1)}
+\providecommand{\impE}[4]{\operatorname{imp}(#1,#2)(#3,#4)}
+\providecommand{\wPair}[3]{{#1}_{W}(#2,#3)}
+\providecommand{\frobX}[5]{\operatorname{fr}_{#1,#2}(#3)(#4,#5)}
+\providecommand{\extL}[1]{\tilde{Y}_{#1}}
+\providecommand{\trivL}[1]{C^{\mathrm{tr}}_{#1}}
+\providecommand{\projC}[1]{\pr^{C}_{#1}}
+\providecommand{\JumpWin}[5]{#5\subseteq[-#1,#1]\cup#2\cdot[#3,#3+#4]}
+\providecommand{\raisedE}[3]{\operatorname{rs}_{#1}(#2,#3)}
+\providecommand{\twoWin}[2]{\mathcal{W}_{#1}(#2)}
+\providecommand{\NoMult}[3]{\operatorname{NM}(#1;#2,#3)}
+\providecommand{\constAt}[3]{\operatorname{cst}_{#1,#2}(#3)}
+\providecommand{\liftId}[4]{\mathfrak{a}_{#1}(#2;#3,#4)}
+\providecommand{\Kills}[4]{\operatorname{Kill}_{#1}(#2;#3,#4)}
+% the cost of a map (the spec says why it has no generated macro): side, cost, map
+\providecommand{\Reaches}[3]{\operatorname{Cost}_{#1}(#3)\le #2}
+
+% ---------- notations of definitions that Part 2 owns (same forms as there)
+\providecommand{\projY}[1]{\pr^{Y}_{#1}}
+\providecommand{\inclY}[1]{\operatorname{in}^{Y}_{#1}}
+\providecommand{\projCloc}[1]{\pr^{C,\mathrm{loc}}_{#1}}
+\providecommand{\tensL}[2]{\mathsf{T}_{#1,#2}}
+\providecommand{\tateL}[1]{#1(1)}
+\providecommand{\third}[1]{S^{\vee}_{#1}}
+\providecommand{\pairW}[1]{\mathsf{b}_{#1}}
+\providecommand{\Safe}[4]{\operatorname{Safe}_{#1}(#2;#3,#4)}
+\providecommand{\CupB}[4]{\operatorname{Cup}_{#1}(#2;#3,#4)}
+\providecommand{\kerX}[3]{\mathfrak{X}^{0}_{#1}(#2;#3)}
+\providecommand{\deepE}[3]{\operatorname{Deep}_{#1}(#2;#3)}
+\providecommand{\ptsOver}[6]{\operatorname{Pt}_{#1}(#2,#3;#4;#5,#6)}
+\providecommand{\raiseX}[5]{\operatorname{up}_{#2,#3}(#1)(#4,#5)}
+\providecommand{\shStd}[4]{\operatorname{sh}_{#1}(#2)(#3,#4)}
+\providecommand{\constE}[3]{\mathfrak{K}_{#1,#2,#3}}
+% ---------- notions of the background library used in Part 3
+\providecommand{\InCl}[3]{\operatorname{Cl}(#1,#2;#3)}
+\providecommand{\cupOrth}[2]{{#2}^{\perp#1}}
+\providecommand{\relLen}[3]{\operatorname{len}_{#1}\bigl(#2/(#2\cap#3)\bigr)}
+\providecommand{\linF}[3]{\beta^{#1}_{#2,#3}}
+
+\begin{document}
+\color{ink}
+
+{\raggedright
+{\sffamily\bfseries\fontsize{7.2}{9}\selectfont\color{leancol}\addfontfeatures{LetterSpace=8}READBACK NOTE · CHAPTER VIII · UNIT 136 · PART 3 OF 3\par}
+\vspace{5pt}
+{\fontsize{21.5}{25.5}\selectfont\bfseries Crystalline classes with few low weights, sparse large weights and tame types: a length bound and rank-free exponents\par}
+\vspace{5pt}
+{\fontsize{12.4}{16}\selectfont\itshape\color{inksoft} One unit of the Lean artifact \ArtifactName, read back into
+mathematics\par}}
+\vspace{8pt}
+{\color{rulegrey}\hrule height 0.6pt}
+\vspace{7pt}
+\thispagestyle{empty}
+
+\textbf{Summary.} This note draws the consequences of Parts 1 and~2 that the bound for Selmer groups at~$\ell$
+uses. For a crystalline lattice~$L$ over an unramified base whose weights lie in a low window and a far window,
+the crystalline classes of~$L$ whose cup product with every crystalline class of every dual-type lattice
+bounds have, inside all crystalline classes, a colength that is linear in the number of low weights and in the
+rank, with an explicit constant; and all crystalline classes have this property when no weight is small and
+negative. For lattices of tame inertial type over~$\Qp$, a power of~$p$ whose exponent does not depend on the
+ramification index makes every crystalline class orthogonal in this sense: the cokernel of Kisin modules is
+killed by a power of~$p$ read off a polynomial that kills the tame generator. Two further rank-free exponents
+are proved, for weights of two sizes and for sparse large weights, from a general statement with cuts on the
+Frobenius orbits.
+
+\statement{leancol}{\fontsize{9.6}{13.2}\selectfont\textbf{What this note is.} The artifact \ArtifactName{} is a
+body of Lean code: the compact edition of a formal proof, due to L.~Alpöge with the AI system Claude, of the Riemann
+hypothesis and of its generalisation to Dirichlet $L$-functions. That headline is a claim. The authors report that
+every file compiles with Lean v4.35.0 against a pinned version of Mathlib and that Lean's kernel accepted the
+proofs; an independent build is recorded in the handout's record of checks when it reports. No mathematician has
+read the argument through, and nothing here says that the Riemann hypothesis is proved. This note is the third of
+three on one unit of the artifact, the folder on lifting; it treats \UnitInNote{} of the unit's \UnitMembers{}
+declarations, those of the last three files. Theorems A and~B, Proposition~\ref{p:few} and the results on tame
+charts are proved in full from Parts 1 and~2 and from Inputs of the background library, which are stated and not
+proved. Theorems C and~D are deduced in full from Proposition~\ref{p:cuts}. For Proposition~\ref{p:cuts} itself the
+construction is given in full, and the final comparisons of exponents, which the formal text settles by a decision
+procedure for linear arithmetic, were \emph{not} redone by hand: this is said at that place. Every statement was compared with its Lean text,
+argument by argument. The Lean text read is \PinText; Appendix~A is the concordance of \ConcDecls{} declarations.}
+
+\sect{The statements}{s:intro}
+The objects are those of Setting~\ref{set:base}: the Kummer chart with its letters, lattices over a coefficient
+ring~$\cO$, classes $\InCl{\mathcal{F}}{\mathsf{K}}{U}$ of lattices, the module $\cupOrth{\mathcal{Q}}{L}$ of the
+maps orthogonal to a class, and the notation of Parts 1 and~2.
+
+\statement{arith}{\phantomsection\label{t:A}\textbf{Theorem A} (few low weights).\enspace
+\emph{In Setting~\ref{set:base}, let $\Gamma$ carry a topology for which $j_\Gamma$ is an open embedding. Let
+$\fc$ be a Kummer chart for~$\Gamma$ that is unramified, with residue degree~$h$, let \m{\omega\in\cO} with
+\m{\omega^{p^h-1}=1}, let $L$ be a lattice over~$\cO$, and let $U=(U(\gamma))_\gamma$ and
+$U'=(U'(\gamma))_\gamma$ be families of finite sets of integers indexed by the $\Zp$-algebra maps
+$\gamma\colon\cO\to C$. Suppose \m{p\ge5}. Let \m{\rho,\eta,W\ge0} be integers, and for every letter~$i$ let
+\m{\beta(i)\ge0} be an integer and \m{\varsigma(i)} a sign, such that for every letter~$i$
+\[\beta(i)+W+\eta\le(p-3)\rho,\qquad\eta\ge1,\qquad6(\rho+\eta+W)<\beta(i),\qquad
+\NoMult{p}{6(\rho+\eta+W)}{\beta(i)},\]
+$\JumpWin{\eta}{-\varsigma(i)}{\beta(i)}{W}{\letterJ{\fc}{\omega}{U}{i}}$ and
+$\JumpWin{\eta}{\varsigma(i)}{\beta(i)}{W}{\letterJ{\fc}{\omega}{U'}{i}}$. Suppose that
+$L\in\InCl{\top}{\bot}{U'}$. Then:
+\begin{enumerate}[label=\textup{(\arabic*)},leftmargin=2.3em,itemsep=2pt]
+\item if no element of $U(\gamma)\cup U'(\gamma)$ lies in \m{[-\rho,0)}, for any~$\gamma$, or if
+$U'(\gamma)\subseteq[-\eta,0]$ for every~$\gamma$, then
+$Z^{1}_{\mathrm{f}}(L)\subseteq\cupOrth{\InCl{\top}{\bot}{U}}{L}$;
+\item for every integer \m{m_0\ge0} such that the multiplicities of the jumps \m{u\in[-\eta,\eta]} of~$L$
+at~$\gamma$ have sum at most~$m_0$, for every~$\gamma$,
+\[\begin{gathered}\relLen{\cO}{Z^{1}_{\mathrm{f}}(L)}{\cupOrth{\InCl{\top}{\bot}{U}}{L}}\\
+\le\ 11\,h\,\bigl(m_0(\rho+1)+\operatorname{rk}_{\cO}(L)\,(W+1)\bigr)\cdot\operatorname{len}_{\cO}(\cO/p\cO).\end{gathered}\]
+\end{enumerate}}}
+\leanline{\lean{fewlowjumps}}
+
+\statement{arith}{\phantomsection\label{t:B}\textbf{Theorem B} (tame types: an exponent independent of the
+ramification index).\enspace
+\emph{In Setting~\ref{set:base}, let $\Gamma$ carry a topology for which $j_\Gamma$ is an open embedding, and
+suppose that $j_\Gamma$ is surjective. Let $L$ be a lattice over~$\cO$, $U$ and~$U'$ families of finite sets of
+integers indexed by the maps $\gamma\colon\cO\to C$, $\mathcal{F}$ a filter on~$\Gamma$, $\mathsf{K}$ a relation
+between elements of~$\Gamma$ and polynomials over~$\cO$, and $\mathsf{r},\mathsf{n}\ge0$ integers. Write
+$\mathsf{K}^{-}$ for the relation $(s,Q)\mapsto\mathsf{K}(s^{-1},Q)$. Suppose that
+$L\in\InCl{\mathcal{F}}{\mathsf{K}^{-}}{U'}$, and that $\TameType{p}{\mathsf{r}}{\mathsf{n}}{\mathsf{K}(s,\cdot)}$
+for every \m{s\in\Gamma} with \m{j_\Gamma(s)} in the inertia group. Let \m{\eta,W,\beta\ge0} be integers and
+$\varsigma$ a sign with $\JumpWin{\eta}{-\varsigma}{\beta}{W}{U(\gamma)}$ and
+$\JumpWin{\eta}{\varsigma}{\beta}{W}{U'(\gamma)}$ for every~$\gamma$, and suppose
+\[\beta+6(W+\eta)+\mathsf{r}^{2}(\mathsf{n}+1)^{2}+2<p .\]
+Then for every $a\in Z^{1}_{\mathrm{f}}(L)$,
+\[p^{\,3\mathsf{r}^{2}(\mathsf{n}+1)^{2}+150(\eta+W+1)}\cdot a\ \in\
+\cupOrth{\InCl{\mathcal{F}}{\mathsf{K}}{U}}{L}.\]}}
+\leanline{\lean{tametypesexponent}}
+
+\statement{arith}{\phantomsection\label{t:C}\textbf{Theorem C} (sparse thick letters).\enspace
+\emph{In Setting~\ref{set:cut}, assume of its conditions only \textup{(W1)}, \textup{(W2)}, \textup{(W5)},
+\textup{(W6)}, \textup{(W7)} and~\textup{(W12)}. Suppose moreover that the Kummer chart is unramified and
+\m{p\ge7}, or that $\varsigma(i)=\varsigma(i')$ for all letters $i$,~$i'$; that
+\[G+V\le\eta,\qquad11\,(p^{J}+1)\,W\le B,\qquad4\,\bigl(J+1+\fd+\lfloor\log_p(2B)\rfloor\bigr)\,W\le X;\]
+and that for every letter~$i$ and all integers \m{a,a'\in[1,J]}: if $i$ and \m{i^{p^{a}}} are thick, then
+\m{i^{p^{a+a'}}} is not thick. Then $\CupB{\Pi}{10^{4}X(J+1)}{c}{c'}$ for all \m{c\in C_S} and
+\m{c'\in C_{S'}}.}}
+\leanline{\lean{scaledCupBoundssparsethick}}
+
+\statement{arith}{\phantomsection\label{t:D}\textbf{Theorem D} (two sizes).\enspace
+\emph{In Setting~\ref{set:cut}, assume of its conditions only \textup{(W1)}, \textup{(W2)}, \textup{(W7)}
+and~\textup{(W12)}. Suppose moreover that the Kummer chart is unramified and \m{p\ge7}, and let \m{K_0\ge0} be
+an integer with
+\[5W\le G,\qquad G\le B,\qquad B<K_0\,p^{2},\qquad2G<K_0\,p,\qquad W\le K_0 .\]
+Then $\CupB{\Pi}{10^{4}K_0(\lfloor\log_p(2B)\rfloor+1)}{c}{c'}$ for all \m{c\in C_S} and \m{c'\in C_{S'}}.}}
+\leanline{\lean{scaledCupBoundstwosizes}}
+
+The unit on Selmer groups uses these four statements and nothing else of the three parts. In all four the
+exponent or the length does not involve the rank of a partner lattice, and in Theorem~B not the ramification
+index of the field that makes the lattices crystalline.
+
+\sect{The setting}{s:setting}
+\begin{conventions}\phantomsection\label{c:conventions}
+Throughout, $p$ is a prime number. The declarations of this unit take the following ambient objects as implicit or
+instance arguments; they are fixed by the Settings and named again in each statement that needs them: the
+prime~$p$; the group~$\Gamma$ over~$\GQp$, in the last file with a topology; the Kummer chart~$\fc$
+for~$\Gamma$; the coefficient ring~$\cO$; a lattice~$L$ or a lattice datum~$L$; sides $S$, $S'$ and a
+pairing~$\Pi$; a letter~$i$; exponent functions $o$, $o'$; the integers and functions of
+Settings \ref{set:few} and~\ref{set:cut}. Tensor products without a subscript are over~$\Zp$;
+\m{v_p(n)} is the exponent of~$p$ in an integer~$n$, with \m{v_p(0)=0}; $\lfloor\log_pn\rfloor$ is the
+largest \m{a\ge0} with \m{p^{a}\le n}, and $0$ for \m{n=0}. A \kw{sign} is $1$ or~$-1$. Exponent functions
+are functions $\mathbb{N}\times\mathbb{Z}\to\mathbb{Z}$. The Lean text calls the artifact's period ring
+\emph{Bcris}; it is Colmez's ring~$B_{\max}$.
+\end{conventions}
+
+\begin{setting}[the base; from the background library and from Parts 1 and~2]\label{set:base}
+The notation is that of Parts 1 and~2, which this Setting recalls, with some further notions of the background
+library.
+
+\emph{The chart and lattice data.} $C$ is the completed algebraic closure of~$\Qp$; \m{\Ainf\subset\WC},
+$\varphi$, $\theta$, $\BdR$ with \m{\Fil^{n}\BdR}, $B_{\max}$ and \m{B^{+}} are the period rings. $\Gamma$ is a
+group with a homomorphism $j_\Gamma\colon\Gamma\to\GQp$ of open image, $\chi$ its cyclotomic character; an
+element \m{s\in\Gamma} is \kw{inertial} if \m{j_\Gamma(s)} lies in the inertia group. A Kummer chart~$\fc$
+for~$\Gamma$ has its ring \m{\fS\subset\Ainf}, a quotient of \m{\WW[[X]]} with $\WW=W(\mathbb{F}_{p^h})$, its
+residue degree~$h$, its coordinate~$z$, its Eisenstein element~$\cE$ with $\cE_\nu=\varphi^{\nu}(\cE)$, its
+index~$e_{\fc}$, the number~$\fd$ (equal to~$0$ if \m{e_{\fc}=1} and to \m{v_p(e_{\fc})+1} otherwise), and its
+subgroup~$\Gamma'$ of index prime to~$p$ containing the elements near~$1$; it is \kw{unramified} if
+\m{\cE=z+p}, \m{e_{\fc}=1}, \m{\fd=0}. The \kw{letters} are the elements of~$\mathbb{F}_{p^h}^\times$.
+$\cO$ is the ring of integers of a finite extension of~$\Qp$; with an element \m{\omega\in\cO},
+\m{\omega^{p^h-1}=1}, it is a coefficient ring for the chart. A \kw{lattice} over~$\cO$ is a finite free
+$\cO$-module with an $\cO$-linear action of~$\Gamma$; $Z^{1}_{\mathrm{f}}(L)$ is the $\cO$-module of its
+crystalline cocycles, and for $\gamma\colon\cO\to C$ and \m{u\in\mathbb{Z}} the jump~$u$ of~$L$ at~$\gamma$
+has a multiplicity. A \kw{lattice datum} is a lattice crystalline on~$\Gamma'$ with finite sets
+$U_L(i)\subset\mathbb{Z}$, one for each letter, containing its jumps at the~$\gamma$ with
+$\gamma(\omega)=\theta([i])$; \m{m_L(i,u)} is the sum of the multiplicities of the jump~$u$ over
+these~$\gamma$. It has the modules \m{\Minf(L)}, \m{\Mlocinf(L)}, \m{\Mloc(L)} and the Kisin module \m{\mathfrak{M}(L)}, the
+periods \m{\Per(L)}, the jump bound~$h_L$, the projectors~$\pr_i$ onto the parts \m{(\WC\otimes L)_i}, and for
+an exponent function~$o$ the module \m{\wExp{L}{i}{o}} of the elements of $\Mlocinf(L)\cap(\WC\otimes L)_i$
+whose periods at \m{i^{p^{-\nu}}} and~$u$, after~$\varphi^{-\nu}$, lie in $\Fil^{o(\nu,u)}\BdR$; a larger~$o$
+gives a smaller module. Further: \m{\std_l(\nu,u)=0} for \m{\nu<l} and \m{-u} for \m{\nu\ge l};
+$\locLP{l}{i}(L)=\Mloc(L)\cap\wExp{L}{i}{\std_l}$; \m{\locKP{Q}} is the set of the elements of \m{\Mloc(L)} in
+a submodule~$Q$; \m{\invMod{Q}} is the set of the~$x$ with \m{gx-x\in Q} for all \m{g\in\Gamma'};
+$\cost{\nu}{n}=v_p(n)+\fd+3\nu$; $\impE{o}{o'}{\nu}{u}$ is \m{o'(\nu,u)} if \m{o(\nu,u)>0} and
+\m{\min(o'(\nu,u),0)} otherwise; $\frobX{l}{n}{o}{\nu}{u}$ is~$n$ for \m{\nu<l} and \m{o(\nu-l,u)} for
+\m{\nu\ge l}; $\raiseX{o}{\nu}{u}{\nu'}{v}$ is \m{o(\nu',v)+1} if \m{(\nu',v)=(\nu,u)} and \m{o(\nu',v)}
+otherwise; and $\shStd{l}{o_1}{\nu}{u}$, for a function~$o_1$ of~$u$, is $\std_l(\nu,u)+o_1(u)$ for \m{\nu=0}
+and \m{\std_l(\nu,u)} otherwise.
+
+\emph{Sides and points.} A side $S=(Y_S,C_S,\alpha_S)$ over~$\cO$ consists of a lattice datum~$Y_S$ with
+\m{0\in U_{Y_S}(i)} for all~$i$, a lattice~$C_S$ and an $\cO$-linear map $\alpha_S\colon C_S\to
+Z^{1}_{\mathrm{f}}(Y_S)$. Its extension \m{\extL{S}} is \m{Y_S\times C_S} with $g(y,c)=(gy+\alpha_S(c)(g),c)$
+and the sets \m{U_{Y_S}(i)}; \m{\trivL{S}} is $C_S$ with the trivial action and the sets~$\{0\}$;
+$\inclY{S}\colon Y_S\to\extL{S}$ and $\projC{S}\colon\extL{S}\to\trivL{S}$ are the inclusion and the
+projection, and \m{\projCloc{S}} is the map \m{1\otimes\projC{S}} on \m{\Mloc(\extL{S})}. For \m{c\in C_S},
+$\constAt{S}{i}{c}=\pr_i(1\otimes c)$; $\liftId{S}{r}{l}{i}$ is the lifting ideal of~$\Ainf$ (Part~1,
+Definition~2.8; its characterization is Input~\ref{r:ideal}(a)); $\Kills{S}{i}{\kappa}{\rho}$ means
+$p^{\kappa}\cE^{\rho}\in\liftId{S}{0}{0}{i}$. \m{\kerX{S}{i}{o}} is the module of the
+$x\in\wExp{\extL{S}}{i}{o}$ with $(1\otimes\projC{S})(x)=0$; \m{\deepE{S}{i}{o}} is the $\Zp$-module of
+the $x\in\Mloc(\extL{S})$ such that $(1\otimes\projC{S})(x)=\constAt{S}{i}{c}$ for some \m{c\in C_S} and
+$x\in\invMod{\wExp{\extL{S}}{i}{o}}$; and $\ptsOver{S}{c}{i}{e}{o_1}{o'}$ is the set of the
+$x\in\Mloc(\extL{S})$ with $(1\otimes\projC{S})(x)=p^{e}\constAt{S}{i}{c}$, $x\in\wExp{\extL{S}}{i}{o_1}$
+and $x\in\invMod{\wExp{\extL{S}}{i}{o'}}$, the points over~$p^{e}c$ at~$i$ with exponents~$o_1$ and
+depth~$o'$. An additive map~$\mathsf{A}$ of \m{\Mloc(\extL{S})} \kw{has cost~$e$}, written
+$\Reaches{S}{e}{\mathsf{A}}$, if $\mathsf{A}(x)-p^{e}x\in\locKP{\kerX{S}{j}{o}}$ for all letters~$j$,
+exponent functions~$o$ and $x\in\deepE{S}{j}{o}$. A pairing~$\Pi$ of sides $S$ and~$S'$ is a pairing of
+the lattices $Y_S$ and~$Y_{S'}$ (Part~2, Setting~2.2); it has its third side \m{\third{\Pi}}, whose lattice datum
+is the Tate twist of the dual of $Y_S\otimes_{\cO}Y_{S'}$ with the jump sets
+$\{0\}\cup\{-u-v-1\}$, \m{u\in U_{Y_S}(i)}, \m{v\in U_{Y_{S'}}(i)}; and $\CupB{\Pi}{e}{c}{c'}$ means that,
+for every topology on~$\Gamma$ for which $j_\Gamma$ is an open embedding, the cup product of \m{\alpha_S(c)}
+and $p^{e}\alpha_{S'}(c')$ under~$\Pi$ bounds. The windows: $\raisedE{n}{\nu}{u}$ is \m{n-u} for \m{\nu=0}
+and \m{-u} for \m{\nu>0}; $\twoWin{n}{c}=[-n,n]\cup[c-n,c+n]$; $\NoMult{p}{n}{\beta}$ says that $p$ divides
+no non-zero element of $\twoWin{n}{\beta}\cup\twoWin{n}{-\beta}$; and
+$\JumpWin{\eta}{\varsigma}{\beta}{W}{U}$ says that every \m{u\in U} has \m{|u|\le\eta} or
+$\beta\le\varsigma u\le\beta+W$.
+
+\emph{The linear Frobenius.} Let $T$ be a potentially crystalline lattice, \m{s\in\Gamma} and \m{m\ge0} such
+that \m{j_\Gamma(s)^{-1}} acts on the residue field of~$\bar{\mathbb{Q}}_p$ as the $p^{m}$-th power (for
+\m{m=0}: $s$ is inertial). Then \m{\linF{T}{s}{m}} is the $B_{\max}$-linear endomorphism of
+\m{B_{\max}\otimes T} that agrees with $\varphi^{m}j_\Gamma(s)\otimes s$ on the elements fixed near~$1$. A
+polynomial~$Q$ over~$\cO$ \kw{kills \m{(s,m)} on~$T$} if $T$ is potentially crystalline and
+$Q(\linF{T}{s}{m})=0$, the coefficients acting through~$T$.
+
+\emph{Classes.} Let $\mathcal{F}$ be a filter on~$\Gamma$, $\mathsf{K}$ a relation between elements of~$\Gamma$
+and polynomials over~$\cO$, and $U=(U(\gamma))_\gamma$ a family of finite sets of integers. A lattice~$Y$
+over~$\cO$ lies in the \kw{class} $\InCl{\mathcal{F}}{\mathsf{K}}{U}$ if the elements of
+\m{B_{\max}\otimes Y} that are fixed by $j_\Gamma(g)\otimes g$ for all~$g$ near~$1$ and for all~$g$ in some
+member of~$\mathcal{F}$ span \m{B_{\max}\otimes Y}; every jump of~$Y$ at~$\gamma$ with non-zero multiplicity
+lies in \m{U(\gamma)}; and $Q$ kills \m{(s,0)} on~$Y$ whenever \m{\mathsf{K}(s,Q)} and $s$ is inertial. Here
+$\top$ is the filter whose only member is~$\Gamma$, so that the first condition for \m{\mathcal{F}=\top} says that
+$Y$ is crystalline on~$\Gamma$, and $\bot$ is the empty relation.
+
+\emph{Orthogonality.} A pairing of lattices $Y$ and~$L$ and the statement that the cup product of two maps
+\m{a\colon\Gamma\to Y}, \m{c\colon\Gamma\to L} under it bounds, for a topology on~$\Gamma$, are as in Part~2,
+Setting~2.2. For a topology on~$\Gamma$, a class~$\mathcal{Q}$ of lattices over~$\cO$ and a lattice~$L$,
+$\cupOrth{\mathcal{Q}}{L}$ is the $\cO$-module of the maps \m{c\colon\Gamma\to L} such that for every
+\m{Y\in\mathcal{Q}}, every pairing of $Y$ and~$L$ and every $a\in Z^{1}_{\mathrm{f}}(Y)$ the cup product of
+$a$ and~$c$ bounds.
+
+\emph{Lengths.} For a ring~$R$ and submodules $N$, $N'$ of an $R$-module, \m{\relLen{R}{N}{N'}} is the length
+of the $R$-module \m{N/(N\cap N')}, a natural number or~$\infty$.
+\end{setting}
+
+\begin{definition}[constants that lift to deep points]\label{d:dc}
+In Setting~\ref{set:base}, for a side~$S$ over~$\cO$, a letter~$i$, an integer~$n$ and an exponent
+function~$o$, \m{\deepC{S}{i}{n}{o}} is the image under \m{\projCloc{S}} of the $\Zp$-module of the
+$x\in\Mloc(\extL{S})$ with $x\in\wExp{\extL{S}}{i}{\raisedE{n}{\cdot}{\cdot}}$ and
+$x\in\deepE{S}{i}{o}$; it is a $\Zp$-submodule of \m{\WC\otimes C_S}.
+\end{definition}
+\leanline{\lean{deepConstants}}
+
+\begin{definition}[tame charts]\label{d:tame}
+In Setting~\ref{set:base}, a \kw{tame chart} for~$\Gamma$ is a Kummer chart~$\fc$ for~$\Gamma$ together with: an
+element \m{\varrho\in\WW} whose reduction modulo~$p$ is a primitive $e_{\fc}$-th root of unity; an inertial
+element \m{\sigma\in\Gamma}, the \kw{tame generator}, such that for every \m{k\ge0}, \m{\sigma^{k}} fixes~$\WW$
+and $\sigma^{k}z=\varrho^{k}z$; and an element $\varpi\in\bar{\mathbb{Q}}_p$ with \m{\varpi^{e_{\fc}}=p}
+that is fixed by \m{j_\Gamma(g)} for all \m{g\in\Gamma'}; such that $p$ does not divide~$e_{\fc}$ and
+$\Gamma'$ is normal in~$\Gamma$.
+\end{definition}
+\leanline{\lean{TameChart}}
+
+\begin{definition}[tame types; the universal side]\label{d:univ}
+In Setting~\ref{set:base}:
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=2pt]
+\item For a natural number~$p$, integers $\mathsf{r},\mathsf{n}\ge0$ and a property~$\mathsf{K}_0$ of
+polynomials over~$\cO$, $\TameType{p}{\mathsf{r}}{\mathsf{n}}{\mathsf{K}_0}$ means that $\mathsf{K}_0$ holds
+for \m{X^{M_0}-1}, where $M_0$ is the least common multiple of the \m{p^{a}-1} for $1\le a\le\mathsf{r}$,
+and for the image in \m{\cO[X]} of some monic polynomial over~$\Zp$ of degree at most~$\mathsf{n}$.
+\item For a Kummer chart~$\fc$, \m{\omega\in\cO} with \m{\omega^{p^h-1}=1}, a family
+$U=(U(\gamma))_\gamma$ of finite sets of integers and a letter~$i$,
+\[\letterJ{\fc}{\omega}{U}{i}=\{0\}\cup\bigcup_{\gamma(\omega)=\theta([i])}U(\gamma).\]
+\item Let $\fc$ and~$\omega$ be as in~(ii), $\mathcal{F}$ a filter on~$\Gamma$ every member of which
+contains~$\Gamma'$, and $L$ a lattice with $L\in\InCl{\mathcal{F}}{\bot}{U}$. The \kw{universal side}
+$\univS{\fc}{\omega}{L;U}$ is the side over \m{(\cO,\omega)} whose lattice datum is~$L$ with the sets
+$\letterJ{\fc}{\omega}{U}{i}$, whose lattice is $Z^{1}_{\mathrm{f}}(L)$ with the trivial action, and whose
+cocycle map is the identity. (It is a lattice datum because $L$ is crystalline on~$\Gamma'$; and
+$Z^{1}_{\mathrm{f}}(L)$ is finitely generated by Input~\ref{k:bk} and has no torsion, so it is free.)
+\end{enumerate}
+\end{definition}
+\leanline{\lean{IsTameType}\sep \lean{letterJumps}\sep \lean{universalSide}}
+
+\begin{setting}[few low weights]\label{set:few}
+In Setting~\ref{set:base}, the Kummer chart is unramified, $S$ is a side over~$\cO$, \m{\rho,\eta,W\ge0} are
+integers, and for every letter~$i$ there are integers $\beta(i),n_{\mathrm{lo}}(i),n_{\mathrm{all}}(i)\ge0$
+and a sign~\m{\varsigma(i)}. The following conditions are referred to by their names.
+\begin{enumerate}[label=\textup{(F\arabic*)},leftmargin=2.9em,itemsep=2pt]
+\item \m{p\ge5}.
+\item $\beta(i)+W+\eta\le(p-3)\rho$ for every letter~$i$.
+\item $6(\rho+\eta+W)<\beta(i)$ for every letter~$i$.
+\item $\NoMult{p}{6(\rho+\eta+W)}{\beta(i)}$ for every letter~$i$.
+\item $\JumpWin{\eta}{\varsigma(i)}{\beta(i)}{W}{U_{Y_S}(i)}$ for every letter~$i$.
+\item $\sum_{u\in[-\eta,\eta]}h\,m_{Y_S}(i,u)\le n_{\mathrm{lo}}(i)$ and
+$\sum_{u\in U_{Y_S}(i)}h\,m_{Y_S}(i,u)\le n_{\mathrm{all}}(i)$ for every letter~$i$.
+\end{enumerate}
+\end{setting}
+
+\begin{setting}[cuts and windows]\label{set:cut}
+In Setting~\ref{set:base}, $S$ and~$S'$ are sides over~$\cO$ and $\Pi$ is a pairing of $S$ and~$S'$;
+$\mathsf{cut}$ and $\mathsf{thick}$ are properties of letters; for every letter~$i$ there are a
+sign~\m{\varsigma(i)} and integers $\rho(i),\beta(i)\ge0$; and
+$\eta,V,W,X,\kappa,B,n,J,\rho_0,G\ge0$ are integers. The following conditions are referred to by their names;
+each statement says which of them it assumes.
+\begin{enumerate}[label=\textup{(W\arabic*)},leftmargin=3.2em,itemsep=2pt]
+\item \m{V+4\eta\le W}.
+\item $\JumpWin{\eta}{-\varsigma(i)}{\beta(i)}{V}{U_{Y_S}(i)}$ and
+$\JumpWin{\eta}{\varsigma(i)}{\beta(i)}{V}{U_{Y_{S'}}(i)}$ for every letter~$i$.
+\item $\bigl(J+1+\fd+\lfloor\log_p(2B)\rfloor\bigr)\,n+\fd\,G\le X$.
+\item $12\,(J+1)\,X<\kappa$.
+\item $e_{\fc}\cdot2B\le p^{J+1}X$.
+\item $8\,e_{\fc}\le p^{J+1}$.
+\item \m{\eta\ge1}.
+\item \m{W\le n}, \m{W\le G}, and $\beta(i)+\rho(i)+W\le2B$ for every letter~$i$.
+\item \m{G\le(p-1)\,n}.
+\item For every letter~$i$ with the property~$\mathsf{cut}$: either \m{\rho(i)=0} and
+$\beta(i^{p^{a}})+W\le G$ for all \m{a\in[1,J]}; or \m{\rho(i)<\beta(i)}, the chart is unramified,
+\m{p\ge5} and $\rho_0\le\kappa+\rho(i)$.
+\item If \m{p\ge5}, then $\beta(i)+W\le(p-3)\rho_0$ for every letter~$i$.
+\item \m{\beta(i)=B} if $i$ is thick, and \m{\beta(i)=G} otherwise.
+\end{enumerate}
+\end{setting}
+
+\inputbox{\textbf{Inputs from Parts 1 and~2.} From Part~1 (\emph{Exponents of elements of Kisin modules, the cost
+of deepening them, and cokernel killers}) and Part~2 (\emph{Cup products of crystalline classes vanish up to a
+power of~$p$: the walk along Frobenius orbits}); $L$ is a lattice datum, $S$ a side.
+\begin{enumerate}[label=\textup{Q\arabic*.},ref=Q\arabic*,leftmargin=2.8em,itemsep=2.5pt]
+\item\label{r:exp} \emph{Exponent modules} (Part~1, Lemmas 4.1, 4.2, Theorem~B, Lemma~7.3). Monotonicity in
+the exponents; \m{\cE_{\nu_0}^{\,n}}, for an integer~$n$ of either sign, raises the exponents at~$\nu_0$ by~$n$ and preserves \m{\Mloc(L)};
+if $rx\in\wExp{L}{i}{o}$ with \m{x\in\Mlocinf(L)} and \m{\cE_\nu\nmid r} for all~$\nu$, then
+\m{x\in\wExp{L}{i}{o}}; $gx-x\in\wExp{L}{i}{o}$ for \m{x\in\wExp{L}{i}{o}}, \m{g\in\Gamma'};
+$x\in\wExp{L}{i}{\std_0}$ if and only if $x\in\Minf(L)\cap(\WC\otimes L)_i$; $\pr_i(x)\in\wExp{L}{i}{\std_0}$ for \m{x\in\Minf(L)}; the map \m{1\otimes\inclY{S}} sends
+\m{\wExp{Y_S}{i}{o}} into $\wExp{\extL{S}}{i}{o}$ and \m{\Mloc(Y_S)} into \m{\Mloc(\extL{S})}; and
+$\cost{\nu}{n}\le3\nu$ if the chart is unramified and $p$ does not divide~$n$ or \m{n=0} (Part~1,
+Lemma~6.1).
+\item\label{r:deep} \emph{Deep elements} (Part~1, Lemma~6.2). If \m{x\in\wExp{L}{i}{o}} and
+$x\in\invMod{\wExp{L}{i}{o'}}$, then $x\in\wExp{L}{i}{\impE{o}{o'}{\cdot}{\cdot}}$.
+\item\label{r:ideal} \emph{The lifting ideal} (Part~1, Lemmas 9.1, 9.3 to 9.7, Theorem~D). \emph{(a)}
+$s\in\liftId{S}{r}{l}{i}$ if and only if there is \m{t\in\Ainf} such that every $(s-rt)\constAt{S}{i}{c}$
+is the image of an element of $\wExp{\extL{S}}{i}{\std_l}$. \emph{(b)} If
+$p^{c}\in\liftId{S}{p^{c+1}}{l}{i}$, then $\liftId{S}{p^{c+1}}{l}{i}\subseteq\liftId{S}{0}{l}{i}$.
+\emph{(c)} $p^{c}z^{pa}\in\liftId{S}{r}{1}{i^{p}}$ if and only if $p^{c}z^{a}\in\liftId{S}{r}{0}{i}$;
+if $s\in\liftId{S}{r}{0}{i}$ and \m{u\le n} for all \m{u\in U_{Y_S}(i)}, then
+$s\,\cE^{n}\in\liftId{S}{r}{1}{i}$. \emph{(d)} If \m{f\in\fS} lies in $\liftId{S}{r}{l}{i}$, there is
+\m{t\in\fS} such that every $y\in\locLP{l}{i}(\trivL{S})$ has an $x\in\locLP{l}{i}(\extL{S})$ over
+\m{(f-rt)y}; and $\constAt{S}{i}{c}\in\locLP{l}{i}(\trivL{S})$. \emph{(e)} If \m{pa\le n},
+$p^{c}z^{n}\in\liftId{S}{r}{1}{i^{p}}$ and $c+v_p(n!)\le\kappa+v_p((pa)!)$, then
+$p^{\kappa}z^{a}\in\liftId{S}{r}{0}{i}$. \emph{(f)} If $p^{c}z^{a}\cE^{n}\in\liftId{S}{r}{1}{i}$,
+$c+\fd n+v_p(n!)\le b$ and \m{a+n\le\kappa}, then $p^{b}z^{\kappa}\in\liftId{S}{r}{1}{i}$. \emph{(g)} If
+\m{u\le n} for all letters~$j$ and \m{u\in U_{Y_S}(j)}, then for every \m{\kappa\ge0} there is \m{a\ge0} with
+$z^{a}\in\liftId{S}{p^{\kappa}}{0}{j}$ for all~$j$ and $a\,p\le e_{\fc}(n+\kappa)+a$. \emph{(h)} If the
+chart is unramified, \m{p\ge5} and $u\le(p-3)(\kappa+\rho)$ for all~$j$ and \m{u\in U_{Y_S}(j)}, then
+$\Kills{S}{i}{\kappa}{\rho}$. \emph{(i)} $\sum_{a\in\twoWin{n}{c}}(v_p(a)+d)\le(4m+2)\lfloor\log_pH\rfloor+(4n+2)d$
+if \m{n\le pm} and \m{|c|+n\le H}.
+\end{enumerate}}
+
+\inputbox{\textbf{Inputs from Parts 1 and~2, continued.}
+\begin{enumerate}[label=\textup{Q\arabic*.},ref=Q\arabic*,leftmargin=2.8em,itemsep=2.5pt,start=4]
+\item\label{r:points} \emph{Points} (Part~2, Lemmas 4.1, 4.4, 4.5, 4.7, Proposition~4.6). \emph{(a)} If
+$\Kills{S}{i}{\kappa}{\rho}$, then $\ptsOver{S}{c}{i}{\kappa}{\raisedE{-\rho}{\cdot}{\cdot}}{\raisedE{-\rho}{\cdot}{\cdot}}$
+is not empty. \emph{(b)} For a finite set~$I$ of steps \m{(\nu,n)} there is an additive map~$\mathsf{A}$ of
+\m{\Mloc(\extL{S})} with $\mathsf{A}(x)-p^{\epsilon}x\in\locKP{\kerX{S}{i}{o}}$ for
+$x\in\deepE{S}{i}{o}$, where $\epsilon=\sum_{(\nu,n)\in I}\cost{\nu}{n}$, and
+$\mathsf{A}(x)\in\deepE{S}{i}{o'}$ if $I$ contains all steps from $o$ to~$o'$; such a map preserves every
+$\Zp$-submodule of \m{\Mloc(\extL{S})} that contains $\locKP{\kerX{S}{i}{o}}$, on its elements in
+\m{\deepE{S}{i}{o}}; and $\locKP{\kerX{S}{i}{o}}\subseteq\deepE{S}{i}{o}$. \emph{(c)} A point of
+$\ptsOver{S}{c}{i}{e}{o_1}{o}$ gives a point of $\ptsOver{S}{c}{i}{e'}{\impE{o_1}{o'}{\cdot}{\cdot}}{o'}$
+if $I$ contains the steps from $o$ to~$o'$ and \m{e+\epsilon\le e'}; in particular, if $\NoMult{p}{n}{\beta}$
+and all these steps are at \m{\nu=0} and in $\twoWin{n}{\beta}\cup\twoWin{n}{-\beta}$, one may take
+\m{e'=e+(8n+4)\fd}. \emph{(d)} $\varphi^{l}$ maps $\ptsOver{S}{c}{i^{p^{-l}}}{e}{o}{o'}$ into
+$\ptsOver{S}{c}{i}{e}{\frobX{l}{0}{o}{\cdot}{\cdot}}{\frobX{l}{1}{o'}{\cdot}{\cdot}}$. \emph{(e)}
+(Strictness.) Every \m{w\in\kerX{S}{i}{o}} is the image of a $y\in\wExp{Y_S}{i}{o}$, and \m{y\in\Mloc(Y_S)}
+if $w\in\Mloc(\extL{S})$.
+\item\label{r:walk} \emph{The walk} (Part~2, Theorems B, C and~D, Definition~2.6). Theorem~B: deep points of
+$S$ and~$S'$ against each other at every cut, with a point of the third side, give
+$\CupB{\Pi}{E}{c}{c'}$. Theorem~C: the rank-free exponent
+$H\ge3(\kappa+(48(\rho+\eta+W)+4)\fd)$ for sides with jumps in opposite windows and three cokernels killed
+by $p^{\kappa}\cE^{\rho}$. Theorem~D: the long gap. They are cited with their hypotheses where used.
+\item\label{r:auer} \emph{A relation among elements of one weight} (Part~2, Proposition~6.1). Unramified
+chart; \m{m_L(i,u)\le n}; \m{j^{p^{-\nu_0}}=i}; $o(\nu_0,u)<o(\nu_0,v)$ for \m{v\in U_L(i)}, \m{v<u};
+$x_0,\dots,x_{hn}\in\Mloc(L)\cap\wExp{L}{j}{o}$. Then some combination \m{\sum_kc_kx_k} with \m{c_k\in\Zp},
+one of them~$1$, lies in $\locKP{\wExp{L}{j}{o_+}}+\locKP{\wExp{L}{j}{\raiseX{o}{\nu_0}{u}{\cdot}{\cdot}}}$,
+where $o_+$ is $o$ raised by~$1$ at \m{\nu=0}.
+\end{enumerate}}
+
+\inputbox{\textbf{Inputs from the background library.} Each is a declaration of the background library, read in its
+Lean text; the number in brackets is the unit that owns it.
+\begin{enumerate}[label=\textup{K\arabic*.},ref=K\arabic*,leftmargin=2.8em,itemsep=2.5pt]
+\item\label{k:len} \emph{Relative lengths} [57]. For $\Zp$-submodules: \emph{(a)}
+$\relLen{\Zp}{N}{N''}\le\relLen{\Zp}{N}{N'}+\relLen{\Zp}{N'}{N''}$; \emph{(b)}
+$\relLen{\Zp}{N}{f^{-1}(N')}=\relLen{\Zp}{f(N)}{N'}$ for a linear map~$f$; \emph{(c)}
+$\relLen{\Zp}{N}{\bigcap_kN_k}\le\sum_k\relLen{\Zp}{N}{N_k}$ for finitely many~$N_k$; \emph{(d)} if
+\m{p^{a}N\subseteq N'} and any \m{m+1} elements~$x_k$ of~$N$ with \m{px_k\in N'} have a combination
+\m{\sum_kc_kx_k\in N'} with \m{c_k\in\Zp}, one of them~$1$, then $\relLen{\Zp}{N}{N'}\le a\,m$. Elementary.
+\item\label{k:frob} \emph{The linear Frobenius} [86]. For potentially crystalline lattices: \emph{(a)}
+$\linF{T}{st}{m+m'}=\linF{T}{s}{m}\,\linF{T}{t}{m'}$, and \m{\linF{T}{g}{0}=1} for inertial~$g$ near~$1$;
+\emph{(b)} a $\Zp$-linear map \m{f\colon T\to T'} that commutes with~$s$ and with all~$g$ near~$1$ satisfies
+$(1\otimes f)\,\linF{T}{s}{m}=\linF{T'}{s}{m}\,(1\otimes f)$; \m{\linF{T}{s}{0}=1} for inertial~$s$ if $T$ is
+crystalline on~$\Gamma$; \emph{(c)} an element of~$B_{\max}$ fixed near~$1$ is fixed by every inertial
+element. In the second reader's comparison, Fontaine gives the Weil action on the periods of a
+finite-dimensional representation (J.-M.~Fontaine, \emph{Représentations $\ell$-adiques potentiellement
+semi-stables}, Astérisque~223, Exposé~VIII, §§2.3.2--2.3.3, §2.3.7), and the $B_{\max}$-linear extension on
+arbitrary modules is not located.
+\item\label{k:crit} \emph{A crystalline criterion} [86]. If $T$ is potentially crystalline and
+\m{\linF{T}{s}{0}=1} for every inertial \m{s\in\Gamma}, then $T$ is crystalline on~$\Gamma$. In the second
+reader's comparison, unramified descent and the Weil inertia account for the classical criterion (Fontaine,
+\emph{Représentations $p$-adiques semi-stables}, Astérisque~223, Exposé~III, §§1.8.5--1.8.6, §5.6.8(iii);
+Exposé~VIII, §2.3), and the descent for arbitrary modules is not located.
+\item\label{k:dual} \emph{Duals of tensor products} [86]. Let $s$ be inertial, $Y$ and~$L$ lattices in classes
+with relations $\mathsf{K}$, $\mathsf{K}'$, and $q$, $q'$ monic polynomials over~$\Zp$ with
+\m{\mathsf{K}(s,q)}, \m{\mathsf{K}'(s,q')}. Then a monic polynomial over~$\Zp$ of degree at most
+\m{\deg q\cdot\deg q'} kills \m{(s^{-1},0)} on $(Y\otimes_{\cO}L)^{\vee}(1)$. Reference to be confirmed.
+\item\label{k:bk} \emph{Crystalline cocycles and jumps} [86, 87]. For a potentially crystalline lattice~$T$:
+$Z^{1}_{\mathrm{f}}(T)$ is a finite $\cO$-module, and for each~$\gamma$ the multiplicities of the jumps
+of~$T$ at~$\gamma$ have sum $\operatorname{rk}_{\cO}(T)$. For \m{u\ne0} the multiplicity of the jump~$u$ of
+\m{\extL{S}} at~$\gamma$ is at most that of~$Y_S$. In the second reader's comparison the first statement is
+the Bloch--Kato local dimension formula applied to the integral module of cocycles (S.~Bloch, K.~Kato,
+\emph{$L$-functions and Tamagawa numbers of motives}, §3.7.2--3, Corollary~3.8.4), and the second is classical
+for field coefficients (Fontaine, Exposé~III, Theorem~3.8(i), Remark~3.9(ii), §5.1.7), its formulation for
+coefficient fibres not located.
+\end{enumerate}}
+
+\inputbox{\textbf{Inputs from the background library, continued.}
+\begin{enumerate}[label=\textup{K\arabic*.},ref=K\arabic*,leftmargin=2.8em,itemsep=2.5pt,start=6]
+\item\label{k:tame} \emph{Tame inertia} [89, 92]. Let $e$ be prime to~$p$, $y\in\bar{\mathbb{Q}}_p$ with
+$y^{e}$ a uniformizer of~$\Qp$, and $f$ a homomorphism from the inertia group of~$\GQp$ to a monoid, with open
+kernel and \m{f(g)^{e}=1} for all~$g$. Then $f$ is trivial on the stabilizer of~$y$. The file names it Hilbert's
+ramification theory for infinite Galois extensions; reference to be confirmed.
+\item\label{k:frame} \emph{The frame theorem with a divisor; Galois and the Kisin module} [83, 82]. Let $L$ be
+a lattice datum. A \kw{crystalline period} is a period \m{\mu\in\Per(L)} whose values on \m{1\otimes L} are
+given by a $\Zp$-linear map \m{L\to B_{\max}}. \emph{(a)} Let \m{d\in\Ainf} be such that $d$ divides~$r$
+in~$\Ainf$ whenever $d$ divides \m{\cE^{m}r} in~$B^{+}$. If \m{x\in\Minf(L)} and
+$\cE^{2h_L}\mu(x)\in B^{+}d$ for every crystalline period~$\mu$, then \m{x\in d\,\Minf(L)}. The
+coordinate~$z$ is such a~$d$. \emph{(b)} \m{\cE^{h_L}\mu(x)} lies in the image of~$\fS_B$ for every
+crystalline period~$\mu$ and $x\in\mathfrak{M}(L)$. \emph{(c)} If \m{g\in\GQp} fixes~$\WW$, then $z$ divides
+\m{gs-s} in~$B^{+}$ for every \m{s\in\fS_B}. \emph{(d)} Let \m{g\in\GQp}, \m{d\in\Ainf} and \m{m\ge0}; if $d$
+divides \m{gs-s} in~$B^{+}$ for all \m{s\in\fS_B} and \m{b\in\BdR} has \m{\cE^{m}b} in the image of~$\fS_B$,
+then $\cE^{2m}(gb-b)\in B^{+}d$. \emph{(e)} For \m{g\in\Gamma} with $g\Gamma'g^{-1}\subseteq\Gamma'$:
+$g\,\Minf(L)\subseteq\Minf(L)$, and $g^{-1}\circ\mu\circ g\in\Per(L)$ for every \m{\mu\in\Per(L)}.
+\emph{(f)} A $\Zp$-linear combination of periods that vanishes on \m{1\otimes L} vanishes on \m{\Minf(L)}.
+Here $\fS_B$ is the ring of Part~1, Setting~2.1. Reference to be confirmed (the Kisin lattice of a crystalline
+lattice).
+\item\label{k:chart} \emph{Existence of charts} [83]. \emph{(a)} For \m{h\ge1}, \m{x\in\mathcal{O}_C} and a
+unit~$v$ with \m{x^{e}v=-p} there is a chart with residue degree~$h$, index~$e$, coordinate~$z$ with
+\m{\theta(z)=x}, and constant unit series. \emph{(b)} If a closed subgroup of~$\GQp$ acts transitively on the
+$n$-th roots of~$p$ for all \m{n>0}, and $u,v\in\mathcal{O}_C^\flat$ have untilts whose $e$-th power is~$p$,
+then some element of the subgroup sends $[u]$ to~$[v]$. The inertia group has this property. \emph{(c)} Every
+\m{s\in\fS} is \m{w+zt} with \m{w\in\WW}, \m{t\in\fS}; and if $z$ divides \m{\cE^{a}r} in~$B^{+}$, then $z$
+divides~$r$ in~$\Ainf$. Elementary.
+\end{enumerate}}
+
+\sect{Constants that lift to deep points}{s:few}
+Throughout this section the setting is Setting~\ref{set:few}. The chart is unramified, so \m{\cE=z+p},
+\m{\fd=0} and $\cost{\nu}{n}=v_p(n)+3\nu$. For a letter~$i$ and an exponent function~$o$ write
+\[\mathsf{P}_i(o)=\locKP{\wExp{\extL{S}}{i}{\raisedE{0}{\cdot}{\cdot}}}\cap\deepE{S}{i}{o},\qquad
+\mathsf{P}^{0}_i(o)=\locKP{\kerX{S}{i}{o}},\]
+so that $\deepC{S}{i}{0}{o}=\projCloc{S}(\mathsf{P}_i(o))$ by Definition~\ref{d:dc}. Write $i^-$ for the
+letter \m{i^{p^{-1}}}.
+
+\begin{lemma}[deepening at one Frobenius index: the loss of constants]\label{l:rel}
+In Setting~\ref{set:few}, assume of its conditions only~\textup{(F6)}. Let $i$, $i'$ be letters and
+\m{\nu_0\ge0} an integer with \m{i^{p^{-\nu_0}}=i'}, let $o$, $o'$ be exponent functions and \m{A,B\ge0}
+integers. Suppose that:
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=2pt]
+\item for every \m{v\in\mathbb{Z}}, $p$ divides no integer~$n$ with $o(0,v)<n<o(0,v)+p^{\nu_0}$;
+\item for every \m{\nu\ge0} and $u\in U_{Y_S}(i^{p^{-\nu}})$: \m{-u\le o(\nu,u)}, and
+$o'(\nu,u)\le o(\nu,u)$ if \m{\nu\ne\nu_0};
+\item the function $u\mapsto o'(\nu_0,u)$ is non-increasing on \m{U_{Y_S}(i')};
+\item for every \m{u\in U_{Y_S}(i')}: $\sum_{o(\nu_0,u)\le n<o'(\nu_0,u)}\cost{\nu_0}{n}\le A+B_u$, where
+\m{B_u=B} if \m{|u|\le\eta} and \m{B_u=0} otherwise.
+\end{enumerate}
+Then
+\[\relLen{\Zp}{\deepC{S}{i}{0}{o}}{\deepC{S}{i}{0}{o'}}\ \le\ A\cdot n_{\mathrm{all}}(i')+B\cdot n_{\mathrm{lo}}(i').\]
+\end{lemma}
+\leanline{\lean{relLengthdeepConstantsle}}
+\begin{proof}
+Multiplying (iv) by \m{h\,m_{Y_S}(i',u)} and summing over \m{u\in U_{Y_S}(i')} gives, by~(F6),
+\[\begin{gathered}\sum_{(u,n)\in I}h\,m_{Y_S}(i',u)\,\cost{\nu_0}{n}\ \le\ A\,n_{\mathrm{all}}(i')+B\,n_{\mathrm{lo}}(i'),\\
+I=\{(u,n): u\in U_{Y_S}(i'),\ o(\nu_0,u)\le n<o'(\nu_0,u)\}.\end{gathered}\]
+We prove that the relative length is at most the left side, by induction on the number of elements of~$I$,
+for all~$o$ at once.
+
+If no \m{v\in U_{Y_S}(i')} has $o(\nu_0,v)<o'(\nu_0,v)$, then \m{o'\le o} on all jump sets by~(ii), so
+$\deepE{S}{i}{o}\subseteq\deepE{S}{i}{o'}$ (Input~\ref{r:exp}) and the relative length is~$0$. Otherwise let
+$u$ be the least such~$v$ and let \m{o^{+}} be the function $\raiseX{o}{\nu_0}{u}{\cdot}{\cdot}$. The
+hypotheses hold for \m{(o^{+},o')}: (i) because \m{o^{+}(0,\cdot)} differs from \m{o(0,\cdot)} only if
+\m{\nu_0=0}, when the intervals of~(i) are empty; (ii), (iii) and~(iv) at once. Its set of steps is
+$I\smallsetminus\{(u,o(\nu_0,u))\}$. By Input~\ref{k:len}(a) and the induction hypothesis it remains to show
+\begin{equation}\label{e:onestep}
+\relLen{\Zp}{\deepC{S}{i}{0}{o}}{\deepC{S}{i}{0}{o^{+}}}\ \le\ \cost{\nu_0}{o(\nu_0,u)}\cdot h\,m_{Y_S}(i',u).
+\end{equation}
+By (ii) and Input~\ref{r:exp}, $\mathsf{P}^{0}_i(o)\subseteq\locKP{\wExp{\extL{S}}{i}{\raisedE{0}{\cdot}{\cdot}}}$,
+and $\mathsf{P}^{0}_i(o)\subseteq\deepE{S}{i}{o}$ (Input~\ref{r:points}(b)); so
+$\mathsf{P}^{0}_i(o)\subseteq\mathsf{P}_i(o)$, and \m{\projCloc{S}} vanishes on~$\mathsf{P}^{0}_i(o)$. By
+Input~\ref{k:len}(b) the left side of~\eqref{e:onestep} is the relative length of \m{\mathsf{P}_i(o)} and the
+preimage of $\projCloc{S}(\mathsf{P}_i(o^{+}))$, which contains $N'=\mathsf{P}_i(o^{+})+\mathsf{P}^{0}_i(o)$. We
+apply Input~\ref{k:len}(d) to \m{N=\mathsf{P}_i(o)} and~$N'$, with the exponent
+$\cost{\nu_0}{o(\nu_0,u)}$ and with \m{m=h\,m_{Y_S}(i',u)}.
+
+\emph{The power of~$p$.} Let $x\in\mathsf{P}_i(o)$. The only step from $o$ to~$o^{+}$ is
+\m{(\nu_0,o(\nu_0,u))}. Let $\mathsf{A}$ be the additive map of Input~\ref{r:points}(b) for this one step, of
+cost $\epsilon=\cost{\nu_0}{o(\nu_0,u)}$. Then $\mathsf{A}(x)\in\deepE{S}{i}{o^{+}}$,
+$\mathsf{A}(x)-p^{\epsilon}x\in\mathsf{P}^{0}_i(o)$, and \m{\mathsf{A}(x)} lies in
+$\locKP{\wExp{\extL{S}}{i}{\raisedE{0}{\cdot}{\cdot}}}$, a $\Zp$-module that contains $\mathsf{P}^{0}_i(o)$.
+So $p^{\epsilon}x\in N'$.
+
+\emph{The relations.} Let $x_0,\dots,x_m\in\mathsf{P}_i(o)$ with \m{p\,x_k\in N'}, and write
+\m{p\,x_k=x'_k+w_k} with $x'_k\in\mathsf{P}_i(o^{+})$ and $w_k\in\mathsf{P}^{0}_i(o)$. By strictness
+(Input~\ref{r:points}(e)), $w_k=(1\otimes\inclY{S})(y_k)$ with $y_k\in\Mloc(Y_S)\cap\wExp{Y_S}{i}{o}$. By
+the minimality of~$u$ and by~(iii), every \m{v\in U_{Y_S}(i')} with \m{v<u} has
+$o(\nu_0,v)\ge o'(\nu_0,v)\ge o'(\nu_0,u)>o(\nu_0,u)$. So Input~\ref{r:auer} applies to the lattice
+datum~$Y_S$, the letters $i'$ and~$i$, the jump~$u$ with \m{n=m_{Y_S}(i',u)}, and the elements~$y_k$: there are
+\m{c_k\in\Zp}, one of them equal to~$1$, and
+\[\sum_kc_ky_k=y'+y'',\qquad y'\in\locKP{\wExp{Y_S}{i}{o_+}},\quad y''\in\locKP{\wExp{Y_S}{i}{o^{+}}},\]
+where $o_+$ is $o$ raised by~$1$ at \m{\nu=0}. Put $x^{\ast}=\sum_kc_kx_k\in\mathsf{P}_i(o)$ and
+$w=(1\otimes\inclY{S})(y')\in\mathsf{P}^{0}_i(o_+)$. We show \m{x^{\ast}\in N'}.
+
+First, $p\,x^{\ast}-w\in\deepE{S}{i}{o^{+}}$: it lies in \m{\Mloc(\extL{S})} over a constant, and
+\[p\,x^{\ast}-w=\sum_kc_kx'_k+(1\otimes\inclY{S})(y''),\]
+where each $x'_k$ is invariant modulo $\wExp{\extL{S}}{i}{o^{+}}$ and the last term lies in
+$\wExp{\extL{S}}{i}{o^{+}}$, a module stable under \m{x\mapsto gx-x} for \m{g\in\Gamma'}
+(Input~\ref{r:exp}).
+
+Secondly, let $I_2$ be the set of the pairs \m{(0,n)} with $o(0,v)<n<o(0,v)+p^{\nu_0}$ for some
+\m{v\in U_{Y_S}(i)}. By~(i) each of them has $\cost{0}{n}=v_p(n)=0$; so the additive map~$\mathsf{B}$ of
+Input~\ref{r:points}(b) for~$I_2$ has cost~$0$. Since $w\in\mathsf{P}^{0}_i(o_+)\subseteq\deepE{S}{i}{o_+}$, the
+element \m{\mathsf{B}(w)} lies in $\mathsf{P}^{0}_i(o_+)$ and in \m{\deepE{S}{i}{o_2}}, where
+$o_2(0,v)=o(0,v)+p^{\nu_0}$ and $o_2(\nu,v)=o(\nu,v)$ for \m{\nu>0}: the steps from $o_+$ to~$o_2$ are
+in~$I_2$. By Input~\ref{r:deep}, $\mathsf{B}(w)\in\wExp{\extL{S}}{i}{\impE{o_+}{o_2}{\cdot}{\cdot}}$. Now
+$\impE{o_+}{o_2}{0}{v}-p^{\nu_0}\ge o(0,v)$: this is clear if \m{o(0,v)\ge0} or
+$o(0,v)+p^{\nu_0}\le0$, and the remaining case $o(0,v)<0<o(0,v)+p^{\nu_0}$ is excluded by~(i), as $p$
+divides~$0$. Hence, by Input~\ref{r:exp},
+\[w_3=\cE^{-p^{\nu_0}}\,\mathsf{B}(w)\ \in\ \mathsf{P}^{0}_i(o).\]
+Since \m{\cE=z+p} and $\cE_{\nu_0}=z^{p^{\nu_0}}+p$, we have $\cE^{p^{\nu_0}}=\cE_{\nu_0}+p\,r$ with
+\m{r\in\fS}. Put $w_4=r\,w_3-(\mathsf{B}(x^{\ast})-x^{\ast})\in\mathsf{P}^{0}_i(o)$; the second term lies in
+$\mathsf{P}^{0}_i(o)$ because $\mathsf{B}$ has cost~$0$. As $\mathsf{B}$ is additive,
+\[p\,(x^{\ast}-w_4)=p\,\mathsf{B}(x^{\ast})-p\,r\,w_3=\mathsf{B}(p\,x^{\ast}-w)+\cE^{p^{\nu_0}}w_3-p\,r\,w_3
+=\mathsf{B}(p\,x^{\ast}-w)+\cE_{\nu_0}\,w_3 .\]
+Here $\mathsf{B}(p\,x^{\ast}-w)\in\deepE{S}{i}{o^{+}}$ (Input~\ref{r:points}(b), for the module
+$\deepE{S}{i}{o^{+}}$ itself), and $\cE_{\nu_0}w_3\in\wExp{\extL{S}}{i}{o^{+}}$ because multiplication
+by~$\cE_{\nu_0}$ raises the exponents at~$\nu_0$ by~$1$. So for every \m{g\in\Gamma'} the element
+$p\,\bigl(g(x^{\ast}-w_4)-(x^{\ast}-w_4)\bigr)$ lies in $\wExp{\extL{S}}{i}{o^{+}}$; as no~$\cE_\nu$
+divides~$p$, Input~\ref{r:exp} gives $g(x^{\ast}-w_4)-(x^{\ast}-w_4)\in\wExp{\extL{S}}{i}{o^{+}}$. Therefore
+$x^{\ast}-w_4\in\mathsf{P}_i(o^{+})$ and \m{x^{\ast}\in N'}.
+\end{proof}
+
+\begin{lemma}[the colength of the constants that lift]\label{l:col}
+In Setting~\ref{set:few}, assume \textup{(F1)} to~\textup{(F6)}. For a letter~$i$ let $o_i$ be the following
+exponent function: $o_i=\raisedE{2\rho+\eta}{\cdot}{\cdot}$ if \m{\varsigma(i)=1}; and if
+\m{\varsigma(i)=-1},
+\[o_i(0,u)=\beta(i)+W+2\rho,\qquad o_i(1,u)=W+1-u+2\rho_u,\qquad o_i(\nu,u)=-u\ \ (\nu\ge2),\]
+where \m{\rho_u=\rho} if \m{|u|\le\eta} and \m{\rho_u=0} otherwise. Then for every letter~$i$, with $N_i$ the
+image of the map $c\mapsto\constAt{S}{i}{c}$ on~$C_S$,
+\[\relLen{\Zp}{N_i}{\deepC{S}{i}{0}{o_i}}\ \le\ (2\rho+1)\,n_{\mathrm{lo}}(i)+3\,(W+1)\,n_{\mathrm{all}}(i^-)
++6\rho\,n_{\mathrm{lo}}(i^-).\]
+\end{lemma}
+\leanline{\lean{existsrelLengthdeepConstantsle}}
+\begin{proof}
+By (F2), (F3) and~(F5), \m{\rho\ge1}, every jump of~$Y_S$ is at most \m{(p-3)\rho}, and a jump~$u$ at~$i$ with
+\m{|u|>\eta} has $|u|\ge\beta(i)>6(\rho+\eta+W)$.
+
+\emph{A supply of points.} Let \m{s\in\{0,\rho\}}, \m{d\in C_S} and $n$ an integer with
+\begin{equation}\label{e:supply}
+n-u\le\impE{\raisedE{s-\rho}{\cdot}{\cdot}}{\raisedE{2\rho+\eta}{\cdot}{\cdot}}{0}{u}\qquad\text{for all }u\in U_{Y_S}(i).
+\end{equation}
+Then $p^{s}\constAt{S}{i}{d}\in\deepC{S}{i}{n}{\raisedE{2\rho+\eta}{\cdot}{\cdot}}$. Indeed
+$\Kills{S}{i}{s}{\rho-s}$ by Input~\ref{r:ideal}(h), which gives a point over \m{p^{s}d} with exponents and
+depth $\raisedE{s-\rho}{\cdot}{\cdot}$ (Input~\ref{r:points}(a)); the steps to the depth
+$\raisedE{2\rho+\eta}{\cdot}{\cdot}$ are at \m{\nu=0} and lie in
+$\twoWin{6(\rho+\eta+W)}{\beta(i)}\cup\twoWin{6(\rho+\eta+W)}{-\beta(i)}$, so by (F4) and
+Input~\ref{r:points}(c), with \m{\fd=0}, there is a point over \m{p^{s}d} with exponents
+$\impE{\raisedE{s-\rho}{\cdot}{\cdot}}{\raisedE{2\rho+\eta}{\cdot}{\cdot}}{\cdot}{\cdot}$ and depth
+$\raisedE{2\rho+\eta}{\cdot}{\cdot}$; at \m{\nu\ge1} these exponents are~$-u$, and \eqref{e:supply} is the
+comparison at \m{\nu=0}.
+
+\emph{The low weights.} We show, for every integer~$t$ with \m{-\eta\le t\le0},
+\begin{equation}\label{e:low}
+\relLen{\Zp}{N_i}{\deepC{S}{i}{t}{\raisedE{2\rho+\eta}{\cdot}{\cdot}}}\ \le\ \rho\sum_{-\eta\le u<t}h\,m_{Y_S}(i,u).
+\end{equation}
+For \m{t=-\eta} the supply with \m{s=0} and \m{n=-\eta} gives
+$N_i\subseteq\deepC{S}{i}{-\eta}{\raisedE{2\rho+\eta}{\cdot}{\cdot}}$: in~\eqref{e:supply} the right side is
+\m{2\rho+\eta-u} for \m{u<-\rho}, and $\min(2\rho+\eta-u,0)$ for \m{u\ge-\rho}, when \m{u\ge-\eta} because
+no jump lies in \m{[-\rho,-\eta)}. Let \m{-\eta\le t<0} and suppose~\eqref{e:low} for~$t$. By
+Input~\ref{k:len}(a) and~(b) it suffices to bound by $\rho\cdot h\,m_{Y_S}(i,t)$ the relative length of
+$N=\locKP{\wExp{\extL{S}}{i}{\raisedE{t}{\cdot}{\cdot}}}\cap\deepE{S}{i}{\raisedE{2\rho+\eta}{\cdot}{\cdot}}$
+and the preimage~$N'$ of $\deepC{S}{i}{t+1}{\raisedE{2\rho+\eta}{\cdot}{\cdot}}$ under \m{\projCloc{S}}; we
+use Input~\ref{k:len}(d). For \m{x\in N} over \m{\constAt{S}{i}{d}}, the supply with \m{s=\rho} and
+\m{n=t+1\le0} gives \m{p^{\rho}x\in N'}: the right side of~\eqref{e:supply} is now \m{2\rho+\eta-u} for
+\m{u<0} and $\min(2\rho+\eta-u,0)\ge t+1-u$ for \m{u\ge0}. Let \m{x_0,\dots,x_m\in N} with \m{m=h\,m_{Y_S}(i,t)}. The
+multiplicity of the jump \m{t\ne0} of \m{\extL{S}} is at most that of~$Y_S$ (Input~\ref{k:bk}), and
+$\raisedE{t}{0}{t}=0<\raisedE{t}{0}{v}$ for \m{v<t}; so by Input~\ref{r:auer}, for the lattice datum
+\m{\extL{S}} and \m{\nu_0=0}, a combination $x^{\ast}=\sum_kc_kx_k$ with \m{c_k\in\Zp}, one of them~$1$,
+lies in $\wExp{\extL{S}}{i}{o^{+}}$, where $o^{+}$ is $\raisedE{t}{\cdot}{\cdot}$ raised by~$1$ at
+\m{(0,t)} (the other module of Input~\ref{r:auer} is contained in this one). By Input~\ref{r:deep},
+$x^{\ast}\in\wExp{\extL{S}}{i}{\impE{o^{+}}{\raisedE{2\rho+\eta}{\cdot}{\cdot}}{\cdot}{\cdot}}$, and
+$\impE{o^{+}}{\raisedE{2\rho+\eta}{\cdot}{\cdot}}{0}{u}\ge t+1-u$: for \m{u\le t} the left side is
+\m{2\rho+\eta-u}, and for \m{u>t} it is at least $\min(2\rho+\eta-u,0)\ge t+1-u$. So
+$x^{\ast}\in\locKP{\wExp{\extL{S}}{i}{\raisedE{t+1}{\cdot}{\cdot}}}$ and \m{x^{\ast}\in N'}.
+This proves~\eqref{e:low}; for \m{t=0} its right side is at most $\rho\,n_{\mathrm{lo}}(i)$ by~(F6).
+
+If \m{\varsigma(i)=1} the lemma is proved. Let \m{\varsigma(i)=-1}, and let $\mathsf{N}$ be the least multiple
+of~$p$ with $\mathsf{N}\ge\beta(i)+W+2\rho$.
+
+\emph{The index~$0$.} Apply Lemma~\ref{l:rel} with \m{\nu_0=0}, \m{i'=i}, \m{A=0}, \m{B=\rho+1},
+$o=\raisedE{2\rho+\eta}{\cdot}{\cdot}$ and \m{o'(0,u)=\mathsf{N}}, \m{o'(\nu,u)=-u} for \m{\nu\ge1}.
+Hypotheses (i) to~(iii) are clear. For (iv) let \m{u\in U_{Y_S}(i)}. If \m{|u|\le\eta}, the sum is at most
+$\sum_{0\le n\le\mathsf{N}}v_p(n)=v_p(\mathsf{N}!)$, and by Legendre's formula and~(F2)
+\[(p-1)\,v_p(\mathsf{N}!)\le\mathsf{N}-1\le\beta(i)+W+2\rho+p-2\le(p-1)(\rho+1).\]
+If \m{|u|>\eta}, then \m{-u\ge\beta(i)}, and the sum runs over
+$\beta(i)+2\rho+\eta\le n<\mathsf{N}$. A multiple~$n$ of~$p$ in this range has
+$n\le\mathsf{N}-p<\beta(i)+W+2\rho$, so it lies in $\twoWin{6(\rho+\eta+W)}{\beta(i)}$ and is not zero,
+against~(F4); so the sum is~$0$. Hence
+$\relLen{\Zp}{\deepC{S}{i}{0}{o}}{\deepC{S}{i}{0}{o'}}\le(\rho+1)\,n_{\mathrm{lo}}(i)$.
+
+\emph{The index~$1$.} Apply Lemma~\ref{l:rel} with \m{\nu_0=1}, \m{i'=i^-}, \m{A=3(W+1)}, \m{B=6\rho}, the
+function~$o'$ just defined in the place of~$o$, and $o_i$ in the place of~$o'$. (i): there is no multiple
+of~$p$ strictly between $\mathsf{N}$ and \m{\mathsf{N}+p}. (ii): \m{-u\le\mathsf{N}} for \m{u\ge-\beta(i)-W},
+and \m{o_i\le o'} at \m{\nu\ne1}. (iii): for \m{u<u'} in \m{U_{Y_S}(i^-)} one has
+$o_i(1,u)\ge o_i(1,u')$ unless \m{|u'|\le\eta<|u|}, when $u'-u\ge\beta(i^-)-\eta>2\rho$. (iv): the sum has
+\m{W+1+2\rho_u} terms \m{\cost{1}{n}} with $-u\le n<W+1-u+2\rho_u$; these~$n$ lie in
+$\twoWin{6(\rho+\eta+W)}{\beta(i^-)}\cup\twoWin{6(\rho+\eta+W)}{-\beta(i^-)}$, so by (F4) and
+Input~\ref{r:exp} each term is at most~$3$. Hence
+$\relLen{\Zp}{\deepC{S}{i}{0}{o'}}{\deepC{S}{i}{0}{o_i}}\le3(W+1)\,n_{\mathrm{all}}(i^-)+6\rho\,n_{\mathrm{lo}}(i^-)$.
+
+The three bounds add up, by Input~\ref{k:len}(a), to the bound of the lemma.
+\end{proof}
+
+\begin{proposition}[few low weights: a submodule of small colength on which cup products bound]\label{p:few}
+In Setting~\ref{set:few}, assume \textup{(F1)} to~\textup{(F6)}, and suppose \m{\eta\ge1}. Then there is a
+$\Zp$-submodule~$V$ of~$C_S$ with
+\[\relLen{\Zp}{C_S}{V}\ \le\ 11\sum_{i}\bigl(n_{\mathrm{lo}}(i)\,(\rho+1)+n_{\mathrm{all}}(i)\,(W+1)\bigr),\]
+the sum over the letters, such that for every side~$T$ over~$\cO$, every pairing~$\Pi$ of $T$ and~$S$ and
+every \m{c\in C_T}: if $\JumpWin{\eta}{-\varsigma(i)}{\beta(i)}{W}{U_{Y_T}(i)}$ for every letter~$i$, then
+$\CupB{\Pi}{0}{c}{d}$ for every \m{d\in V}.
+\end{proposition}
+\leanline{\lean{existsscaledCupBoundsfewlowjumps}}
+\begin{proof}
+Let $V$ be the set of the \m{d\in C_S} with $\constAt{S}{i}{d}\in\deepC{S}{i}{0}{o_i}$ for every letter~$i$,
+with $o_i$ as in Lemma~\ref{l:col}. By Input~\ref{k:len}(b) and~(c) and Lemma~\ref{l:col},
+\begin{align*}\relLen{\Zp}{C_S}{V}&\le\sum_i\bigl((2\rho+1)\,n_{\mathrm{lo}}(i)+3(W+1)\,n_{\mathrm{all}}(i^-)+6\rho\,n_{\mathrm{lo}}(i^-)\bigr)\\
+&=\sum_i\bigl((8\rho+1)\,n_{\mathrm{lo}}(i)+3(W+1)\,n_{\mathrm{all}}(i)\bigr),\end{align*}
+since \m{i\mapsto i^-} permutes the letters; this is at most the bound stated.
+
+Let $T$, $\Pi$, $c$ be as in the statement and \m{d\in V}. We apply Theorem~B of Part~2
+(Input~\ref{r:walk}) to the pairing~$\Pi$ of $T$ and~$S$ with \m{\kappa=e=e'=E=0}, with every letter a cut, so
+that \m{\mathsf{l}(i)=1}, with \m{\mathsf{Q}(i)} the statement \m{\varsigma(i)=1}, and with the families
+\[\begin{gathered}o^{T}=\impE{\raisedE{-\rho}{\cdot}{\cdot}}{\raisedE{2\rho+\eta}{\cdot}{\cdot}}{\cdot}{\cdot},\qquad
+o^{S}_i=\impE{\raisedE{0}{\cdot}{\cdot}}{o_i}{\cdot}{\cdot},\\
+\mathsf{z}=\impE{\raisedE{-\rho}{\cdot}{\cdot}}{\raisedE{\rho}{\cdot}{\cdot}}{\cdot}{\cdot},\qquad
+\mathsf{z}'=\raisedE{\rho}{\cdot}{\cdot},\end{gathered}\]
+the first, third and fourth being the same at all letters. Explicitly, at \m{\nu\ge1} the functions $o^{T}$
+and~$\mathsf{z}$ are \m{u\mapsto-u}, and
+\[o^{T}(0,u)=\begin{cases}0,&-\rho\le u\le2\rho+\eta,\\2\rho+\eta-u,&\text{otherwise,}\end{cases}\qquad
+\mathsf{z}(0,s)=\begin{cases}0,&|s|\le\rho,\\ \rho-s,&|s|>\rho;\end{cases}\]
+in particular $\mathsf{z}(\nu,\cdot)$ is non-increasing and
+\begin{equation}\label{e:z}
+\mathsf{z}(0,s)\ge-s-\rho\quad\text{for all }s .
+\end{equation}
+For the jumps~$v$ of~$Y_S$ at~$j$, \m{o^{S}_j(0,v)} is \m{2\rho+\eta-v} or~$0$ if \m{\varsigma(j)=1}, the value~$0$
+only for \m{v\ge0}; it is \m{\beta(j)+W+2\rho} for \m{v<0} and $0$ for \m{v\ge0} if \m{\varsigma(j)=-1}; and
+\begin{equation}\label{e:oS}
+o^{S}_j(\nu,v)\ge-v\ \text{ and }\ o_j(\nu,v)\ge-v\qquad\text{for all }\nu\ge0\text{ and }v\in U_{Y_S}(j^{p^{-\nu}}),
+\end{equation}
+because \m{v\ge-\beta(j)-W} at \m{\nu=0}.
+
+\emph{The points.} By (F2) every jump of $T$, of~$S$ and of the third side is at most \m{(p-3)\rho}: those of
+the third side are $0$ or \m{-u-v-1} with $u$, $v$ jumps of $T$ and~$S$ at the same letter, in opposite
+windows. So $\Kills{T}{i}{0}{\rho}$ and $\Kills{\third{\Pi}}{i}{0}{\rho}$ (Input~\ref{r:ideal}(h)), and as
+in the proof of Lemma~\ref{l:col}, by (F4) and Input~\ref{r:points}(a) and~(c) with \m{\fd=0}, the sets
+$\ptsOver{T}{c}{i}{0}{o^{T}}{\raisedE{2\rho+\eta}{\cdot}{\cdot}}$ and
+$\ptsOver{\third{\Pi}}{1}{i}{0}{\mathsf{z}}{\mathsf{z}'}$ are not empty; here \m{\eta\ge1} is used to
+place the steps of the third side, which are within \m{\rho+2\eta+W+1} of $0$ or~\m{\pm\beta(i)}, in the
+windows of~(F4). Since \m{d\in V}, there is $x\in\mathsf{P}_i(o_i)$ over \m{\constAt{S}{i}{d}}; by
+Input~\ref{r:deep} it is a point of $\ptsOver{S}{d}{i}{0}{o^{S}_i}{o_i}$.
+
+\emph{The deep point of~$T$.} We check Definition~2.6 of Part~2 for $T$ against~$S$ at~$i$, with the depth
+$\raisedE{2\rho+\eta}{\cdot}{\cdot}$ and \m{r=0}. Let \m{\nu\ge0}, $u$ a jump of~$T$ and $v$ a jump of~$S$
+at \m{i^{p^{-\nu}}}, and \m{s=-u-v-1}. The left side of clause~(a) is \m{s+u=-v-1} for \m{\nu\ge1}, and for
+\m{\nu=0} it is, by~\eqref{e:z},
+\[-\mathsf{z}(0,s)-(2\rho+\eta-u)\ \le\ -v-1-\rho-\eta .\]
+Both are smaller than~$-v$ and, by \eqref{e:oS} and the list of the values of \m{o^{S}_i(0,v)}, smaller than
+\m{o^{S}_i(\nu,v)}. For clause~(b) let \m{\varsigma(i)=1}. Then the jumps of~$T$ at~$i$ are at most~$\eta$, so
+$o^{T}(0,u)\ge0=\std_1(0,u)$, and $o^{T}(\nu,u)=-u=\std_1(\nu,u)$ for \m{\nu\ge1}. With \m{r=0} the left
+side is that of~(a); the additional bound $\frobX{1}{0}{o^{S}_{i^-}}{\nu}{v}$ is $0$ for \m{\nu=0}, where
+the left side is at most \m{-v-1-\rho-\eta<0} because \m{v\ge-\eta}; and it is
+$o^{S}_{i^-}(\nu-1,v)\ge-v$ for \m{\nu\ge1}, by~\eqref{e:oS}.
+
+\emph{The deep point of~$S$.} We check the definition for $S$ against~$T$ at~$i$, for the proposition
+\m{\varsigma(i)=-1}, with the depth~$o_i$ and \m{r=1}. Let $v$ be a jump of~$S$ and $u$ a jump of~$T$ at
+\m{i^{p^{-\nu}}}, \m{s=-u-v-1}. Clause~(a) asks that
+$-\mathsf{z}(\nu,s)-o_i(\nu,v)<\min(-u,o^{T}(\nu,u))$. For \m{\nu\ge1} the left side is at most
+\m{s+v=-u-1}, by~\eqref{e:oS}, and \m{o^{T}(\nu,u)=-u}. For \m{\nu=0} and \m{\varsigma(i)=1} it is at most
+\m{-u-1-\rho-\eta} by~\eqref{e:z}. For \m{\nu=0} and \m{\varsigma(i)=-1} it is
+$-\mathsf{z}(0,s)-\beta(i)-W-2\rho\le-u-1-\rho$, by~\eqref{e:z} and \m{v\ge-\beta(i)-W}. In both cases it
+is smaller than~$-u$, than \m{2\rho+\eta-u}, and than~$0$ when \m{u\ge-\rho}, hence smaller than
+\m{o^{T}(0,u)}.
+
+Clause~(b), for \m{\varsigma(i)=-1}: \m{o^{S}_i(0,v)\ge0} and $o^{S}_i(\nu,v)\ge-v$ for \m{\nu\ge1}, so
+\m{\std_1\le o^{S}_i} on the jumps. It remains to show
+\[-\frobX{1}{0}{\mathsf{z}}{\nu}{s}-o_i(\nu,v)\ <\ \min\bigl(o^{T}(\nu,u),\ \frobX{1}{0}{o^{T}}{\nu}{u}\bigr).\]
+For \m{\nu=0} the left side is $-(\beta(i)+W+2\rho)$, the right side is \m{\min(o^{T}(0,u),0)}, and
+$o^{T}(0,u)\ge2\rho+\eta-\beta(i)-W$ or \m{o^{T}(0,u)=0}. For \m{\nu\ge2} the left side is \m{s+v=-u-1} and
+the right side is~$-u$. Let \m{\nu=1}; the letter is~$i^-$, the left side is
+$-\mathsf{z}(0,s)-(W+1-v+2\rho_v)$, the right side is $\min(-u,o^{T}(0,u))$. So we need
+\[\mathsf{z}(0,s)>-s-W-2-2\rho_v\qquad\text{and}\qquad\mathsf{z}(0,s)>v-W-1-2\rho_v-o^{T}(0,u).\]
+The first: if \m{|v|\le\eta} it follows from~\eqref{e:z}; if \m{|v|>\eta} and \m{|s|>\rho} from
+$\mathsf{z}(0,s)=\rho-s$; and if \m{|v|>\eta} and \m{|s|\le\rho}, then $u$ is a far jump as well, in the
+opposite window, so \m{|u+v|\le W}, \m{s\ge-W-1} and $\mathsf{z}(0,s)=0>-s-W-2$. The second: if
+$o^{T}(0,u)=2\rho+\eta-u$ it follows from~\eqref{e:z}. If \m{o^{T}(0,u)=0}, then $-\rho\le u\le2\rho+\eta$,
+so \m{|u|\le\eta}; for \m{|v|\le\eta}, \eqref{e:z} gives $\mathsf{z}(0,s)\ge u+v+1-\rho\ge v+1-2\rho$; for
+\m{|v|>\eta} one has \m{|s|>\rho} and $\mathsf{z}(0,s)=\rho+u+v+1\ge v+1$.
+
+All hypotheses of Theorem~B of Part~2 hold, and it gives $\CupB{\Pi}{0}{c}{d}$.
+\end{proof}
+
+\sect{Tame charts}{s:tame}
+In this section $\fc$ is a tame chart for~$\Gamma$ (Definition~\ref{d:tame}), with its root of
+unity~$\varrho$, its tame generator~$\sigma$ and its element~$\varpi$. For a polynomial~$q$ over~$\Zp$ write
+\m{q=\sum_kq_kX^{k}}; it kills \m{(\sigma,0)} on a lattice if its image in~\m{\cO[X]} does.
+
+\begin{lemma}[a polynomial in the tame generator makes elements divisible by the coordinate]\label{l:zsum}
+In Setting~\ref{set:base}, let $\fc$ be a tame chart for~$\Gamma$ with tame generator~$\sigma$, $L$ a lattice
+datum over~$\cO$, and $q$ a polynomial over~$\Zp$ with $q(\linF{L}{\sigma}{0})=0$. Then for every
+$x\in\mathfrak{M}(L)$ there is \m{y\in\Minf(L)} with
+\[z\cdot y=\sum_{k=0}^{\deg q}q_k\,\sigma^{k}x .\]
+\end{lemma}
+\leanline{\lean{existszsmuleqsumtameGen}}
+\begin{proof}
+Since $\Gamma'$ is normal, each \m{\sigma^{k}} preserves \m{\Minf(L)}, and $\mu_k=\sigma^{-k}\circ\mu\circ\sigma^{k}$
+is a period for every period~$\mu$ (Input~\ref{k:frame}(e)); so the right side~$w$ lies in \m{\Minf(L)}. By
+Input~\ref{k:frame}(a) it suffices to show $\cE^{2h_L}\mu(w)\in B^{+}z$ for every crystalline
+period~$\mu$. Let $\lambda\colon L\to B_{\max}$ give the values of~$\mu$ on \m{1\otimes L}, and for
+\m{g\in\Gamma} let $\Lambda_g\colon B_{\max}\otimes L\to B_{\max}$ be the $B_{\max}$-linear map with
+$\Lambda_g(1\otimes t)=j_\Gamma(g)^{-1}\lambda(gt)$. Then
+\begin{equation}\label{e:Lam}
+\Lambda_{g'}\bigl((j_\Gamma(g)\otimes g)\,y\bigr)=j_\Gamma(g)\,\Lambda_{g'g}(y)\qquad(g,g'\in\Gamma,\ y\in B_{\max}\otimes L),
+\end{equation}
+and $\Lambda_{\sigma^{k}g}=\Lambda_{\sigma^{k}}$ for \m{g\in\Gamma'}, because $\mu$ commutes with the element
+$\sigma^{k}g\sigma^{-k}$ of~$\Gamma'$.
+
+Let $y\in B_{\max}\otimes L$ be fixed near~$1$. By~\eqref{e:Lam} the element $\Lambda_{\sigma^{k}}(y)$
+of~$B_{\max}$ is fixed near~$1$, hence fixed by the inertial element~$\sigma^{k}$ (Input~\ref{k:frob}(c)). On
+such~$y$, $(\linF{L}{\sigma}{0})^{k}=\linF{L}{\sigma^{k}}{0}$ acts as $j_\Gamma(\sigma^{k})\otimes\sigma^{k}$
+(Input~\ref{k:frob}(a)), so by~\eqref{e:Lam} again
+\[\Lambda_1\bigl((\linF{L}{\sigma}{0})^{k}y\bigr)=j_\Gamma(\sigma^{k})\,\Lambda_{\sigma^{k}}(y)=\Lambda_{\sigma^{k}}(y),
+\qquad\text{and}\qquad\sum_kq_k\Lambda_{\sigma^{k}}(y)=\Lambda_1\bigl(q(\linF{L}{\sigma}{0})\,y\bigr)=0 .\]
+As $L$ is potentially crystalline, such~$y$ span \m{B_{\max}\otimes L}; so $\sum_kq_k\Lambda_{\sigma^{k}}=0$.
+On \m{1\otimes t} this says $\sum_kq_k\mu_k(1\otimes t)=0$, hence $\sum_kq_k\mu_k(x)=0$
+(Input~\ref{k:frame}(f)). Therefore
+\[\mu(w)=\sum_kq_k\,\sigma^{k}\bigl(\mu_k(x)\bigr)=\sum_kq_k\bigl(\sigma^{k}\mu_k(x)-\mu_k(x)\bigr).\]
+Each $\mu_k$ is a crystalline period, so \m{\cE^{h_L}\mu_k(x)} lies in the image of~$\fS_B$
+(Input~\ref{k:frame}(b)); \m{\sigma^{k}} fixes~$\WW$, so $z$ divides \m{\sigma^{k}s-s} for \m{s\in\fS_B}
+(Input~\ref{k:frame}(c)); and Input~\ref{k:frame}(d) gives
+$\cE^{2h_L}(\sigma^{k}\mu_k(x)-\mu_k(x))\in B^{+}z$.
+\end{proof}
+
+\begin{lemma}[the extension is killed by the product with \m{X-1}]\label{l:extkill}
+In Setting~\ref{set:base}, let $\fc$ be a tame chart for~$\Gamma$ with tame generator~$\sigma$, $S$ a side
+over~$\cO$, and $q$ a polynomial over~$\Zp$ that kills \m{(\sigma,0)} on~$Y_S$. Then
+\[\bigl(q\cdot(X-1)\bigr)\bigl(\linF{\extL{S}}{\sigma}{0}\bigr)=0 .\]
+\end{lemma}
+\leanline{\lean{aevallinearFrobextLatticeeqzero}}
+\begin{proof}
+The maps \m{\inclY{S}} and \m{\projC{S}} commute with~$\Gamma$, so the linear Frobenius commutes with
+\m{1\otimes\inclY{S}} and \m{1\otimes\projC{S}}, and it is the identity on $B_{\max}\otimes\trivL{S}$
+(Input~\ref{k:frob}(b)). For $y\in B_{\max}\otimes\extL{S}$ the element $\linF{\extL{S}}{\sigma}{0}y-y$
+therefore maps to~$0$ in $B_{\max}\otimes C_S$, so it is $(1\otimes\inclY{S})(x)$ with
+$x\in B_{\max}\otimes Y_S$, and
+$q(\linF{\extL{S}}{\sigma}{0})(1\otimes\inclY{S})(x)=(1\otimes\inclY{S})\bigl(q(\linF{Y_S}{\sigma}{0})x\bigr)=0$.
+\end{proof}
+
+\begin{proposition}[tame charts: a cokernel killer independent of the index]\label{p:tamekill}
+In Setting~\ref{set:base}, let $\fc$ be a tame chart for~$\Gamma$ with tame generator~$\sigma$, $S$ a side
+over~$\cO$, \m{n,m,\kappa\ge0} integers, $i$ a letter, and $q$ a monic polynomial over~$\Zp$ that kills
+\m{(\sigma,0)} on~$Y_S$. Suppose that \m{u\le n} for every letter~$j$ and every \m{u\in U_{Y_S}(j)}, that
+\[e_{\fc}\le p^{m},\qquad n+\kappa+2<p,\qquad m\,(\deg q+1)\le\kappa .\]
+Then $\Kills{S}{i}{\kappa}{0}$.
+\end{proposition}
+\leanline{\lean{killsCokernelofisKilledBy}}
+\begin{proof}
+Put $Q=q\cdot(X-1)=\sum_kQ_kX^{k}$, monic of degree \m{\deg q+1}, with \m{Q(1)=0}, and \m{r=p^{\kappa+1}}.
+By Input~\ref{r:ideal}(g) there is \m{a_0\ge0} with $z^{a_0}\in\liftId{S}{r}{0}{i}$ and
+$a_0(p-1)\le e_{\fc}(n+\kappa+1)$; as \m{n+\kappa+1<p-1}, \m{a_0<e_{\fc}}. For \m{0\le a<e_{\fc}} let
+\m{N_a} be the number of the integers~$k$ with \m{a<k<e_{\fc}} and $Q(\varrho^{k})\in p\WW$. We show, by
+descending induction on~$a$ from~$a_0$,
+\begin{equation}\label{e:down}
+p^{mN_a}z^{a}\in\liftId{S}{r}{0}{i}\qquad(0\le a\le a_0).
+\end{equation}
+For \m{a=a_0} it holds. Let \m{0<a\le a_0} and suppose~\eqref{e:down} for~$a$; write \m{c=mN_a}.
+
+\emph{If $Q(\varrho^{a})\in p\WW$}, then \m{N_{a-1}=N_a+1}. By Input~\ref{r:ideal}(c),
+$p^{c}z^{pa}\in\liftId{S}{r}{1}{i^{p}}$, and by Input~\ref{r:ideal}(e), with \m{p(a-1)\le pa}, the element
+\m{p^{c+m}z^{a-1}} lies in $\liftId{S}{r}{0}{i}$ as soon as $c+v_p((pa)!)\le c+m+v_p((p(a-1))!)$, that is
+\m{1+v_p(a)\le m}; and $p^{v_p(a)}\le a<e_{\fc}\le p^{m}$.
+
+\emph{If \m{Q(\varrho^{a})} is a unit of~$\WW$}, then \m{N_{a-1}=N_a}. Let \m{f=p^{c}z^{a}}. By
+Input~\ref{r:ideal}(d) there is \m{t_0\in\fS} such that for every \m{c'\in C_S} some
+$x\in\locLP{0}{i}(\extL{S})$ lies over $(f-r\,t_0)\constAt{S}{i}{c'}$; write \m{t_0=w+z\,t} with
+\m{w\in\WW}, \m{t\in\fS} (Input~\ref{k:chart}(c)). By Input~\ref{r:exp}, $x\in\Minf(\extL{S})$, and it is
+a point over~$F_0$; so $x\in\mathfrak{M}(\extL{S})$. By Lemmas \ref{l:extkill} and~\ref{l:zsum} there is
+$y\in\Minf(\extL{S})$ with $z\,y=\sum_kQ_k\sigma^{k}x$. Now \m{\sigma^{k}} fixes~$\WW$, hence commutes
+with~$\pr_i$ and fixes \m{\constAt{S}{i}{c'}}, and $\sigma^{k}z=\varrho^{k}z$; so, with
+$T=\sum_kQ_k\varrho^{k}\sigma^{k}(t)\in\Ainf$,
+\begin{align*}z\cdot(1\otimes\projC{S})(\pr_iy)&=\sum_kQ_k\bigl(p^{c}\varrho^{ka}z^{a}-r\,w-r\,\varrho^{k}z\,\sigma^{k}(t)\bigr)\constAt{S}{i}{c'}\\
+&=z\,\bigl(Q(\varrho^{a})\,p^{c}z^{a-1}-r\,T\bigr)\constAt{S}{i}{c'},\end{align*}
+the term with~$w$ vanishing because \m{Q(1)=0}. The coordinate~$z$ is a unit of~$\WC$, and
+$\pr_iy\in\wExp{\extL{S}}{i}{\std_0}$ (Input~\ref{r:exp}); so by Input~\ref{r:ideal}(a),
+$Q(\varrho^{a})\,p^{c}z^{a-1}\in\liftId{S}{r}{0}{i}$, and the unit can be removed.
+
+This proves~\eqref{e:down}. For \m{a=0} it says $p^{mN_0}\in\liftId{S}{r}{0}{i}$. The elements
+\m{\varrho^{k}}, \m{0<k<e_{\fc}}, are distinct modulo~$p$, and the reduction of~$Q$ is monic, so
+\m{N_0\le\deg q+1} and \m{mN_0\le\kappa}. Hence $p^{\kappa}\in\liftId{S}{p^{\kappa+1}}{0}{i}$, and
+Input~\ref{r:ideal}(b) gives $p^{\kappa}\in\liftId{S}{0}{0}{i}$.
+\end{proof}
+
+\begin{proposition}[existence of tame charts]\label{p:tameexist}
+In Setting~\ref{set:base}, suppose that \m{j_\Gamma} is surjective. Let \m{e\ge0} and \m{h_0\ge1} be integers
+such that $p$ does not divide~$h_0$ and $e$ divides \m{p^{h_0}-1}. Then there is a tame chart for~$\Gamma$
+whose index is~$e$.
+\end{proposition}
+\leanline{\lean{existstameChart}}
+\begin{proof}
+Put \m{N=p^{h_0}-1}; it is prime to~$p$, and \m{e\ge1}. Choose $\varpi\in\bar{\mathbb{Q}}_p$ with
+\m{\varpi^{e}=p}, an element \m{\varpi^{\flat}} of the tilt~$\mathcal{O}_C^{\flat}$ given by a compatible system
+of $p$-power roots of~$\varpi$ (its \kw{untilt} is~$\varpi$), and a primitive $e$-th root of unity~$a$ in the
+subfield $\mathbb{F}_{p^{h_0}}$ of the tilt. By Input~\ref{k:chart}(a), for \m{x=\varpi} and \m{v=-1}, there is a chart with residue degree~$h_0$,
+index~$e$, constant unit series, and coordinate \m{z=[\varpi^{\flat}]} with \m{\theta(z)=\varpi}.
+
+\emph{The subgroup.} Let \m{\chi_N} be the character of~$\GQp$ on the $N$-th roots of unity, and
+$\Delta=\ker\chi_N\cap\operatorname{Stab}(\varpi)$, an open subgroup. An element of~$\GQp$ fixes~$\WW$ if
+and only if it lies in \m{\ker\chi_N}; so $\Delta$ is the group of the elements that fix $\WW$
+and~\m{\theta(z)}. For \m{g\in\GQp} the quotient \m{g\varpi/\varpi} is an $e$-th, hence an $N$-th root of
+unity. It follows that $\Delta$ is normal: for \m{\delta\in\Delta} and \m{g\in\GQp}, $\delta$ fixes
+$g^{-1}\varpi=(g^{-1}\varpi/\varpi)\,\varpi$, so \m{g\delta g^{-1}} fixes~$\varpi$. It also follows that
+\m{g^{N}\in\Delta} for \m{g\in\ker\chi_N}, because $g$ fixes the root of unity \m{g\varpi/\varpi}. Finally
+$g^{h_0}\in\ker\chi_N$ for every~$g$: it acts on the $N$-th roots of unity as a power of the $p^{h_0}$-th
+power map, which is the identity. So every element of \m{\GQp/\Delta} has order dividing \m{h_0N}, the order
+of this finite group divides a power of \m{h_0N}, and it is prime to~$p$. Put $\Gamma'=j_\Gamma^{-1}(\Delta)$;
+it is normal, of index prime to~$p$ since $j_\Gamma$ is surjective, it contains the elements near~$1$,
+$j_\Gamma(\Gamma')=\Delta$, and its elements fix~$\varpi$.
+
+\emph{The elements of inertia.} The inertia group is closed and acts transitively on the $n$-th roots
+of~$p$ for every \m{n>0}; so by Input~\ref{k:chart}(b) and the surjectivity of~$j_\Gamma$, for every
+$v\in\mathcal{O}_C^{\flat}$ whose untilt has $e$-th power~$p$ there is an inertial \m{s\in\Gamma} with
+\m{s\cdot z=[v]}. Inertial elements fix~$\WW$. For $v=\varepsilon^{l}\varpi^{\flat}$, \m{l\ge0}, the
+element~$s$ fixes \m{\theta(z)}, so it lies in~$\Gamma'$ and $s\cdot z=[\varepsilon]^{l}z$: with~$\Gamma'$
+the chart is a Kummer chart. For $v=a\,\varpi^{\flat}$ we get the tame generator~$\sigma$, with
+\m{\sigma z=[a]z} and, since $\sigma$ fixes \m{\varrho=[a]\in\WW}, $\sigma^{k}z=\varrho^{k}z$ for all~$k$.
+The index $e$ divides~$N$, so $p$ does not divide it.
+\end{proof}
+
+\sect{Cuts and windows}{s:cuts}
+In this section the setting is Setting~\ref{set:cut}.
+
+\begin{lemma}[the cokernel killer at a cut]\label{l:atcut}
+In Setting~\ref{set:cut}, assume \textup{(W3)}, \textup{(W4)}, \textup{(W5)}, \textup{(W6)}, \textup{(W8)},
+\textup{(W9)}, \textup{(W10)} and~\textup{(W11)}. Let $T$ be a side over~$\cO$ such that for every letter~$j$
+and every integer~$n'$ with \m{\beta(j)+W\le n'}, every \m{u\in U_{Y_T}(j)} satisfies \m{u\le n'}. Then
+$\Kills{T}{i}{\kappa}{\rho(i)}$ for every letter~$i$ with the property~$\mathsf{cut}$.
+\end{lemma}
+\leanline{\lean{killsCokernelatcut}}
+\begin{proof}
+Let $i$ be a cut. If the second alternative of (W10) holds, then by (W11) every jump of~$T$ is at most
+$(p-3)\rho_0\le(p-3)(\kappa+\rho(i))$, and Input~\ref{r:ideal}(h) gives the claim. Suppose the first:
+\m{\rho(i)=0} and $\beta(i^{p^{a}})+W\le G$ for \m{1\le a\le J}. Put \m{r=p^{\kappa+1}}. By (W8) every jump
+of~$T$ is at most~$2B$, so by Input~\ref{r:ideal}(g) there is \m{a_0\ge0} with
+$z^{a_0}\in\liftId{T}{r}{0}{j}$ for every letter~$j$ and $a_0(p-1)\le e_{\fc}(2B+\kappa+1)$.
+
+\emph{Claim.} Let \m{J'\le J}, let $j$ be a letter with $\beta(j^{p^{a}})+W\le G$ for \m{1\le a\le J'}, and
+\m{x\ge0} an integer with $p\,a_0\le p^{J'+1}x$. Then $p^{J'X}z^{x+n}\in\liftId{T}{r}{0}{j}$. For
+\m{J'=0}, \m{a_0\le x}. Let \m{J'\ge1}. The claim for \m{J'-1}, the letter~$j^{p}$ and the integer~$px$ gives
+$p^{(J'-1)X}z^{px+n}\in\liftId{T}{r}{0}{j^{p}}$; the jumps of~$T$ at~$j^{p}$ are at most~$G$, so
+$p^{(J'-1)X}z^{px+n}\cE^{G}\in\liftId{T}{r}{1}{j^{p}}$ (Input~\ref{r:ideal}(c)). By Legendre's formula and
+(W9), \m{v_p(G!)\le n}, so $\fd\,G+v_p(G!)\le X$ by~(W3), and \m{px+n+G\le p(x+n)} by~(W9);
+Input~\ref{r:ideal}(f) gives $p^{J'X}z^{p(x+n)}\in\liftId{T}{r}{1}{j^{p}}$, and Input~\ref{r:ideal}(c) the
+claim.
+
+Take \m{J'=J}, \m{j=i} and $x_0=2X+\lfloor\kappa/4\rfloor+1$. By (W5) and~(W6),
+\[p\,a_0\le2\,e_{\fc}\,(2B+\kappa+1)\le p^{J+1}\bigl(2X+\tfrac{\kappa+1}{4}\bigr)\le p^{J+1}x_0 ,\]
+so $p^{JX}z^{m}\in\liftId{T}{r}{0}{i}$ with \m{m=x_0+n}, and $p^{JX}z^{pm}\in\liftId{T}{r}{1}{i^{p}}$.
+Now $v_p((pm)!)=m+v_p(m!)\le2m-1$, and
+\[JX+2m-1=(J+4)X+2n+1+2\lfloor\kappa/4\rfloor\le\kappa ,\]
+because \m{n\le X} by (W3) and $\kappa-2\lfloor\kappa/4\rfloor\ge6(J+1)X+1$ by~(W4). So
+Input~\ref{r:ideal}(e), with the exponent~$0$ of~$z$, gives $p^{\kappa}\in\liftId{T}{p^{\kappa+1}}{0}{i}$,
+and Input~\ref{r:ideal}(b) gives $p^{\kappa}\in\liftId{T}{0}{0}{i}$.
+\end{proof}
+
+\begin{proposition}[cuts with windows]\label{p:cuts}
+In Setting~\ref{set:cut}, assume \textup{(W1)} to~\textup{(W11)}, and let \m{E\ge0} be an integer. Suppose
+that:
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=2pt]
+\item \m{\rho(i)+W\le p\,n} for every letter~$i$;
+\item \m{51\,\kappa\le E};
+\item for every letter~$i$ there is an integer~$l$ with \m{0<l\le2J+1} such that \m{i^{p^{-l}}} has the
+property~$\mathsf{cut}$;
+\item for every letter~$i$ and every integer \m{l\ge0} such that \m{i^{p^{-l}}} has the property~$\mathsf{cut}$
+and no \m{i^{p^{-a}}} with \m{0<a<l} has it, there is an integer \m{t\ge0} for which one of the following
+holds:
+\begin{itemize}[leftmargin=2.4em,itemsep=1pt]
+\item[\textup{($\alpha$)}] for every \m{0\le a<l}: $\varsigma(i^{p^{-a}})=\varsigma(i^{p^{-t}})$ or
+$\beta(i^{p^{-a}})+V\le\eta$;
+\item[\textup{($\beta$)}] the chart is unramified, \m{p\ge5}, \m{\rho(i^{p^{-l}})=0}, \m{t+J+1=l}, \m{\rho(i)=0} or \m{t=0},
+\[\rho_0+G\sum_{0\le a\le J}p^{a}<\beta(i^{p^{-t}}),\]
+and for every \m{0\le a<l} with \m{a\ne t}: $\varsigma(i^{p^{-a}})\ne\varsigma(i^{p^{-t}})$ or
+$\beta(i^{p^{-a}})+V\le\eta$; and $\beta(i^{p^{-a}})+W\le G$ if \m{t<a}.
+\end{itemize}
+\end{enumerate}
+Then $\CupB{\Pi}{E}{c}{c'}$ for all \m{c\in C_S} and \m{c'\in C_{S'}}.
+\end{proposition}
+\leanline{\lean{scaledCupBoundsofcutwindows}}
+\begin{proof}
+\emph{The data of the walk.} For a letter~$i$ let \m{\mathsf{l}(i)} be the least \m{l>0} such that
+\m{i^{p^{-l}}} is a cut; $\mathsf{l}(i)\le2J+1$ by~(iii). Let \m{t(i)} be an integer~$t$ of~(iv) for $i$ and
+\m{l=\mathsf{l}(i)}, and $\varsigma^{\circ}(i)=\varsigma(i^{p^{-t(i)}})$. Let \m{\eta_\nu=\eta} for
+\m{\nu\le2J} and \m{\eta_\nu=0} for \m{\nu>2J}. For a sign~$\epsilon$ let
+\[\mathsf{R}^{\epsilon}_i(\nu,u)=\max\bigl(\std_{\mathsf{l}(i)}(\nu,u),\,-u-\eta_\nu\bigr)\ \text{ if }\varsigma^{\circ}(i)=\epsilon,\qquad
+\mathsf{R}^{\epsilon}_i(\nu,u)=-u-\eta_\nu\ \text{ otherwise.}\]
+We apply Theorem~B of Part~2 (Input~\ref{r:walk}) with the property~$\mathsf{cut}$, with \m{\mathsf{Q}(i)} the
+statement $\varsigma^{\circ}(i)=1$, with the families \m{o=\mathsf{R}^{+1}}, \m{o'=\mathsf{R}^{-1}} and
+$z(i)=z'(i)=\raisedE{-\rho(i)}{\cdot}{\cdot}$, and with \m{e=e'=25\kappa}; by~(ii), \m{e+e'+\kappa\le E}. The
+functions \m{z(i)(\nu,\cdot)} are non-increasing.
+
+\emph{The third side.} A jump of \m{\third{\Pi}} at~$j$ is $0$ or \m{-u-v-1} with $u$, $v$ jumps of $S$
+and~$S'$ at~$j$; by (W1) and~(W2) it is at most \m{\beta(j)+W}. So Lemma~\ref{l:atcut} applies to the third
+side, and to $S$ and~$S'$. For a cut~$i$, Input~\ref{r:points}(a) gives a point of
+$\ptsOver{\third{\Pi}}{1}{i}{\kappa}{z(i)}{z'(i)}$.
+
+\emph{The deep points.} Let $\epsilon$, $\epsilon'$ be signs and $T$, $T'$ sides over~$\cO$ such that
+$\JumpWin{\eta}{-\epsilon\varsigma(j)}{\beta(j)}{V}{U_{Y_T}(j)}$ and
+$\JumpWin{\eta}{\epsilon\varsigma(j)}{\beta(j)}{V}{U_{Y_{T'}}(j)}$ for every letter~$j$; let \m{c\in C_T} and
+$i$ a cut. We claim that $T$ has a deep point over \m{p^{25\kappa}c} at~$i$ against~$T'$, for the data
+$(\mathsf{cut},\mathsf{l}(i),\mathsf{R}^{\epsilon},\mathsf{R}^{\epsilon'},z)$ and the proposition
+$\varsigma^{\circ}(i)=\epsilon$. For $(T,T',\epsilon,\epsilon')=(S,S',1,-1)$ and \m{(S',S,-1,1)} these are
+hypotheses (i) and~(ii) of Theorem~B of Part~2, by~(W2).
+
+Let $I$ be the set of the pairs \m{(\nu,n)} with \m{\nu<4J+2} and
+$n\in\twoWin{W_\nu}{\pm\beta(i^{p^{-\nu}})}$, where \m{W_0=\rho(i)+W}, \m{W_\nu=W} for
+\m{\nu>0}, and the sign is~$+$ if and only if $\varsigma(i^{p^{-\nu}})=\epsilon$. By Input~\ref{r:ideal}(i),
+with (i) and~(W8), the costs of the pairs of~$I$ with a given~$\nu$ have sum at most
+\[(4n+2)\lfloor\log_p(2B)\rfloor+(4W_\nu+2)(\fd+3\nu)\ \le\ 72\,X ,\]
+by (W3) and \m{W\le n}; for \m{\nu=0} one uses that \m{\fd=0} if \m{\rho(i)\ne0}, by~(W10). So the costs
+of~$I$ have sum at most \m{(4J+2)\cdot72X}, and by~(W4)
+\begin{equation}\label{e:25}
+\kappa+4X+(4J+2)\cdot72\,X\le25\,\kappa .
+\end{equation}
+Let \m{t=t(i)}. Two cases.
+
+\emph{Case~1: $\varsigma^{\circ}(i)\ne\epsilon$, or alternative~\textup{($\alpha$)} of~\textup{(iv)} holds.}
+By Lemma~\ref{l:atcut} and Input~\ref{r:points}(a) there is a point over \m{p^{\kappa}c} at~$i$ with exponents
+and depth $\raisedE{-\rho(i)}{\cdot}{\cdot}$. Let
+$d(\nu,u)=\raisedE{\rho(i)}{\nu}{u}+\eta_{\lfloor\nu/2\rfloor}$. A step \m{(\nu,n)} from
+$\raisedE{-\rho(i)}{\cdot}{\cdot}$ to~$d$ has \m{\nu\le4J+1} and
+$-u-(W_\nu-W)\le n<-u+(W_\nu-W)+\eta$ for a jump~$u$ of~$T$ at \m{i^{p^{-\nu}}}; as $-u$ lies in
+\m{[-\eta,\eta]} or in $\epsilon\varsigma(i^{p^{-\nu}})\cdot[\beta,\beta+V]$ and \m{V+\eta\le W}, the step
+lies in~$I$. By Input~\ref{r:points}(c) and~\eqref{e:25} there is a point over \m{p^{25\kappa}c} with
+depth~$d$ and exponents $\impE{\raisedE{-\rho(i)}{\cdot}{\cdot}}{d}{\cdot}{\cdot}$. We take this depth~$d$
+and \m{r=0}; the letter~$i$ is a cut.
+
+\emph{Case~2: $\varsigma^{\circ}(i)=\epsilon$ and \textup{($\alpha$)} fails.} Then ($\beta$) holds: the chart
+is unramified, \m{p\ge5}, $\mathsf{l}(i)=t+J+1$, and $i^{p^{-\mathsf{l}(i)}}$ is a cut at which
+\m{\rho=0}. Let \m{j=i^{p^{-t}}}. We apply Theorem~D of Part~2 (Input~\ref{r:walk}) to~$T$ at~$j$ with
+\m{l=J+1}, \m{\gamma=G}, \m{\rho=\rho_0}, $N=\rho_0+G\sum_{0\le a\le J}p^{a}$, \m{A=2B} and \m{\delta=X}. Its
+hypotheses: $\Kills{T}{j^{p^{-(J+1)}}}{\kappa}{0}$ by Lemma~\ref{l:atcut}; $\Kills{T}{j}{0}{\rho_0}$ by
+(W11) and Input~\ref{r:ideal}(h); the jumps of~$T$ at~$j$ are at most \m{\eta\le G}, because
+$\varsigma(j)=\epsilon$ puts the far window of~$T$ at~$j$ on the negative side, and those at
+\m{j^{p^{-a}}}, \m{0<a\le J}, are at most~$G$ by~($\beta$); \m{N<\beta(j)\le2B} by ($\beta$) and~(W8);
+$3e_{\fc}\le p^{J+1}$ by~(W6); $e_{\fc}\cdot2B\le p^{J+1}X$ by~(W5). It gives a point of
+$\ptsOver{T}{c}{j}{\kappa+4X}{\shStd{J+1}{o_1}{\cdot}{\cdot}}{\shStd{J+1}{o_2}{\cdot}{\cdot}}$ with
+$o_1(u)=\min(2B,-u-N)$ and \m{o_2(u)=2B}, and Input~\ref{r:points}(d) moves it by~\m{\varphi^{t}} to a
+point over \m{p^{\kappa+4X}c} at~$i$ with depth $\frobX{t}{1}{\shStd{J+1}{o_2}{\cdot}{\cdot}}{\cdot}{\cdot}$.
+Let \m{d(t,u)=2B} and $d(\nu,u)=\std_{t+J+1}(\nu,u)+3\eta_{\lfloor\nu/2\rfloor}$ for \m{\nu\ne t}. The steps
+from that depth to~$d$ have \m{\nu\le4J+1}, \m{\nu\ne t}, and \m{0\le n<3\eta} or
+\m{-u\le n<-u+3\eta}; as \m{V+4\eta\le W} they lie in~$I$. By Input~\ref{r:points}(c) and~\eqref{e:25} there
+is a point over \m{p^{25\kappa}c} at~$i$ with depth~$d$. We take this~$d$ and \m{r=\mathsf{l}(i)}.
+
+\emph{What is not deformalized.} In both cases it remains to compare exponents: that the exponents of the
+point found are at least $\mathsf{R}^{\epsilon}_i$ on the jumps of~$T$, and that the depth~$d$ and the
+integer~$r$ satisfy clauses (a) and~(b) of Definition~2.6 of Part~2 against $\mathsf{R}^{\epsilon'}$ and the
+family~$z$. These are inequalities between the explicit piecewise linear functions above, at the jumps
+allowed by the windows, in the cases \m{\nu=0}, \m{0<\nu<t}, \m{\nu=t}, $t<\nu<\mathsf{l}(i)$ and
+$\nu\ge\mathsf{l}(i)$; they use (W1), (W2), (W7), (W8), the choice of~\m{t(i)} in~(iv) and, in Case~2, the
+inequality \m{N<\beta(j)}. The formal text proves them by a decision procedure for linear arithmetic after a
+case distinction. They were not redone by hand for this note.
+\end{proof}
+
+\begin{proof}[Proof of Theorem C]
+By (W1) and~(W7), \m{W\ge4}; by the hypotheses \m{G\le\eta\le W}, $B\ge11(p^{J}+1)W\ge22W$ and
+\m{X\ge16}. Call a letter~$i$ a \kw{cut} if no \m{i^{p^{a}}} with \m{1\le a\le J} is thick. We apply
+Proposition~\ref{p:cuts} with this property, with \m{\rho(i)=0} for all~$i$, with \m{2W} in the place of~$n$
+and of~$G$, with $\rho_0=\lfloor3B/5\rfloor$, \m{\kappa=12(J+1)X+1} and \m{E=10^{4}X(J+1)}, and with
+$B$, $J$, $X$, $V$, $W$, $\eta$, $\beta$, $\varsigma$ as they are. Conditions (W1), (W2), (W5), (W6), (W7) are
+assumed, (W4) holds by the choice of~$\kappa$, and (W3) reads
+$(J+1+\fd+\lfloor\log_p(2B)\rfloor)\cdot2W+\fd\cdot2W\le X$, which follows from the hypothesis on~$X$. (W8):
+$\beta(i)+W\le B+W\le2B$. (W9): \m{2W\le(p-1)\cdot2W}. (W10): at a cut~$i$ the letters \m{i^{p^{a}}},
+\m{1\le a\le J}, are not thick, so $\beta(i^{p^{a}})+W=G+W\le2W$. (W11):
+$B+W\le2\lfloor3B/5\rfloor$, because \m{B\ge5W+8}. Hypothesis~(i): \m{W\le2pW}. (ii):
+$51\kappa=612(J+1)X+51\le10^{4}X(J+1)$.
+
+\emph{A thick letter that is not a cut.} Let $j$ be thick and not a cut. Then \m{j^{p^{-(J+1)}}} is a cut.
+Indeed some \m{j^{p^{a'}}}, \m{1\le a'\le J}, is thick; if \m{j^{p^{-(J+1)+b}}} were thick for some
+\m{1\le b\le J}, the hypothesis of the theorem for this letter and the exponents \m{a=J+1-b} and~$a'$ would
+say that \m{j^{p^{a'}}} is not thick.
+
+\emph{Hypothesis~(iii).} Suppose that no \m{i^{p^{-l}}}, \m{1\le l\le2J+1}, is a cut. As
+\m{i^{p^{-(J+1)}}} is not a cut, some \m{i^{p^{-a}}} with \m{1\le a\le J} is thick; it is not a cut, so
+\m{i^{p^{-(a+J+1)}}} is a cut, and \m{a+J+1\le2J+1}.
+
+\emph{Hypothesis~(iv).} Let $i$ and~$l$ be as there. If \m{i^{p^{-a}}} is thick with \m{0<a<l}, then it is
+not a cut, so \m{i^{p^{-(a+J+1)}}} is a cut and \m{l\le a+J+1}; and \m{l<a+J+1} is impossible, because the cut
+\m{i^{p^{-l}}} would have the thick letter \m{i^{p^{-a}}} among its translates by \m{p^{b}},
+\m{1\le b\le J}. So among the \m{i^{p^{-a}}}, \m{0\le a<l}, only those with \m{a=0} and \m{a=l-J-1} can be
+thick. If ($\alpha$) holds with \m{t=0} we are done. Otherwise some \m{a<l} has
+$\varsigma(i^{p^{-a}})\ne\varsigma(i)$ and $\beta(i^{p^{-a}})+V>\eta$; then \m{i^{p^{-a}}} is thick,
+because \m{G+V\le\eta}, and \m{a\ne0}, so \m{a=l-J-1}. Take \m{t=a}. The signs are not all equal, so the
+chart is unramified and \m{p\ge7}; \m{\rho=0} everywhere; \m{t+J+1=l}; and
+\[\rho_0+2W\sum_{0\le b\le J}p^{b}<\tfrac35B+4Wp^{J}\le\tfrac35B+\tfrac4{11}B<B=\beta(i^{p^{-t}}).\]
+For \m{b<l}, \m{b\ne t}: if \m{i^{p^{-b}}} is thick then \m{b=0} and
+$\varsigma(i)\ne\varsigma(i^{p^{-t}})$; if it is not thick then $\beta(i^{p^{-b}})+V=G+V\le\eta$; and
+for \m{t<b} it is not thick, so $\beta(i^{p^{-b}})+W=G+W\le2W$. This is~($\beta$).
+
+Proposition~\ref{p:cuts} gives $\CupB{\Pi}{10^{4}X(J+1)}{c}{c'}$.
+\end{proof}
+
+\begin{proof}[Proof of Theorem D]
+By (W1) and~(W7), \m{W\ge4}, so \m{G\ge20}, \m{B\ge G>0} and \m{K_0\ge1}. Put
+$\lambda=\lfloor\log_p(2B)\rfloor$. For a letter~$i$ let $\rho(i)=\max(\lfloor B/p\rfloor-7K_0,0)$ if
+\m{i^{p}} is thick and \m{\rho(i)=0} otherwise, and call~$i$ a \kw{cut} if \m{\rho(i)<\beta(i)}. Since
+$\lfloor B/p\rfloor<B$ and \m{\beta(i)\in\{B,G\}}, a letter~$i$ is not a cut if and only if
+\begin{equation}\label{e:noncut}
+i\text{ is not thick},\qquad i^{p}\text{ is thick},\qquad G+7K_0\le\lfloor B/p\rfloor .
+\end{equation}
+We apply Proposition~\ref{p:cuts} with this property and this~$\rho$, with $K_0$ in the place of~$n$,
+\m{J=1}, $\rho_0=\lfloor B/p\rfloor+12K_0$, \m{G+W} in the place of~$G$, \m{X=(2+\lambda)K_0},
+\m{\kappa=24X+1} and $E=10^{4}K_0(\lambda+1)$. The chart is unramified, so \m{e_{\fc}=1}, \m{\fd=0}. (W1),
+(W2), (W7) are assumed; (W3) and (W4) hold by the choices. (W5): $2B<2K_0p^{2}\le p^{2}X$. (W6):
+\m{8\le p^{2}}. (W8): \m{W\le K_0}, and $\rho(i)+W\le\max(\lfloor B/p\rfloor-6K_0,\,W)\le B$, so
+$\beta(i)+\rho(i)+W\le2B$. (W9):
+$G+W\le G+K_0<K_0(p/2+1)\le(p-1)K_0$. (W10): let $i$ be a cut; if \m{i^{p}} is not thick, then
+\m{\rho(i)=0} and \m{\beta(i^{p})+W=G+W}; if \m{i^{p}} is thick, then \m{\rho(i)<\beta(i)}, the chart is
+unramified, \m{p\ge5}, and $\rho_0\le\kappa+\rho(i)$ because $\rho(i)\ge\lfloor B/p\rfloor-7K_0$ and
+\m{19K_0\le\kappa}. (W11): with $B\le p\lfloor B/p\rfloor+p-1$ and $\lfloor B/p\rfloor\le K_0p-1$,
+\[(p-3)\rho_0-(B+K_0)\ \ge\ (12p-37)K_0-3\lfloor B/p\rfloor-p+1\ \ge\ (9p-37)K_0-p+4\ >0 .\]
+Hypothesis~(i): $\rho(i)+W=W\le pK_0$ if \m{\rho(i)=0}, and
+$\rho(i)+W\le\lfloor B/p\rfloor-6K_0<pK_0$ otherwise. (ii):
+$51\kappa=1224(2+\lambda)K_0+51\le10^{4}K_0(\lambda+1)$. (iii): if \m{i^{p^{-1}}} is not a cut, it is not
+thick by~\eqref{e:noncut}, so \m{i^{p^{-2}}} is a cut, again by~\eqref{e:noncut}; thus \m{l\le2}.
+
+(iv): let $i$ and~$l$ be as there; \m{l\le2}. Take \m{t=0}. For \m{l\le1}, ($\alpha$) holds. Let \m{l=2}:
+\m{i^{p^{-1}}} is not a cut, so by~\eqref{e:noncut} it is not thick, $i$ is thick and
+$G+7K_0\le\lfloor B/p\rfloor$. If ($\alpha$) fails, then $\varsigma(i^{p^{-1}})\ne\varsigma(i)$, and
+($\beta$) holds: the chart is unramified and \m{p\ge7}; \m{\rho(i^{p^{-2}})=0} because \m{i^{p^{-1}}} is not thick; \m{t+J+1=2};
+$\beta(i^{p^{-1}})+W=G+W$; and, as $B-\lfloor B/p\rfloor\ge(p-1)(G+7K_0)$, \m{W\le K_0} and
+\m{2G<K_0p},
+\[B-\rho_0-(G+W)(1+p)\ \ge\ (p-1)(G+7K_0)-12K_0-(p+1)(G+K_0)=(6p-20)K_0-2G\ >0 .\]
+Proposition~\ref{p:cuts} gives $\CupB{\Pi}{10^{4}K_0(\lambda+1)}{c}{c'}$.
+\end{proof}
+
+\sect{The two theorems on lattices}{s:lattices}
+\begin{lemma}[orthogonality from the universal sides]\label{l:orth}
+In Setting~\ref{set:base}, let $\Gamma$ carry a topology for which $j_\Gamma$ is an open embedding. Let $\fc$
+be a Kummer chart for~$\Gamma$, \m{\omega\in\cO} with \m{\omega^{p^h-1}=1}, $\mathcal{F}$ a filter on~$\Gamma$
+every member of which contains~$\Gamma'$, $U$ and~$U'$ families of finite sets of integers indexed by the maps
+$\gamma\colon\cO\to C$, $\mathcal{Q}$ a class of lattices over~$\cO$ contained in
+$\InCl{\mathcal{F}}{\bot}{U}$, $L$ a lattice with $L\in\InCl{\mathcal{F}}{\bot}{U'}$, \m{e\ge0} an integer
+and $x\in Z^{1}_{\mathrm{f}}(L)$. Suppose that $\CupB{\Pi}{e}{c}{x}$ for every \m{Y\in\mathcal{Q}}, every
+pairing~$\Pi$ of the sides $\univS{\fc}{\omega}{Y;U}$ and $\univS{\fc}{\omega}{L;U'}$, and every
+$c\in Z^{1}_{\mathrm{f}}(Y)$. Then $p^{e}x\in\cupOrth{\mathcal{Q}}{L}$.
+\end{lemma}
+\leanline{\lean{memcupOrthogonalofscaledCupBounds}}
+\begin{proof}
+A pairing of the two universal sides is a pairing of the lattices $Y$ and~$L$, their cocycle maps are the
+identity, and the topology of~$\Gamma$ is one of those of Definition~2.4 of Part~2. So the hypothesis says
+that the cup product of $c$ and~\m{p^{e}x} bounds, for every \m{Y\in\mathcal{Q}}, every pairing and every
+$c\in Z^{1}_{\mathrm{f}}(Y)$; this is the definition of $\cupOrth{\mathcal{Q}}{L}$.
+\end{proof}
+
+\begin{proof}[Proof of Theorem A]
+The filter~$\top$ has the single member~$\Gamma$, which contains~$\Gamma'$. For a lattice~$Y$ in
+$\InCl{\top}{\bot}{U}$ write $S_Y=\univS{\fc}{\omega}{Y;U}$, and $S_L=\univS{\fc}{\omega}{L;U'}$. Their
+jump sets at~$i$ are $\letterJ{\fc}{\omega}{U}{i}$ and $\letterJ{\fc}{\omega}{U'}{i}$, in the windows of
+the statement.
+
+(1) Let $x\in Z^{1}_{\mathrm{f}}(L)$, $Y$ in the class, $\Pi$ a pairing of $S_Y$ and~$S_L$, and
+$c\in Z^{1}_{\mathrm{f}}(Y)$. We apply Theorem~C of Part~2 (Input~\ref{r:walk}) with \m{\kappa=0}, the
+given~$\rho$, and \m{H=0}. Its hypothesis~(i) holds by Input~\ref{r:ideal}(h): the jumps of $S_Y$, $S_L$ and
+of the third side are at most $\beta(i)+W+\eta\le(p-3)\rho$. Hypotheses (ii) and~(iii) are assumed. (iv):
+in the first case of~(1) no element of the two jump sets lies in \m{[-\rho,0)}, as $0$ does not; in the
+second, the chart is unramified, \m{p\ge5}, \m{\eta\ge1}, and
+$\letterJ{\fc}{\omega}{U'}{i}\subseteq[-\eta,0]$. (v): \m{\fd=0}. So $\CupB{\Pi}{0}{c}{x}$, and
+Lemma~\ref{l:orth} with \m{e=0} gives $x\in\cupOrth{\InCl{\top}{\bot}{U}}{L}$.
+
+(2) For a letter~$i$ let $g_i$ be the number of the maps~$\gamma$ with $\gamma(\omega)=\theta([i])$. The side
+$S_L$ satisfies Setting~\ref{set:few} with the given $\rho,\eta,W,\beta,\varsigma$ and
+\[n_{\mathrm{lo}}(i)=h\,m_0\,g_i,\qquad n_{\mathrm{all}}(i)=h\,\operatorname{rk}_{\cO}(L)\,g_i :\]
+(F1) to (F5) are hypotheses of the theorem, and (F6) holds because \m{m_L(i,u)} is the sum over these~$\gamma$
+of the multiplicities of~$u$, which for each~$\gamma$ have sum at most~$m_0$ over \m{|u|\le\eta} and sum
+$\operatorname{rk}_{\cO}(L)$ over all~$u$ (Input~\ref{k:bk}). Let $V\subseteq Z^{1}_{\mathrm{f}}(L)$ be the
+$\Zp$-submodule of Proposition~\ref{p:few}. For \m{d\in V}, $Y$ in the class, a pairing~$\Pi$ of $S_Y$
+and~$S_L$ and $c\in Z^{1}_{\mathrm{f}}(Y)$, the proposition gives $\CupB{\Pi}{0}{c}{d}$; by
+Lemma~\ref{l:orth}, $V\subseteq\cupOrth{\InCl{\top}{\bot}{U}}{L}$. Distinct letters have distinct
+\m{\theta([i])}, and there are $\operatorname{rk}_{\Zp}(\cO)$ maps~$\gamma$ in all, so
+$\sum_ig_i\le\operatorname{rk}_{\Zp}(\cO)$ and
+\begin{align*}\relLen{\Zp}{Z^{1}_{\mathrm{f}}(L)}{\cupOrth{\InCl{\top}{\bot}{U}}{L}}&\le\relLen{\Zp}{Z^{1}_{\mathrm{f}}(L)}{V}\\
+&\le11\,h\,\bigl(m_0(\rho+1)+\operatorname{rk}_{\cO}(L)(W+1)\bigr)\cdot\operatorname{rk}_{\Zp}(\cO).\end{align*}
+Let \m{f_{\cO}} be the degree of the residue field of~$\cO$ over~$\mathbb{F}_p$. The length over~$\Zp$ of an
+$\cO$-module of finite length is $f_{\cO}$ times its length over~$\cO$, and
+$\operatorname{rk}_{\Zp}(\cO)=\operatorname{len}_{\Zp}(\cO/p\cO)=f_{\cO}\operatorname{len}_{\cO}(\cO/p\cO)$.
+Dividing by~$f_{\cO}$ gives~(2).
+\end{proof}
+
+\begin{proof}[Proof of Theorem B]
+\emph{The tame chart.} Let \m{M_0} be the least common multiple of the \m{p^{a}-1}, $1\le a\le\mathsf{r}$.
+It divides \m{p^{\mathsf{r}!}-1}, and $p$ does not divide~$\mathsf{r}!$ because \m{\mathsf{r}<p}. By
+Proposition~\ref{p:tameexist} there is a tame chart~$\fc$ for~$\Gamma$ with index \m{e_{\fc}=M_0}; let
+$\sigma$ be its tame generator and $\varpi$ its element. Then $e_{\fc}\le\prod_{a\le\mathsf{r}}p^{a}\le
+p^{\mathsf{r}^{2}}$, and \m{\fd\le1}: the index is prime to~$p$, so $\fd$ is $0$ or~$1$. As a coefficient
+root we take \m{\omega=1}.
+
+\emph{The lattices are crystalline on~$\Gamma'$.} Let $\mathcal{F}'$ be the filter of the subsets of~$\Gamma$
+that contain~$\Gamma'$. We claim: if $\mathsf{K}_1$ is a relation with
+$\TameType{p}{\mathsf{r}}{\mathsf{n}}{\mathsf{K}_1(s,\cdot)}$ for all inertial~$s$, then every lattice~$Y$ in
+$\InCl{\mathcal{F}}{\mathsf{K}_1}{U}$ lies in $\InCl{\mathcal{F}'}{\bot}{U}$. Indeed $Y$ is potentially
+crystalline. As $j_\Gamma$ is bijective, $g\mapsto\linF{Y}{j_\Gamma^{-1}(g)}{0}$ is a map from the inertia
+group of~$\GQp$ to the endomorphisms of \m{B_{\max}\otimes Y}; it is a homomorphism of monoids and is trivial
+near~$1$ (Input~\ref{k:frob}(a)), and its $M_0$-th power is trivial, because \m{X^{M_0}-1} kills \m{(s,0)}
+on~$Y$ for inertial~$s$ by the definitions of the tame type and of the class. By Input~\ref{k:tame}, for
+\m{y=\varpi} and the exponent \m{M_0=e_{\fc}}, it is trivial on the stabilizer of~$\varpi$, which contains
+\m{j_\Gamma(s)} for the inertial \m{s\in\Gamma'}. By Input~\ref{k:crit}, applied to the group~$\Gamma'$ with the restriction of~$j_\Gamma$, for which
+the linear Frobenius of an inertial element is the same, $Y$ is crystalline on~$\Gamma'$. The condition on the jumps is unchanged, and the relation~$\bot$ imposes nothing.
+The claim applies to $\mathsf{K}$ and to~$\mathsf{K}^{-}$, since the inverse of an inertial element is
+inertial.
+
+\emph{The killers.} By the hypothesis on~$\mathsf{K}$ at $\sigma$ and at~$\sigma^{-1}$ there are monic
+polynomials $q$, $q'$ over~$\Zp$ of degree at most~$\mathsf{n}$ with $\mathsf{K}(\sigma,q)$ and
+$\mathsf{K}(\sigma^{-1},q')$. Let $Y$ be a lattice in $\InCl{\mathcal{F}}{\mathsf{K}}{U}$. Then $q$ kills
+\m{(\sigma,0)} on~$Y$ and $q'$ kills \m{(\sigma^{-1},0)} on~$Y$; and since $L\in\InCl{\mathcal{F}}{\mathsf{K}^{-}}{U'}$,
+$q'$ kills \m{(\sigma,0)} on~$L$ and $q$ kills \m{(\sigma^{-1},0)} on~$L$. By Input~\ref{k:dual} for
+\m{s=\sigma^{-1}}, a monic polynomial~$q_3$ over~$\Zp$ of degree at most~$\mathsf{n}^{2}$ kills
+\m{(\sigma,0)} on $(Y\otimes_{\cO}L)^{\vee}(1)$.
+
+\emph{The walk.} Let $S_Y=\univS{\fc}{1}{Y;U}$ and $S_L=\univS{\fc}{1}{L;U'}$, let $\Pi$ be a pairing of
+$S_Y$ and~$S_L$, $c\in Z^{1}_{\mathrm{f}}(Y)$ and $a\in Z^{1}_{\mathrm{f}}(L)$. The jump sets of the two
+sides are in the windows of the statement, with \m{\beta(i)=\beta} and $\varsigma(i)=\varsigma$ for all~$i$,
+and the jumps of the two sides and of the third side are at most \m{n=\beta+6(W+\eta)}. Put
+$\kappa=\mathsf{r}^{2}(\mathsf{n}+1)^{2}$. By Proposition~\ref{p:tamekill} with \m{m=\mathsf{r}^{2}}, for the
+polynomials $q$, $q'$ and~$q_3$,
+\[\Kills{S_Y}{i}{\kappa}{0},\qquad\Kills{S_L}{i}{\kappa}{0},\qquad\Kills{\third{\Pi}}{i}{\kappa}{0}\]
+for every letter~$i$: \m{n+\kappa+2<p} is the hypothesis, and
+$\mathsf{r}^{2}(\mathsf{n}^{2}+1)\le\kappa$. We apply Theorem~C of Part~2 (Input~\ref{r:walk}) with this
+$\kappa$, with \m{\rho=0} and $H=3\kappa+150(\eta+W+1)$. (i) has just been shown. (ii): a non-zero element
+of $\twoWin{6(\eta+W)}{\beta}\cup\twoWin{6(\eta+W)}{-\beta}$ has absolute value at most
+\m{\beta+6(\eta+W)<p}. (iii) is assumed. (iv): the interval \m{[-0,0)} is empty. (v):
+$3(\kappa+(48(\eta+W)+4)\fd)\le3\kappa+144(\eta+W)+12\le H$, as \m{\fd\le1}. So
+$\CupB{\Pi}{H}{c}{a}$, and Lemma~\ref{l:orth}, for the filter~$\mathcal{F}'$, the class
+$\mathcal{Q}=\InCl{\mathcal{F}}{\mathsf{K}}{U}$ and \m{e=H}, gives
+$p^{H}a\in\cupOrth{\InCl{\mathcal{F}}{\mathsf{K}}{U}}{L}$.
+\end{proof}
+
+\sect{Where the results are used}{s:used}
+The unit on Selmer groups of the handout bounds the local term at~$\ell$ of a Selmer group by the four
+theorems: Theorem~A where the residue field is large and the weights are small against~$\ell$ in number,
+Theorem~B for tame inertial types, Theorems C and~D for weights of two sizes. Nothing else of the three parts
+is used there. Inside the unit, Proposition~\ref{p:few} is used only for Theorem~A, the results on tame
+charts only for Theorem~B, and Proposition~\ref{p:cuts} only for Theorems C and~D.
+
+\sect{Notes on the formal text}{s:notes}
+\emph{Arguments as the text gives them.} The arguments were read from the Lean text and the census of the
+workspace, and were not printed by Lean. The hypotheses of Settings \ref{set:few} and~\ref{set:cut} are
+section hypotheses of the formal text; each declaration includes those that its statement here names, by the
+commands of the text that include and omit them, which were read. Several declarations carry implicit
+arguments that their statements do not use: a letter and an exponent function in
+Proposition~\ref{p:few}, a function of the letters in Theorem~C, an integer in Lemma~\ref{l:atcut} and
+Theorem~C, and the function~$\beta$ in Lemma~\ref{l:rel}. The universal side takes, besides the chart, the
+root and the membership of the lattice in a class, the hypothesis on the filter, which the census does not
+list; the note writes the lattice and its jump sets in the slot of the membership. The statement of
+Lemma~\ref{l:atcut} is the formal one with its auxiliary integer~$n'$.
+
+\emph{The number~$\fd$ for a tame chart.} For a tame chart with index different from~$1$ the number~$\fd$ is
+\m{v_p(e_{\fc})+1=1}, not~$0$. An earlier state of the reader's dossier put it equal to~$0$ in the proof of
+Theorem~B; the second reader of the workspace corrected this, the dossier now says so, and the formal proof
+agrees: it unfolds the definition and uses only that $p$ does not divide the index. The constant \m{150(\eta+W+1)} absorbs the term.
+
+\emph{The product in Lemma~\ref{l:extkill}.} The polynomial is the product \m{q\cdot(X-1)}, evaluated at the
+linear Frobenius; the factor \m{X-1} is what removes the constant~$w$ in the proof of
+Proposition~\ref{p:tamekill}.
+
+\emph{The filter.} The hypothesis of the formal text on the filter~$\mathcal{F}$ says that every member
+of~$\mathcal{F}$ contains~$\Gamma'$, not that $\Gamma'$ is a member.
+
+\emph{Lengths.} In Theorem~A the length is over~$\cO$, and the factor $\operatorname{len}_{\cO}(\cO/p\cO)$
+is the ramification index of~$\cO$; the formal proof passes through lengths over~$\Zp$ as in the proof above.
+
+\emph{Arithmetic.} The formal text settles the comparisons of sizes and exponents by decision procedures.
+The note gives them by hand in Lemma~\ref{l:col}, Proposition~\ref{p:few}, Lemma~\ref{l:atcut}, the proofs of
+Theorems A, B, C and~D; in Proposition~\ref{p:cuts} it gives the construction and the costs and says which
+comparisons it does not redo. In the proof of Lemma~\ref{l:col} the integer~$\mathsf{N}$ is the least
+multiple of~$p$ that is at least \m{\beta(i)+W+2\rho}.
+
+\emph{The background.} The period ring is Colmez's~$B_{\max}$. For the linear Frobenius and the crystalline
+criterion the second reader finds the classical statements for representations over a field in Fontaine's
+exposés and no source for the form on arbitrary modules; for crystalline cocycles the Bloch--Kato local
+formula. No place in the literature was confirmed for the frame theorem, for the tame inertia statement in
+the form used, and for the killing of duals of tensor products.
+
+\subhead{How this note was written.} From the reader's dossier of the unit: the statements of all members and
+the structured proofs of the declarations treated here; and from the second reader's two reports on the unit,
+whose corrections were applied. The three Lean files were read in full. The proofs of Lemma~\ref{l:rel} and
+of Proposition~\ref{p:tameexist}, which the reader had marked as least certain, were read line by line in the
+Lean text: in the first, the identity $p(x^{\ast}-w_4)=\mathsf{B}(px^{\ast}-w)+\cE_{\nu_0}w_3$ and the three
+places where hypothesis~(i) enters were recomputed by hand; in the second, the normality of~$\Delta$ and the
+bound for the exponent of the quotient. The verifications of the deep points in Proposition~\ref{p:few}, the
+induction in Proposition~\ref{p:tamekill} and the reductions of Theorems C and~D to
+Proposition~\ref{p:cuts} were worked out by hand; the formal proofs leave them to automation. The comparisons
+at the end of the proof of Proposition~\ref{p:cuts} were not redone. The program check of the unit's dossier
+covered \UnitSteps{} leaf steps of \UnitProofs{} proofs.
+
+\head{Appendix A. Concordance with the Lean artifact}
+{\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}\setlength{\tabcolsep}{0pt}
+\begin{longtable}{@{}p{30mm}p{56mm}p{43mm}r@{}}
+\textbf{In this note} & \textbf{Lean declaration} & \textbf{File} & \textbf{Lines}\\\midrule\endhead
+\ConcordanceRows
+\end{longtable}}
+
+Two statements as the artifact has them:
+\quoted{fewlowjumps}
+\quoted{tametypesexponent}
+
+\emph{Legend.} As in Parts 1 and~2; in addition \texttt{InClass F K U} is the class
+$\InCl{\mathcal{F}}{\mathsf{K}}{U}$, \texttt{cupOrthogonal} is $\cupOrth{\mathcal{Q}}{L}$,
+\texttt{crysCocycles} is \m{Z^{1}_{\mathrm{f}}}, \texttt{relLength} is the relative length,
+\texttt{linearFrob} is the linear Frobenius, \texttt{IsWeilPair (toGp s) 0} says that $s$ is inertial,
+\texttt{jump} is the multiplicity of a jump, \texttt{k.f} is~$h$ and \texttt{k.e} is~$e_{\fc}$,
+\texttt{differentExp} is~$\fd$, \texttt{letterFrob} is \m{i\mapsto i^{p}} and \texttt{stepBack i a} is
+\m{i^{p^{-a}}}; \texttt{zetaE}, \texttt{tameGen} and \texttt{ϖ} of a tame chart are $\varrho$, $\sigma$
+and~$\varpi$. In the first file \texttt{a} is~$\rho$, \texttt{b} is~$\beta$, \texttt{ε} is~$\varsigma$,
+\texttt{n} and \texttt{r} are $n_{\mathrm{lo}}$ and~$n_{\mathrm{all}}$, and in its first lemma \texttt{a}
+is~$\nu_0$ and \texttt{c}, \texttt{c'} are $o$, $o'$. In the second file \texttt{s}, \texttt{s₀} are $\rho$,
+$\rho_0$, \texttt{b} is~$B$, \texttt{T} is the property of being thick, \texttt{K} is~$K_0$, \texttt{e} is~$E$,
+and \texttt{ν} in the proof of Proposition~\ref{p:tamekill} is~$a$. In the third file \texttt{ζ}
+is~$\omega$, \texttt{r} and \texttt{N} are $\mathsf{r}$ and~$\mathsf{n}$, \texttt{m} is~$m_0$ and \texttt{g}
+is~$\gamma$.
+
+\head{Notation}
+\begingroup\fontsize{8.6}{10.9}\selectfont\raggedright
+\setlength{\columnsep}{9mm}\setlength{\parskip}{0pt}
+\begin{multicols}{2}
+\nt{$\ell$}{the prime of Chapter~VIII of the handout; it is~$p$ here}
+\nt{$p$, $\Qp$, $\Zp$, $\bar{\mathbb{Q}}_p$, $C$, $\mathcal{O}_C$, $\GQp$, $\mathbb{F}_p$}{the prime, the $p$-adic numbers and integers, an algebraic closure, its completion, the integers, the Galois group, the prime field}
+\nt{$\Ainf$, $\WC$, $\mathcal{O}_C^\flat$, $B^{+}$, $A_{\max}$}{Witt vectors of the tilt and of its fraction field, the tilt, \m{A_{\max}[1/p]}}
+\nt{$\varphi$, $\theta$, $\varepsilon$, $[\,\cdot\,]$}{Frobenius, Fontaine's map, a system of roots of unity in the tilt, the Teichmüller lift}
+\nt{$\BdR$, $\Fil^{n}\BdR$, $B_{\max}$}{period rings and the filtration}
+\nt{$\Gamma$, $\Gamma'$, $j_\Gamma$, $\chi$, $\chi_N$, $\Delta$}{the group, the subgroup of the chart, the map to~$\GQp$, the cyclotomic character, the character on the $N$-th roots of unity, an open subgroup}
+\nt{$\fc$, $\fS$, $\fS_B$, $\WW$, $h$, $X$, $z$, $\cE$, $\cE_\nu$, $e_{\fc}$, $\fd$, $F_0$}{the chart, its ring, the ring of Part~1, $W(\mathbb{F}_{p^h})$, the residue degree, the variable, the coordinate, the Eisenstein element and its translates, the index, the different exponent, a value field}
+\nt{$\varrho$, $\sigma$, $\varpi$, $\varpi^{\flat}$}{the root of unity, the tame generator and the root of~$p$ of a tame chart; an element of the tilt above~$\varpi$}
+\nt{$\cO$, $\omega$, $\gamma$, $f_{\cO}$}{coefficients, the root of unity, a map \m{\cO\to C}, the residue degree of~$\cO$}
+\nt{$i$, $i'$, $j$, $i^-$}{letters; \m{i^-=i^{p^{-1}}}}
+\nt{$L$, $Y$, $T$, $T'$}{lattices and lattice data; $T$, $T'$ are also sides}
+\nt{$Z^{1}_{\mathrm{f}}(L)$, $\operatorname{rk}_{\cO}(L)$, $U_L(i)$, $m_L(i,u)$, $h_L$}{crystalline cocycles, the rank, the jump set and the multiplicity of a jump at a letter, the jump bound}
+\nt{$U$, $U'$, $U(\gamma)$}{families of finite sets of integers}
+\nt{$\pr_i$, $\Per(L)$, $\Minf(L)$, $\Mlocinf(L)$, $\Mloc(L)$, $\mathfrak{M}(L)$}{projector, periods, Kisin modules}
+\nt{\m{\wExp{L}{i}{o}}, \m{\locLP{l}{i}(L)}, \m{\locKP{Q}}, \m{\invMod{Q}}}{exponent modules; elements of \m{\Mloc}; invariants modulo~$Q$}
+\nt{$\std_l$, \m{\cost{\nu}{n}}, $\impE{o}{o'}{\nu}{u}$, $\frobX{l}{n}{o}{\nu}{u}$, $\raiseX{o}{\nu}{u}{\nu'}{v}$, $\shStd{l}{o_1}{\nu}{u}$}{standard exponents, cost, improved, shifted and raised exponents}
+\nt{$S$, $S'$, $Y_S$, $C_S$, $\alpha_S$, $S_Y$, $S_L$}{sides and their parts; universal sides}
+\nt{\m{\extL{S}}, \m{\trivL{S}}, \m{\projC{S}}, \m{\inclY{S}}, \m{\projCloc{S}}}{extension, trivial datum, projection, inclusion}
+\nt{\m{\constAt{S}{i}{c}}, $\liftId{S}{r}{l}{i}$, $\Kills{S}{i}{\kappa}{\rho}$}{constants, lifting ideal, cokernel killer}
+\nt{$\raisedE{n}{\nu}{u}$, \m{\twoWin{n}{c}}, $\NoMult{p}{n}{\beta}$, $\JumpWin{\eta}{\varsigma}{\beta}{W}{U}$}{raised exponents and windows}
+\nt{$\Pi$, \m{\third{\Pi}}, $\CupB{\Pi}{e}{c}{c'}$}{a pairing, its third side, the scaled cup product bounds}
+\nt{\m{\kerX{S}{i}{o}}, \m{\deepE{S}{i}{o}}, $\Reaches{S}{e}{\mathsf{A}}$, $\ptsOver{S}{c}{i}{e}{o_1}{o'}$}{kernel with exponents, deep elements, cost of a map, points}
+\nt{\m{\linF{T}{s}{m}}}{the linear Frobenius}
+\nt{$\InCl{\mathcal{F}}{\mathsf{K}}{U}$, $\mathcal{F}$, $\mathcal{F}'$, $\mathsf{K}$, $\mathsf{K}^{-}$, $\mathsf{K}_0$, $\mathsf{K}_1$, $\top$, $\bot$, $\mathcal{Q}$}{a class of lattices; filters; relations and a property of polynomials; the trivial filter, the empty relation; a class}
+\nt{$\cupOrth{\mathcal{Q}}{L}$, \m{\relLen{R}{N}{N'}}, $\operatorname{len}$, $R$}{the orthogonal module, the relative length, length, a ring}
+\nt{\m{\deepC{S}{i}{n}{o}}, $\TameType{p}{\mathsf{r}}{\mathsf{n}}{\mathsf{K}_0}$, $\letterJ{\fc}{\omega}{U}{i}$, $\univS{\fc}{\omega}{L;U}$}{constants that lift, tame types, jump sets at a letter, the universal side}
+\nt{$\mathsf{cut}$, $\mathsf{thick}$, $\mathsf{Q}$, $\mathsf{l}(i)$, $t(i)$, $\varsigma^{\circ}(i)$}{properties of letters, the distance to the nearest cut, the integer of~(iv), a sign}
+\nt{$o$, $o'$, $o^{+}$, $o_+$, $o_1$, $o_2$, $o_i$, $o^{T}$, $o^{S}_i$, $\mathsf{z}$, $\mathsf{z}'$, $z(i)$, $z'(i)$, $d$, $\mathsf{R}^{\epsilon}_i$}{exponent functions and families of them; $o_1$, $o_2$ are also functions of~$u$ alone; $z$ is also the coordinate, $d$ also an element}
+\nt{$\nu$, $\nu'$, $\nu_0$, $l$, $u$, $v$, $s$}{indices, levels, jumps; $s$ is also an element of~$\Gamma$}
+\nt{$\rho$, $\eta$, $W$, $V$, $\beta$, $B$, $G$, $J$, $J'$, $X$, $\kappa$, $\rho_0$, $\rho_u$, $W_\nu$, $\eta_\nu$, $n$, $n'$, $K_0$, $E$, $H$, $\lambda$}{the integers of the Settings and of the proofs; $X$ is also the variable, $\lambda$ also a linear map}
+\nt{$n_{\mathrm{lo}}$, $n_{\mathrm{all}}$, $m_0$, $g_i$, $\mathsf{r}$, $\mathsf{n}$, $M_0$, $h_0$, $N$, $\mathsf{N}$, $N_a$}{bounds for multiplicities, the number of maps above a letter, the sizes of a tame type, a least common multiple, a residue degree, \m{p^{h_0}-1}, a multiple of~$p$, a number of roots}
+\nt{$\varsigma$, $\epsilon$, $\epsilon'$}{signs; $\epsilon$ is also a cost}
+\nt{$A$, $B_u$, $a$, $a'$, $a_0$, $b$, $c$, $c'$, $e$, $e'$, $k$, $m$, $r$, $t$, $x_0$, $\gamma$, $\delta$}{integers; $B$ of Lemma~\ref{l:rel} is an integer; $a$ is also a root of unity and a cocycle, $c$ an element, $k$, $r$, $t$ also elements, $\delta$ an element of~$\Delta$}
+\nt{$g$, $g'$, $\sigma^{k}$}{elements of~$\Gamma$ or of~$\GQp$}
+\nt{$x$, $x'_k$, $x_k$, $x^{\ast}$, $y$, $y'$, $y''$, $y_k$, $w$, $w_k$, $w_3$, $w_4$, $d$, $t_0$, $f$}{elements of modules and rings}
+\nt{$\mathsf{P}_i(o)$, $\mathsf{P}^{0}_i(o)$, $N$, $N'$, $N_i$, $V$, $I$, $I_2$}{modules and sets of steps of Section~\ref{s:few}; $V$ is also a width, $N$ also an integer}
+\nt{$\mathsf{A}$, $\mathsf{B}$}{additive maps}
+\nt{$q$, $q'$, $q_3$, $q_k$, $Q$, $Q_k$, $T$}{polynomials and their coefficients; an element of~$\Ainf$}
+\nt{$\mu$, $\mu_k$, $\Lambda_g$}{periods and linear maps}
+\nt{$v_p(n)$, $\lfloor\log_pn\rfloor$, $\deg q$, $\operatorname{rk}_{\Zp}(\cO)$, $\operatorname{Stab}(\varpi)$}{the exponent of~$p$ in~$n$, the integral logarithm, the degree, the rank over~$\Zp$, the stabilizer of~$\varpi$ in~$\GQp$}
+\end{multicols}
+\endgroup
+
+\end{document}
