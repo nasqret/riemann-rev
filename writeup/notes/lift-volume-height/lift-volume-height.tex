@@ -254,7 +254,12 @@
 \newcommand{\carrier}[2]{\mathfrak{C}_{#1,#2}}
 \newcommand{\cXi}[3]{\Xi^{\circ}_{#1,#2}(#3)}
 \newcommand{\vf}{\operatorname{vf}}
-\newcommand{\rat}[2]{\rho_{#1}(#2)}
+\newcommand{\rat}[3]{\rho_{#1}(#2,#3)}      % Lean's Pair.ratio p ϑ s: the pair, the tame character, the sign
+\newcommand{\idem}{\operatorname{idem}}
+\newcommand{\clU}{h_{\UU}}                    % the class sum of the constant 1 over U(1) at the chosen level
+\newcommand{\tm}{t_{\mathbf{m}}}              % the number of the depth of an indicator jet
+\newcommand{\rowpar}[2]{\operatorname{rp}_D(#1,#2)}
+\newcommand{\acct}{ \textup{(}an account of the formal proof\textup{)}}
 \newcommand{\triv}[2]{\Xi_{#1}(#2)}
 \newcommand{\ialg}[2]{I_{#1}(#2)}
 % definitions of this note whose arguments the text reading misreads; written with the arguments their uses show
@@ -281,8 +286,8 @@ mathematics\par}}
 \thispagestyle{empty}
 
 \textbf{Summary.} For a fit family of twists, the volume of a single theta lift at the trivial twist divided by
-its volume at the twist has height at most \m{\dim\operatorname{Row}(D)\cdot k(D)\cdot(\log b\cdot B_0(D)-\mathsf{U}(D))}
-(Theorem~A): each lift repays the cost \m{\mathsf{U}(D)} of one direction, $k(D)$ times, for every row. The proof
+its volume at the twist has height at most the dimension of the rows times
+$k(D)\cdot(\log b\cdot B_0(D)-\mathsf{U}(D))$ (Theorem~A): each lift repays the cost \m{\mathsf{U}(D)} of one direction, $k(D)$ times, for every row. The proof
 has three parts. First, an explicit theta form \m{F^{\natural}} on the indefinite group of the $j$-th lift is, for
 every twist, a constant multiple of a class sum of twisted theta kernels, and the constant has absolute value a
 product of Hecke $L$-values: the twisted forms lie on one line (Theorem~C). Second, the products of
@@ -299,11 +304,17 @@ every file compiles with Lean v4.35.0 against a pinned version of Mathlib and th
 proofs; an independent build is recorded in the handout's record of checks when it reports. No mathematician has
 read the argument through, and nothing here says that the Riemann hypothesis is proved. This note is the last of
 four on one unit of the artifact, the folder of the rows; it treats \UnitInNote{} of the unit's \UnitMembers{}
-declarations, those of seven files. Every declaration is stated. Theorem~A is proved in full from Theorem~B, the
-comparison forms of the sister note and the definition of a fit family. The proofs of Theorems B, C and~D and of
-the analytic lemmas are given as accounts of which results combine, at the level at which they were read; their
-inputs from other units and from the background library are named and not proved here. Every statement was compared
-with its Lean text, argument by argument. The Lean text read is \PinText; Appendix~A is the concordance of
+declarations, those of seven files. Every declaration is stated. Theorem~A is proved in full from Theorem~B with
+Corollary~\ref{c:hv}, from Lemma~\ref{l:gram} and Proposition~\ref{p:det}, from the comparison forms of the sister
+note and from the definition of a fit family; the proofs of Corollary~\ref{c:hv}, of Lemmas \ref{l:pigeon}
+and~\ref{l:gram}, of Proposition~\ref{p:iso} and of Proposition~\ref{p:det}\,(b) are complete as well. All other
+proofs are accounts of the formal proofs: they say which results combine and do not verify the estimates and the
+normalising constants. Each of them is headed as an account where it stands, and the proof of
+Proposition~\ref{p:approx} is an outline. Theorems B, C and~D and Proposition~\ref{p:det}\,(a), on which Theorem~A
+rests, are among the accounts. The inputs from other units and from the background library are named and not
+proved here. Every statement was compared with its Lean text, argument by argument (for the definitions of the
+line see the last section).
+The Lean text read is \PinText; Appendix~A is the concordance of
 \ConcDecls{} declarations.}
 
 \sect{The statements}{s:intro}
@@ -316,7 +327,8 @@ has height at most \m{\dim\operatorname{Row}(D)\cdot\bigl(k(D)\cdot(\log b\cdot 
 \vspace{4pt}\phantomsection\label{t:B}\textbf{Theorem B} (each ratio of Hecke values repays one direction).\enspace
 \emph{In Setting~\ref{set:data}, let \m{\theta} be a family of $m$-fold twists of~$D$ that is fit for~$D$, $j$ a lift
 index and $p$ a pair of~$D$ that is of rank one for~$j$. Then the family
-\m{(\ell,\iota)\mapsto\rat{p}{\theta_{\ell,\iota}^{\,j}}^{-1}} has height at most \m{6B_0(D)-\mathsf{U}(D)}.}}
+\m{(\ell,\iota)\mapsto\rat{p}{\theta_{\ell,\iota}^{\,j}}{1}^{-1}} of inverse ratios for the sign~$1$ has height at most
+\m{6B_0(D)-\mathsf{U}(D)}.}}
 \leanline{\lean{heightLeliftVolumeratio}\sep \lean{heightLeinvratio}}
 
 \statement{arith}{\phantomsection\label{t:C}\textbf{Theorem C} (twisted theta forms lie on one line).\enspace
@@ -338,12 +350,16 @@ weight~$\kappa^{-}$. Then \m{F=0}.}}
 Here \m{\lvol{\vartheta}{j}} is the volume of the $j$-th single lift at the twist~$\vartheta^{j}$ (the note \emph{The
 volume of the chain of theta lifts as a product of lift volumes}), heights are those of Chapter~IV,
 \m{B_0(D)=\operatorname{budget}(D)/(m\,k(D))} is the budget for congruences and \m{\mathsf{U}(D)} the cost of one direction
-(Setting~\ref{set:data}); the function \m{\fNatural{j}{i}{\cdot}}, the line multiplier and the product
-\m{\heckeValueProd{j}{\vartheta}} of Hecke values are defined in §\ref{s:setting}. In Theorem~C the left side does not
-depend on the twist. Since \m{h_{\mathrm{main}}(D)=m\,k(D)\,\mathsf{U}(D)}, the product over \m{j=1,\dots,m} of the
-bounds of Theorem~A is \m{\dim\operatorname{Row}(D)\cdot(\log b\cdot\operatorname{budget}(D)-h_{\mathrm{main}}(D))}: with the
-product formula of the first note of this unit, this is the second height bound in the proof of Theorem~C of the
-handout.
+(Setting~\ref{set:data}); \m{\rat{p}{\vartheta}{s}} is the ratio of a twisted to an untwisted Hecke $L$-value of the
+pair~$p$, for the tame character~$\vartheta$ and the sign~$s$ (Setting~\ref{set:data}); the function
+\m{\fNatural{j}{i}{\cdot}}, the line multiplier and the product \m{\heckeValueProd{j}{\vartheta}} of Hecke values are
+defined in §\ref{s:setting}. In Theorem~C the left side does not depend on the twist. The lettered theorems are
+those of this note; ``Theorem~C of the handout'' is the theorem of the overview. Since
+\m{h_{\mathrm{main}}(D)=m\,k(D)\,\mathsf{U}(D)}, the sum over \m{j=1,\dots,m} of the bounds of Theorem~A, which is the
+bound for the product of the $m$ families, is
+\m{\dim\operatorname{Row}(D)\cdot(\log b\cdot\operatorname{budget}(D)-h_{\mathrm{main}}(D))}: with the factorisation of the
+volume of the chain in Theorem~A of the first note of this unit, this gives the second height bound in the proof of
+Theorem~C of the handout.
 
 \sect{The setting}{s:setting}
 \begin{conventions}\phantomsection\label{c:conventions}
@@ -358,11 +374,14 @@ statement are introduced in the statement.
 \begin{setting}[the data and what other units and the sister notes attach to it]\label{set:data}
 The general notions are those of the background Setting of the note \emph{Auxiliary dual pairs, determinant
 polynomials and the carrier}: a CM field~$E$ with CM type and Weil data, the character~$\upsilon$, moduli, characters with weight and
-tame part, tameness, the products \m{\LP{T}{\nu}{d}} of $L$-values, hermitian spaces, class sums, theta kernels
+tame part, tameness, the partial $L$-functions \m{L^{T}(z,\nu)} (of the base change of~$\nu$, without the Euler
+factors at the places of~$T$ and at their complex conjugates) and the products \m{\LP{T}{\nu}{d}} of their values,
+hermitian spaces, class sums, theta kernels
 \m{\tk{S}{T}{\alpha}{\beta}{\mathfrak{m}}{\Psi}{P}(g,h)}, weights, coordinate vectors with their polynomials
 \m{\operatorname{pol}_\kappa(\xi)} and Gram norms, auxiliary pairs~$O$ with their forms \m{\FormVx{O}}, and the carrier
 \m{\carrier{E}{m}} with the class sum \m{\cXi{m}{c}{h}}. Gauges, integrality at an embedding, the numbers
-\m{\nsq{\phi}{\sigma}}, ``tested'' and the coset kernel sum \m{\cks{O}{b}{w}{e}{y}(g)} are those of the note \emph{Glued
+\m{\nsq{\phi}{\sigma}}, ``tested against a subspace for an idempotent'' and the coset kernel sum
+\m{\cks{O}{b}{w}{e}{y}(g)} are those of the note \emph{Glued
 lattices, product forms and the integral comparison forms}.
 
 \emph{Data.} $P=(N_0,d)$ are parameters, with \m{K=\mathbb{Q}(\sqrt{-d})}, and $D$ is admissible data for~$P$: the
@@ -378,23 +397,15 @@ B_0(D)&=\frac{\operatorname{budget}(D)}{m\,k(D)},\qquad\operatorname{js}_D(n)=\l
 \mathsf{U}(D)&=\sum_\tau\Bigl(\operatorname{js}_D(w_0(\tau))-\operatorname{Ask}_D(w_D(\tau),\tau)\Bigr),
 \end{align*}
 with $\Omega$ the period constant of \m{E(D)}; \m{\mathsf{U}(D)} is the \kw{cost of one direction} and
-\m{\operatorname{js}_D} the \kw{jet size}. A lift index is an integer~$j$ with \m{1\le j\le m}. Tame characters, twists,
-$m$-fold twists with their sets \m{Q(\vartheta)}, fit families, heights, the spaces $W_j(D)$, the good forms
-\m{\Mgood{j}}, the rows, the auxiliary pairs \m{O_D(\vartheta,j)}, with index sets \m{\ix r} of size~$r$ and
-\m{\ix n} of size \m{r+t(D)}, the adjoint lifts \m{\alift_D(\vartheta,j)} and the lift volumes \m{\lvol{\vartheta}{j}} are
-as in the first note of this unit. For a tame character~$\vartheta$ and an integer \m{c\ge0}, \m{\mathfrak{m}_D(\vartheta,c)}
-is the modulus \m{\bar\pi_g^{c}} times the primes of \m{Q(\vartheta)}.
-
-\emph{Fitness.} A family~$\theta$ of $m$-fold twists is \kw{fit for~$D$} if: (1) $\ell$ is prime to the norms of the
-primes in \m{Q(\theta_{\ell,\iota})}; (2) for every lift index~$j$ there are real numbers~$\beta_\ell$ with
-\m{\sum_{\ell\in T}\beta_\ell\le B_0(D)} for every finite set~$T$ of primes such that, for every \m{(\ell,\iota)}, the
-image~$\mathcal{Z}$ of the adjoint lift for \m{\theta_{\ell,\iota}^{\,j}} on the good forms, and each line spanned by the
-trivial lift \m{\triv{p}{\theta_{\ell,\iota}^{\,j}}} of a pair~$p$ of rank one for~$j$, has \kw{denominators at
-most~$\beta_\ell$}: for all families \m{(y_a)}, \m{(y'_b)} of \m{\dim\mathcal{Z}} forms, the~$y_a$ integral at every
-embedding \m{\CC\to\CC_\ell} and the~$y'_b$ integral at~$\iota$ and tested against~\m{\mathcal{Z}^{\perp}}, the determinant of
-the numbers \m{\ip{y_a}{\operatorname{pr}_{\mathcal{Z}}y'_b}} has \m{|\iota(\,\cdot\,)|_\ell\le\exp(\dim\mathcal{Z}\cdot r_0\beta_\ell)},
-with $r_0$ the rank of the first space of the pair; (3) for every lift index~$j$, every ramified pair~$p$ and
-every sign, the family \m{(\ell,\iota)\mapsto\rat{p}{\theta_{\ell,\iota}^{\,j}}^{-1}} has height at most~$x^{999}$.
+\m{\operatorname{js}_D} the \kw{jet size}. A lift index is an integer~$j$ with \m{1\le j\le m}. Tame characters and
+$m$-fold twists with their sets \m{Q(\vartheta)}, heights, the good idempotent \m{e_0(D)} and the idempotents
+\m{\idem(\mathbf{c})} of the tuples~$\mathbf{c}$ of labels, the spaces $W_j(D)$, the good forms \m{\Mgood{j}}, the rows,
+the auxiliary pairs \m{O_D(\vartheta,j)}, with index sets \m{\ix r} of size~$r$ and \m{\ix n} of size \m{r+t(D)}, the
+adjoint lifts \m{\alift_D(\vartheta,j)} and the lift volumes \m{\lvol{\vartheta}{j}} are as in the first note of this
+unit. A \kw{twist} is a tame character whose tame part is non-trivial at every prime of \m{Q(\vartheta)} (the Setting
+on the data of the note \emph{Glued lattices, product forms and the integral comparison forms}); the powers
+\m{\vartheta^{j}}, \m{1\le j\le m}, of an $m$-fold twist are twists. For a tame character~$\vartheta$ and an integer
+\m{c\ge0}, \m{\mathfrak{m}_D(\vartheta,c)} is the modulus \m{\bar\pi_g^{c}} times the primes of \m{Q(\vartheta)}.
 
 \emph{Pairs.} A \kw{pair} of~$D$ (unit \emph{Exchange}) is a character~$\nu_p$ of weight~$-c_p$, with tame
 part~$\psi_p$, together with an integer~$z_p$. It is \kw{flat} for a finite index set~$\ix n$ if \m{c_{p,\tau}=z_p}
@@ -403,9 +414,33 @@ is~$\omega_D^{j}$ and \m{w_j(\tau)+r-t(D)\le c_{p,\tau}\le w_j(\tau)}; \kw{ramif
 exactly at the chosen primes. A pair with a suitable index set and a twist~$\vartheta$ has an \kw{$L$-value datum},
 with an auxiliary pair of a definite group \m{\UU(1)} and a definite space, jet degrees \m{c_{p,\tau}-z_p}, kernel
 forms, and a \kw{trivial lift} \m{\triv{p}{\vartheta}}, the theta lift of the trivial character of \m{\UU(1)}; its
-\kw{normalised value} \m{\ialg{p}{\vartheta}} is the squared norm of the trivial lift cleared of its denominators, and
-\m{\rat{p}{\vartheta}=\ialg{p}{\vartheta}/\ialg{p}{1}} is the ratio of the twisted to the untwisted Hecke $L$-value of the
-pair; it is real and not zero.
+\kw{normalised value} \m{\ialg{p}{\vartheta}} is the squared norm of the trivial lift cleared of its denominators. The
+labels of such an auxiliary pair have degree~$1$, and \m{\idem(X-1)}, the \kw{label idempotent}, is the idempotent of
+its tuple of labels all equal to \m{X-1}. For a pair~$p$, a tame character~$\vartheta$ and a sign~$s$, the \kw{ratio}
+of the twisted to the untwisted Hecke $L$-value of the pair is
+\[\rat{p}{\vartheta}{s}=\bigl|L^{T_\vartheta}\bigl(z_p,(\nu_p\vartheta^{s})^{-1}\bigr)\bigr|\Big/\bigl|L^{T_1}\bigl(z_p,\nu_p^{-1}\bigr)\bigr|,\]
+with \m{T_\vartheta} the set of the chosen primes and of the primes of \m{Q(\vartheta)}, so that $T_1$ is the set of the
+chosen primes: the sign is the exponent of the twist. The ratio is real and not zero, and
+\m{\rat{p}{\vartheta}{1}=\ialg{p}{\vartheta}/\ialg{p}{1}} for an index set that fits~$p$ (unit \emph{Exchange}).
+
+\emph{Denominators.} Let $O$ be an auxiliary pair whose first space has rank~$r_0$, $\mathcal{Z}$ a linear subspace
+of \m{\FormVx{O}}, $e$ an idempotent of the group algebra of the finite group of~$O$, \m{(\ell,\iota)} a prime with a
+field isomorphism from~$\CC$ to an algebraic closure of~$\mathbb{Q}_\ell$, and $\beta$ a real number. The
+subspace~$\mathcal{Z}$ has \kw{denominators at most~$\beta$ at~$\iota$ for~$e$} if, for all families \m{(y_a)},
+\m{(y'_b)} of \m{\dim\mathcal{Z}} forms, the~$y_a$ integral at every embedding \m{\CC\to\CC_\ell} and the~$y'_b$
+integral at~$\iota$ and tested against~\m{\mathcal{Z}^{\perp}} for~$e$, the determinant of the numbers
+\m{\ip{y_a}{\operatorname{pr}_{\mathcal{Z}}y'_b}} has \m{|\iota(\,\cdot\,)|_\ell\le\exp(\dim\mathcal{Z}\cdot r_0\,\beta)}; here
+\m{\operatorname{pr}_{\mathcal{Z}}} is the orthogonal projection to~$\mathcal{Z}$.
+
+\emph{Fitness.} A family~$\theta$ of $m$-fold twists is \kw{fit for~$D$} if: (1) for every \m{(\ell,\iota)}, the
+prime~$\ell$ is prime to the norms of the primes in \m{Q(\theta_{\ell,\iota})}; (2) for every lift index~$j$ there are
+real numbers~$\beta_\ell$, whose sum over every finite set of primes is at most \m{B_0(D)}, such that for every
+\m{(\ell,\iota)} the image of the adjoint lift for \m{\theta_{\ell,\iota}^{\,j}} on the good forms has denominators at
+most~$\beta_\ell$ at~$\iota$ for the good idempotent \m{e_0(D)}, and, for every pair~$p$ of rank one for~$j$, the line
+\m{\CC\,\triv{p}{\theta_{\ell,\iota}^{\,j}}} has denominators at most~$\beta_\ell$ at~$\iota$ for the label idempotent
+\m{\idem(X-1)}; (3) for every lift index~$j$, every ramified pair~$p$ and every sign~$s$, the family
+\m{(\ell,\iota)\mapsto\rat{p}{\theta_{\ell,\iota}^{\,j}}{s}^{-1}} has height at most~$x^{999}$. In~(3) the sign stands in
+the third slot of the ratio: the twist enters the numerator as \m{(\theta_{\ell,\iota}^{\,j})^{s}}.
 \end{setting}
 
 \subsection*{Definitions: index sets and characters}
@@ -526,9 +561,9 @@ In Setting~\ref{set:data}:
 $o$ absent, the character \m{\mu^{0}_j\,\upsilon^{\,n_j}}, \m{n_j=j+\lfloor(t(D)-11m-1)/2\rfloor}, of weight
 \m{\tau\mapsto n_j-w_j(\tau)}, with the integer \m{\heckeCount{D}}; for a sign~$s$, the character
 \m{\upsilon^{-\eSign{D}{s}}\chi_D^{\,sj}}, of weight \m{-\eSign{D}{s}}, with the integer \m{\eSign{D}{s}}.
-\item For a lift index~$j$ and a twist~$\vartheta$, with $T$ the set of the chosen primes and of the primes in
-\m{Q(\vartheta)},
-\[\heckeValueProd{j}{\vartheta}=\prod_{o}\LP{T}{(\nu_o\,\vartheta^{\,s_o})^{-1}}{z_o},\]
+\item For a lift index~$j$ and a twist~$\vartheta$, with \m{T_\vartheta} the set of the chosen primes and of the
+primes in \m{Q(\vartheta)},
+\[\heckeValueProd{j}{\vartheta}=\prod_{o}\LP{T_\vartheta}{(\nu_o\,\vartheta^{\,s_o})^{-1}}{z_o},\]
 the product over the three line pairs \m{(\nu_o,z_o)=\linePair{j}{o}}, with \m{s_o=-1} for the sign~$-1$ and
 \m{s_o=+1} otherwise.
 \item For a lift index~$j$, a function~$\zeta$ from \m{\SmallClasses{D}} to coordinate vectors of
@@ -547,11 +582,13 @@ with auxiliary pair~$O_X$, $\vartheta$ a twist and $F$ a function from \m{\UU(I_
 where $M_D$ is the chosen group order of~$D$, $\delta_q$ the denominator bound of~$q$, \m{N(Q(\vartheta))} the product
 of the norms of the primes in \m{Q(\vartheta)}, $\Gamma$ the level of the auxiliary pair of the $L$-value datum
 of~$q$ at~$\vartheta$, and the bracket the Gram form with the vector~$1$.
-\textup{(ii)} For finite-dimensional inner product spaces $T$ and~$V$, \m{k\in\CC}, a subspace~$L$ of~$V$ and a
-linear map \m{\operatorname{gl}\colon T\to V}, the \kw{compressed Gram operator}
-\m{\compressedGramOp{k}{L}{\operatorname{gl}}} is the endomorphism
-\m{z\mapsto k\cdot\operatorname{pr}_L(\operatorname{gl}(\operatorname{gl}^{*}z))} of~$L$, with \m{\operatorname{pr}_L} the orthogonal
-projection.
+
+
+\textup{(ii)} For finite-dimensional inner product spaces $T$ and~$V$, \m{\varkappa\in\CC}, a subspace~$L$ of~$V$
+and a linear map \m{\operatorname{gl}\colon T\to V}, the \kw{compressed Gram operator}
+\m{\compressedGramOp{\varkappa}{L}{\operatorname{gl}}} is the endomorphism
+\m{z\mapsto\varkappa\cdot\operatorname{pr}_L(\operatorname{gl}(\operatorname{gl}^{*}z))} of~$L$, with \m{\operatorname{pr}_L} the
+orthogonal projection.
 \end{definition}
 \leanline{\lean{xiSum}\sep \lean{compressedGramOp}}
 
@@ -566,8 +603,8 @@ twists of~$D$ to~$\CC$, a finite-dimensional inner product space \m{\operatornam
 of \m{\alift_D(\vartheta,j)} to \m{\Mgood{j}}: (i) \m{\gamma(\vartheta)\ne0} and
 \m{|\gamma(\vartheta)/\gamma(1)|^2=\heckeValueProd{j}{\vartheta}/\heckeValueProd{j}{1}}; (ii)
 \m{u_\vartheta^{*}\circ\operatorname{gl}_\vartheta=\gamma(\vartheta)A}; (iii) $A$ is surjective; (iv)
-\m{\operatorname{gl}_\vartheta(A^{*}y)} is tested against the orthogonal complement of the image of~$u_\vartheta$, for every
-\m{y\in\Mgood{j}}; (v) if $\ell$ is prime to the norms of the primes in \m{Q(\vartheta)}, \m{\varphi\colon\CC\to\CC_\ell}
+\m{\operatorname{gl}_\vartheta(A^{*}y)} is tested against the orthogonal complement of the image of~$u_\vartheta$ for the
+good idempotent \m{e_0(D)}, for every \m{y\in\Mgood{j}}; (v) if $\ell$ is prime to the norms of the primes in \m{Q(\vartheta)}, \m{\varphi\colon\CC\to\CC_\ell}
 is an embedding and every \m{\overline{\zeta_a}} has gauge at most~$1$ at the representative of its class for
 \m{\varphi\circ\mathrm{conj}}, then \m{\operatorname{gl}_\vartheta(\zeta)} is integral at~$\varphi$; (vi)
 \m{\mathsf{h}_D(j)\cdot\nsq{\operatorname{gl}_1(\zeta)}{\sigma}\le\exp(2rB_0(D))\sum_a\|\sigma(\zeta_a)\|^2} for all
@@ -575,16 +612,18 @@ is an embedding and every \m{\overline{\zeta_a}} has gauge at most~$1$ at the re
 and~D and Proposition~\ref{p:lineint} of this note; there is no circle, since these do not use it.
 
 \vspace{3pt}\textbf{Input 2} (the same note).\enspace (a) Crude bounds: for finite index sets \m{\ix L}, \m{\ix N} and
-an integer \m{d\ge0} there is \m{c\ne0} such that $c$ times every kernel of the definite pair
-\m{(I_{\ix L},I_{\ix N})} over \m{E(D)}, with a homogeneous polynomial of degree~$d$, a modulus~$\mathfrak{m}$ containing
+an integer \m{\mathsf{d}\ge0} there is \m{c\ne0} such that $c$ times every kernel of the definite pair
+\m{(I_{\ix L},I_{\ix N})} over \m{E(D)}, with a homogeneous polynomial of degree~$\mathsf{d}$, a
+modulus~$\mathfrak{m}$ containing
 \m{q\,g(D)^2} and a datum integral away from~$q$, is integral at the primes prime to~$q$ at points integral above
 them, and has conjugates of size at most \m{e^{x_1}} times bounds for the datum and the polynomial, when
-\m{q=1}, \m{d\le g(D)} and the ranks are at most \m{40k(D)}. (b) The depth of an indicator jet: for orders
-\m{\mathbf{m}_\tau} with \m{w_D(\tau)\le\mathbf{m}_\tau\le w_D(\tau)+x^{42}} there is \m{t\ne0}, with conjugates at most
-\m{\exp(f(D)mb/k(D))}, such that for every prime~$\ell$ and embedding some Taylor coefficient of total orders
-\m{\mathbf{m}_\tau}, of an indicator datum of \m{(I_1,I_{12})} modulo~\m{\bar\pi_g}, times
-\m{\kappa_0^{12}\prod_\tau\mathbf{m}_\tau!/t}, has $\ell$-adic absolute value at least \m{\ell^{-F_D(\ell)}}, with
-\m{F_D(\ell)} the forced part. (c) The conjugates of the normalised value of a flat pair at the trivial twist are at
+\m{q=1}, \m{\mathsf{d}\le g(D)} and the ranks are at most \m{40k(D)}. (b) The depth of an indicator jet: for orders
+\m{\mathbf{m}=(\mathbf{m}_\tau)} with \m{w_D(\tau)\le\mathbf{m}_\tau\le w_D(\tau)+x^{42}} there is \m{\tm\in\CC},
+\m{\tm\ne0}, with conjugates at most \m{\exp(f(D)mb/k(D))}, such that for every prime~$\ell$ and every embedding
+\m{\varphi\colon\CC\to\CC_\ell} some Taylor coefficient of total orders \m{\mathbf{m}_\tau}, of an indicator datum of
+\m{(I_1,I_{12})} modulo~\m{\bar\pi_g}, in the Taylor series scaled by \m{\bar\pi_g} times the jet scale, times
+\m{\kappa_0^{12}\prod_\tau\mathbf{m}_\tau!/\tm}, has \m{|\varphi(\,\cdot\,)|_\ell\ge\ell^{-F_D(\ell)}}, with \m{F_D(\ell)} the
+forced part and \m{\kappa_0} the vacuum scale. (c) The conjugates of the normalised value of a flat pair at the trivial twist are at
 most \m{\exp(x^{34})}. (d) For an $L$-value datum and a monomial of the jet degrees there is an integral
 coordinate vector whose harmonic polynomial is the monomial times a ratio of factorials, fixed by the matrices
 that fix the columns of the monomial. (e) Point forms, their pairing and descent; the vanishing of periods for
@@ -603,27 +642,52 @@ is generated tuple by tuple.}
 each $y'_{\ell,\iota}$ is $y_{\ell,\iota}$ times an integer power of the norm of the modulus of \m{\theta_{\ell,\iota}}, for a
 fit family, a height bound for~$y$ holds for~$y'$ (unit \emph{Exchange}).
 \textbf{Unit \emph{Exchange}.}\enspace The pairs \m{O_D(\vartheta,j)} fit their parameters; adjoint lifts are
-injective; \m{\rat{p}{\vartheta}=\ialg{p}{\vartheta}/\ialg{p}{1}}; the logarithm of the conjugates of the squared norm of a
+injective; \m{\rat{p}{\vartheta}{s}} is real and not zero, and \m{\rat{p}{\vartheta}{1}=\ialg{p}{\vartheta}/\ialg{p}{1}}; the
+logarithm of the conjugates of the squared norm of a
 trivial lift; the pairing of a trivial lift with kernel forms; rank bounds; bounds for the weights of the kernels.
 \textbf{Unit \emph{Selmer}.}\enspace The definition of a fit family; for a tested form, the orthogonal
 projection to a subspace killed by a Hecke test does not increase the norms \m{\nsq{\cdot}{\sigma}}; the lifts of
 eigenforms are killed by the Hecke test; an auxiliary pair has infinitely many split places off its level; the
-rank-one bound of a fit family for a line.
+descent of a form of an auxiliary pair \m{O_D(\vartheta,j)} is a form of principal level on \m{W_j(D)}. The
+\emph{rank-one bound}: if the line \m{\CC\,\triv{p}{\vartheta}} of a trivial lift has denominators at most~$\beta$
+at~$\iota$ for \m{\idem(X-1)}, the class stabilisers of \m{\UU(1)} at the chosen level are trivial, and $\Xi$,
+$\Xi'$ are test forms at~$\ell$ (Lemma~\ref{l:test}\,(c)), then
+\m{|\iota(\clU\ip{\Xi}{\operatorname{pr}\Xi'})|_\ell\le e^{\beta}}, with $\operatorname{pr}$ the orthogonal projection to the line and
+\m{\clU} the number of classes of \m{\UU(1)} at that level.
 \textbf{Units \emph{Data}, \emph{Columns}, \emph{Trace}, \emph{Filling}.}\enspace Comparison of monomials in the
 scales; free levels and class numbers; \m{\operatorname{Ask}_D(y,\tau)} as a sum over primes of local terms; equal
 dimensions of good forms; the line coordinates as coefficients of the product of determinants in the positive
-letters.
-\textbf{Background library.}\enspace A cusp form is large only away from the cusps (Siegel's argument; the
-catalogue gives C.~Poor and D.~Yuen, \emph{Linear dependence among Siegel modular forms}, Math.\ Ann.\ 318 (2000),
-Thm~1.3, relation: a weaker form): a non-zero rapidly decreasing holomorphic automorphic form has a point~$g$ with
-\m{|F|\le2|F(g)|} everywhere and first minimum bounded below wherever \m{|F|\ge|F(g)|}. The reproducing formula for
-theta kernels in the stable range (the catalogue gives S.~Böcherer, Math.\ Z.\ 183 (1983), and J.-S.~Li, J.\ reine
-angew.\ Math.\ 428 (1992), place not confirmed, relation: a special case in dual form). Auerbach's lemma (the
-catalogue gives H.~Auerbach's thesis and P.~Wojtaszczyk, \emph{Banach spaces for analysts}, place not confirmed).
-A short basis of a lattice (the catalogue gives Lagarias, Lenstra and Schnorr, Combinatorica 10 (1990), place not
-confirmed, relation: a weaker form). Holomorphic minors as coefficients of discrete series; Poisson summation for
-theta kernels; the dual isometry of Weyl modules (Fulton and Harris, \emph{Representation theory}, §15.5, as cited
-in the artifact); the Fock model. References to be confirmed where the catalogue has none.}
+letters.}
+
+\inputbox{\textbf{Inputs from the background library.} Each is used where it is named. The references are those of
+the handout's catalogue, with the relation that its second reading allows.
+
+\vspace{4pt}A cusp form is large only away from the cusps: a non-zero rapidly
+decreasing holomorphic automorphic form has a point~$g$ with \m{|F|\le2|F(g)|} everywhere and first minimum bounded
+below wherever \m{|F|\ge|F(g)|}. (The authors call this Siegel's argument. The catalogue gives C.~Poor and D.~Yuen,
+\emph{Linear dependence among Siegel modular forms}, Math.\ Ann.\ 318 (2000), §1, Theorems 1.2--1.3, as an analogue
+for Siegel modular forms; the unitary estimate and its constant have not been located in the literature.) The
+reproducing formula for theta kernels in the stable range is the artifact's own: the catalogue locates the
+classical basis theorem (S.~Böcherer, \emph{Über die Fourier--Jacobi-Entwicklung Siegelscher Eisensteinreihen},
+§1, Theorem~III, p.~22) and a unitary pairing in the stable range (J.-S.~Li, \emph{Non-vanishing theorems for the
+cohomology of certain arithmetic quotients}, §2, Theorem~2.1, p.~184), and the finite unitary formula used here is
+distinct from both. Auerbach's lemma, in the form used here (a field with an embedding into a normed field, a
+compact separating family of linear forms, the coordinates chosen in the family), is a determinant-maximisation
+extension of the classical lemma (Schlumprecht, course notes for Functional Analysis~I, Theorem~1.5.1); this
+form has not been located in a published source. A short basis of a lattice (W.~Banaszczyk, Math.\ Ann.\ 296
+(1993), Theorems (2.1)--(2.2), pp.~631--632; J.~C.~Lagarias, H.~W.~Lenstra and C.~P.~Schnorr, \emph{Korkin--Zolotarev
+bases and successive minima of a lattice and its reciprocal lattice}, Theorems 2.4--2.5, pp.~336--337; the formal
+radius is weaker than the one these give). The Cauchy--Schwarz inequality for conjugated pairings of forms,
+\m{|\sigma\ip{y}{x}|\le\|x\|_{\sigma}\,\|y\|_{\tilde\sigma}} with
+\m{\tilde\sigma=\mathrm{conj}\circ\sigma\circ\mathrm{conj}} and \m{\|x\|_\sigma} the square root of \m{\nsq{x}{\sigma}}.
+Holomorphic minors as coefficients of discrete series, their circle mean and their reproducing identity; Poisson
+summation for theta kernels; the dual isometry of Weyl modules (Fulton and Harris, \emph{Representation theory},
+§15.5, as cited in the artifact); the Fock model. References to be confirmed where the catalogue has none.}
+
+\subhead{Status of the proofs.} A proof headed ``Proof'' is complete relative to the inputs it names. A proof
+headed ``an account of the formal proof'' says which results combine, in the order of the formal proof, and does
+not verify the estimates, the exponents and the normalising constants; an ``outline'' does less and says what it
+leaves out.
 
 \sect{Proofs}{s:proofs}
 \subsection*{The line: counts, coordinates, arithmetic}
@@ -635,12 +699,14 @@ In Setting~\ref{set:data}, let $j$ be a lift index and $\tau$ an infinite place.
 \m{|\DetIx{j}{\tau}|\le b_1+b_2+\mathsf{g}(D)+m\,\mathsf{g}(D)}, with $b_1$, $b_2$ the auxiliary bounds of the data.
 \item The maps \m{i\mapsto\negIx{j}{i}} and, for every~$h$, \m{i\mapsto\posRowIndex{j}{h}{i}} are injective, the sign
 \m{\padSigns{j}} is $-1$ on the values of the first and $+1$ on the values of the second.
-\item The integers \m{\lfloor t(D)/2\rfloor-\operatorname{sgn}(\sigma)(\varsigma_q+w_j)}, \m{0\le q<r}, at the embeddings~$\sigma$
-of \m{E(D)}, with \m{\varsigma_q} the row parameters and \m{\operatorname{sgn}(\sigma)=\pm1} according as $\sigma$ belongs
-to the CM type or not, satisfy the jump conditions of a row type for \m{(r,t(D))} of the unit \emph{Filling}.
+\item The integers
+\m{\lfloor t(D)/2\rfloor-\operatorname{sgn}(\sigma)\bigl(\rowpar{\tau_\sigma}{q}+w_j(\tau_\sigma)\bigr)}, \m{0\le q<r}, at the
+embeddings~$\sigma$ of \m{E(D)}, with \m{\tau_\sigma} the infinite place of~$\sigma$, \m{\rowpar{\tau_\sigma}{q}} the row
+parameters of the data and \m{\operatorname{sgn}(\sigma)=\pm1} according as $\sigma$ belongs to the CM type or not, satisfy
+the jump conditions of a row type for \m{(r,t(D))} of the unit \emph{Filling}.
 \end{enumerate}
 \end{lemma}
-\begin{proof}
+\begin{proof}[Proof\acct]
 (a) and~(b): the number of columns of height below \m{k(D)+j-1} is a telescoping sum of the row parameters of the
 weight of~$W_j(D)$; adding the \m{\mathsf{g}'(D)} further elements and the exponent gives the weight, and the bound
 follows from~(a). (c) and~(d) are case distinctions on the definitions, with the inequalities between the scales
@@ -661,13 +727,14 @@ columns with polynomial coefficients.
 \m{\operatorname{pol}_{\kappa^{+}}(y)} is the image of \m{\Delta(j,i,Y)} under evaluation at~$z$ followed by~$\varphi$; and if
 \m{|\varphi(\tau(Y_{ab}))|\le g(D)^4} for all $\tau$, $a$, $b$ and \m{|\varphi(z_x)|\le g(D)^4} for all~$x$, then
 \m{\|y\|^2_{\kappa^{+}}\le\bigl(g(D)^{9}\bigr)^{31m\sum_\tau|\DetIx{j}{\tau}|}}.
-\item There are an integer \m{d\ge0} with \m{d\le31m\sum_\tau|\DetIx{j}{\tau}|} and an integer~$H$ with
-\m{0<H\le(d^d)^3} such that for every line choice~$i$, every~$Y$ and every standard filling~$l$ the polynomial
-\m{Q=H\cdot\linePolyCoords{j}{i}{Y}_l} is homogeneous of degree~$d$ and has its coefficients in every subring
+\item There are an integer \m{\mathsf{d}\ge0} with \m{\mathsf{d}\le31m\sum_\tau|\DetIx{j}{\tau}|} and an integer~$H$
+with \m{0<H\le(\mathsf{d}^{\mathsf{d}})^3} such that for every line choice~$i$, every~$Y$ and every standard
+filling~$l$ the polynomial \m{Q=H\cdot\linePolyCoords{j}{i}{Y}_l} is homogeneous of degree~$\mathsf{d}$ and has its
+coefficients in every subring
 of~$\CC$ that contains all the numbers \m{\tau(Y_{ab})}.
 \end{enumerate}
 \end{lemma}
-\begin{proof}
+\begin{proof}[Proof\acct]
 (a) Compare coefficients after evaluating the coefficient polynomials at every point: the coordinates in the first
 columns are defined by Fock duality so that the polynomial of the coordinate vector is the given polynomial, once
 it is semi-invariant of weight~$\kappa^{+}$, which the product of determinants is (unit \emph{Filling}).
@@ -694,13 +761,13 @@ vector \m{y=\overline{c\cdot\lineMultiplier{\vartheta}{j}{i}{h}{\cdot}}} satisfi
 Moreover, for a tame character~$\vartheta$ and an integer \m{c'\ge0}, the integer \m{N(Q(\vartheta))\,g(D)^{c'}} lies in the
 modulus \m{\mathfrak{m}_D(\vartheta,c')}.
 \end{proposition}
-\begin{proof}
+\begin{proof}[Proof\acct]
 The last assertion: \m{\bar\pi_g^{c'}} divides \m{g(D)^{c'}}, and the product of the norms of the primes of
 \m{Q(\vartheta)} lies in their product. For the rest, the line multiplier is a class sum of products of three theta
 kernels of definite pairs: the kernel inside \m{\cXi{m}{\twistedChi{\vartheta}{j}}{c}}, the constant of the negative
 definite space~$I_j^{-}$, whose kernel is the conjugate of a kernel of~$I_j$ up to a number of absolute value~$1$,
-and the kernel of~$L^{+}$ with the line coordinates. Take $d$ and~$H$ from Lemma~\ref{l:coords}\,(c) and the three
-constants of Input~2\,(a) for these pairs, with degrees $0$, $0$ and~$d$; let $c$ be their product with $H$, with
+and the kernel of~$L^{+}$ with the line coordinates. Take $\mathsf{d}$ and~$H$ from Lemma~\ref{l:coords}\,(c) and the three
+constants of Input~2\,(a) for these pairs, with degrees $0$, $0$ and~$\mathsf{d}$; let $c$ be their product with $H$, with
 the square of the chosen group order and with the number of absolute value~$1$. (i) The moduli contain
 \m{N(Q(\vartheta))g(D)^2}, the data are integral away from \m{N(Q(\vartheta))}, and class representatives can be moved
 by rational points to points integral above~$p$, the kernels changing by the rule for rational points; the
@@ -732,12 +799,12 @@ for~$o$ and have holomorphic gap \m{300\nu}, and \m{|k_\tau(i)|\le B} for all $\
 \end{setting}
 
 \begin{lemma}[integrals against holomorphic minors]\label{l:mh}
-In Setting~\ref{set:iso}: \m{\int|\operatorname{mh}_k(h)|^2dh>0}, the integral over \m{G_\infty(s)}; and for every continuous
-function~$A$ on \m{G_\infty(s)}, every real~$C$ and every integer \m{N\le6\nu} with \m{|A(h)|\le C\|h\|^{N}} for
-all~$h$, the product \m{A\cdot\operatorname{mh}_w} is integrable and
-\m{\bigl|\int A(h)\operatorname{mh}_w(h)\,dh\bigr|\le C\,B^{7\nu}\int|\operatorname{mh}_k(h)|^2dh}.
+In Setting~\ref{set:iso}, the integral \m{\int|\operatorname{mh}_k(h)|^2dh} over \m{G_\infty(s)} is positive; and for
+every continuous function~$A$ on \m{G_\infty(s)}, every real number~$C$ and every integer \m{N\le6\nu} such that
+\m{|A(h)|\le C\|h\|^{N}} for all~$h$, the product \m{A\cdot\operatorname{mh}_w} is integrable and
+\[\Bigl|\int A(h)\operatorname{mh}_w(h)\,dh\Bigr|\le C\,B^{7\nu}\int|\operatorname{mh}_k(h)|^2dh .\]
 \end{lemma}
-\begin{proof}
+\begin{proof}[Proof\acct]
 The holomorphic minors are coefficients of discrete series; their $L^2$ norms are inverses of formal degrees,
 hence positive and comparable for $w$ and~$k$ up to powers of~$B$, and their decay integrates the polynomial
 growth of~$A$ (library).
@@ -754,17 +821,24 @@ holomorphic of weight \m{k-w}, with \m{|K(h)-K_0(h)|\le\|h\|^{6\nu}\varepsilon} 
 \end{proposition}
 \begin{proof}
 By Lemma~\ref{l:mh}, \m{\operatorname{mh}_w} is integrable and \m{I=\int|\operatorname{mh}_k|^2>0}. For an angle~$\vartheta$ let
-\m{z_\vartheta} be $z$ times the element \m{e^{i\vartheta o}} of the diagonal torus at infinity. By holomorphy,
+\m{z_\vartheta} be $z$ times the element \m{e^{i\vartheta o}} of the diagonal torus at infinity, with entries
+\m{e^{i\vartheta o(i)}}, and let \m{\chi_\vartheta=\prod_\tau\prod_{i\in\ix n}e^{i\vartheta\,o(i)\,k_\tau(i)}}, a number of
+absolute value~$1$: the conjugate of the factor of the library's circle mean. By holomorphy,
 \m{|F(z_\vartheta)|=|F(z)|}, so the hypothesis gives for every angle a function \m{K^{(\vartheta)}}, holomorphic of weight
 \m{k-w}, within \m{\|h\|^{6\nu}\varepsilon} of~$K_0$, with
-\[\int W_\vartheta(h)\,K^{(\vartheta)}(h)\,dh=0,\qquad W_\vartheta(h)=\overline{F(z_\vartheta(h,1))}\,\operatorname{mh}_w(h).\]
-Hence \m{\int W_\vartheta K^{(0)}=\int W_\vartheta(K^{(0)}-K^{(\vartheta)})}, and since \m{|F|\le2|F(z)|} and
+\[\int W_\vartheta(h)\,K^{(\vartheta)}(h)\,dh=0,\qquad
+W_\vartheta(h)=\chi_\vartheta\,\overline{F(z_\vartheta(h,1))}\,\operatorname{mh}_w(h);\]
+the constant~\m{\chi_\vartheta} does not change the vanishing. Hence
+\[\int W_\vartheta K^{(0)}=\int W_\vartheta\,\bigl(K^{(0)}-K^{(\vartheta)}\bigr),\]
+and since \m{|F|\le2|F(z)|} and
 \m{|K^{(0)}-K^{(\vartheta)}|\le2\|h\|^{6\nu}\varepsilon}, Lemma~\ref{l:mh} with \m{N=6\nu} bounds this by
-\m{4\varepsilon|F(z)|B^{7\nu}I}, for every angle. On the other hand the mean of \m{W_\vartheta(h)} over the angles is, by
-holomorphy of weight~$k$, \m{\overline{F(z)}} times the conjugate of \m{\operatorname{mh}_k(h)}, and the function
-\m{K^{(0)}\operatorname{mh}_w} is holomorphic of weight~$k$, so its integral against the conjugate of \m{\operatorname{mh}_k} is
-its value at~$1$ times~$I$. Exchanging the two integrals gives
-\m{|F(z)|\,|K^{(0)}(1)|\,I\le4\varepsilon|F(z)|B^{7\nu}I}, that is \m{|K^{(0)}(1)|\le4\varepsilon B^{7\nu}}; and
+\m{4\varepsilon|F(z)|B^{7\nu}I}, for every angle. On the other hand, by the circle mean for holomorphic functions of
+weight~$k$ (library), the mean over the angles of \m{\chi_\vartheta\,\overline{F(z_\vartheta(h,1))}} is
+\m{\overline{F(z)}\cdot\overline{\operatorname{mh}_k(h)}}, so that the mean of \m{W_\vartheta(h)} is
+\[\overline{F(z)}\cdot\overline{\operatorname{mh}_k(h)}\cdot\operatorname{mh}_w(h).\]
+The function \m{K^{(0)}\operatorname{mh}_w} is holomorphic of weight~$k$, so by the reproducing identity (library) its
+integral against the conjugate of \m{\operatorname{mh}_k} is its value at~$1$ times~$I$. Exchanging the two integrals
+gives \m{|F(z)|\,|K^{(0)}(1)|\,I\le4\varepsilon|F(z)|B^{7\nu}I}, that is \m{|K^{(0)}(1)|\le4\varepsilon B^{7\nu}}; and
 \m{|K_0(1)|\le|K^{(0)}(1)|+\varepsilon}.
 \end{proof}
 \leanline{\lean{isolation}}
@@ -773,8 +847,8 @@ its value at~$1$ times~$I$. Exchanging the two integrals gives
 Let $E$ be a field with a CM type, \m{\ix n}, \m{\ix n'} finite non-empty index sets, $S$ and~$T$ hermitian spaces
 with index sets \m{\ix n}, \m{\ix n'}.
 \begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
-\item If \m{N\ge1} is an integer in the different of~$E$, then
-\m{\lambda_1(S)\,\lambda_1(T)/(c_N\,|\ix n'|\,|\ix n|)\le\lambda_1(\operatorname{Hom}(S,T))}, with \m{c_N=6N(f_E|\ix n|)^2}.
+\item If \m{N\ge1} is an integer in the different of~$E$, then, with \m{c_N=6N(f_E|\ix n|)^2},
+\[\frac{\lambda_1(S)\,\lambda_1(T)}{c_N\,|\ix n'|\,|\ix n|}\le\lambda_1(\operatorname{Hom}(S,T)).\]
 \item Let $E$ have Weil data, $\mathfrak{m}$ a modulus, $t$ a matrix over \m{\OEr/\mathfrak{m}}, with trace character
 \m{\psi'_t(y)=\psi'(\operatorname{tr}(yt))}, $v$ and~$w$ Fock vectors and $z$ an adelic vector of
 \m{\operatorname{Hom}(S,T)}. Then the pairing of the datum \m{v\otimes\psi'_t} with the Heisenberg translate by~$z$ of
@@ -785,22 +859,28 @@ a modulus, $g$, $h$ points, \m{c\in E} non-zero such that $c$ times the idele of
 integral for every integral adele~$z$ that reduces to~$0$ modulo~$\mathfrak{m}$, \m{\mu>0} a real number with
 \m{\mu\,|\tau(c)|\le\sqrt{2\pi\operatorname{Im}\tau(\jmath)}\cdot\lambda_1(\operatorname{Hom}(S^{g},T^{h}))} at every infinite
 place~$\tau$, with $\jmath$ the purely imaginary element of the Weil data and \m{S^{g}}, \m{T^{h}} the spaces moved
-by the points, \m{q>f_E|\ix n'||\ix n|} an integer, and $Q$ a polynomial, homogeneous of degree~$d$ for real
+by the points, \m{q>f_E|\ix n'||\ix n|} an integer, and $Q$ a polynomial, homogeneous of degree~$\mathsf{d}$ for real
 scalars, with Fock vector \m{v=v_Q}. Then there is a function~$\Psi$ on matrices modulo~$\mathfrak{m}$ such that for
 all \m{u\in G_\infty(s)}, \m{u'\in G_\infty(s')}
-\[\Bigl|\tk{S}{T}{a}{b}{\mathfrak{m}}{\Psi}{Q}\bigl(g\,(u,1),h\,(u',1)\bigr)-\bigl\langle v,\omega^{\infty}_{\gamma,\gamma'}(u,u')v\bigr\rangle\Bigr|
-\le\|u'\|^{3q}\Bigl(\frac{100(d+2q)}{\mu^2}\Bigr)^{q}|\ip{v}{v}|\,\|u\|^{3q}.\]
+\begin{multline*}
+\Bigl|\tk{S}{T}{a}{b}{\mathfrak{m}}{\Psi}{Q}\bigl(g\,(u,1),h\,(u',1)\bigr)-\bigl\langle v,\omega^{\infty}_{\gamma,\gamma'}(u,u')v\bigr\rangle\Bigr|\\
+\le\|u'\|^{3q}\Bigl(\frac{100(\mathsf{d}+2q)}{\mu^2}\Bigr)^{q}|\ip{v}{v}|\,\|u\|^{3q}.
+\end{multline*}
 \end{enumerate}
 \end{lemma}
-\begin{proof}
-(a) A short basis~$Y$ of the lattice of~$S$ (library) turns a non-zero vector~$z$ of \m{\operatorname{Hom}(S,T)} into the
-vectors \m{zY_k} of~$T$, one of them non-zero, of length at least \m{\lambda_1(T)} and at most \m{|z||Y_k|}. (b) Lift~$t$,
+\begin{proof}[Proof\acct]
+(a) The first minima are cut off at~$1$. So it suffices to show that the left side is at most~$1$ and at most the
+length of every non-zero vector~$z$ of the lattice of \m{\operatorname{Hom}(S,T)}. The first holds because
+\m{\lambda_1(S)\le1}, \m{\lambda_1(T)\le1} and \m{c_N\,|\ix n'|\,|\ix n|\ge1}. For the second, a short basis~$Y$ of the
+lattice of~$S$ (library), with vectors of length at most \m{c_N/\lambda_1(S)}, turns~$z$ into the vectors \m{zY_k}
+of~$T$, one of them non-zero, of length at least \m{\lambda_1(T)} and at most \m{|z||Y_k|}; the factor
+\m{|\ix n'|\,|\ix n|} allows for the comparison of the norms of vectors and of matrices in the formal text. (b) Lift~$t$,
 write the Heisenberg translate of the named datum as a translate of the character, and compute place by place.
 (c) Let $\Psi$ be the average over~$t$ of \m{\overline{\theta[\psi'_t,Q](g,h)}\,\psi'_t}. By Poisson summation the
 kernel is a sum over the lattice of \m{\operatorname{Hom}(S^{g},T^{h})} of archimedean matrix coefficients, computed
 by~(b); the term of the vector~$0$ is \m{\ip{v}{\omega^{\infty}_{\gamma,\gamma'}(u,u')v}}. The other lattice vectors have
 length at least the first minimum, hence at least~$\mu$ in the normalised coordinates, and the Gaussian decay of
-the matrix coefficients of a Fock vector of degree~$d$, summed over the lattice with \m{q>f_E|\ix n'||\ix n|},
+the matrix coefficients of a Fock vector of degree~$\mathsf{d}$, summed over the lattice with \m{q>f_E|\ix n'||\ix n|},
 gives the error.
 \end{proof}
 \leanline{\lean{firstMinimummulle}\sep \lean{dataInnertraceChar}\sep \lean{normmodKernelsub}}
@@ -816,7 +896,7 @@ of every level, and there is an order~$o$, positive first for the signs of \m{I_
 \item \m{\carrier{E}{m}\ne0}.
 \end{enumerate}
 \end{lemma}
-\begin{proof}
+\begin{proof}[Proof\acct]
 (a) By the carrier identity (Input~3) the carrier is a finite combination of theta kernels of the pair
 \m{(I_{2m,m},I_{3m})} with datum \m{\chi\circ\det}, which are rapidly decreasing (the datum is supported on invertible
 matrices), invariant under every level through the tame character, and holomorphic of the stated weight because
@@ -837,7 +917,12 @@ such that for every \m{g\in\UU(W_j(D))(\AAA)} with \m{(5b\cdot b^{23})^{-1/2}\le
 complex numbers \m{c_a}, \m{a\in\MemberIndex{j}}, with
 \[\Bigl|\sum_{a}c_a\,\fNatural{j}{a}{g\,(y,1)}-K_0(y)\Bigr|\le\|y\|^{6\nu_D}\,\varepsilon\qquad\text{for all archimedean }y.\]
 \end{proposition}
-\begin{proof}
+\begin{proof}[Outline of the proof]
+The outline follows the formal proof step by step and names the result that each step uses. It does not reproduce
+the estimates: the lower bound for the first minimum of the lattice of homomorphisms, the size of the
+constant~$\varepsilon$ and the inequality between \m{\varepsilon(5b)^{7\nu_D}} and \m{|K_0(1)|} are closed in the formal
+text by the inequalities between the scales and were not verified here.
+
 \emph{The main term.} The padded space \m{W_j(D)\oplus I_j^{-}\oplus I_{3m-j}} has $m$ negative signs
 (Lemma~\ref{l:counts}\,(c)). By Lemma~\ref{l:carrier} the carrier is rapidly decreasing, holomorphic of weight
 \m{(0,3m)} and not zero; by the library's result on near maxima it has a point~$x$ with
@@ -846,8 +931,8 @@ complex numbers \m{c_a}, \m{a\in\MemberIndex{j}}, with
 of the Fock vector of the line polynomial is a product of
 holomorphic minors in each variable, with weights determined by the exponents of the line polynomial and
 Lemma~\ref{l:counts}\,(a). Put
-\[K_0(y)=\int\carrier{E(D)}{m}(x\,u)\,\operatorname{mh}_\varsigma(u)\,C(u,y)\,du,\]
-the integral over the archimedean group of signature \m{(2m,m)}, with \m{\varsigma} the weight
+\[K_0(y)=\int\carrier{E(D)}{m}(x\,u)\,\operatorname{mh}_{w^{\circ}}(u)\,C(u,y)\,du,\]
+the integral over the archimedean group of signature \m{(2m,m)}, with \m{w^{\circ}} the weight
 \m{(-\mathsf{g}'(D),6m+1)} on the two blocks. It is bounded, by Lemma~\ref{l:mh} with \m{N=0}. At \m{y=1} the integrand is a
 holomorphic function times the conjugate of a holomorphic minor of its weight, and the integral is its value at
 \m{u=1} times \m{\int|\operatorname{mh}|^2>0}: \m{K_0(1)} is a positive multiple of \m{\carrier{E(D)}{m}(x)C(1,1)\ne0}.
@@ -858,7 +943,7 @@ minimum at~$x$ from the near maximum and the hypothesis on~$g$, the lattice of
 Lemma~\ref{l:sparse}\,(c), for the pair of the carrier space and the padded space, the polynomial \m{\linePoly{j}} and
 \m{q=2\nu_D}, gives a function~$\Psi$ modulo~\m{\bar\pi_g^{2}} whose kernel differs from \m{C(u,y)} by at most
 \m{\|u\|^{6\nu_D}\|y\|^{6\nu_D}} times a small constant. The reproducing formula (library), for the pair of the carrier
-space and \m{I_{\FlatIndex{D}}}, expresses the pairing of the rapidly decreasing form \m{\carrier{E(D)}{m}\operatorname{mh}_\varsigma}
+space and \m{I_{\FlatIndex{D}}}, expresses the pairing of the rapidly decreasing form \m{\carrier{E(D)}{m}\operatorname{mh}_{w^{\circ}}}
 with theta kernels as a finite combination, with coefficients \m{c(i_2)}, of the kernels with the determinant
 polynomials of the short rows of the line choices~$i_2$. The product of~$\Psi$ with the indicator of an inclusion
 matrix is a finite combination of trace characters \m{\psi'_{i_1}}, with coefficients \m{f(i_1)} (finite Fourier
@@ -871,7 +956,7 @@ replacing this kernel by \m{C(u,y)} costs, by Lemma~\ref{l:mh} with \m{N=6\nu_D}
 \leanline{\lean{existsfNaturalapprox}}
 
 \subsection*{Theorems C and D}
-\begin{proof}[Proof of Theorem C]
+\begin{proof}[Proof of Theorem C\acct]
 Fix~$j$. The padded space \m{W_j(D)\oplus I_j^{-}\oplus I_{3m-j}\oplus I_{\FlatIndex{D}}\oplus S}, regrouped by
 \m{\regroupEquiv{j}}, has the block signs of a bijection built from \m{\negIx{j}{\cdot}} and the row indices
 (Lemma~\ref{l:counts}\,(c)), and for every twist~$\vartheta$ the characters satisfy
@@ -896,8 +981,8 @@ level of the stabiliser with the column datum. The seesaw for the three blocks o
 product of determinants through its coordinates in the positive letters (unit \emph{Filling}) turn the inner sums
 into \m{\sum_l\lineMultiplier{\vartheta}{j}{i}{h}{l}} times the $l$-th basis polynomial, that is into the kernel with
 the polynomial of the line multiplier in the positive letters: the coset kernel sum. So the identity of the
-theorem holds with \m{c(\vartheta)} the product of \m{c_1(\vartheta)}, \m{c_2(\vartheta)} and the order of a general linear
-group, and \m{|c(\vartheta)|^2} is a constant divided by a product of products of $L$-values at the characters
+theorem holds with \m{c(\vartheta)=c_1(\vartheta)\,c_2(\vartheta)/|\GL_{3m}(\OEr/\bar\pi_g^{2})|}, by the formula of the
+matching summed against a form on a square block, and \m{|c(\vartheta)|^2} is a constant divided by a product of products of $L$-values at the characters
 \m{(\twistedChi{\vartheta}{j}\carrierChar{j})^{-1}\upsilon^{\cdots}}, \m{\twistedChi{\vartheta}{j}^{-1}\upsilon^{m}} and
 \m{\twistedChi{\vartheta}{j}\upsilon^{m/2}}; unfolding the characters, these are the three factors of
 \m{\heckeValueProd{j}{\vartheta}}.
@@ -914,7 +999,7 @@ order that is positive first for the signs of~$W_j(D)$, of weight the difference
 weight of the kernels of \m{\tableTheta{j}{\cdot}{\cdot}}.
 \end{enumerate}
 \end{lemma}
-\begin{proof}
+\begin{proof}[Proof\acct]
 (a) Good forms are cusp forms of principal level at the chosen primes. (b) By Theorem~C with \m{\ix a=\CarrierIndex{D}},
 \m{u=1} and \m{w=i_1}, \m{\fNatural{j}{i}{\cdot}} is a finite combination of theta kernels of the pair of~$W_j(D)$ and
 the big block with polynomials in the positive letters; such kernels are holomorphic, the Fock vector being a
@@ -923,7 +1008,7 @@ rapidly decreasing of the level of the modulus.
 \end{proof}
 \leanline{\lean{goodFormsrapid}\sep \lean{mulfNaturalrapid}}
 
-\begin{proof}[Proof of Theorem D]
+\begin{proof}[Proof of Theorem D\acct]
 Suppose \m{F\ne0}. Its conjugate~$\bar F$ is holomorphic, of the weight~$k$ of the kernels of the adjoint lift,
 because $F$ is in the image of the descent of the trivial twist (the adjoint lift is injective). By the library's
 result on near maxima there is a point~$g_0$ with \m{\bar F(g_0)\ne0}, \m{|F|\le2|F(g_0)|} everywhere and first
@@ -954,7 +1039,7 @@ for~$\ix n$, with \m{\nu_p\upsilon^{|\ix n|/2}=\chi} and with the tame part of~$
 \m{(\ell,\iota)\mapsto\|\triv{p}{1}\|^2} has height at most \m{B_0(D)-\sum_\tau\operatorname{js}_D(w_0(\tau))}.
 \end{enumerate}
 \end{lemma}
-\begin{proof}
+\begin{proof}[Proof\acct]
 (a) Take \m{\nu_p=\chi\upsilon^{-|\ix n|/2}} and \m{z_p=|\ix n|/2}; the conditions on a pair hold by the inequalities
 between the scales. (b) Take a flat pair~$q$ for the index set of~$p$ by~(a) and the witness
 \m{H=\ialg{q}{1}/\|\triv{p}{1}\|^2}: then \m{H\cdot\|\triv{p}{1}\|^2=\ialg{q}{1}} is an algebraic integer, so the $\ell$-adic
@@ -993,23 +1078,28 @@ In Setting~\ref{set:data}, let $\ell$ be a prime with an embedding \m{\iota\colo
 $\ell$ prime to \m{N(Q(\vartheta))}, $\mathcal{N}$ a module over the valuation ring of~$\iota$ inside \m{\FormVx{O_X}}, and $F$
 a function with values in~$\mathcal{N}$. Then \m{\xiSum{q}{\vartheta}{F}\in\mathcal{N}}.
 \item Let $q$, $X$, $\vartheta$, $F$ be as in Definition~\ref{d:aux}\,(i), $g$ a point, \m{A,B\in\CC} and $\Lambda$ a
-continuous conjugate-linear form on \m{\FormVx{O_X}} with
-\m{\Lambda(F(h))=B\cdot(A\cdot\text{the kernel form of }q\text{ at }(g,h))} in every coordinate, for all~$h$. Then
-\m{N_q\,\kappa_0^{m'}\cdot\Lambda(\xiSum{q}{\vartheta}{F})=B\cdot\ialg{q}{\vartheta}\cdot A}, with $N_q$ the class number of the chosen
-level of the datum of~$q$ and \m{\kappa_0} the vacuum scale.
+continuous conjugate-linear form on \m{\FormVx{O_X}} such that, in every coordinate and for all~$h$,
+\[\Lambda(F(h))=B\cdot\bigl(A\cdot\text{the kernel form of }q\text{ at }(g,h)\bigr).\]
+Then \m{\clU\,\kappa_0^{m'}\cdot\Lambda(\xiSum{q}{\vartheta}{F})=B\cdot\ialg{q}{\vartheta}\cdot A}, with \m{\kappa_0} the vacuum
+scale and \m{\clU} the class sum of the constant~$1$ over \m{\UU(1)} at the chosen level of the data: the sum over
+the classes of the inverses of the orders of their stabilisers. That level is free (unit \emph{Data}), so the
+stabilisers are trivial and \m{\clU} is the number of classes.
 \item Let $p$ be a pair of rank one for a lift index~$j$, let $q$, $q_2$, $q_3$ be pairs flat for
 \m{\{1,\dots,2z_p-20\}}, \m{\{1,\dots,4\}} and \m{\{1,\dots,4\}}, $\vartheta$ a twist of~$D$ with $\ell$ prime to
 \m{N(Q(\vartheta))}, $x_0$ a \m{12\times1} matrix modulo~\m{\bar\pi_g}, $\alpha$ an exponent whose total orders are the jet
 degrees of the $L$-value datum~$X$ of~$p$ at~$\vartheta$, and $b$ a character whose product with the second characters
 of the data of $q_2$ at~$\vartheta$, of $q_3$ at~$1$ and of~$q$ at~$1$ is the second character of~$X$. Then there is a
 form \m{\Xi\in\FormVx{O_X}} that is a \kw{test form at~$\ell$}, integral at every embedding into~$\CC_\ell$ and tested
-against the kernel of the descent, with, for every point~$g$ of \m{\UU(1)},
-\[\ip{\Xi}{\text{kernel form of }X\text{ at }g}\cdot N^3\kappa_0^{2z_p-12}=\frac{\prod_\tau d_\tau!}{\alpha!}\cdot\ialg{q}{1}\,\ialg{q_3}{1}\,\ialg{q_2}{\vartheta}\cdot
-\tk{I_1}{I_{12}}{1}{b}{\bar\pi_g}{\mathbf{1}_{x_0}}{x^{\alpha}}(g,1),\]
-with $N$ the class number of \m{\UU(1)} at the chosen level and $d_\tau$ the jet degrees.
+against the kernel of the descent for the label idempotent \m{\idem(X-1)}, with, for every point~$g$ of \m{\UU(1)},
+\begin{align*}
+\ip{\Xi}{\text{kernel form of }X\text{ at }g}\cdot\clU^{3}\kappa_0^{2z_p-12}
+={}&\frac{\prod_\tau d_\tau!}{\alpha!}\cdot\ialg{q}{1}\,\ialg{q_3}{1}\,\ialg{q_2}{\vartheta}\\
+&\cdot\tk{I_1}{I_{12}}{1}{b}{\bar\pi_g}{\mathbf{1}_{x_0}}{x^{\alpha}}(g,1),
+\end{align*}
+with \m{\clU} as in~(b) and $d_\tau$ the jet degrees.
 \end{enumerate}
 \end{lemma}
-\begin{proof}
+\begin{proof}[Proof\acct]
 (a) The class sum is an integral combination, the orders of class stabilisers dividing~$M_D$; the factor
 \m{\delta_q/N(Q(\vartheta))^{m'-1}} is $\iota$-integral since $\ell$ is prime to \m{N(Q(\vartheta))}, and the Gram form of~$1$
 with \m{\delta_q} times the trivial lift is $\iota$-integral by the definition of the denominator bound. (b) Expand the
@@ -1030,89 +1120,125 @@ defines~$\Xi$ pairs to zero with it.
 \end{proof}
 \leanline{\lean{xiSummem}\sep \lean{smulapplyxiSum}\sep \lean{existstestform}}
 
-\begin{proof}[Proof of Theorem B]
-Write \m{\vartheta_{\ell,\iota}=\theta_{\ell,\iota}^{\,j}} and let $G$ be the finite group of the characters of weight~$0$ with tame
-part trivial outside the chosen primes that occur in Lemma~\ref{l:pigeon}\,(a) for \m{\UU(1)} at the chosen level,
-which is free, with class number~$N$.
+\begin{proof}[Proof of Theorem B\acct]
+The argument is that of the formal proof; the powers of the class number, of the vacuum scale and of the
+denominator bounds are not recomputed (§\ref{s:notes}). Write \m{\vartheta_{\ell,\iota}=\theta_{\ell,\iota}^{\,j}}, a twist,
+and let $G$ be the finite group of the characters of weight~$0$ with tame part trivial outside the chosen primes
+that occur in Lemma~\ref{l:pigeon}\,(a) for \m{\UU(1)} at the chosen level. That level is free (unit \emph{Data}), so
+the class sum \m{\clU} of the constant~$1$ is the number of classes.
 
 \emph{Choices.} For every \m{\chi\in G} take pairs \m{q_1(\chi)}, flat for \m{\{1,\dots,2z_p-20\}}, and \m{q_3(\chi)}, flat
 for \m{\{1,\dots,4\}}, attached to~$\chi$ by Lemma~\ref{l:flat}\,(a), and let $q_2$ be the flat pair for
 \m{\{1,\dots,4\}} attached to~\m{\chi_D}; it is ramified. The orders \m{\mathbf{m}_\tau=c_{p,\tau}-z_p}, the jet degrees
-of~$p$, satisfy \m{w_D(\tau)\le\mathbf{m}_\tau\le w_D(\tau)+x^{42}}, because $p$ is of rank one; take $t$ from Input~2\,(b).
-Let $V$ be a complex number with
-\[V^{|G|}=\prod_{\chi\in G}\ialg{q_3(\chi)}{1}\cdot\bigl(\ialg{q_1(\chi)}{1}\cdot t\cdot\ialg{q_2}{1}\bigr).\]
+of~$p$, satisfy \m{w_D(\tau)\le\mathbf{m}_\tau\le w_D(\tau)+x^{42}}, because $p$ is of rank one; take \m{\tm} from
+Input~2\,(b). Let $V$ be a complex number with
+\[V^{|G|}=\prod_{\chi\in G}\ialg{q_3(\chi)}{1}\cdot\bigl(\ialg{q_1(\chi)}{1}\cdot\tm\cdot\ialg{q_2}{1}\bigr).\]
 Then \m{V\ne0}, and \m{|\sigma(V)|\le e^{B_0(D)}} for all \m{\sigma\in\AutC}: by Lemma~\ref{l:pigeon}\,(b) for~$\sigma$ and
 \m{\psi=1}, \m{|\sigma(V)|} is at most the absolute value of a conjugate of a product of three normalised values and
-of~$t$, which Input~2\,(b), (c) and the scales bound.
+of~\m{\tm}, which Input~2\,(b), (c) and the scales bound.
 
-\emph{The valuation.} Claim: for every \m{(\ell,\iota)}, with \m{\vartheta=\vartheta_{\ell,\iota}}, there is a test form~$\Xi$
-at~$\ell$ with
+\emph{The valuation.} Claim: for every index \m{(\ell,\iota)} of the family and every embedding
+\m{\varphi\colon\CC\to\CC_\ell}, with \m{\vartheta=\vartheta_{\ell,\iota}} the twist of the index, there is a test form~$\Xi$
+at~$\ell$ for the $L$-value datum of~$p$ at~$\vartheta$ with
 \begin{equation}\label{e:val}
-|\iota(V)|_\ell\cdot\ell^{-F_D(\ell)}\le\bigl|\iota\bigl(N^2\,\ip{\Xi}{\triv{p}{\vartheta}}/\rat{q_2}{\vartheta}\bigr)\bigr|_\ell .
+|\varphi(V)|_\ell\cdot\ell^{-F_D(\ell)}\le\bigl|\varphi\bigl(\clU^{2}\,\ip{\Xi}{\triv{p}{\vartheta}}/\rat{q_2}{\vartheta}{1}\bigr)\bigr|_\ell .
 \end{equation}
-Indeed, Input~2\,(b), for the modulus~\m{\bar\pi_g}, gives $\alpha$ and~$x_0$ such that the Taylor coefficient
-\m{s(1)}, where \m{s(g)} is the kernel of \m{(I_1,I_{12})} with the indicator of~$x_0$ and the monomial~\m{x^{\alpha}}
-at~$g$, satisfies \m{\ell^{-F_D(\ell)}\le|\iota(\kappa_0^{12}\prod_\tau\mathbf{m}_\tau!\,s(1)/t)|_\ell}. Lemma~\ref{l:pigeon}\,(a) gives
-$z$ and \m{\psi\in G} with \m{|\iota(s(1))|_\ell} at most the absolute value of the mean of \m{(\psi s)(gz)}, and
-Lemma~\ref{l:pigeon}\,(b) gives \m{\psi_3\psi_1=\psi} with
-\m{|\iota(V)|_\ell\le|\iota(\ialg{q_3(\psi_3)}{1}\ialg{q_1(\psi_1)}{1}\,t\,\ialg{q_2}{1})|_\ell}. Lemma~\ref{l:test}\,(c), for the pairs
-\m{q_1(\psi_1)}, $q_2$, \m{q_3(\psi_3)} and the character~$b$ determined by them and~$\psi$, gives~$\Xi$. Its pairing
-with the trivial lift, which is the class sum over \m{\UU(1)} of the kernel forms, is by the formula of
-Lemma~\ref{l:test}\,(c) the mean of \m{(\psi s)(gz)} times \m{\ialg{q_1}{1}\ialg{q_3}{1}\ialg{q_2}{\vartheta}\prod_\tau\mathbf{m}_\tau!/\alpha!} and
-powers of~$N$ and~$\kappa_0$. Since \m{\ialg{q_2}{\vartheta}/\rat{q_2}{\vartheta}=\ialg{q_2}{1}} and \m{|1/\alpha!|_\ell\ge1}, the three
+In this claim the index fixes the twist and the embedding varies. Of the index the proof uses only that $\ell$ is
+prime to \m{N(Q(\vartheta))}, which is clause~(1) of fitness; Input~2\,(b) and Lemma~\ref{l:pigeon} hold for every
+embedding. Indeed, Input~2\,(b), for the modulus~\m{\bar\pi_g} and the embedding~$\varphi$, gives $\alpha$ and~$x_0$
+such that the Taylor coefficient \m{s(1)}, where \m{s(g)} is the kernel of \m{(I_1,I_{12})} with the indicator
+of~$x_0$ and the monomial~\m{x^{\alpha}} at~$g$, satisfies
+\[\ell^{-F_D(\ell)}\le\Bigl|\varphi\Bigl(\kappa_0^{12}\prod_\tau\mathbf{m}_\tau!\cdot s(1)/\tm\Bigr)\Bigr|_\ell .\]
+Lemma~\ref{l:pigeon}\,(a) gives $z$ and \m{\psi\in G} with \m{|\varphi(s(1))|_\ell} at most the absolute value of the
+mean of \m{(\psi s)(gz)}, and Lemma~\ref{l:pigeon}\,(b) gives \m{\psi_3\psi_1=\psi} with
+\[|\varphi(V)|_\ell\le\bigl|\varphi\bigl(\ialg{q_3(\psi_3)}{1}\,\ialg{q_1(\psi_1)}{1}\,\tm\,\ialg{q_2}{1}\bigr)\bigr|_\ell .\]
+Lemma~\ref{l:test}\,(c), for the pairs \m{q_1(\psi_1)}, $q_2$, \m{q_3(\psi_3)} and the character~$b$ determined by them
+and~$\psi$, gives~$\Xi$. Its pairing with the trivial lift, which is the class sum over \m{\UU(1)} of the kernel
+forms, is by the formula of Lemma~\ref{l:test}\,(c) the mean of \m{(\psi s)(gz)} times
+\m{\ialg{q_1(\psi_1)}{1}\,\ialg{q_3(\psi_3)}{1}\,\ialg{q_2}{\vartheta}\prod_\tau\mathbf{m}_\tau!/\alpha!} and powers of~\m{\clU}
+and~$\kappa_0$. Since \m{\ialg{q_2}{\vartheta}/\rat{q_2}{\vartheta}{1}=\ialg{q_2}{1}} and \m{|1/\alpha!|_\ell\ge1}, the three
 inequalities combine to~\eqref{e:val}.
 
 \emph{The height.} Consider the family
-\m{y'_{\ell,\iota}=\bigl(\rat{q_2}{\vartheta_{\ell,\iota}}/\|\triv{p}{\vartheta_{\ell,\iota}}\|\bigr)^2/N^3}. It has height at most
-\m{2B_0(D)+B_0(D)+\sum_\tau\operatorname{Ask}_D(w_D(\tau),\tau)}, with the witness \m{H=V\bar V}: its conjugates are at most
-\m{e^{2B_0(D)}}; and \eqref{e:val} for $\iota$ and for \m{\iota\circ\mathrm{conj}}, with test forms $\Xi$, $\Xi'$, gives
-\[|\iota(V\bar V)|_\ell\,\ell^{-2F_D(\ell)}\le\Bigl|\iota\Bigl(N\cdot\frac{\ip{\Xi}{\triv{p}{\vartheta}}\ip{\triv{p}{\vartheta}}{\Xi'}}{\|\triv{p}{\vartheta}\|^2}\Bigr)\Bigr|_\ell\cdot\bigl|\iota\bigl(N^3\|\triv{p}{\vartheta}\|^2/\rat{q_2}{\vartheta}^2\bigr)\bigr|_\ell ,\]
-where the first factor is at most \m{e^{\beta_\ell}} by clause~(2) of fitness for the line of the trivial lift, the
-two test forms being integral and tested. So \m{|\iota(Hy'_{\ell,\iota})|_\ell\le\exp(\beta_\ell+2F_D(\ell)\log\ell)}, and the sum
-of \m{2F_D(\ell)\log\ell} over the primes below a bound \m{\ge x_1} is \m{\sum_\tau\operatorname{Ask}_D(w_D(\tau),\tau)} (unit
-\emph{Columns}). The family \m{\rat{q_2}{\vartheta_{\ell,\iota}}^{-2}} has height at most~$2x^{999}$ by clause~(3) of fitness,
-and the constant family \m{\|\triv{p}{1}\|^2} has height at most \m{B_0(D)-\sum_\tau\operatorname{js}_D(w_0(\tau))} by
-Lemma~\ref{l:flat}\,(b). The product of the three families is
-\m{\|\triv{p}{1}\|^2/(N^3\|\triv{p}{\vartheta_{\ell,\iota}}\|^2)}, and \m{\rat{p}{\vartheta_{\ell,\iota}}^{-1}} is this number times a natural
-number, a power of~$N$ times a power of \m{N(Q(\vartheta_{\ell,\iota}))}, by the definition of the normalised values; a
-height bound passes to a family whose $\ell$-adic absolute values are not larger (unit \emph{Heights}). Heights add:
-\m{4B_0(D)+2x^{999}-\mathsf{U}(D)\le6B_0(D)-\mathsf{U}(D)}, since \m{x^{999}\le B_0(D)}.
+\[y'_{\ell,\iota}=\bigl(\rat{q_2}{\vartheta_{\ell,\iota}}{1}\big/\|\triv{p}{\vartheta_{\ell,\iota}}\|\bigr)^2\big/\clU^{3}.\]
+It has height at most \m{2B_0(D)+B_0(D)+\sum_\tau\operatorname{Ask}_D(w_D(\tau),\tau)}, with the witness \m{H=V\bar V}. The
+conjugates of~$H$ are at most \m{e^{2B_0(D)}}, because \m{\sigma(\bar V)} is the image of~$V$ under the automorphism
+\m{\sigma\circ\mathrm{conj}}. Fix an index \m{(\ell,\iota)} and write \m{\vartheta=\vartheta_{\ell,\iota}}. The
+claim~\eqref{e:val} for this index, with \m{\varphi=\iota} and with \m{\varphi=\iota\circ\mathrm{conj}}, that is twice
+for the same twist~$\vartheta$, gives test forms $\Xi$, $\Xi'$ with
+\[|\iota(V\bar V)|_\ell\,\ell^{-2F_D(\ell)}\le\bigl|\iota\bigl(\clU\,\ip{\Xi}{\operatorname{pr}\Xi'}\bigr)\bigr|_\ell\cdot
+\bigl|\iota\bigl(\clU^{3}\|\triv{p}{\vartheta}\|^2/\rat{q_2}{\vartheta}{1}^2\bigr)\bigr|_\ell ,\]
+where \m{\operatorname{pr}} is the orthogonal projection to the line \m{\CC\,\triv{p}{\vartheta}}, so that
+\[\ip{\Xi}{\operatorname{pr}\Xi'}=\ip{\Xi}{\triv{p}{\vartheta}}\cdot\ip{\triv{p}{\vartheta}}{\Xi'}\big/\|\triv{p}{\vartheta}\|^2;\]
+here one uses that the ratio is real.
+
+The first factor is at most \m{e^{\beta_\ell}} by the rank-one bound of the unit \emph{Selmer}: by clause~(2)
+of fitness the line \m{\CC\,\triv{p}{\vartheta}} has denominators at most~$\beta_\ell$ at~$\iota$ for \m{\idem(X-1)}, the
+class stabilisers of \m{\UU(1)} are trivial, and $\Xi$, $\Xi'$ are test forms at~$\ell$. Clause~(2) cannot be
+applied to $\Xi$ and~$\Xi'$ directly: a test form is tested against the kernel of the descent, not against the
+orthogonal complement of the line. The rank-one bound applies it to~$\Xi$ and to the sum of the translates
+of~$\Xi'$ by the twisted central operators at representatives of the \m{\clU} classes of \m{\UU(1)}. This sum is
+integral at~$\iota$ and tested against the orthogonal complement of the line, the trivial lift is fixed by these
+operators, and the sum is where the factor~\m{\clU} comes from. So
+\[|\iota(Hy'_{\ell,\iota})|_\ell\le\exp\bigl(\beta_\ell+2F_D(\ell)\log\ell\bigr),\]
+and the sum of \m{2F_D(\ell)\log\ell} over the primes below a bound \m{\ge x_1} is
+\m{\sum_\tau\operatorname{Ask}_D(w_D(\tau),\tau)} (unit \emph{Columns}).
+
+The family
+\m{\rat{q_2}{\vartheta_{\ell,\iota}}{1}^{-2}} has height at most~$2x^{999}$ by clause~(3) of fitness, for the ramified
+pair~$q_2$ and the sign~$1$, and the constant family \m{\|\triv{p}{1}\|^2} has height at most
+\m{B_0(D)-\sum_\tau\operatorname{js}_D(w_0(\tau))} by Lemma~\ref{l:flat}\,(b). The product of the three families is
+\[\|\triv{p}{1}\|^2\big/\bigl(\clU^{3}\,\|\triv{p}{\vartheta_{\ell,\iota}}\|^2\bigr),\]
+and \m{\rat{p}{\vartheta_{\ell,\iota}}{1}^{-1}} is this number times a natural number, a power of~\m{\clU} times a power of \m{N(Q(\vartheta_{\ell,\iota}))}, by the definition of the
+normalised values; a height bound passes to a family whose $\ell$-adic absolute values are not larger (unit
+\emph{Heights}). Heights add: \m{4B_0(D)+2x^{999}-\mathsf{U}(D)\le6B_0(D)-\mathsf{U}(D)}, since \m{x^{999}\le B_0(D)}.
 \end{proof}
 \leanline{\lean{heightLeinvratio}}
 
 \begin{corollary}[the product of Hecke values]\label{c:hv}
 In Setting~\ref{set:data}, let \m{\theta} be a family of $m$-fold twists of~$D$ that is fit for~$D$ and $j$ a lift
-index. Then the family \m{(\ell,\iota)\mapsto\bigl(\heckeValueProd{j}{\theta_{\ell,\iota}^{\,j}}/\heckeValueProd{j}{1}\bigr)^{-1}} has
-height at most \m{10\,m\,x^{999}+k(D)\,(6B_0(D)-\mathsf{U}(D))}.
+index. Then the family
+\[(\ell,\iota)\longmapsto\Bigl(\frac{\heckeValueProd{j}{\theta_{\ell,\iota}^{\,j}}}{\heckeValueProd{j}{1}}\Bigr)^{-1}\]
+has height at most \m{10\,m\,x^{999}+k(D)\,(6B_0(D)-\mathsf{U}(D))}.
 \end{corollary}
 \begin{proof}
-By its definition \m{\heckeValueProd{j}{\vartheta}} is a product of squares of absolute values of $L$-values
-\m{L^{T}(z,\cdot)}, \m{1\le z\le z_o}, for the three line pairs, times a power of the norm of~$T$. The ratio to the
-untwisted product is therefore, up to an integer power of \m{N(Q(\vartheta))}, the square of a product of ratios
-\m{\rat{p}{\vartheta}} over the pairs \m{p=(\nu_o,z)}: for the first line pair and \m{7m/2<z\le\heckeCount{D}} these pairs
-are of rank one for~$j$, and there are \m{\lfloor k(D)/2\rfloor} of them; all the other pairs are ramified, and there
-are at most \m{5m} of them. Theorem~B for the first, clause~(3) of fitness for the others, the rules for products
-and squares of heights, and the rule for powers of \m{N(Q(\vartheta))} give the bound; \m{2\lfloor k(D)/2\rfloor=k(D)}
-because \m{k(D)} is even.
+Let $\vartheta$ be a twist. By its definition \m{\heckeValueProd{j}{\vartheta}} is the product, over the three line
+pairs \m{(\nu_o,z_o)=\linePair{j}{o}} with their signs~$s_o$, of a power of the norm of~\m{T_\vartheta} and of the
+squares \m{|L^{T_\vartheta}(z,(\nu_o\vartheta^{s_o})^{-1})|^2}, \m{1\le z\le z_o}. Since $T_1$ is the set of the chosen
+primes, the ratio to the untwisted product is, up to an integer power of \m{N(Q(\vartheta))}, the square of the
+product of the ratios
+\[\rat{(\nu_o,z)}{\vartheta}{s_o},\qquad1\le z\le z_o,\]
+over the three line pairs. The sign of each ratio is the sign~$s_o$ of its line pair: the line pair of the
+sign~$-1$ contributes the ratios \m{\rat{(\nu_o,z)}{\vartheta}{-1}}, and not those for the sign~$1$. For the first
+line pair, where \m{s_o=1}, and \m{7m/2<z\le\heckeCount{D}}, the pairs \m{(\nu_o,z)} are of rank one for~$j$, and
+there are \m{\lfloor k(D)/2\rfloor} of them. All the other pairs are ramified, and there are \m{7m/2+m+m/2=5m} of
+them. Now take \m{\vartheta=\theta_{\ell,\iota}^{\,j}}. Theorem~B for the first, clause~(3) of fitness with the
+sign~$s_o$ for the others, the rules for products and squares of heights, and the rule for powers of
+\m{N(Q(\vartheta))} (unit \emph{Heights}) give the bound
+\m{2\,\bigl(\lfloor k(D)/2\rfloor\,(6B_0(D)-\mathsf{U}(D))+5m\,x^{999}\bigr)}, and \m{2\lfloor k(D)/2\rfloor=k(D)} because
+\m{k(D)} is even.
 \end{proof}
 \leanline{\lean{heightLeinvheckeValueProd}}
 
 \subsection*{The volume of a lift: Theorem A}\label{s:volume}
 \begin{lemma}[the compressed Gram operator]\label{l:gram}
 Let $T$, $U$, $V$ be finite-dimensional inner product spaces, \m{\operatorname{gl}\colon T\to V}, \m{u\colon U\to V} and
-\m{A\colon T\to U} linear maps and \m{\gamma,k\in\CC}.
+\m{A\colon T\to U} linear maps and \m{\gamma,\varkappa\in\CC}.
 \begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
 \item If \m{u^{*}\circ\operatorname{gl}=\gamma A}, then \m{\operatorname{gl}^{*}\circ u=\bar\gamma A^{*}}.
 \item With $L$ the image of~$u$:
-\m{\vf(u)^2\cdot\det\compressedGramOp{k}{L}{\operatorname{gl}}=k^{\dim L}\cdot\vf(\operatorname{gl}^{*}\circ u)^2}, where \m{\vf}
-is the volume factor.
+\m{\vf(u)^2\cdot\det\compressedGramOp{\varkappa}{L}{\operatorname{gl}}=\varkappa^{\dim L}\cdot\vf(\operatorname{gl}^{*}\circ u)^2},
+where \m{\vf} is the volume factor.
 \end{enumerate}
 \end{lemma}
 \begin{proof}
-(a) Take adjoints. (b) The operator is $k$ times \m{w^{*}w} for \m{w=\operatorname{gl}^{*}|_L}, since on~$L$
+(a) Take adjoints. (b) If $u$ is not injective, both sides vanish: \m{\vf(u)=0}, and \m{\operatorname{gl}^{*}\circ u} is
+not injective, so \m{\vf(\operatorname{gl}^{*}\circ u)=0}. Let $u$ be injective; it is then a bijection from~$U$
+onto~$L$. The operator is $\varkappa$ times \m{w^{*}w} for \m{w=\operatorname{gl}^{*}|_L}, since on~$L$
 \[\ip{z}{\operatorname{pr}_L\operatorname{gl}\operatorname{gl}^{*}z'}=\ip{\operatorname{gl}^{*}z}{\operatorname{gl}^{*}z'};\]
-and
-\m{\operatorname{gl}^{*}\circ u=w\circ u}, with $u$ regarded as a map onto~$L$, so the volume factors multiply.
+and \m{\operatorname{gl}^{*}\circ u=w\circ u}, with $u$ regarded as a bijection onto~$L$, so that
+\[\vf(w\circ u)^2=\det(w^{*}w)\cdot\vf(u)^2\qquad\text{and}\qquad
+\varkappa^{\dim L}\,\vf(\operatorname{gl}^{*}\circ u)^2=\det(\varkappa\,w^{*}w)\cdot\vf(u)^2 .\]
 \end{proof}
 \leanline{\lean{adjointcomp}\sep \lean{detcompressedGramOp}}
 
@@ -1120,7 +1246,8 @@ and
 In Setting~\ref{set:data}: $j$ is a lift index, $\vartheta$ a twist of~$D$,
 \m{\operatorname{gl}\colon\operatorname{Tab}_D(j)\to\FormVx{O_D(\vartheta,j)}} a linear map, $L$ a linear subspace of
 \m{\FormVx{O_D(\vartheta,j)}} and $\beta$ a real number, such that \m{\operatorname{gl}^{*}} is injective on~$L$ and, for every
-\m{z\in L}, the form \m{\operatorname{gl}(\operatorname{gl}^{*}z)} is tested against~$L^{\perp}$.
+\m{z\in L}, the form \m{\operatorname{gl}(\operatorname{gl}^{*}z)} is tested against~$L^{\perp}$ for the good idempotent
+\m{e_0(D)}.
 \end{setting}
 
 \begin{proposition}[the determinant at the primes and at the conjugates]\label{p:det}
@@ -1129,15 +1256,16 @@ In Setting~\ref{set:gl}:
 \item Let \m{(\ell,\iota)} be a prime with a field isomorphism from~$\CC$ to an algebraic closure
 of~$\mathbb{Q}_\ell$. Suppose that for every table~$\zeta$ and every embedding \m{\varphi\colon\CC\to\CC_\ell}: if every
 \m{\overline{\zeta_a}} has gauge at most~$1$ at the representative of its class for \m{\varphi\circ\mathrm{conj}}, then
-\m{\operatorname{gl}(\zeta)} is integral at~$\varphi$; and that $L$ has denominators at most~$\beta$ at~$\iota$. Then
+\m{\operatorname{gl}(\zeta)} is integral at~$\varphi$; and that $L$ has denominators at most~$\beta$ at~$\iota$ for
+\m{e_0(D)}. Then
 \[\bigl|\iota\bigl(\det\compressedGramOp{\mathsf{h}_D(j)}{L}{\operatorname{gl}}\bigr)\bigr|_\ell\le\exp\bigl(\dim L\cdot(r\,\beta)\bigr).\]
-\item Suppose that $L$ is the image of~$u_\vartheta$ and that
-\m{\mathsf{h}_D(j)\,\nsq{\operatorname{gl}(\zeta)}{\sigma}\le e^{\beta}\sum_a\|\sigma(\zeta_a)\|^2} for all tables~$\zeta$ and all~$\sigma$. Then
-for every \m{\sigma\in\AutC}:
-\m{\bigl|\sigma\bigl(\det\compressedGramOp{\mathsf{h}_D(j)}{L}{\operatorname{gl}}\bigr)\bigr|\le\exp(\dim L\cdot\beta)}.
+\item Suppose that $L$ is the image of~$u_\vartheta$ and that, for all tables~$\zeta$ and all \m{\sigma\in\AutC},
+\[\mathsf{h}_D(j)\,\nsq{\operatorname{gl}(\zeta)}{\sigma}\le e^{\beta}\sum_a\|\sigma(\zeta_a)\|^2 .\]
+Then for every \m{\sigma\in\AutC}:
+\[\bigl|\sigma\bigl(\det\compressedGramOp{\mathsf{h}_D(j)}{L}{\operatorname{gl}}\bigr)\bigr|\le\exp(\dim L\cdot\beta).\]
 \end{enumerate}
 \end{proposition}
-\begin{proof}
+\begin{proof}[Proof \textup{(}\textup{(a)}: an account of the formal proof; \textup{(b)}: complete\textup{)}]
 (a) Move the class representatives of \m{\SmallClasses{D}} by rational points~\m{\delta_{\mathfrak{c}}} to points integral
 above~$\ell$ (library). For an index \m{a=(i,\mathfrak{c})} and a coordinate~$e$ let \m{f_{a,e}} be the table that is zero
 outside~$a$ and whose entry at~$a$ is the translate by~\m{\delta_{\mathfrak{c}}} of the vector dual to the coordinate~$e$
@@ -1156,18 +1284,25 @@ at~$\iota$, because by the estimate of Auerbach's lemma the conjugates of the en
 Setting~\ref{set:gl}. The definition of
 denominators at most~$\beta$ gives the bound, the rank of the first space being~$r$.
 (b) The determinant is the product of the \m{\dim L} eigenvalues, so it suffices to show \m{|\sigma(\alpha)|\le e^{\beta}}
-for an eigenvalue~$\alpha$ with eigenvector \m{z\in L}. Let \m{\zeta=\operatorname{gl}^{*}z}, which is not zero, and let
-\m{\zeta^{\sigma}} be the table with the entries
-\m{\zeta^{\sigma}_a=\overline{\sigma^{-1}\bigl(\overline{\sigma(\zeta_a)}\bigr)}}; it is chosen so that
-\m{\sigma\ip{\zeta^{\sigma}}{\zeta}=\sum_a\|\sigma(\zeta_a)\|^2}, without any assumption that $\sigma$ commutes with complex
-conjugation. Pairing
+for an eigenvalue~$\alpha$ with eigenvector \m{z\in L}. Let \m{\zeta=\operatorname{gl}^{*}z}, which is not zero, put
+\m{\tilde\sigma=\mathrm{conj}\circ\sigma\circ\mathrm{conj}}, and let \m{\zeta^{\sigma}} be the table with the entries
+\m{\zeta^{\sigma}_a=\overline{\sigma^{-1}\bigl(\overline{\sigma(\zeta_a)}\bigr)}}. It is chosen so that
+\[\tilde\sigma(\zeta^{\sigma}_a)=\sigma(\zeta_a)\quad\text{for all }a,\qquad\text{and}\qquad
+\sigma\ip{\zeta^{\sigma}}{\zeta}=\sum_a\|\sigma(\zeta_a)\|^2,\]
+without any assumption that $\sigma$ commutes with complex conjugation. Pairing
 \m{\alpha z=\mathsf{h}_D(j)\operatorname{pr}_L\operatorname{gl}(\zeta)} with \m{\operatorname{gl}(\zeta^{\sigma})} and applying~$\sigma$ gives
-\m{|\sigma(\alpha)|\sum_a\|\sigma(\zeta_a)\|^2\le\mathsf{h}_D(j)\,|\sigma\ip{\operatorname{gl}(\zeta^{\sigma})}{\operatorname{pr}_L\operatorname{gl}(\zeta)}|}. By the
-Cauchy--Schwarz inequality for the norms \m{\nsq{\cdot}{\sigma}} and because the projection to~$L$ does not increase
-these norms on the tested form \m{\operatorname{gl}(\zeta)} (unit \emph{Selmer}; $L$ is killed by the Hecke test at a split
-place off the level, which exists, since the lifts of good eigenforms are, and $L$ is generated by such lifts,
-tuple by tuple, by Input~3), the right side is at most the geometric mean of the two size bounds:
-\m{e^{\beta}\sum_a\|\sigma(\zeta_a)\|^2}. The sum is positive.
+\[|\sigma(\alpha)|\sum_a\|\sigma(\zeta_a)\|^2=\mathsf{h}_D(j)\,\bigl|\sigma\ip{\operatorname{gl}(\zeta^{\sigma})}{\operatorname{pr}_L\operatorname{gl}(\zeta)}\bigr|.\]
+The norms \m{\|\cdot\|_\sigma} do not satisfy a Cauchy--Schwarz inequality at~$\sigma$ alone when $\sigma$ does not
+commute with complex conjugation. The inequality of the library is
+\m{|\sigma\ip{y}{x}|\le\|x\|_{\sigma}\,\|y\|_{\tilde\sigma}}; apply it to \m{y=\operatorname{gl}(\zeta^{\sigma})} and
+\m{x=\operatorname{pr}_L\operatorname{gl}(\zeta)}. The size bound at~$\tilde\sigma$ for the table~\m{\zeta^{\sigma}} gives
+\m{\mathsf{h}_D(j)\,\nsq{\operatorname{gl}(\zeta^{\sigma})}{\tilde\sigma}\le e^{\beta}\sum_a\|\tilde\sigma(\zeta^{\sigma}_a)\|^2=e^{\beta}\sum_a\|\sigma(\zeta_a)\|^2}.
+The size bound at~$\sigma$ for~$\zeta$ gives the same bound for
+\m{\mathsf{h}_D(j)\,\nsq{\operatorname{pr}_L\operatorname{gl}(\zeta)}{\sigma}}, because the projection to~$L$ does not increase
+\m{\nsq{\cdot}{\sigma}} on the tested form \m{\operatorname{gl}(\zeta)=\operatorname{gl}(\operatorname{gl}^{*}z)} (unit \emph{Selmer};
+$L$ is killed by the Hecke test at a split place off the level, which exists, since the lifts of good eigenforms
+are, and $L$ is generated by such lifts, tuple by tuple, by Input~3). So the right side is at most the geometric
+mean of the two bounds, \m{e^{\beta}\sum_a\|\sigma(\zeta_a)\|^2}, and the sum is positive.
 \end{proof}
 \leanline{\lean{normdetpadic}\sep \lean{normdetarch}}
 
@@ -1184,7 +1319,7 @@ By Input~1\,(ii) and Lemma~\ref{l:gram},
 The right side is not zero: \m{\gamma(\vartheta)\ne0}, and $A^{*}$ is injective because $A$ is surjective. So
 \m{\Delta(\vartheta)\ne0}; hence the compressed Gram operator is invertible and \m{\operatorname{gl}_\vartheta^{*}} is injective
 on~$L_\vartheta$. For \m{z=u_\vartheta y\in L_\vartheta}, \m{\operatorname{gl}_\vartheta(\operatorname{gl}_\vartheta^{*}z)=\bar\gamma(\vartheta)\operatorname{gl}_\vartheta(A^{*}y)}
-is tested by Input~1\,(iv). So Setting~\ref{set:gl} holds for every twist. Dividing \eqref{e:volid} for~$1$ by
+is tested against \m{L_\vartheta^{\perp}} for \m{e_0(D)} by Input~1\,(iv). So Setting~\ref{set:gl} holds for every twist. Dividing \eqref{e:volid} for~$1$ by
 \eqref{e:volid} for \m{\vartheta_{\ell,\iota}} and using Input~1\,(i),
 \[\frac{\lvol{1}{j}}{\lvol{\theta_{\ell,\iota}}{j}}=\frac{\Delta(\vartheta_{\ell,\iota})}{\Delta(1)}\cdot\Bigl(\Bigl(\frac{\heckeValueProd{j}{\vartheta_{\ell,\iota}}}{\heckeValueProd{j}{1}}\Bigr)^{-1}\Bigr)^{n_0}.\]
 The first family has height at most \m{n_0\cdot3rB_0(D)}, with the witness \m{H=\Delta(1)}: its conjugates are at most
@@ -1199,8 +1334,8 @@ is one of the inequalities between the scales.
 
 \sect{Where the results are used}{s:used}
 Theorem~A is the second of the two inputs of Theorem~C of the handout named in the head of the argument; the unit
-\emph{Endgame} multiplies its bounds over \m{j=1,\dots,m} and combines them with the product formula for the volume
-of the chain. Theorems C and~D and Proposition~\ref{p:lineint} are the inputs of the comparison forms in the sister
+\emph{Endgame} multiplies the $m$ families for \m{j=1,\dots,m}, adds their bounds, and combines the result with the
+factorisation of the volume of the chain (Theorem~A of the first note). Theorems C and~D and Proposition~\ref{p:lineint} are the inputs of the comparison forms in the sister
 note. Lemma~\ref{l:carrier} and the definitions of §\ref{s:setting} are used in this unit only.
 
 \sect{Notes on the formal text}{s:notes}
@@ -1223,15 +1358,29 @@ numbers \m{c(\vartheta)} are not zero is proved in the sister note from Theorem~
 numbers, truncated at zero in the formal text; \m{m/2} is an integer because $m$ is even; the exponent of
 \m{\upsilon} in \m{\tableTheta{j}{\zeta}{g}} is the integer \m{m/2-j}, and that in \m{\carrierChar{j}} is an integer that may be
 negative.
-\item \emph{Theorem~A.} The formal bound is written \m{\dim\operatorname{Row}(D)\cdot(k(D)\cdot(\log b\cdot B_0(D)-\mathsf{U}(D)))}, with
-\m{\log b} a field of the data. The family is indexed by the pairs of a prime and a field isomorphism from~$\CC$
+\item \emph{Theorem~A.} The formal bound is the product of \m{\dim\operatorname{Row}(D)} and of
+$k(D)\cdot(\log b\cdot B_0(D)-\mathsf{U}(D))$, with \m{\log b} a field of the data. The family is indexed by the pairs of a prime and a field isomorphism from~$\CC$
 to an algebraic closure of~$\mathbb{Q}_\ell$; the embeddings into~$\CC_\ell$ of the statements about gauges are obtained
 from them.
 \item \emph{What was not reconstructed.} In the proof of Theorem~B the exact normalising factors (the powers of
 the class number, of the vacuum scale and of the denominator bounds) are balanced in the formal text by
 simplification; the proof above tracks the absolute values that matter and says where a factor is harmless. In
 Proposition~\ref{p:approx} the function~$K_0$ is not written in the formal text, Lean infers it; the formula above is
-my reading of what it must be.
+my reading of what it must be. The referee of this note compared it with the terms that the formal proof constructs
+and found it in agreement.
+\item \emph{The sign of the ratio.} The formal ratio of a pair takes three arguments: the pair, the tame character
+and a sign, which has the default value~$1$ and multiplies the exponent of the tame character in the numerator.
+Theorem~B and the claim in its proof are written in the formal text with the default; the note writes the sign~$1$
+in the third slot. Clause~(3) of fitness is stated for every sign, and the proof of Corollary~\ref{c:hv} uses it with
+the sign of each line pair, \m{-1} for the third.
+\item \emph{The index and the embedding in the proof of Theorem~B.} The formal claim behind~\eqref{e:val} is stated
+for an index of the family, a prime with a field isomorphism, and separately for an embedding into~$\CC_\ell$; the
+twist is that of the index. It is applied twice to one index, at the embedding of the isomorphism and at its
+composite with complex conjugation.
+\item \emph{Letters that differ from the formal text.} The scalar of the compressed Gram operator is~$k$ in the
+formal text and~$\varkappa$ here; the number of the indicator jet is~$t$ there and \m{\tm} here; the class sum of the
+constant~$1$ over \m{\UU(1)} is~$N$ there and \m{\clU} here; the degrees of Lemmas \ref{l:coords} and~\ref{l:sparse}
+are~$d$ there and~$\mathsf{d}$ here. The letters $k$, $t$, $N$ and~$d$ have other meanings in this write-up.
 \end{enumerate}
 
 \subhead{How this note was written.} From the dossier of the unit, whose reader calls the step claims of the long
@@ -1246,8 +1395,12 @@ primes, not only for the trivial one; and in the proof of Theorem~A the power of
 and the local exponents carry no factor \m{\log\ell}. Her exact identity for the ratio of the volumes is the one
 derived above. I read completely the Lean
 files of the height of the lift volume, of the Hecke values, of the separation and of the approximation, and the
-statements and docstrings of the other three; the definitions of the line were taken from the dossier's reading
-and compared with the docstrings. The proofs of Theorem~B and of Proposition~\ref{p:approx} I read line by line in
+statements and docstrings of the other three. The definitions of the line (Definitions \ref{d:index}
+to~\ref{d:hv}) I took from the dossier's reading and compared with the docstrings; the referee of this note then
+compared them with the Lean text of the two files (the sizes of the index sets, the two index maps, the index set
+of the determinants, the exponent of the line polynomial, the rows of the determinants, the datum, the line
+multiplier, the function \m{F^{\natural}}, the exponent and the characters, the line pairs, and the signs in the
+product of Hecke values) and found them in agreement. The proofs of Theorem~B and of Proposition~\ref{p:approx} I read line by line in
 the Lean text. For Theorem~B I could reconstruct the argument: the choice of~$V$, the two pigeonholes, the test
 form, the use of the three clauses of fitness and the bookkeeping of heights; the powers of the normalising
 constants I did not recompute. For Proposition~\ref{p:approx} I could reconstruct the architecture (the near maximum
@@ -1257,6 +1410,18 @@ between the scales. The proof of Theorem~A is complete relative to its inputs an
 checked the identity of the volumes and the count of the heights by hand. I read the Lean definitions of a fit
 family, of denominators, of heights, of the budget for congruences and of the cost of one direction. The program
 check of the unit's dossier covered \UnitSteps{} leaf steps of \UnitProofs{} proofs.
+
+\subhead{Revision.} This text was revised after the report of an independent referee (26 November 2026), who
+compared the statements with the Lean text and re-derived the complete proofs. The changes: the ratio of a pair
+carries its sign, as the formal definition does, in fitness, in Theorem~B and in Corollary~\ref{c:hv}, where the
+sign~$-1$ is needed; the partial $L$-function is that of the base change, without the Euler factors at the
+conjugate places as well; in the proof of Theorem~B the claim on valuations separates the index from the embedding
+and the rank-one bound of the unit \emph{Selmer} is used where clause~(2) of fitness does not apply directly; in
+Proposition~\ref{p:det}\,(b) the Cauchy--Schwarz inequality is the conjugated one; the proofs of
+Lemmas \ref{l:gram}\,(b) and~\ref{l:sparse}\,(a) and of Proposition~\ref{p:iso} are completed; ``tested'' and
+``denominators'' name their idempotent; the references of the background results are those of the catalogue with
+the second reader's verdicts; and each proof says where it stands whether it is complete, an account or an
+outline.
 
 \head{Appendix A. Concordance with the Lean artifact}
 {\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
@@ -1274,7 +1439,8 @@ check of the unit's dossier covered \UnitSteps{} leaf steps of \UnitProofs{} pro
 In these texts {\leanfont HeightLe} is ``height at most'', {\leanfont D.IsFitFamily} fitness, {\leanfont D.rowDim}
 the dimension of the rows, {\leanfont D.logB} the number \m{\log b}, {\leanfont D.B₀} the budget for congruences,
 {\leanfont D.dirCost} the cost of one direction, {\leanfont D.liftVolume} the lift volume, {\leanfont p.ratio} the
-ratio \m{\rat{p}{\vartheta}}, {\leanfont cosetKernelSum} the coset kernel sum and {\leanfont D.goodForms} the good forms.
+ratio \m{\rat{p}{\vartheta}{s}}, whose sign~$s$ is~$1$ where the formal text does not write it,
+{\leanfont cosetKernelSum} the coset kernel sum and {\leanfont D.goodForms} the good forms.
 
 \head{Notation}
 \begingroup\fontsize{8.6}{10.9}\selectfont\raggedright
@@ -1294,21 +1460,26 @@ congruences; cost of one direction; jet size; period constant; budget; main amou
 embeddings; primes}
 \nt{$j$, $\vartheta$, $Q(\vartheta)$, $N(Q(\vartheta))$, $\mathfrak{m}_D(\vartheta,c)$, $\theta$}{lift index; twist; its primes
 and their norm; a modulus; a fit family}
-\nt{$\beta_\ell$, $\beta$, $\mathcal{Z}$, $r_0$}{denominator exponents; a subspace; a rank}
+\nt{$\beta_\ell$, $\beta$, $\mathcal{Z}$, $r_0$, $\operatorname{pr}_{\mathcal{Z}}$, $\operatorname{pr}$}{denominator exponents; a
+subspace; a rank; orthogonal projections}
+\nt{$e_0(D)$, $\idem(\mathbf{c})$, $\mathbf{c}$, $\idem(X-1)$, $e$}{the good idempotent; the idempotent of a tuple of
+labels; the label idempotent; an idempotent}
 \nt{$W_j(D)$, $\Mgood{j}$, $O_D(\vartheta,j)$, $\alift_D(\vartheta,j)$, $u_\vartheta$, $\lvol{\vartheta}{j}$}{objects of the first
 note}
 \nt{$\ix r,\ix n,\ix a,\ix L,\ix N$, $\ix n'$}{finite index sets}
 \nt{$\UU(S)(\AAA)$, $\AAA$, $\AAA_f$, $G_\infty(s)$, $\KK{3m}$, $\clsum{h}{\Gamma}$, $\Gamma$}{groups; adeles; levels; class sums}
-\nt{$\tk{S}{T}{\alpha}{\beta}{\mathfrak{m}}{\Psi}{P}(g,h)$, $\LP{T}{\nu}{d}$, $L^{T}(z,\nu)$}{theta kernel; product of
-$L$-values; partial $L$-function}
+\nt{$\tk{S}{T}{\alpha}{\beta}{\mathfrak{m}}{\Psi}{P}(g,h)$, $\LP{T}{\nu}{d}$, $L^{T}(z,\nu)$, $T_\vartheta$}{theta kernel;
+product of $L$-values; partial $L$-function of the base change, without the Euler factors at~$T$ and at the
+conjugate places; the chosen primes and those of \m{Q(\vartheta)}}
 \nt{$\kappa^{\pm}$, $\kappa$, $\operatorname{pol}_\kappa(\xi)$, $\operatorname{pol}^{-}$, $\|\xi\|_\kappa$}{weights; polynomials and norms
 of coordinate vectors}
 \nt{$\FormVx{O}$, $\gau{\iota}{\kappa}{\epsilon}{g}{\xi}$, $\nsq{\phi}{\sigma}$, $\cks{O}{b}{w}{e}{y}(g)$}{forms; gauge; norm
 at~$\sigma$; coset kernel sum}
 \nt{$\carrier{E}{m}$, $\cXi{m}{c}{h}$}{the carrier; its class sum}
 \nt{$p$, $q$, $q_1$, $q_2$, $q_3$ (pairs), $\nu_p$, $c_p$, $z_p$, $\psi_p$}{pairs and their components}
-\nt{$\rat{p}{\vartheta}$, $\triv{p}{\vartheta}$, $\ialg{p}{\vartheta}$, $\delta_q$, $X$, $O_X$}{ratio; trivial lift; normalised
-value; denominator bound; an $L$-value datum and its pair}
+\nt{$\rat{p}{\vartheta}{s}$, $s$ (sign), $\triv{p}{\vartheta}$, $\ialg{p}{\vartheta}$, $\delta_q$, $X$, $O_X$}{ratio of the
+pair~$p$ for the tame character~$\vartheta$ and the sign~$s$; trivial lift; normalised value; denominator bound; an
+$L$-value datum and its pair}
 \nt{$\untwistedModulus{D}$, $\forgetTwist{\vartheta}{x}$, $\untwistedAuxPair{j}$}{Definition~\ref{d:index}\,(1)}
 \nt{$\CarrierIndex{D}$, $\FlatIndex{D}$, $\SmallIndex{D}$, $\SmallClasses{D}$, $\mathfrak{c}$,
 $h_{\mathfrak{c}}$}{index sets; classes and representatives}
@@ -1325,18 +1496,23 @@ $\psi'_t$}{datum, line multiplier, \m{F^{\natural}}; additive characters}
 \nt{$S$, $W'$, $L^{+}$, $I_j^{-}$, $I^{\flat}$, $V''$, $V^{\circ}$, $\mathbf{1}_I$, $\mathbf{1}_{x_0}$,
 $\Theta^{+}_{l}$}{spaces of the construction; indicators; a kernel}
 \nt{$\eSign{D}{s}$, $\heckeCount{D}$, $\linePair{j}{o}$, $\heckeValueProd{j}{\vartheta}$, $\tableTheta{j}{\zeta}{g}$}{Definition~\ref{d:hv}}
-\nt{$\xiSum{q}{\vartheta}{F}$, $\compressedGramOp{k}{L}{\operatorname{gl}}$, $\vf$}{Definition~\ref{d:aux}; the volume factor}
+\nt{$\xiSum{q}{\vartheta}{F}$, $\compressedGramOp{\varkappa}{L}{\operatorname{gl}}$, $\varkappa$, $\vf$}{Definition~\ref{d:aux};
+a complex scalar; the volume factor}
 \nt{$\operatorname{Tab}_D(j)$, $\zeta$, $\zeta_a$, $\gamma$, $A$, $\operatorname{gl}_\vartheta$, $\mathsf{h}_D(j)$}{objects of Input~1}
 \nt{$\|h\|$, $\operatorname{mh}_k$, $\lambda_1$, $\nu$, $\nu_D$, $B$, $f_E$, $o$, $w$, $k$ (weights)}{objects of
 Setting~\ref{set:iso}}
-\nt{$K_0$, $K$, $C$, $\varepsilon$, $C(u,y)$, $\varsigma$, $c_a$, $\Psi$, $\mu$, $q$ (integer), $c_N$,
+\nt{$K_0$, $K$, $C$, $\varepsilon$, $C(u,y)$, $w^{\circ}$, $c_a$, $\Psi$, $\mu$, $q$ (integer), $c_N$,
 $\jmath$}{objects of Propositions \ref{p:iso} and~\ref{p:approx} and Lemma~\ref{l:sparse}}
-\nt{$G$, $V$, $N$, $N_q$, $s(g)$, $\mathbf{m}_\tau$, $t$, $\alpha$, $x_0$, $\kappa_0$, $d_\tau$, $\Xi$, $\Xi'$,
+\nt{$G$, $V$, $\clU$, $s(g)$, $\mathbf{m}$, $\mathbf{m}_\tau$, $\tm$, $\alpha$, $x_0$, $\kappa_0$, $d_\tau$, $\Xi$, $\Xi'$,
 $y'$}{objects of the proof of Theorem~B}
 \nt{$\Delta(\vartheta)$, $L_\vartheta$, $n_0$, $H$, $T$, $U$, $u$}{objects of the proof of Theorem~A; a witness of a height;
 spaces and maps}
-\nt{$z_\vartheta$, $W_\vartheta$, $K^{(\vartheta)}$, $I$, $n_j$}{objects of the proof of isolation, with $\vartheta$ an angle;
-an exponent}
+\nt{$z_\vartheta$, $\chi_\vartheta$, $W_\vartheta$, $K^{(\vartheta)}$, $I$, $n_j$}{objects of the proof of isolation, with
+$\vartheta$ an angle; an exponent}
+\nt{$\rowpar{\tau}{q}$, $\tau_\sigma$, $\operatorname{sgn}(\sigma)$, $\tilde\sigma$}{row parameters; the place and the sign of
+an embedding; the automorphism \m{\mathrm{conj}\circ\sigma\circ\mathrm{conj}}}
+\nt{$N$, $t$, $\mathsf{d}$}{an integer in Lemmas \ref{l:mh} and~\ref{l:sparse}; a matrix in Lemma~\ref{l:sparse}; a
+degree}
 \nt{$c(\vartheta)$, $c_1$, $c_2$, $C_1$, $C_2$, $u$, $w$ (matrices), $\phi$, $\Phi_0$, $\mathfrak{n}$}{objects of
 Theorem~C}
 \nt{$F$, $g_0$, $y$, $z$, $a$, $e$, $l$, $h$, $d$, $c$, $c'$, $v$, $Y$, $Q$, $H$ (integer), $A$, $B$ (numbers),

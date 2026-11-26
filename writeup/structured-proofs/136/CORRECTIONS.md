@@ -81,3 +81,33 @@ ExponentLattices, HodgeExpansion, CupProductBound, CokernelKillers, LongGap (136
 - dossier digest of 136: old `8f098a961fe45f5f09fd27a383a255a613e95336375dc5601ff89ad555e1a5d4` → new `97661ebe12eae50d8d53f621ce1ef102adf4b82a3fee3889fd5b3658b32abdc1`
 - chunk 136-a: old `424f4f2720784b6d8b4cc8ef51bda64879b42032a92f268d597754494739fb64` → new `d298509e999e024117abec02a8a492f5cb13b7a052cf0223c0bac028bdf8021d`; 136-b: old `dccd5a2baff1612de4be3053030ba3d0501475c2ce79922b340402ef759c58ae` → new `07bbf3293a95ae076a6d58b7e3633c258b1036194a0aa3027d43740ac01ff4aa`
 - `python3 tools/rb.py check 136`: exit 0 — 141 of 141 statements at their lines; 69 structured proofs, 430 steps, 375 leaves (longest 8 lines); typed facts 34 of 34; imports quoted 148 of 148; arguments accounted for 1408 of 1408. `check 136-a`, `check 136-b`: exit 0.
+
+## 2026-11-26 (third pass) — the note writer's findings
+
+Correction reader: a Claude agent (Opus 5.5), the only writer of 136 and its chunks during this pass. Applied: the two findings of the note writer, each read against the pinned source (`lsernau/grh-lean` @ `72fead1`, `grh-compact/src`) before it was written. The changes are exact replacements in the generated records of chunk 136-b, made by a new module `gen/pass3.py` (with `gen/fixlib.py`; applied fixes logged in `gen/pass3.log.json`), called by `gen/build.py` after the literature records; 136-a needed no change. 136-b was emitted again, checked, and the unit merged with `book/plan/merge_chunks.py 136`. Nothing was built.
+
+### What was applied
+
+- `exists_relLength_deepConstants_le` (summary): q·p is the least multiple of p that is at least b(i) + W + 2a (FewLowJumps.lean 130–131: `existsUnique_add_zsmul_mem_Ico` with q·p ∈ [b(i) + W + 2a, b(i) + W + 2a + p)), not a Euclidean quotient, which rounds down.
+- `Lift.KummerChart.universalSide` (arguments): the section hypothesis hF : map k.Γ'.subtype ⊤ ≤ F (ExponentTheorems.lean 31), which the census omits, is an explicit argument between ζ and h — the uses `k.universalSide ζ hF (hc Y a)` and `k.universalSide ζ hF hL` (lines 57–58) pass it — so the list is now hand-derived (`binders_basis` "lean", `binders_lean` saying that Lean was not asked, `binders_derivation`), with hF added after F. The text already wrote universalSide(k, ζ, hF, h).
+
+### Changes (old → new)
+
+#### Chunk 136-b (5 recorded fixes; `gen/pass3.py`, log `gen/pass3.log.json`)
+- `Lift.KummerChart.PairingSide.exists_relLength_deepConstants_le` proof summary: “(q from the Euclidean division of b(i) + W + 2a by p)” → “(q·p the least multiple of p that is ≥ b(i) + W + 2a: b(i) + W + 2a ≤ q·p < b(i) + W + 2a + p, existsUnique_add_zsmul_mem_Ico — not the quotient of a Euclidean division, which rounds down)”. [writer: FewLowJumps.lean 130–131 (existsUnique_add_zsmul_mem_Ico p 0 (b i + W + 2a): q·p ∈ [b(i) + W + 2a, b(i) + W + 2a + p))]
+- `Lift.KummerChart.universalSide` binders: + hF (explicit, map k.Γ'.subtype ⊤ ≤ F) at position 13. [writer: ExponentTheorems.lean 28–31 (section hypothesis (hF : map k.Γ'.subtype ⊤ ≤ F)), 50–52, 57–58 (`k.universalSide ζ hF (hc Y a)`)]
+- `Lift.KummerChart.universalSide` binders_basis: set to “lean”. [writer]
+- `Lift.KummerChart.universalSide` binders_lean: set to “NOT printed by Lean: nothing is built on this machine, so `#check @Lift.KummerChart.universalSide` was not run. The list is the census's text reading with the s…”. [writer]
+- `Lift.KummerChart.universalSide` binders_derivation: set to “source-derived, not elaborator output: the section variables of New/Lift/ExponentTheorems.lean 28–31 end with (k) (ζ) (ho) {F} (hF : map k.Γ'.subtype ⊤ ≤ F); th…”. [writer]
+
+### Not applied, and why
+
+- Nothing contested.
+
+### Digests and checks
+
+- dossier digest of 136: old `97661ebe12eae50d8d53f621ce1ef102adf4b82a3fee3889fd5b3658b32abdc1` → new `be353f4efee4e4b2693285236b5782e4144fb6029f07bae9dff573f05a368d2a`
+- chunks: 136-a unchanged `d298509e999e024117abec02a8a492f5cb13b7a052cf0223c0bac028bdf8021d`; 136-b `07bbf3293a95ae076a6d58b7e3633c258b1036194a0aa3027d43740ac01ff4aa` → `7b4f46c93c61ff50465fdfac31b3479d89171ef0ff43eddd8e16549719a3fd9d`
+- `python3 tools/rb.py check 136`: exit 0 — 141 of 141 statements at their lines; 69 structured proofs, 430 steps, 375 leaves (longest 8 lines, bound 8); typed facts 34 of 34; imports quoted 148 of 148; arguments accounted for 1409 of 1409 (1 member by Lean's own signature, which this check cannot confirm: universalSide). `check 136-a`, `136-b`: exit 0.
+
+Cost: about 75 minutes of wall time for the five units 148, 132, 138, 136 and 147 together (about 09:20Z–10:35Z by the clock, the start estimated from the first backup at 09:47Z and the reading before it), shared among them; tokens not reported by the client.
