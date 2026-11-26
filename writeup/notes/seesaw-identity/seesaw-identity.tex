@@ -8,7 +8,7 @@
 %  line ranges and counts come from data.tex; quoted Lean statements are copied from the artifact by the build.
 %
 %  Rules of the text: standard terminology; every symbol is explained where it first appears and listed again
-%  in the notation at the end; no letter has two meanings; a proof is complete or says what it takes for granted;
+%  in the notation at the end; no letter has two meanings, except as the notation lists; a proof is complete or says what it takes for granted;
 %  Lean names appear only in the LEAN lines and in the concordance.
 %
 %  The signature rule (the build enforces it): a function, relation or predicate that the artifact defines is
@@ -147,6 +147,8 @@
 \renewenvironment{proof}[1][Proof]{\par\pushQED{\qed}\normalfont\topsep0pt\partopsep0pt
   \trivlist\item[\hskip\labelsep\itshape #1.]\ignorespaces}{\popQED\endtrivlist\@endpefalse}
 \makeatother
+% the two boxes of Inputs carry their own numbers: \inputslabel{number}{label}
+\makeatletter\newcommand{\inputslabel}[2]{\def\@currentlabel{#1}\label{#2}}\makeatother
 
 % where each declaration of the concordance is treated: \cs{key}{place}, the place naming a \label or a lettered item
 \cs{seesaw}{Theorem A}
@@ -293,7 +295,7 @@
 \newcommand{\gY}[1]{\mathcal{Y}_{#1}(D)}           % the grading of Y_j(D)
 \newcommand{\gYlast}{\mathcal{Y}_{\mathrm{last}}(D)}
 \newcommand{\cutB}{\mathrm{cut}(D)}                % g(D)^{f(D) n_m(D)^2}
-\newcommand{\unf}[6]{P^{(#5)}_{D,#1,#2}[#3,#4;#6]} % the stage function
+\newcommand{\unf}[6]{\mathfrak{P}^{(#5)}_{D,#1,#2}[#3,#4;#6]} % the stage function
 \newcommand{\Bes}[1]{B(#1)}                        % the Bessel group of a grading
 \newcommand{\Besf}[1]{B_f(#1)}
 \newcommand{\Besr}[1]{\Gamma_B(#1)}                % its rational points
@@ -303,6 +305,15 @@
 \newcommand{\cst}[1]{\mathfrak{c}(#1)}             % the constant of a grading
 \newcommand{\lv}[2]{\ell_{#2}(#1)}                 % minus the order at w of an idele
 \newcommand{\coef}[2]{\langle #1,#2\rangle}        % the coefficient of an algebraic form at a functional
+\newcommand{\cD}[1]{c_{#1}}                         % the constant of Theorem A
+\newcommand{\vpi}[2]{\varpi(#1,#2)}                % the generator of the different of E(P,\mu) (Chapter III)
+\newcommand{\cgD}[1]{\hat{\pi}_g(#1)}               % the idele of \bar\pi_g(D) (unit Trace)
+\newcommand{\piId}[1]{\hat{\pi}_N(#1)}              % the principal idele of \pi_N(D) (unit Trace)
+\newcommand{\zw}[2]{z_{#2}(#1)}                     % the central translation at a place of \Pi(D)
+\newcommand{\XIo}[2]{\underline{X}^{\circ}_{#2}(#1)} % X_j(D) without its point
+\newcommand{\transum}[5]{\mathsf{T}_{#4,#3}(#1,#2,#5)} % the translate sum, as in the note on the Gauss-sum operator
+\newcommand{\Tm}[2]{T_{#1,#2}}                      % the string map of two gradings, as in the note on two lifts
+\newcommand{\pW}[1]{\omega^{\mathrm{pr}}_{#1}}      % the twisted pair action, as in the note on two lifts
 
 \begin{document}
 \color{ink}
@@ -383,16 +394,46 @@ with coefficients~$\Psi$, of composites of $m$ theta lifts $\Xs{D}{0}\to\dots\to
 forms, followed by the restriction from $\Xs{D}{m}$ to $\Ys{D}{m}$ (Definition~\ref{d:good}).
 
 \statement{arith}{\phantomsection\label{t:A}\textbf{Theorem A (the seesaw identity).}\enspace In
-Setting~\ref{s:data} there is one non-zero complex number~$c$, depending only on~$D$, such that for every twist $\vartheta$ of~$D$ there is a
+Setting~\ref{s:data} there is one non-zero complex number~$\cD{D}$, depending only on~$D$, such that for every twist $\vartheta$ of~$D$ there is a
 finitely supported function $\Psi\colon\Tr{D}\to\CC$ which is a good datum for $\vartheta$
 (Definition~\ref{d:good}) and satisfies
-\[\iot{\vartheta}\bigl(\PoinD{D}(c\,\varphi)\bigr)\;=\;\Bmu{D}{\vartheta}{\Psi}(\varphi)
+\[\iot{\vartheta}\bigl(\PoinD{D}(\cD{D}\,\varphi)\bigr)\;=\;\Bmu{D}{\vartheta}{\Psi}(\varphi)
 \qquad\text{for every ramified column }\varphi\in\Colram{D}.\]
-The constant $c$ is chosen before~$\vartheta$, and $\Psi$ before~$\varphi$: one scalar for the datum~$D$, one good
+The constant $\cD{D}$ is chosen before~$\vartheta$, and $\Psi$ before~$\varphi$: one scalar for the datum~$D$, one good
 datum for each twist, and the identity for all ramified columns at once; no condition is put on the column.}
 \leanline{\lean{seesaw}}
 
-The proof has two engines. The first cuts one period into a finite sum.
+The proof has two engines. The first is an induction over the lifts. Its statement is abstract on purpose: the
+map $S$ below will be specialised, in the proof of Theorem~A, to a tensor of finite theta data.
+
+\statement{arith}{\phantomsection\label{t:B}\textbf{Theorem B (unfolding).}\enspace In Setting~\ref{s:data} let
+$j$ be a natural number with \m{j\le 2\rhoD{D}+2}, let $\mathcal{Y}$ be a grading of $\Ys{D}{j}$ with norm $\ND{D}$,
+with a finite set $X$ and a string of length~$l$, where \m{l=2\rhoD{D}+1-j} (and \m{l=0} for \m{j=2\rhoD{D}+2}),
+and let $\mathsf{a}$ be a complex function of the tuples \m{\xi=(\xi_i)_{i\in\NN}} of real points \m{\xi_i\in G_\infty(\Ys{D}{i})}.
+There is a complex number $C$ such that for every tame character $\vartheta$ of~$D$, every complex vector space $M$
+and every map $S$ from the tuples \m{q=(q_i)_{i\in\NN}} of cosets $q_i\in G_f(\Ys{D}{i})/\levelY{\vartheta}{i}$ to~$M$
+there is a vector \m{\mathsf{w}\in M} such that:
+\begin{enumerate}[label=(\roman*)]
+\item $\mathsf{w}\in\Adm{v_S}{\mathrm{all}}{\lvn{\vartheta}}{1}{\Qs{\vartheta}=\emptyset}{\cutB^{\,j}}$, where $v_S$ sends a
+  tuple \m{y=(y_i)} of finite points $y_i\in\Kaw{\lvn{\vartheta}}{\Ys{D}{i}}$, integral at the places not dividing
+  $\lvn{\vartheta}$, to $S\bigl((y_i\,\levelY{\vartheta}{i})_i\bigr)$, and ``all'' is the set of all such tuples;
+\item \m{\Omega(\mathsf{w})=\mathsf{w}} for every tuple \m{b=(b_i)} with \m{b_i\in\Kst{D}{i}} and every linear map
+  $\Omega\colon M\to M$ such that \m{\Omega(S(q))=S(q')} for all~$q$, where
+  $q'_i=\inclf{\gY{i}}(b_i)\,q_i$ for \m{i<j} and \m{q'_i=q_i} for \m{i\ge j};
+\item for every form $z$ on $\Ys{D}{j}$ of the conjugate type \m{\cj{\FormY{j}}}, every ramified column
+  \m{\varphi\in\Colram{D}} and every linear form $L\colon M\to\CC$: \emph{if} for all tuples $\xi$ of real points
+  and $y$ of finite points with \m{y_{2\rhoD{D}+2}=1} and \m{y_0\in\Kch{D}{\Ys{D}{0}}} the function
+  $F=\unf{\vartheta}{\varphi}{\xi}{y}{j}{\mathcal{Y}}\cdot z$, in case it is integrable on
+  $\Besr{\mathcal{Y}}\backslash G(\Ys{D}{j})$, satisfies
+  \[\int_{\Besr{\mathcal{Y}}\backslash G(\Ys{D}{j})}F\;=\;\mathsf{a}(\xi)\cdot L\bigl(S((y_i\,\levelY{\vartheta}{i})_i)\bigr),\]
+  \emph{then}
+  \[\int_{[G(\Ys{D}{j})]}z\cdot\chainY{\vartheta}{j}{\bigl(\PoinD{D}\varphi\bigr)}\;=\;C\cdot L(\mathsf{w}).\]
+\end{enumerate}
+The notation $\Adm{\cdot}{\cdot}{\cdot}{\cdot}{\cdot}{\cdot}$ for admissible combinations is recalled in
+Definition~\ref{d:adm}, the number $\cutB$ in Definition~\ref{d:eval}.}
+\leanline{\lean{existsisAdmissibleCombunfolding}}
+
+The second engine cuts one period into a finite sum; the induction of Theorem~B uses it once at every lift.
 
 \statement{arith}{\phantomsection\label{t:C}\textbf{Theorem C (finite cuts).}\enspace In Setting~\ref{s:data} let
 $j$ be a natural number with \m{j\le 2\rhoD{D}+1}, and let \m{\mathcal{Y}=\gY{j}} be the grading of $\Ys{D}{j}$
@@ -413,36 +454,6 @@ Here $\Kst{D}{j}$ is the level of stage~$j$ (Definition~\ref{d:columns}), $\leve
 Definition~\ref{d:lift}, and $\unf{\vartheta}{\varphi}{\xi}{y}{j}{\mathcal{Y}}$ the stage function of
 Definition~\ref{d:stage}.}
 \leanline{\lean{existsstagecut}}
-
-The second engine is an induction over the lifts. Its statement is abstract on purpose: the map $S$ below will be
-specialised, in the proof of Theorem~A, to a tensor of finite theta data.
-
-\statement{arith}{\phantomsection\label{t:B}\textbf{Theorem B (unfolding).}\enspace In Setting~\ref{s:data} let
-$j$ be a natural number with \m{j\le 2\rhoD{D}+2}, let $\mathcal{Y}$ be a grading of $\Ys{D}{j}$ with norm $\ND{D}$,
-with a finite set $X$ and a string of length~$l$, where \m{l=2\rhoD{D}+1-j} (and \m{l=0} for \m{j=2\rhoD{D}+2}),
-and let $\mathsf{a}$ be a complex function of the tuples \m{\xi=(\xi_i)_{i\in\NN}} of real points \m{\xi_i\in G_\infty(\Ys{D}{i})}.
-There is a complex number $C$ such that for every tame character $\vartheta$ of~$D$, every complex vector space $M$
-and every map $S$ from the tuples \m{q=(q_i)_{i\in\NN}} of cosets $q_i\in G_f(\Ys{D}{i})/\levelY{\vartheta}{i}$ to~$M$
-there is a vector \m{w\in M} such that:
-\begin{enumerate}[label=(\roman*)]
-\item $w\in\Adm{v_S}{\mathrm{all}}{\lvn{\vartheta}}{1}{\Qs{\vartheta}=\emptyset}{\cutB^{\,j}}$, where $v_S$ sends a
-  tuple \m{y=(y_i)} of finite points $y_i\in\Kaw{\lvn{\vartheta}}{\Ys{D}{i}}$, integral at the places not dividing
-  $\lvn{\vartheta}$, to $S\bigl((y_i\,\levelY{\vartheta}{i})_i\bigr)$, and ``all'' is the set of all such tuples;
-\item \m{\Omega(w)=w} for every tuple \m{b=(b_i)} with \m{b_i\in\Kst{D}{i}} and every linear map
-  $\Omega\colon M\to M$ such that \m{\Omega(S(q))=S(q')} for all~$q$, where
-  $q'_i=\inclf{\gY{i}}(b_i)\,q_i$ for \m{i<j} and \m{q'_i=q_i} for \m{i\ge j};
-\item for every form $z$ on $\Ys{D}{j}$ of the conjugate type \m{\cj{\FormY{j}}}, every ramified column
-  \m{\varphi\in\Colram{D}} and every linear form $L\colon M\to\CC$: \emph{if} for all tuples $\xi$ of real points
-  and $y$ of finite points with \m{y_{2\rhoD{D}+2}=1} and \m{y_0\in\Kch{D}{\Ys{D}{0}}} the function
-  $F=\unf{\vartheta}{\varphi}{\xi}{y}{j}{\mathcal{Y}}\cdot z$, in case it is integrable on
-  $\Besr{\mathcal{Y}}\backslash G(\Ys{D}{j})$, satisfies
-  \[\int_{\Besr{\mathcal{Y}}\backslash G(\Ys{D}{j})}F\;=\;\mathsf{a}(\xi)\cdot L\bigl(S((y_i\,\levelY{\vartheta}{i})_i)\bigr),\]
-  \emph{then}
-  \[\int_{[G(\Ys{D}{j})]}z\cdot\chainY{\vartheta}{j}{\bigl(\PoinD{D}\varphi\bigr)}\;=\;C\cdot L(w).\]
-\end{enumerate}
-The notation $\Adm{\cdot}{\cdot}{\cdot}{\cdot}{\cdot}{\cdot}$ for admissible combinations is recalled in
-Definition~\ref{d:adm}, the number $\cutB$ in Definition~\ref{d:eval}.}
-\leanline{\lean{existsisAdmissibleCombunfolding}}
 
 \sect{The setting}{s:setting}
 \begin{conventions}\phantomsection\label{c:conventions}
@@ -507,8 +518,9 @@ A function $F\colon G(V)\to\CC$ is \emph{generic for~$\mathcal{Y}$} if it is con
 $\Besr{\mathcal{Y}}$, and for every \m{u\in\Uni{\mathcal{Y}}} such that \m{u-1} raises grades by at least~$2$ and
 every \m{g\in G(V)} satisfies $F(ug)=\psi_E\bigl(\tfrac{\mathbf{j}}2\operatorname{tr}(\mathrm{sh}_{\mathcal{Y}}\,u)\bigr)F(g)$;
 here $\psi_E$ is the standard additive character of \m{\Ad/E} and $\mathrm{sh}_{\mathcal{Y}}$ is the rational
-matrix that kills $X$ and sends $z_a$ to a multiple of~$z_{a+1}$, the multiple being $\cst{\mathcal{Y}}$ times
-\m{-N}, \m{-N\cst{\mathcal{Y}}} or~$1$ according to the position of $a$ in the string.
+matrix that kills $X$ and sends $z_a$ to a multiple of~$z_{a+1}$ (and the last string vector to~$0$), the multiple
+being $\cst{\mathcal{Y}}$ times \m{-N} if $z_a$ is the middle vector, times \m{-N\cst{\mathcal{Y}}} if $l$ is even and
+$z_a$ has grade~$1$, and times~$1$ otherwise.
 \end{definition}
 
 \begin{definition}[theta data, lifts and the unfolding step; recalled]\label{d:theta}
@@ -519,21 +531,27 @@ representation~$\omega$ of~$G(W)$, the theta functional~$\theta$, the vacuum, th
 $\mathcal{W}_f(W)$ spanned by the translates \m{\varrho_f(y)} of the vacuum, and the datum $v\tensor f$ made
 of a vector $v$ of the Fock model at the infinite places and $f\in\mathcal{S}(W)$. For a character $\nu$ of the
 norm-one adeles the pair \m{G(V)\times G(V')} acts on $\mathcal{S}(\Hom(V,V'))$ by the Weil representation
-twisted by~$\nu$ and powers of~$\upsilon$, written $\omega_\nu$; its restriction to finite points acts on the finite
-part. The \emph{theta lift} with datum $\Phi$ of a function $F$ on $[G(V)]$ is
-$h\mapsto\int_{[G(V)]}\theta(\omega_\nu(g,h)\Phi)\,F(g)\,dg$. Let $\mathcal{Y}$, $\mathcal{Y}'$ be gradings of
-$V$, $V'$ with the same norm and strings of lengths $l$ and \m{l-1}. For \m{g\in G(V)}, \m{h\in G(V')} the
-\emph{constant term at the string map} $\mathrm{ct}_{\mathcal{Y},\mathcal{Y}'}(\nu,\Phi)(g,h)$ is the mean, over
-the adelic maps of positive degree modulo the rational ones, of the Heisenberg translates of
-\m{\omega_\nu(g,h)\Phi} evaluated at the rational map that sends each string vector of $\mathcal{Y}$ to a
-multiple of the string vector of $\mathcal{Y}'$ with the same number. For a function $F$ on $G(V)$ and
-\m{x\in G(V)} the \emph{unfolded function} is
-\[\bigl(\mathrm{unf}_{\mathcal{Y},\mathcal{Y}'}(\nu,\Phi;F,x)\bigr)(h)=\int_{[\Bes{\mathcal{Y}}]}F(\varrho x)\;
-\mathrm{ct}_{\mathcal{Y},\mathcal{Y}'}(\nu,\Phi)(\varrho x,h)\,d\varrho .\]
+twisted by~$\nu$ and powers of~$\upsilon$, the \emph{twisted pair action} $\pW{\nu}$ of the note \emph{Two
+consecutive theta lifts}; its restriction to finite points acts on the finite part. The \emph{theta lift} with
+datum $\Phi$ of a function $F$ on $[G(V)]$ is
+$h\mapsto\int_{[G(V)]}\theta(\pW{\nu}(g,h)\Phi)\,F(g)\,dg$. Let $\mathcal{Y}$, $\mathcal{Y}'$ be gradings of
+$V$, $V'$ with the same norm and strings of lengths $l$ and \m{l-1}. The \emph{string map}
+$\Tm{\mathcal{Y}}{\mathcal{Y}'}\colon V\to V'$ is the rational matrix that kills $X$ and sends the string vector
+$z_a$ of $\mathcal{Y}$ to a multiple of the string vector of $\mathcal{Y}'$ with the same number~$a$ (and the last
+one to~$0$); the multiple is $1$, \m{-N\cst{\mathcal{Y}}} or $\cst{\mathcal{Y}}$ for $z_a$ of positive, zero or
+negative grade if $l$ is odd, and $\cst{\mathcal{Y}}$ or $1$ for positive or negative grade if $l$ is even. A
+matrix \m{n\colon V\to V'} is read as a vector of \m{\Hom(V,V')} in the coordinates of the frames, and the
+\emph{degree} of its position $(i',i)$ is \m{\gr(i')-\gr(i)}. For \m{g\in G(V)}, \m{h\in G(V')} the \emph{constant
+term at the string map} $\mathrm{ct}_{\mathcal{Y},\mathcal{Y}'}(\nu,\Phi)(g,h)$ is the mean of
+\[\theta\bigl(\varrho(n)\,\varrho(\Tm{\mathcal{Y}}{\mathcal{Y}'})\,\pW{\nu}(g,h)\Phi\bigr)\]
+over the adelic matrices \m{n\colon V\to V'} with entries only in positions of positive degree, modulo the
+rational ones. For a function $F$ on $G(V)$ and \m{x\in G(V)} the \emph{unfolded function} is
+\[\bigl(\mathrm{unf}_{\mathcal{Y},\mathcal{Y}'}(\nu,\Phi;F,x)\bigr)(h)=\int_{[\Bes{\mathcal{Y}}]}F(\varsigma x)\;
+\mathrm{ct}_{\mathcal{Y},\mathcal{Y}'}(\nu,\Phi)(\varsigma x,h)\,d\varsigma .\]
 \end{definition}
 
-\statement{ana}{\textbf{Inputs 1 (the background library, folder \emph{Weil/Periods} and \emph{Weil/Lift}).}
-\phantomsection\label{in:lib}\enspace In the notation of Definitions~\ref{d:grading} and~\ref{d:theta}:
+\statement{ana}{\textbf{Inputs 1 (the background library).}
+\phantomsection\inputslabel{1}{in:lib}\enspace In the notation of Definitions~\ref{d:grading} and~\ref{d:theta}:
 \begin{enumerate}[label=(\alph*)]
 \item \emph{Genericity is inherited.} If $F$ is generic for $\mathcal{Y}$ and
   $\cst{\mathcal{Y}'}=\cst{\mathcal{Y}}$, then $\mathrm{unf}_{\mathcal{Y},\mathcal{Y}'}(\nu,\Phi;F,x)$ is generic
@@ -541,7 +559,7 @@ multiple of the string vector of $\mathcal{Y}'$ with the same number. For a func
 \item \emph{One unfolding step.} If $F$ is generic for~$\mathcal{Y}$ and $z$ is an automorphic, rapidly decreasing
   function on $G(V')$, then $\mathrm{unf}_{\mathcal{Y},\mathcal{Y}'}(\nu,\Phi;F,x)\cdot z$ is integrable on
   $\Besr{\mathcal{Y}'}\backslash G(V')$, and its integral there equals
-  $\int_{[\Bes{\mathcal{Y}}]}F(\varrho x)\int_{[G(V')]}\theta(\omega_\nu(\varrho x,h)\Phi)\,z(h)\,dh\,d\varrho$.
+  $\int_{[\Bes{\mathcal{Y}}]}F(\varsigma x)\int_{[G(V')]}\theta(\pW{\nu}(\varsigma x,h)\Phi)\,z(h)\,dh\,d\varsigma$.
 \item \emph{Lift and descent are transposes.} A datum $\Phi$ is an \emph{arrow} from a type $\mathsf{q}$ on $V$ to
   a type $\mathsf{q}'$ on $V'$ if every form of type $\mathsf{q}$ is rapidly decreasing and its theta lift with
   datum $\Phi$ is a form of type~$\mathsf{q}'$. If $\Phi$ is an arrow from $\mathsf{q}$ to $\mathsf{q}'$ and, for the
@@ -553,13 +571,60 @@ multiple of the string vector of $\mathcal{Y}'$ with the same number. For a func
   $E$ is stably unramified and two matrices over $\Oh$ with $n$ rows and equally many columns have left inverses
   over $\Oh$ and equal Gram matrices for the standard form, then a matrix in \m{\GL_n(\Oh)} preserving the standard
   form carries one to the other.
-\end{enumerate}
-For (a) and (b) the Lean file cites B.~Wang Peng Jun, \emph{Global theta lifting and automorphic periods
-associated to nilpotent orbits}, J.~Number Theory 271 (2025), Prop.~3.2 and Thm.~4.5, and for the local case
-R.~Gomez and C.-B.~Zhu, GAFA 24 (2014); the authors mark the first as compared, with the place confirmed. Our
-catalogue has not confirmed these places: \emph{reference to be confirmed}. For (d) the catalogue gives
-U.~A.~First, J.~Pure Appl.\ Algebra 219 (2015), Cor.~4.9 and~4.11 (Witt's extension theorem, here in a special
-case), and ``Hermite normal form over a valuation ring'' without a place.}
+\end{enumerate}}
+
+\statement{ana}{\textbf{Inputs 1, continued (the background library).}\enspace In the same notation:
+\begin{enumerate}[label=(\alph*),start=5]
+\item \emph{Discrete-series edges are arrows.} If the parameters, weights and signs of $V$ and $V'$ correspond in
+  the sense of the unit \emph{Exchange}, then the vector of the Fock model given by the product of the chosen
+  joint harmonic polynomials is an \emph{edge} between the two discrete-series types; and an edge, tensored with
+  any element of the finite part, is an arrow in the sense of~(c) from the first type to the second and, for the
+  pair with the two groups exchanged, from the conjugate of the second to the conjugate of the first, for
+  characters of the weights of the two spaces.
+\item \emph{Data named modulo a modulus.} For a modulus~$\mathfrak{m}$, integral finite points \m{k\in\Kz{V}},
+  \m{k'\in\Kz{V'}} and a residue matrix $y$ modulo~$\mathfrak{m}$, with \m{y'=\cj{k'}^{-1}y\,\cj{k}} for the
+  reductions $\cj{k}$, $\cj{k'}$ modulo~$\mathfrak{m}$: the operator \m{\pW{\nu}((1,k),(1,k'))} carries the vector
+  named on the vacuum by the indicator of $y'$ to the vector named by the indicator of~$y$, times the value of
+  the twisting character of $V$ at \m{\det k'} and the inverse of the value of that of $V'$ at \m{\det k}.
+\item \emph{Constant terms are zero terms.} There is a splitting of \m{\Hom(V,V')}, in the sense of the note
+  \emph{Two consecutive theta lifts}, whose isotropic frame consists of the basis vectors at the positions of
+  positive degree, such that for every datum $\Phi$ and every adelic matrix \m{y\colon V\to V'} the mean of
+  \m{\theta(\varrho(n)\varrho(y)\Phi)} over the matrices $n$ of positive degree, as in Definition~\ref{d:theta},
+  is the theta function of the zero term of \m{\varrho(y)\Phi} along that splitting.
+\item \emph{Kernels of definite pairs give theta lifts.} For standard definite spaces of ranks \m{0<n<n'}, weights
+  that fit, a level, a non-zero scale and characters of the two weights, the lifts of algebraic modular forms by
+  the theta kernels of the pair form a family of theta lifts in the sense of Input~5 of the note \emph{Two
+  consecutive theta lifts}: the theta integral of a coefficient of a form against a datum with a polynomial vector
+  at the infinite places is a coefficient of the lift of the form.
+\item \emph{Cut-off functions and integration in stages.} A proper action of a group with a right invariant
+  measure on a $\sigma$-compact Hausdorff space has a cut-off function, a non-negative function whose integral
+  over every orbit is~$1$. If $\Delta$ is a subgroup of a subgroup $H$ of a group~$G$, and a map
+  \m{(x,h)\mapsto h\,\mathsf{s}(x)} carries the product of a measure on a space of parameters $x$ and the measure
+  of $H$ to the measure of~$G$, then for a measurable, left $\Delta$-invariant function $F$ that is integrable on
+  \m{\Delta\backslash G}, the inner integrals \m{\int_{\Delta\backslash H}F(h\,\mathsf{s}(x))\,dh} are integrable
+  in~$x$ and their integral is \m{\int_{\Delta\backslash G}F}; the quotients carry the measures induced as in
+  Definition~\ref{d:space}.
+\end{enumerate}}
+
+\subhead{Status of Inputs~1.} For (a) and (b) the Lean file cites B.~Wang Peng Jun, \emph{Global theta lifting and automorphic
+periods associated to nilpotent orbits}, J.~Number Theory 271 (2025), Prop.~3.2 and Thm.~4.5, and for the local
+case R.~Gomez and C.-B.~Zhu, GAFA 24 (2014); the authors mark the first as compared, with the place confirmed. Our
+catalogue has not confirmed these places: \emph{reference to be confirmed}. For (d) the catalogue lists Witt's
+theorem over $\Oh$ in the special case of orthonormal columns, which the library deduces from the statement with
+equal Gram matrices used here, and gives for it U.~A.~First, \emph{Witt's extension theorem for quadratic spaces
+over semiperfect rings}, Remark~2.1 and Corollary~4.9, applied on each orbit of conjugation on the finite places;
+for Hermite reduction it records ``Hermite normal form over a valuation ring'' without a place. For the first
+statement of (e) the catalogue cites Ichino, \emph{Theta lifting for discrete series representations of real
+unitary groups} (arXiv:2002.09148), Theorem~4.1 and Lemma~7.8, pp.~35--36, for the compact types, and records the
+verdict of its second reading: the formal matching condition selects witnesses for a two-sided analytic
+statement beyond the published joint-type criterion. So the formal statement is not a special case or a weaker
+form of the cited ones: it goes beyond them, and its relation to the literature is unresolved; it is used here
+as the library proves it. The second statement of (e) and (f) are classed elementary. For (h) the library's
+heading is ``Theta lift for a definite unitary pair as a class sum on algebraic modular forms''; for the
+class-sum formula behind it the catalogue names B.~Gross, \emph{Algebraic modular forms}, Israel J. Math.\ 113
+(1999), Kashiwara--Vergne (1978) and R.~Howe, \emph{Transcending classical invariant theory}, J.~Amer.\ Math.\
+Soc.\ 2 (1989), place not confirmed. For (c), (g) and (i) the catalogue has no reference: \emph{reference to be
+confirmed}.
 
 \subhead{The data.}
 
@@ -590,19 +655,22 @@ In Setting~\ref{s:data}:
 \item for a natural number $j$ with \m{j\le2\rhoD{D}+1}, $\gY{j}$ is the grading of $\Ys{D}{j}$ as
   $\XI{D}{j}$ plus a string of length \m{2\rhoD{D}+1-j=m-1-j} with norm $\ND{D}$, with the bijection onto
   $\YI{D}{j}$ fixed in the unit \emph{Trace} and with the constant
-  $\cst{\gY{j}}=-\bigl(\mathbf{j}\,\gD{D}\,\varpi\bigr)^{-1}$, where $\varpi$ is the generator of the different of
-  $\ED{D}$ fixed in Chapter~III;
+  $\cst{\gY{j}}=-\bigl(\mathbf{j}\,\gD{D}\,\vpi{P}{\mu}\bigr)^{-1}$, where $\vpi{P}{\mu}$ is the generator of the
+  different of $\ED{D}$ fixed in Chapter~III;
 \item $\gYlast$ is the grading of the standard space $\Ys{D}{m}$ as a set of \m{\nD{D}{m}-1} elements, the set
   $\XI{D}{m}$ without its last element, plus a string of length~$0$, with norm $\ND{D}$ and constant~$1$. In the
   formal text it is given for every number $M$ together with a proof that \m{m=M}.
 \end{enumerate}
-The last element of $\XI{D}{j}$ is called the \emph{point} of~$\XI{D}{j}$.
+The last element of $\XI{D}{j}$ is called the \emph{point} of~$\XI{D}{j}$, and $\XIo{D}{j}$ is the set $\XI{D}{j}$
+without its point.
 \end{definition}
 \leanline{\lean{gradingY}\sep\lean{lastGrading}}
 
-The space $\Ys{D}{j}$ is thus the orthogonal sum of the definite space $\Xs{D}{j}$ and a string that becomes
-shorter by one vector with each lift; an odd string has a middle vector of norm \m{-\ND{D}}, which makes the space
-indefinite, and for \m{j=m} the string is empty.
+For \m{j\le m-1} the space $\Ys{D}{j}$ is thus the orthogonal sum of the definite space $\Xs{D}{j}$ and a string of
+length \m{m-1-j}, one vector shorter after each lift. A non-empty string makes the space indefinite (by its
+hyperbolic planes and, for odd length, its middle vector of norm \m{-\ND{D}}). For \m{j=m-1} the string is empty
+and $\Ys{D}{m-1}$ is definite; $\Ys{D}{m}$ is the standard definite space of rank \m{\nD{D}{m}-1}, whose index
+set the grading $\gYlast$ identifies with~$\XIo{D}{m}$.
 
 \begin{definition}[one lift of the indefinite chain]\label{d:lift}
 In Setting~\ref{s:data} let $\vartheta$ be a tame character of $D$ and $j$ a natural number.
@@ -613,7 +681,7 @@ In Setting~\ref{s:data} let $\vartheta$ be a tame character of $D$ and $j$ a nat
   \m{\muc{D}{\vartheta^{j+1}}{j+1}} of the lift number \m{j+1}: a family of characters of the residue fields, equal
   to $\omega_{D,w}^{j+1}\psi_{\vartheta,w}^{j+1}$ at~$w$.
 \item \m{\kerY{\vartheta}{j}} is the theta kernel of the pair \m{(\Ys{D}{j},\Ys{D}{j+1})}: the space of theta data
-  of the space of homomorphisms from $\Ys{D}{j}$ to $\Ys{D}{j+1}$, with the Weil representation $\omega_\nu$ of
+  of the space of homomorphisms from $\Ys{D}{j}$ to $\Ys{D}{j+1}$, with the twisted pair action $\pW{\nu}$ of
   Definition~\ref{d:theta} for \m{\nu=\muc{D}{\vartheta^{j+1}}{j+1}} and with the theta functional.
 \item \m{\ups{\vartheta}{j}} is the element of the finite part of this space obtained from the vacuum by the
   operator named by the indicator function of the matrices that are integral and congruent to the block
@@ -663,7 +731,7 @@ In Setting~\ref{s:data} let $\vartheta$ be a tame character of~$D$.
 \leanline{\lean{lastResLevel}\sep\lean{lastLevelChar}\sep\lean{iotaAtLevel}\sep\lean{groupLift}}
 
 \begin{setting}[filling data that fit a space; recalled from the unit \emph{Filling}]\label{s:filling}
-Let $\mathsf{S}$ be filling data over $E$ of a shape with $\varrho$ hyperbolic planes (Chapter~VI): among its
+Let $\mathsf{S}$ be filling data over $E$ of a shape with a number of hyperbolic planes (Chapter~VI): among its
 components are a prime~$N$, two further primes with product~$g_{\mathsf{S}}$, their chosen places, a generator
 $\varpi_{\mathsf{S}}$ of the different, a level $K_{\mathsf{S}}$ on the definite part $X_0$, and Bessel systems
 at the infinite places with their vectors \m{W(g_\infty)} of Bessel functions. Let $V$ be a hermitian space with
@@ -723,8 +791,9 @@ In Setting~\ref{s:data}, for a natural number $j$:
 \item $\Kst{D}{j}$ is the level of $\Xs{D}{j}$ of the elements that are congruent to~$1$ modulo the chosen places
   and whose last row, the row of the point, is congruent to \m{(0,\dots,0,1)} modulo~$\piN{D}$; $\Stg{D}{j}$ is the
   space of the smooth algebraic modular forms on $\Xs{D}{j}$ of the weight of stage~$j$; the ramified columns are
-  the image on $\Col{D}$ of \m{\prod_{w\in\PiD{D}}(1-z_w)}, where $z_w$ is the translation by a scalar matrix that
-  generates the units modulo~$w$ and is $1$ at the places other than $w$ and~$\cj w$;
+  the image on $\Col{D}$ of \m{\prod_{w\in\PiD{D}}(1-\zw{D}{w})}, where $\zw{D}{w}$ is the translation by the scalar
+  matrix of an integral adele of norm one, fixed in the unit \emph{Columns}, that generates the units modulo~$w$
+  and is $1$ at the places other than $w$ and~$\cj w$;
 \item for a tame character $\vartheta$ of~$D$, \m{\kerX{D}{\vartheta}{j}} is the theta kernel of the definite pair
   \m{(\Xs{D}{j},\Xs{D}{j+1})} with the character \m{\muc{D}{\vartheta^{j+1}}{j+1}}; its data are the elements of
   the finite part of $\mathcal{S}(\Hom(\Xs{D}{j},\Xs{D}{j+1}))$, and the lift with a datum $\Phi$ is a linear map
@@ -746,14 +815,21 @@ In Setting~\ref{s:data}, for a natural number $j$:
 \end{enumerate}
 \end{definition}
 
-\begin{definition}[reduced vacua]\label{d:redvac}
-In Setting~\ref{s:data}, for \m{t\in\Tr{D}} and a natural number $i$ let
-\[\ptr{D}{t}{i}=\sum_{y}\varrho_f(\mathrm{c}(y))\,\tdat{D}{t}{2i}\tensor\varrho_f(\mathrm{r}(y))\,\tdat{D}{t}{2i+1}\]
-be the sum over the vectors $y$ with entries in \m{\prod_{w\in\PiD{D}}\ZZ/\ND{D}}, indexed by~$\XI{D}{2i+1}$, where
-$\mathrm{c}(y)$ is the matrix whose last column is \m{-y/\ND{D}} at the places of $\PiD{D}$ and which vanishes
-elsewhere, and $\mathrm{r}(y)$ the matrix whose last row is the conjugate of that column (the \emph{translate sum} of
-the note on the Gauss-sum operator). The \emph{reduced vacuum} of $t$ is the pure tensor
-\[\redvac{D}{t}=\ptr{D}{t}{\rhoD{D}}\tensor\dots\tensor\ptr{D}{t}{0}.\]
+\begin{definition}[translate sums, pair translates and reduced vacua]\label{d:redvac}
+In Setting~\ref{s:data} let $i$ be a natural number. The \emph{translate sum} of the note on the Gauss-sum
+operator, for the index sets $\XIo{D}{2i}$, $\XI{D}{2i+1}$, $\XIo{D}{2i+2}$, the set of places $\PiD{D}$ and the
+prime~$\ND{D}$, is the endomorphism
+\[\transum{\XIo{D}{2i}}{\XI{D}{2i+1}}{\PiD{D}}{\ND{D}}{\XIo{D}{2i+2}}\;=\;\sum_{y}\varrho_f(\mathrm{c}(y))\tensor\varrho_f(\mathrm{r}(y))\]
+of \m{\mathcal{W}_f(\Hom(\Xs{D}{2i},\Xs{D}{2i+1}))\tensor\mathcal{W}_f(\Hom(\Xs{D}{2i+1},\Xs{D}{2i+2}))}: the sum
+over the vectors $y$ with entries in \m{\prod_{w\in\PiD{D}}\ZZ/\ND{D}}, indexed by~$\XI{D}{2i+1}$, where
+$\mathrm{c}(y)$ is the matrix whose last column, that of the point of $\XI{D}{2i}$, is \m{-y/\ND{D}} at the places
+of $\PiD{D}$ and which vanishes elsewhere, and $\mathrm{r}(y)$ the matrix whose last row, that of the point of
+$\XI{D}{2i+2}$, is the conjugate of that column. For a family \m{v=(v_j)_{j\in\NN}} of finite data
+\m{v_j\in\mathcal{W}_f(\Hom(\Xs{D}{j},\Xs{D}{j+1}))} the \emph{pair translates} are
+\[\ptr{D}{v}{i}\;=\;\transum{\XIo{D}{2i}}{\XI{D}{2i+1}}{\PiD{D}}{\ND{D}}{\XIo{D}{2i+2}}\bigl(v_{2i}\tensor v_{2i+1}\bigr),\]
+and for \m{t\in\Tr{D}} (Definition~\ref{d:columns}(c)) the \emph{reduced vacuum} of $t$ is the pure tensor
+\[\redvac{D}{t}=\ptr{D}{\tdat{D}{t}{\cdot}}{\rhoD{D}}\tensor\dots\tensor\ptr{D}{\tdat{D}{t}{\cdot}}{0},\]
+formed with the family \m{\tdat{D}{t}{\cdot}=(\tdat{D}{t}{j})_{j}} of the translated vacua of~$t$.
 \end{definition}
 \leanline{\lean{reducedVacuum}}
 
@@ -771,9 +847,10 @@ function $\Psi$ is a \emph{good datum for~$\vartheta$} if
   \m{j\ge m}, and every linear map $\beta$ on the tensor product of the data spaces of the first $m$ lifts,
   $\sum_t\Psi(t)\,\beta\bigl(\bigotimes_{j<m}\omega(a_j,a_{j+1})\tdat{D}{t}{j}\bigr)=\sum_t\Psi(t)\,\beta\bigl(\bigotimes_{j<m}\tdat{D}{t}{j}\bigr)$;
 \item for every \m{\varphi\in\Stg{D}{0}}:
-  $\chcomb{D}{\vartheta}{\Psi}{m}(\varphi)=\sum_t\Psi(t)\,\chnn{D}{\vartheta}{\ptr{D}{t'}{\cdot}}{\rhoD{D}+1}(\varphi)$,
-  where $t'$ stands for the data \m{\tdat{D}{t}{j}} projected to the vectors that are vacua at the places of
-  $\PiD{D}$ and their conjugates.
+  \[\chcomb{D}{\vartheta}{\Psi}{m}(\varphi)=\sum_t\Psi(t)\,\chnn{D}{\vartheta}{\ptr{D}{\mathsf{P}_\Pi\tdat{D}{t}{\cdot}}{\cdot}}{\rhoD{D}+1}(\varphi),\]
+  where $\mathsf{P}_\Pi$ is the projection of the finite part to the vectors that are vacua at the places of
+  $\PiD{D}$ and their conjugates, applied to every member of the family \m{\tdat{D}{t}{\cdot}}, and the paired
+  data are the pair translates of Definition~\ref{d:redvac}.
 \end{enumerate}
 \end{definition}
 
@@ -809,7 +886,7 @@ In Setting~\ref{s:data}:
   $\gY{2\rhoD{D}},\gY{2\rhoD{D}+1},\gYlast$ formed with $\piN{D}$ if \m{i=\rhoD{D}}, and $0$ if \m{i>\rhoD{D}};
 \item $\cutB=\gD{D}^{\,\fD{D}\,\nD{D}{m}^{2}}$;
 \item for a tame character~$\vartheta$, a tuple \m{y=(y_j)} of finite points \m{y_j\in G_f(\Ys{D}{j})} and a natural
-  number~$j$, $\tUps{\vartheta}{y}{j}=\omega_\nu(y_j,y_{j+1})\,\ups{\vartheta}{j}$ with
+  number~$j$, $\tUps{\vartheta}{y}{j}=\pW{\nu}(y_j,y_{j+1})\,\ups{\vartheta}{j}$ with
   \m{\nu=\muc{D}{\vartheta^{j+1}}{j+1}};
 \item for a natural number~$i$, $\evD{\vartheta}{y}{i}=\pairEvalY{i}\bigl(\tUps{\vartheta}{y}{2i}\boxtimes\tUps{\vartheta}{y}{2i+1}\bigr)$,
   where $\boxtimes$ is the arrow product of two data, a datum on
@@ -848,30 +925,48 @@ has the orders of the reference ideles exactly outside $Q$ and its conjugate, an
 
 \begin{definition}[multiplicity of a cut]\label{d:mult}
 Let $H$ be a group with subgroups $S$, $A$ and~$J$, let $T$ be a finite set of left cosets of $J$ in~$H$ and $t$ a
-left coset of~$J$. The \emph{multiplicity} $\cov{S}{A}{T}{t}$ is the number of the cosets \m{\varrho\,(S\cap A)},
-\m{\varrho\in S}, with \m{\varrho^{-1}t\in T}; it is $0$ if there are infinitely many.
+left coset of~$J$. The \emph{multiplicity} $\cov{S}{A}{T}{t}$ is the number of the left cosets of \m{S\cap A} in $S$
+that contain an element $\varsigma$ with \m{\varsigma^{-1}t\in T}; it is $0$ if there are infinitely many. When $T$
+is stable under left multiplication by \m{S\cap A}, as in all uses, every element of such a coset has this
+property.
 \end{definition}
 \leanline{\lean{coverMultiplicity}}
 
-\statement{ana}{\textbf{Inputs 2 (other units and the other notes of this unit).}\phantomsection\label{in:units}
+\statement{ana}{\textbf{Inputs 2 (other units and the other notes of this unit).}\phantomsection\inputslabel{2}{in:units}
 \enspace In Setting~\ref{s:data}:
 \begin{enumerate}[label=(\alph*)]
 \item (\emph{Trace}, unit~140) for \m{j<m} the frame of $\Ys{D}{j}$ has finite part \m{\Lambda_j\,k_j} with
-  $\Lambda_j$ the graded lattice basis of $\gY{j}$ for the ideles \m{\ideA{D}=\alpha/\cj{c_g}}, the principal idele
-  of $\piN{D}$ and the scale $\lsc{D}{j}=(\ideA{D}/\cj{\ideA{D}})^{\lceil(m-j)/2\rceil}$, and $k_j$ integral
-  with integral inverse and congruent to $1$ at the chosen places; here $c_g$ is a finite idele generating the ideal
-  of $\piGb{D}$, equal to $1$ at the places not dividing it. If $w$ or $\cj w$ lies in $\Qs{\vartheta}$ for a tame
+  $\Lambda_j$ the graded lattice basis of $\gY{j}$ for the ideles \m{\ideA{D}=\alpha/\cj{\cgD{D}}}, the principal
+  idele $\piId{D}$ of $\piN{D}$ and the scale $\lsc{D}{j}=(\ideA{D}/\cj{\ideA{D}})^{\lceil(m-j)/2\rceil}$, and $k_j$
+  integral with integral inverse and congruent to $1$ at the chosen places; here $\cgD{D}$ is a finite idele
+  generating the ideal of $\piGb{D}$, equal to $1$ at the places not dividing it, and $\piId{D}$ is the finite
+  idele with the components of~$\piN{D}$. If $w$ or $\cj w$ lies in $\Qs{\vartheta}$ for a tame
   character $\vartheta$, then $w$ divides $\lvn{\vartheta}$ and divides neither $\piGb{D}$ nor $\ND{D}$. Moreover
   \m{m=2\rhoD{D}+2}.
 \item (\emph{Columns}, unit~145) $\PiD{D}$ is a split level for $\ND{D}$: it is disjoint from its conjugate, the
   places above $\ND{D}$ are those of $\PiD{D}$ and their conjugates, and $\ND{D}$ is a uniformiser at each of them.
-  For every \m{w\in\PiD{D}}, every ramified column has the form \m{\psi-z_w\psi} with \m{\psi\in\Col{D}}.
+  For every \m{w\in\PiD{D}}, every ramified column has the form \m{\psi-\zw{D}{w}\psi} with \m{\psi\in\Col{D}}.
   If \m{t\in\Tadm{D}{q}} and $S$ is a set of places prime to $q$ whose conjugates are not chosen, then
   $\tdat{D}{t}{j}$ is fixed by the projection to the vectors that are vacua at the places of $S$ and their
   conjugates.
-\item (\emph{Exchange}, unit~147) \m{|\YI{D}{j}|\le\nD{D}{m}} for \m{j\le m}.
+\item (\emph{Exchange}, unit~147) \m{|\YI{D}{j}|\le\nD{D}{m}} for \m{j\le m}. For \m{j<m} the parameters, weights
+  and signs of $\Ys{D}{j}$ and $\Ys{D}{j+1}$ correspond, in the sense required by Inputs~\ref{in:lib}(e).
+\end{enumerate}}
+
+\statement{ana}{\textbf{Inputs 2, continued: the unit \emph{Filling}.}\enspace In Setting~\ref{s:data}:
+\begin{enumerate}[label=(\alph*),start=4]
 \item (\emph{Filling}, unit~148) $\Kst{D}{0}$ is the preimage of the principal level at the chosen places under the
-  inclusion of the finite points of $\Xs{D}{0}$ into those of~$\Ys{D}{0}$. \emph{Unfolding of Poincar\'e series}: for
+  inclusion of the finite points of $\Xs{D}{0}$ into those of~$\Ys{D}{0}$, and the principal level
+  \m{K^{\mathrm{pr}}_{\mathsf{S}}} of the filling data of~$D$ is \m{\Kch{D}{\Ys{D}{0}}} (in the formal text, by
+  definition). \emph{Terms of the series}, for admissible filling data as in Setting~\ref{s:filling}: (1) if a
+  term \m{\mathrm{cb}_a(\gamma'g)}, with $\gamma'$ a rational point of the Bessel group, does not vanish at a
+  point $g$ whose finite component, translated by the representative of a class and by~$\eta$, lies in the
+  principal level, then $a$ belongs to that class and $\gamma'$ to the group of the rational unipotent elements
+  that the class conjugates into the principal level; (2) over that group the cut-offs sum to~$1$, so that the
+  terms \m{\mathrm{cb}_a(\gamma'g)} sum to the Bessel function of the real component; (3) \emph{strong
+  approximation for the unipotent group}: for a finite point $u$ of the unipotent group of the shape and any
+  finite point $h$ there is a rational unipotent $\varsigma$ with \m{h^{-1}u^{-1}\varsigma h} in the principal
+  level. \emph{Unfolding of Poincar\'e series}: for
   admissible filling data as in Setting~\ref{s:filling}, a form $z$ on $V$ and a subgroup $\Delta$ of $\Gamma(V)$,
   the product of $z$ and $\mathrm{P}_{\mathsf{S}}(\phi,\Delta)$ is integrable on \m{\Delta\backslash G(V)}, with
   integral $\sum_a\phi_a\int_{G(V)}z\cdot\mathrm{cb}_a$. \emph{The last stage}: there is a linear map $R$ from
@@ -885,12 +980,23 @@ left coset of~$J$. The \emph{multiplicity} $\cov{S}{A}{T}{t}$ is the number of t
   $\int_{[G(\Ys{D}{m})]}F\,\cj\Xi=C_{\mathsf{t}}\cdot\langle\Xi,R\psi\rangle$. Here
   $\coef{\mathsf{t}}{\psi}(g)=\mathsf{t}\bigl(g_\infty^{-1}\psi(g_f)\bigr)$ is the \emph{coefficient} of $\psi$
   at~$\mathsf{t}$, and $\langle\,,\rangle$ the Petersson product.
-\item (\emph{Curve}, unit~150) \emph{named data are admissible combinations}: let $\mathfrak{m}$ be a modulus,
-  \m{g'} an integer of $E$ and $q$ a natural number with \m{g'q\in\mathfrak{m}}, and $\Psi_0$ a function of residue
-  matrices modulo~$\mathfrak{m}$ with values in $\Oaw{q}$; then the vector named at the places of $\mathfrak{m}$ by
-  $\Psi_0$ on a vector $u$ fixed by the projection at those places is an admissible combination of the translates
-  \m{\varrho_f(t)u}, with \m{\cj{g'}\,t} integral at the places not dividing~$q$, away from~$q$, with denominator
-  a power of the norm of~$g'$ and, under a proposition~$p$, size any bound for \m{\sum|\sigma\Psi_0|}.
+\end{enumerate}}
+
+\statement{ana}{\textbf{Inputs 2, continued: the unit \emph{Curve} and the other notes of this unit.}\enspace In
+Setting~\ref{s:data}:
+\begin{enumerate}[label=(\alph*),start=5]
+\item (\emph{Curve}, unit~150) \emph{named data are admissible combinations}: let $W$ be a hermitian space with
+  frame, with index set~$I$, let $\mathfrak{m}$ be a modulus, \m{g'} an integer of $E$ and $q$ a natural number with
+  \m{g'q\in\mathfrak{m}}, let $\mathsf{e}$ be an integral finite adele with \m{\mathsf{e}\,q\equiv0}
+  modulo~$\mathfrak{m}$ (when none is named, \m{\mathsf{e}=g'}), let $\Psi_0$ be a function of residue vectors
+  modulo~$\mathfrak{m}$ indexed by~$I$ (residue matrices, for a space of homomorphisms) with values in $\Oaw{q}$,
+  $p$ a proposition and $B$ a real number such that, if $p$ holds, \m{\sum_x|\sigma(\Psi_0(x))|\le B} for every field
+  automorphism $\sigma$ of~$\CC$, and let $u$ be a vector of $\mathcal{S}(W)$ and $u_0$ its projection to the
+  vectors that are vacua at the places of~$\mathfrak{m}$ and their conjugates. Then the vector named at the places
+  of $\mathfrak{m}$ by $\Psi_0$ on $u$ is an admissible combination of the translates \m{\varrho_f(t)u_0}, over the
+  finite vectors $t$ with \m{\cj{\mathsf{e}}\,t} integral at the places not dividing~$q$, away from~$q$, with
+  denominator the absolute norm of the ideal of~$g'$ to the power~$|I|$ (which is $0$ for \m{g'=0}) and,
+  under~$p$, size~$B$. The weight $\cj{\mathsf{e}}$ of the translates is thus set by $\mathsf{e}$ and not by~$g'$.
 \item (the note \emph{Two consecutive theta lifts} of this unit) the calculus of admissible combinations
   (substitution multiplies denominators and sizes; linear and bilinear images; pure tensors; multiplication by a
   root of unity; clearing a constant); the Weil translate of a translated vacuum by a finite point $g$ is an
@@ -922,12 +1028,13 @@ In Setting~\ref{s:data} let $\vartheta$ be a tame character of~$D$ and $j$ a nat
 \begin{proof}
 (i) $\psic{D}{\vartheta}{j}=\omega_D^{\,j}\psi_\vartheta$, and $\omega_{D,w}$ is trivial at the places that are
 not chosen; a place of $\Qs{\vartheta}$ does not divide $\piGb{D}$ (Inputs~\ref{in:units}(a)). (ii) The
-condition that defines $\levelY{\vartheta}{j}$ contains the condition at the chosen places. (iii) The parameters
-of $\Ys{D}{j}$ and $\Ys{D}{j+1}$ correspond in the sense of the unit \emph{Exchange}, so the Fock vector of the joint
-harmonic is an edge between the two types; an edge tensored with any element of the finite part, here
-\m{\ups{\vartheta}{j}}, is an arrow in both directions. The statement on edges is the background library's form of
-the correspondence of discrete series under theta lifts (the catalogue cites J.-S.~Li, Duke Math.~J. 61 (1990), and
-R.~Howe, J.~Amer.\ Math.\ Soc. 2 (1989), as a weaker form, place not confirmed).
+condition that defines $\levelY{\vartheta}{j}$ contains the condition at the chosen places. (iii) The parameters,
+weights and signs of $\Ys{D}{j}$ and $\Ys{D}{j+1}$ correspond (Inputs~\ref{in:units}(c)). By the first statement of
+Inputs~\ref{in:lib}(e) the vector $v$ of the Fock model given by the joint harmonic is an edge between the two
+types, and by the second statement the datum \m{\datY{\vartheta}{j}=v\tensor\ups{\vartheta}{j}}, an edge tensored
+with an element of the finite part, is an arrow in both directions; the character of the kernel has the weights of
+the two spaces (the note on the characters of the data). The status of this input, on which every lift of the
+chain rests, is given after Inputs~\ref{in:lib}.
 \end{proof}
 \leanline{\lean{liftTameParteqofmemQ}\sep\lean{levelYlechosenLevel}\sep\lean{isArrowdatumY}}
 
@@ -944,7 +1051,7 @@ columns of $g'_w$, those indexed by $\YI{D}{j}$ through \m{\inclY{j}}, form the 
 \m{\binom10} modulo the product $\mathfrak{m}$ of the places in question. The Weil operator of an integral pair
 \m{(k,k')} carries the vector named by the indicator of a residue matrix $y$ to the vector named by the indicator
 of \m{\cj{k'}\,y\,\cj{k}^{-1}}, the bars denoting reduction modulo~$\mathfrak{m}$, times the values of the two
-twisting characters at \m{\det k} and \m{\det k'} (a rule of the library for data given modulo a modulus). The
+twisting characters at \m{\det k} and \m{\det k'} (Inputs~\ref{in:lib}(f)). The
 hypothesis says exactly that $\cj{k'}\binom10\cj{k}^{-1}=\binom10$ at every place. The twisting character is
 \m{\muc{D}{\vartheta^{j+1}}{j+1}} times a power of~$\upsilon$; it has tame part \m{\ltame{\vartheta}{j}}, so its
 value at the determinant of an element of $\Kz{\,\cdot\,}$ is the product of the values of the tame part at the
@@ -1073,16 +1180,17 @@ coordinates of the filling data, $a_\infty^{-1}$ acts on the Weyl coordinates of
 $\langle\,,\rangle$ is the bilinear dot product of coordinate vectors.
 \end{proposition}
 \begin{proof}
-Write \m{a_f\eta=\gamma\,\varrho_d\,k} with $\gamma$ a rational point of~$X_0$, $\varrho_d$ the representative of a
-class~$d$ and \m{k\in K_{\mathsf{S}}}. \emph{First}, if a point $g$ has finite component, translated by $\varrho_d$
-and~$\eta$, in the principal level, then
-$\mathrm{P}_{\mathsf{S}}(\mathrm{cc}_{\mathsf{S}}(\psi),\Besr{\mathcal{Y}})(g)=\langle\mathsf{A}(\psi(\varrho_d)),W(g_\infty)\rangle$:
-a term \m{\mathrm{cb}_{(c,\cdot)}(\gamma'g)} with \m{\gamma'\in\Besr{\mathcal{Y}}} can be non-zero only if \m{c=d} and
-$\gamma'$ comes from the group of the rational unipotent elements that the class $d$ conjugates into the principal
-level; the sum over the classes reduces to the class~$d$, and over that group the cut-offs sum to~$1$ (two facts
-of the unit \emph{Filling}). \emph{Then}, by strong approximation for the unipotent group, there is a rational
-unipotent $\varsigma$ such that the finite part of \m{\varsigma u}, conjugated by~$a_f\eta$, lies in the principal
-level. By Lemma~\ref{l:poinbasic}(i) the series is unchanged if its argument is multiplied on the left by
+Write \m{a_f\eta=\gamma\,\mathsf{g}\,k} with $\gamma$ a rational point of~$X_0$, $\mathsf{g}$ the chosen
+representative of the class of \m{a_f\eta} and \m{k\in K_{\mathsf{S}}}. \emph{First}, if a point $g$ has finite
+component, translated by $\mathsf{g}$ and~$\eta$, in the principal level, then
+$\mathrm{P}_{\mathsf{S}}(\mathrm{cc}_{\mathsf{S}}(\psi),\Besr{\mathcal{Y}})(g)=\langle\mathsf{A}(\psi(\mathsf{g})),W(g_\infty)\rangle$:
+a term \m{\mathrm{cb}_{a'}(\gamma'g)} with \m{\gamma'\in\Besr{\mathcal{Y}}} can be non-zero only if $a'$ belongs to
+the class of $\mathsf{g}$ and $\gamma'$ comes from the group of the rational unipotent elements that this class
+conjugates into the principal level; so the sum over the classes reduces to this class, and over that group the
+cut-offs sum to~$1$ (Inputs~\ref{in:units}(d), facts (1) and~(2)). \emph{Then}, by strong approximation for the
+unipotent group (Inputs~\ref{in:units}(d), fact~(3)), there is a rational unipotent $\varsigma$ such that the finite
+part of \m{\varsigma u}, conjugated by~$a_f\eta$, lies in the principal level. By Lemma~\ref{l:poinbasic}(i) the
+series is unchanged if its argument is multiplied on the left by
 $\varsigma$ and by \m{\incl{\mathcal{Y}}(\gamma^{-1})}, and the first step applies to the new point. The Bessel
 vector transforms under the real points of $X_0$ by the Weyl representation, which $\mathsf{A}$ intertwines, and
 under the real unipotent part by the character of~$\sigma$; the level of $\psi$ absorbs~$k$; and for a unipotent
@@ -1112,8 +1220,16 @@ component. The sets of such $h$ are open and cover, and \m{F_g=\mathrm{P}} there
 continuous. For $u$ as in the definition of genericity,
 $\mathrm{P}(ug)=\psi_E(-\sigma(u)/(g_{\mathsf{S}}\varpi_{\mathsf{S}}))\mathrm{P}(g)$. Finally
 $\mathrm{sh}_{\mathcal{Y}}=\cst{\mathcal{Y}}\cdot\mathsf{C}$ for the matrix $\mathsf{C}$ of the shape with
-$\operatorname{tr}(\mathsf{C}u)=\sigma(u)+\cj{\sigma(u^{-1})}$ (an entrywise computation, by cases on the shape),
-so that with the hypothesis on \m{\mathbf{j}\,\cst{\mathcal{Y}}} the character is
+$\operatorname{tr}(\mathsf{C}u)=\sigma(u)+\cj{\sigma(u^{-1})}$ (an entrywise computation, by cases on the shape).
+Moreover \m{\sigma(u^{-1})=-\sigma(u)}, because $\sigma$ is additive on products of unipotent elements; so
+\m{\operatorname{tr}(\mathrm{sh}_{\mathcal{Y}}u)=\cst{\mathcal{Y}}\,(\sigma(u)-\cj{\sigma(u)})}. Put
+\m{\varkappa=-(g_{\mathsf{S}}\varpi_{\mathsf{S}})^{-1}}; by the hypothesis \m{\varkappa=\mathbf{j}\,\cst{\mathcal{Y}}},
+and \m{\cj\varkappa=-\varkappa} because \m{\cj{\mathbf{j}}=-\mathbf{j}} and \m{\cj{\cst{\mathcal{Y}}}=\cst{\mathcal{Y}}}.
+Hence
+\[\tfrac{\mathbf{j}}{2}\operatorname{tr}(\mathrm{sh}_{\mathcal{Y}}u)=\tfrac12\bigl(\varkappa\,\sigma(u)-\varkappa\,\cj{\sigma(u)}\bigr)
+=\tfrac12\bigl(\varkappa\,\sigma(u)+\cj{\varkappa\,\sigma(u)}\bigr),\]
+and \m{\psi_E(\tfrac12(x+\cj x))=\psi_E(x)} for every adele~$x$, the standard character being invariant under
+conjugation. So the character of the normal form, \m{\psi_E(\varkappa\,\sigma(u))}, is
 $\psi_E\bigl(\tfrac{\mathbf{j}}{2}\operatorname{tr}(\mathrm{sh}_{\mathcal{Y}}u)\bigr)$.
 \end{proof}
 \leanline{\lean{isGenericpoincare}}
@@ -1139,8 +1255,8 @@ real and of finite points as in Definition~\ref{d:stage}.
 \m{j=0} it is Proposition~\ref{p:genericpoin} for the filling data of~$D$ (Proposition~\ref{p:fits}), whose
 hypothesis is the definition of the constant of~$\gY{0}$; the step is Inputs~\ref{in:lib}(a), all gradings $\gY{j}$
 having the same constant. (iii) The representative is \m{y_j\,v_j} with $v_j\in\levelY{\vartheta}{j}$, so
-$\tUps{\vartheta}{y^{\circ}}{j}=\omega_\nu(y_j,y_{j+1})\,\omega_\nu(v_j,v_{j+1})\ups{\vartheta}{j}$, and
-$\omega_\nu(v_j,v_{j+1})\ups{\vartheta}{j}=\ups{\vartheta}{j}$ by Lemma~\ref{l:upsilon}: the reductions of $v_j$ and
+$\tUps{\vartheta}{y^{\circ}}{j}=\pW{\nu}(y_j,y_{j+1})\,\pW{\nu}(v_j,v_{j+1})\ups{\vartheta}{j}$, and
+$\pW{\nu}(v_j,v_{j+1})\ups{\vartheta}{j}=\ups{\vartheta}{j}$ by Lemma~\ref{l:upsilon}: the reductions of $v_j$ and
 $v_{j+1}$ are~$1$, so its hypothesis holds and the character factor is~$1$.
 \end{proof}
 \leanline{\lean{unfoldStageupdate}\sep\lean{isGenericunfoldStage}\sep\lean{evaluatedDatumout}}
@@ -1184,8 +1300,8 @@ the theta function of the zero term of the arrow product $\tUps{\vartheta}{y}{2i
 translated by the stacked string map. The zero term of an integrated datum is an integrated datum whose finite
 part is the finite zero term, and by the defining property of the finite evaluation and the hypothesis on
 $\mathcal{R}$ this finite part is the arrow tensor of $\evD{\vartheta}{y}{i}$. The double lift, applied to the
-lifts \m{2i+1} and \m{2i+2} (theta lifts in the sense required, by the library's theorem on kernels of definite
-pairs), turns the integral into a coefficient of the composite of the two lifts with datum $\evD{\vartheta}{y}{i}$
+lifts \m{2i+1} and \m{2i+2} (theta lifts in the sense required, by Inputs~\ref{in:lib}(h)), turns the integral
+into a coefficient of the composite of the two lifts with datum $\evD{\vartheta}{y}{i}$
 applied to the chain of $i$ pairs. The functional $\mathsf{t}$ so obtained depends on $\xi$, $\xi^{\star}$,
 $\mathcal{R}$ only.
 \end{proof}
@@ -1207,8 +1323,8 @@ string of length~$l$.
 \item Let \m{y\in G_f(V)} and let $(b,\beta)$ be $\adat{\mathcal{Y}}{y}$. Put
   $\mathsf{k}=(b^{-1}\,\mathrm{fr}_{V,f}\,y)^{-1}$. For string indices $a$, $a'$ with \m{a'\le l-1-a}, the entry of
   \m{\mathsf{k}^{*}\mathsf{k}} at the string indices $(a,a')$ is $J_V(z_a,z_{a'})\cdot\cj{\beta_a}\beta_{a'}$.
-\item If $\adb{\mathcal{Y}}{h}{b}{\beta}$ for some \m{h\in\GL_I(\Af)}, then
-  $\adb{\mathcal{Y}}{b^{-1}}{b^{-1}}{\beta^{-1}}$.
+\item If $\adb{\mathcal{Y}}{h}{b}{\beta}$ for some matrix \m{h\in\GL_I(\Af)}, then the inverses satisfy the same
+  relation with themselves: $\adb{\mathcal{Y}}{b^{-1}}{b^{-1}}{\beta^{-1}}$.
 \item Let \m{h,h'\in\GL_I(\Af)} with $\adb{\mathcal{Y}}{h}{b}{\beta}$ and $\adb{\mathcal{Y}}{h'}{b'}{\beta'}$, and let
   $w$ be a finite place at which the matrix \m{h^{-1}h'} is integral. Then
   \m{\ord_w\beta'_a\ge\ord_w\beta_a} for every string index~$a$.
@@ -1294,12 +1410,20 @@ let \m{h\in G_f(X\sqcup\{\mathrm{pt}\})} be integral with integral inverse and w
 \m{(0,\dots,0,1)} modulo~$\pi$. Then $\inclf{\mathcal{Y}}(h)\in\Kz{V}$.
 \end{lemma}
 \begin{proof}
-In the coordinates of the frame, $\inclf{\mathcal{Y}}(h)-1=\mathrm{fr}_{V,f}^{-1}(\tilde h-1)\,\mathrm{fr}_{V,f}$ with
-$\tilde h$ the block matrix of $h$ and~$1$. For even $l$ the lattice basis is diagonal with $1$ on
-\m{X\sqcup\{\mathrm{pt}\}}, and \m{h-1} is integral. For odd $l$ the conjugation by $\Lambda$ divides the row of the
-point by $\cj\pi$ and multiplies its column, which is harmless exactly because that row is \m{\equiv(0,\dots,0,1)}
-modulo $\pi$ and $\pi$ is a uniformiser on $\Sigma$ and a unit elsewhere. Conjugating by \m{k\in\GL_I(\Oh)} keeps
-integrality.
+In the coordinates of the frame \m{\mathrm{fr}_{V,f}=\Lambda k},
+$\inclf{\mathcal{Y}}(h)-1=k^{-1}\Lambda^{-1}(\tilde h-1)\Lambda k$ with $\tilde h$ the block matrix of $h$ and~$1$.
+For even $l$ the rows and columns \m{X\sqcup\{\mathrm{pt}\}} of $\Lambda$ are those of the identity, and \m{h-1} is
+integral. For odd $l$, \m{\Lambda^{-1}(\tilde h-1)\Lambda} has the entries of \m{h-1}, except that the column of the
+point is divided by~$\cj\pi$ and the row of the point is multiplied by~$\cj\pi$ (so that the entry at the point
+itself is unchanged); moreover the row of the point of \m{h-1}, divided by~$-\pi$, stands in the row of the middle
+string vector, whose entry in the column of the point is the entry of \m{h-1} at the point divided by~$-N$. So
+three congruences are needed. The row of the point of \m{h-1} is $\equiv0$ modulo~$\pi$ by hypothesis. The
+integral matrices with integral inverse and with this property form a group, and $h$ is unitary; so
+\m{h^{-1}=h^{*}} has the property too, which says that the column of the point of \m{h-1} is $\equiv0$
+modulo~$\cj\pi$. In particular the entry of \m{h-1} at the point is $\equiv0$ modulo $\pi$ and modulo~$\cj\pi$,
+hence modulo \m{N=\pi\cj\pi}, as $\pi$ is a uniformiser on~$\Sigma$, $\cj\pi$ on~$\cj\Sigma$, both are units
+elsewhere and $\Sigma$ is disjoint from~$\cj\Sigma$. So the matrix is integral, and conjugating by
+\m{k\in\GL_I(\Oh)} keeps integrality.
 \end{proof}
 \leanline{\lean{inclXFinmemKf}}
 
@@ -1322,8 +1446,15 @@ $1$ on $X$ and $\gamma$ on the string; it is an adapted basis of itself. Since \
 point $y$, equal to $1$ outside $w$ and~$\cj w$, such that \m{\mathrm{fr}_{V,f}\,y\,h} and $\mathsf{d}$ have the same
 component at~$w$. Choose a pair $(b',\beta')$ adapted at \m{yh} (Lemma~\ref{l:adapted}(ii)). By
 Lemma~\ref{l:adapted}(vi) its diagonal has the orders of $\gamma$ at~$w$ and those of $\beta$ away from $w$
-and~$\cj w$. At $\cj w$ its orders are at most those of~$\gamma$ by Lemma~\ref{l:adapted}(v), the matrix that
-compares the two lattices being integral there; and they are at least those of $\beta$ on the first half, by the
+and~$\cj w$. At $\cj w$ its orders are at most those of~$\gamma$, by Lemma~\ref{l:adapted}(v) for the matrices
+\m{\mathrm{fr}_{V,f}\,yh} and~$\mathsf{d}$. Indeed, the matrix that compares the two lattices is
+\m{(\mathrm{fr}_{V,f}\,yh)^{-1}\mathsf{d}=(\mathrm{fr}_{V,f}\,yh)^{*}J_V\,\mathsf{d}}, and since \m{\mathrm{fr}_{V,f}\,yh}
+agrees with $\mathsf{d}$ at~$w$, its component at~$\cj w$ is that of \m{\mathsf{d}^{*}J_V\mathsf{d}}. This matrix
+is the identity on~$X$, and its only non-zero entries on the string are
+\m{\cj{\gamma_{a'}}\gamma_{l-1-a'}=1} off the middle index and \m{-N\,\cj{\gamma_a}\gamma_a} at the middle
+index~$a$, whose order at~$\cj w$ is \m{1+\ord_w\beta_a+\ord_{\cj w}\beta_a=0} by the assumed failure. So the
+comparison matrix is integral at~$\cj w$. And the orders at $\cj w$ are at least those of $\beta$ on the first
+half, by the
 Gram condition of the first step for $(b',\beta')$ and, at the middle index, by the failure of the inequality. As
 \m{\gamma=\beta} on the first half, the two diagonals have the same orders there at every place. So
 Proposition~\ref{p:orbit} applies to $h$ and \m{yh}: there is \m{k\in\Kz{V}} with
@@ -1363,24 +1494,28 @@ Granting the claim, take orders at every place: with (b) the claim bounds \m{\or
 (d) costs one more unit on~$Q$; and (f) turns the upper bound for one half of $\beta'$ into the lower bound for the
 other half. Linear arithmetic gives the near-lines bound for $\beta'$ with $n'$ and \m{k+1}.
 
-\emph{Proof of the claim.} The library gives a splitting of \m{\Hom(V,V')} along the maps of positive degree for
-which the constant term at the string map $\mathsf{T}$ is the theta function of the zero term of the Heisenberg
-translate by~$\mathsf{T}$. By (c) and the support of the zero term (note \emph{Two consecutive theta lifts}: if a
+\emph{Proof of the claim.} By Inputs~\ref{in:lib}(g) there is a splitting of \m{\Hom(V,V')} along the maps of
+positive degree for which the constant term at the string map \m{\Tm{\mathcal{Y}}{\mathcal{Y}'}} is the theta
+function of the zero term of the Heisenberg translate by this map. By (c)
+and the support of the zero term (note \emph{Two consecutive theta lifts}: if a
 datum is fixed by the translations \m{\varrho_f(\mathsf{M}y)}, $y$ integral, and the finite zero term of its
 translate by a vector $t$ does not vanish, then $t$ lies in \m{\mathsf{M}'\Oh+k^{\perp}}, where
 \m{\mathsf{M}\mathsf{M}'^{*}=1} and $k$ is the isotropic frame of the splitting), applied to the datum moved by the
 finite parts of \m{(h,h')}, which by (e) is fixed by the translations of \m{\mathfrak{b}} times the lattice moved by
-\m{(h,h')}: there is an integral vector $\lambda_0$ such that $\mathsf{T}$ and
+\m{(h,h')}: there is an integral vector $\lambda_0$ such that \m{\Tm{\mathcal{Y}}{\mathcal{Y}'}} and
 $\cj{\mathfrak{b}}^{-1}(h,h')\lambda_0$ have the same pairing with the isotropic frame. Reading this relation in
 the frames of $V$ and $V'$, for the entries $(i',i)$ with \m{\gr(i')<\gr(i)}, expresses the entries of
-\m{\cj{\mathfrak{b}}\,\mathsf{T}} there through the matrix $\mathsf{W}=\mathrm{fr}_{V',f}h'_f\cdot\lambda_0\cdot(\mathrm{fr}_{V,f}h_f)^{-1}$.
+\m{\cj{\mathfrak{b}}\,\Tm{\mathcal{Y}}{\mathcal{Y}'}} there through the matrix $\mathsf{W}=\mathrm{fr}_{V',f}h'_f\cdot\lambda_0\cdot(\mathrm{fr}_{V,f}h_f)^{-1}$.
 Now $b'^{-1}\,\mathsf{W}\,J_V^{-1}(b^{-1})^{*}$ is integral, because $b'$ and $b$ are adapted and $\lambda_0$ is
 integral. Its entry at the $a$-th string index of $\mathcal{Y}'$ and the string index \m{l'-a} of $\mathcal{Y}$ is a
 double sum in which, by the triangularity of $b'^{-1}$ and $b^{-1}$, only one term survives: the product of the
-diagonal entries \m{\beta'^{-1}_a} and \m{\cj{\beta_{l'-a}}^{-1}} with the entry of \m{\cj{\mathfrak{b}}\mathsf{T}/\alpha}
-at the $a$-th string vectors, which is \m{\cj{\mathfrak{b}}/\alpha} times $1$, \m{\cst{\mathcal{Y}}} or
-\m{-N\cst{\mathcal{Y}}} according to the position; \m{\cj N=N} and the middle case is covered by the exponent
-$\delta_a$. This is the claim.
+diagonal entries \m{\beta'^{-1}_a} and \m{\cj{\beta_{l'-a}}^{-1}}, of \m{\cj{\mathfrak{b}}/\alpha}, of the multiple
+of the string map at~$z_a$ (which is $1$, \m{\cst{\mathcal{Y}}} or \m{-N\cst{\mathcal{Y}}}, by
+Definition~\ref{d:theta}) and of the entry of $J_V^{-1}$ at \m{(z_a,z_{l'-a})}, which is $1$, or \m{-N^{-1}} when
+$z_a$ is the middle vector of~$\mathcal{Y}$. The multiple \m{-N\cst{\mathcal{Y}}} occurs exactly at the middle
+vector, where the factor \m{-N^{-1}} cancels~\m{-N}; so the product of the last two factors is
+\m{\cst{\mathcal{Y}}} or~$1$, and comparing the cases of Definition~\ref{d:theta} with the definition of
+$\delta_a$ shows that it is \m{\cst{\mathcal{Y}}^{\delta_a}}. This is the claim.
 \end{proof}
 \leanline{\lean{step}}
 
@@ -1388,12 +1523,12 @@ $\delta_a$. This is the claim.
 In Setting~\ref{s:data}:
 \begin{enumerate}[label=(\roman*)]
 \item the ideal of $\ED{D}$ generated by $\piGb{D}$ has absolute norm \m{\gD{D}^{\fD{D}}};
-\item for every finite place~$w$, the idele $c_g$ of Inputs~\ref{in:units}(a) and $\piGb{D}$ have the same order
-  at~$w$;
+\item for every finite place~$w$, the idele $\cgD{D}$ of Inputs~\ref{in:units}(a) and $\piGb{D}$ have the same
+  order at~$w$;
 \item for every natural number $j$ with \m{j\le2\rhoD{D}+1} and every finite place~$w$, the constant
   \m{\cst{\gY{j}}} and the idele \m{\ideA{D}\,\cj{\ideA{D}}} have the same order at~$w$;
 \item for every natural number $j$ with \m{j\le2\rhoD{D}+1}, the grading $\gY{j}$ spans the lattice of
-  \m{(\ideA{D},\pi,\lsc{D}{j})}, $\pi$ the principal idele of~$\piN{D}$;
+  \m{(\ideA{D},\piId{D},\lsc{D}{j})}, $\piId{D}$ the principal idele of~$\piN{D}$;
 \item for a tame character $\vartheta$ of $D$ and a hermitian space with frame $V$ over $\ED{D}$, with a finite
   index set: every element of \m{\Kch{D}{V}} that is $1$ at the places of $\Qs{\vartheta}$ is congruent to $1$
   modulo every chosen place and every place of~$\Qs{\vartheta}$.
@@ -1402,9 +1537,10 @@ In Setting~\ref{s:data}:
 \begin{proof}
 (i) The ideal is the product of the chosen places, and those above $g_i$ have norm $g_i$ and are $\fD{D}$ in
 number. (ii) Both orders are the multiplicity of $w$ in the ideal of~$\piGb{D}$. (iii) By the self-duality of the
-Weil data, \m{\mathbf{j}\alpha\cj\alpha} has at $w$ the order of the inverse different, which $\varpi$ generates; so
-\m{(\mathbf{j}\,\gD{D}\,\varpi)^{-1}} has the order of \m{\alpha\cj\alpha/\gD{D}}, and
-$\ideA{D}\cj{\ideA{D}}=\alpha\cj\alpha/(c_g\cj{c_g})$, where \m{c_g\cj{c_g}} has the order of
+Weil data, \m{\mathbf{j}\alpha\cj\alpha} has at $w$ the order of the inverse different, which
+\m{\vpi{P}{\mu}^{-1}} generates; so \m{(\mathbf{j}\,\gD{D}\,\vpi{P}{\mu})^{-1}} has the order of
+\m{\alpha\cj\alpha/\gD{D}}, and
+$\ideA{D}\cj{\ideA{D}}=\alpha\cj\alpha/(\cgD{D}\cj{\cgD{D}})$, where \m{\cgD{D}\cj{\cgD{D}}} has the order of
 \m{\piGb{D}\cj{\piGb{D}}=\gD{D}} by~(ii). (iv) This is Inputs~\ref{in:units}(a), by the definition of the spaces
 and of the gradings. (v) At a chosen place this is the definition of \m{\Kch{D}{V}}; at a place of $\Qs{\vartheta}$
 an element with component $1$ reduces to~$1$.
@@ -1429,24 +1565,29 @@ Proposition~\ref{p:step}, which we apply with \m{\mathfrak{a}=\ideA{D}}, \m{Q=\Q
 $\datY{\vartheta}{j}=v\tensor\ups{\vartheta}{j}$ and $\mathfrak{b}$ a generator of the product $\mathfrak{m}$ of the
 chosen places and the places of~$\Qs{\vartheta}$; the parities of the string lengths match the exponents. (b) is
 Lemma~\ref{l:vals}(iii). (d): the order of $\mathfrak{b}$ at $w$ is the multiplicity of $w$ in the ideal of
-$\piGb{D}$ plus \m{[w\in\Qs{\vartheta}]}, and \m{\alpha/\ideA{D}=\cj{c_g}}. (e): by Inputs~\ref{in:units}(e) with
-\m{g'=0}, \m{\ups{\vartheta}{j}} is a combination of translates \m{\varrho_f(t)} of the vacuum with
-\m{\cj{\mathfrak{b}}t} integral; \m{\varrho_f(\mathfrak{b}y)} fixes the vacuum for integral~$y$ and commutes with
-\m{\varrho_f(t)} up to the value of the additive character at the pairing of \m{\mathfrak{b}y} and~$t$, which
-is~$1$ by self-duality of the standard lattice. (f) follows from Proposition~\ref{p:rev} for $\gY{j+1}$, with
-\m{\Sigma=\PiD{D}} and the principal idele of $\piN{D}$ (Inputs~\ref{in:units}(b)), once its hypothesis is verified.
+$\piGb{D}$ plus \m{[w\in\Qs{\vartheta}]}, and \m{\alpha/\ideA{D}=\cj{\cgD{D}}}. (e): \m{\ups{\vartheta}{j}} is
+named on the vacuum by an indicator modulo~$\mathfrak{m}$; by Inputs~\ref{in:units}(e) with \m{g'=0}, \m{q=1}
+and \m{\mathsf{e}=\mathfrak{b}} (so that \m{\mathsf{e}\,q\equiv0} modulo~$\mathfrak{m}$) it is a combination of
+translates \m{\varrho_f(t)} of the vacuum with \m{\cj{\mathfrak{b}}t} integral at every place. Only this support
+is used: the denominator that the Input gives for \m{g'=0} is~$0$ and says nothing about the coefficients. Now
+\m{\varrho_f(\mathfrak{b}y)} fixes the vacuum for integral~$y$ and commutes with \m{\varrho_f(t)} up to the value
+of the additive character at the pairing of \m{\mathfrak{b}y} and~$t$, which is~$1$ because \m{\cj{\mathfrak{b}}t}
+is integral (Input~1(a) and~(e) of the note \emph{Two consecutive theta lifts}: the standard lattice is self-dual).
+(f) follows from Proposition~\ref{p:rev} for $\gY{j+1}$, with \m{\Sigma=\PiD{D}} and the principal idele $\piId{D}$
+of $\piN{D}$ (Inputs~\ref{in:units}(b)), once its hypothesis is verified.
 
 So let the string of $\gY{j+1}$ be odd, that is \m{j+1=2i+2} for a natural number~$i$, and suppose that for some
 \m{\varsigma\in\Besf{\gY{j+1}}} and \m{w\in\PiD{D}} the inclusion of Proposition~\ref{p:rev} holds at the point~$g_f$.
-Write $\varsigma^{-1}=u\,\incl{\gY{j+1}}(a_0)$ with $u$ unipotent, and \m{\varphi=\psi-z_w\psi} with
+Write $\varsigma^{-1}=u\,\incl{\gY{j+1}}(a_0)$ with $u$ unipotent, and \m{\varphi=\psi-\zw{D}{w}\psi} with
 \m{\psi\in\Col{D}} (Inputs~\ref{in:units}(b)). By Proposition~\ref{p:even} for the pair index~$i$, with the real
 point of $g$ and after replacing the entry of $\xi$ and $y$ of index \m{2i+2} (Lemma~\ref{l:stage}(i),(iii)), the
 function of stage \m{2i+2} on the middle grading is a coefficient of the chain of \m{i+1} pairs. The central
-element $z_w$ is a scalar of norm one supported at $w$ and~$\cj w$; by Inputs~\ref{in:units}(g) the chain of pairs
-of \m{z_w\psi} is the right translate by $z_w$ of the chain of pairs of~$\psi$, the character factors being trivial
+element of $\zw{D}{w}$ is a scalar of norm one supported at $w$ and~$\cj w$; by Inputs~\ref{in:units}(g) the chain
+of pairs of \m{\zw{D}{w}\psi} is the right translate by this scalar of the chain of pairs of~$\psi$, the character
+factors being trivial
 because the characters are unramified above~$\ND{D}$. Moving $u$ out by genericity (a string of odd length makes
 every unipotent element raise grades by~$2$), the stage function at $g$ becomes the difference of two values of
-the same coefficient, at a point and at its translate by~$z_w$; by the assumed inclusion this translate differs
+the same coefficient, at a point and at its translate by the scalar; by the assumed inclusion this translate differs
 from the point by an element of $\levelY{\vartheta}{j+1}$ — a place of $\PiD{D}$ is neither chosen nor in
 $\Qs{\vartheta}$ — and the evaluated data depend only on cosets modulo these levels (Lemma~\ref{l:stage}(iii)). The
 two values agree and the stage function vanishes at~$g$, against the assumption.
@@ -1488,14 +1629,15 @@ with \m{(huh^{-1})^{q^{n}}\in A} for all \m{u\in J}; and for every \m{h\in\maths
 Let $\mathsf{C}$ be a set of cosets \m{hJ}, \m{h\in\mathsf{K}}, that meets every $S$-orbit of such cosets exactly
 once, and let $T$ be the set of the cosets \m{p\,t} with \m{p\in S\cap A}, \m{t\in\mathsf{C}}. It is contained in the
 image of the compact set \m{A\mathsf{K}} in the discrete space of cosets of the open subgroup~$J$, hence finite.
-(i) holds by construction. (ii): if \m{hJ=p\,dJ} with \m{d\in\mathsf{K}}, then \m{h\in A\,H_0\,J\subseteq H_0}.
+(i) holds by construction. (ii): if \m{hJ=p\,h_0J} with \m{h_0\in\mathsf{K}}, then \m{h\in A\,H_0\,J\subseteq H_0}.
 (iii): a coset \m{hJ} in $T$, and by the second hypothesis also the coset of a point of~$\mathsf{W}$, lies in the
-$S$-orbit of some \m{dJ\in\mathsf{C}}, \m{d\in\mathsf{K}}; by Lemma~\ref{l:mult}(i) it has the multiplicity of~$dJ$.
-Let $S_d$ be the stabiliser of $dJ$ in~$S$. Since $\mathsf{C}$ meets the orbit once, the elements \m{\varsigma\in S}
-with \m{\varsigma^{-1}dJ\in T} are those of \m{S_d\,(S\cap A)}, so the multiplicity is the index of \m{S_d\cap A}
-in~$S_d$, which is finite because \m{dAd^{-1}} is commensurable with~$A$. This index divides the order of the
-quotient of $S_d$ by the normal core of \m{S_d\cap A}. Every element of $S_d$ lies in \m{dJd^{-1}}, so by the first
-hypothesis a fixed $q^{n}$-th power of it lies in $A$, and the same holds for its conjugates in~$S_d$: every element
+$S$-orbit of some \m{h_0J\in\mathsf{C}}, \m{h_0\in\mathsf{K}}; by Lemma~\ref{l:mult}(i) it has the multiplicity
+of~$h_0J$. Let $S_0$ be the stabiliser of $h_0J$ in~$S$. Since $\mathsf{C}$ meets the orbit once, the elements
+\m{\varsigma\in S} with \m{\varsigma^{-1}h_0J\in T} are those of \m{S_0\,(S\cap A)}, so the multiplicity is the index
+of \m{S_0\cap A} in~$S_0$, which is finite because \m{h_0Ah_0^{-1}} is commensurable with~$A$. This index divides
+the order of the quotient of $S_0$ by the normal core of \m{S_0\cap A}. Every element of $S_0$ lies in
+\m{h_0Jh_0^{-1}}, so by the first hypothesis a fixed $q^{n}$-th power of it lies in $A$, and the same holds for its
+conjugates in~$S_0$: every element
 of the finite quotient has order dividing~$q^{n}$. A finite group all of whose elements have order a power of $q$
 has order dividing a power of~$q$.
 \end{proof}
@@ -1547,8 +1689,8 @@ $\inclf{\gY{0}}(\Kst{D}{0})$. For a tame character $\vartheta$ apply Proposition
 \m{S=\Besf{\gY{0}}}, $J=\levelY{\vartheta}{0}\subseteq A$ (Lemma~\ref{l:tame}(ii)), \m{\mathsf{K}=A},
 $H_0=\Kaw{\lvn{\vartheta}}{\Ys{D}{0}}\cap A$, \m{q=\lvn{\vartheta}} and $\mathsf{W}$ the set of the points where some
 function of stage~$0$ does not vanish. For \m{h\in A} and \m{u\in J\subseteq A} the conjugate \m{huh^{-1}} lies in the group~$A$, so the exponent
-\m{n=0} works; and Lemma~\ref{l:poinbasic}(ii) moves a point of $\mathsf{W}$ into $A$ by an
-element of~$S$.
+\m{n=0} works; and Lemma~\ref{l:poinbasic}(ii) moves a point of $\mathsf{W}$ by an element of~$S$ into the
+principal level of the filling data of~$D$, which is~$A$ (Inputs~\ref{in:units}(d)).
 
 \emph{The case \m{j\ne0}.} Take \m{A=\Kz{\Ys{D}{j}}}; it contains $\inclf{\gY{j}}(\Kst{D}{j})$ by
 Lemma~\ref{l:inclK}, whose hypotheses are Lemma~\ref{l:vals}(iv), Inputs~\ref{in:units}(b) and the congruence
@@ -1557,21 +1699,29 @@ condition in the definition of~$\Kst{D}{j}$. For every finite point $h$ choose a
 of the integers \m{\ord_w\beta(h)_a-\ord_w\beta(1)_a}, for the string indices $a$ and the places $w$ in
 \m{Q\cup\cj Q}. For every profile with values between \m{-j} and~$j$ choose a point, with this profile if there is one,
 and keep its components at the places of \m{Q\cup\cj Q} only, setting the others to~$1$; let $\mathsf{K}$ be the
-union of the finitely many cosets \m{d\,\Kz{\Ys{D}{j}}} of these points~$d$. It is compact. Apply
+union of the finitely many cosets \m{h_0\,\Kz{\Ys{D}{j}}} of these points~$h_0$. It is compact. Apply
 Proposition~\ref{p:cut} with \m{S=\Besf{\gY{j}}}, $J=\levelY{\vartheta}{j}$, $H_0=\Kaw{\lvn{\vartheta}}{\Ys{D}{j}}$,
 \m{q=\lvn{\vartheta}} and $\mathsf{W}$ the set of the finite parts of the points where a function of stage $j$ of a
 ramified column, with \m{y_0\in\Kch{D}{\Ys{D}{0}}}, does not vanish. The hypotheses: a point of $\mathsf{K}$ is
 integral at the places not dividing~$\lvn{\vartheta}$, because the places of \m{Q\cup\cj Q} divide it
 (Inputs~\ref{in:units}(a)); for \m{u\in J} the conjugate \m{huh^{-1}} agrees with an element of $\Kz{\,\cdot\,}$ outside
-\m{Q\cup\cj Q}, and at a place $w$ of $Q$ the component of $u$ is congruent to $1$ modulo~$w$, so that its powers
-with exponent a high power of the residue characteristic, a fortiori of~$\lvn{\vartheta}$, converge to~$1$ and
-eventually lie in the open subgroup \m{h_w^{-1}\GL(\mathcal{O}_w)h_w}. Finally let \m{h\in\mathsf{W}}. By
+\m{Q\cup\cj Q}, and at a place $w$ of $Q$ the component $u_w$ of $u$ is congruent to $1$ modulo~$w$, that is,
+\m{u_w\in1+\mathfrak{p}_w\mathrm{M}_I(\mathcal{O}_w)}, where $\mathfrak{p}_w$ is the maximal ideal of
+$\mathcal{O}_w$ and \m{\mathrm{M}_I(\mathcal{O}_w)} the ring of the matrices over~$\mathcal{O}_w$. Let $\ell$ be the
+residue characteristic of~$w$. By the binomial expansion, the $\ell$-th power maps
+\m{1+\mathfrak{p}_w^{\nu}\mathrm{M}_I(\mathcal{O}_w)} into \m{1+\mathfrak{p}_w^{\nu+1}\mathrm{M}_I(\mathcal{O}_w)}
+for every \m{\nu\ge1}; so \m{u_w^{\ell^{\nu}}\in1+\mathfrak{p}_w^{\nu+1}\mathrm{M}_I(\mathcal{O}_w)} for all
+\m{u\in J} and all~$\nu$. These subgroups are stable under powers, and $\ell$ divides~$\lvn{\vartheta}$. As they
+form a basis of neighbourhoods of~$1$, one exponent~$n$, chosen for the finitely many places of~$Q$, puts
+\m{u_w^{\lvn{\vartheta}^{n}}} into the open subgroup \m{h_w^{-1}\GL_I(\mathcal{O}_w)h_w} for every \m{u\in J} at
+once; at the conjugate place the component of \m{(huh^{-1})^{\lvn{\vartheta}^{n}}} is then integral with integral
+inverse as well, the element being unitary. Finally let \m{h\in\mathsf{W}}. By
 Proposition~\ref{p:nearstage} the lattice of $h$ has near lines; by Lemma~\ref{l:nearzero} for \m{h=1} and
 \m{Q=\emptyset} the string diagonal at $1$ has exactly the reference orders; so the profile of $h$ has values in
-\m{[-j,j]} and the diagonal of $h$ has the orders of that of $1$ outside \m{Q\cup\cj Q}. Let $d$ be the chosen point
-with this profile. By Lemma~\ref{l:adapted}(vi), adapted bases at $d$ and at $h$ have string diagonals of the same
-orders at every place, and Proposition~\ref{p:orbit} gives \m{k\in\Kz{\,\cdot\,}} with
-$\varsigma=d\,k\,h^{-1}\in\Besf{\gY{j}}$; then \m{\varsigma h=dk\in\mathsf{K}}. The three conclusions of
+\m{[-j,j]} and the diagonal of $h$ has the orders of that of $1$ outside \m{Q\cup\cj Q}. Let $h_0$ be the chosen
+point with this profile. By Lemma~\ref{l:adapted}(vi), adapted bases at $h_0$ and at $h$ have string diagonals of
+the same orders at every place, and Proposition~\ref{p:orbit} gives \m{k\in\Kz{\,\cdot\,}} with
+$\varsigma=h_0\,k\,h^{-1}\in\Besf{\gY{j}}$; then \m{\varsigma h=h_0k\in\mathsf{K}}. The three conclusions of
 Proposition~\ref{p:cut} are (i), (ii) and (iii) of the theorem; for \m{j=0}, (ii) includes \m{h\in A}.
 \end{proof}
 
@@ -1580,8 +1730,9 @@ Proposition~\ref{p:cut} are (i), (ii) and (iii) of the theorem; for \m{j=0}, (ii
 \begin{proof}[Proof of Theorem~B]
 By induction on~$j$, for all $\mathcal{Y}$ and all functions~$\mathsf{a}$.
 
-\emph{\m{j=0}.} Take \m{C=\mathsf{a}(1)}, the value at the tuple of trivial points, and \m{w=S(1)}, the value at the
-tuple of trivial cosets: a combination with one coefficient~$1$, which is (i), and (ii) is void. For (iii), unfold
+\emph{\m{j=0}.} Take \m{C=\mathsf{a}(1)}, the value at the tuple of trivial points, and \m{\mathsf{w}=S(1)}, the value at the
+tuple of trivial cosets: a combination with one coefficient~$1$, which is~(i). (ii) holds because no index is
+moved: \m{q'=q} for every~$q$, so that \m{\Omega(S(1))=S(1)}. For (iii), unfold
 the Poincar\'e series twice (Inputs~\ref{in:units}(d)): the integral over \m{[G(\Ys{D}{0})]} of $z$ times
 \m{\PoinD{D}\varphi}, the series over all rational points, and the integral over
 $\Besr{\mathcal{Y}}\backslash G(\Ys{D}{0})$ of $z$ times the series over \m{\Besr{\mathcal{Y}}}, which is the
@@ -1594,7 +1745,7 @@ level~$A$ and the function $\xi_j'\mapsto\mathsf{a}(\xi\text{ with its entry }j\
 induction hypothesis at $j$ to the grading $\gY{j}$ and the function \m{\xi\mapsto C(\xi)}; it gives a
 constant~$C$. Given $\vartheta$, $M$ and~$S$, put
 \[S'(q)=\sum_{t\in T}\frac{1}{\cov{\Besf{\gY{j}}}{A}{T}{t}}\;S\bigl(q\text{ with its entry }j\text{ replaced by }t\bigr)\]
-and let $w$ be the vector that the induction hypothesis gives for~$S'$.
+and let $\mathsf{w}$ be the vector that the induction hypothesis gives for~$S'$.
 
 (i) Each \m{S'(q)} is a combination of values of $S$ at tuples whose new entry is integral away from
 $\lvn{\vartheta}$ (Theorem~C(ii)), with coefficients $1/\cov{\Besf{\gY{j}}}{A}{T}{t}$ that lie in
@@ -1611,7 +1762,7 @@ Substituting these combinations into the admissible combination for $S'$ multipl
 coefficients times $S$ at the moved tuple with entry $\inclf{\gY{j}}(b_j)\,t$ at~$j$. Since
 $\inclf{\gY{j}}(b_j)\in\Besf{\gY{j}}\cap A$, multiplication by it permutes $T$ (Theorem~C(i)) and keeps the
 multiplicity (Lemma~\ref{l:mult}(i)); so \m{\Omega(S'(q))=S'(q')} with $q'$ the tuple moved at the indices \m{<j},
-and the induction hypothesis gives \m{\Omega(w)=w}.
+and the induction hypothesis gives \m{\Omega(\mathsf{w})=\mathsf{w}}.
 
 (iii) Let $z$, $\varphi$, $L$ satisfy the hypothesis for \m{j+1} and the grading~$\mathcal{Y}$. By
 Lemma~\ref{l:tame}(iii) and Inputs~\ref{in:lib}(c), with $z^{\flat}$ the descent of $z$ times the index
@@ -1637,8 +1788,7 @@ is the hypothesis at~$j$.
 
 \sect{From an invariant combination to a good datum}{s:good}
 
-In this section the \emph{translate sum} $\tau_D$ is the operator $\sum_y\varrho_f(\mathrm{c}(y))\tensor\varrho_f(\mathrm{r}(y))$
-of Definition~\ref{d:redvac}, so that $\ptr{D}{t}{i}=\tau_D\bigl(\tdat{D}{t}{2i}\tensor\tdat{D}{t}{2i+1}\bigr)$, and
+In this section the translate sums and the pair translates are those of Definition~\ref{d:redvac}, and
 \emph{vac} is the vacuum of the space in question.
 
 \begin{proposition}[the pairs of lifts evaluate admissibly]\label{p:evalpair}
@@ -1648,32 +1798,42 @@ a complex number $C_i$ such that for every natural number $n$ prime to $\ND{D}$,
 finite vector $t_0$ of $\Hom(\Ys{D}{2i+1},\Ys{D}{2i}^{-}\oplus\Ys{D}{2i+2})$ for which \m{\piGb{D}\,t_0} is integral
 on the rows of the first summand and \m{\pi_g\,t_0} on the rows of the second, at all places not
 dividing~$n$ (two conjugate weights),
-\[\pairEvalY{i}\bigl(\varrho_f(t_0)\mathrm{vac}\bigr)\in\Adm{v}{\mathcal{I}_n}{n}{d_i}{p}{1},\qquad
-v(t_1,t_2)=C_i\cdot\tau_D\bigl(\varrho_f(t_1)\mathrm{vac}\tensor\varrho_f(t_2)\mathrm{vac}\bigr),\]
+\[\begin{gathered}\pairEvalY{i}\bigl(\varrho_f(t_0)\mathrm{vac}\bigr)\in\Adm{v}{\mathcal{I}_n}{n}{d_i}{p}{1},\\
+v(t_1,t_2)=C_i\cdot\transum{\XIo{D}{2i}}{\XI{D}{2i+1}}{\PiD{D}}{\ND{D}}{\XIo{D}{2i+2}}\bigl(\varrho_f(t_1)\mathrm{vac}\tensor\varrho_f(t_2)\mathrm{vac}\bigr),\end{gathered}\]
 where $\mathcal{I}_n$ is the set of the pairs of finite matrices \m{(t_1,t_2)} with \m{\pi_g\,t_1} and
 \m{\pi_g\,t_2} integral at the places not dividing~$n$, and $d_i$ is the order of \m{\Oh/\piGb{D}} to the
 power $(\nD{D}{2i}+\nD{D}{2i+2})\cdot\nD{D}{2i+1}$.
 \end{proposition}
 \begin{proof}
 By the definition of \m{\pairEvalY{i}} this is the theorem \emph{admissible evaluation} of the note \emph{Two
-consecutive theta lifts}, applied to the middle pair for \m{i<\rhoD{D}} and to the last pair for \m{i=\rhoD{D}}. Its
-hypotheses are: $\PiD{D}$ is a split level for $\ND{D}$ and $\ND{D}$ is split and squarefree along it with the
-principal idele of $\piN{D}$ (Inputs~\ref{in:units}(b)); the middle grading spans its lattice
-(Lemma~\ref{l:vals}(iv)); with \m{\delta=\cj{c_g}^{-1}c_g}, of norm one, the weights on the two points are $1$, or
-$\delta$ on the last point of the last pair; \m{\delta=1} and $\piGb{D}$ is a unit at the places above $\ND{D}$,
-because chosen places do not divide~$\ND{D}$, with Lemma~\ref{l:vals}(ii); and scaled neighbour vectors land in
-the lattices of the outer spaces. The last hypothesis is the lattice lemma of that note for $\gY{2i}$ and
-$\gY{2i+2}$ (Lemma~\ref{l:vals}(iv)), and in the last pair for $\gY{1}$-type coordinates of the point, where the
-standard space $\Ys{D}{m}$ has frame~$1$ and the identity \m{\cj\varepsilon\varepsilon=-1} of the chosen unit
-$\varepsilon$ enters.
+consecutive theta lifts} (Theorem~D there), applied to the middle pair for \m{i<\rhoD{D}} and to the last pair for
+\m{i=\rhoD{D}}. Its hypotheses, in the letters of that theorem: $\PiD{D}$ is a split level for $\ND{D}$, and
+$\ND{D}$ is split and squarefree along it with the principal idele $\piId{D}$ of $\piN{D}$
+(Inputs~\ref{in:units}(b)). The middle grading \m{\gY{2i+1}} spans the lattice of
+\m{(\ideA{D},\piId{D},\lsc{D}{2i+1})} (Lemma~\ref{l:vals}(iv)). The integral adele $\beta$ is~$\piGb{D}$, and
+\m{\delta=\cj{\cgD{D}}^{-1}\cgD{D}}, of norm one, satisfies
+\m{\delta=(\cj\alpha/\alpha)\cdot(\ideA{D}/\cj{\ideA{D}})} because \m{\ideA{D}=\alpha/\cj{\cgD{D}}}. The family
+$\kappa$ is $1$ at every index except the point of $\XI{D}{m}$ in the last pair, where it is~$\delta$. At the
+places above $\ND{D}$, \m{\delta=1} and $\piGb{D}$ is a unit, because chosen places do not divide~$\ND{D}$
+(Lemma~\ref{l:vals}(ii)); and \m{\pi_g\kappa_b} and \m{\piGb{D}\kappa_b} are integral, $\delta$ having at every
+place the order of \m{\piGb{D}/\pi_g}. \emph{The hypothesis on weights}: the zero part of the middle pair joins
+only indices that carry the same weight; that of the last pair also joins the point of $\XI{D}{m}$ to the only
+string vector of~\m{\gY{2\rhoD{D}}}, where the two weights are $\piGb{D}$ and \m{\pi_g\delta}, of the same absolute
+value at every place: this is the reason for \m{\kappa=\delta} there. \emph{The hypothesis on lattices}: scaled
+neighbour vectors land in the lattices of the outer spaces. In the middle pair this is the lattice lemma of that
+note (Lemma~4.3 there) for $\gY{2i}$ and $\gY{2i+2}$, whose scales $\lsc{D}{2i}$ and $\lsc{D}{2i+2}$ are the powers
+of \m{\ideA{D}/\cj{\ideA{D}}} with exponents \m{\rhoD{D}-i+1} and \m{\rhoD{D}-i} (Lemma~\ref{l:vals}(iv)). In the
+last pair it is the same lemma for \m{\gY{2\rhoD{D}}}, with exponent~$1$, applied to the sum of the two congruences
+of a neighbour vector, one of them multiplied by the unit $\varepsilon$ with \m{\cj\varepsilon\varepsilon=-1}; the
+frame of the standard space $\Ys{D}{m}$ is~$1$.
 \end{proof}
 \leanline{\lean{isAdmissibleEvalpairEvalY}}
 
 \begin{proposition}[evaluated data are combinations of reduced vacua]\label{p:redvac}
 In Setting~\ref{s:data} there is a complex number $C$ such that for every tame character $\vartheta$ of $D$ and
 every tuple \m{y=(y_j)} of finite points with $y_j\in\Kaw{\lvn{\vartheta}}{\Ys{D}{j}}$ for all~$j$:
-\[\evD{\vartheta}{y}{\rhoD{D}}\tensor\dots\tensor\evD{\vartheta}{y}{0}\ \in\
-\Adm{C\cdot\redvac{D}{\cdot}}{\Tadm{D}{\lvn{\vartheta}}}{\lvn{\vartheta}}{\cutB^{\,2m}}{\Qs{\vartheta}=\emptyset}{1}.\]
+\[\begin{gathered}\evD{\vartheta}{y}{\rhoD{D}}\tensor\dots\tensor\evD{\vartheta}{y}{0}\\
+{}\in\Adm{C\cdot\redvac{D}{\cdot}}{\Tadm{D}{\lvn{\vartheta}}}{\lvn{\vartheta}}{\cutB^{\,2m}}{\Qs{\vartheta}=\emptyset}{1}.\end{gathered}\]
 \end{proposition}
 \begin{proof}
 Write \m{n=\lvn{\vartheta}}. \emph{Each moved datum.} \m{\ups{\vartheta}{j}} is named by an indicator modulo the
@@ -1691,9 +1851,10 @@ $\Hom(\Ys{D}{2i+1},\Ys{D}{2i}^{-}\oplus\Ys{D}{2i+2})$, at the vector with rows \
 summand and $t'$ on the second, which satisfies the integrality of Proposition~\ref{p:evalpair}: the conjugated
 block has the weight~$\piGb{D}$, the other block the weight~$\pi_g$. Applying
 \m{\pairEvalY{i}} and Proposition~\ref{p:evalpair} (with $n$, prime to $\ND{D}$), $\evD{\vartheta}{y}{i}$ is an
-admissible combination of the vectors $C_i\,\tau_D(\varrho_f(t_1)\mathrm{vac}\tensor\varrho_f(t_2)\mathrm{vac})$.
+admissible combination of the vectors \m{v(t_1,t_2)} of that proposition, each of them $C_i$ times the translate
+sum of the pair~$i$ applied to a tensor of two translated vacua.
 \emph{The tensor.} A pure tensor of admissible combinations is an admissible combination of the pure tensors, with
-the product of the denominators and of the sizes; the pure tensor of the vectors \m{C_i\tau_D(\dots)} is
+the product of the denominators and of the sizes; the pure tensor of the vectors \m{v(t_1,t_2)} of the pairs is
 \m{\prod_iC_i} times a reduced vacuum, up to the normalisation of the vacuum, which is absorbed in~$C$. The
 denominators: all are powers of the order of \m{\Oh/\piGb{D}}, which is \m{\gD{D}^{\fD{D}}} (Lemma~\ref{l:vals}(i)),
 with exponents bounded, for each pair, by \m{4\,\nD{D}{m}^{2}}; so each pair contributes a divisor of \m{\cutB^{4}}
@@ -1704,15 +1865,16 @@ and the \m{\rhoD{D}+1} pairs a divisor of \m{\cutB^{4(\rhoD{D}+1)}=\cutB^{\,2m}}
 \begin{lemma}\label{l:proj}
 In Setting~\ref{s:data} let $\vartheta$ be a tame character of $D$, \m{t\in\Tadm{D}{\lvn{\vartheta}}} and $i$ a
 natural number, and let $\mathsf{P}_\Pi$ be the projection of the finite part to the vectors that are vacua at the
-places of $\PiD{D}$ and their conjugates. Then
-$(\mathsf{P}_\Pi\tensor\mathsf{P}_\Pi)\bigl(\ptr{D}{t}{i}\bigr)=\tdat{D}{t}{2i}\tensor\tdat{D}{t}{2i+1}$.
+places of $\PiD{D}$ and their conjugates (Definition~\ref{d:good}(iii)). Then
+\[(\mathsf{P}_\Pi\tensor\mathsf{P}_\Pi)\bigl(\ptr{D}{\tdat{D}{t}{\cdot}}{i}\bigr)=\tdat{D}{t}{2i}\tensor\tdat{D}{t}{2i+1}.\]
 \end{lemma}
 \begin{proof}
 The places of $\PiD{D}$ and their conjugates do not divide $\lvn{\vartheta}$ and are not chosen, so
 \m{\tdat{D}{t}{j}} is fixed by $\mathsf{P}_\Pi$ (Inputs~\ref{in:units}(b)); for such a vector,
-\m{\mathsf{P}_\Pi\varrho_f(t')} is \m{\varrho_f(t')} if $t'$ is integral at these places and $0$ otherwise (a rule
-of the library). In the sum defining \m{\ptr{D}{t}{i}} the vector \m{-y/\ND{D}} is integral at $\PiD{D}$ only for
-\m{y=0}, and that term is the tensor of the two data.
+\m{\mathsf{P}_\Pi\varrho_f(t')} is \m{\varrho_f(t')} if $t'$ is integral at these places and $0$ otherwise
+(Input~1(f) of the note \emph{Two consecutive theta lifts}). In the sum defining
+\m{\ptr{D}{\tdat{D}{t}{\cdot}}{i}} the vector \m{-y/\ND{D}} is integral at $\PiD{D}$ only for \m{y=0}, and that
+term is the tensor of the two data.
 \end{proof}
 \leanline{\lean{projOnFinPartpairTranslates}}
 
@@ -1722,7 +1884,8 @@ In Setting~\ref{s:data} let $q$ be a natural number, $p$ a proposition and \m{t\
 v(t')=\bigotimes_{i\le\rhoD{D}}\bigl(\tdat{D}{t'}{2i}\tensor\tdat{D}{t'}{2i+1}\bigr).\end{gathered}\]
 \end{lemma}
 \begin{proof}
-Factor by factor: \m{\ptr{D}{t}{i}} is a sum, over at most \m{\ND{D}^{\fD{D}\nD{D}{m}}} vectors~$y$, of terms with
+Factor by factor: \m{\ptr{D}{\tdat{D}{t}{\cdot}}{i}} is a sum, over at most \m{\ND{D}^{\fD{D}\nD{D}{m}}}
+vectors~$y$, of terms with
 coefficient~$1$, and each term is a root of unity times
 $\varrho_f(t_1)\mathrm{vac}\tensor\varrho_f(t_2)\mathrm{vac}$ with $t_1$, $t_2$ the sums of the entries of $t$ and
 of the translations by \m{\mp y/\ND{D}}, since Heisenberg operators compose up to values of the additive character.
@@ -1732,28 +1895,32 @@ These translations live at the places above~$\ND{D}$, so the new tuple is admiss
 \leanline{\lean{isAdmissibleCombreducedVacuum}}
 
 \begin{proposition}[an invariant combination of reduced vacua is the chain of a good datum]\label{p:good}
-In Setting~\ref{s:data} let $\vartheta$ be a twist of $D$ and let $w$ be a tensor in the product of the paired data
+In Setting~\ref{s:data} let $\vartheta$ be a twist of $D$ and let $\mathsf{w}$ be a tensor in the product of the paired data
 spaces of the \m{\rhoD{D}+1} pairs of definite lifts. Assume that
-\[w\in\Adm{\redvac{D}{\cdot}}{\Tadm{D}{\lvn{\vartheta}}}{\lvn{\vartheta}}{1}{\Qs{\vartheta}=\emptyset}{\cutB^{\,2m}\cdot\cutB^{\,2\rhoD{D}+2}},\]
-and that for every tuple \m{b=(b_j)} with \m{b_j\in\Kst{D}{j}} and \m{b_{2\rhoD{D}+2}=1} the tensor $w$ is fixed by the
+\[\mathsf{w}\in\Adm{\redvac{D}{\cdot}}{\Tadm{D}{\lvn{\vartheta}}}{\lvn{\vartheta}}{1}{\Qs{\vartheta}=\emptyset}{\cutB^{\,2m}\cdot\cutB^{\,2\rhoD{D}+2}},\]
+and that for every tuple \m{b=(b_j)} with \m{b_j\in\Kst{D}{j}} and \m{b_{2\rhoD{D}+2}=1} the tensor $\mathsf{w}$ is fixed by the
 operator
 \[\bigotimes_{i\le\rhoD{D}}\omega(b_{2i},b_{2i+1})\tensor\omega(b_{2i+1},b_{2i+2}).\]
 Then there is a finitely supported
 $\Psi\colon\Tr{D}\to\CC$ that is a good datum for $\vartheta$ and such that for every \m{\varphi\in\Stg{D}{0}}
-\[\chnn{D}{\vartheta}{w}{\rhoD{D}+1}(\varphi)=\chcomb{D}{\vartheta}{\Psi}{m}(\varphi),\]
+\[\chnn{D}{\vartheta}{\mathsf{w}}{\rhoD{D}+1}(\varphi)=\chcomb{D}{\vartheta}{\Psi}{m}(\varphi),\]
 the left side being the chain of pairs extended linearly to tensors.
 \end{proposition}
 \begin{proof}
-Substitute Lemma~\ref{l:redvaccomb} into the combination~$w$: this gives a finitely supported $\Psi$ on
+Substitute Lemma~\ref{l:redvaccomb} into the combination~$\mathsf{w}$: this gives a finitely supported $\Psi$ on
 \m{\Tadm{D}{\lvn{\vartheta}\ND{D}}} with values in \m{\Oaw{\lvn{\vartheta}}} and
-$w=\sum_{t}\Psi(t)\bigotimes_i(\tdat{D}{t}{2i}\tensor\tdat{D}{t}{2i+1})$; if \m{\Qs{\vartheta}=\emptyset} its size is
+$\mathsf{w}=\sum_{t}\Psi(t)\bigotimes_i(\tdat{D}{t}{2i}\tensor\tdat{D}{t}{2i+1})$; if \m{\Qs{\vartheta}=\emptyset} its size is
 at most the product of the two sizes, which the comparisons of the data bound by \m{\exp(x^{60})}. This is
 condition (i) of Definition~\ref{d:good}. The chain of pairs of a pure tensor of pairs is the chain of the single
-data, so $\chnn{D}{\vartheta}{w}{\rhoD{D}+1}=\chcomb{D}{\vartheta}{\Psi}{m}$, because \m{m=2(\rhoD{D}+1)}. Joint
+data, so $\chnn{D}{\vartheta}{\mathsf{w}}{\rhoD{D}+1}=\chcomb{D}{\vartheta}{\Psi}{m}$, because \m{m=2(\rhoD{D}+1)}. Joint
 invariance (ii): regrouping the tensor of the $m$ single data into pairs carries the joint action of a tuple $b$
-to the action in the hypothesis, which fixes~$w$. Condition (iii): by Lemma~\ref{l:proj} every reduced vacuum, hence
-$w$, is fixed by $\bigotimes_i\tau_D\circ(\mathsf{P}_\Pi\tensor\mathsf{P}_\Pi)$; applying the chain of pairs to both
-sides of this identity for $w$, written through~$\Psi$, is~(iii).
+to the action in the hypothesis, which fixes~$\mathsf{w}$. Condition (iii): let $\mathsf{R}$ be the endomorphism of the
+tensor product of the paired data spaces that is, on the factor of the pair~$i$, the projection
+\m{\mathsf{P}_\Pi\tensor\mathsf{P}_\Pi} followed by the translate sum of that pair (Definition~\ref{d:redvac}); on
+a pure tensor of single data \m{s=(s_j)_{j<m}} it gives the tensor of the pair translates
+\m{\ptr{D}{\mathsf{P}_\Pi s}{i}}, \m{i\le\rhoD{D}}. By Lemma~\ref{l:proj}, $\mathsf{R}$ fixes the reduced vacuum of
+every \m{t\in\Tadm{D}{\lvn{\vartheta}}}, hence~$\mathsf{w}$. Applying $\mathsf{R}$ to
+$\mathsf{w}=\sum_{t}\Psi(t)\bigotimes_i(\tdat{D}{t}{2i}\tensor\tdat{D}{t}{2i+1})$ and then the chain of pairs gives~(iii).
 \end{proof}
 \leanline{\lean{existsisGoodDatumofinvariant}}
 
@@ -1766,29 +1933,29 @@ $\mathsf{t}(\xi)$ be the functional of Proposition~\ref{p:even} for the pair ind
 $\gYlast$ of $\Ys{D}{m}$, the last arrow pair, whose finite evaluation is \m{\pairEvalY{\rhoD{D}}} by definition, and
 the trivial real point. Apply Theorem~B with \m{j=m=2\rhoD{D}+2}, the grading $\gYlast$, whose string has
 length~$0$, and the function $\mathsf{a}(\xi)=C_{\mathsf{t}(\xi)}$; let $C_{\mathrm{u}}$ be the constant it gives. Put
-\[c=\Bigl(\frac{C_{\mathrm{u}}\,C_{\mathrm{v}}}{\cutB^{\,2m}}\Bigr)^{-1}\ \text{if this quotient is not zero, and}\ c=1\ \text{otherwise.}\]
+\[\cD{D}=\Bigl(\frac{C_{\mathrm{u}}\,C_{\mathrm{v}}}{\cutB^{\,2m}}\Bigr)^{-1}\ \text{if this quotient is not zero, and}\ \cD{D}=1\ \text{otherwise.}\]
 
 \emph{The datum.} Fix a twist~$\vartheta$. Let $M$ be the tensor product of the paired data spaces and
 \[S(q)=\evD{\vartheta}{q^{\circ}}{\rhoD{D}}\tensor\dots\tensor\evD{\vartheta}{q^{\circ}}{0},\]
-where $q^{\circ}$ is the tuple of the chosen representatives of the cosets~$q$; let $w$ be the vector of
-Theorem~B. By Theorem~B(i), $w$ is an admissible combination of the values \m{S(\text{cosets of }y)}, $y$ integral
+where $q^{\circ}$ is the tuple of the chosen representatives of the cosets~$q$; let $\mathsf{w}$ be the vector of
+Theorem~B. By Theorem~B(i), $\mathsf{w}$ is an admissible combination of the values \m{S(\text{cosets of }y)}, $y$ integral
 away from~$\lvn{\vartheta}$, with denominator $1$ and size \m{\cutB^{\,m}}; by Lemma~\ref{l:stage}(iii) these values
-are the tensors of Proposition~\ref{p:redvac}. Substituting, $w$ is an admissible combination of the vectors
+are the tensors of Proposition~\ref{p:redvac}. Substituting, $\mathsf{w}$ is an admissible combination of the vectors
 \m{C_{\mathrm{v}}\redvac{D}{t}}, \m{t\in\Tadm{D}{\lvn{\vartheta}}}, with denominator \m{\cutB^{\,2m}}; clearing the
-constant and the denominator (Inputs~\ref{in:units}(f)), the vector \m{w^{\star}=c\,C_{\mathrm{u}}\,w} is an admissible
+constant and the denominator (Inputs~\ref{in:units}(f)), the vector \m{\mathsf{w}^{\star}=\cD{D}\,C_{\mathrm{u}}\,\mathsf{w}} is an admissible
 combination of the reduced vacua themselves with denominator~$1$ and size \m{\cutB^{\,2m}\cdot\cutB^{\,m}}. It is
 invariant as Proposition~\ref{p:good} requires: for a tuple $b$ with \m{b_j\in\Kst{D}{j}} and \m{b_m=1}, the operator
 $\bigotimes_i\omega(b_{2i},b_{2i+1})\tensor\omega(b_{2i+1},b_{2i+2})$ sends \m{S(q)} to $S$ at the tuple moved by the
 images of the $b_j$ under the inclusions $\inclf{\gY{j}}$, because the finite evaluation of an arrow pair commutes
 with the finite points of the three definite groups (\emph{equivariance of the finite evaluation},
 Inputs~\ref{in:units}(f)); so Theorem~B(ii) applies. Proposition~\ref{p:good} gives a good datum $\Psi$ with
-$\chnn{D}{\vartheta}{w^{\star}}{\rhoD{D}+1}=\chcomb{D}{\vartheta}{\Psi}{m}$.
+$\chnn{D}{\vartheta}{\mathsf{w}^{\star}}{\rhoD{D}+1}=\chcomb{D}{\vartheta}{\Psi}{m}$.
 
 \emph{The identity.} By the criterion (1) of the last stage it suffices to show, for \m{\varphi\in\Colram{D}},
-\[\chainY{\vartheta}{m}{\bigl(\PoinD{D}(c\,\varphi)\bigr)}=R\bigl(\chcomb{D}{\vartheta}{\Psi}{m}(\varphi)\bigr),\]
+\[\chainY{\vartheta}{m}{\bigl(\PoinD{D}(\cD{D}\,\varphi)\bigr)}=R\bigl(\chcomb{D}{\vartheta}{\Psi}{m}(\varphi)\bigr),\]
 and for this to pair both sides with an arbitrary \m{\Xi\in\FormY{m}}. Apply
 Theorem~B(iii) to the form \m{z=\cj\Xi}, the column $\varphi$ and the linear form
-\[L(w')=\bigl\langle\Xi,R\bigl(\chnn{D}{\vartheta}{w'}{\rhoD{D}+1}(\varphi)\bigr)\bigr\rangle .\]
+\[L(\mathsf{w}')=\bigl\langle\Xi,R\bigl(\chnn{D}{\vartheta}{\mathsf{w}'}{\rhoD{D}+1}(\varphi)\bigr)\bigr\rangle .\]
 Its hypothesis: for $\xi$ and $y$ with
 \m{y_m=1} and \m{y_0\in\Kch{D}{\Ys{D}{0}}}, Proposition~\ref{p:even} says that the function of stage $m$ on $\gYlast$
 is, on the image of \m{\incl{\gYlast}}, the coefficient at $\mathsf{t}(\xi)$, on the block diagonal elements, of
@@ -1796,19 +1963,23 @@ is, on the image of \m{\incl{\gYlast}}, the coefficient at $\mathsf{t}(\xi)$, on
 by (2) of the last stage its integral against \m{\cj\Xi} is
 \[C_{\mathsf{t}(\xi)}\langle\Xi,R\psi\rangle=\mathsf{a}(\xi)\,L\bigl(S(\text{cosets of }y)\bigr),\]
 again by Lemma~\ref{l:stage}(iii). The conclusion of Theorem~B(iii) is
-\[\bigl\langle\Xi,\chainY{\vartheta}{m}{\bigl(\PoinD{D}\varphi\bigr)}\bigr\rangle=C_{\mathrm{u}}\cdot\bigl\langle\Xi,R\bigl(\chnn{D}{\vartheta}{w}{\rhoD{D}+1}(\varphi)\bigr)\bigr\rangle .\]
-Multiplying by $c$ and using linearity in the tensor gives the pairing of $\Xi$ with
-\[R\bigl(\chnn{D}{\vartheta}{w^{\star}}{\rhoD{D}+1}(\varphi)\bigr)=R\bigl(\chcomb{D}{\vartheta}{\Psi}{m}(\varphi)\bigr).\]
+\[\bigl\langle\Xi,\chainY{\vartheta}{m}{\bigl(\PoinD{D}\varphi\bigr)}\bigr\rangle=C_{\mathrm{u}}\cdot\bigl\langle\Xi,R\bigl(\chnn{D}{\vartheta}{\mathsf{w}}{\rhoD{D}+1}(\varphi)\bigr)\bigr\rangle .\]
+Multiplying by $\cD{D}$ and using linearity in the tensor gives the pairing of $\Xi$ with
+\[R\bigl(\chnn{D}{\vartheta}{\mathsf{w}^{\star}}{\rhoD{D}+1}(\varphi)\bigr)=R\bigl(\chcomb{D}{\vartheta}{\Psi}{m}(\varphi)\bigr).\]
 As $\Xi$ is
-arbitrary, the two forms agree, and (1) of the last stage gives the theorem. The number $c$ was fixed before
+arbitrary, the two forms agree, and (1) of the last stage gives the theorem. The number $\cD{D}$ was fixed before
 $\vartheta$ and~$\varphi$.
 \end{proof}
 
 \sect{Where the results are used}{s:used}
 
 Theorem~A is used once, in the proof of Theorem~A of the write-up (\emph{short forms}, unit \emph{Endgame}): its
-constant $c$ is the constant in the Poincar\'e maps \m{\gpt{D}{\gamma}\circ\PoinD{D}\circ(c\,\cdot)} from ramified
-columns to rows, and for every twist the good datum turns the size and the divisibility of
+constant $\cD{D}$ is the constant in the Poincar\'e maps \m{\gpt{D}{\gamma}\circ\PoinD{D}\circ(\cD{D}\,\cdot)} from
+ramified columns to rows: the restriction of this composite to $\Colram{D}$ is the Poincar\'e series
+$\mathcal{P}_D(\gamma)$ of Setting~2 of the overview, and the ``fixed non-zero constant'' of that Setting is
+$\cD{D}$ (in the formal text the map is the composite of the projection, the Poincar\'e series and the inclusion
+of the ramified columns scaled by the constant chosen from Theorem~A). The roman $\PoinD{D}$ of this note is the
+series before the projection and the scaling. For every twist the good datum turns the size and the divisibility of
 \m{\iot{\vartheta}} of such a row into those of \m{\Bmu{D}{\vartheta}{\Psi}}, which the units \emph{Columns},
 \emph{Curve} and \emph{TwistedHecke} estimate. The map \m{\iotL{\vartheta}{(\,\cdot\,)}} restricted to the rows is
 the chain of lifts $\Theta_{D,\vartheta}$ of the overview; Corollary~\ref{c:groupG} and Lemma~\ref{l:blocks} are used by
@@ -1830,7 +2001,7 @@ Theorems~B and~C and all statements about the chain hold for tame characters. (2
 $\mathcal{Y}$ is arbitrary with the right string length, and the subtraction in \m{l=2\rhoD{D}+1-j} is truncated; the
 proof uses it for $\gY{j}$ and, at \m{j=m}, for $\gYlast$. The integrability in (iii) is a hypothesis \emph{inside}
 the hypothesis: the formal text never has to prove that the function of stage \m{j+1} times $z$ is integrable,
-because the unfolding step provides it. (3) The constant $c$ is Mathlib's normalising unit of
+because the unfolding step provides it. (3) The constant $\cD{D}$ is Mathlib's normalising unit of
 \m{C_{\mathrm{u}}C_{\mathrm{v}}/\cutB^{\,2m}}, which is $1$ when the quotient vanishes; the formal text does not show
 that the quotient is non-zero and does not need it. (4) The bound \m{\exp(x^{60})} in the definition of a good
 datum is asked only for \m{\Qs{\vartheta}=\emptyset}, and so are all size clauses in this note. (5)
@@ -1855,7 +2026,7 @@ it. Unused hypotheses were not determined: no Lean was run for this note.
 
 \subhead{The second reading.} A second reader compared the member texts of the whole unit and a sample of the proof
 steps with the Lean source, after the dossier was made. Where her reading and the dossier differ, this note
-follows her, having checked each point in the source: one scalar $c$ for the datum, chosen before the twist, and a
+follows her, having checked each point in the source: one scalar $\cD{D}$ for the datum, chosen before the twist, and a
 restriction that acts on the definite chain only, the indefinite chain being paired with a test form directly
 (proof of Theorem~A); in Proposition~\ref{p:sumcut} the average over the finite Bessel group is taken for every coset
 of non-zero multiplicity, the multiplicity and not the indicator of the cut being invariant under the whole
@@ -1905,10 +2076,11 @@ The statement of the theorem, as the artifact has it:
   lifts), $r$ (rank), $g_0$, $g_1$ (primes), $\pi_g$}
 \nt{$\ED{D}$, $\fD{D}$, $\gD{D}$, $\tD{D}$, $\nD{D}{j}$}{the CM field; the number of its infinite places;
   \m{g_0g_1}; \m{5r}; the rank of stage~$j$}
-\nt{$\mathbf{j}$, $\alpha$, $\upsilon$, $\varpi$}{Weil data: an element of trace zero, an idele, the splitting
-  character; a generator of the different}
+\nt{$\mathbf{j}$, $\alpha$, $\upsilon$, $\vpi{P}{\mu}$}{Weil data: an element of trace zero, an idele, the splitting
+  character; the generator of the different of $\ED{D}$}
 \nt{$\rhoD{D}$}{\m{m/2-1}}
-\nt{$\piGb{D}$, $c_g$}{the conjugate of $\pi_g$ in $\ED{D}$; an idele generating its ideal}
+\nt{$\piGb{D}$, $\cgD{D}$, $\piId{D}$}{the conjugate of $\pi_g$ in $\ED{D}$; an idele generating its ideal; the
+  principal idele of $\piN{D}$ (the last two written as in the note of the unit \emph{Trace})}
 \nt{$\ND{D}$, $\piN{D}$, $\PiD{D}$}{the level prime; an integer of norm $\ND{D}$; the places dividing it}
 \nt{$\vartheta$, $\Qs{\vartheta}$, $\psi_\vartheta$, $\lvn{\vartheta}$}{a tame character; its places; its tame part;
   the product of the norms of its places}
@@ -1929,10 +2101,11 @@ The statement of the theorem, as the artifact has it:
   groups; finite part; rational points}
 \nt{$\incl{\mathcal{Y}}$, $\inclf{\mathcal{Y}}$}{the inclusion of the group of $X$}
 \nt{$\psi_E$, $\mathrm{sh}_{\mathcal{Y}}$}{the standard additive character; the shift matrix}
-\nt{$\mathcal{S}(W)$, $\mathcal{W}_f(W)$, $\varrho(y)$, $\varrho_f(y)$, $\omega$, $\omega_\nu$, $\theta$}{theta data;
-  finite part; Heisenberg operators; Weil representation; theta functional}
+\nt{$\mathcal{S}(W)$, $\mathcal{W}_f(W)$, $\varrho(y)$, $\varrho_f(y)$, $\omega$, $\pW{\nu}$, $\theta$}{theta data;
+  finite part; Heisenberg operators; Weil representation; twisted pair action; theta functional}
 \nt{$\nu$, $\Phi$, $v\tensor f$, $\boxtimes$}{a character; a datum; integrated datum; arrow product}
-\nt{$\mathrm{ct}$, $\mathrm{unf}$}{constant term at the string map; unfolded function}
+\nt{$\Tm{\mathcal{Y}}{\mathcal{Y}'}$, $\mathrm{ct}$, $\mathrm{unf}$}{the string map; constant term at the string
+  map; unfolded function}
 \nt{$\gY{j}$, $\gYlast$}{the gradings of the spaces $\Ys{D}{j}$}
 \nt{$\inclY{j}$, $\blk{j}{i}$, $R_0$, $T_0$}{block inclusion; block number; sets of blocks}
 \nt{$\levelY{\vartheta}{j}$, $\ltame{\vartheta}{j}$, $\kerY{\vartheta}{j}$, $\ups{\vartheta}{j}$}{level, tame part,
@@ -1951,13 +2124,15 @@ The statement of the theorem, as the artifact has it:
   coordinates; Poincar\'e series; projection to rows}
 \nt{$\Oaw{n}$, $\Adm{v}{\mathcal{I}}{n}{d}{p}{B}$}{numbers integral away from~$n$; admissible combinations}
 \nt{$\ell$, $\jmath$, $\sigma$}{a prime; a ring homomorphism \m{\CC\to\CC_\ell}; an automorphism of~$\CC$}
-\nt{$\Kst{D}{j}$, $\Stg{D}{j}$, $z_w$}{level and forms of stage~$j$; a central translation}
+\nt{$\Kst{D}{j}$, $\Stg{D}{j}$, $\zw{D}{w}$}{level and forms of stage~$j$; the central translation at~$w$}
 \nt{$\Tr{D}$, $\Tadm{D}{q}$, $\tdat{D}{t}{j}$}{translations; admissible ones; translated vacua}
 \nt{$\chn{D}{\vartheta}{\Phi}{j}$, $\chnn{D}{\vartheta}{\Phi}{p}$, $\chcomb{D}{\vartheta}{\Psi}{j}$}{chains of
   definite lifts: single, paired, combined}
 \nt{$\resY{D}$, $\Bmu{D}{\vartheta}{\Psi}$, $\Psi$}{restriction to $\Ys{D}{m}$; the definite side; a good datum}
-\nt{$\ptr{D}{t}{i}$, $\tau_D$, $\redvac{D}{t}$, $\mathsf{P}_\Pi$}{pair translates; translate sum; reduced vacuum;
-  projection at $\PiD{D}$}
+\nt{$\XIo{D}{j}$, $\transum{I}{I'}{\Sigma}{N}{I''}$, $\ptr{D}{v}{i}$, $\redvac{D}{t}$}{$\XI{D}{j}$ without its point;
+  translate sum of three index sets, a set of places and a prime; pair translates of a family~$v$; reduced vacuum}
+\nt{$\mathsf{P}_\Pi$, $\mathsf{R}$, $I'$, $I''$}{projection at $\PiD{D}$; an endomorphism (Proposition~\ref{p:good});
+  index sets}
 \nt{$\varphi$, $\psi$, $\xi$, $y$, $\unf{\vartheta}{\varphi}{\xi}{y}{j}{\mathcal{Y}}$}{columns; tuples of real and
   finite points; stage functions}
 \nt{$\pairEvalY{i}$, $\cutB$, $\tUps{\vartheta}{y}{j}$, $\evD{\vartheta}{y}{i}$}{finite evaluation of a pair; the cut
@@ -1970,15 +2145,25 @@ The statement of the theorem, as the artifact has it:
 \nt{$H$, $S$, $A$, $J$, $T$, $t$, $H_0$, $\mathsf{K}$, $\mathsf{W}$, $\mathsf{C}$}{a group, subgroups, a set of
   cosets, a coset; a subgroup, a compact set, a set of points, representatives}
 \nt{$\cov{S}{A}{T}{t}$}{multiplicity of a cut}
-\nt{$C$, $C_i$, $C_{\mathsf{t}}$, $C_{\mathrm{u}}$, $C_{\mathrm{v}}$, $c$}{constants; the constant of Theorem~A}
-\nt{$M$, $L$, $\Omega$, $\mathsf{a}$, $\mathsf{b}$, $w$, $w^{\star}$, $q$, $q'$}{a vector space, a linear form, an
-  endomorphism; functions; vectors of~$M$; tuples of cosets}
+\nt{$C$, $C_i$, $C_{\mathsf{t}}$, $C_{\mathrm{u}}$, $C_{\mathrm{v}}$, $\cD{D}$}{constants; the constant of Theorem~A}
+\nt{$M$, $L$, $\Omega$, $\mathsf{a}$, $\mathsf{b}$, $\mathsf{w}$, $\mathsf{w}^{\star}$, $q$, $q'$}{a vector space, a
+  linear form, an endomorphism; functions; vectors of~$M$; tuples of cosets}
 \nt{$\mathsf{t}$, $\coef{\mathsf{t}}{\psi}$, $R$, $\Xi$, $z$, $z^{\flat}$, $F$}{a functional; a coefficient; the
   last-stage map; forms; functions}
-\nt{$g$, $h$, $k$, $u$, $\varsigma$, $p$, $d$, $n$, $i$, $j$, $e$, $f$}{points, integral points, unipotent and
+\nt{$g$, $h$, $h_0$, $k$, $u$, $\varsigma$, $p$, $n$, $i$, $j$, $e$, $f$}{points, integral points, unipotent and
   Bessel elements; natural numbers and indices; a bijection; a datum}
-\nt{$\delta$, $\delta_a$, $\lambda_0$, $\mathsf{T}$, $\mathsf{M}$, $\mathsf{W}$, $\varepsilon$}{a norm-one idele;
-  exponents; an integral vector; the string map; matrices; a unit with \m{\cj\varepsilon\varepsilon=-1}}
+\nt{$\delta$, $\delta_a$, $\lambda_0$, $\mathsf{M}$, $\mathsf{W}$, $\varepsilon$, $\kappa$}{a norm-one idele;
+  exponents; an integral vector; matrices; a unit with \m{\cj\varepsilon\varepsilon=-1}; a family of weights}
+\nt{$\mathsf{e}$, $u_0$, $\mathsf{g}$, $\mathsf{s}$, $S_0$, $\varkappa$, $\mathfrak{p}_w$, $\mathrm{M}_I(\mathcal{O}_w)$}{in
+  the Inputs and in single proofs: an integral adele, a projected vector, a representative, a map of parameters, a
+  stabiliser, a number, the maximal ideal at~$w$, a matrix ring}
+\nt{letters with two meanings}{$b$: the third scale of~$D$ (Setting~\ref{s:data} only), an adapted basis
+  (Section~\ref{s:lattices}), and with an index a member of a tuple of level elements; $d$: the prime of~$P$, and a
+  denominator of an admissible combination; $t$: a coset, and a tuple of translations in $\Tr{D}$; $T$: a set of
+  cosets, and with two gradings as indices the string map; $x$: the first scale of~$D$, and a point or a
+  parameter; $\varrho$: the Heisenberg operators, and with $D$ the number $\rhoD{D}$; $P$: the parameters, the
+  roman $\PoinD{D}$ is the Poincar\'e series and the fraktur one the stage functions; $w$: a finite place, the
+  sans-serif $\mathsf{w}$ a vector; $\nu$: a character, and an index or exponent}
 \nt{$\Theta_{D,\vartheta}$}{the chain of lifts on the rows, as in the overview}
 \nt{$\mathfrak{X}$, $\mathfrak{m}$, $\mathfrak{m}_1$, $s$, $\Delta$, $\Gamma$, $\phi$, $Q$, $Q_0$, $U$, $B$, $G$,
   $Y$, $Z$, $O$}{level places; moduli; a datum; a subgroup; coefficients; sets of places and of planes; letters

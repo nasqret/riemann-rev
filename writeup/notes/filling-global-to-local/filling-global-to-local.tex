@@ -1,0 +1,1315 @@
+% !TEX program = lualatex
+% ---------------------------------------------------------------------------------------------
+%  Readback note 38: From amplitude sums to local correlations: filling levels at finitely many places, and the filling data of the admissible data
+%
+%  Build:  python3 tools/rb.py note <slug>
+%
+%  One unit of a Lean artifact, rewritten as ordinary mathematics. The prose is hand-written. Lean names,
+%  line ranges and counts come from data.tex; quoted Lean statements are copied from the artifact by the build.
+%
+%  Rules of the text: standard terminology; every symbol is explained where it first appears and listed again
+%  in the notation at the end; no letter has two meanings; a proof is complete or says what it takes for granted;
+%  Lean names appear only in the LEAN lines and in the concordance.
+%
+%  The signature rule (the build enforces it): a function, relation or predicate that the artifact defines is
+%  written only through its notation macro, which the build makes from the spec (`notation`) with one slot for
+%  each explicit argument of the Lean definition. No argument is fixed and dropped, also not "for brevity" and
+%  not for one section. Every argument and every hypothesis of a stated declaration stands inside its
+%  statement, or in a Setting that the statement cites by number; only implicit and instance arguments (the
+%  ambient objects) may stand in the conventions.
+% ---------------------------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\ifdefined\pdfvariable\pdfvariable suppressoptionalinfo \numexpr 1+2+4+8\relax\fi
+\usepackage[a4paper,hmargin=35mm,top=22mm,bottom=27mm,footskip=12mm,nohead]{geometry}
+
+\usepackage{fontspec}
+\directlua{
+  luaotfload.add_fallback("gfallback", {"STIXTwoMath-Regular.otf:mode=node;", "DejaVuSans.ttf:mode=node;"})
+  luaotfload.add_fallback("gmonofallback", {"DejaVuSansMono.ttf:mode=node;", "STIXTwoMath-Regular.otf:mode=node;"})
+}
+\setmainfont{NewCM10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookItalic,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldItalic,SmallCapsFont=*-Book,SmallCapsFeatures={Letters=SmallCaps},
+  RawFeature={fallback=gfallback}]
+\setsansfont{NewCMSans10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookOblique,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldOblique,RawFeature={fallback=gfallback}]
+\setmonofont{JetBrainsMono}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,Scale=MatchLowercase,
+  RawFeature={-calt;-liga;fallback=gmonofallback}]
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage[math-style=TeX]{unicode-math}
+\setmathfont{NewCMMath-Book.otf}
+\emergencystretch=2.5em\relax
+
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows.meta,positioning,backgrounds}
+\usepackage[protrusion=true,expansion=true]{microtype}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{multicol}
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+
+\definecolor{ink}{HTML}{0F172A}
+\definecolor{inksoft}{HTML}{475569}
+\definecolor{inkfaint}{HTML}{94A3B8}
+\definecolor{rulegrey}{HTML}{CBD5E1}
+\definecolor{arith}{HTML}{C2410C}
+\definecolor{est}{HTML}{7C3AED}
+\definecolor{ana}{HTML}{0891B2}
+\definecolor{ok}{HTML}{047857}
+\definecolor{leancol}{HTML}{3730A3}
+
+\title{From amplitude sums to local correlations: filling levels at finitely many places, and the filling data of the admissible data}
+\author{grh-compact}
+\date{}
+
+% ------------------------------------------------------------------------------------- macros
+\newcommand{\leanfont}{\ttfamily\fontsize{8.6}{10.5}\selectfont\color{leancol}}
+\newcommand{\lean}[1]{\csname LN@#1\endcsname}
+\newcommand{\fillin}[1]{{\color{arith}\itshape[#1]}}  % a place of the template that is not written yet; the build reports every one that is left
+\newcommand{\leanquote}[1]{\csname LQ@#1\endcsname}
+\input{data.tex}
+
+\linespread{1.08}                       % 11 pt on 14.7 pt
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt plus 1.5pt minus 0.5pt}
+\setlength{\abovedisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\belowdisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\abovedisplayshortskip}{3pt plus 2pt}
+\setlength{\belowdisplayshortskip}{6pt plus 2pt minus 2pt}
+\emergencystretch=1.5em
+\clubpenalty=10000 \widowpenalty=10000 \displaywidowpenalty=10000
+\relpenalty=7000 \binoppenalty=9000
+\raggedbottom
+\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\sffamily\fontsize{7.6}{9}\selectfont\color{inkfaint}\thepage\,/\,\pageref*{LastPage}}
+\setlist{topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=4pt,leftmargin=2.1em,labelsep=0.55em}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\len}{\operatorname{len}}
+\newcommand{\cok}{\operatorname{cok}}
+\newcommand{\End}{\operatorname{End}}
+\newcommand{\Hom}{\operatorname{Hom}}
+\newcommand{\Gal}{\operatorname{Gal}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\kw}[1]{\emph{#1}}
+\newcommand{\m}[1]{\mbox{$#1$}}        % a short formula that must not be broken across lines
+\newcommand{\head}[1]{\par\addvspace{17pt plus 4pt minus 2pt}\Needspace{6\baselineskip}%
+  \noindent{\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\sect}[2]{\refstepcounter{section}\label{#2}\par\addvspace{19pt plus 4pt minus 2pt}\Needspace{7\baselineskip}%
+  \noindent\llap{{\fontsize{13.2}{16}\selectfont\bfseries\color{inkfaint}\thesection}\hspace{9pt}}%
+  {\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\subhead}[1]{\par\addvspace{9pt plus 2pt}\Needspace{4\baselineskip}\noindent\textbf{#1}\enspace\ignorespaces}
+% where a statement lives in the Lean archive
+\newcommand{\leantag}{{\sffamily\bfseries\fontsize{6.3}{8}\selectfont\color{leancol}\addfontfeatures{LetterSpace=7}LEAN}}
+\newcommand{\sep}{\unskip\nobreak\hspace{5pt}{\color{inkfaint}\textperiodcentered}\hspace{5pt plus 2pt}\ignorespaces}
+\newcommand{\leanline}[1]{\par\nopagebreak\vspace{-2.5pt}{\fontsize{8.9}{12.4}\selectfont\color{inksoft}\raggedright
+  \noindent\llap{\leantag\hspace{9pt}}#1\par}\vspace{1pt}}
+% a displayed statement in a tinted box: #1 colour, #2 text
+\newcommand{\statement}[2]{\par\addvspace{7pt}\begingroup\setlength{\fboxsep}{8.5pt}\setlength{\fboxrule}{0.6pt}%
+  \noindent\fcolorbox{#1!30!white}{#1!3!white}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{#2}}%
+  \endgroup\par\addvspace{7pt}}
+\newcommand{\nt}[2]{\par\noindent\hangindent=1.1em\hangafter=1 #1\enspace{\color{inksoft}#2}\par\vspace{1pt}}
+\newcommand{\legdot}[1]{\tikz[baseline=-0.62ex]\fill[#1] (0,0) circle (2.5pt);\hspace{3pt}}
+\newcommand{\crow}[4]{\csname CS@#1\endcsname & #2 & \textcolor{inksoft}{#3} & \textcolor{inksoft}{#4}\\}
+\newcommand{\leanquoteline}[2]{\par\noindent\hangindent=\dimexpr#1\fontdimen2\font+2.2em\relax\hangafter=1
+  \hspace*{#1\fontdimen2\font}#2}
+\newcommand{\quoted}[1]{\par\vspace{3pt}{\ttfamily\fontsize{7.5}{10.4}\selectfont\color{leancol}\raggedright
+  \setlength{\parskip}{0pt}\leanquote{#1}\par}\vspace{4pt}}
+\newcommand{\bx}[3]{{\sffamily\bfseries\fontsize{7.3}{9.2}\selectfont\color{#1!82!black}#2}\\[1.5pt]#3}
+\newcommand{\cs}[2]{\expandafter\newcommand\csname CS@#1\endcsname{#2}}
+
+% theorems
+\newtheoremstyle{plainx}{7pt plus 2pt}{7pt plus 2pt}{\itshape}{}{\bfseries}{.}{0.5em}{}
+\newtheoremstyle{uprightx}{7pt plus 2pt}{7pt plus 2pt}{}{}{\bfseries}{.}{0.5em}{}
+\theoremstyle{plainx}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{uprightx}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{setting}[theorem]{Setting}          % hypotheses shared by several statements; each of them cites it by number
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\renewcommand{\qedsymbol}{{\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.5pt}\fbox{\rule{0pt}{0.46em}\hspace{0.46em}}}}
+% what holds throughout the note: the ambient objects only (implicit and instance arguments), never a hypothesis
+\newenvironment{conventions}{\par\addvspace{5pt}\noindent\textbf{Conventions.}\enspace\ignorespaces}{\par\addvspace{3pt}}
+\makeatletter
+\renewenvironment{proof}[1][Proof]{\par\pushQED{\qed}\normalfont\topsep0pt\partopsep0pt
+  \trivlist\item[\hskip\labelsep\itshape #1.]\ignorespaces}{\popQED\endtrivlist\@endpefalse}
+\makeatother
+
+% where each declaration of the concordance is treated: \cs{key}{place}, the place naming a \label or a lettered item
+\cs{IsIntegralOff}{Definition~\ref{d:off}}
+\cs{toPlaces}{Definition~\ref{d:off}}
+\cs{IsFillingLevel}{Definition~\ref{d:FL}}
+\cs{cosetAmplitude}{Definition~\ref{d:cosamp}}
+\cs{eventuallymemintegralOff}{Theorem C}
+\cs{eventuallyisIntegralOff}{Theorem C}
+\cs{existsplacesintegralOff}{Theorem C}
+\cs{existsisFillingLevel}{Theorem C}
+\cs{existstoPlaceseq}{Lemma~\ref{l:lift}}
+\cs{memunitaryLeveliff}{Lemma~\ref{l:levels}}
+\cs{memlatStabilizeriff}{Lemma~\ref{l:levels}}
+\cs{memprincipalLeveliff}{Lemma~\ref{l:levels}}
+\cs{reductioneqiff}{Lemma~\ref{l:levels}}
+\cs{psisimpleRootSumequnipotentChar}{Lemma~\ref{l:char}}
+\cs{mdevalPlacesrpowhalf}{Lemma~\ref{l:mod}}
+\cs{mdg}{Lemma~\ref{l:mod}}
+\cs{gpowmulunipotentMass}{Lemma~\ref{l:mod}}
+\cs{cardreducedImagemul}{Proposition~\ref{p:count}}
+\cs{cardreducedImagebesselS}{Corollary~\ref{c:bessel}}
+\cs{termPositionfloorGroupspec}{Lemma~\ref{l:floor}}
+\cs{ratToInfweylElemmul}{Lemma~\ref{l:weylinf}}
+\cs{tailVectorevalPlaces}{Lemma~\ref{l:weylinf}}
+\cs{existshasSumcosetAmplitude}{Theorem B}
+\cs{correlationsmuleqcosetAmplitude}{Theorem A}
+\cs{filling}{Definition~\ref{d:SD}}
+\cs{cardX}{Lemma~\ref{l:small}}
+\cs{unitarySignFrameY}{Lemma~\ref{l:small}}
+\cs{instLbHPowRealNatOfNatHMulLb}{Lemma~\ref{l:small}}
+\cs{existsbesselSystem}{Proposition~\ref{p:bessel}}
+\cs{columnLevelzeroeqcomap}{Theorem D}
+\cs{relIndexlatStabilizer}{Theorem D}
+\cs{cardclassesfilling}{Theorem D}
+\cs{stdClassSumcarrierXieqlineMultiplier}{Lemma~\ref{l:poly}}
+\cs{instAdmissible}{Theorem D}
+% ----- macros-148: the recalled notions of unit 148 (chunks a, b) and of its neighbours, with every explicit
+% ----- argument of the Lean definition as a slot. Shared by Notes F, P, T, G; copy unchanged into the preamble.
+\newcommand{\fs}{\mathfrak{s}}                      % the shape (rho, kappa, k_0)
+\newcommand{\sT}{\mathsf{T}}                        % a finite set of finite places
+\newcommand{\cL}{\mathcal{L}}                       % a level
+\newcommand{\AEf}{\mathbb{A}_{E,f}}
+\newcommand{\hO}{\hat{O}_E}
+\newcommand{\GL}{\mathrm{GL}}
+\newcommand{\full}{\mathrm{full}}
+\newcommand{\cut}{\mathrm{cut}}
+\newcommand{\rh}[1]{\varrho(#1)}                    % Shape.ϱ
+\newcommand{\kk}[1]{k(#1)}                          % Shape.k = #κ
+\newcommand{\nn}[1]{n(#1)}                          % Shape.n = ϱ + 1
+\newcommand{\rr}[1]{r(#1)}                          % Shape.r = 2ϱ + k + 1
+\newcommand{\Ix}[1]{I(#1)}                          % Shape.BesselIndex
+\newcommand{\Mx}[1]{M(#1)}                          % Shape.MiddleIndex
+\newcommand{\ninf}[1]{f(#1)}                        % numInfPlaces E
+\newcommand{\ET}[1]{E_{#1}}                         % LocProd T
+% the components of the filling data S
+\newcommand{\bS}[1]{b(#1)}                          % S.b
+\newcommand{\NS}[1]{N(#1)}                          % S.N
+\newcommand{\qS}[2]{q_{#2}(#1)}                     % S.levelPrime i
+\newcommand{\gS}[1]{g(#1)}                          % S.g = q_0 q_1
+\newcommand{\piS}[1]{\bar\pi(#1)}                   % S.piBar
+\newcommand{\vpS}[1]{\varpi(#1)}                    % S.ϖ
+\newcommand{\ChS}[2]{\mathrm{Ch}_{#2}(#1)}          % S.chosenPlaces i
+\newcommand{\KcolS}[1]{K^{\mathrm{col}}(#1)}        % S.columnLevel
+\newcommand{\BsysS}[2]{\mathfrak{B}_{#2}(#1)}       % S.besselSys v
+% forms, groups, levels of the set-up (Setup.lean)
+\newcommand{\Trat}[2]{T^{\mathrm{rat}}_{#1}(#2)}    % S.ratMiddle R
+\newcommand{\Tlat}[2]{T^{\mathrm{lat}}_{#1}(#2)}    % S.latMiddle R
+\newcommand{\GS}[2]{G_{#1}(#2)}                     % S.G R
+\newcommand{\GFin}[1]{G^{\mathrm{lat}}_{#1}}        % S.GFin
+\newcommand{\GRes}[1]{\mathsf{G}(#1)}               % S.GRes
+\newcommand{\Cl}[1]{\mathrm{Cl}(#1)}                % S.Classes
+\newcommand{\Bc}[1]{\mathrm{Bc}(#1)}                % S.BesselCoord
+\newcommand{\KS}[1]{K(#1)}                          % S.latStabilizer
+\newcommand{\redS}[1]{\mathrm{red}_{#1}}            % S.reduction
+\newcommand{\KgS}[1]{K_g(#1)}                       % S.principalLevel
+\newcommand{\redim}[2]{\overline{#2}^{\,#1}}        % S.reducedImage A
+\newcommand{\kapS}[2]{\kappa_{#2}(#1)}              % S.kappa v
+\newcommand{\gid}[1]{\hat{g}(#1)}                   % S.gIdele
+\newcommand{\latB}[1]{\Lambda(#1)}                  % S.latBasis
+\newcommand{\rinf}[1]{\mathrm{r}^{\infty}_{#1}}     % S.ratToInf
+\newcommand{\rfin}[1]{\mathrm{r}^{f}_{#1}}          % S.ratToFin
+\newcommand{\incH}[1]{\mathrm{inc}_{#1}}            % S.inclHFin
+\newcommand{\hc}[2]{h_{#1}(#2)}                     % S.h c
+\newcommand{\pos}[4]{\mathrm{pos}_{#1}(#2,#3;#4)}   % S.termPosition c c' γ
+\newcommand{\terms}[4]{\mathrm{Tm}_{#1}(#2,#3,#4)}  % S.termsOver c s c'
+\newcommand{\Zf}[2]{Z_{#1}(#2)}                     % S.frameProducts γ
+\newcommand{\tdisc}[2]{\mathsf{g}_{#1}(#2)}         % S.termDisc γ
+\newcommand{\clU}[2]{\mathcal{U}_{#1,#2}}           % S.classUnip c
+\newcommand{\cutoff}[2]{\beta_{#1,#2}}              % S.classCutoff c
+\newcommand{\besfn}[4]{W^{#1}_{#2}(#3)_{#4}}        % S.besselFn y i, with the side
+\newcommand{\amp}[5]{a^{#1}_{#2}(#3,#4;#5)}         % S.amplitude c c' γ, with the side
+\newcommand{\ampabs}[5]{|a|^{#1}_{#2}(#3,#4;#5)}    % S.amplitudeAbs c c' γ, with the side
+\newcommand{\ampsum}[6]{A^{#1}_{#2}(#3;#4,#5,#6)}   % S.amplitudeSum T c s c', with the side
+\newcommand{\uchar}[2]{\psi^{\mathcal{U}}_{#1}(#2)} % S.unipotentChar u
+\newcommand{\ucov}[1]{\nu(#1)}                      % S.unipCovolume
+\newcommand{\siegC}[1]{c_{*}(#1)}                   % S.siegelConst
+\newcommand{\packC}[1]{a_{*}(#1)}                   % S.packetConst
+\newcommand{\uord}[1]{\mathrm{uo}(#1)}              % S.unipOrder
+\newcommand{\cdim}[1]{\mathrm{cd}(#1)}              % S.columnDim
+\newcommand{\bdeg}[1]{\deg(#1)}                     % S.besselDegree
+\newcommand{\mainE}[1]{\mathsf{d}(#1)}              % S.mainEnergy
+\newcommand{\besE}[1]{\mathsf{d}_{1}(#1)}           % S.besselEnergy
+\newcommand{\tailS}[1]{\mathrm{tl}(#1)}             % S.tailScale
+\newcommand{\codimF}[1]{\mathrm{cf}(#1)}            % S.codimFactor
+\newcommand{\fscale}[3]{\mathrm{fs}_{#1}(#2,#3)}    % S.frameScaleSq v a
+\newcommand{\fsprod}[1]{\mathrm{fs}(#1)}            % S.frameScaleProd
+\newcommand{\mass}[2]{\operatorname{mass}(#1,#2)}   % mass E r
+% chunk b and the sieve
+\newcommand{\energy}[3]{\mathrm{En}_{#1}(#2;#3)}    % Filling.energy A Ω (S implicit in Lean, shown)
+\newcommand{\linkE}[5]{\mathrm{LE}^{#1}_{#2}(#3;#4,#5)} % Filling.linkEnergy T Ω' R (side and S implicit, shown)
+\newcommand{\fixset}[3]{\mathrm{Fix}_{#1}(#2,#3)}   % Filling.fixingSet Sg d (S implicit, shown)
+\newcommand{\vfix}[3]{\mathrm{Fix}_{#1,#2}(#3)}     % Filling.vectorFixer w d (S implicit, shown)
+\newcommand{\charT}[2]{\psi_{#1,#2}}                % S.charOnPlaces T
+\newcommand{\fgain}[3]{\beta_{#1,#2}(#3)}           % S.frequencyGain T ξ
+\newcommand{\link}[1]{\operatorname{link}(#1)}      % link γ
+\newcommand{\clink}[2]{\operatorname{link}^{\circ}(#1,#2)} % commonLink γ γ'
+\newcommand{\tdnorm}[2]{\|\mathsf{g}\|_{#1}(#2)}    % S.termDiscNorm γ
+\newcommand{\mnorm}[3]{\mathrm{mn}_{#1}(#2;#3)}     % S.minorNorm j γ
+\newcommand{\cgauge}[5]{\mathrm{cg}_{#1}(#2;#3,#4;#5)} % S.classGauge j c c' γ
+\newcommand{\pinv}[5]{\mathrm{pi}_{#1}(#2,#3;#4,#5)} % S.pairInvariant c c' γ γ'
+\newcommand{\ldsq}[3]{\mathrm{ld}_{#1}(#2,#3)}      % S.linkDiscSq v e
+\newcommand{\lmet}[1]{Q^{\mathrm{link}}_{#1}}       % S.linkMetric
+% ----- end of macros-148
+% ----- notions of the background library, of the set-up of this unit, of Note T and of other units that this
+% ----- note recalls, written by hand with every explicit argument (TeX as in the notes that state them)
+\newcommand{\JT}[1]{J(#1)}                          % Shape.Form.splitGram
+\newcommand{\GT}[1]{G(#1)}                          % Shape.Form.G
+\newcommand{\UT}[1]{\mathcal{U}(#1)}                % besselU
+\newcommand{\HT}[1]{\mathcal{H}(#1)}                % besselH
+\newcommand{\ST}[1]{\mathcal{S}(#1)}                % besselS
+\newcommand{\Hl}[2]{\mathcal{H}_{#1}(#2)}           % GT l
+\newcommand{\sd}[1]{\operatorname{sd}(#1)}          % simpleRootSum
+\newcommand{\ZT}[2]{Z_{#1}(#2)}                     % Shape.Form.frameGram
+\newcommand{\weyl}[2]{w_{#1}(#2)}                   % weylElem l p
+\newcommand{\pad}[2]{(#1\,|\,#2)}                   % padTuple p t
+\newcommand{\tailv}[3]{\operatorname{tv}(#1,#2,#3)} % tailVector π t x
+\newcommand{\gix}[1]{[#1]}                          % genIndex
+\newcommand{\modT}[1]{\operatorname{mod}_{#1}}      % the modulus of the place structure on E_T
+\newcommand{\psiT}[1]{\psi_{#1}}                    % the character of the place structure on E_T
+\newcommand{\KA}[2]{\hat{K}_{#1}(#2)}               % unitaryLevel (integral adeles) u (split Gram matrix of latMiddle over the finite adeles)
+\newcommand{\KT}[3]{K_{#1,#2}(#3)}                  % unitaryLevel (integers of E_T) u (split Gram matrix of latMiddle over E_T)
+\newcommand{\cgp}[1]{\mathrm{K}^{\circ}(#1)}        % Level.congGroup F
+\newcommand{\gL}[1]{g_{#1}}                         % the unit of a level
+\newcommand{\IsStd}[1]{#1\in\operatorname{StdLev}}  % IntegralPlace.IsStdLevel F
+\newcommand{\Levels}[3]{\operatorname{Lev}(#1,#2,#3)} % Level ι T m
+\newcommand{\gM}[1]{\mathsf{M}(#1)}                 % Level.groupMeasure F
+\newcommand{\etab}[1]{\eta_{<#1}}                   % ascConv heisenbergMeasure j
+\newcommand{\fmod}[3]{\mathsf{d}_{#2}(#1;#3)}       % Level.floorModulus F l g
+\newcommand{\hdens}[4]{\mathsf{h}_{#2}(#1;#3,#4)}   % Level.headDensity F j p q
+\newcommand{\bcorr}[3]{\mathrm{J}(#1,#2;#3)}        % besselCorrelation μ W γ
+\newcommand{\phs}[2]{\chi_{#1}(#2)}                 % IntegralPlace.phase g z (Note T)
+\newcommand{\IntG}[1]{\operatorname{Int}(#1)}       % Level.IntermediateGroup F (Note T)
+\newcommand{\umass}[1]{\mathsf{v}(#1)}              % Level.unipotentMass F (Note T)
+\newcommand{\Cos}[1]{\operatorname{Cos}(#1)}        % Level.IntermediateGroup.Cosets Z (Note T)
+\newcommand{\bvec}[2]{W_{#1}(#2)}                   % Level.IntermediateGroup.besselVector Z y (Note T)
+\newcommand{\corr}[3]{\mathcal{J}(#1;#2,#3)}        % Level.correlation Z p l (Note T)
+\newcommand{\tlink}[2]{\mathrm{Tm}^{\mathrm{lk}}_{#1}(#2)} % Filling.termsOfLink S Λ
+\newcommand{\bker}[4]{\mathrm{bk}^{#1}_{#2}(#3,#4)} % Filling.besselKernel γ y, with the side and S
+\newcommand{\Fits}[6]{\operatorname{Fits}(#1;#2,#3,#4,#5,#6)} % Filling.Fits S V l kw Y η
+\newcommand{\sGD}[1]{\mathsf{G}(#1)}                % Data.G
+\newcommand{\Colv}[2]{K^{\mathrm{col}}_{#2}(#1)}    % Data.columnLevel D j
+\newcommand{\IsBes}[3]{#1\in\operatorname{Bes}(#2,#3)} % Filling.IsBessel B l kw
+\newcommand{\basisVec}[2]{\operatorname{bv}_{#1}(#2)} % Data.basisVec D i
+\newcommand{\posEquiv}[1]{\operatorname{pe}_D(#1)}  % Data.posEquiv j
+\newcommand{\detRows}[4]{\operatorname{dr}_D(#1,#2,#3,#4)} % Data.detRows j i Y τ
+\newcommand{\linePolyCoords}[3]{\operatorname{lc}_D(#1,#2,#3)} % Data.linePolyCoords j i Y
+\newcommand{\psiS}[1]{\psi_{#1}}                     % Filling.selfDualChar S
+\newcommand{\vol}{\operatorname{vol}}
+\newcommand{\rePart}{\operatorname{Re}}
+\newcommand{\CC}{\mathbb{C}}
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\NN}{\mathbb{N}}
+\newcommand{\Inp}[1]{Input~\ref{i:#1}}
+
+\begin{document}
+\color{ink}
+
+{\raggedright
+{\sffamily\bfseries\fontsize{7.2}{9}\selectfont\color{leancol}\addfontfeatures{LetterSpace=8}READBACK NOTE 38\par}
+\vspace{5pt}
+{\fontsize{21.5}{25.5}\selectfont\bfseries From amplitude sums to local correlations: filling levels at finitely many places, and the filling data of the admissible data\par}
+\vspace{5pt}
+{\fontsize{12.4}{16}\selectfont\itshape\color{inksoft} One unit of the Lean artifact \ArtifactName, read back into
+mathematics\par}}
+\vspace{8pt}
+{\color{rulegrey}\hrule height 0.6pt}
+\vspace{7pt}
+\thispagestyle{empty}
+
+\textbf{Summary.} The second moment of the Poincaré series is a sum of \emph{amplitudes} of rational elements
+of a unitary group, sorted by classes and by an element of a finite level group. This note is the dictionary
+that turns such sums into integrals at a finite set $\sT$ of finite places. It shows that the product of the
+completions at $\sT$ carries a standard level whose congruence subgroup reads the principal level of the
+filling data, that integrality off~$\sT$ and the components at $\sT$ describe the level groups and the unipotent
+character, and it proves the \emph{unfolding}: the sum of the amplitudes over a double coset of the unipotent
+group, cut off at~$\sT$, is the product of an archimedean Bessel correlation and one coordinate of the local
+correlation of Note~T. A second theorem writes a block of amplitude sums with a given link as a sum of limits
+of such coset amplitudes as $\sT$ grows. The last section attaches the filling data to the admissible data of
+the proof, proves that Bessel systems of the required type exist at the infinite places, and verifies the
+standing hypotheses of the filling theorem.
+
+\statement{leancol}{\fontsize{9.6}{13.2}\selectfont\textbf{What this note is.} The artifact \ArtifactName{} is a
+body of Lean code: the compact edition of a formal proof, due to L.~Alpöge with the AI system Claude, of the
+Riemann hypothesis and of its generalisation to Dirichlet $L$-functions. That headline is a claim. The authors
+report that every file compiles and that Lean's kernel accepted the proofs; an independent replay is recorded in
+the handout's record of checks when it reports. No mathematician has read the argument through, and nothing here
+says that the Riemann hypothesis is proved. This note (Note~G of its unit) treats \UnitInNote{} of the
+\UnitMembers{} declarations of the unit \emph{Translates of Poincaré series fill the rows}: the modules on the
+passage from global data to the places of~$\sT$, on the filling data of the admissible data and on their
+admissibility. Proved here from the inputs: Theorems A to~C and the statements of
+§§\ref{s:dict}--\ref{s:unfold}. Theorem~D and Proposition~\ref{p:bessel} are assemblies; the note says which
+inputs they assemble and does not reproduce their arithmetic. Taken for granted and stated as Inputs 1 to~6 in
+§\ref{s:inputs}: the set-up of the unit, the local theory of Note~T, the standard levels, facts on adeles from
+the background library, and the results on the data from Chapter~III and from the units on the columns, the
+rows and the discrete series. Every statement was compared with its Lean text, argument by argument. The Lean
+text read is \PinText; Appendix~A is the concordance of \ConcDecls{} declarations.}
+
+\sect{The statements}{s:intro}
+The objects are recalled in §\ref{s:setting}. In brief: $S$ is filling data over a CM field~$E$,
+\m{\GS{S}{E}} the rational unitary group, \m{\GFin{S}} its finite adelic points in the lattice basis, with the
+level groups \m{\KgS{S}\le\KS{S}} and the reduction \m{\redS{S}} to the finite group \m{\GRes{S}};
+\m{\pos{S}{c}{c'}{\gamma}} is the position of a rational element for two classes, \m{\loc{S}{\sT}} takes the components
+at~$\sT$, and \m{\cosamp{S}{\sT}{c}{s}{c'}{\gamma}} is the coset amplitude of the side~$\sigma$ (Definition~\ref{d:cosamp}).
+
+\statement{arith}{\phantomsection\label{t:A}\textbf{Theorem A} (unfolding).\enspace
+\emph{In Setting~\ref{s:T}, suppose that \m{\gid{S}^{-1}} is integral off~$\sT$, that $E$ carries Weil data and
+that $S$ is admissible. Let $\sigma$ be a side, \m{\gamma_1\in\Hl{\varrho}{\Trat{S}{E}}}, $p$ a sequence of units
+of~$E$, and $c$, $c'$ classes such that \m{\intoff{S}{\sT}{\pos{S}{c}{c'}{\weyl{\varrho}{p}\gamma_1}}}. Let
+\m{Z\in\IntG{\cL}}, \m{k\in\KS{S}}, and let \m{a,b\in\Cos{Z}} be cosets with
+\m{\loc{S}{\sT}(k)^{-1}a_aa_b^{-1}\in\cgp{\cL}}. Put \m{\gamma=\weyl{\varrho}{p}\gamma_1}, let $p_{\sT}$ be the sequence
+of the components of $p$ at~$\sT$, and \m{W^{\sigma}=\besfn{\sigma}{S}{\cdot}{\cdot}}. Then}
+\begin{align*}&\corr{Z}{p_{\sT}}{\loc{S}{\sT}(\pos{S}{c}{c'}{\gamma_1})^{-1}}_{(a,b)}\cdot\bcorr{dy}{W^{\sigma}}{\rinf{S}(\gamma)}\\
+&\qquad=\hdens{\cL}{\varrho}{p_{\sT}}{1}\cdot\gM{\cL}\bigl(\cgp{\cL}\bigr)\cdot\cosamp{S}{\sT}{c}{\redS{S}(k)}{c'}{\gamma}.\end{align*}}
+\leanline{\lean{correlationsmuleqcosetAmplitude}}
+
+\statement{arith}{\phantomsection\label{t:B}\textbf{Theorem B} (blocks as limits of coset amplitudes).\enspace
+\emph{In Setting~\ref{s:S}, suppose that $E$ carries Weil data and that $S$ is admissible. Let $\sigma$ be a
+side, $c$, $c'$ classes, \m{s\in\GRes{S}} and $\Lambda$ a link, such that
+\m{\ampsum{\sigma}{S}{\tlink{S}{\Lambda}}{c}{s}{c'}\ne0} and such that for every \m{\gamma\in\terms{S}{c}{s}{c'}} all leading
+minors of \m{\Zf{S}{\gamma}} are non-zero. Then there are a unit $t$ of~$E$, an element \m{\gamma_1\in\GS{S}{E}} and
+\m{k\in\KS{S}} such that}
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=1pt]
+\item \m{\gamma_1\in\Hl{\varrho}{\Trat{S}{E}}}, \m{\Zf{S}{\gamma_1}_{\varrho\varrho}=t}, \m{\NS{S}^2<|t_\tau|^2} \emph{for every
+infinite place~$\tau$,} \m{\redS{S}(k)=s} \emph{and} \m{\Lambda=\link{\weyl{\varrho}{1}\gamma_1}}; \emph{and}
+\item \emph{there is a family \m{(L_p)} of vectors of \m{\ell^2(\Bc{S}\times\Bc{S})}, indexed by the maps
+\m{p\colon\{0,\dots,\rh{\fs}-1\}\to E^{\times}}, which is summable with sum
+\m{\ampsum{\sigma}{S}{\tlink{S}{\Lambda}}{c}{s}{c'}}, such that for every~$p$}
+\[\cosamp{S}{\sT}{c}{s}{c'}{\weyl{\varrho}{\pad{p}{t}}\gamma_1}\ \longrightarrow\ L_p\]
+\emph{as $\sT$ grows in the directed set of the finite sets of finite places of~$E$.}
+\end{enumerate}}
+\leanline{\lean{existshasSumcosetAmplitude}}
+
+\statement{arith}{\phantomsection\label{t:C}\textbf{Theorem C} (filling levels exist).\enspace
+\emph{In Setting~\ref{s:S}:}
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=1pt]
+\item \emph{Suppose that $E$ carries Weil data, and let $\sT$ be a finite set of finite places of~$E$ that is
+stable under complex conjugation. Then there are an integral place structure on \m{\ET{\sT}} and a level $\cL$
+of \m{\Tlat{S}{\ET{\sT}}} with \m{\isFL{S}{\sT}{\cL}}.}
+\item \emph{For every finite set $\sT_0$ of units of~$E$ there are arbitrarily large finite sets $\sT$ of finite
+places, stable under complex conjugation, such that $t$ and $t^{-1}$ are integral off $\sT$ for all
+\m{t\in\sT_0}, \m{\gid{S}^{-1}} is integral off~$\sT$, \m{\latB{S}} and its inverse have entries integral
+off~$\sT$, and \m{\NS{S}^{-1}} is integral off~$\sT$.}
+\item \emph{Every finite adele $a$ is integral off all sufficiently large finite sets $\sT$ of finite places;
+and for every \m{x\in\GFin{S}}, \m{\intoff{S}{\sT}{x}} for all sufficiently large~$\sT$.}
+\end{enumerate}}
+\leanline{\lean{existsisFillingLevel}\sep \lean{existsplacesintegralOff}\sep \lean{eventuallymemintegralOff}\sep
+\lean{eventuallyisIntegralOff}}
+
+\statement{arith}{\phantomsection\label{t:D}\textbf{Theorem D} (the filling data of the admissible data).\enspace
+\emph{In Setting~\ref{s:D}, let \m{S=\SD{D}} be the filling data of~$D$ (Definition~\ref{d:SD}), and let $K_f$ be
+the group of the integral points of the finite adelic unitary group of the standard form on the index set of
+the columns. Then:}
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=1pt]
+\item \m{\Colv{D}{0}=\incH{\SD{D}}^{-1}\bigl(\KgS{\SD{D}}\bigr)};
+\item \emph{the index of \m{\incH{\SD{D}}^{-1}(\KS{\SD{D}})\cap K_f} in $K_f$ is} \m{(N(D)^{k(D)}-1)^{f(D)}};
+\item \m{\#\Cl{\SD{D}}=\#\redim{\SD{D}}{\mathcal H}\cdot(N(D)^{k(D)}-1)^{f(D)}\cdot\mass{E(D)}{k(D)}}, \emph{where}
+\m{\mathcal H=\HT{\Tlat{\SD{D}}{\AEf}}}; \emph{and}
+\item \emph{\m{\SD{D}} is admissible.}
+\end{enumerate}}
+\leanline{\lean{columnLevelzeroeqcomap}\sep \lean{relIndexlatStabilizer}\sep \lean{cardclassesfilling}\sep
+\lean{instAdmissible} (an instance without a name)}
+
+Theorems A and~B are Inputs 4(f) and~4(e) of the main note of the unit (Note~F, \emph{Translates of Poincaré
+series fill the rows}); Theorem~C and the lemmas of §\ref{s:dict} are its Inputs 4(a) to~(c), the lemmas of
+§\ref{s:floor} its Input~4(d), and Theorem~D with Definition~\ref{d:SD} and Proposition~\ref{p:bessel} its
+Input~9(a).
+
+\sect{The setting}{s:setting}
+\begin{conventions}\phantomsection\label{c:conventions}
+The natural numbers are \m{0,1,2,\dots}. $E$ is a CM field with its CM type: a number field that is a CM field,
+with complex conjugation \m{x\mapsto\bar x}, together with the choice of one embedding at each infinite
+place~$\tau$; \m{x_\tau\in\CC} is the image of \m{x\in E} under it, and \m{\ninf{E}} is the number of infinite
+places. A \emph{finite place} $w$ of $E$ is a non-zero prime ideal; \m{\F_w} is its residue field, $E_w$ the
+completion, $O_w$ its integers, $\bar w$ the conjugate place. \m{\AEf} is the ring of finite adeles, \m{\hO} its
+subring of integral adeles, and $\psi_f$ the standard additive character of \m{\AEf}. A finite set $\sT$ of
+finite places is \emph{stable under complex conjugation} if it contains $\bar w$ with every~$w$; for a finite
+set $\sT$ of finite places, \m{\ET{\sT}=\prod_{w\in\sT}E_w}, \m{x_{\sT}\in\ET{\sT}} is the family of the components
+at $\sT$ of a finite adele or of an element of~$E$, and $\tilde y$ is the extension by zero of
+\m{y\in\ET{\sT}} to a finite adele. A finite adele is \emph{integral off~$\sT$} if its components at the places
+outside $\sT$ are integral, and an element of $E$ if its image is. The field $E$ is \emph{stably unramified} if
+it contains a primitive root of unity of order~$5040$, and $E$ \emph{carries Weil data} if it is stably
+unramified and a splitting character in the sense of Chapter~III of the handout is given. A \emph{shape} is a
+triple \m{\fs=(\varrho,\kappa,k_0)} of a natural number, a finite set and an element of it; \m{\rh{\fs}=\varrho},
+\m{\kk{\fs}=\#\kappa}, \m{\nn{\fs}=\rh{\fs}+1}, \m{\rr{\fs}=2\rh{\fs}+\kk{\fs}+1}. A \emph{semilocal field}, an
+\emph{integral place structure} on it, with its ring of integers, character and modulus, a \emph{level} $\cL$,
+its unit \m{\gL{\cL}} and congruence subgroup \m{\cgp{\cL}}, the group measure \m{\gM{\cL}} and a \emph{standard
+level} are as in Note~T of this unit (\emph{The top floor at a finite place}); on \m{\ET{\sT}} the integers are
+\m{O_{\sT}=\prod_{w\in\sT}O_w}, the character is written \m{\psiT{\sT}} and the modulus \m{\modT{\sT}}. A \emph{side}
+is one of the two words \m{\full}, \m{\cut}; in this note $\sigma$ always denotes a side. $P$ denotes the
+parameters of the proof (Chapter~III). $X^*$ is the conjugate transpose of a matrix, \m{\ell^2(X)} the space
+\m{\CC^X} with its inner product, conjugate-linear in the first variable. The letters $T$, $F$ of the formal
+text for a set of places and a level are written $\sT$ and~$\cL$.
+\end{conventions}
+
+\subhead{Forms and groups.} As in Notes F and~T: \m{\Ix{\fs}} is the index set with \m{e_0,\dots,e_{\varrho-1}},
+the elements of~$\kappa$, $z$, and \m{e^*_0,\dots,e^*_{\varrho-1}}; the frame is \m{\mathfrak f_a=e_a}
+(\m{a<\varrho}), \m{\mathfrak f_\varrho=z}. For a commutative ring $R$ with involution and an $\fs$-form $T$
+over~$R$, \m{\JT{T}} is the split Gram matrix, \m{\GT{T}} its unitary group, \m{h(v,v')=v^*\JT{T}v'},
+\m{\ZT{T}{x}} the frame Gram matrix with corner entry \m{h(z,xz)}; \m{\UT{T}}, \m{\HT{T}}, \m{\ST{T}=\UT{T}\HT{T}} are
+the Bessel unipotent subgroup, the subgroup fixing all $e_a$, $e^*_a$ and~$z$, and the Bessel subgroup;
+\m{\Hl{\varrho}{T}} is the subgroup fixing all $e_a$ and $e^*_a$; \m{\sd{u}} is the sum of the entries of $u$ just
+above the diagonal of its frame block; and for a sequence $p$ of units, \m{\weyl{\varrho}{p}} is the Weyl element
+of length~$\varrho$, which sends $e_a$ to \m{p_ae^*_a} and $e^*_a$ to \m{\bar p_a^{-1}e_a} for \m{a<\varrho}. For
+\m{p\colon\{0,\dots,\varrho-1\}\to R^{\times}} and a unit~$t$, \m{\pad{p}{t}} is the sequence
+\m{p_0,\dots,p_{\varrho-1},t,1,1,\dots}. For a unit $\pi$, an element $t$ and \m{x\in R^{\kappa}}, the \emph{tail
+vector} \m{\tailv{\pi}{t}{x}} is the vector \m{x-(\pi\bar\pi)^{-1}t\,z}, written in the lattice basis below.
+
+\begin{setting}[filling data]\label{s:S}
+$E$ is a CM field with its CM type, $\fs$ is a shape, and $S$ is filling data over $E$ of shape~$\fs$, in the
+sense of the set-up of this unit (the note \emph{The filling data}). Its components are: a real number
+\m{\bS{S}\ge1000}; a prime number \m{\NS{S}\ge5} and a finite idele \m{\piS{S}\in\hO} with
+\m{\piS{S}\,\overline{\piS{S}}=\NS{S}}; two primes \m{\qS{S}{0}}, \m{\qS{S}{1}} different from \m{\NS{S}}, with
+\m{\gS{S}=\qS{S}{0}\qS{S}{1}}; for \m{i=0,1} a set \m{\ChS{S}{i}} of \m{\ninf{E}} finite places above
+\m{\qS{S}{i}}, the \emph{chosen places}, with residue fields of \m{\qS{S}{i}} elements and such that the
+conjugate of a chosen place is never chosen; a generator \m{\vpS{S}} of the different of $E$ with
+\m{\overline{\vpS{S}}=-\vpS{S}}; an open compact subgroup \m{\KcolS{S}} of the finite adelic unitary group of the
+standard form on~$\kappa$, with trivial class automorphism groups; and for every infinite place $\tau$ a
+Bessel system \m{\BsysS{S}{\tau}}. Among its inequalities: \m{10^5\le\rh{\fs}},
+\m{\nn{\fs}\,[E:\Q]\le2^{2\rh{\fs}}} and \m{1000\,(2\rh{\fs}+2)\le\kk{\fs}}.
+\end{setting}
+
+\subhead{The groups of the set-up.} In Setting~\ref{s:S}, for a commutative ring $R$ with involution over the
+integers of~$E$: \m{\Trat{S}{R}} is the $\fs$-form that is the identity on $\kappa$ and \m{-\NS{S}} at~$z$, and
+\m{\GS{S}{R}=\GT{\Trat{S}{R}}}; \m{\Tlat{S}{R}} is the Gram matrix of the same form in the \emph{lattice basis}, in
+which the basis vector of $k_0$ is replaced by a combination of it and of~$z$ with coefficients
+\m{\piS{S}^{-1}} and \m{\NS{S}^{-1}}; \m{\latB{S}} is the matrix of this change of basis over \m{\AEf}, and
+\m{\GFin{S}=\GT{\Tlat{S}{\AEf}}}. The homomorphism \m{\rfin{S}\colon\GS{S}{E}\to\GFin{S}} is the diagonal embedding
+followed by the change of basis; \m{\rinf{S}\colon\GS{S}{E}\to\prod_\tau G_1(\fs)} is the family of the images at
+the infinite places, rescaled to the real form \m{G_1(\fs)} of the library by positive numbers, of which
+\m{\fscale{S}{\tau}{a}>0} (\m{a\le\varrho}) are the \emph{frame scales}; \m{\incH{S}} embeds the finite adelic points
+of the unitary group of the standard form on $\kappa$ into \m{\GFin{S}} as \m{\HT{\Tlat{S}{\AEf}}}. For
+\m{\gamma\in\GS{S}{E}}, \m{\Zf{S}{\gamma}=\ZT{\Trat{S}{E}}{\gamma}}, \m{\tdisc{S}{\gamma}} is the \emph{term discriminant},
+equal to \m{d\bar d\,(t\bar t-\NS{S}^2)} when \m{\Zf{S}{\gamma}} is diagonal with entries \m{p_0,\dots,p_{\varrho-1},t}
+and \m{d=p_0\cdots p_{\varrho-1}}; \m{\link{\gamma}} is the \emph{link} of~$\gamma$, a subspace attached to $\gamma$ in
+the set-up, and for a link~$\Lambda$,
+\m{\tlink{S}{\Lambda}=\{\gamma\in\GS{S}{E}:\ \tdisc{S}{\gamma}\ne0,\ \link{\gamma}=\Lambda\}}.
+
+For a finite idele~$u$, \m{\KA{S}{u}} is the group of the \m{x\in\GFin{S}} that have entries in \m{\hO}, as has
+$x^{-1}$, and for which \m{u^{-1}(x-1)} has entries in~\m{\hO}. Then \m{\KS{S}=\KA{S}{1}}, and with \m{\gid{S}}, the
+integer \m{\gS{S}} as a finite idele, \m{\KgS{S}=\KA{S}{\gid{S}}} is the kernel of the reduction
+\m{\redS{S}\colon\KS{S}\to\GRes{S}} modulo the chosen places, where
+\m{\GRes{S}=\prod_{i}\prod_{w\in\ChS{S}{i}}\GL_{\Ix{\fs}}(\F_w)}; for a subgroup $B$ of \m{\GFin{S}},
+\m{\redim{S}{B}=\redS{S}(B\cap\KS{S})}. The character \m{\psiS{S}(x)=\psi_f(-x/\vpS{S})} of \m{\AEf} is self-dual:
+\m{\psiS{S}(ra)=1} for all \m{r\in\hO} exactly if \m{a\in\hO}; and
+\m{\uchar{S}{u}=\psiS{S}\bigl(\gid{S}^{-1}\sd{u}\bigr)} for \m{u\in\GFin{S}}. For a finite set $\sT$ of finite places,
+\m{\charT{S}{\sT}(y)=\psiS{S}(\tilde y)} is the character of \m{\ET{\sT}} of the set-up. \m{\Cl{S}} is the finite set
+of the double cosets of the finite adelic unitary group of $\kappa$ by its rational points and \m{\KcolS{S}};
+each class $c$ has a chosen representative $y_c$, and \m{\hc{S}{c}=\incH{S}(y_c)}. For classes $c$, $c'$ and
+\m{\gamma\in\GS{S}{E}},
+\[\pos{S}{c}{c'}{\gamma}=\hc{S}{c}^{-1}\,\rfin{S}(\gamma)\,\hc{S}{c'}\in\GFin{S},\]
+and for \m{s\in\GRes{S}} the set of \emph{terms over} \m{(c,s,c')} is
+$\terms{S}{c}{s}{c'}=\{\gamma\in\GS{S}{E}:\ \pos{S}{c}{c'}{\gamma}\in\KS{S},\ \redS{S}(\pos{S}{c}{c'}{\gamma})=s\}$.
+\m{\clU{S}{c}} is the group of the rational \m{u\in\UT{\Trat{S}{E}}} with \m{\pos{S}{c}{c}{u}\in\KgS{S}}.
+
+\subhead{Amplitudes.} \m{\Bc{S}} is the set of the families \m{(i_\tau)_\tau} of indices of the Bessel systems. For
+a side $\sigma$, a point $y$ of \m{\prod_\tau G_1(\fs)} and \m{i\in\Bc{S}}, \m{\besfn{\sigma}{S}{y}{i}} is the product
+over $\tau$ of the $i_\tau$-th coordinates at $y_\tau$ of the full or the cut Bessel function of
+\m{\BsysS{S}{\tau}}; \m{\bker{\sigma}{S}{\gamma}{y}\in\ell^2(\Bc{S}\times\Bc{S})}, the \emph{Bessel kernel}, has the
+coordinates \m{\besfn{\sigma}{S}{y}{i}\,\overline{\besfn{\sigma}{S}{\rinf{S}(\gamma)^{-1}y}{i'}}}. With the cutoffs
+\m{\cutoff{S}{c}\ge0} of the set-up, functions on \m{\prod_\tau G_1(\fs)}, the \emph{amplitude} of
+\m{\gamma\in\GS{S}{E}} over $c$, $c'$ and the \emph{amplitude sum} of a set \m{\Xi\subseteq\GS{S}{E}} are
+\begin{align*}\amp{\sigma}{S}{c}{c'}{\gamma}&=\int\cutoff{S}{c}(y)\,\cutoff{S}{c'}\bigl(\rinf{S}(\gamma)^{-1}y\bigr)\,\bker{\sigma}{S}{\gamma}{y}\,dy,\\
+\ampsum{\sigma}{S}{\Xi}{c}{s}{c'}&=\sum_{\gamma\in\Xi\cap\terms{S}{c}{s}{c'}}\amp{\sigma}{S}{c}{c'}{\gamma},\end{align*}
+with $dy$ the Haar measure of the set-up; \m{\ampabs{\sigma}{S}{c}{c'}{\gamma}} is the same integral with the norm of
+the Bessel kernel. The \emph{order} is \m{\uord{S}=\gS{S}^{\ninf{E}\rh{\fs}(2\kk{\fs}+2\rh{\fs}+1)}}. $S$ is
+\emph{admissible} if the standing hypotheses of the set-up hold: \m{\KcolS{S}=\incH{S}^{-1}(\KgS{S})}, the
+reduction \m{\redS{S}} is surjective, and the inequalities listed in the proof of Theorem~D.
+
+\subhead{The local objects of Note~T.} For a finite set $\sT$ of finite places and a unit $u$ of \m{\ET{\sT}}, \m{\KT{S}{\sT}{u}} is the group of the
+\m{y\in\GT{\Tlat{S}{\ET{\sT}}}} that have entries in $O_{\sT}$, as has $y^{-1}$, and for which \m{u^{-1}(y-1)} has
+entries in~$O_{\sT}$. For a level $\cL$ of \m{\Tlat{S}{\ET{\sT}}}: \m{\cgp{\cL}=\KT{S}{\sT}{\gL{\cL}}};
+\m{\phs{g}{y}} is the finite Bessel function; \m{\IntG{\cL}} the set of the intermediate groups $Z$, with
+\m{\cgp{\cL}\le Z\le\KT{S}{\sT}{1}}; \m{\Cos{Z}} the set of the cosets of \m{\cgp{\cL}} in $Z$, each coset $c$ with a
+representative $a_c$; \m{\bvec{Z}{y}} the finite Bessel vector, with the coordinate
+\m{\phs{\gL{\cL}}{y\,a_c^{-1}}} at~$c$; \m{\umass{\cL}=\prod_{l<\varrho}\fmod{\cL}{l}{\gL{\cL}}} the unipotent mass, where
+\m{\fmod{\cL}{l}{g}=\modT{\sT}(g)^{\kk{\fs}+1+2(\varrho-l-1)+1/2}}; \m{\hdens{\cL}{\varrho}{p}{1}} the head density; and
+for a sequence $p$ of units of \m{\ET{\sT}} and \m{l\in\GT{\Tlat{S}{\ET{\sT}}}}, the correlation is
+\m{\corr{Z}{p}{l}=\hdens{\cL}{\varrho}{p}{1}\cdot\bcorr{\gM{\cL}}{\bvec{Z}{\cdot}}{\weyl{\varrho}{p}\,l^{-1}}}, where for a
+measure $\mu$, a vector-valued function $W$ and a group element $\gamma$ the \emph{Bessel correlation}
+\m{\bcorr{\mu}{W}{\gamma}} is the tensor with the coordinates \m{\int W(y)_i\,\overline{W(\gamma^{-1}y)_{i'}}\,d\mu(y)}.
+\m{\etab{j}} is the convolution of the first $j$ Heisenberg measures.
+
+\begin{definition}[integrality off $\sT$ and the components at $\sT$]\label{d:off}
+In Setting~\ref{s:S}, let $\sT$ be a finite set of finite places of~$E$.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=1pt]
+\item For \m{x\in\GFin{S}} we write \m{\intoff{S}{\sT}{x}}, and say that $x$ is \emph{integral off~$\sT$}, if the
+entries of $x$ and of $x^{-1}$ are integral off~$\sT$.
+\item If $\sT$ is stable under complex conjugation, \m{\loc{S}{\sT}\colon\GFin{S}\to\GT{\Tlat{S}{\ET{\sT}}}} is the
+homomorphism that takes the components at $\sT$ of every entry.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{IsIntegralOff}\sep \lean{toPlaces}}
+
+\begin{definition}[filling levels]\label{d:FL}
+In Setting~\ref{s:S}, let $\sT$ be a finite set of finite places of $E$ that is stable under complex
+conjugation, suppose that \m{\ET{\sT}} carries an integral place structure, and let
+\[\cL\in\Levels{\{1,\dots,\kk{\fs}-6\rh{\fs}-13\}}{\Tlat{S}{\ET{\sT}}}{3\rh{\fs}+6}\]
+be a level, with \m{3\rh{\fs}+6} further hyperbolic pairs and an orthonormal part of \m{\kk{\fs}-6\rh{\fs}-13}
+vectors. Then \m{\isFL{S}{\sT}{\cL}} (\emph{$\cL$ is a filling level for $S$ at~$\sT$}) means: $\cL$ is a standard
+level, \m{\IsStd{\cL}}; the character of the place structure is \m{\psiT{\sT}=\charT{S}{\sT}}; and
+\m{\gL{\cL}=\gid{S}_{\sT}}.
+\end{definition}
+\leanline{\lean{IsFillingLevel}}
+
+\begin{setting}[a filling level]\label{s:T}
+In Setting~\ref{s:S}, with $E$, $\fs$ and $S$ as there: $\sT$ is a finite set of finite places of $E$ that is
+stable under complex conjugation; \m{\ET{\sT}} carries an integral place structure; and $\cL$ is a level of
+\m{\Tlat{S}{\ET{\sT}}} with \m{\isFL{S}{\sT}{\cL}}, a filling level.
+\end{setting}
+
+\begin{definition}[coset amplitudes]\label{d:cosamp}
+In Setting~\ref{s:S}, let $\sT$ be a finite set of finite places of~$E$, $\sigma$ a side, $c$, $c'$ classes,
+\m{s\in\GRes{S}} and \m{\gamma\in\GS{S}{E}}. The \emph{coset amplitude} is
+\[\cosamp{S}{\sT}{c}{s}{c'}{\gamma}=\sum_{(u,u')}\amp{\sigma}{S}{c}{c'}{u\gamma u'^{-1}}\ \in\ \ell^2(\Bc{S}\times\Bc{S}),\]
+the sum over the pairs \m{(u,u')} of elements of \m{\UT{\Trat{S}{E}}} with \m{\intoff{S}{\sT}{\pos{S}{c}{c}{u}}} and
+\m{u\gamma u'^{-1}\in\terms{S}{c}{s}{c'}}. The side is an instance argument of the formal definition; it is the
+superscript $\sigma$ of the notation, and every statement of this note says which side it is.
+\end{definition}
+\leanline{\lean{cosetAmplitude}}
+
+\begin{setting}[the admissible data]\label{s:D}
+\m{P=(N_0,d)} are the parameters of the proof and $D$ is admissible data for~$P$ (Chapter~III of the handout).
+Attached to $D$ are the CM field \m{E(D)} with its CM type, which carries Weil data; the ranks \m{m(D)},
+\m{r(D)}, \m{k(D)} with \m{r(D)+1=k(D)+m(D)} and \m{m(D)=2\varrho(D)+2}; the number \m{f(D)} of the infinite places
+of \m{E(D)}; the third scale \m{b(D)}; the level \m{N(D)}, a prime, and a finite idele \m{\hat\pi(D)} with
+\m{\hat\pi(D)\overline{\hat\pi(D)}=N(D)}; the primes \m{g_0(D)}, \m{g_1(D)} with their chosen places; the generator
+\m{\varpi(P)} of the different; from the units on the columns and on the seesaw, the index set \m{X_0(D)} of
+the columns, with \m{k(D)} elements (Lemma~\ref{l:small}), the level \m{\Colv{D}{0}} of the columns, the shape
+\m{\fs(D)=(\varrho(D),X_0(D),k_0)} with $k_0$ the last index, the finite group \m{\sGD{D}}, and for every infinite
+place $\tau$ the doubled row parameter \m{2\varkappa_D(\tau,\cdot)} and the column weight
+\m{\mathsf{w}^{\mathrm{col}}_D(\tau)}, a weight of the unitary group of the columns.
+\end{setting}
+
+\sect{What is taken for granted}{s:inputs}
+The following statements are used and not proved here. Inputs 1 to~3 belong to the set-up of this unit (the
+notes \emph{The filling data}, \emph{Box partitions of arithmetic unipotent groups} and \emph{The energy of
+amplitude sums}) and, for the big cell, to the background library; Input~4 to Note~T and to the note
+\emph{Poincaré series of cut Bessel functions} of this unit; Input~5 to the background library; Input~6 to
+Chapter~III and to the units on the columns, the rows, the real place and the discrete series. They are stated
+from the dossier's readings of their quoted Lean statements. Where a classical theorem stands behind an input,
+its reference is to be confirmed, except where another note is cited for it.
+
+\statement{est}{\phantomsection\label{i:1}\textbf{Input 1} (levels and the unipotent character; set-up of this
+unit).\enspace In Setting~\ref{s:S}, with \m{\mathcal U=\UT{\Tlat{S}{\AEf}}} and \m{\mathcal H=\HT{\Tlat{S}{\AEf}}}:
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=1pt]
+\item The kernel of \m{\redS{S}} is \m{\KA{S}{\gid{S}}}, as said in §\ref{s:setting}; \m{\gid{S}\in\hO}; the split Gram
+matrix of \m{\Tlat{S}{\AEf}} and its inverse have entries in~\m{\hO}; and the components of \m{\Tlat{S}{\AEf}} at $\sT$
+form \m{\Tlat{S}{\ET{\sT}}}, the lattice form for the integer \m{\NS{S}} of~\m{\ET{\sT}}.
+\item \m{\psiS{S}(ra)=1} for all \m{r\in\hO} exactly if \m{a\in\hO}; and \m{\charT{S}{\sT}(x_{\sT})=\psiS{S}(x)} for every
+finite adele $x$ that is integral off~$\sT$.
+\item For a rational \m{u\in\UT{\Trat{S}{E}}} and a class~$c$: \m{\rfin{S}(u)\in\mathcal U} and
+\m{\pos{S}{c}{c}{u}\in\mathcal U}. If \m{u,v\in\mathcal U} and $h$ is in the image of \m{\incH{S}} with
+\m{u^{-1}h^{-1}vh\in\KgS{S}}, then \m{\uchar{S}{v}=\uchar{S}{u}}.
+\item \emph{(Rational approximation.)} For a class $c$ and \m{u\in\mathcal U} there is a rational
+\m{u_0\in\UT{\Trat{S}{E}}} with \m{u^{-1}\pos{S}{c}{c}{u_0}\in\KgS{S}} and \m{\uchar{S}{\rfin{S}(u_0)}=\uchar{S}{u}}.
+\item For a form $T$ as in Note~T over \m{\AEf} or over \m{\ET{\sT}}, a unit~$g$, \m{u\in\UT{T}} and \m{h\in\HT{T}}: if
+$uh$ lies in the congruence subgroup modulo~$g$, so does~$h$. Every element of \m{\ST{T}} is such a product~$uh$.
+\end{enumerate}}
+
+\statement{est}{\phantomsection\label{i:2}\textbf{Input 2} (amplitudes; set-up of this unit).\enspace In
+Setting~\ref{s:S}, let $\sigma$ be a side and $c$, $c'$ classes.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=1pt]
+\item \emph{(Partition of unity.)} If $E$ is stably unramified and $S$ admissible, then
+\m{\sum_{u\in\clU{S}{c}}\cutoff{S}{c}\bigl(\rinf{S}(u)\,y\bigr)=1} for every point~$y$.
+\item \emph{(The kernel under unipotent elements.)} For rational \m{u,u'\in\UT{\Trat{S}{E}}}, \m{\gamma\in\GS{S}{E}} and
+a point~$y$: \m{\bker{\sigma}{S}{u\gamma u'^{-1}}{\rinf{S}(u)\,y}=\uchar{S}{\rfin{S}(u)}^{-1}\,\uchar{S}{\rfin{S}(u')}\cdot
+\bker{\sigma}{S}{\gamma}{y}}.
+\item \emph{(Summability.)} If $E$ is stably unramified and $S$ admissible, then for every
+\m{\Xi\subseteq\GS{S}{E}} and \m{s\in\GRes{S}} the family of the amplitudes \m{\amp{\sigma}{S}{c}{c'}{\gamma}},
+\m{\gamma\in\Xi\cap\terms{S}{c}{s}{c'}}, is summable, and \m{\sum_{\gamma\in\terms{S}{c}{s}{c'}}\ampabs{\sigma}{S}{c}{c'}{\gamma}<\infty}.
+\end{enumerate}}
+
+\statement{est}{\phantomsection\label{i:3}\textbf{Input 3} (the big cell and links; background library and
+set-up).\enspace Let $T$ be an $\fs$-form over a field with involution whose split Gram matrix is hermitian
+and invertible; here \m{T=\Trat{S}{E}}.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=1pt]
+\item If all leading minors of \m{\ZT{T}{\gamma}} are non-zero, there are \m{u,u'\in\UT{T}}, a sequence $p$ of units
+and \m{\gamma_1\in\Hl{\varrho}{T}} with \m{\gamma=u^{-1}\,\weyl{\varrho}{p}\gamma_1\,u'}.
+\item If \m{v_1\,\weyl{\varrho}{p}\gamma_1\,v_2^{-1}=v_1'\,\weyl{\varrho}{q}\gamma_1\,v_2'^{-1}} with
+\m{v_1,v_2,v_1',v_2'\in\UT{T}} and \m{\gamma_1\in\Hl{\varrho}{T}}, then \m{p_a=q_a} for \m{a<\varrho}, \m{v_1=v_1'} and
+\m{v_2=v_2'}.
+\item For \m{\gamma_1\in\Hl{\varrho}{T}}, \m{\ZT{T}{\weyl{\varrho}{p}\gamma_1}} is the diagonal matrix with the entries
+\m{p_0,\dots,p_{\varrho-1}} and \m{h(z,\gamma_1z)}. For \m{u,u'\in\UT{T}}, the leading minors of \m{\ZT{T}{u^{-1}\gamma u'}}
+are those of \m{\ZT{T}{\gamma}}, the term discriminants of \m{u^{-1}\gamma u'} and $\gamma$ agree, and
+\m{\link{u^{-1}\gamma u'}=\link{\gamma}}. For \m{\gamma_1,\gamma_2\in\Hl{\varrho}{T}} and sequences $p$, $q$ of units:
+\m{\link{\weyl{\varrho}{p}\gamma_1}=\link{\weyl{\varrho}{q}\gamma_2}} exactly if \m{\gamma_1=\gamma_2}.
+\end{enumerate}}
+
+\statement{est}{\phantomsection\label{i:4}\textbf{Input 4} (the local theory; Note~T and the note on standard
+levels).\enspace Let $A$ be a semilocal field with an involution and an integral place structure, $T$ a form
+and $\cL$ a level as in Note~T, with integers $O_A$, character $\psi_A$ and modulus \m{\operatorname{mod}_A}.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=1pt]
+\item \emph{(Note~T, Lemma on the finite Bessel function.)} For a unit $g$ and \m{y\in\GT{T}}: if \m{\phs{g}{y}\ne0}
+there is \m{u\in\UT{T}} with $u^{-1}y$ in the congruence subgroup modulo~$g$; for every such~$u$,
+\m{\phs{g}{y}=\psi_A(g^{-1}\sd{u})}; \m{\phs{g}{yk}=\phs{g}{y}} for $k$ in that subgroup; and
+\m{\phs{g}{uy}=\psi_A(g^{-1}\sd{u})\phs{g}{y}} for \m{u\in\UT{T}}. Moreover \m{\sd{h}=0} for \m{h\in\HT{T}}, and
+\m{\sd{uu'}=\sd{u}+\sd{u'}} for \m{u,u'\in\ST{T}}.
+\item \emph{(Standard levels.)} If \m{\IsStd{\cL}}: \m{\gM{\cL}} is a Haar measure, invariant under left and right
+translations and finite on the group of the integral isometries; \m{\etab{\varrho}} is carried by \m{\UT{T}} and
+invariant under right translation by its elements; and for a unit \m{g\in O_A} with \m{\bar g=g}, the congruence
+subgroup modulo $g$ has \m{\etab{\varrho}}-measure \m{\prod_{l<\varrho}\fmod{\cL}{l}{g}}.
+\item \emph{(Lattice levels.)} Let \m{N\in O_A} with \m{\bar N=N} be such that the split Gram matrix of the
+lattice form of the shape $\fs$ for $N$ is a hermitian unit, $g$ a unit of $A$ with \m{g\in O_A}, \m{\bar g=g}, and
+$\iota$ a finite set, $m'$ a natural number with \m{\kk{\fs}=\#\iota+2m'+1}. Then that form has a level
+in \m{\Levels{\iota}{\cdot}{m'}} with unit $g$ that is a \emph{lattice level}. A level in
+\m{\Levels{\iota}{\cdot}{m+1}} is standard exactly if it is a lattice level, \m{\zeta_A(m)^{\nn{\fs}}\le1+2^{-\nn{\fs}}}
+for the ideal zeta function of~$O_A$, \m{m<9\nn{\fs}}, \m{13\nn{\fs}\le\#\iota}, and the unitary group has a Haar
+measure that is right invariant.
+\end{enumerate}}
+
+\statement{est}{\phantomsection\label{i:5}\textbf{Input 5} (adeles; background library).\enspace Let $\sT$ be a
+finite set of finite places of~$E$.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=1pt]
+\item \emph{(Extension by zero.)} The map \m{y\mapsto\tilde y} from \m{\ET{\sT}} to \m{\AEf} is additive and
+multiplicative, \m{(\tilde y)_{\sT}=y}, $\tilde y$ is integral off~$\sT$, and \m{\tilde{\bar y}=\bar{\tilde y}} if $\sT$ is
+stable under complex conjugation. A finite adele lies in \m{\hO} exactly if it is integral off $\sT$ and its
+components at $\sT$ are integral.
+\item \emph{(Indices and archimedean absolute values.)} With the generalised index \m{\gix{\cdot}} of
+\m{\ET{\sT}}: for \m{x\in E^{\times}} integral off~$\sT$, \m{\gix{x_{\sT}}^{1/2}\le\prod_\tau|x_\tau|}.
+\item \emph{(Zeta functions.)} The ideal zeta function of $O_{\sT}$ is at most that of~\m{\hO}; and if
+\m{n\,[E:\Q]\le2^{v}}, then \m{\zeta_{\hO}(u+v+4)^{n}\le1+2^{-u}}.
+\item \emph{(Unimodular lattices.)} A hermitian matrix $b$ over \m{\AEf} that has, with its inverse, entries in
+\m{\hO} is \m{k^*bk=1} for some matrix $k$ with $k$, $k^{-1}$ integral. The image of a Haar measure of a locally
+compact group, restricted to an open subgroup, under a continuous homomorphism that is surjective on that
+subgroup is a Haar measure of the image; and \m{\ET{\sT}} has a unit $\delta$ with \m{\bar\delta=-\delta},
+\m{\delta,\delta^{-1}\in O_{\sT}}, and an element \m{\tau_0\in O_{\sT}} with \m{\tau_0+\bar\tau_0=1}.
+\item \emph{(Finite groups.)} The stabiliser of a non-zero vector of $k^n$ in \m{\GL_n(k)}, for a finite field
+$k$ and \m{n\ge1}, has index \m{\#k^{n}-1}.
+\end{enumerate}}
+
+\statement{est}{\phantomsection\label{i:6}\textbf{Input 6} (the data; Chapter~III and other units).\enspace In
+Setting~\ref{s:D}:
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=1pt]
+\item \emph{(Chapter~III.)} The logarithmic bounds of the admissible data, in particular
+\m{b(D)^{19}\le g_0(D)g_1(D)\le b(D)^{23}}, the window for \m{\log N(D)}, \m{k(D)\le a(D)}, \m{\pi\le b(D)}, and the
+inequalities of Setting~\ref{s:S} for \m{\fs(D)} and \m{b(D)}; the primes \m{g_i(D)} are different from \m{N(D)}, an
+integral adele is divisible by \m{g_0(D)g_1(D)} exactly if it and its conjugate vanish modulo all chosen
+places, the conjugate of a chosen place is not chosen, and there are \m{f(D)} chosen places above each
+\m{g_i(D)}; \m{\varpi(P)} generates the different and \m{\overline{\varpi(P)}=-\varpi(P)}.
+\item \emph{(Columns.)} The class automorphism groups of \m{\Colv{D}{0}} are trivial, so that the number of its
+classes is a class sum, which for a subgroup of $K_f$ is its index times the class sum of~$K_f$; the class sum
+of $K_f$ is \m{\mass{E(D)}{k(D)}}; \m{\Colv{D}{0}} is the group of the elements of $K_f$ that reduce to $1$ at all
+chosen places and whose row at the last index is congruent to that of the identity modulo every place
+dividing~\m{\hat\pi(D)};
+there are \m{f(D)} such places, each with \m{N(D)} elements in its residue field, none conjugate to another.
+\item \emph{(The filling data fit.)} The filling data \m{\SD{D}} of Definition~\ref{d:SD} fit the space
+\m{Y_0(D)} of the rows in the sense of the note on Poincaré series, and every family of residue matrices at the
+chosen places is the reduction of an integral element of the finite adelic unitary group; consequently
+\m{\redS{\SD{D}}} is surjective. Under \m{\incH{S}}, an element $y$ lies in \m{\incH{S}^{-1}(\KS{S})} exactly if it is
+integral and its row at $k_0$ is congruent to that of the identity modulo every place dividing~\m{\piS{S}}, and
+the reduction of \m{\incH{S}(y)} at a chosen place is $1$ exactly if that of $y$ is (set-up of the unit).
+\item \emph{(Bessel functions; units on the discrete series, on the real place and on the exchange.)} For a
+Harish-Chandra parameter with a large gap: the formal degree is positive and is given by Weyl's dimension
+polynomial (the reference and its relation to the formal statement are given in Note~F, Input~8(g)); the kernel
+of the discrete series in a frame is idempotent; there is a Bessel function of the type of an irreducible
+unitary representation of the unitary group of the columns whose matrix coefficient is the coefficient of the
+lowest type, with the bounds of the Laplace method for steep parameters; a Bessel function with these bounds
+has a cut pair; the full function of a cut pair satisfies Schur bounds; and a cut Bessel function has band
+limits.
+\item \emph{(Sizes of the counts.)} A bound for \m{\#\Bc{\SD{D}}}, the logarithm of the degree \m{\bdeg{\SD{D}}}
+within an explicit interval, and \m{|\log(\mass{E(D)}{i+1}/\mass{E(D)}{i})-\cdots|} bounded for
+\m{k(D)\le i<r(D)}, as the formal text states them (the note on the degree bounds of this unit and the library
+on masses).
+\item \emph{(Line coordinates; unit on the rows.)} With the notation of the note \emph{The height of a ratio of
+lift volumes}: the polynomial of the line coordinates \m{\linePolyCoords{j}{i}{Y}} in the weight of the first
+columns is the product $\Delta$ of the stacked determinants of the matrices \m{\detRows{j}{i}{Y}{\tau}} along
+\m{\posEquiv{j}}, read as a polynomial in the first columns with coefficients polynomials in the other columns.
+\end{enumerate}}
+
+\sect{The dictionary between adelic and local objects}{s:dict}
+\begin{lemma}[lifting from the places of $\sT$]\label{l:lift}
+In Setting~\ref{s:S}, let $\sT$ be a finite set of finite places of~$E$ that is stable under complex
+conjugation. For every \m{y\in\GT{\Tlat{S}{\ET{\sT}}}} there is \m{x\in\GFin{S}} with \m{\loc{S}{\sT}(x)=y} and
+\m{\intoff{S}{\sT}{x}}, such that \m{x\in\UT{\Tlat{S}{\AEf}}} if \m{y\in\UT{\Tlat{S}{\ET{\sT}}}}, and
+\m{x\in\HT{\Tlat{S}{\AEf}}} if \m{y\in\HT{\Tlat{S}{\ET{\sT}}}}.
+\end{lemma}
+\begin{proof}
+Let \m{e=y-1} and \m{x=1+\tilde e}, the extension by zero taken entry by entry. Let $J$ be the split Gram matrix
+of \m{\Tlat{S}{\AEf}} and $J_{\sT}$ that of \m{\Tlat{S}{\ET{\sT}}}, the matrix of the components of~$J$. Extension by
+zero is multiplicative and commutes with conjugation (Input~\ref{i:5}(a)), and \m{\tilde a\,b=\widetilde{a\,b_{\sT}}}
+for a finite adele~$b$. So
+\[x^*Jx-J=\tilde e^*J+J\tilde e+\tilde e^*J\tilde e=\widetilde{e^*J_{\sT}+J_{\sT}e+e^*J_{\sT}e}=\widetilde{y^*J_{\sT}y-J_{\sT}}=0,\]
+and \m{x\in\GFin{S}}. Its components at $\sT$ are those of~$y$; off $\sT$ it is the identity, and its inverse is
+\m{1+\widetilde{y^{-1}-1}}, so \m{\intoff{S}{\sT}{x}}. The groups $\mathcal U$ and $\mathcal H$ are defined by
+conditions that certain entries are $0$ or~$1$; these pass from $y$ to~$x$.
+\end{proof}
+\leanline{\lean{existstoPlaceseq}}
+
+\begin{lemma}[level groups at $\sT$]\label{l:levels}
+In Setting~\ref{s:S}, let $\sT$ be a finite set of finite places of $E$ that is stable under complex
+conjugation, and \m{x\in\GFin{S}}.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=1pt]
+\item For a finite idele $u$ such that \m{u^{-1}} is integral off~$\sT$: \m{x\in\KA{S}{u}} exactly if
+\m{\intoff{S}{\sT}{x}} and \m{\loc{S}{\sT}(x)\in\KT{S}{\sT}{u_{\sT}}}.
+\item \m{x\in\KS{S}} exactly if \m{\intoff{S}{\sT}{x}} and \m{\loc{S}{\sT}(x)\in\KT{S}{\sT}{1}}.
+\end{enumerate}
+Suppose moreover that we are in Setting~\ref{s:T}, with a filling level~$\cL$, and that \m{\gid{S}^{-1}} is integral
+off~$\sT$.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=1pt,resume]
+\item \m{x\in\KgS{S}} exactly if \m{\intoff{S}{\sT}{x}} and \m{\loc{S}{\sT}(x)\in\cgp{\cL}}.
+\item For \m{k,l\in\KS{S}}: \m{\redS{S}(k)=\redS{S}(l)} exactly if \m{\loc{S}{\sT}(k)^{-1}\loc{S}{\sT}(l)\in\cgp{\cL}}.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) A finite adele is integral exactly if it is integral off $\sT$ and its components at $\sT$ are integral
+(Input~\ref{i:5}(a)). If the entries of $x$ are integral off~$\sT$, so are those of \m{u^{-1}(x-1)}, because
+\m{u^{-1}} is. So the three conditions that define \m{\KA{S}{u}} split into \m{\intoff{S}{\sT}{x}} and the three
+conditions at~$\sT$, which define \m{\KT{S}{\sT}{u_{\sT}}}. (b) is (a) for \m{u=1}. (c) is (a) for \m{u=\gid{S}}, as
+\m{\KgS{S}=\KA{S}{\gid{S}}} (Input~\ref{i:1}(a)) and \m{\cgp{\cL}=\KT{S}{\sT}{\gL{\cL}}} with \m{\gL{\cL}=\gid{S}_{\sT}}.
+(d) The reductions agree exactly if \m{k^{-1}l\in\KgS{S}}; as \m{k^{-1}l\in\KS{S}} is integral off $\sT$ by~(b),
+this is the condition of~(c).
+\end{proof}
+\leanline{\lean{memunitaryLeveliff}\sep \lean{memlatStabilizeriff}\sep \lean{memprincipalLeveliff}\sep
+\lean{reductioneqiff}}
+
+\begin{lemma}[the unipotent character at $\sT$]\label{l:char}
+In Setting~\ref{s:T}, suppose that \m{\gid{S}^{-1}} is integral off~$\sT$, and let \m{x\in\GFin{S}} with
+\m{\intoff{S}{\sT}{x}}. Then
+\m{\psiT{\sT}\bigl(\gL{\cL}^{-1}\,\sd{\loc{S}{\sT}(x)}\bigr)=\uchar{S}{x}}.
+\end{lemma}
+\begin{proof}
+The left side is \m{\charT{S}{\sT}(a_{\sT})} for the finite adele \m{a=\gid{S}^{-1}\sd{x}}, because
+\m{\psiT{\sT}=\charT{S}{\sT}} and \m{\gL{\cL}=\gid{S}_{\sT}}. As $a$ is integral off~$\sT$, this is
+\m{\psiS{S}(a)=\uchar{S}{x}} by Input~\ref{i:1}(b).
+\end{proof}
+\leanline{\lean{psisimpleRootSumequnipotentChar}}
+
+\begin{lemma}[moduli]\label{l:mod}
+In Setting~\ref{s:S}, let $\sT$ be a finite set of finite places of $E$ that is stable under complex
+conjugation, and suppose that \m{\ET{\sT}} carries an integral place structure.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=1pt]
+\item For a unit $x$ of $E$ such that $x$ and $x^{-1}$ are integral off~$\sT$:
+$\modT{\sT}(x_{\sT})^{1/2}=\bigl(\prod_\tau|x_\tau|\bigr)^{-1}$.
+\end{enumerate}
+Suppose moreover that we are in Setting~\ref{s:T}, with a filling level~$\cL$, and that \m{\gid{S}^{-1}} is integral
+off~$\sT$.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=1pt,resume]
+\item \m{\modT{\sT}(\gL{\cL})=\gS{S}^{-2\ninf{E}}}.
+\item \m{\uord{S}\cdot\umass{\cL}=1}.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) By Input~\ref{i:5}(b) for $x$ and for $x^{-1}$, \m{\gix{x_{\sT}}^{1/2}\le\prod_\tau|x_\tau|} and
+\m{\gix{x_{\sT}}^{-1/2}\le\prod_\tau|x_\tau|^{-1}}; so \m{\gix{x_{\sT}}^{1/2}=\prod_\tau|x_\tau|}, and
+\m{\modT{\sT}(x_{\sT})=\gix{x_{\sT}}^{-1}}. (b) is (a) for the integer \m{x=\gS{S}}, whose absolute value at every
+infinite place is \m{\gS{S}}; its inverse is integral off $\sT$ by hypothesis. (c) By (b),
+\[\umass{\cL}=\prod_{l<\varrho}\gS{S}^{-2\ninf{E}\,(\kk{\fs}+1+2(\varrho-l-1)+1/2)}=\gS{S}^{-\ninf{E}\,\varrho\,(2\kk{\fs}+2\varrho+1)},\]
+since \m{\sum_{l<\varrho}(\kk{\fs}+\tfrac32+2(\varrho-l-1))=\varrho(\kk{\fs}+\varrho+\tfrac12)}; this is \m{\uord{S}^{-1}}.
+\end{proof}
+\leanline{\lean{mdevalPlacesrpowhalf}\sep \lean{mdg}\sep \lean{gpowmulunipotentMass}}
+
+\begin{proof}[Proof of Theorem C]
+\emph{(iii)} A finite adele is integral at all but finitely many places; so are the finitely many entries of
+$x$ and of~$x^{-1}$.
+
+\emph{(ii)} Given a finite set $\sT'$ of finite places, the finitely many finite adeles in question are
+integral off every sufficiently large set, by~(iii); choose such a set that contains $\sT'$, and add the
+conjugates of its places.
+
+\emph{(i)} Write \m{A=\ET{\sT}}. \emph{The place structure.} By Input~\ref{i:5}(d) there are a unit $\delta$ with
+\m{\bar\delta=-\delta} and an element $\tau_0$ with \m{\tau_0+\bar\tau_0=1}, integral with integral inverse of~$\delta$.
+The data of the structure are: $\delta$ and~$\tau_0$; the Haar measure of the skew elements that gives mass $1$
+to the integral ones; the modulus \m{\modT{\sT}(u)=\gix{u}^{-1}}; the character \m{\charT{S}{\sT}}; and the
+Plancherel constant~$1$. The character is self-dual: for \m{a\in A}, \m{\charT{S}{\sT}(ra)=1} for all \m{r\in O_{\sT}}
+exactly if \m{\psiS{S}(r'\tilde a)=1} for all \m{r'\in\hO}, that is, exactly if \m{\tilde a\in\hO}
+(Input~\ref{i:1}(b)), that is, \m{a\in O_{\sT}} (Input~\ref{i:5}(a)). The formal text verifies the further axioms
+of a place structure for these data: the decomposition of the Haar measure of $A$ along the map
+\m{(\beta,\beta')\mapsto\tau_0\delta\beta+\beta'} from pairs of skew elements, the continuity of the modulus, a locally
+integrable majorant of \m{\gix{x}^{1/2}}, and Plancherel's inequality, whose kernel is the indicator function of
+$O_{\sT}$ by the self-duality.
+
+\emph{The level.} By Input~\ref{i:1}(a), \m{\Tlat{S}{\ET{\sT}}} is the lattice form for~\m{\NS{S}}, and its split
+Gram matrix is a hermitian unit. Put \m{\iota=\{1,\dots,\kk{\fs}-6\varrho-13\}} and \m{m'=3\varrho+6}; then
+\m{\kk{\fs}=\#\iota+2m'+1}, as \m{6\varrho+13\le\kk{\fs}}. The unit \m{g=\gid{S}_{\sT}} is integral and fixed by the
+involution. By Input~\ref{i:4}(c) there is a lattice level $\cL$ with \m{\gL{\cL}=g}. It is standard, with
+\m{m=3\varrho+5}: by Input~\ref{i:5}(c), for \m{u=\nn{\fs}}, \m{v=2\varrho} and \m{n=\nn{\fs}}, and by
+\m{\nn{\fs}[E:\Q]\le2^{2\varrho}} (Setting~\ref{s:S}), \m{\zeta_A(m)^{\nn{\fs}}\le\zeta_{\hO}(m)^{\nn{\fs}}\le1+2^{-\nn{\fs}}};
+\m{m<9\nn{\fs}}; and \m{13\nn{\fs}\le\kk{\fs}-6\varrho-13} because \m{1000(2\varrho+2)\le\kk{\fs}}. Finally the unitary
+group \m{\GT{\Tlat{S}{\ET{\sT}}}} has a Haar measure invariant on both sides: by Input~\ref{i:5}(d) the lattice has
+an orthonormal basis over~\m{\hO}, which identifies \m{\GFin{S}} with the finite adelic unitary group of the
+standard form, a group with a Haar measure invariant on both sides; the elements that are integral off $\sT$
+form an open subgroup, on which \m{\loc{S}{\sT}} is surjective by Lemma~\ref{l:lift}; and the image of the
+restricted measure is a Haar measure of the image. So \m{\isFL{S}{\sT}{\cL}}.
+\end{proof}
+
+\begin{proposition}[counting reductions by a measure]\label{p:count}
+In Setting~\ref{s:T}, suppose that \m{\gid{S}^{-1}} is integral off~$\sT$. Let $B$ be a subgroup of \m{\GFin{S}} and
+$\mu$ an s-finite measure on \m{\GT{\Tlat{S}{\ET{\sT}}}} such that $\mu$-almost every $z$ is \m{\loc{S}{\sT}(x)} for
+some \m{x\in B} with \m{\intoff{S}{\sT}{x}}, and such that $\mu$ is invariant under right translation by
+\m{\loc{S}{\sT}(x)} for every \m{x\in B}. Then
+\m{\#\redim{S}{B}\cdot\mu\bigl(\cgp{\cL}\bigr)=\mu\bigl(\KT{S}{\sT}{1}\bigr)}.
+\end{proposition}
+\begin{proof}
+For every \m{s\in\redim{S}{B}} choose \m{k_s\in B\cap\KS{S}} with \m{\redS{S}(k_s)=s}, and let
+$C_s=\{z:\ z\,\loc{S}{\sT}(k_s)\in\cgp{\cL}\}$. By the invariance, \m{\mu(C_s)=\mu(\cgp{\cL})}. The sets $C_s$ are
+pairwise disjoint: if \m{z\in C_s\cap C_t}, then $\loc{S}{\sT}(k_s)^{-1}\loc{S}{\sT}(k_t)\in\cgp{\cL}$, so \m{s=t} by
+Lemma~\ref{l:levels}(d). Their union is \m{\KT{S}{\sT}{1}} up to a $\mu$-null set. Indeed, each $C_s$ lies in
+\m{\KT{S}{\sT}{1}}, because \m{\cgp{\cL}} and \m{\loc{S}{\sT}(k_s)} do (Lemma~\ref{l:levels}(b)). Conversely let
+$z=\loc{S}{\sT}(x)\in\KT{S}{\sT}{1}$ with \m{x\in B}, \m{\intoff{S}{\sT}{x}}. Then \m{x\in\KS{S}} by
+Lemma~\ref{l:levels}(b), \m{s=\redS{S}(x^{-1})} lies in \m{\redim{S}{B}}, and \m{xk_s\in\KgS{S}}, so
+$z\,\loc{S}{\sT}(k_s)\in\cgp{\cL}$ by Lemma~\ref{l:levels}(c). Summing the measures gives the claim.
+\end{proof}
+\leanline{\lean{cardreducedImagemul}}
+
+\begin{corollary}[the reduction of the Bessel subgroup]\label{c:bessel}
+In Setting~\ref{s:S}, suppose that $E$ carries Weil data, and write \m{\mathcal S=\ST{\Tlat{S}{\AEf}}},
+\m{\mathcal H=\HT{\Tlat{S}{\AEf}}}. Then \m{\#\redim{S}{\mathcal S}=\#\redim{S}{\mathcal H}\cdot\uord{S}}.
+\end{corollary}
+\begin{proof}
+By Theorem~C(ii), for \m{\sT_0=\emptyset}, and Theorem~C(i) there are a set $\sT$ off which \m{\gid{S}^{-1}} is
+integral and a filling level $\cL$ for $S$ at~$\sT$. Apply Proposition~\ref{p:count} to
+\m{B=\mathcal U=\UT{\Tlat{S}{\AEf}}} and \m{\mu=\etab{\varrho}}: this measure is carried by the unipotent group at~$\sT$,
+every element of which is the image of an element of $\mathcal U$ that is integral off $\sT$
+(Lemma~\ref{l:lift}), and it is invariant under right translation by that group (Input~\ref{i:4}(b)). By the
+same input \m{\mu(\cgp{\cL})=\umass{\cL}} and \m{\mu(\KT{S}{\sT}{1})=1}. Hence \m{\#\redim{S}{\mathcal U}\cdot\umass{\cL}=1},
+and \m{\#\redim{S}{\mathcal U}=\uord{S}} by Lemma~\ref{l:mod}(c). It remains to see that
+\m{(\bar u,\bar h)\mapsto\bar u\bar h} is a bijection from \m{\redim{S}{\mathcal U}\times\redim{S}{\mathcal H}} to
+\m{\redim{S}{\mathcal S}}. It is injective because the two images meet in~$1$: if \m{u\in\mathcal U\cap\KS{S}} and
+\m{h\in\mathcal H\cap\KS{S}} have the same reduction, then \m{u^{-1}h\in\KgS{S}}, so \m{h\in\KgS{S}} by
+Input~\ref{i:1}(e). It is surjective because an element of \m{\mathcal S\cap\KS{S}} is a product $uh$ with
+\m{u\in\mathcal U}, \m{h\in\mathcal H}, and then \m{h\in\KS{S}} by the same input, hence also \m{u\in\KS{S}}.
+\end{proof}
+\leanline{\lean{cardreducedImagebesselS}}
+
+\sect{The floor group, Weyl elements, and blocks as limits}{s:floor}
+\begin{lemma}[positions of the elements of the floor group]\label{l:floor}
+In Setting~\ref{s:S}, let \m{\gamma_1\in\GS{S}{E}} with \m{\gamma_1\in\Hl{\varrho}{\Trat{S}{E}}} and let $c$, $c'$ be classes.
+Put \m{l=\pos{S}{c}{c'}{\gamma_1}}, \m{t=\Zf{S}{\gamma_1}_{\varrho\varrho}}, and let \m{\omega\in E^{\kappa}} be the vector of the
+coefficients of \m{\gamma_1z} at the basis vectors of~$\kappa$. Then:
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=1pt]
+\item \m{l\in\Hl{\varrho}{\Tlat{S}{\AEf}}};
+\item \m{l\,z=\tailv{\piS{S}}{t}{y_c^{-1}\omega}}, with $t$ and $\omega$ read in \m{\AEf};
+\item \m{\NS{S}\cdot\omega^*\omega=t\bar t-\NS{S}^2};
+\item for every sequence $p$ of units of~$E$, \m{\pos{S}{c}{c'}{\weyl{\varrho}{p}\gamma_1}=\weyl{\varrho}{p}\cdot l}, where on
+the right $p$ is read as a sequence of finite ideles.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+As $\gamma_1$ fixes all $e_a$ and $e^*_a$, it preserves the span of $\kappa$ and~$z$; write
+$\gamma_1z=\sum_j\omega_jx_j+\zeta z$. The form is the identity on $\kappa$ and \m{-\NS{S}} at~$z$, so
+\m{t=h(z,\gamma_1z)=-\NS{S}\zeta}, and \m{h(\gamma_1z,\gamma_1z)=h(z,z)} reads
+$\omega^*\omega-\NS{S}\bar\zeta\zeta=-\NS{S}$; this gives~(iii). (i) The elements \m{\hc{S}{c}}, \m{\hc{S}{c'}} lie in
+$\mathcal H$ and \m{\rfin{S}(\gamma_1)} fixes all $e_a$, $e^*_a$, since the change to the lattice basis only
+concerns the middle. (ii) \m{\hc{S}{c'}} fixes~$z$, so $l\,z=\hc{S}{c}^{-1}\rfin{S}(\gamma_1)z$; in the rational
+basis this is the vector with the $\kappa$-part \m{y_c^{-1}\omega} and the coefficient
+$\zeta=-(\piS{S}\overline{\piS{S}})^{-1}t$ at~$z$, and written in the lattice basis it is the tail vector.
+(iv) The Weyl element only moves the vectors $e_a$, $e^*_a$; it commutes with the change of basis and with
+the elements that fix all $e_a$ and~$e^*_a$, such as \m{\hc{S}{c}} and \m{\hc{S}{c'}}.
+\end{proof}
+\leanline{\lean{termPositionfloorGroupspec}}
+
+\begin{lemma}[Weyl elements at infinity; tail vectors at $\sT$]\label{l:weylinf}
+In Setting~\ref{s:S}:
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=1pt]
+\item For \m{\gamma\in\GS{S}{E}}, a sequence $p$ of units of $E$ and an infinite place $\tau$ of~$E$,
+\m{\rinf{S}(\weyl{\varrho}{p}\gamma)_\tau=\weyl{\varrho}{p^{(\tau)}}\cdot\rinf{S}(\gamma)_\tau}, where \m{p^{(\tau)}} is the sequence
+\m{a\mapsto\fscale{S}{\tau}{a}\cdot(p_a)_\tau}, read as $1$ at the indices where this number is not a unit.
+\item For a finite set $\sT$ of finite places of $E$ that is stable under complex conjugation, a finite
+adele $t$ and \m{x\in\AEf^{\kappa}}: \m{\tailv{\piS{S}_{\sT}}{t_{\sT}}{x_{\sT}}=\bigl(\tailv{\piS{S}}{t}{x}\bigr)_{\sT}}.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) \m{\rinf{S}} is a homomorphism, and at the place $\tau$ it conjugates the image of a matrix by the diagonal
+matrix of the basis scales. The Weyl element has the entries $p_a$ and \m{\bar p_a^{-1}} between $e_a$ and
+$e^*_a$; conjugation multiplies $p_a$ by the quotient of the two scales, which is the frame scale
+\m{\fscale{S}{\tau}{a}}, a positive real number, and \m{\bar p_a^{-1}} by its inverse. (b) Taking components at $\sT$
+is a homomorphism of rings with involution, and the tail vector is given by ring operations.
+\end{proof}
+\leanline{\lean{ratToInfweylElemmul}\sep \lean{tailVectorevalPlaces}}
+
+\begin{proof}[Proof of Theorem B]
+Write \m{T=\Trat{S}{E}} and \m{\mathcal U=\UT{T}}, and let
+\[\mathcal B=\tlink{S}{\Lambda}\cap\terms{S}{c}{s}{c'}.\]
+As the amplitude sum over \m{\tlink{S}{\Lambda}} is not zero, there is an element $\gamma_0$ of~$\mathcal B$. By hypothesis its leading
+minors do not vanish, so by Input~\ref{i:3}(a) we can write $\gamma_0=v^{-1}\,\weyl{\varrho}{r}\gamma_1\,v'$ with
+$v,v'\in\mathcal U$, a sequence $r$ of units and $\gamma_1\in\Hl{\varrho}{T}$. Let $t=h(z,\gamma_1z)=\Zf{S}{\gamma_1}_{\varrho\varrho}$. By Input~\ref{i:3}(c) the last
+leading minor of \m{\Zf{S}{\gamma_0}} is \m{r_0\cdots r_{\varrho-1}t}, so $t$ is a unit; the term discriminant of $\gamma_0$
+is \m{d\bar d(t\bar t-\NS{S}^2)\ne0}; and $\Lambda=\link{\gamma_0}=\link{\weyl{\varrho}{p}\gamma_1}$ for every sequence~$p$.
+
+\emph{(i)} By Lemma~\ref{l:floor}(iii), at an infinite place~$\tau$,
+\m{|t_\tau|^2-\NS{S}^2=\NS{S}\sum_j|(\omega_j)_\tau|^2\ge0}, and it is not zero because \m{t\bar t\ne\NS{S}^2} in~$E$.
+The element \m{k=\pos{S}{c}{c'}{\gamma_0}} lies in \m{\KS{S}} and has the reduction~$s$, as \m{\gamma_0\in\terms{S}{c}{s}{c'}}.
+
+\emph{(ii)} For \m{p\colon\{0,\dots,\varrho-1\}\to E^{\times}} and \m{u,u'\in\mathcal U} put
+\m{\gamma_{p,u,u'}=u\,\weyl{\varrho}{\pad{p}{t}}\gamma_1\,u'^{-1}}. The map \m{(p,u,u')\mapsto\gamma_{p,u,u'}} is injective by Input~\ref{i:3}(b). Its values lie
+in \m{\tlink{S}{\Lambda}}: the link is $\Lambda$, and the term discriminant is \m{d\bar d(t\bar t-\NS{S}^2)\ne0} with
+\m{d=p_0\cdots p_{\varrho-1}} (Input~\ref{i:3}(c)). Every \m{\gamma\in\mathcal B} is a value: by Input~\ref{i:3}(a),
+\m{\gamma=w^{-1}\weyl{\varrho}{q}\gamma_2w'} with \m{\gamma_2\in\Hl{\varrho}{T}}, and
+\m{\link{\weyl{\varrho}{q}\gamma_2}=\Lambda=\link{\weyl{\varrho}{1}\gamma_1}} forces \m{\gamma_2=\gamma_1}. Therefore the family
+\m{\mathbf 1[\gamma_{p,u,u'}\in\terms{S}{c}{s}{c'}]\cdot\amp{\sigma}{S}{c}{c'}{\gamma_{p,u,u'}}}, indexed by the triples, is a
+reindexing of the summable family of the amplitudes over $\mathcal B$ (Input~\ref{i:2}(c)), completed by zeros.
+Its sum is the amplitude sum of the theorem, and summing first over \m{(u,u')} gives a summable family
+\[L_p=\sum_{(u,u')}\mathbf 1\bigl[\gamma_{p,u,u'}\in\terms{S}{c}{s}{c'}\bigr]\cdot\amp{\sigma}{S}{c}{c'}{\gamma_{p,u,u'}}\]
+with the same sum. The coset amplitude \m{\cosamp{S}{\sT}{c}{s}{c'}{\weyl{\varrho}{\pad{p}{t}}\gamma_1}} is the same sum
+with the further factor \m{\mathbf 1[\intoff{S}{\sT}{\pos{S}{c}{c}{u}}]}. For each \m{(u,u')} this factor is $1$ for
+all sufficiently large~$\sT$ (Theorem~C(iii)), and the terms are dominated by the norms of a summable family;
+by dominated convergence for series the coset amplitudes tend to~$L_p$.
+\end{proof}
+
+\sect{The unfolding}{s:unfold}
+\begin{proof}[Proof of Theorem A]
+Write $G_{\sT}=\GT{\Tlat{S}{\ET{\sT}}}$, $g=\gL{\cL}$, $\mathcal U=\UT{\Trat{S}{E}}$, $s=\redS{S}(k)$ and
+$P=\pos{S}{c}{c'}{\gamma}$, which is integral off~$\sT$; for $u,u'\in\mathcal U$ put $\gamma_{u,u'}=u\gamma u'^{-1}$.
+
+\emph{Step 1: the left side.} By Lemma~\ref{l:floor}(iv), $\loc{S}{\sT}(P)=\weyl{\varrho}{p_{\sT}}\cdot l_0$ with
+$l_0=\loc{S}{\sT}(\pos{S}{c}{c'}{\gamma_1})$, so that
+$\corr{Z}{p_{\sT}}{l_0^{-1}}=\hdens{\cL}{\varrho}{p_{\sT}}{1}\cdot\bcorr{\gM{\cL}}{\bvec{Z}{\cdot}}{\loc{S}{\sT}(P)}$. Its coordinate at
+\m{(a,b)} is the head density times
+\begin{align*}&\int\phs{g}{z\,a_a^{-1}}\,\overline{\phs{g}{\loc{S}{\sT}(P)^{-1}z\,a_b^{-1}}}\,d\gM{\cL}(z)\\
+&\qquad=\int\phs{g}{z}\,\overline{\phs{g}{\loc{S}{\sT}(P)^{-1}z\,\loc{S}{\sT}(k)}}\,d\gM{\cL}(z),\end{align*}
+by the right invariance of \m{\gM{\cL}} (substitute \m{z\,a_a} for~$z$), the hypothesis
+$a_aa_b^{-1}\in\loc{S}{\sT}(k)\,\cgp{\cL}$ and Input~\ref{i:4}(a). The archimedean factor is
+$\bcorr{dy}{W^{\sigma}}{\rinf{S}(\gamma)}=\int\bker{\sigma}{S}{\gamma}{y}\,dy$. So the left side of the theorem is
+$\hdens{\cL}{\varrho}{p_{\sT}}{1}$ times the integral over \m{(z,y)} of
+\begin{equation}\label{e:r}\mathsf r(z,y)=\phs{g}{z}\cdot\overline{\phs{g}{\loc{S}{\sT}(P)^{-1}z\,\loc{S}{\sT}(k)}}\cdot\bker{\sigma}{S}{\gamma}{y}.\end{equation}
+
+\emph{Step 2: the right side.} For \m{(u,u')} let \m{Q(u,u')} be the condition of Definition~\ref{d:cosamp}:
+\m{\intoff{S}{\sT}{\pos{S}{c}{c}{u}}} and \m{\gamma_{u,u'}\in\terms{S}{c}{s}{c'}}. By the left invariance of \m{\gM{\cL}} and of
+$dy$, for every \m{(u,u')},
+\begin{align*}&\gM{\cL}\bigl(\cgp{\cL}\bigr)\cdot\amp{\sigma}{S}{c}{c'}{\gamma_{u,u'}}\\
+&\qquad=\int\!\!\int\mathbf 1\bigl[\loc{S}{\sT}(\pos{S}{c}{c}{u})\,z\in\cgp{\cL}\bigr]
+\cdot\mathsf a_{u,u'}\bigl(\rinf{S}(u)\,y\bigr)\,d\gM{\cL}(z)\,dy,\end{align*}
+where \m{\mathsf a_{u,u'}(y)=\cutoff{S}{c}(y)\,\cutoff{S}{c'}(\rinf{S}(\gamma_{u,u'})^{-1}y)\,\bker{\sigma}{S}{\gamma_{u,u'}}{y}} is the
+integrand of the amplitude. The sum over the \m{(u,u')} with \m{Q(u,u')} may be taken under the integral: the
+integral of the norm of the term of \m{(u,u')} is at most
+\m{\gM{\cL}(\KT{S}{\sT}{1})\cdot\ampabs{\sigma}{S}{c}{c'}{\gamma_{u,u'}}}, the map \m{(u,u')\mapsto\gamma_{u,u'}} is injective (Input~\ref{i:3}(b)), and
+the sum of these numbers over \m{\terms{S}{c}{s}{c'}} is finite (Input~\ref{i:2}(c); the measure is finite by
+Input~\ref{i:4}(b)). So it suffices to show, for all $z$ and~$y$,
+\begin{equation}\label{e:pt}\sum_{(u,u')}\mathbf 1\bigl[Q(u,u')\bigr]\cdot\mathbf 1\bigl[\loc{S}{\sT}(\pos{S}{c}{c}{u})\,z\in\cgp{\cL}\bigr]\cdot
+\mathsf a_{u,u'}\bigl(\rinf{S}(u)\,y\bigr)=\mathsf r(z,y).\end{equation}
+
+\emph{Step 3: the two conditions.} Fix $z$ and~$y$. By Lemma~\ref{l:lift}, \m{z=\loc{S}{\sT}(x)} with
+\m{\intoff{S}{\sT}{x}}. Put \m{\xi=P^{-1}xk}; it is integral off~$\sT$ (Lemma~\ref{l:levels}(b) for~$k$), and
+\m{\loc{S}{\sT}(\xi)=\loc{S}{\sT}(P)^{-1}z\,\loc{S}{\sT}(k)}. We claim that, for \m{u,u'\in\mathcal U},
+\begin{equation}\label{e:C}\begin{gathered}Q(u,u')\text{ and }\loc{S}{\sT}(\pos{S}{c}{c}{u})\,z\in\cgp{\cL}\\
+\Longleftrightarrow\quad\pos{S}{c}{c}{u}\,x\in\KgS{S}\text{ and }\pos{S}{c'}{c'}{u'}\,\xi\in\KgS{S}.\end{gathered}\end{equation}
+By Lemma~\ref{l:levels}(c), and since $x$ is integral off~$\sT$, the element \m{l_1=\pos{S}{c}{c}{u}\,x} lies in
+\m{\KgS{S}} exactly if \m{\pos{S}{c}{c}{u}} is integral off $\sT$ and \m{\loc{S}{\sT}(\pos{S}{c}{c}{u})\,z\in\cgp{\cL}}. Suppose
+this. From \m{P=xk\xi^{-1}} we get
+\[\pos{S}{c}{c'}{\gamma_{u,u'}}=\pos{S}{c}{c}{u}\cdot P\cdot\pos{S}{c'}{c'}{u'}^{-1}=l_1\cdot k\cdot\bigl(\pos{S}{c'}{c'}{u'}\,\xi\bigr)^{-1}.\]
+As \m{l_1\in\KgS{S}} and \m{k\in\KS{S}} has the reduction~$s$, the left side lies in \m{\KS{S}} with the reduction $s$
+exactly if \m{\pos{S}{c'}{c'}{u'}\,\xi\in\KgS{S}}. This proves~\eqref{e:C}.
+
+\emph{Step 4: phases.} Let \m{u\in\mathcal U} with \m{\pos{S}{c}{c}{u}\,x\in\KgS{S}}. Then
+\begin{equation}\label{e:val}\phs{g}{z}=\uchar{S}{\rfin{S}(u)}^{-1}.\end{equation}
+Indeed \m{u_1=\pos{S}{c}{c}{u}} lies in \m{\UT{\Tlat{S}{\AEf}}} and is integral off $\sT$ (Input~\ref{i:1}(c), Step~3); by
+Lemma~\ref{l:levels}(c), \m{\loc{S}{\sT}(u_1)\,z\in\cgp{\cL}}, so by Input~\ref{i:4}(a) and Lemma~\ref{l:char}
+\m{\phs{g}{z}=\psiT{\sT}\bigl(g^{-1}\sd{\loc{S}{\sT}(u_1)^{-1}}\bigr)=\uchar{S}{u_1}^{-1}}; and \m{\uchar{S}{u_1}=\uchar{S}{\rfin{S}(u)}} by
+Input~\ref{i:1}(c), because \m{u_1=\hc{S}{c}^{-1}\rfin{S}(u)\hc{S}{c}}. The same holds for $u'$, $c'$ and~$\xi$. With
+Input~\ref{i:2}(b) and the definition of the cutoffs' arguments, for \m{(u,u')} satisfying \eqref{e:C} the term
+of \eqref{e:pt} is
+\begin{align*}&\cutoff{S}{c}\bigl(\rinf{S}(u)y\bigr)\cdot\cutoff{S}{c'}\bigl(\rinf{S}(u')\rinf{S}(\gamma)^{-1}y\bigr)\cdot\uchar{S}{\rfin{S}(u)}^{-1}
+\uchar{S}{\rfin{S}(u')}\cdot\bker{\sigma}{S}{\gamma}{y}\\
+&\qquad=\cutoff{S}{c}\bigl(\rinf{S}(u)y\bigr)\cdot\cutoff{S}{c'}\bigl(\rinf{S}(u')\rinf{S}(\gamma)^{-1}y\bigr)\cdot\mathsf r(z,y),\end{align*}
+by \eqref{e:val} for \m{(u,x)} and for \m{(u',\xi)}, the values of $\uchar{S}{\cdot}$ being of modulus~$1$.
+
+\emph{Step 5: the cutoffs sum to one.} So the left side of \eqref{e:pt} is \m{\mathsf r(z,y)} times the product of
+\[\Sigma_c(x,y)=\sum_{u\in\mathcal U}\mathbf 1\bigl[\pos{S}{c}{c}{u}\,x\in\KgS{S}\bigr]\cdot\cutoff{S}{c}\bigl(\rinf{S}(u)\,y\bigr)\]
+and of \m{\Sigma_{c'}(\xi,\rinf{S}(\gamma)^{-1}y)}. If \m{\mathsf r(z,y)=0} we are done. Otherwise \m{\phs{g}{z}\ne0} and
+\m{\phs{g}{\loc{S}{\sT}(\xi)}\ne0}, and it suffices to show: if $x$ is integral off $\sT$ and
+\m{\phs{g}{\loc{S}{\sT}(x)}\ne0}, then \m{\Sigma_c(x,y)=1} for all~$y$. By Input~\ref{i:4}(a) and Lemma~\ref{l:lift} there
+is \m{u_2\in\UT{\Tlat{S}{\AEf}}}, integral off~$\sT$, with \m{\loc{S}{\sT}(u_2^{-1}x)\in\cgp{\cL}}, hence
+\m{u_2^{-1}x\in\KgS{S}} (Lemma~\ref{l:levels}(c)). By Input~\ref{i:1}(d) there is a rational \m{v\in\mathcal U} with
+\m{u_2^{-1}\pos{S}{c}{c}{v}\in\KgS{S}}. Then, for \m{u\in\mathcal U},
+\m{\pos{S}{c}{c}{u}\,x\in\KgS{S}} exactly if \m{\pos{S}{c}{c}{uv}\in\KgS{S}}, that is, \m{uv\in\clU{S}{c}}; so with \m{u=wv^{-1}},
+\[\Sigma_c(x,y)=\sum_{w\in\clU{S}{c}}\cutoff{S}{c}\bigl(\rinf{S}(w)\,\rinf{S}(v)^{-1}y\bigr)=1\]
+by the partition of unity of Input~\ref{i:2}(a). This proves \eqref{e:pt} and the theorem.
+\end{proof}
+
+\sect{The filling data of the admissible data}{s:data}
+\begin{definition}[the filling data of $D$]\label{d:SD}
+In Setting~\ref{s:D}, the \emph{filling data of~$D$}, \m{\SD{D}}, are the filling data over \m{E(D)} of the shape
+\m{\fs(D)} with the following components: the number \m{b(D)}; the prime \m{N(D)} and the idele \m{\hat\pi(D)}; the
+primes \m{g_0(D)}, \m{g_1(D)} with the chosen places of $D$ above them; the generator \m{\varpi(P)} of the
+different; the column level \m{\Colv{D}{0}}; and at every infinite place $\tau$ a Bessel system chosen among
+those of Proposition~\ref{p:bessel}. The conditions on filling data (Setting~\ref{s:S}) hold by
+Input~\ref{i:6}(a),~(b). In particular \m{\bS{\SD{D}}=b(D)}, \m{\NS{\SD{D}}=N(D)}, \m{\gS{\SD{D}}=g_0(D)g_1(D)}, and for
+the shape \m{\fs=\fs(D)}: \m{\rh{\fs}=\varrho(D)}, \m{\kk{\fs}=k(D)} and \m{\rr{\fs}=2\varrho(D)+k(D)+1=r(D)}.
+\end{definition}
+\leanline{\lean{filling}}
+
+\begin{lemma}[three small facts]\label{l:small}
+In Setting~\ref{s:D}: the index set \m{X_0(D)} of the columns has \m{k(D)} elements. Moreover the formal text
+fixes, as instances, a unitary matrix that diagonalises the real form of the shape \m{\fs(D)} with the signs of
+the space of the rows (a \emph{frame}), and records the bound \m{b(D)^{10}\le2^{\varrho(D)}}.
+\end{lemma}
+\begin{proof}
+The first is the count of the index set in the unit on the seesaw. The frame exists because the form has as
+many negative signs as the standard form of these signs, and one is chosen. The bound is one of the
+logarithmic bounds of Chapter~III: \m{10\log b(D)\le\varrho(D)\log2}.
+\end{proof}
+\leanline{\lean{cardX}\sep \lean{unitarySignFrameY}\sep \lean{instLbHPowRealNatOfNatHMulLb}}
+
+\begin{proposition}[Bessel systems for the data]\label{p:bessel}
+In Setting~\ref{s:D}, let $\tau$ be an infinite place of \m{E(D)}. Then there is a Bessel system $\mathfrak B$ on the
+real group \m{G_1(\fs(D))}, for the bound \m{b(D)} and the number \m{f(D)} in the sense of the set-up, of the type
+\m{\IsBes{\mathfrak B}{2\varkappa_D(\tau,\cdot)}{\mathsf{w}^{\mathrm{col}}_D(\tau)}}, which means:
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=1pt]
+\item the degree of $\mathfrak B$ is the value of Weyl's dimension polynomial at the doubled row parameter
+\m{2\varkappa_D(\tau,\cdot)};
+\item there is an invertible matrix $A$ such that, for every $h$ in the unitary group of the columns, embedded
+as the subgroup that fixes the frame and its dual, and every point~$y$, the full Bessel function satisfies
+\m{A\,W^{\full}(hy)=\mathrm{Sch}(h)\,A\,W^{\full}(y)}, where \m{\mathrm{Sch}} is the transpose of the Schur
+representation of weight \m{\mathsf{w}^{\mathrm{col}}_D(\tau)} at the transposed element; and
+\item $W^{\full}$ is fixed by right convolution with the kernel of the discrete series of the parameter
+\m{2\varkappa_D(\tau,\cdot)}, read in the frame of Lemma~\ref{l:small}.
+\end{enumerate}
+\end{proposition}
+\begin{proof}
+An assembly of Input~\ref{i:6}(d); its content lies there. The steps, in the order of the formal text: (1) the
+doubled row parameter $\lambda$ has entries of absolute value at most \m{3a(D)} and a gap of size \m{r(D)^7}
+(Chapter~III), and its lowest type for the maximal compact subgroup is the column weight at one position and
+$0$ at the others. (2) The formal degree of $\lambda$ is positive and equals Weyl's dimension polynomial; the
+kernel of its discrete series in the frame is idempotent; and the parameter is steep in the sense of the unit
+on the exchange. (3) The Gram matrix of the Weyl module of the column weight is positive definite, of the form
+$B^*B$; conjugating the Schur representation by $B$ gives a unitary representation~$\rho$, and a matrix that
+commutes with it is scalar. (4) There is a Bessel function of type $\rho$ whose matrix coefficient is that of
+the lowest type, with the bounds of the Laplace method. (5) It has a cut pair, whose full function satisfies
+the Schur bounds. (6) The cut function has band limits; the constant that this requires is bounded as follows:
+each factor \m{|\lambda_i-\lambda_j|/2} of Weyl's polynomial is at most \m{3a(D)}, since both entries are at most
+\m{3a(D)} in absolute value, and the remaining factorials and powers are compared with powers of \m{b(D)} by the
+bounds of Chapter~III. These data form a Bessel system; (i) holds by~(2), (ii) with \m{A=B^*} by~(3), and (iii)
+by the convolution identity of the cut pair and the idempotent kernel.
+\end{proof}
+\leanline{\lean{existsbesselSystem}}
+
+\begin{proof}[Proof of Theorem D]
+Write \m{S=\SD{D}}, \m{N=N(D)}, \m{k=k(D)}, \m{f=f(D)}.
+
+\emph{(i)} By Input~\ref{i:6}(c), \m{\incH{S}^{-1}(\KgS{S})} is the group of the \m{y\in K_f} whose row at $k_0$ is
+congruent to that of the identity modulo every place dividing \m{\hat\pi(D)}, and whose reduction at every
+chosen place is~$1$. By Input~\ref{i:6}(b) this is the description of \m{\Colv{D}{0}}.
+
+\emph{(ii)} By Input~\ref{i:6}(c), \m{\incH{S}^{-1}(\KS{S})\cap K_f} is the group of the \m{y\in K_f} such that, for
+each of the $f$ places $w$ dividing \m{\hat\pi(D)}, the inverse transpose of the reduction of $y$ at $w$ fixes the
+basis vector of $k_0$ in \m{\F_w^{k}}. No two of these places are conjugate, so the reduction maps $K_f$ onto the
+product of the groups \m{\GL_k(\F_w)}, and the index is the product of the indices of the stabilisers of a
+non-zero vector, each equal to \m{N^k-1} (Input~\ref{i:5}(e)).
+
+\emph{(iii)} The class automorphism groups of the column level are trivial, so \m{\#\Cl{S}} is its class sum,
+which is \m{[K_f:\Colv{D}{0}]\cdot\mass{E(D)}{k}} (Input~\ref{i:6}(b)). By (i) the index is
+\[[K_f:\incH{S}^{-1}(\KS{S})\cap K_f]\cdot[\incH{S}^{-1}(\KS{S}):\incH{S}^{-1}(\KgS{S})]=(N^k-1)^f\cdot\#\redim{S}{\mathcal H},\]
+by (ii), and because \m{\incH{S}} maps onto $\mathcal H$, so that the second index is the order of the image of
+\m{\mathcal H\cap\KS{S}} under~\m{\redS{S}}.
+
+\emph{(iv)} The standing hypotheses are: (1) $\KcolS{S}=\incH{S}^{-1}(\KgS{S})$; (2) \m{\redS{S}} is surjective;
+(3) \m{|\vpS{S}_\tau|\le\bS{S}} and $1\le|\kapS{S}{\tau}|\le\bS{S}^{23}$ for all~$\tau$, and
+\m{\NS{S}\le\bS{S}^{60\nn{\fs}}}; (4) the band inequality
+$\prod_\tau c_{\mathrm{band}}(\fs)\,\bS{S}^{7\kk{\fs}}\bigl(|\kapS{S}{\tau}|^{2\rh{\fs}+1}/(\gS{S}\NS{S})\bigr)^{\kk{\fs}-\nn{\fs}^7}\le\bdeg{S}^{-1}$;
+(5) $\tailS{S}^{44}\besE{S}\le\mainE{S}$, $\tailS{S}^{18}\codimF{S}\mainE{S}\le\besE{S}$ and \m{\codimF{S}\le1}; (6)
+$\#\Bc{S}\le\bS{S}^{2\kk{\fs}\ninf{E}}$; (7) $(\NS{S}^{\kk{\fs}}/\bS{S})^{\ninf{E}}$ is at most the index of~(ii); and
+(8) the bound for the packet constant \m{\packC{S}} stated in Note~F. Here \m{\kapS{S}{\tau}}, \m{c_{\mathrm{band}}(\fs)},
+\m{\bdeg{S}}, \m{\tailS{S}}, \m{\besE{S}}, \m{\mainE{S}}, \m{\codimF{S}} are the constants of the set-up, as recalled in
+Note~F. (1) is~(i), and (2) is Input~\ref{i:6}(c). The others are inequalities between positive real numbers.
+The formal proof makes every quantity explicit: $\#\redim{S}{\mathcal S}=\#\redim{S}{\mathcal H}\cdot\uord{S}$
+(Corollary~\ref{c:bessel}), \m{\#\Cl{S}} by~(iii), the index by~(ii), \m{\prod_\tau|\vpS{S}_\tau|} as a power of the
+root discriminant, the volumes and the covolume by their definitions, and \m{\rr{\fs}=k+2\varrho(D)+1}. It then
+takes logarithms; with the bounds for \m{\#\Bc{S}}, for \m{\log\bdeg{S}} and for the ratios of the masses of the
+ranks from $k$ to \m{r(D)} (Input~\ref{i:6}(e)), with \m{N\le N^k} and \m{k\log N-2/N\le\log(N^k-1)}, each inequality
+becomes a linear inequality between the logarithmic sizes of the data, which follows from the windows of
+Chapter~III (Input~\ref{i:6}(a)). This linear arithmetic is not reproduced here.
+\end{proof}
+
+\begin{lemma}[an expansion of a product of stacked determinants]\label{l:poly}
+In Setting~\ref{s:D}, with the notation of the note \emph{The height of a ratio of lift volumes}: let $j$ be a
+lift index, $i$ a line choice with its short rows~$Y_i$, and let $\Delta$ be the product of the stacked
+determinants of the matrices \m{\detRows{j}{i}{Y_i}{\tau}} along \m{\posEquiv{j}}, a polynomial in variables
+\m{x_{\tau,a,b}} with $\tau$ an infinite place, \m{a<2m(D)}, and $b$ either a number below \m{k(D)+j-1} or an index of
+the space~$L^{+}$. Let $n$ be a set, $f$ a map from the row indices to~$n$ and $g$ a map from the indices of
+$L^{+}$ to~$n$. Let $\Delta^{f,g}$ be the image of $\Delta$ under the substitution
+\m{x_{\tau,a,b}\mapsto x_{\tau,a,f(\basisVec{D}{b})}} for the numbers $b$ and \m{x_{\tau,a,b}\mapsto x_{\tau,a,g(b)}} for the
+indices of~$L^{+}$. Then
+\[\Delta^{f,g}=\sum_{l}f_*(P_l)\cdot g_*\bigl(\linePolyCoords{j}{i}{Y_i}_l\bigr),\]
+where $l$ runs over the index set of the basis of the Weyl module of the weight of the first columns, $P_l$
+is the \emph{letter polynomial} of the $l$-th basis vector for the positive letters (its polynomial, with the
+variable of \m{(\tau,a)} and of the number $h$ replaced by the sum of the variables \m{x_{\tau,a,i'}} over the row
+indices $i'$ of positive sign and of order~$h$, for the order function of the untwisted auxiliary pair), and $f_*$, $g_*$ rename the last index of the variables.
+\end{lemma}
+\begin{proof}
+By Input~\ref{i:6}(f) and the linearity of the polynomial of a vector, $\Delta$, read as a polynomial in the
+first columns with coefficients in the variables of~$L^{+}$, is \m{\sum_lp_l\cdot\linePolyCoords{j}{i}{Y_i}_l} with
+$p_l$ the polynomial of the $l$-th basis vector. The substitution of the statement and the map that sends
+$p_l$ to \m{f_*(P_l)} and renames the coefficients by $g$ are homomorphisms of algebras, so it suffices to
+compare them on the variables. On a variable of~$L^{+}$ both are~$g_*$. On the variable of \m{(\tau,a)} and a
+number~$h$, the second gives the sum of the \m{x_{\tau,a,f(i')}} over the row indices $i'$ of positive sign and
+order~$h$; there is exactly one such index, \m{i'=\basisVec{D}{h}}, because the order of such an index is its
+number, the numbering of the row indices is a bijection, and the sign is positive exactly for the numbers below
+\m{k(D)+j-1}.
+\end{proof}
+\leanline{\lean{stdClassSumcarrierXieqlineMultiplier}}
+
+\sect{Where the results are used}{s:used}
+Note~F (\emph{Translates of Poincaré series fill the rows}) quotes Theorem~C as its Input~4(a); Lemma~\ref{l:lift},
+Lemma~\ref{l:levels}, Lemma~\ref{l:char} and Lemma~\ref{l:mod} as Input~4(b); Proposition~\ref{p:count} and
+Corollary~\ref{c:bessel} as Input~4(c); Lemma~\ref{l:floor} and Lemma~\ref{l:weylinf} as Input~4(d); Theorem~B as
+Input~4(e); Theorem~A as Input~4(f); and Definition~\ref{d:SD}, Proposition~\ref{p:bessel} and Theorem~D as
+Input~9(a). Lemma~\ref{l:poly} is used in the unit on the rows, in the module on the separation of the lines.
+Theorem~D(ii),~(iii) and Corollary~\ref{c:bessel} are used in the proof of Theorem~D(iv).
+
+\sect{Notes on the formal text}{s:notes}
+\begin{enumerate}[leftmargin=1.6em,itemsep=3pt]
+\item \emph{Arguments that the census reads differently from Lean; to be settled by} \texttt{\#check} \emph{on a
+build.} In the three statements of Theorem~C(ii),~(iii) the set $\sT$ is bound by ``for all sufficiently
+large'' or ``there are arbitrarily large''; the census lists it as an argument, with its stability under
+conjugation, because a variable of the file has this name. The same holds for the stability of $\sT$ in
+Theorem~B and Corollary~\ref{c:bessel}, where $\sT$ is bound or absent. For Lemma~\ref{l:mod}(c) the census lists
+no hypothesis although the statement names the level; the note states the setting that Lean takes.
+\item \emph{Statements cut by the census.} The statements of Lemma~\ref{l:floor} and of Theorem~A contain local
+definitions at which the census ends the statement; they were read to their true end, with the second
+reader's table of corrected spans.
+\item \emph{The side.} The side is an instance argument of the coset amplitude and of Theorems A and~B, with
+the full side as default instance; the note writes it as the superscript~$\sigma$.
+\item \emph{Forms of the formal statements.} In Theorem~A the two sides are written with scalar
+multiplications, and the measure of the congruence subgroup is taken as a real number. In Theorem~B the family
+is indexed by the maps from \m{\{0,\dots,\varrho-1\}}, the element $k$ is given as an element of \m{\KS{S}}, and the
+limit is along all finite sets of finite places, not only the stable ones. In Definition~\ref{d:FL} the index
+set of the orthonormal part and the number of further pairs are fixed by the type of the level. In
+Lemma~\ref{l:mod}(b) the right side is written as the square of the inverse of \m{\gS{S}^{\ninf{E}}}.
+\item \emph{A hypothesis stronger than its use.} Proposition~\ref{p:count} assumes the invariance of $\mu$ under
+the images of all elements of~$B$; the proof uses it for elements of \m{B\cap\KS{S}} only. Note~F states its
+Input~4(c) with the invariance under the images of the elements of $B$ that are integral off~$\sT$, which is what
+the proof uses and is weaker than the formal hypothesis.
+\item \emph{Definition~\ref{d:SD}.} The formal definition gives several components of the filling data only
+through the proofs of their properties; they were read off these proofs. The identification of the group
+\m{\GRes{\SD{D}}} with \m{\sGD{D}}, used in Note~F, is not a statement of the modules of this note.
+\item \emph{Lemma~\ref{l:poly}.} Its formal name speaks of a class sum and a line multiplier; the statement is
+the polynomial identity given here, and the class sums appear where it is used.
+\item \emph{Points where the dossier's first reading was corrected by the second reader.} In
+Lemma~\ref{l:mod}(a) the summary of the proof gave the wrong power of the index; the statement is as above. In
+the proof of Theorem~C(i) the self-duality is the statement about the annihilator of~$O_{\sT}$, with the
+quantifier over~$r$. In Proposition~\ref{p:bessel} the bound \m{3a(D)} holds for each entry of the parameter
+(so \m{6a(D)} for a difference, before the division by~$2$). In Theorem~D(iv) the elementary fact used is
+\m{N\le N^k}.
+\item \emph{What was not re-derived.} The linear arithmetic of Theorem~D(iv); the constructions behind
+Proposition~\ref{p:bessel}; the axioms of a place structure in Theorem~C(i) other than the self-duality; in
+Lemma~\ref{l:poly}, that the order of a row index of positive sign is its number, which is taken from the last
+step of the formal proof. The measurability and summability conditions of the interchange of sum and integral
+in Theorem~A are verified in the formal text; the text above gives the bound that is used.
+\end{enumerate}
+
+\subhead{How this note was written.} From the structured proofs of the three modules in the third chunk of the
+unit's dossier, all of whose statements and claims a second reader had re-read; her remarks were taken into
+account. I read the three modules in the Lean text line by line and compared every statement of this note
+with it argument by argument; I read in the Lean text the definitions of the filling data, of admissibility, of
+Bessel systems and their type, of the character at~$\sT$, and of the notions of the unit on the rows that
+Lemma~\ref{l:poly} needs. The inputs are stated from the dossier's readings of their quoted statements.
+Arguments that are mine and shorter than the formal ones: the proof of Lemma~\ref{l:lift} by the identity for
+\m{x^*Jx-J}, the proof of Lemma~\ref{l:floor} in coordinates, and the organisation of the proof of Theorem~A in
+five steps. Nothing was compiled for this note. The program check of the unit's dossier covered \UnitSteps{}
+leaf steps of \UnitProofs{} proofs.
+
+\head{Appendix A. Concordance with the Lean artifact}
+{\raggedright The formal names of the objects and the letters of this note: \texttt{IsIntegralOff},
+\texttt{toPlaces}, \texttt{IsFillingLevel}, \texttt{cosetAmplitude} are \m{\intoff{S}{\sT}{x}}, \m{\loc{S}{\sT}},
+\m{\isFL{S}{\sT}{\cL}}, \m{\cosamp{S}{\sT}{c}{s}{c'}{\gamma}}; \texttt{Data.filling} is \m{\SD{D}}; \texttt{LocProd},
+\texttt{evalPlaces}, \texttt{adeleOfLocal}, \texttt{integralOff} are \m{\ET{\sT}}, \m{x\mapsto x_{\sT}},
+\m{y\mapsto\tilde y}, integrality off~$\sT$; \texttt{unitaryLevel} is \m{\KA{S}{u}} over the finite adeles and
+\m{\KT{S}{\sT}{u}} over \m{\ET{\sT}}; \texttt{latStabilizer}, \texttt{principalLevel}, \texttt{reduction},
+\texttt{reducedImage} are \m{\KS{S}}, \m{\KgS{S}}, \m{\redS{S}}, \m{\redim{S}{B}}; \texttt{termPosition},
+\texttt{termsOver}, \texttt{termsOfLink} are \m{\pos{S}{c}{c'}{\gamma}}, \m{\terms{S}{c}{s}{c'}}, \m{\tlink{S}{\Lambda}};
+\texttt{selfDualChar}, \texttt{charOnPlaces}, \texttt{unipotentChar} are $\psiS{S}$, \m{\charT{S}{\sT}},
+\m{\uchar{S}{u}}; \texttt{besselKernel}, \texttt{classCutoff}, \texttt{amplitude}, \texttt{amplitudeSum} are
+\m{\bker{\sigma}{S}{\gamma}{y}}, \m{\cutoff{S}{c}}, \m{\amp{\sigma}{S}{c}{c'}{\gamma}}, \m{\ampsum{\sigma}{S}{\Xi}{c}{s}{c'}};
+\texttt{unipOrder}, \texttt{unipotentMass}, \texttt{frameScaleSq} are \m{\uord{S}}, \m{\umass{\cL}},
+\m{\fscale{S}{\tau}{a}}; \texttt{padTuple}, \texttt{tailVector}, \texttt{weylElem} are \m{\pad{p}{t}},
+\m{\tailv{\pi}{t}{x}}, \m{\weyl{\varrho}{p}}; the element \texttt{σ} of the formal statements is $\gamma_1$, the set
+\texttt{T} is~$\sT$, the level \texttt{F} is~$\cL$; \texttt{paramW} and \texttt{Data.κ} are the doubled row
+parameter and the column weight. Two statements as the artifact has them:\par}
+\quoted{correlationsmuleqcosetAmplitude}
+\quoted{existshasSumcosetAmplitude}
+{\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}\setlength{\tabcolsep}{0pt}
+\begin{longtable}{@{}p{27mm}>{\raggedright\arraybackslash}p{68mm}p{34mm}r@{}}
+\textbf{In this note} & \textbf{Lean declaration} & \textbf{File} & \textbf{Lines}\\\midrule\endhead
+\ConcordanceRows
+\end{longtable}}
+
+\head{Notation}
+\begingroup\fontsize{8.6}{10.9}\selectfont\raggedright
+\setlength{\columnsep}{9mm}\setlength{\parskip}{0pt}
+\begin{multicols}{2}
+\nt{$E$, \m{x\mapsto\bar x}, $\tau$, $v$, $x_\tau$, \m{\ninf{E}}}{a CM field with its CM type, conjugation,
+infinite places, the image at a place, their number}
+\nt{$w$, $\bar w$, \m{\F_w}, $E_w$, $O_w$, \m{\AEf}, \m{\hO}, $\psi_f$}{a finite place, its conjugate, residue
+field, completion, integers; finite adeles, integral adeles, the standard character}
+\nt{$\sT$, $\sT_0$, $\sT'$, \m{\ET{\sT}}, $O_{\sT}$, $x_{\sT}$, $\tilde y$}{finite sets of places (of units for
+$\sT_0$), the product of completions, its integers, components, extension by zero}
+\nt{\m{\psiT{\sT}}, \m{\modT{\sT}}, \m{\gix{u}}, $\delta$, $\tau_0$, $\beta$, $A$}{character, modulus, generalised index, a
+skew unit, a trace-one element and skew elements of the place structure on \m{A=\ET{\sT}}}
+\nt{\m{\fs=(\varrho,\kappa,k_0)}, \m{\rh{\fs}}, \m{\kk{\fs}}, \m{\nn{\fs}}, \m{\rr{\fs}}}{a shape and its numbers; in
+proofs $\varrho$ abbreviates \m{\rh{\fs}}}
+\nt{\m{\Ix{\fs}}, $e_a$, $e^*_a$, $z$, $x_j$, \m{\mathfrak f_a}, $h$}{index set, basis vectors, the frame, the
+hermitian form}
+\nt{$T$, \m{\JT{T}}, \m{\GT{T}}, \m{\ZT{T}{x}}, \m{\UT{T}}, \m{\HT{T}}, \m{\ST{T}}, \m{\Hl{\varrho}{T}}}{a form, split Gram
+matrix, unitary group, frame Gram matrix, Bessel unipotent subgroup, the subgroup fixing the frame and its
+dual, Bessel subgroup, floor group; $\mathcal U$, $\mathcal H$, $\mathcal S$ in proofs}
+\nt{\m{\sd{u}}, \m{\weyl{\varrho}{p}}, \m{\pad{p}{t}}, \m{\tailv{\pi}{t}{x}}}{sum above the diagonal, Weyl element,
+padded sequence, tail vector}
+\nt{$S$, \m{\bS{S}}, \m{\NS{S}}, \m{\piS{S}}, \m{\qS{S}{i}}, \m{\gS{S}}, \m{\ChS{S}{i}}, \m{\vpS{S}}, \m{\KcolS{S}},
+\m{\BsysS{S}{\tau}}}{filling data and their components}
+\nt{\m{\Trat{S}{R}}, \m{\Tlat{S}{R}}, \m{\GS{S}{R}}, \m{\GFin{S}}, \m{\latB{S}}, \m{\rfin{S}}, \m{\rinf{S}}, \m{\incH{S}},
+\m{\fscale{S}{\tau}{a}}}{forms, groups, the lattice basis, the maps to the finite adeles, to infinity and from the
+unitary group of the columns, frame scales}
+\nt{\m{\KA{S}{u}}, \m{\KS{S}}, \m{\KgS{S}}, \m{\gid{S}}, \m{\redS{S}}, \m{\GRes{S}}, \m{\redim{S}{B}}, \m{\KT{S}{\sT}{u}}}{level
+groups, the idele of $g$, reduction, the finite group, reduced image, level groups at~$\sT$}
+\nt{$\psiS{S}$, \m{\charT{S}{\sT}}, \m{\uchar{S}{u}}, \m{\uord{S}}}{characters, unipotent character, the order}
+\nt{\m{\Cl{S}}, $c$, $c'$, $y_c$, \m{\hc{S}{c}}, \m{\pos{S}{c}{c'}{\gamma}}, \m{\terms{S}{c}{s}{c'}}, \m{\clU{S}{c}}}{classes,
+representatives, positions, terms, the unipotent lattice of a class}
+\nt{\m{\Zf{S}{\gamma}}, \m{\tdisc{S}{\gamma}}, \m{\link{\gamma}}, $\Lambda$, \m{\tlink{S}{\Lambda}}}{frame Gram matrix,
+term discriminant, links, the terms of a link}
+\nt{\m{\Bc{S}}, $\sigma$, \m{\besfn{\sigma}{S}{y}{i}}, $W^{\sigma}$, \m{\bker{\sigma}{S}{\gamma}{y}}, \m{\cutoff{S}{c}},
+\m{\amp{\sigma}{S}{c}{c'}{\gamma}}, \m{\ampabs{\sigma}{S}{c}{c'}{\gamma}}, \m{\ampsum{\sigma}{S}{\Xi}{c}{s}{c'}}}{Bessel
+coordinates, a side, Bessel functions, kernel, cutoffs, amplitudes, amplitude sums}
+\nt{\m{\intoff{S}{\sT}{x}}, \m{\loc{S}{\sT}}, \m{\isFL{S}{\sT}{\cL}}, \m{\cosamp{S}{\sT}{c}{s}{c'}{\gamma}}}{integral
+off~$\sT$, components at~$\sT$, filling levels, coset amplitude}
+\nt{$\cL$, \m{\gL{\cL}}, \m{\cgp{\cL}}, \m{\IsStd{\cL}}, \m{\gM{\cL}}, \m{\etab{j}}, \m{\fmod{\cL}{l}{g}},
+\m{\umass{\cL}}, \m{\hdens{\cL}{\varrho}{p}{1}}}{a level, its unit, congruence subgroup, standard levels, group
+measure, Heisenberg measures, floor modulus, unipotent mass, head density}
+\nt{\m{\phs{g}{y}}, \m{\IntG{\cL}}, $Z$, \m{\Cos{Z}}, $a_c$, \m{\bvec{Z}{y}}, \m{\corr{Z}{p}{l}},
+\m{\bcorr{\mu}{W}{\gamma}}}{finite Bessel function, intermediate groups, cosets, representatives, finite Bessel
+vector, correlation, Bessel correlation}
+\nt{$\gamma$, $\gamma_0$, $\gamma_1$, $\gamma_2$, \m{\gamma_{u,u'}}, \m{\gamma_{p,u,u'}}, $p$, $q$, $r$, $t$, $\omega$, $\zeta$, $d$}{rational
+elements, sequences of units, the corner entry, the vector and coefficient of \m{\gamma_1z}, a product}
+\nt{$k$, $l$, $l_0$, $l_1$, $x$, $\xi$, $P$, $u$, $u'$, $u_0$, $u_1$, $u_2$, $v'$, $w'$, $s$, $a$, $b$, $y$}{elements
+of the level groups and adelic elements of the proofs, cosets, a point at infinity}
+\nt{$L_p$, $\mathcal B$, $Q(u,u')$, \m{\mathsf r}, \m{\mathsf a_{u,u'}}, \m{\Sigma_c}, $C_s$, $k_s$, $B$, $\mu$, $J$,
+$e$, $G_{\sT}$}{the limits, a block, the condition, integrands, sums of cutoffs, sets, representatives, a
+subgroup, a measure, a Gram matrix, a difference, the group at~$\sT$}
+\nt{$P$, $D$, \m{E(D)}, \m{m(D)}, \m{r(D)}, \m{k(D)}, \m{\varrho(D)}, \m{f(D)}, \m{b(D)}, \m{a(D)}, \m{N(D)}, \m{\hat\pi(D)},
+\m{g_i(D)}, \m{\varpi(P)}, $N_0$}{parameters, admissible data and their numbers}
+\nt{\m{X_0(D)}, \m{\Colv{D}{0}}, \m{\fs(D)}, \m{\sGD{D}}, \m{\SD{D}}, $K_f$, \m{\varkappa_D}, \m{\mathsf{w}^{\mathrm{col}}_D},
+\m{\lambda}}{index set and level of the columns, the shape, the finite group, the filling data, integral points,
+row parameter, column weight, the doubled parameter}
+\nt{$\mathfrak B$, \m{\IsBes{\mathfrak B}{l}{w}}, \m{W^{\full}}, $A$, \m{\mathrm{Sch}}, \m{\rho}, \m{G_1(\fs)}}{a Bessel
+system, its type, the full Bessel function, an intertwiner, the Schur representation, the real group}
+\nt{\m{\kapS{S}{\tau}}, \m{c_{\mathrm{band}}}, \m{\bdeg{S}}, \m{\tailS{S}}, \m{\besE{S}}, \m{\mainE{S}}, \m{\codimF{S}},
+\m{\packC{S}}, \m{\mass{E}{r}}}{constants of the set-up, the mass}
+\nt{$\Delta$, $\Delta^{f,g}$, \m{x_{\tau,a,b}}, \m{\basisVec{D}{b}}, \m{\posEquiv{j}}, \m{\detRows{j}{i}{Y}{\tau}},
+\m{\linePolyCoords{j}{i}{Y}}, $Y_i$, $L^{+}$, $P_l$, $p_l$, $f$, $g$, $n$, $j$, $i$, $i'$}{the objects of
+Lemma~\ref{l:poly}}
+\nt{$m$, $m'$, $\iota$, $n$, \m{\zeta_A}, \m{\zeta_{\hO}}, $\ell^2(X)$, $X$, $R$, $\Xi$, $N$, $K$, $F$, $O$}{numbers of a
+level, zeta functions, \m{\CC^X}, a ring, a set of rational elements, and letters in names}
+\end{multicols}
+\endgroup
+
+\end{document}
