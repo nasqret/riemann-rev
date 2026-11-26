@@ -28,7 +28,7 @@
 ## The write-up, a working draft (26 November 2026)
 
 > [!IMPORTANT]
-> **The condensed proof read as mathematics, unit by unit.** 46 notes cover all 24 units of the formal argument, from the five final theorems down, in the order of the argument; classical results are quoted from the literature (a catalogue of 2,944 background declarations, 113 of them compared with their published statements). Every statement links to the Lean lines it renders, at the pinned commit. Made by AI agents and checked by programs, read again by an independent AI reader and by AI referees; **not yet refereed by a human**, and it does not say that RH is proved.
+> **The condensed proof read as mathematics, unit by unit.** 47 notes cover all 24 units of the formal argument, from the five final theorems down, in the order of the argument; classical results are quoted from the literature (a catalogue of 2,944 background declarations, 113 of them compared with their published statements). Every statement links to the Lean lines it renders, at the pinned commit. Made by AI agents and checked by programs, read again by an independent AI reader and by AI referees; **not yet refereed by a human**, and it does not say that RH is proved.
 >
 > **[Read the handout (PDF)](https://nasqret.github.io/riemann-rev/writeup/handout.pdf)** · [catalogue of quoted results (PDF)](https://nasqret.github.io/riemann-rev/writeup/catalogue-full.pdf) · [the folder: structured proofs, LaTeX sources, catalogue](writeup/) · **[guide for AI agents](writeup/AGENTS.md)**
 
