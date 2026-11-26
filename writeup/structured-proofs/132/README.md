@@ -1,6 +1,6 @@
 # Unit 132: The analysis at the real places: tower measures, gauges, open-cell charts and Plancherel bounds
 
-Merged from the chunks 132-a, 132-b by `book/plan/merge_chunks.py` (2026-11-26 10:19 UTC). Each chunk was read by its own reader (`book/plan/SPLIT.md`); their notes follow.
+Merged from the chunks 132-a, 132-b by `book/plan/merge_chunks.py` (2026-11-26 15:54 UTC). Each chunk was read by its own reader (`book/plan/SPLIT.md`); their notes follow.
 
 ## Chunk 132-a
 

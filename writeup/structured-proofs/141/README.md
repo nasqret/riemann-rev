@@ -39,13 +39,15 @@ lines with their owning units; 9 Mathlib facts under `ambient_inputs` (statement
 not in this workspace). Lemma triage: 83 argument, 45 one-step, 28 automation, 4 computation.
 
 ## What I am unsure of
-- **Binders** follow the text reading of `rb.py signature`; nothing was compared with `#check @Name`. 78 arguments
-  in 42 members are marked "[listed by the text reading only; Lean does not take this argument: …]" (section
-  variables whose names occur only bound, as fields such as `D.w`, or as named arguments `(a := …)`); 7 duplicates
-  come from `variable (x) in` prefixes (ArrowPair, IsSplitLevel.diagN, translateSum, coverMultiplicity). 14 members
-  carry `binders_note`: arguments Lean takes that the text reading misses (the split level instance through
-  `liftFn`/`diagNInv`/`embedGL`; `p`, `[Fact p.Prime]`, `[PadicPlace p]` through `ιₚ`; ε and `[Frame 𝔰 ε]` in
-  `Filling.Fits.*`; E, X, X′, X₀ after the statement's `let` in `integral_theta_eq_lift₂`).
+- **Binders** follow the text reading of `rb.py signature` and await comparison with `#check @Name`.
+  Across 42 members, 80 entries are marked `listed by the text reading only`. Of these, 78 are section variables that the
+  reader expects Lean to omit. Two further entries in `IsAdmissibleEval` flag the section type `q` and its
+  `Fintype q` instance for comparison with the elaborated signature. Seven duplicate entries in four members
+  come from `variable (x) in` prefixes (ArrowPair, IsSplitLevel.diagN, translateSum, coverMultiplicity).
+  Fifteen members carry a `binders_note` about arguments the text reading misses. Examples include the split-level
+  instance through `liftFn`/`diagNInv`/`embedGL`, `p`, `[Fact p.Prime]` and `[PadicPlace p]` through `ιₚ`,
+  ε and `[Frame 𝔰 ε]` in `Filling.Fits.*`, E, X, X′ and X₀ in `integral_theta_eq_lift₂`, and P and D in
+  `Data.exists_stage_cut`. See `unit.json` under `notes.binders` for the current account.
 - **Claims of long rewrite and simp chains** state the mathematical effect read from the lemma names and the shape
   of the terms, not from running Lean. Sample these first: `ArrowPair.zeroTerm_splitting_tripleWeil` (steps 4–11),
   `exists_isAdmissibleEval_std` (14–24), `isAdmissibleEval_finEval` (8–15),

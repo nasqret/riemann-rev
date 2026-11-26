@@ -79,14 +79,12 @@ step claims of the long `simp`/`grw`/`grind` blocks were reconstructed from lemm
 Lean. The least certain are:
 * `IsTwoFactor.exists_near_one` 14: the bound Re tr c − Re tr T ≤ (‖T‖ + ‖c‖)·‖c‖ is right (the closing `nlinarith`
   needs it), but which side of the `trans_eq'` identity is which could not be checked.
-* `IsTwoFactor.laplace_method`:
-  * 6.1: what `le_total _ (β⁻¹ ^ _)` compares is left to unification; since 2026-11-26 the claim gives a reading
-    from the shape of the rewrites (g(s)^(8N) against β⁻¹^(50N)) and the second reader's alternative (g(s) against
-    β⁻⁵, a second-reader message #4), both labelled;
-  * 6.1.2: the constant in T (read as T = N·log β, the value compatible with the default proofs of the hypotheses of
-    `dsCoeff_gaussian_shape`; the second reader's 0.9N·log β is not, see `CORRECTIONS.md`);
-  * 6.1.2.4.1.2: how conj ψ_k is handled through −k;
-  * 9: the two numeric side goals.
+* `IsTwoFactor.laplace_method` 6.1 compares $g(s)^{8N}$ with $\beta^{-50N}$. The comparison is
+  reconstructed from the two power rewrites at line 158. The Gaussian scale is $T=N\log\beta$.
+  The near-diagonal estimate in line 172 has error $16e^{-100T}$. Step 6.1.2 explains the passage to the
+  global weighted error. The conjugation used in step 6.1.2.4.1.2 is the identity `dsCoeff_neg`
+  in `Lib/DiscreteSeries/FlenstedJensen/PsiBasic.lean`, line 45. Steps 9 and 12 give the two numerical
+  comparisons for absorbing the measure term. The implicit arguments at line 158 await a native goal trace.
 * `exists_principalMinor_eq_exp` 21–25: `on_goal 7` and `on_goal 4` are read as the postponed hypotheses of the
   second and third applications of the compression lemma (the order of postponed goals was inferred).
 * `norm_poincare_period_sub_le`: 2.2–2.6 (the dominating function); 12.2–12.6 (which postponed goal each step closes);

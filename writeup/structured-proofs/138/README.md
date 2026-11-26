@@ -1,6 +1,6 @@
 # Unit 138: The choice of the twists: Galois representations of lifts, Selmer groups made short by one anticyclotomic twist, and congruence bounds by Ribet's method
 
-Merged from the chunks 138-a, 138-b, 138-c by `book/plan/merge_chunks.py` (2026-11-26 10:25 UTC). Each chunk was read by its own reader (`book/plan/SPLIT.md`); their notes follow.
+Merged from the chunks 138-a, 138-b, 138-c by `book/plan/merge_chunks.py` (2026-11-26 15:53 UTC). Each chunk was read by its own reader (`book/plan/SPLIT.md`); their notes follow.
 
 ## Chunk 138-a
 

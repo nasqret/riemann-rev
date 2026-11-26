@@ -1,6 +1,6 @@
 # Unit 148: Translates of Poincaré series fill the rows: a Petersson-type second moment along a Bessel subgroup
 
-Merged from the chunks 148-a, 148-b, 148-c, 148-d by `book/plan/merge_chunks.py` (2026-11-26 09:57 UTC). Each chunk was read by its own reader (`book/plan/SPLIT.md`); their notes follow.
+Merged from the chunks 148-a, 148-b, 148-c, 148-d by `book/plan/merge_chunks.py` (2026-11-26 15:45 UTC). Each chunk was read by its own reader (`book/plan/SPLIT.md`); their notes follow.
 
 ## Chunk 148-a
 
