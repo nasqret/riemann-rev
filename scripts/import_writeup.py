@@ -27,7 +27,9 @@ import hashlib
 import json
 import re
 import shutil
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -53,6 +55,30 @@ def copy_text(src: Path, dst: Path) -> None:
         sys.exit(f"import_writeup: {src} contains a private path ({m.group(0)!r}); not imported")
     dst.parent.mkdir(parents=True, exist_ok=True)
     dst.write_text(s, encoding="utf-8")
+
+
+def check_public_dossiers(ws: Path, config: dict, units: list[dict]) -> None:
+    """Run Readback on the exported bytes with the same Lean source and unit membership."""
+    with tempfile.TemporaryDirectory() as tmp:
+        workspace = Path(tmp)
+        reading = workspace / "reading"
+        reading.mkdir()
+        source = (ws / Path(config["artifact"]["path"]).expanduser()).resolve()
+        settings = {**config, "artifact": {**config["artifact"], "path": str(source)}}
+        (workspace / "readback.json").write_text(json.dumps(settings), encoding="utf-8")
+        for rel in ("census.json", "units.proposal.json", "ledger/units.json", "statement-ranges.json"):
+            original = ws / "reading" / rel
+            if original.is_file():
+                (reading / rel).parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(original, reading / rel)
+        exported = OUT / "structured-proofs"
+        (reading / "units").symlink_to(exported.resolve(), target_is_directory=True)
+        for unit in units:
+            uid = unit["unit"]
+            subprocess.run([sys.executable, "-B", str((ws / "tools/rb.py").resolve()), "check", uid],
+                           cwd=workspace, check=True)
+            check = json.loads((exported / uid / "check.json").read_text(encoding="utf-8"))
+            unit["check_problems"] = len(check["problems"])
 
 
 def main() -> int:
@@ -92,16 +118,15 @@ def main() -> int:
         if not U.is_dir() or not re.fullmatch(r"\d+", U.name) or not (U / "unit.json").exists():
             continue
         dst = OUT / "structured-proofs" / U.name
-        for f in ("unit.json", "check.json", "README.md", "CORRECTIONS.md"):
+        for f in ("unit.json", "README.md", "CORRECTIONS.md"):
             if (U / f).exists():
                 copy_text(U / f, dst / f)
         for p in sorted((U / "proofs").glob("*.json")):
             copy_text(p, dst / "proofs" / p.name)
         D = json.loads((U / "unit.json").read_text(encoding="utf-8"))
-        chk = json.loads((U / "check.json").read_text(encoding="utf-8")) if (U / "check.json").exists() else {}
         units.append({"unit": U.name, "title": D.get("title"), "members": len(D.get("members") or []),
-                      "structured_proofs": len(list((U / "proofs").glob("*.json"))),
-                      "check_problems": len(chk.get("problems") or []) if isinstance(chk, dict) else None})
+                      "structured_proofs": len(list((U / "proofs").glob("*.json")))})
+    check_public_dossiers(WS, rb, units)
 
     # the catalogue and the second reader's verdicts
     cat = []
