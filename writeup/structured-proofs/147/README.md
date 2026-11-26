@@ -1,6 +1,6 @@
 # Unit 147: The exchange identity: theta integrals of complementary rank agree up to a constant, and cruder forms complete a family to a basis in the lower bound
 
-Merged from the chunks 147-a, 147-b, 147-c by `book/plan/merge_chunks.py` (2026-11-26 10:27 UTC). Each chunk was read by its own reader (`book/plan/SPLIT.md`); their notes follow.
+Merged from the chunks 147-a, 147-b, 147-c by `book/plan/merge_chunks.py` (2026-11-26 19:36 UTC). Each chunk was read by its own reader (`book/plan/SPLIT.md`); their notes follow.
 
 ## Chunk 147-a
 
