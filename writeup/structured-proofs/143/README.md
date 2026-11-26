@@ -11,7 +11,7 @@ Merged from the chunks 143-a, 143-b by `book/plan/merge_chunks.py` (2026-11-26 0
 > **2026-11-26, second-reading corrections (a second-reader message and the note writer's findings):** applied through the generator by the correction reader (texts, step claims, Lean-basis argument lists of `exists_modKernel_integral_bound` and `Data.lineMultiplier_integral_and_small`, `literature` records on the imports that cite named classical results, from a second-reader message/0011/0012/0017/0019/0024/0032). See `CORRECTIONS.md` of the merged unit.
 
 
-Reader: astra's stand-in (a Claude reader, 26 Nov 2026). Artifact `lsernau/grh-lean` at `72fead10`, edition
+Reader: the second reader's stand-in (a Claude reader, 26 Nov 2026). Artifact `lsernau/grh-lean` at `72fead10`, edition
 `grh-compact`, read from the source only (nothing built here). Gate: `python3 tools/rb.py check 143-a` exits 0
 (141 of 141 statements at their lines, 53 structured proofs, 375 steps, 350 leaves of at most 8 lines, 32 of 32
 written types in their own steps, 120 imports quoted, 1723 arguments accounted for).

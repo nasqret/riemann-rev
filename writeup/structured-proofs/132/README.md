@@ -11,7 +11,7 @@ Merged from the chunks 132-a, 132-b by `book/plan/merge_chunks.py` (2026-11-26 1
 > **2026-11-26, second-reading corrections (a second-reader message):** applied through the generator by the correction reader: `RealPlaceSizes.complexLevel`, the definition the census misses, is recorded below (Notes) and in the texts of the members that use it; `literature` records on the imports that cite named classical results (a second-reader message/0011/0012/0017/0019/0024/0032, `gen/literature.json`). See `CORRECTIONS.md` of the merged unit.
 
 
-Reader: a Claude reader standing in for astra (coordinator's split, `book/plan/SPLIT.md`). Edition `grh-compact` at
+Reader: a Claude reader standing in for the second reader (coordinator's split, `book/plan/SPLIT.md`). Edition `grh-compact` at
 `72fead102f663d5c7a407964a13dc0cf9d977207`. Nothing was built: every statement about what Lean does is read from the
 source, and claims are labelled accordingly below.
 
@@ -111,7 +111,7 @@ check 132-a`.
 > **2026-11-26, second-reading corrections (a second-reader message):** applied through the generator by the correction reader: `RealPlaceSizes.complexLevel`, the definition the census misses, is recorded below (Notes) and in the texts of the members that use it; `literature` records on the imports that cite named classical results (a second-reader message/0011/0012/0017/0019/0024/0032, `gen/literature.json`). See `CORRECTIONS.md` of the merged unit.
 
 
-Reader: a Claude reader standing in for astra (coordinator's split, `book/plan/SPLIT.md`; chunk claimed by `mkdir` under
+Reader: a Claude reader standing in for the second reader (coordinator's split, `book/plan/SPLIT.md`; chunk claimed by `mkdir` under
 rule 7 after 132-a passed). Edition `grh-compact` at `72fead102f663d5c7a407964a13dc0cf9d977207`. Nothing was built: every
 statement about what Lean does is read from the source.
 

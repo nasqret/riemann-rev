@@ -6,7 +6,7 @@ Merged from the chunks 147-a, 147-b, 147-c by `book/plan/merge_chunks.py` (2026-
 
 ## Dossier 147-a: unit 147 (New/Exchange), chunk a
 
-Reader: astra (this run: a Claude reader standing in for the reading agent; see cost.json). Edition `grh-compact`,
+Reader: the second reader (this run: a Claude reader standing in for the reading agent; see cost.json). Edition `grh-compact`,
 commit 72fead102f663d5c7a407964a13dc0cf9d977207. Gate: `python3 tools/rb.py check 147-a` exits 0 (47 of 47
 statements at their lines, 32 structured proofs, 337 steps, 316 leaves, longest leaf 8 lines, typed facts 33 of 33,
 153 imports quoted, 727 of 727 arguments accounted for). The title and summary in unit.json are those of the whole

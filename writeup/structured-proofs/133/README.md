@@ -5,7 +5,7 @@
 > four imports carry the second reader's `literature` verdict, and one import was added (`Space.firstMinimum_le_one`,
 > 174 imports now). The norm conventions below are confirmed by the second reader. See `CORRECTIONS.md`.
 
-Reader: a Claude reader standing in for astra. Edition `grh-compact` at `72fead102f663d5c7a407964a13dc0cf9d977207`.
+Reader: a Claude reader standing in for the second reader. Edition `grh-compact` at `72fead102f663d5c7a407964a13dc0cf9d977207`.
 Nothing was built. Every statement about what Lean does is read from the source, and the labels below say so.
 
 Unit 133 is `New.DiscreteSeries.{TwoFactorSetup, GaussianShape, MinorExpansion, RestrictionLemma, BesselExistence}`.
