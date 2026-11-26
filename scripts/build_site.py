@@ -99,6 +99,10 @@ def home(has_book: bool) -> str:
     chapters = len(re.findall(r"^\s*-?\s*(?:file|root):", (ROOT / "book" / "_toc.yml").read_text(encoding="utf-8"), flags=re.M))
     repo = f"https://github.com/{REPO}"
     cards = [
+        ("ok", "The condensed proof", "25 November 2026: the same five theorems in 112,827 lines instead of 17.4 million, "
+                                      "24,850 of them for the argument itself. What happened, how the argument goes, "
+                                      "and what has been checked, with links into the Lean source.",
+         "summary/grh-condensed-summary.pdf", "Read the note (PDF)"),
         ("arith", "The atlas", f"An interactive map: the {len(comps)} components, a guided tour, the graph of "
                                f"{n_decl} declarations with links to their Lean source, illustrated ideas and the "
                                "verification ledger.", "atlas/", "Open the atlas"),
@@ -156,13 +160,19 @@ def home(has_book: bool) -> str:
     in standard mathematical language, and record who has checked what.</p>
     <p class="status"><b>{esc(st["headline"])}</b><br><span>Record of {esc(utc(st["as_of"]))}; the mathematics has not
     yet been refereed.</span></p>
-    <div class="cta"><a class="btn" href="atlas/">Open the atlas</a><a class="btn ghost" href="guide/proof-guide.pdf">Read the guide</a>
+    <div class="cta"><a class="btn" href="summary/grh-condensed-summary.pdf">The condensed proof (note)</a><a class="btn ghost" href="atlas/">Open the atlas</a><a class="btn ghost" href="guide/proof-guide.pdf">Read the guide</a>
     <a class="btn ghost" href="{repo}#readme">Status dashboard</a></div>
   </div>
 </header>
 <main class="wrap">
   <p class="note"><b>What this site is.</b> A map of an announced proof and a record of who has checked what. It is not
   a proof, not a referee report and not an endorsement, and it is not an official companion to the announcement.</p>
+  <p class="note"><b>New, 25&nbsp;November&nbsp;2026: a condensed proof.</b> A rewriting of the proof by Luke Sernau,
+  colleagues at Anthropic and Claude states the same five theorems in 112,827 lines of Lean instead of 17.4 million;
+  the argument itself takes 24,850 lines of code, the background is separated and referenced. Machines have checked it;
+  no mathematician has read it yet. <a href="summary/grh-condensed-summary.pdf">Read our note</a> ·
+  <a href="https://github.com/lsernau/grh-lean">the repository</a> ·
+  <a href="https://nasqret.github.io/riemann-proof-atlas/">the proof atlas</a></p>
   <h2>Where to go</h2>
   <div class="grid">
 {card_html}
@@ -217,11 +227,12 @@ def main() -> int:
         return 1
     if OUT.exists():
         shutil.rmtree(OUT)
-    for sub in ("atlas", "guide", "blueprint", "digests"):
+    for sub in ("atlas", "guide", "blueprint", "digests", "summary"):
         (OUT / sub).mkdir(parents=True)
     (OUT / ".nojekyll").write_text("", encoding="utf-8")                 # the book has folders that begin with "_"
     (OUT / "atlas" / "index.html").write_text(site_atlas(), encoding="utf-8")
-    for rel in ("guide/proof-guide.pdf", "guide/proof-guide.gif", "blueprint/atlas-blueprint.pdf"):
+    for rel in ("guide/proof-guide.pdf", "guide/proof-guide.gif", "blueprint/atlas-blueprint.pdf",
+                "summary/grh-condensed-summary.pdf"):
         shutil.copy2(ROOT / rel, OUT / rel)
     (OUT / "digests" / "editions").mkdir(exist_ok=True)
     for slug in ("tower-bound", "local-nilpotence", "layer-descent"):

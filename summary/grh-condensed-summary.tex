@@ -1,0 +1,217 @@
+% !TEX program = lualatex
+% A summary of the condensed Lean proof of RH and GRH for Dirichlet L-functions (lsernau/grh-lean 72fead1),
+% for a conference talk on 27 November 2026. Private until the owner decides. Every number was measured on the
+% pinned commit (scratchpad census of 26 November 2026); every mathematical statement is read from the Lean source
+% or from the authors' own guides (GUIDE.md, INDEX.md, the header of src/New/Main.lean).
+\documentclass[11pt,a4paper]{article}
+\usepackage[a4paper,hmargin=30mm,top=20mm,bottom=24mm,footskip=11mm]{geometry}
+\usepackage{fontspec}
+\setmainfont{LibertinusSerif}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,BoldFont=*-Semibold,BoldItalicFont=*-SemiboldItalic]
+\setsansfont{Inter}[Extension=.otf,UprightFont=*-Regular,BoldFont=*-SemiBold]
+\setmonofont{JetBrainsMono}[Extension=.otf,UprightFont=*-Regular,BoldFont=*-SemiBold,Scale=MatchLowercase,RawFeature={-calt;-liga}]
+\usepackage{amsmath,amsthm}
+\usepackage[math-style=TeX]{unicode-math}
+\setmathfont{LibertinusMath-Regular.otf}
+\usepackage{xcolor,tikz,booktabs,enumitem,microtype}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds,calc}
+\usepackage[colorlinks=true,urlcolor=lean,linkcolor=lean]{hyperref}
+\usepackage{needspace,array}\emergencystretch=3em
+\definecolor{ink}{HTML}{0F172A}\definecolor{inksoft}{HTML}{475569}\definecolor{rule}{HTML}{CBD5E1}
+\definecolor{arith}{HTML}{C2410C}\definecolor{est}{HTML}{7C3AED}\definecolor{ana}{HTML}{0891B2}\definecolor{lean}{HTML}{3730A3}
+\newcommand{\Q}{\mathbb{Q}}\newcommand{\Z}{\mathbb{Z}}\newcommand{\C}{\mathbb{C}}
+\newcommand{\code}[1]{{\ttfamily\small\color{lean}#1}}
+\newcommand{\lk}[2]{\href{#1}{\code{#2}}}
+\newcommand{\B}{https://github.com/lsernau/grh-lean/blob/72fead102f663d5c7a407964a13dc0cf9d977207/grh-compact/}
+\newcommand{\RR}{https://github.com/lsernau/grh-lean/blob/72fead102f663d5c7a407964a13dc0cf9d977207/}
+\newcommand{\head}[1]{\par\addvspace{11pt}\Needspace{6\baselineskip}\noindent{\large\bfseries\color{ink}#1}\par\nopagebreak\vspace{2pt}}
+\newcommand{\statusbox}[2]{\par\addvspace{6pt}\noindent\fcolorbox{#1!35!white}{#1!4!white}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{#2}}\par\addvspace{6pt}}
+\setlength{\parindent}{0pt}\setlength{\parskip}{4.5pt plus 1pt}
+\setlist{topsep=2pt,itemsep=2pt,leftmargin=1.6em}
+\linespread{1.06}
+\pagestyle{plain}
+
+\begin{document}\color{ink}
+{\sffamily\bfseries\footnotesize\color{lean}RIEMANN-REV · PUBLIC NOTE · 26 NOVEMBER 2026}\par\vspace{4pt}
+{\LARGE\bfseries The condensed Lean proof of RH and GRH:\\ what happened, how it goes, what is checked}\par\vspace{5pt}
+{\itshape\color{inksoft}A reading of \href{https://github.com/lsernau/grh-lean/tree/72fead102f663d5c7a407964a13dc0cf9d977207}{\code{lsernau/grh-lean}} at commit \code{72fead1} (25 November 2026), a shorter rewriting of
+L.\,Alpöge's announced proof. Part of \href{https://github.com/nasqret/riemann-rev}{riemann-rev}; see also the
+\href{https://nasqret.github.io/riemann-proof-atlas/}{proof atlas}.\par}
+\vspace{6pt}{\color{rule}\hrule height .6pt}\vspace{4pt}
+
+\statusbox{lean}{\small\textbf{Status in one paragraph.} The repository contains a Lean~4 proof, written by Claude (AI) after
+Alpöge's proof, of the Riemann hypothesis and of GRH for all Dirichlet $L$-functions, stated in Mathlib's terms. Its
+authors report that Lean's kernel accepts it with the three standard axioms only, that three independent proof checkers
+accept an export of it, and that the tool Comparator accepts it against a statement-only challenge file; the community
+repository that adopted it builds every commit with checks for \code{sorry} and extra axioms, and the runs that have finished have passed. We
+found no \code{sorry}, no axiom and no construct that bypasses the kernel in its source. \textbf{No mathematician has
+read the proof through}, and no paper accompanies it; the authors say so themselves. Our own replay of the build is
+under way. This note is a map of the argument as the code states it, not a verification of it.}
+
+\head{1. What happened}
+{\small\begin{tabular}{@{}>{\raggedright\arraybackslash}p{24mm}>{\raggedright\arraybackslash}p{122mm}@{}}\toprule
+20 Nov 2026 & Levent Alpöge announces proofs of RH and of GRH for Dirichlet characters, written with the AI system
+Claude: a \href{https://alpo.ge/remark.pdf}{four-page note} and a Lean archive of 175{,}187 files and 17.4 million lines.
+Independent kernel replays of that archive are recorded on the
+\href{https://github.com/nasqret/riemann-rev\#status-dashboard}{riemann-rev dashboard}.\\
+20 Nov & The community repository
+\href{https://github.com/leanprover-community/riemann-hypothesis}{\code{leanprover-community/riemann-hypothesis}} opens
+and starts to clean up the archive.\\
+25 Nov, 20:38 UTC & \href{https://github.com/lsernau/grh-lean}{\code{lsernau/grh-lean}} appears: ``a shorter version,
+produced in collaboration with my colleagues at Anthropic, and Claude'' (Luke Sernau). Two editions of the same five
+theorems: a readable one of 477{,}124 lines and a compact one of 112{,}827 lines. ``No mathematician has read it
+through.''\\
+25 Nov, 22:24 UTC & The community repository moves its main branch to the readable edition and from then on builds
+every commit, failing on \code{sorry} or on any axiom beyond the standard three.\\
+26 Nov & This note. riemann-rev starts a complete human-readable write-up of the compact edition.\\\bottomrule
+\end{tabular}}
+
+\head{2. How large the simplification is}
+
+{\small\begin{tabular}{@{}>{\raggedright\arraybackslash}p{47mm}rr>{\raggedright\arraybackslash}p{58mm}@{}}\toprule
+edition & Lean files & lines & remark\\\midrule
+Alpöge's submission, 20 Nov (\href{https://github.com/Deicyde/riemann-hypothesis/tree/40e56bab026552e089d7afcfeff08d2defb9c005}{\code{40e56bab}}) & 175{,}187 & 17.4 million & the announced artifact\\
+readable edition \lk{\RR grh}{grh/}, 25 Nov & 803 & 477{,}124 & proof part \code{New}: 192{,}000 lines\\
+compact edition \lk{\RR grh-compact}{grh-compact/}, 25 Nov & 794 & 112{,}827 & \textbf{proof part \code{New}: 24{,}850 lines of code,
+1{,}571 theorems}\\\bottomrule
+\end{tabular}}\par
+The two editions of \code{grh-lean} have byte-identical statements and build settings (Lean v4.35.0, Mathlib
+\code{56a00585}); some steps use different arguments. Each is split into \code{Lib} (background results ``classed as
+known in the literature'' that Mathlib lacks, with their proofs; it never imports \code{New}) and \code{New} (the
+argument). Every number in the table was counted on the pinned commits.
+
+\textbf{What changed in five days.} The formal text shrank from 17.4 million lines to 112{,}827, a factor of about 150.
+The part that is specific to this proof is 24{,}850 lines of code in 219 files; the background that Mathlib lacks
+(51{,}280 lines) is separated from it and labelled with references to the literature; the five final statements did
+not change and are checked by machine in each edition. Both the announced proof and its condensation were written by
+an AI system under human direction, and the condensation, a rewriting of one machine-written proof into another a
+hundred and fifty times smaller, took days. The proof is now small enough for a team of experts to read. Until
+someone does, it is a claim that machines have checked, not a theorem that mathematicians have accepted.
+
+\head{3. The theorems and the trust base}
+The file \lk{\B src/Statements.lean}{src/Statements.lean} (16 lines, imports only Mathlib) defines four statements, and \lk{\B src/Main.lean}{src/Main.lean}
+proves five theorems without hypotheses:
+\begin{itemize}
+\item \code{riemannHypothesis}: Mathlib's \code{RiemannHypothesis} --- every zero $s\ne1$ of $\zeta$ other than
+$-2,-4,\dots$ has $\operatorname{Re}s=\tfrac12$; and the same statement spelled out;
+\item for every modulus $N\ge1$ and every Dirichlet character $\chi$ mod $N$, primitive or not:
+$L(s,\chi)\ne0$ for $\operatorname{Re}s>\tfrac12$ (except $s=1$ for the principal character); every zero with
+$0<\operatorname{Re}s<1$ has $\operatorname{Re}s=\tfrac12$; and the case of primitive $\chi$.
+\end{itemize}
+To trust the result one reads these 16 lines and the five statements, and trusts Lean's kernel and Mathlib's
+definitions of $\zeta$, of $L(s,\chi)$ and of \code{RiemannHypothesis}. Everything else is checked by the kernel; the
+tool Comparator checks the five theorems against \lk{\B Challenge.lean}{Challenge.lean}, which states them with \code{sorry}.
+
+\Needspace{24\baselineskip}\head{4. The strategy in one picture}
+\begin{center}\small
+\begin{tikzpicture}[node distance=5mm and 6mm,>={Stealth[length=2.4mm]},
+  b/.style={draw=#1!55!white,fill=#1!5!white,rounded corners=2pt,align=center,inner sep=4pt,text width=34mm,font=\footnotesize}]
+\node[b=ana] (grh) {\textbf{GRH, RH}\\ (functional equation)};
+\node[b=ana,below=of grh] (zf) {\textbf{no zero in} $\operatorname{Re}s>\tfrac12$\\ for all $\chi$ mod $q_0$};
+\node[b=ana,below=of zf] (os) {\textbf{one-sided bound}\\ $R_{q_0}(x)\le x^{-1/2+\varepsilon}$};
+\node[b=est,below=of os] (star) {\textbf{main inequality} $(\star)$\\ $m\cdot\mathrm{rem}\le f\,a\,(\log b)^5$, $m\approx\sqrt x$};
+\node[b=arith,below left=6mm and -8mm of star] (up) {\textbf{upper bound}\\ Theorem A: short forms\\ Theorem B: enough forms};
+\node[b=arith,below right=6mm and -8mm of star] (low) {\textbf{lower bound}\\ Theorem C: integral forms are long};
+\draw[->] (zf)--(grh); \draw[->] (os)--node[right,font=\scriptsize]{Landau's positivity criterion}(zf);
+\draw[->] (star)--node[right,font=\scriptsize]{choice of the second scale}(os);
+\draw[->] (up)--(star); \draw[->] (low)--(star);
+\node[font=\scriptsize,color=inksoft,align=center,anchor=north] at ($(up.south)!.5!(low.south)+(0,-2mm)$) {the main amount $h_{\mathrm{main}}$ appears in both bounds and cancels};
+\end{tikzpicture}\end{center}
+
+\head{5. Step 1: from a one-sided bound for primes to a zero-free half-plane}
+Fix $q_0$ divisible by $18480=16\cdot3\cdot5\cdot7\cdot11$ and a prime $d\equiv q_0/2-1\pmod{q_0}$ (so
+$d\equiv7\pmod8$); let $K=\Q(\sqrt{-d})$ with quadratic character $\chi_K$. The weights
+$\lambda(n)=\Lambda(n)\,(1-\chi_K(n))\ge0$ for $n\equiv1\pmod{q_0}$ (and $0$ otherwise) count the primes that do not split
+in~$K$. The remainder is
+\[
+R_{q_0}(x)=\sum_{n\le x}\lambda(n)\Bigl(\frac1n-\frac1x\Bigr)-\frac{\log x}{\varphi(q_0)}-c_{q_0},
+\]
+with an explicit constant $c_{q_0}$ built from logarithmic derivatives of $L$-functions at $1$. \textbf{Criterion}
+(\lk{\B src/New/Endgame/OneSidedCriterion.lean\#L28}{entireL\_ne\_zero\_of\_primeError\_le}): if $\beta>\tfrac12$ and, for the primes $d$ of a unit class forcing
+$d\equiv7\pmod 8$, $R_{q_0}(x)\le x^{\beta-1}$ for all large $x$, then no $L(s,\chi)$ with $\chi$ mod $q_0$ vanishes in
+$\operatorname{Re}s>\beta$. Only an \emph{upper} bound is needed, because the weights are non-negative: this is
+Landau's theorem on Dirichlet integrals with a positive integrand, in the form of a one-sided criterion (Landau 1905;
+Montgomery--Vaughan §15.1; M.\,Suzuki 2024); real zeros are avoided by the choice of~$d$. Every modulus divides some
+admissible $q_0$, so all Dirichlet characters are covered.
+
+\head{6. Step 2: the main inequality and why $\sqrt x$}
+At a large scale $x$ the proof builds \emph{data}: further scales $x_1$ and $b$ with $(\log b)^{100}\le x$,
+$x^{10^6}\le x_1$, $x_1^{10^6}\le b$; a number $m\in[\sqrt x,2\sqrt x]$ of theta lifts; ranks $r\in[x^5,3x^5]$ and
+$k=r+1-m$; a CM field $E=K(\zeta)$ with about $x^{11}$ distinguished infinite places (``tops''); a derivative order
+$a\approx x\,b$ and a prime level~$N$. The main inequality (\lk{\B src/New/Main.lean\#L121}{star\_inequality}) reads
+\[
+m\cdot\mathrm{rem}\ \le\ f\,a\,(\log b)^5 ,
+\]
+where $\mathrm{rem}$ is the prime sum at the tops less its expected value and $f$ the number of infinite places.
+In the authors' words, ``the saving $x^{-1/2}$ is $1/m$'': normalised by the number of places and the order~$a$,
+the remainder is at most about $(\log b)^6/m$, with $\log b$ about $x^{\varepsilon}$. A good choice of the second scale $x_1$ in a long window
+(\lk{\B src/New/Endgame/OneSidedCriterion.lean\#L73}{IsPolar.exists\_window\_sub\_mul\_le}) then gives $R_{q_0}(x)\le x^{8\varepsilon-1/2}$
+(\lk{\B src/New/Main.lean\#L149}{eventually\_primeError\_le\_rpow}), and Step~1 gives GRH (\lk{\B src/New/Main.lean\#L174}{New.grh}).
+
+\head{7. Step 3: one covolume bounded from both sides}
+The objects are automorphic forms on unitary groups over~$E$. \emph{Columns} are algebraic modular forms on a definite
+$U(k)$; \emph{rows} (the target forms) are cusp forms on an indefinite $U(r)$. Poincaré series map columns to rows, and a
+chain of $m$ theta lifts $Y_0\to Y_1\to\dots\to Y_m$ with ranks growing by $t+1$, $t=5r$, is twisted by an anticyclotomic
+character $\vartheta$ of $U(1)$. For a family of target forms one measures the logarithm of the \emph{covolume} of its
+lifts (a Gram determinant, at every complex conjugate) and its \emph{index} (how far the lifts are from integral, prime by
+prime).
+\begin{itemize}
+\item \textbf{Theorem A (short forms)}, \lk{\B src/New/Endgame/ShortAndEnough.lean\#L138}{Data.short\_forms}: after a rational normalisation, the projected Poincaré
+series of integral ramified columns have lifts whose squared norms are at most
+$\exp\bigl(h_{\mathrm{main}}-m\cdot\mathrm{rem}+\text{error}\bigr)$ at every conjugate, and the index of what they span
+is small.
+\item \textbf{Theorem B (enough forms)}, \lk{\B src/New/Endgame/ShortAndEnough.lean\#L173}{Data.enough\_forms}: few translates of these Poincaré series span all but
+a share $4/b^2$ of the target forms --- a second-moment (``filling'') argument with Bessel functions at the real places.
+\item \textbf{Theorem C (integral forms are long)}, \lk{\B src/New/Endgame/LongForms.lean\#L63}{Data.integral\_forms\_long}: for any such family,
+$\text{covolume}+2\cdot\text{index}\ \ge\ \dim\cdot\bigl(h_{\mathrm{main}}-\text{error}\bigr)$. The mechanism is the
+product formula for heights (the height of the constant family~$1$ is $\ge0$): sizes are read on the untwisted chain,
+valuations on twisted ones, with one twist $\vartheta_\iota$ for each prime $\ell$ and each $\iota\colon\C\cong
+\overline{\Q}_\ell$, chosen with congruences, Galois representations and Selmer groups (\lk{\B src/New/Selmer/FitTwistsExist.lean\#L24}{exists\_isFitFamily});
+the volume of the chain factors into the volumes of single lifts, each of which gains a known amount.
+\end{itemize}
+A and B give the upper bound $h_{\mathrm{main}}-m\cdot\mathrm{rem}+\text{error}$ for the normalised covolume, C gives
+the lower bound $h_{\mathrm{main}}-\text{error}$; the main amount cancels and $(\star)$ remains, with total error
+$f\,a\,(\log b)^5$.
+
+\head{8. What is quoted from the literature}
+\lk{\B src/Lib}{Lib} (573 files, 51{,}280 lines of code in the compact edition) proves, in the forms needed and often weaker than
+the general theorems, parts of: class field theory and Galois cohomology; $\ell$-adic and Hodge cohomology; Galois
+representations attached to eigenforms (matching Hecke polynomials for most Frobenii); $p$-adic comparison, $p$-adic
+Hodge theory and Kisin modules; Shimura varieties; the Siegel--Weil and Rallis inner product formulas; a simple trace
+formula; a Chowla--Selberg formula; a bound for the odd part of twisted Tate--Shafarevich groups of abelian CM fields
+(after Mazur--Wiles and Greither, proved without the main conjecture, \lk{\B src/Lib/Cyclotomic/OddSha/OddShaBound.lean\#L69}{exists\_length\_shaOdd\_le}); primes in progressions; and a zero-density count after Pólya--Vinogradov for the
+choice of~$d$. These are proved inside the archive, not assumed. Its \lk{\B REFERENCES.md}{REFERENCES.md} lists 196 citations, of which
+57 were compared with their sources by the authors.
+
+\head{9. What is checked, and what is not}
+{\small\begin{tabular}{@{}>{\raggedright\arraybackslash}p{36mm}>{\raggedright\arraybackslash}p{110mm}@{}}\toprule
+checked by machine (reported) & build of every file without \code{sorry}; \code{\#print axioms}: \code{propext},
+\code{Classical.choice}, \code{Quot.sound}; export accepted by nanoda, con-leche, con-ron; Comparator against
+\code{Challenge.lean}\\
+checked by others & community CI builds every commit of the readable edition, failing on \code{sorry} or extra axioms;
+the runs that have finished have passed\\
+checked by us & source scan of both editions: no \code{sorry}, \code{axiom}, \code{opaque}, \code{unsafe},
+\code{native\_decide}, custom syntax or compile-time code; statements read; independent replay on a cluster under way\\
+not checked by anyone & a mathematician's reading of the argument; whether the method is, in substance, as new as it
+looks; most of the cited places in the literature\\\bottomrule
+\end{tabular}}
+
+\head{10. What we are doing next}
+A complete write-up of the compact edition's \code{New} (25{,}000 lines), with every classical input quoted by precise
+reference: structured proofs prepared unit by unit by a second AI agent, written up as mathematics by a first one and
+checked against the Lean statements; first release in about ten days, at
+\href{https://github.com/nasqret/riemann-rev}{\code{github.com/nasqret/riemann-rev}}. The same project keeps a
+\href{https://github.com/nasqret/riemann-rev\#status-dashboard}{dashboard of every recorded check}, a
+\href{https://nasqret.github.io/riemann-rev/guide/proof-guide.pdf}{guide to the submission} and four notes on parts of
+it; the \href{https://nasqret.github.io/riemann-proof-atlas/}{proof atlas} places the declarations of the archive on a
+map of the arXiv literature. The submission's route through the theorem of Ferrero and Washington (a
+``cohomological window'' along cyclotomic towers) is not taken: neither edition cites that theorem. The corresponding
+cohomological input is the bound for odd Tate--Shafarevich groups of §8, which enters through Ribet's method in the
+choice of the twists.
+
+\vspace{6pt}{\color{rule}\hrule height .4pt}\vspace{3pt}
+{\footnotesize\color{inksoft}Sources: \href{https://github.com/lsernau/grh-lean/tree/72fead102f663d5c7a407964a13dc0cf9d977207}{\code{github.com/lsernau/grh-lean}} at \code{72fead102f66} (README,
+\lk{\RR grh/GUIDE.md}{GUIDE.md}, \lk{\RR grh/INDEX.md}{INDEX.md} of \code{grh/}, header of \lk{\B src/New/Main.lean}{grh-compact/src/New/Main.lean}, the statements quoted); L.\,Alpöge,
+\href{https://alpo.ge/remark.pdf}{\code{alpo.ge/remark.pdf}}; \href{https://github.com/leanprover-community/riemann-hypothesis}{\code{github.com/leanprover-community/riemann-hypothesis}}.
+Line counts are physical lines; ``lines of code'' omit comments and blank lines. The announcement and the formal proof
+are claims checked by machine, not by human readers; nothing here asserts more.}
+\end{document}

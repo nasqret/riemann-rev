@@ -2,17 +2,19 @@
 
 # The announced proof of the Riemann hypothesis
 
-**A map, a guide and a verification dashboard for the formal proof announced by Levent Alpöge on 20 November 2026**
+**A map, a guide and a verification dashboard for the formal proof announced by Levent Alpöge on 20 November 2026, and for its condensed rewriting of 25 November**
 
 <a href="https://nasqret.github.io/riemann-rev/"><img src="assets/figures/hero.svg" width="94%" alt="The centred prime sum (G(y) − log 2π)/√y computed for y up to ten million: it stays inside the band that the Riemann hypothesis predicts."></a>
 
-<a href="#status-dashboard"><img alt="status: announced, machine-checked, not yet refereed" src="https://img.shields.io/badge/status-announced%2C_machine--checked%2C_not_yet_refereed-8250df"></a> <a href="#every-recorded-check-of-the-complete-proof"><img alt="complete proof: accepted by two independent kernels" src="https://img.shields.io/badge/complete_proof-accepted_by_two_independent_kernels-2ea44f"></a> <a href="#the-theorem"><img alt="statements: match the Mathlib challenge" src="https://img.shields.io/badge/statements-match_the_Mathlib_challenge-2ea44f"></a> <a href="#status-dashboard"><img alt="axioms: propext · Classical.choice · Quot.sound" src="https://img.shields.io/badge/axioms-propext_%C2%B7_Classical.choice_%C2%B7_Quot.sound-2ea44f"></a>
+<a href="#the-condensed-proof-25-november-2026"><img alt="condensed proof: 112,827 lines, 154× shorter" src="https://img.shields.io/badge/condensed_proof-112%2C827_lines%2C_154%C3%97_shorter-8250df"></a> <a href="#status-dashboard"><img alt="status: announced, machine-checked, not yet refereed" src="https://img.shields.io/badge/status-announced%2C_machine--checked%2C_not_yet_refereed-8250df"></a> <a href="#every-recorded-check-of-the-complete-proof"><img alt="complete proof: accepted by two independent kernels" src="https://img.shields.io/badge/complete_proof-accepted_by_two_independent_kernels-2ea44f"></a> <a href="#the-theorem"><img alt="statements: match the Mathlib challenge" src="https://img.shields.io/badge/statements-match_the_Mathlib_challenge-2ea44f"></a> <a href="#status-dashboard"><img alt="axioms: propext · Classical.choice · Quot.sound" src="https://img.shields.io/badge/axioms-propext_%C2%B7_Classical.choice_%C2%B7_Quot.sound-2ea44f"></a>
 
 <a href="#how-this-page-stays-current"><img alt="record as of: 2026-11-20 23:51 UTC" src="https://img.shields.io/badge/record_as_of-2026--11--20_23%3A51_UTC-0969da"></a> <a href="https://github.com/Deicyde/riemann-hypothesis/tree/40e56bab026552e089d7afcfeff08d2defb9c005"><img alt="archive: 175,187 Lean modules" src="https://img.shields.io/badge/archive-175%2C187_Lean_modules-57606a"></a> <img alt="Lean: 4.33.1" src="https://img.shields.io/badge/Lean-4.33.1-57606a"> <a href="https://github.com/leanprover-community/mathlib4/tree/0df444a360eaa60ab8c11dca51a86af692955474"><img alt="Mathlib: 0df444a3" src="https://img.shields.io/badge/Mathlib-0df444a3-57606a"></a> <a href="https://github.com/nasqret/riemann-rev/actions/workflows/checks.yml"><img alt="checks of this repository" src="https://github.com/nasqret/riemann-rev/actions/workflows/checks.yml/badge.svg"></a> <a href="https://github.com/nasqret/riemann-rev/actions/workflows/pages.yml"><img alt="build of the site" src="https://github.com/nasqret/riemann-rev/actions/workflows/pages.yml/badge.svg"></a>
 
+**New:** [the condensed proof, our note (PDF)](https://nasqret.github.io/riemann-rev/summary/grh-condensed-summary.pdf) · [lsernau/grh-lean](https://github.com/lsernau/grh-lean/tree/72fead102f663d5c7a407964a13dc0cf9d977207)
+
 **Read it online:** [site](https://nasqret.github.io/riemann-rev/) · [atlas](https://nasqret.github.io/riemann-rev/atlas/) · [proof atlas](https://nasqret.github.io/riemann-proof-atlas/) · [guide](https://nasqret.github.io/riemann-rev/guide/proof-guide.pdf) · [book](https://nasqret.github.io/riemann-rev/book/) · [blueprint](https://nasqret.github.io/riemann-rev/blueprint/atlas-blueprint.pdf)
 
-[Status](#status-dashboard) · [The theorem](#the-theorem) · [New here?](#new-here-start-here) · [Route of the proof](#the-route-of-the-proof) · [Contents](#what-is-in-this-repository) · [Check it yourself](#check-it-yourself) · [Transparency](#transparency) · [FAQ](#questions-and-answers)
+[The condensed proof](#the-condensed-proof-25-november-2026) · [Status](#status-dashboard) · [The theorem](#the-theorem) · [New here?](#new-here-start-here) · [Route of the proof](#the-route-of-the-proof) · [Contents](#what-is-in-this-repository) · [Check it yourself](#check-it-yourself) · [Transparency](#transparency) · [FAQ](#questions-and-answers)
 
 </div>
 
@@ -22,6 +24,54 @@
 > **What is claimed.** On 20 November 2026 Levent Alpöge announced, in a four-page note written with the AI system Claude, a proof of the Riemann hypothesis and of its analogue for Dirichlet $`L`$-functions. The proof was published only as a formal proof in the Lean proof assistant: 175,187 files that a computer can check, and that no human is expected to read from beginning to end.
 >
 > **Where things stand** (record of 2026-11-20 23:51 UTC). Two independent kernels accepted the complete proof, and all five theorems matched the canonical Mathlib challenge. The human-readable mathematics has not been written up yet, and the argument has not been through the traditional refereeing of the mathematical community. Nothing here is this repository's own claim that the theorem is true; it reports the records listed below, with their sources.
+
+## The condensed proof (25 November 2026)
+
+> [!NOTE]
+> **The same five theorems in 112,827 lines of Lean instead of 17.4 million.** On 25 November 2026 [`lsernau/grh-lean`](https://github.com/lsernau/grh-lean/tree/72fead102f663d5c7a407964a13dc0cf9d977207) appeared: a rewriting of the proof "produced in collaboration with my colleagues at Anthropic, and Claude" (Luke Sernau), in two editions with byte-identical statements. The argument itself, the folder `New` of the compact edition, is **24,850 lines of code** (1,571 theorems); the background that Mathlib lacks is separated in `Lib` and labelled with references to the literature. Machines have checked it; **no mathematician has read it yet**, as its authors say.
+>
+> **[Read our note: what happened, how the argument goes, what is checked (PDF)](https://nasqret.github.io/riemann-rev/summary/grh-condensed-summary.pdf)** · every Lean name in it links to its line at the pinned commit.
+
+<p align="center"><a href="https://nasqret.github.io/riemann-rev/summary/grh-condensed-summary.pdf"><img src="assets/screens/condensed-note.png" width="70%" alt="The first page of the note on the condensed proof: what happened, and how large the simplification is."></a></p>
+
+### What happened
+
+| date (2026) | event |
+| --- | --- |
+| 20 Nov | Levent Alpöge announces the proof, written with Claude: a [four-page note](https://alpo.ge/remark.pdf) and a Lean archive of 175,187 files, 17,374,215 lines. Independent kernel replays: [the dashboard below](#status-dashboard). |
+| 20 Nov | The community repository [`leanprover-community/riemann-hypothesis`](https://github.com/leanprover-community/riemann-hypothesis) opens and starts to clean up the archive. |
+| 25 Nov, 20:38 UTC | [`lsernau/grh-lean`](https://github.com/lsernau/grh-lean/tree/72fead102f663d5c7a407964a13dc0cf9d977207) is published: a readable edition (`grh/`, 477,124 lines) and a compact one (`grh-compact/`, 112,827 lines) of the same five theorems. |
+| 25 Nov, 22:24 UTC | The community repository moves its main branch to the readable edition; its CI builds every commit and fails on `sorry` or on any axiom beyond the standard three. |
+| 26 Nov | This repository publishes the note above and starts a complete human-readable write-up of the compact edition. |
+
+### How large the simplification is
+
+| edition | Lean files | lines | lines of code | the argument (`New`) | background (`Lib`) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Alpöge's submission ([`40e56bab`](https://github.com/Deicyde/riemann-hypothesis/tree/40e56bab026552e089d7afcfeff08d2defb9c005)) | 175,187 | 17,374,215 |  |  |  |
+| readable edition [`grh/`](https://github.com/lsernau/grh-lean/tree/72fead102f663d5c7a407964a13dc0cf9d977207/grh) | 803 | 477,124 | 299,899 | 122,391 lines of code | 177,489 lines of code |
+| compact edition [`grh-compact/`](https://github.com/lsernau/grh-lean/tree/72fead102f663d5c7a407964a13dc0cf9d977207/grh-compact) | 794 | 112,827 | 76,149 | **24,850 lines of code, 1,571 theorems** | 51,280 lines of code |
+
+Counted by `scripts/measure_condensed.py` on the pinned commits: the compact edition is 154 times shorter than the submission, the readable one 36 times. `Lib` never imports `New`. A scan of both editions finds 0 uses of `sorry`, `axiom`, `opaque`, `unsafe`, `native_decide`, `implemented_by`, custom syntax or code run at compile time.
+
+### How the argument goes, in five lines
+
+1. **GRH from a one-sided bound for primes** ([`entireL_ne_zero_of_primeError_le`](https://github.com/lsernau/grh-lean/blob/72fead102f663d5c7a407964a13dc0cf9d977207/grh-compact/src/New/Endgame/OneSidedCriterion.lean#L28)): an upper bound $`x^{-1/2+\varepsilon}`$ for a weighted count of the primes that do not split in $` ℚ(\sqrt{-d})`$ rules out zeros with real part above one half; only one side is needed because the weights are non-negative (Landau 1905).
+2. **The bound from the main inequality** ([`star_inequality`](https://github.com/lsernau/grh-lean/blob/72fead102f663d5c7a407964a13dc0cf9d977207/grh-compact/src/New/Main.lean#L121)), with about $`\sqrt{\mathstrut x}`$ theta lifts: "the saving $`x^{-1/2}`$ is $`1/m`$".
+3. **The main inequality from one covolume bounded from both sides**, for a lattice of theta lifts between unitary groups over a CM field.
+4. **Upper bound:** Theorem A, short forms, and Theorem B, enough forms ([`ShortAndEnough`](https://github.com/lsernau/grh-lean/blob/72fead102f663d5c7a407964a13dc0cf9d977207/grh-compact/src/New/Endgame/ShortAndEnough.lean#L138)).
+5. **Lower bound:** Theorem C, integral forms are long ([`integral_forms_long`](https://github.com/lsernau/grh-lean/blob/72fead102f663d5c7a407964a13dc0cf9d977207/grh-compact/src/New/Endgame/LongForms.lean#L63)), by the product formula for heights, with one twist for each prime chosen through Galois representations and Selmer groups.
+
+The main amount appears in both bounds and cancels. The note explains each step and lists what is quoted from the literature: class field theory, Galois representations of eigenforms, $`p`$-adic Hodge theory, Shimura varieties, the Siegel–Weil and Rallis formulas, a bound for odd Tate–Shafarevich groups after Mazur–Wiles and Greither, and more, all proved inside `Lib`, not assumed. The theorem of Ferrero and Washington, central to the submission's route, is cited in neither edition.
+
+### What is checked, and what is not
+
+- **Reported by the authors:** every file builds without `sorry`; `#print axioms` lists only `propext`, `Classical.choice`, `Quot.sound`; the exported proof is accepted by nanoda, con-leche and con-ron; Comparator accepts the five theorems against [`Challenge.lean`](https://github.com/lsernau/grh-lean/blob/72fead102f663d5c7a407964a13dc0cf9d977207/grh-compact/Challenge.lean).
+- **By the community:** CI builds every commit of the readable edition and fails on `sorry` or extra axioms; the runs that have finished have passed.
+- **By us:** the source scan above, the statements read, and an independent replay of the build on a cluster, under way.
+- **By nobody yet:** a mathematician's reading of the argument.
+
+The rest of this page records the **submission of 20 November**: its checks, its route and the notes on parts of it. A complete write-up of the compact edition, every classical input quoted by reference, is in progress here.
 
 > [!TIP]
 > **The proof atlas: [nasqret.github.io/riemann-proof-atlas](https://nasqret.github.io/riemann-proof-atlas/).** The theorems and lemmas of the archive placed on a map of the arXiv literature by subject. Search a Lean name, follow a theorem from its mathematical neighbourhood to its Lean code and to the endpoints that depend on it, and read the chapters on three levels: statements, structured proofs and Lean, beside the notes. Built by the reading project; the paper map is Leland McInnes's map of arXiv.

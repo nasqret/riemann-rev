@@ -230,6 +230,7 @@ def build() -> str:
     audit = load("verification/logs/axioms.json")
     zeta = load("verification/logs/mathlib-zeta-axioms.json") if (ROOT / "verification/logs/mathlib-zeta-axioms.json").exists() else None
     facts = load("assets/figures/facts.json")
+    cond = load("data/condensed.json")            # scripts/measure_condensed.py: the editions of lsernau/grh-lean
     comps = {c["id"]: c for c in model["components"]}
     nodes = {n["id"]: n for n in model["nodes"]}
     tiers = model["tiers"]
@@ -282,11 +283,14 @@ def build() -> str:
     add('<div align="center">\n')
     add("# The announced proof of the Riemann hypothesis\n")
     add("**A map, a guide and a verification dashboard for the formal proof announced by Levent Alpöge "
-        "on 20 November 2026**\n")
+        "on 20 November 2026, and for its condensed rewriting of 25 November**\n")
     add(f'<a href="{SITE}/"><img src="assets/figures/hero.svg" width="94%" '
         'alt="The centred prime sum (G(y) − log 2π)/√y computed for y up to ten million: it stays inside the band '
         'that the Riemann hypothesis predicts."></a>\n')
+    ec, er = cond["editions"]["grh-compact"], cond["editions"]["grh"]
     row1 = [
+        badge("condensed proof", f'{ec["all"]["lines"]:,} lines, {cond["factor_compact"]}× shorter', "8250df",
+              "#the-condensed-proof-25-november-2026"),
         badge("status", "announced, machine-checked, not yet refereed", "8250df", "#status-dashboard"),
         badge("complete proof", "accepted by two independent kernels" if two else "full replay reported",
               "2ea44f" if two else "d4a72c", "#every-recorded-check-of-the-complete-proof"),
@@ -306,9 +310,11 @@ def build() -> str:
     ]
     add(" ".join(row1) + "\n")
     add(" ".join(row2) + "\n")
+    add(f"**New:** [the condensed proof, our note (PDF)]({SITE}/summary/grh-condensed-summary.pdf) · "
+        f"[lsernau/grh-lean](https://github.com/{cond['repo']}/tree/{cond['commit']})\n")
     add(f"**Read it online:** [site]({SITE}/) · [atlas]({SITE}/atlas/) · [proof atlas]({PROOF_ATLAS}) · "
         f"[guide]({SITE}/guide/proof-guide.pdf) · [book]({SITE}/book/) · [blueprint]({SITE}/blueprint/atlas-blueprint.pdf)\n")
-    add("[Status](#status-dashboard) · [The theorem](#the-theorem) · [New here?](#new-here-start-here) · "
+    add("[The condensed proof](#the-condensed-proof-25-november-2026) · [Status](#status-dashboard) · [The theorem](#the-theorem) · [New here?](#new-here-start-here) · "
         "[Route of the proof](#the-route-of-the-proof) · [Contents](#what-is-in-this-repository) · "
         "[Check it yourself](#check-it-yourself) · [Transparency](#transparency) · [FAQ](#questions-and-answers)\n")
     add("</div>\n")
@@ -325,6 +331,76 @@ def build() -> str:
         "The human-readable mathematics has not been written up yet, and the argument has not been through the "
         "traditional refereeing of the mathematical community. Nothing here is this repository's own claim that "
         "the theorem is true; it reports the records listed below, with their sources.\n")
+
+    # ------------------------------------------------------------------ the condensed proof (25 November 2026)
+    tree = f"https://github.com/{cond['repo']}/tree/{cond['commit']}"
+    blob = f"https://github.com/{cond['repo']}/blob/{cond['commit']}/grh-compact/"
+    sub = cond["submission"]
+    add("## The condensed proof (25 November 2026)\n")
+    add("> [!NOTE]\n"
+        f"> **The same five theorems in {ec['all']['lines']:,} lines of Lean instead of {sub['lines'] / 1e6:.1f} million.** "
+        f"On 25 November 2026 [`lsernau/grh-lean`]({tree}) appeared: a rewriting of the proof \"produced in collaboration "
+        "with my colleagues at Anthropic, and Claude\" (Luke Sernau), in two editions with byte-identical statements. "
+        f"The argument itself, the folder `New` of the compact edition, is **{ec['New']['code_lines']:,} lines of code** "
+        f"({ec['New']['theorems']:,} theorems); the background that Mathlib lacks is separated in `Lib` and labelled with "
+        "references to the literature. Machines have checked it; **no mathematician has read it yet**, as its authors "
+        "say.\n>\n"
+        f"> **[Read our note: what happened, how the argument goes, what is checked (PDF)]({SITE}/summary/grh-condensed-summary.pdf)** "
+        "· every Lean name in it links to its line at the pinned commit.\n")
+    add(f'<p align="center"><a href="{SITE}/summary/grh-condensed-summary.pdf"><img src="assets/screens/condensed-note.png" '
+        'width="70%" alt="The first page of the note on the condensed proof: what happened, and how large the simplification is."></a></p>\n')
+    add("### What happened\n")
+    add(table(["date (2026)", "event"], [
+        ["20 Nov", f"Levent Alpöge announces the proof, written with Claude: a [four-page note](https://alpo.ge/remark.pdf) and a "
+                   f"Lean archive of {sub['files']:,} files, {sub['lines']:,} lines. Independent kernel replays: "
+                   "[the dashboard below](#status-dashboard)."],
+        ["20 Nov", "The community repository [`leanprover-community/riemann-hypothesis`](https://github.com/leanprover-community/riemann-hypothesis) "
+                   "opens and starts to clean up the archive."],
+        ["25 Nov, 20:38 UTC", f"[`lsernau/grh-lean`]({tree}) is published: a readable edition (`grh/`, {er['all']['lines']:,} lines) "
+                              f"and a compact one (`grh-compact/`, {ec['all']['lines']:,} lines) of the same five theorems."],
+        ["25 Nov, 22:24 UTC", "The community repository moves its main branch to the readable edition; its CI builds every "
+                              "commit and fails on `sorry` or on any axiom beyond the standard three."],
+        ["26 Nov", "This repository publishes the note above and starts a complete human-readable write-up of the compact edition."],
+    ]) + "\n")
+    add("### How large the simplification is\n")
+    add(table(["edition", "Lean files", "lines", "lines of code", "the argument (`New`)", "background (`Lib`)"], [
+        [f"Alpöge's submission ([`{pins['mirror_commit'][:8]}`]({mirror_tree}))", f"{sub['files']:,}", f"{sub['lines']:,}", "", "", ""],
+        [f"readable edition [`grh/`]({tree}/grh)", f"{er['all']['files']:,}", f"{er['all']['lines']:,}", f"{er['all']['code_lines']:,}",
+         f"{er['New']['code_lines']:,} lines of code", f"{er['Lib']['code_lines']:,} lines of code"],
+        [f"compact edition [`grh-compact/`]({tree}/grh-compact)", f"{ec['all']['files']:,}", f"{ec['all']['lines']:,}",
+         f"{ec['all']['code_lines']:,}", f"**{ec['New']['code_lines']:,} lines of code, {ec['New']['theorems']:,} theorems**",
+         f"{ec['Lib']['code_lines']:,} lines of code"],
+    ], ["---", "---:", "---:", "---:", "---:", "---:"]) + "\n")
+    add(f"Counted by `scripts/measure_condensed.py` on the pinned commits: the compact edition is {cond['factor_compact']} times "
+        f"shorter than the submission, the readable one {cond['factor_readable']} times. `Lib` never imports `New`. A scan of "
+        f"both editions finds {ec['all']['risky'] + er['all']['risky']} uses of `sorry`, `axiom`, `opaque`, `unsafe`, "
+        "`native_decide`, `implemented_by`, custom syntax or code run at compile time.\n")
+    add("### How the argument goes, in five lines\n")
+    add(f"1. **GRH from a one-sided bound for primes** ([`entireL_ne_zero_of_primeError_le`]({blob}src/New/Endgame/OneSidedCriterion.lean#L28)): "
+        "an upper bound $x^{-1/2+\\varepsilon}$ for a weighted count of the primes that do not split in $\\mathbb Q(\\sqrt{-d})$ "
+        "rules out zeros with real part above one half; only one side is needed because the weights are non-negative (Landau 1905).\n"
+        f"2. **The bound from the main inequality** ([`star_inequality`]({blob}src/New/Main.lean#L121)), "
+        "with about $\\sqrt x$ theta lifts: \"the saving $x^{-1/2}$ is $1/m$\".\n"
+        "3. **The main inequality from one covolume bounded from both sides**, for a lattice of theta lifts between unitary "
+        "groups over a CM field.\n"
+        f"4. **Upper bound:** Theorem A, short forms, and Theorem B, enough forms ([`ShortAndEnough`]({blob}src/New/Endgame/ShortAndEnough.lean#L138)).\n"
+        f"5. **Lower bound:** Theorem C, integral forms are long ([`integral_forms_long`]({blob}src/New/Endgame/LongForms.lean#L63)), "
+        "by the product formula for heights, with one twist for each prime chosen through Galois representations and Selmer groups.\n")
+    add("The main amount appears in both bounds and cancels. The note explains each step and lists what is quoted from the "
+        "literature: class field theory, Galois representations of eigenforms, $p$-adic Hodge theory, Shimura varieties, the "
+        "Siegel–Weil and Rallis formulas, a bound for odd Tate–Shafarevich groups after Mazur–Wiles and Greither, and more, "
+        "all proved inside `Lib`, not assumed. The theorem of Ferrero and Washington, central to the submission's route, "
+        "is cited in neither edition.\n")
+    add("### What is checked, and what is not\n")
+    add("- **Reported by the authors:** every file builds without `sorry`; `#print axioms` lists only `propext`, "
+        "`Classical.choice`, `Quot.sound`; the exported proof is accepted by nanoda, con-leche and con-ron; Comparator "
+        f"accepts the five theorems against [`Challenge.lean`]({blob}Challenge.lean).\n"
+        "- **By the community:** CI builds every commit of the readable edition and fails on `sorry` or extra axioms; the "
+        "runs that have finished have passed.\n"
+        "- **By us:** the source scan above, the statements read, and an independent replay of the build on a cluster, under way.\n"
+        "- **By nobody yet:** a mathematician's reading of the argument.\n")
+    add("The rest of this page records the **submission of 20 November**: its checks, its route and the notes on parts "
+        "of it. A complete write-up of the compact edition, every classical input quoted by reference, is in progress here.\n")
 
     # ------------------------------------------------------------------ the proof atlas
     add("> [!TIP]\n"
