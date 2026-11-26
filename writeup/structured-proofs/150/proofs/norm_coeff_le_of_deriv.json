@@ -1,0 +1,228 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Curve.FormalParameter:72:7",
+ "summary": "Show |μ_k| ≤ 1 for k ∈ {p+1, p+p^e} and |μ_k| ≤ |ϖ^Q| otherwise. Only k = p + 1 + Q·I contribute; k·μ_k is p·ϖ^{QI}·(m′)_{k−1} = p ϖ^{QI}∑ n_{i+1}·(j+1)Z_{j+1}; only j = QJ contribute (hypothesis R), and the p-adic valuations of k and of i + 1 (`exists_norm_eq_inv_pow_bounds`) balance the powers of ϖ.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Abbreviate P = ϖ^Q; rewrite the integrality hypotheses as bounds on all coefficients; p ≤ p^e = Q + 1.",
+   "lines": [
+    79,
+    80
+   ],
+   "lean": "  set P := ϖ ^ Q; simp [↓mem_range_seriesToCp, congruencePart] at *; have :=\n    hQ ▸ le_self_pow (by omega) p",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "For every k: |μ_k| ≤ 1 if k ∈ {p+1, p+p^e}, and |μ_k| ≤ |P| otherwise.",
+   "lines": [
+    81,
+    94
+   ],
+   "lean": "  have {k} : ‖μ.coeff k‖ ≤ ite (k ∈ [p + 1, p + p ^ e]) 1 ‖P‖ := by\n    by_cases g : k ≡ p + 1 [MOD Q]; by_cases! 2 < k\n    obtain ⟨I, rfl⟩ := (modEq_iff_exists_eq_add (g.symm.le_of_lt_add (by omega))).1 g.symm\n    obtain ⟨a, na, A⟩ := exists_norm_eq_inv_pow_bounds (p + Q * I) 1 1 0 I hQ\n    grw [← mul_le_mul_iff_left₀ (na.trans_gt _), ← norm_mul, show _ * _ = p * P ^ I *\n      (d⁄dX m).coeff _ by simp [hμ, pow_add, pow_mul, add_right_comm, ModEq.rfl, coeff_derivative,\n      field], hm, coeff_mul, mul_sum, norm_sum_le_of_forall_le_of_nonneg _]\n    simp [coeff_derivative] at *; rintro (_ | i) j x; swap; obtain ⟨J, rfl⟩ | _ := em (Q ∣ j)\n    obtain ⟨_ : J ≤ I + 1, c, nc', B⟩ := by nlinarith, exists_norm_eq_inv_pow_bounds i 1 0 J I hQ\n    grw [(le_div_iff₀ _).2 (hn i), nc', ← sq_le_sq₀]; any_goals simp [*]; positivity\n    by_cases! J ≠ 1; grw [hw]\n    repeat simp [*, apply_ite, pow_right_comm _ I, field, ← cast_succ, -hQ, ← hQ, hQ ▸ nc, Fact.out,\n      pow_le_pow_iff_right₀, norm_p_eq_inv, ← pow_mul, ← pow_add]; clear! Z ϖ n m; cases he <;>\n      grind [ModEq.eq_of_abs_lt]",
+   "head_lines": [
+    81,
+    81
+   ],
+   "typed_fact": "‖μ.coeff k‖ ≤ ite (k ∈ [p + 1, p + p ^ e]) 1 ‖P‖",
+   "uses": []
+  },
+  {
+   "id": "2.1",
+   "parent": "2",
+   "kind": "case-split",
+   "claim": "Cases: if k ≢ p + 1 mod Q then μ_k = 0; if k ≤ 2 then μ_k = 0 (m₀ = m₁ = m₂ = 0); so assume k ≡ p + 1 mod Q and k > 2.",
+   "lines": [
+    82,
+    82
+   ],
+   "lean": "    by_cases g : k ≡ p + 1 [MOD Q]; by_cases! 2 < k",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "2.2",
+   "parent": "2",
+   "kind": "setup",
+   "claim": "Write k = p + 1 + Q·I.",
+   "lines": [
+    83,
+    83
+   ],
+   "lean": "    obtain ⟨I, rfl⟩ := (modEq_iff_exists_eq_add (g.symm.le_of_lt_add (by omega))).1 g.symm",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "2.3",
+   "parent": "2",
+   "kind": "deduction",
+   "claim": "|k|_p = |p + QI + 1|_p = p^{−a} with the bounds of `exists_norm_eq_inv_pow_bounds` (x = p + QI, t = ε = 1, J = 0, k = I).",
+   "lines": [
+    84,
+    84
+   ],
+   "lean": "    obtain ⟨a, na, A⟩ := exists_norm_eq_inv_pow_bounds (p + Q * I) 1 1 0 I hQ",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "exists_norm_eq_inv_pow_bounds"
+    }
+   ]
+  },
+  {
+   "id": "2.4",
+   "parent": "2",
+   "kind": "reduction",
+   "claim": "Multiply the claimed bound by |k|_p; it becomes a bound for |k·μ_k|.",
+   "lines": [
+    85,
+    85
+   ],
+   "span": [
+    85,
+    1,
+    85,
+    62
+   ],
+   "lean": "    grw [← mul_le_mul_iff_left₀ (na.trans_gt _), ← norm_mul, ",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "2.5",
+   "parent": "2",
+   "kind": "computation",
+   "claim": "k·μ_k = p·P^I·(m′)_{k−1} (from the definition of μ, k = p + 1 + QI and (m′)_{k−1} = k·m_k). (The written type is `_ * _ = p * P ^ I * (d⁄dX m).coeff _`; the recorded typed_fact is only its fragment up to the line break.)",
+   "lines": [
+    85,
+    87
+   ],
+   "span": [
+    85,
+    62,
+    87,
+    13
+   ],
+   "lean": "show _ * _ = p * P ^ I *\n      (d⁄dX m).coeff _ by simp [hμ, pow_add, pow_mul, add_right_comm, ModEq.rfl, coeff_derivative,\n      field]",
+   "typed_fact": "_ * _ = p * P ^ I *",
+   "uses": []
+  },
+  {
+   "id": "2.6",
+   "parent": "2",
+   "kind": "computation",
+   "claim": "Insert m′ = n·Z′, expand the coefficient of the product as ∑_{i+j=k−1} n_i·(Z′)_j, and bound the sum by the maximum of its terms (ultrametric inequality).",
+   "lines": [
+    87,
+    87
+   ],
+   "span": [
+    87,
+    13,
+    87,
+    76
+   ],
+   "lean": ", hm, coeff_mul, mul_sum, norm_sum_le_of_forall_le_of_nonneg _]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "2.5"
+    }
+   ]
+  },
+  {
+   "id": "2.7",
+   "parent": "2",
+   "kind": "case-split",
+   "claim": "Consider a term n_{i+1}·(Z′)_j; if Q ∤ j then (Z′)_j = (j+1)Z_{j+1} = 0 (hypothesis R), so j = Q·J.",
+   "lines": [
+    88,
+    88
+   ],
+   "lean": "    simp [coeff_derivative] at *; rintro (_ | i) j x; swap; obtain ⟨J, rfl⟩ | _ := em (Q ∣ j)",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "2.8",
+   "parent": "2",
+   "kind": "deduction",
+   "claim": "J ≤ I + 1, and |i + 1|_p = p^{−c} with the bounds of `exists_norm_eq_inv_pow_bounds` (x = i, t = 1, ε = 0, J, k = I).",
+   "lines": [
+    89,
+    89
+   ],
+   "lean": "    obtain ⟨_ : J ≤ I + 1, c, nc', B⟩ := by nlinarith, exists_norm_eq_inv_pow_bounds i 1 0 J I hQ",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "exists_norm_eq_inv_pow_bounds"
+    }
+   ]
+  },
+  {
+   "id": "2.9",
+   "parent": "2",
+   "kind": "estimate",
+   "claim": "|n_{i+1}| ≤ |i + 1|_p⁻¹ (n′ integral) and |Z_{QJ+1}| = |ϖ^Q|⁻¹ for J = 1 (hypothesis nc); compare squares.",
+   "lines": [
+    90,
+    90
+   ],
+   "lean": "    grw [(le_div_iff₀ _).2 (hn i), nc', ← sq_le_sq₀]; any_goals simp [*]; positivity",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "2.10",
+   "parent": "2",
+   "kind": "case-split",
+   "claim": "For J ≠ 1, |(Z′)_{QJ}| ≤ 1 (Z′ integral).",
+   "lines": [
+    91,
+    91
+   ],
+   "lean": "    by_cases! J ≠ 1; grw [hw]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "2.11",
+   "parent": "2",
+   "kind": "estimate",
+   "claim": "In each case the product of the bounds is ≤ 1 for k ∈ {p+1, p+p^e} and ≤ |P| otherwise: an inequality between powers of p and of |ϖ|, checked in the cases e = 1 and e = 2 from the exponent bounds (`grind`).",
+   "lines": [
+    92,
+    94
+   ],
+   "lean": "    repeat simp [*, apply_ite, pow_right_comm _ I, field, ← cast_succ, -hQ, ← hQ, hQ ▸ nc, Fact.out,\n      pow_le_pow_iff_right₀, norm_p_eq_inv, ← pow_mul, ← pow_add]; clear! Z ϖ n m; cases he <;>\n      grind [ModEq.eq_of_abs_lt]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The three claims follow from the coefficient bound: the coefficients at p+1 and p+p^e have norm ≤ 1, and all other coefficients of μ are ≤ |P|, so (ϖ^Q)⁻¹ times the rest is integral.",
+   "lines": [
+    95,
+    95
+   ],
+   "lean": "  grind [_root_.norm_zero, inv_mul_le_one_of_le₀]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "2"
+    }
+   ]
+  }
+ ]
+}

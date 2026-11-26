@@ -98,7 +98,14 @@ def home(has_book: bool) -> str:
     n_decl = sum(1 for n in model["nodes"] if n["kind"] != "motivation")
     chapters = len(re.findall(r"^\s*-?\s*(?:file|root):", (ROOT / "book" / "_toc.yml").read_text(encoding="utf-8"), flags=re.M))
     repo = f"https://github.com/{REPO}"
+    wm = load("writeup/MANIFEST.json")              # scripts/import_writeup.py: the edition of the write-up
     cards = [
+        ("ok", "The write-up (working draft)", f"A complete reading of the condensed proof as mathematics: "
+                                               f"{len(wm['notes'])} notes on all {len(wm['units'])} units, from the five "
+                                               "theorems down, each statement linked to its Lean lines; structured proofs "
+                                               "and a guide for AI agents. Read by AI agents and checked by programs; "
+                                               "not yet refereed by a human.",
+         "writeup/handout.pdf", "Read the handout (PDF)"),
         ("ok", "The condensed proof", "25 November 2026: the same five theorems in 112,827 lines instead of 17.4 million, "
                                       "24,850 of them for the argument itself. What happened, how the argument goes, "
                                       "and what has been checked, with links into the Lean source.",
@@ -160,14 +167,19 @@ def home(has_book: bool) -> str:
     in standard mathematical language, and record who has checked what.</p>
     <p class="status"><b>{esc(st["headline"])}</b><br><span>Record of {esc(utc(st["as_of"]))}; the mathematics has not
     yet been refereed.</span></p>
-    <div class="cta"><a class="btn" href="summary/grh-condensed-summary.pdf">The condensed proof (note)</a><a class="btn ghost" href="atlas/">Open the atlas</a><a class="btn ghost" href="guide/proof-guide.pdf">Read the guide</a>
+    <div class="cta"><a class="btn" href="writeup/handout.pdf">The write-up (PDF)</a><a class="btn ghost" href="summary/grh-condensed-summary.pdf">The condensed proof (note)</a><a class="btn ghost" href="atlas/">Open the atlas</a><a class="btn ghost" href="guide/proof-guide.pdf">Read the guide</a>
     <a class="btn ghost" href="{repo}#readme">Status dashboard</a></div>
   </div>
 </header>
 <main class="wrap">
   <p class="note"><b>What this site is.</b> A map of an announced proof and a record of who has checked what. It is not
   a proof, not a referee report and not an endorsement, and it is not an official companion to the announcement.</p>
-  <p class="note"><b>New, 25&nbsp;November&nbsp;2026: a condensed proof.</b> A rewriting of the proof by Luke Sernau,
+  <p class="note"><b>New, 26&nbsp;November&nbsp;2026: the write-up, a working draft.</b> The condensed proof read as
+  mathematics, unit by unit: <a href="writeup/handout.pdf">the handout (PDF)</a>, in which every statement links to the
+  Lean lines it renders; <a href="writeup/catalogue-full.pdf">the catalogue of quoted results</a>; and, for AI agents,
+  <a href="{repo}/tree/main/writeup">the structured proofs, the LaTeX sources and a guide</a>. Read by AI agents and
+  checked by programs; not yet refereed by a human. It does not say that RH is proved.</p>
+  <p class="note"><b>25&nbsp;November&nbsp;2026: a condensed proof.</b> A rewriting of the proof by Luke Sernau,
   colleagues at Anthropic and Claude states the same five theorems in 112,827 lines of Lean instead of 17.4 million;
   the argument itself takes 24,850 lines of code, the background is separated and referenced. Machines have checked it;
   no mathematician has read it yet. <a href="summary/grh-condensed-summary.pdf">Read our note</a> ·
@@ -227,12 +239,13 @@ def main() -> int:
         return 1
     if OUT.exists():
         shutil.rmtree(OUT)
-    for sub in ("atlas", "guide", "blueprint", "digests", "summary"):
+    for sub in ("atlas", "guide", "blueprint", "digests", "summary", "writeup"):
         (OUT / sub).mkdir(parents=True)
     (OUT / ".nojekyll").write_text("", encoding="utf-8")                 # the book has folders that begin with "_"
     (OUT / "atlas" / "index.html").write_text(site_atlas(), encoding="utf-8")
     for rel in ("guide/proof-guide.pdf", "guide/proof-guide.gif", "blueprint/atlas-blueprint.pdf",
-                "summary/grh-condensed-summary.pdf"):
+                "summary/grh-condensed-summary.pdf", "writeup/handout.pdf", "writeup/catalogue-full.pdf",
+                "writeup/MANIFEST.json", "writeup/AGENTS.md", "writeup/README.md"):
         shutil.copy2(ROOT / rel, OUT / rel)
     (OUT / "digests" / "editions").mkdir(exist_ok=True)
     for slug in ("tower-bound", "local-nilpotence", "layer-descent"):

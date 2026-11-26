@@ -1,0 +1,641 @@
+% !TEX program = lualatex
+% ---------------------------------------------------------------------------------------------
+%  Readback note 11: The volume of the chain of theta lifts as a product of lift volumes
+%
+%  Build:  python3 tools/rb.py note <slug>
+%
+%  One unit of a Lean artifact, rewritten as ordinary mathematics. The prose is hand-written. Lean names,
+%  line ranges and counts come from data.tex; quoted Lean statements are copied from the artifact by the build.
+%
+%  Rules of the text: standard terminology; every symbol is explained where it first appears and listed again
+%  in the notation at the end; no letter has two meanings; a proof is complete or says what it takes for granted;
+%  Lean names appear only in the LEAN lines and in the concordance.
+%
+%  The signature rule (the build enforces it): a function, relation or predicate that the artifact defines is
+%  written only through its notation macro, which the build makes from the spec (`notation`) with one slot for
+%  each explicit argument of the Lean definition. No argument is fixed and dropped, also not "for brevity" and
+%  not for one section. Every argument and every hypothesis of a stated declaration stands inside its
+%  statement, or in a Setting that the statement cites by number; only implicit and instance arguments (the
+%  ambient objects) may stand in the conventions.
+% ---------------------------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\ifdefined\pdfvariable\pdfvariable suppressoptionalinfo \numexpr 1+2+4+8\relax\fi
+\usepackage[a4paper,hmargin=35mm,top=22mm,bottom=27mm,footskip=12mm,nohead]{geometry}
+
+\usepackage{fontspec}
+\directlua{
+  luaotfload.add_fallback("gfallback", {"STIXTwoMath-Regular.otf:mode=node;", "DejaVuSans.ttf:mode=node;"})
+  luaotfload.add_fallback("gmonofallback", {"DejaVuSansMono.ttf:mode=node;", "STIXTwoMath-Regular.otf:mode=node;"})
+}
+\setmainfont{NewCM10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookItalic,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldItalic,SmallCapsFont=*-Book,SmallCapsFeatures={Letters=SmallCaps},
+  RawFeature={fallback=gfallback}]
+\setsansfont{NewCMSans10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookOblique,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldOblique,RawFeature={fallback=gfallback}]
+\setmonofont{JetBrainsMono}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,Scale=MatchLowercase,
+  RawFeature={-calt;-liga;fallback=gmonofallback}]
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage[math-style=TeX]{unicode-math}
+\setmathfont{NewCMMath-Book.otf}
+\emergencystretch=2.5em\relax
+
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows.meta,positioning,backgrounds}
+\usepackage[protrusion=true,expansion=true]{microtype}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{multicol}
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+
+\definecolor{ink}{HTML}{0F172A}
+\definecolor{inksoft}{HTML}{475569}
+\definecolor{inkfaint}{HTML}{94A3B8}
+\definecolor{rulegrey}{HTML}{CBD5E1}
+\definecolor{arith}{HTML}{C2410C}
+\definecolor{est}{HTML}{7C3AED}
+\definecolor{ana}{HTML}{0891B2}
+\definecolor{ok}{HTML}{047857}
+\definecolor{leancol}{HTML}{3730A3}
+
+\title{The volume of the chain of theta lifts as a product of lift volumes}
+\author{grh-compact}
+\date{}
+
+% ------------------------------------------------------------------------------------- macros
+\newcommand{\leanfont}{\ttfamily\fontsize{8.6}{10.5}\selectfont\color{leancol}}
+\newcommand{\lean}[1]{\csname LN@#1\endcsname}
+\newcommand{\fillin}[1]{{\color{arith}\itshape[#1]}}  % a place of the template that is not written yet; the build reports every one that is left
+\newcommand{\leanquote}[1]{\csname LQ@#1\endcsname}
+\input{data.tex}
+
+\linespread{1.08}                       % 11 pt on 14.7 pt
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt plus 1.5pt minus 0.5pt}
+\setlength{\abovedisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\belowdisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\abovedisplayshortskip}{3pt plus 2pt}
+\setlength{\belowdisplayshortskip}{6pt plus 2pt minus 2pt}
+\emergencystretch=1.5em
+\clubpenalty=10000 \widowpenalty=10000 \displaywidowpenalty=10000
+\relpenalty=7000 \binoppenalty=9000
+\raggedbottom
+\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\sffamily\fontsize{7.6}{9}\selectfont\color{inkfaint}\thepage\,/\,\pageref*{LastPage}}
+\setlist{topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=4pt,leftmargin=2.1em,labelsep=0.55em}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\len}{\operatorname{len}}
+\newcommand{\cok}{\operatorname{cok}}
+\newcommand{\End}{\operatorname{End}}
+\newcommand{\Hom}{\operatorname{Hom}}
+\newcommand{\Gal}{\operatorname{Gal}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\kw}[1]{\emph{#1}}
+\newcommand{\m}[1]{\mbox{$#1$}}        % a short formula that must not be broken across lines
+\newcommand{\head}[1]{\par\addvspace{17pt plus 4pt minus 2pt}\Needspace{6\baselineskip}%
+  \noindent{\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\sect}[2]{\refstepcounter{section}\label{#2}\par\addvspace{19pt plus 4pt minus 2pt}\Needspace{7\baselineskip}%
+  \noindent\llap{{\fontsize{13.2}{16}\selectfont\bfseries\color{inkfaint}\thesection}\hspace{9pt}}%
+  {\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\subhead}[1]{\par\addvspace{9pt plus 2pt}\Needspace{4\baselineskip}\noindent\textbf{#1}\enspace\ignorespaces}
+% where a statement lives in the Lean archive
+\newcommand{\leantag}{{\sffamily\bfseries\fontsize{6.3}{8}\selectfont\color{leancol}\addfontfeatures{LetterSpace=7}LEAN}}
+\newcommand{\sep}{\unskip\nobreak\hspace{5pt}{\color{inkfaint}\textperiodcentered}\hspace{5pt plus 2pt}\ignorespaces}
+\newcommand{\leanline}[1]{\par\nopagebreak\vspace{-2.5pt}{\fontsize{8.9}{12.4}\selectfont\color{inksoft}\raggedright
+  \noindent\llap{\leantag\hspace{9pt}}#1\par}\vspace{1pt}}
+% a displayed statement in a tinted box: #1 colour, #2 text
+\newcommand{\statement}[2]{\par\addvspace{7pt}\begingroup\setlength{\fboxsep}{8.5pt}\setlength{\fboxrule}{0.6pt}%
+  \noindent\fcolorbox{#1!30!white}{#1!3!white}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{#2}}%
+  \endgroup\par\addvspace{7pt}}
+\newcommand{\nt}[2]{\par\noindent\hangindent=1.1em\hangafter=1 #1\enspace{\color{inksoft}#2}\par\vspace{1pt}}
+\newcommand{\legdot}[1]{\tikz[baseline=-0.62ex]\fill[#1] (0,0) circle (2.5pt);\hspace{3pt}}
+\newcommand{\crow}[4]{\csname CS@#1\endcsname & #2 & \textcolor{inksoft}{#3} & \textcolor{inksoft}{#4}\\}
+\newcommand{\leanquoteline}[2]{\par\noindent\hangindent=\dimexpr#1\fontdimen2\font+2.2em\relax\hangafter=1
+  \hspace*{#1\fontdimen2\font}#2}
+\newcommand{\quoted}[1]{\par\vspace{3pt}{\ttfamily\fontsize{7.5}{10.4}\selectfont\color{leancol}\raggedright
+  \setlength{\parskip}{0pt}\leanquote{#1}\par}\vspace{4pt}}
+\newcommand{\bx}[3]{{\sffamily\bfseries\fontsize{7.3}{9.2}\selectfont\color{#1!82!black}#2}\\[1.5pt]#3}
+\newcommand{\cs}[2]{\expandafter\newcommand\csname CS@#1\endcsname{#2}}
+
+% theorems
+\newtheoremstyle{plainx}{7pt plus 2pt}{7pt plus 2pt}{\itshape}{}{\bfseries}{.}{0.5em}{}
+\newtheoremstyle{uprightx}{7pt plus 2pt}{7pt plus 2pt}{}{}{\bfseries}{.}{0.5em}{}
+\theoremstyle{plainx}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{uprightx}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{setting}[theorem]{Setting}          % hypotheses shared by several statements; each of them cites it by number
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\renewcommand{\qedsymbol}{{\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.5pt}\fbox{\rule{0pt}{0.46em}\hspace{0.46em}}}}
+% what holds throughout the note: the ambient objects only (implicit and instance arguments), never a hypothesis
+\newenvironment{conventions}{\par\addvspace{5pt}\noindent\textbf{Conventions.}\enspace\ignorespaces}{\par\addvspace{3pt}}
+\makeatletter
+\renewenvironment{proof}[1][Proof]{\par\pushQED{\qed}\normalfont\topsep0pt\partopsep0pt
+  \trivlist\item[\hskip\labelsep\itshape #1.]\ignorespaces}{\popQED\endtrivlist\@endpefalse}
+\makeatother
+
+% where each declaration of the concordance is treated: \cs{key}{place}, the place naming a \label or a lettered item
+\cs{normDetSq}{Lemma~\ref{l:gram}}
+\cs{liftVolume}{Definition~\ref{d:vol}}
+\cs{chainTheta}{Definition~\ref{d:vol}}
+\cs{chainVolume}{Definition~\ref{d:vol}}
+\cs{volumeProduct}{Theorem A}
+\cs{rangeTupleIdem}{Lemma~\ref{l:idem}}
+\cs{groupAlgActionAuxLift}{Lemma~\ref{l:equiv}}
+\cs{rangeGoodLift}{Lemma~\ref{l:range}}
+\newcommand{\CC}{\mathbb{C}}
+\newcommand{\ZZ}{\mathbb{Z}}
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\AutC}{\operatorname{Aut}(\CC)}
+\newcommand{\Row}{\mathrm{Row}}
+\newcommand{\Mf}{\mathcal{M}}
+\newcommand{\Mg}{\mathcal{M}^{\circ}}
+\newcommand{\Ff}{\mathcal{F}}
+\newcommand{\alift}{\operatorname{lift}^{*}}
+\newcommand{\chain}{\operatorname{chain}}
+\newcommand{\Hk}{\mathbb{T}}
+\newcommand{\sfG}{\mathsf{G}}
+\newcommand{\idem}{\operatorname{idem}}
+\newcommand{\vol}{\operatorname{vf}}
+\newcommand{\ip}[2]{\langle #1,#2\rangle}
+\newcommand{\inputbox}[1]{\statement{inksoft}{#1}}
+
+\begin{document}
+\color{ink}
+
+{\raggedright
+{\sffamily\bfseries\fontsize{7.2}{9}\selectfont\color{leancol}\addfontfeatures{LetterSpace=8}READBACK NOTE · CHAPTER VII · UNIT 143 · PART 1 OF 4\par}
+\vspace{5pt}
+{\fontsize{21.5}{25.5}\selectfont\bfseries The volume of the chain of theta lifts as a product of lift volumes\par}
+\vspace{5pt}
+{\fontsize{12.4}{16}\selectfont\itshape\color{inksoft} One unit of the Lean artifact \ArtifactName, read back into
+mathematics\par}}
+\vspace{8pt}
+{\color{rulegrey}\hrule height 0.6pt}
+\vspace{7pt}
+\thispagestyle{empty}
+
+\textbf{Summary.} The rows of the proof are the good automorphic forms on an indefinite unitary group of rank~$r$,
+and the chain of lifts sends them, through $m$ theta lifts, to algebraic modular forms on a definite unitary group.
+This note proves that the volume of the chain on the rows, the determinant of its Gram operator, is a constant to
+the power of the dimension of the rows times the product of the volumes of $m$ single lifts, each taken at a
+definite group of fixed rank and at the matching power of the twist. The constant depends on the twist, but only
+through quantities whose ratio to the untwisted one has controlled height. The proof compares Gram forms: by the
+Rallis inner product formula each Gram form is a constant times a Hecke operator, and the same Hecke operators
+occur on both sides.
+
+\statement{leancol}{\fontsize{9.6}{13.2}\selectfont\textbf{What this note is.} The artifact \ArtifactName{} is a
+body of Lean code: the compact edition of a formal proof, due to L.~Alpöge with the AI system Claude, of the Riemann
+hypothesis and of its generalisation to Dirichlet $L$-functions. That headline is a claim. The authors report that
+every file compiles with Lean v4.35.0 against a pinned version of Mathlib and that Lean's kernel accepted the
+proofs; an independent build is recorded in the handout's record of checks when it reports. No mathematician has
+read the argument through, and nothing here says that the Riemann hypothesis is proved. This note is the first of
+four on one unit of the artifact, the folder of the rows; it treats \UnitInNote{} of the unit's \UnitMembers{}
+declarations, those of the file on the volume of the chain. Theorem~A and Lemmas \ref{l:gram} to~\ref{l:range} are
+proved in full from Inputs 1 to~7, which belong to other units and are stated in a box and not proved here. Every
+statement below was compared with its Lean text, argument by argument. The Lean text read is \PinText; Appendix~A
+is the concordance of \ConcDecls{} declarations.}
+
+\sect{The statement}{s:intro}
+Theorem~C of the handout bounds a height from below by comparing the chain of lifts at the trivial twist with the
+chain at well-chosen twists. It needs to know how the volume of the chain depends on the twist. The answer has two
+parts: a product formula, which is Theorem~A here, and a bound for each factor, which is the subject of the note
+\emph{The height of a ratio of lift volumes}. The objects are those of Setting~\ref{set:data} and
+Definition~\ref{d:vol}.
+
+\statement{arith}{\phantomsection\label{t:A}\textbf{Theorem A} (the volume of the chain is a product).\enspace
+\emph{In Setting~\ref{set:data}, for all parameters~$P$ and all admissible data~$D$ for~$P$, with number of
+lifts~$m$, there is a function~$c$ from the $m$-fold twists of~$D$ to~$\CC$ with the following two properties.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item For every family $\theta=(\theta_{\ell,\iota})$ of $m$-fold twists of~$D$ that is fit for~$D$, the family
+\m{(\ell,\iota)\mapsto|c(\theta_{\ell,\iota})/c(1)|^{-2}} has height at most \m{m^2\cdot2\,t(D)\,x^{999}}, where $x$ is
+the first scale of~$D$ and \m{t(D)=5r}.
+\item For every $m$-fold twist~$\vartheta$ of~$D$,
+\[\chainVolume{D}{\vartheta}\ne0\qquad\text{and}\qquad
+\chainVolume{D}{\vartheta}=|c(\vartheta)|^{\dim\Row(D)}\cdot\prod_{j=1}^{m}\liftVolume{D}{\vartheta}{j}.\]
+\end{enumerate}}}
+\leanline{\lean{volumeProduct}\sep property (a) is the formal text's ``$c$ costs \m{m\cdot m} squares''
+(Input~7)}
+
+Here $\chainVolume{D}{\vartheta}$ is the volume of the chain $\chainTheta{D}{\vartheta}$ of $m$ lifts on the rows,
+and $\liftVolume{D}{\vartheta}{j}$ is the volume of the $j$-th single lift, formed with the twist~$\vartheta^{j}$,
+on the good forms of its own source. The exponent \m{\dim\Row(D)} appears because all the volumes are determinants
+on spaces of this one dimension.
+
+\sect{The setting}{s:setting}
+\begin{conventions}\phantomsection\label{c:conventions}
+Inner product spaces are complex, and an inner product \m{\ip{y'}{y}} is conjugate-linear in~$y'$ and linear
+in~$y$.
+For a linear map~$u$ between finite-dimensional inner product spaces, $u^{*}$ is its adjoint. The implicit
+arguments of the declarations of this note are the parameters~$P$ (in all of them) and, in
+Lemmas~\ref{l:gram} and~\ref{l:idem}, an inner product space~$U$ and, in Lemma~\ref{l:gram}, a second one~$U'$
+and the scalar~$a$; in Lemmas \ref{l:idem} to~\ref{l:range} also the tame character~$\vartheta$, the lift index~$j$,
+the homomorphism~$\varrho$, the tuple~$\mathbf{c}$, the element~$\xi$ and the subspace~$\mathcal{N}$. Each of
+them is introduced again in the statement that uses it.
+\end{conventions}
+
+\begin{setting}[data, forms and lifts; all taken from other units]\label{set:data}
+\emph{Data.} $P=(N_0,d)$ are parameters and $D$ is admissible data for~$P$ (Setting~1 of the overview of the
+handout; the notes on Chapter~III). Attached to~$D$ are the CM field \m{E(D)}, the number~$m$ of lifts, the
+rank~$r$, the step \m{t(D)=5r}, the first scale~$x$, the finite set of \kw{chosen primes} of \m{E(D)}, and the
+finite group $\sfG(D)$, the product of the groups $\mathrm{GL}_r$ of the residue fields of the chosen primes. A
+\kw{lift index} is an integer~$j$ with \m{1\le j\le m}.
+
+\emph{Spaces.} $Y_0(D),\dots,Y_m(D)$ are hermitian spaces over \m{E(D)}, the space $Y_i(D)$ of rank \m{r+i\,t(D)};
+$Y_0(D)$ is indefinite and $Y_m(D)$ is definite. For a lift index~$j$, $W_j(D)$ is a diagonal hermitian space of
+rank~$r$.
+
+\emph{Forms of principal level.} For a hermitian space~$V$ of rank~$r$ over \m{E(D)}, $\Mf_D(V)$ is the space of
+automorphic forms on the unitary group of~$V$ of a fixed type at the infinite places and fixed by the principal
+congruence subgroup at the chosen primes. It is an inner product space under the Petersson product, the group
+algebra \m{\CC[\sfG(D)]} acts on it, and it is finite-dimensional for \m{V=Y_0(D)} and for \m{V=W_j(D)}.
+
+\emph{Good forms and rows.} A \kw{tuple of labels} is a family of monic polynomials of degree~$r$, one over the
+residue field of each chosen prime. Each tuple~$\mathbf{c}$ has a central idempotent \m{\idem(\mathbf{c})} of
+\m{\CC[\sfG(D)]}; idempotents of different tuples are orthogonal. A finite set of tuples is called \kw{good}, and
+$e_0(D)$ is the sum of \m{\idem(\mathbf{c})} over the good tuples~$\mathbf{c}$; it is a central idempotent. The
+\kw{good forms} on~$V$ are \m{\Mg_D(V)=e_0(D)\,\Mf_D(V)}, and the \kw{rows} are \m{\Row(D)=\Mg_D(Y_0(D))}.
+
+\emph{Hecke operators.} $\Hk_D$ is the Hecke algebra of~$D$: an algebra whose elements~$T$ act on every
+$\Mf_D(V)$, by an endomorphism~$T_V$ that preserves $\Mg_D(V)$; it contains the Hecke operators at the primes
+away from the level. A \kw{Hecke eigensystem} is a function~$p$ that assigns a complex number to each of these
+Hecke operators, and \m{\Mf_D(V)[p]} is the space of the forms on which each of them acts by the value of~$p$.
+
+\emph{Twists.} A \kw{tame character} of~$D$ is a character~$\vartheta$ of the norm-one ideles of \m{E(D)}, trivial
+on the norm-one elements of \m{E(D)} and at the infinite places, at most tamely ramified, with a finite
+set~\m{Q(\vartheta)} of primes outside of which it is unramified; \m{Q(\vartheta)} contains the complex conjugate
+of none of its members, and the norms of its members are prime to \m{g(D)N(D)}. It is an \kw{$m$-fold twist} if
+$\vartheta^{n}$ is ramified at every prime of \m{Q(\vartheta)} for \m{1\le n\le m}. The trivial character~$1$ is
+an $m$-fold twist with \m{Q(1)=\emptyset}, and every power $\vartheta^{n}$ is a tame character with
+\m{Q(\vartheta^{n})=Q(\vartheta)}. For an integer \m{e\ge0}, \m{\mathfrak{m}_D(\vartheta,e)} is the ideal of
+\m{E(D)} equal to the $e$-th power of the product of the chosen primes times the product of the primes in
+\m{Q(\vartheta)}, and \m{|\mathcal{O}/\mathfrak{m}_D(\vartheta,e)|} is the number of elements of its residue ring.
+
+\emph{Single lifts.} For a tame character~$\vartheta$ and a lift index~$j$, the \kw{auxiliary pair}
+\m{O_D(\vartheta,j)} consists of $W_j(D)$, of a definite hermitian space of rank \m{r+t(D)} and of a character
+built from~$\vartheta$; \m{\Ff(O_D(\vartheta,j))} is its space of algebraic modular forms on the definite space, a
+finite-dimensional inner product space on which \m{\CC[\sfG(D)]} acts (the note \emph{Auxiliary dual pairs,
+determinant polynomials and the carrier}). The \kw{adjoint lift}
+\[\alift_D(\vartheta,j)\colon\Mf_D(W_j(D))\longrightarrow\Ff(O_D(\vartheta,j))\]
+is the adjoint of a theta lift from the definite space to~$W_j(D)$.
+
+\emph{The chain.} For an $m$-fold twist~$\vartheta$, the linear map
+\m{\chain_D(\vartheta)\colon\Mf_D(Y_0(D))\to\mathcal{A}_{D,\vartheta}} is the composite of $m$ theta lifts
+\m{Y_0(D)\to Y_1(D)\to\dots\to Y_m(D)}, the $i$-th formed with~$\vartheta^{i}$, with values in a finite-dimensional
+inner product space $\mathcal{A}_{D,\vartheta}$ of algebraic modular forms on the definite space~$Y_m(D)$.
+
+\emph{Heights and fit families.} A family \m{Z=(Z_{\ell,\iota})} of complex numbers, indexed by the pairs of a
+prime~$\ell$ and a field isomorphism~$\iota$ from~$\CC$ to an algebraic closure of~$\mathbb{Q}_\ell$, has
+\kw{height at most~$h$}, for a real number~$h$, if there are \m{H\in\CC} with \m{H\ne0}, a real number~$\alpha$
+and real numbers~$\eta_\ell$ with \m{|\sigma(H)|\le e^{\alpha}} for all \m{\sigma\in\AutC},
+\m{|\iota(H\,Z_{\ell,\iota})|_\ell\le e^{\eta_\ell}} for all \m{(\ell,\iota)}, and such that $\alpha$ plus the sum of
+the~$\eta_\ell$ over the primes~$\ell$ below any sufficiently large bound is at most~$h$. A family
+\m{\theta=(\theta_{\ell,\iota})} of $m$-fold twists of~$D$, with the same index set, may be \kw{fit for~$D$}; the
+definition belongs to Chapter~VIII and enters this note only through Input~7.
+\end{setting}
+
+\begin{definition}[volumes]\label{d:vol}
+For a linear map~$u$ between finite-dimensional inner product spaces, the \kw{volume factor} \m{\vol(u)} is the
+real number \m{\ge0} with \m{\vol(u)^2=\det(u^{*}u)}; it vanishes exactly when $u$ is not injective. In
+Setting~\ref{set:data}:
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=2pt]
+\item for an $m$-fold twist~$\vartheta$ of~$D$ and a lift index~$j$, the \kw{lift volume} is
+\[\liftVolume{D}{\vartheta}{j}=\vol(u)^2=\det(u^{*}u),\]
+where \m{u\colon\Mg_D(W_j(D))\to\Ff(O_D(\vartheta^{j},j))} is the restriction of \m{\alift_D(\vartheta^{j},j)}, the
+adjoint lift for the twist~$\vartheta^{j}$, to the good forms;
+\item for an $m$-fold twist~$\vartheta$ of~$D$, the \kw{chain of lifts on the rows} is the restriction
+\[\chainTheta{D}{\vartheta}=\chain_D(\vartheta)\big|_{\Row(D)}\colon\ \Row(D)\to\mathcal{A}_{D,\vartheta};\]
+\item for an $m$-fold twist~$\vartheta$ of~$D$, the \kw{volume of the chain} is
+\[\chainVolume{D}{\vartheta}=\vol(\chainTheta{D}{\vartheta})^2=\det(\chainTheta{D}{\vartheta}^{*}\,\chainTheta{D}{\vartheta}).\]
+\end{enumerate}
+Both volumes are real numbers \m{\ge0}, regarded as complex numbers.
+\end{definition}
+\leanline{\lean{liftVolume}\sep \lean{chainTheta}\sep \lean{chainVolume}}
+
+\inputbox{\textbf{Inputs from other units.} The seven results below are taken for granted. They are stated as the
+dossier of this unit reads them; the notes on their units prove them. In all of them $P$ and~$D$ are as in
+Setting~\ref{set:data}.
+
+\vspace{4pt}\textbf{Input 1} (unit \emph{Exchange}; the inner product formula for one lift).\enspace For every lift
+index~$j$ there is \m{A_j\in\CC}, \m{A_j\ne0}, such that for every tame character~$\vartheta$ of~$D$ the map
+\m{\alift_D(\vartheta,j)} is injective and, for all \m{y',y\in\Mf_D(W_j(D))},
+\[\ip{\alift_D(\vartheta,j)\,y'}{\alift_D(\vartheta,j)\,y}=A_j\,\delta_D(\vartheta)\sum_{\gamma}R_{D}(\vartheta,j,W_j(D);y',y;\gamma).\]
+Here the terms \m{R_{D}(\vartheta,j,V;y',y;\gamma)}, defined for every hermitian space~$V$ of rank~$r$ and all
+\m{y',y\in\Mf_D(V)}, are those of the Rallis inner product formula (a matrix coefficient of a translation at a
+coset~$\gamma$, weighted by a local factor that depends on $\vartheta$ and~$j$), the series converges
+unconditionally, and \m{\delta_D(\vartheta)\ne0} is the \kw{Gram factor}: a ratio of indices and orders of finite
+groups that depends only on the chosen primes and on \m{Q(\vartheta)}.
+
+\vspace{3pt}\textbf{Input 2} (unit \emph{Exchange}; the first lift of each row of the triangle).\enspace For every
+$m$-fold twist~$\vartheta$ there are a family of inner product spaces of forms \m{F_\vartheta(i,n)}, for
+\m{i+n\le m}, with linear maps \m{a_\vartheta(i,n)\colon F_\vartheta(i,n)\to F_\vartheta(i,n+1)}, which are theta
+lifts, isometric embeddings \m{\jmath_i\colon\Mf_D(Y_0(D))\to F_\vartheta(i,0)}, and positive integers
+\m{N_n(\vartheta)}, for \m{0\le n\le m}. For every \m{i<m} there is \m{C_i\in\CC} such that for every $m$-fold
+twist~$\vartheta$ and all \m{z,y\in\Mf_D(Y_0(D))}
+\[N_0(\vartheta)\,\ip{a_\vartheta(i,0)\jmath_i z}{a_\vartheta(i,0)\jmath_i y}=C_i\sum_{\gamma}R_{D}(\vartheta^{i+1},i+1,Y_0(D);z,y;\gamma).\]
+
+\vspace{3pt}\textbf{Input 3} (unit \emph{Exchange}; the Gram form of the weighted chain).\enspace Let
+\m{u_\vartheta\colon F_\vartheta(0,0)\to F_\vartheta(0,m)} be the composite of the maps
+\m{N_n(\vartheta)\,a_\vartheta(0,n)}, \m{0\le n<m}. Suppose that for every $m$-fold twist~$\vartheta$ and every
+\m{i<m} an endomorphism \m{S(\vartheta,i)} of \m{\Row(D)} is given with
+\m{N_0(\vartheta)\ip{a_\vartheta(i,0)\jmath_i z}{a_\vartheta(i,0)\jmath_i y}=\ip{z}{S(\vartheta,i)y}} for all
+\m{z\in\Mf_D(Y_0(D))} and \m{y\in\Row(D)}. Then there is a function~$\kappa$ from the $m$-fold twists to~$\CC$ that
+costs \m{m\cdot m} squares (Input~7), and for every $m$-fold twist~$\vartheta$ there is an endomorphism \m{T(\vartheta)}
+of \m{\Row(D)} with \m{\det T(\vartheta)=\prod_{i<m}\det S(\vartheta,i)} and
+\[\ip{u_\vartheta\jmath_0z}{u_\vartheta\jmath_0y}=\kappa(\vartheta)\,\frac{N_0(\vartheta)\,N_1(\vartheta)^{m}}{N_m(\vartheta)}\,\ip{z}{T(\vartheta)y}\]
+for all \m{z\in\Mf_D(Y_0(D))} and \m{y\in\Row(D)}.}
+
+\inputbox{\textbf{Inputs from other units, continued.}
+
+\vspace{4pt}\textbf{Input 4} (unit \emph{Exchange}; the chain at its level).\enspace For every $m$-fold
+twist~$\vartheta$ the map \m{\chain_D(\vartheta)} is injective. Let \m{I(\vartheta)} be the index of the level of
+\m{\mathcal{A}_{D,\vartheta}} in the stabiliser of the standard lattice of~$Y_m(D)$, and let $\omega$ be the dimension
+of the weight of \m{\mathcal{A}_{D,\vartheta}}, a positive integer that does not depend on~$\vartheta$. Then
+\m{\ip{\chain_D(\vartheta)z}{\chain_D(\vartheta)y}=I(\vartheta)\,\omega\,\ip{u_\vartheta\jmath_0z}{u_\vartheta\jmath_0y}}
+for all \m{z,y\in\Mf_D(Y_0(D))}. Moreover there are a number~$G$ and an integer~$l$ with
+\[I(\vartheta)=G\cdot|\mathcal{O}/\mathfrak{m}_D(\vartheta,0)|^{\,l}\cdot\delta_D(\vartheta)^{m}\cdot\frac{N_m(\vartheta)}{N_0(\vartheta)\,N_1(\vartheta)^{m}}
+\qquad\text{for every $m$-fold twist }\vartheta.\]
+
+\vspace{3pt}\textbf{Input 5} (unit \emph{Trace}; one Hecke element for two Rallis series).\enspace Let
+$\vartheta$ be a tame character of~$D$ and $j$ a lift index, let $V$ and~$V'$ be hermitian spaces of rank~$r$ over
+\m{E(D)} whose signatures satisfy the gap condition of that unit (the proof below takes \m{V=Y_0(D)} and
+\m{V'=W_{i+1}(D)}), let \m{A,A'\in\CC}, and let $B$ and~$B'$ be complex functions of two forms. If
+\m{A\sum_\gamma R_D(\vartheta,j,V;z,y;\gamma)=B(z,y)} for all \m{z,y\in\Mf_D(V)} and
+\m{A'\sum_\gamma R_D(\vartheta,j,V';z,y;\gamma)=B'(z,y)} for all \m{z,y\in\Mf_D(V')}, the series converging
+unconditionally, then there is \m{T\in\Hk_D} with \m{B(z,y)=A\ip{z}{T_Vy}} and \m{B'(z,y)=A'\ip{z}{T_{V'}y}} for all
+such $z$ and~$y$.
+
+\vspace{3pt}\textbf{Input 6} (unit \emph{Trace}; good forms on different spaces).\enspace For every lift
+index~$j$ and every \m{T\in\Hk_D}, the determinants of~$T$ on \m{\Mg_D(Y_0(D))} and on \m{\Mg_D(W_j(D))} are equal,
+and \m{\dim\Row(D)=\dim\Mg_D(W_j(D))}.
+
+\vspace{3pt}\textbf{Input 7} (unit \emph{Exchange}; the cost of squares).\enspace For an integer \m{n\ge0}, a
+function~$c$ from the $m$-fold twists of~$D$ to~$\CC$ \kw{costs $n$ squares} if, for every family~$\theta$ of
+$m$-fold twists that is fit for~$D$, the family \m{(\ell,\iota)\mapsto|c(\theta_{\ell,\iota})/c(1)|^{-2}} has height
+at most \m{n\cdot2\,t(D)\,x^{999}}. (i) If $c$ costs $n$ squares, $c'$ costs $n'$ squares and \m{n+n'\le n''}, then
+the product \m{c\,c'} costs $n''$ squares. (ii) If there are a real number~$G'$, an integer \m{e\ge0} and an
+integer~$l'$ with \m{|c(\vartheta)|^2=G'\cdot|\mathcal{O}/\mathfrak{m}_D(\vartheta,e)|^{\,l'}} for every $m$-fold
+twist~$\vartheta$, then $c$ costs $0$ squares.}
+
+Property~(a) of Theorem~A says that $c$ costs \m{m\cdot m} squares, and the function~$\kappa$ of Input~3 costs
+\m{m\cdot m} squares. Inputs 1 and~2 are two instances of the Rallis inner product formula, which expresses the
+Petersson product of two theta lifts as a product of local zeta integrals; the notes on the unit \emph{Exchange}
+give the reference. In Input~2 the spaces \m{F_\vartheta(i,n)} form a triangle whose row \m{i=0} is the chain
+\m{Y_0(D)\to\dots\to Y_m(D)}; the other rows serve the proof of Input~3 only.
+
+\sect{Proofs}{s:proofs}
+\begin{lemma}[a Gram form determines the volume]\label{l:gram}
+Let $U$ and~$U'$ be finite-dimensional inner product spaces, \m{u\colon U\to U'} a linear map, $S$ an endomorphism
+of~$U$ and \m{a\in\CC}. If \m{\ip{uy'}{uy}=a\,\ip{y'}{Sy}} for all \m{y',y\in U}, then
+\[\vol(u)^2=a^{\dim U}\cdot\det S.\]
+\end{lemma}
+\begin{proof}
+For all \m{y',y\in U}, \m{\ip{y'}{u^{*}uy}=\ip{uy'}{uy}=a\ip{y'}{Sy}=\ip{y'}{(aS)y}}. So \m{u^{*}u=aS}, and
+\m{\vol(u)^2=\det(u^{*}u)=\det(aS)=a^{\dim U}\det S}.
+\end{proof}
+\leanline{\lean{normDetSq}}
+
+\begin{proof}[Proof of Theorem A]
+Fix $P$ and~$D$, and write \m{n_0=\dim\Row(D)}.
+
+\emph{The single lifts.} Take the numbers \m{A_j\ne0} of Input~1 and the numbers~$C_i$ of Input~2. Let
+$\vartheta$ be an $m$-fold twist and \m{0\le i<m}. The power \m{\vartheta^{i+1}} is a tame character with
+\m{Q(\vartheta^{i+1})=Q(\vartheta)}, so \m{\delta_D(\vartheta^{i+1})=\delta_D(\vartheta)}. Input~1, for the tame
+character \m{\vartheta^{i+1}} and the lift index \m{i+1}, and Input~2 give two series of Rallis terms with the same
+parameters \m{(\vartheta^{i+1},i+1)}, one on \m{W_{i+1}(D)} with the constant \m{A_{i+1}\delta_D(\vartheta)} and one
+on $Y_0(D)$ with the constant~$C_i$. By Input~5 there is \m{T_{\vartheta,i}\in\Hk_D} with
+\begin{align*}
+N_0(\vartheta)\,\ip{a_\vartheta(i,0)\jmath_iz}{a_\vartheta(i,0)\jmath_iy}&=C_i\,\ip{z}{T_{\vartheta,i}\,y}
+&&\text{for }z,y\in\Mf_D(Y_0(D)),\\
+\ip{\alift_D(\vartheta^{i+1},i+1)\,z}{\alift_D(\vartheta^{i+1},i+1)\,y}&=A_{i+1}\,\delta_D(\vartheta)\,\ip{z}{T_{\vartheta,i}\,y}
+&&\text{for }z,y\in\Mf_D(W_{i+1}(D)),
+\end{align*}
+where $T_{\vartheta,i}$ acts on the forms of the space in question. Since $T_{\vartheta,i}$ preserves the good
+forms, the second identity and Lemma~\ref{l:gram}, applied to the restriction of the adjoint lift to
+\m{\Mg_D(W_{i+1}(D))}, a space of dimension~$n_0$ by Input~6, give
+\begin{equation}\label{e:single}
+\liftVolume{D}{\vartheta}{i+1}=\bigl(A_{i+1}\,\delta_D(\vartheta)\bigr)^{n_0}\cdot\det\bigl(T_{\vartheta,i}\mid\Mg_D(W_{i+1}(D))\bigr).
+\end{equation}
+
+\emph{The chain.} Let \m{S(\vartheta,i)} be \m{C_i} times the restriction of~$T_{\vartheta,i}$ to \m{\Row(D)}. By
+the first identity the hypothesis of Input~3 holds. Take $\kappa$ and the endomorphisms \m{T(\vartheta)} from
+Input~3. With Input~4, for \m{z,y\in\Row(D)},
+\begin{align*}
+\ip{\chainTheta{D}{\vartheta}z}{\chainTheta{D}{\vartheta}y}
+&=I(\vartheta)\,\omega\,\kappa(\vartheta)\,\frac{N_0(\vartheta)N_1(\vartheta)^{m}}{N_m(\vartheta)}\,\ip{z}{T(\vartheta)y}\\
+&=G\,|\mathcal{O}/\mathfrak{m}_D(\vartheta,0)|^{\,l}\,\delta_D(\vartheta)^{m}\,\omega\,\kappa(\vartheta)\,\ip{z}{T(\vartheta)y}.
+\end{align*}
+By Lemma~\ref{l:gram} and the formula for \m{\det T(\vartheta)},
+\begin{equation}\label{e:chain}
+\chainVolume{D}{\vartheta}=\bigl(G\,|\mathcal{O}/\mathfrak{m}_D(\vartheta,0)|^{\,l}\,\delta_D(\vartheta)^{m}\,\omega\,\kappa(\vartheta)\bigr)^{n_0}
+\cdot\prod_{i<m}C_i^{\,n_0}\det\bigl(T_{\vartheta,i}\mid\Row(D)\bigr).
+\end{equation}
+
+\emph{Comparison.} By Input~6 the determinants of $T_{\vartheta,i}$ on \m{\Row(D)=\Mg_D(Y_0(D))} and on
+\m{\Mg_D(W_{i+1}(D))} agree. Insert this into \eqref{e:chain} and write
+\m{C_i^{\,n_0}\,\delta_D(\vartheta)^{n_0}=(C_i/A_{i+1})^{n_0}\,(A_{i+1}\delta_D(\vartheta))^{n_0}}, which is allowed since
+\m{A_{i+1}\ne0}. By the identities \eqref{e:single} for \m{i<m},
+\[\chainVolume{D}{\vartheta}=c(\vartheta)^{n_0}\cdot\prod_{j=1}^{m}\liftVolume{D}{\vartheta}{j},\qquad
+c(\vartheta)=\kappa(\vartheta)\cdot\prod_{i<m}\frac{C_i}{A_{i+1}}\cdot\omega\cdot G\cdot|\mathcal{O}/\mathfrak{m}_D(\vartheta,0)|^{\,l}.\]
+The volumes are real and \m{\ge0}. Taking absolute values on both sides gives the formula of~(b), with
+\m{|c(\vartheta)|^{n_0}} in the place of \m{c(\vartheta)^{n_0}}.
+
+\emph{Non-vanishing.} The map \m{\chain_D(\vartheta)} is injective by Input~4, so its restriction
+\m{\chainTheta{D}{\vartheta}} is injective and \m{\chainVolume{D}{\vartheta}\ne0}.
+
+\emph{The cost.} Write \m{c=\kappa\cdot c_0}. The function~$c_0$ satisfies
+\m{|c_0(\vartheta)|^2=G'\cdot|\mathcal{O}/\mathfrak{m}_D(\vartheta,0)|^{2l}} with a real number~$G'$ that does not
+depend on~$\vartheta$, so it costs $0$ squares by Input~7\,(ii). The function~$\kappa$ costs \m{m\cdot m}
+squares. By Input~7\,(i), with \m{m\cdot m+0\le m\cdot m}, the function~$c$ costs \m{m\cdot m} squares, which
+is~(a).
+\end{proof}
+\leanline{\lean{volumeProduct}\sep the formal proof takes absolute values of the two identities given by
+Lemma~\ref{l:gram} before it compares them}
+
+The last three results of the file describe the image of one adjoint lift on the good forms. They are not used
+for Theorem~A; the note \emph{The height of a ratio of lift volumes} and Chapter~VIII use them
+(§\ref{s:used}).
+
+\begin{lemma}[a good tuple acts inside the good part]\label{l:idem}
+In Setting~\ref{set:data}, let $U$ be an inner product space, let
+\m{\varrho\colon\CC[\sfG(D)]\to\operatorname{End}_{\CC}(U)} be a homomorphism of $\CC$-algebras, and let
+$\mathbf{c}$ be a tuple of labels that is good. Then the image of \m{\varrho(\idem(\mathbf{c}))} is contained in
+the image of \m{\varrho(e_0(D))}.
+\end{lemma}
+\begin{proof}
+The idempotents of the tuples are orthogonal and $e_0(D)$ is their sum over the good tuples, of which
+$\mathbf{c}$ is one. So \m{\idem(\mathbf{c})=\idem(\mathbf{c})\,e_0(D)=e_0(D)\,\idem(\mathbf{c})}, the second
+equality because $e_0(D)$ is central. Hence
+\m{\varrho(\idem(\mathbf{c}))=\varrho(e_0(D))\circ\varrho(\idem(\mathbf{c}))}, and the image of a composite lies in
+the image of its outer map.
+\end{proof}
+\leanline{\lean{rangeTupleIdem}}
+
+\begin{lemma}[the adjoint lift commutes with the finite group]\label{l:equiv}
+In Setting~\ref{set:data}, let $\vartheta$ be a tame character of~$D$, $j$ a lift index and
+\m{\xi\in\CC[\sfG(D)]}. For every \m{y\in\Mf_D(W_j(D))},
+\[\alift_D(\vartheta,j)(\xi\cdot y)=\xi\cdot\alift_D(\vartheta,j)(y),\]
+where $\xi$ acts on the left through the action of \m{\CC[\sfG(D)]} on \m{\Mf_D(W_j(D))} and on the right through
+its action on \m{\Ff(O_D(\vartheta,j))}.
+\end{lemma}
+\begin{proof}
+Both actions are linear in~$\xi$, and $\xi$ is a finite combination of elements of \m{\sfG(D)}. For a group element
+the identity is the equivariance of the adjoint lift, which the unit of Chapter~VIII that defines the adjoint
+lift proves.
+\end{proof}
+\leanline{\lean{groupAlgActionAuxLift}}
+
+\begin{lemma}[the image of the adjoint lift on the good forms]\label{l:range}
+In Setting~\ref{set:data}, let $\vartheta$ be a tame character of~$D$, $j$ a lift index and $\mathcal{N}$ a linear
+subspace of \m{\Ff(O_D(\vartheta,j))}. Suppose that for every Hecke eigensystem~$p$, every
+\m{y\in\Mg_D(W_j(D))\cap\Mf_D(W_j(D))[p]} and every good tuple of labels~$\mathbf{c}$: if
+\m{\alift_D(\vartheta,j)(y)} lies in the image of the action of \m{\idem(\mathbf{c})} on
+\m{\Ff(O_D(\vartheta,j))}, then \m{\alift_D(\vartheta,j)(y)\in\mathcal{N}}. Then
+\[\alift_D(\vartheta,j)\bigl(\Mg_D(W_j(D))\bigr)\subseteq\mathcal{N}.\]
+\end{lemma}
+\begin{proof}
+The space \m{\Mf_D(W_j(D))} is the sum of the spaces \m{\Mf_D(W_j(D))[p]} over the Hecke eigensystems~$p$ (a fact of
+the unit of Chapter~VIII that defines them). The good forms are the forms \m{e_0(D)\,y}. So it suffices to show, for every~$p$ and every
+\m{y\in\Mf_D(W_j(D))[p]}, that the lift of \m{e_0(D)\,y} lies in~$\mathcal{N}$. Now
+\m{e_0(D)\,y=\sum_{\mathbf{c}}\idem(\mathbf{c})\,y}, the sum over the good tuples. Fix one. The form
+\m{y_{\mathbf{c}}=\idem(\mathbf{c})\,y} is good by Lemma~\ref{l:idem}, applied to the action on \m{\Mf_D(W_j(D))},
+and it lies in \m{\Mf_D(W_j(D))[p]}, because the Hecke operators commute with the action of \m{\sfG(D)}. By
+Lemma~\ref{l:equiv}, \m{\alift_D(\vartheta,j)(y_{\mathbf{c}})=\idem(\mathbf{c})\cdot\alift_D(\vartheta,j)(y)} lies in the
+image of the action of \m{\idem(\mathbf{c})}. The hypothesis gives \m{\alift_D(\vartheta,j)(y_{\mathbf{c}})\in\mathcal{N}},
+and the sum over~$\mathbf{c}$ lies in~$\mathcal{N}$.
+\end{proof}
+\leanline{\lean{rangeGoodLift}}
+
+\sect{Where the results are used}{s:used}
+Theorem~A is one of the two inputs of Theorem~C of the handout that the head of the argument names; the unit
+\emph{Endgame} applies it twice, once to bound the height of
+\m{\chainVolume{D}{1}^2/\chainVolume{D}{\theta_{\ell,\iota}}^2} for a fit family~$\theta$, and once for the
+non-vanishing in~(b). The other input bounds each ratio
+\m{\liftVolume{D}{1}{j}/\liftVolume{D}{\theta_{\ell,\iota}}{j}}; it is proved in the note \emph{The height of a ratio
+of lift volumes}, which uses Lemmas \ref{l:idem} and~\ref{l:range} to describe the image of a single lift, and
+Lemma~\ref{l:equiv} is used in the note \emph{Glued lattices, product forms and the integral comparison forms}.
+Chapter~VIII uses Lemmas \ref{l:idem} and~\ref{l:range} in the proof that fit families exist.
+
+\sect{Notes on the formal text}{s:notes}
+\begin{enumerate}[label=\textup{\arabic*.},leftmargin=1.6em,itemsep=5pt]
+\item \emph{The volume factor.} The formal text uses the library's volume factor of a linear map and its two
+properties quoted in Definition~\ref{d:vol}: its square is \m{\det(u^{*}u)}, and it vanishes exactly when the
+kernel is not zero. The library's definition was not read; the definition above is by these properties. The lift
+volume and the volume of the chain are defined as squares of this real number, cast to~$\CC$.
+\item \emph{The constant is explicit.} The formal proof gives $c$ by the formula at the end of the proof above. It
+does not say that $c$ is unique, and the statement does not use more than its existence.
+\item \emph{Two identifications made by Lean.} The proof applies Input~5 to the series of Input~2, for the
+twist~$\vartheta$ and the row~$i$, and to the series of Input~1, for the tame character \m{\vartheta^{i+1}} and
+the lift index \m{i+1}. That the terms of the first series are the Rallis terms with the parameters
+\m{(\vartheta^{i+1},i+1)}, and that the Gram factor of the pair \m{O_D(\vartheta^{i+1},i+1)} is the one of
+\m{O_D(\vartheta,1)}, is nowhere stated as a lemma: Lean accepts the application because the definitions unfold
+to the same terms. Input~2 above is worded with these identifications made.
+\item \emph{Arguments that the formal statements leave to Lean.} In the definition of the volume of the chain the
+twist is written without its type, and in the definition of the lift volume the index~$j$ is; Lean infers that
+the first is an $m$-fold twist and the second a lift index, from the maps they are given to. In
+Lemma~\ref{l:equiv} the form~$y$ and in Lemmas \ref{l:equiv} and~\ref{l:range} the twist~$\vartheta$ are written
+without types as well; that $\vartheta$ is a tame character, not necessarily a twist, was read off the definition
+of the adjoint lift.
+\item \emph{Hypotheses of Lemma~\ref{l:gram}.} The formal statement asks that both spaces be finite-dimensional;
+$U'$ could be arbitrary once the adjoint exists, but the library's volume factor is defined for finite-dimensional
+spaces.
+\item \emph{What an assembly assembles.} Theorem~A carries no analysis of its own: the convergence of the Rallis
+series, the triangle of lifts and its square laws, the rigidity of the labels behind Input~6 and the index
+computation of Input~4 all lie in the inputs.
+\end{enumerate}
+
+\subhead{How this note was written.} From the dossier of the unit: the structured proofs of Theorem~A (eight
+steps), of Lemma~\ref{l:gram} and of Lemmas \ref{l:idem} and~\ref{l:range}. I read the whole Lean file of these
+eight declarations, and the Lean statements of the inputs in their files: the cost of squares and its two rules,
+the inner product formula for one lift, the formula for the first lift of a row, the statement about the Gram
+form of a weighted chain in a triangle together with the definition of a triangle, the index of the last level
+and the norm of the chain at its level, the common Hecke element, and the two statements about good forms on
+different spaces; also the Lean definitions of tame characters, twists, $m$-fold twists, forms of principal level,
+good forms, rows, heights and fit families. I did not read the proofs of the inputs. The reader of the dossier
+notes that no second reader had looked at it. After the dossier was frozen, the second reader of the write-up compared the readings of all statements of the unit
+with the Lean text and sampled its structured proofs (her message to the writer of 26 November 2026); for this note
+she confirms the two statements about volumes and that the last three lemmas take a tame character, as stated
+here. The proof of Theorem~A above follows the formal one step by step. The program check of the unit's dossier covered \UnitSteps{} leaf
+steps of \UnitProofs{} proofs.
+
+\head{Appendix A. Concordance with the Lean artifact}
+{\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}\setlength{\tabcolsep}{0pt}
+\begin{longtable}{@{}p{30mm}p{56mm}p{43mm}r@{}}
+\textbf{In this note} & \textbf{Lean declaration} & \textbf{File} & \textbf{Lines}\\\midrule\endhead
+\ConcordanceRows
+\end{longtable}}
+
+\subhead{Theorem A and the three definitions as they are written in the artifact.}
+\quoted{volumeProduct}
+\quoted{liftVolume}
+\quoted{chainTheta}
+\quoted{chainVolume}
+In these texts {\leanfont D.MFoldTwist} is the type of the $m$-fold twists of~$D$, {\leanfont D.goodLift} the
+adjoint lift restricted to the good forms, {\leanfont D.iotaAtLevel} the map \m{\chain_D(\vartheta)},
+{\leanfont D.rows} the space \m{\Row(D)}, {\leanfont D.rowDim} its dimension, {\leanfont normDet} the volume
+factor, and {\leanfont D.CostsSquares} the notion of Input~7.
+
+\head{Notation}
+\begingroup\fontsize{8.6}{10.9}\selectfont\raggedright
+\setlength{\columnsep}{9mm}\setlength{\parskip}{0pt}
+\begin{multicols}{2}
+\nt{$P=(N_0,d)$, $D$}{parameters; admissible data for~$P$}
+\nt{$E(D)$}{the CM field of the data}
+\nt{$m$, $r$, $t(D)$, $x$}{number of lifts; rank of the rows; the step \m{5r}; the first scale}
+\nt{$g(D)$, $N(D)$}{the two levels of the data}
+\nt{$\sfG(D)$}{the finite group of the chosen primes}
+\nt{$j$, $i$, $n$, $e$}{a lift index; a row index \m{<m}; integers \m{\ge0}}
+\nt{$Y_i(D)$, $W_j(D)$}{the hermitian spaces of the chain; of the $j$-th single lift}
+\nt{$V$, $V'$}{hermitian spaces of rank~$r$}
+\nt{$\Mf_D(V)$, $\Mg_D(V)$}{forms of principal level on~$V$; the good ones}
+\nt{$\Row(D)$, $n_0$}{the rows; their dimension}
+\nt{$e_0(D)$, $\idem(\mathbf{c})$, $\mathbf{c}$}{the good idempotent; the idempotent of a tuple of labels; a tuple}
+\nt{$\Hk_D$, $T$, $T_V$, $T_{\vartheta,i}$}{the Hecke algebra; an element; its action on~$\Mf_D(V)$; the element
+of the proof}
+\nt{$p$, $\Mf_D(V)[p]$}{a Hecke eigensystem; its eigenspace}
+\nt{$\vartheta$, $Q(\vartheta)$}{a tame character or twist; its set of ramified primes}
+\nt{$\mathfrak{m}_D(\vartheta,e)$, $\mathcal{O}$}{the ideal of chosen primes to the power~$e$ times
+\m{Q(\vartheta)}; the ring of integers of \m{E(D)}}
+\nt{$O_D(\vartheta,j)$, $\Ff(O_D(\vartheta,j))$}{the auxiliary pair; its space of algebraic forms}
+\nt{$\alift_D(\vartheta,j)$}{the adjoint lift}
+\nt{$\chain_D(\vartheta)$, $\mathcal{A}_{D,\vartheta}$}{the chain of $m$ lifts; its target}
+\nt{$\chainTheta{D}{\vartheta}$}{the chain restricted to the rows}
+\nt{$\vol(u)$, $u^{*}$}{the volume factor of a linear map~$u$; its adjoint}
+\nt{$\liftVolume{D}{\vartheta}{j}$, $\chainVolume{D}{\vartheta}$}{the lift volume; the volume of the chain}
+\nt{$L$}{in ``$L$-function'': the Dirichlet series attached to a character}
+\nt{$\ell$, $\iota$, $\sigma$}{a prime; a field isomorphism from~$\CC$ to an algebraic closure of~$\mathbb{Q}_\ell$;
+an automorphism of~$\CC$}
+\nt{$\theta=(\theta_{\ell,\iota})$}{a family of $m$-fold twists}
+\nt{$Z$, $h$, $H$, $\alpha$, $\eta_\ell$}{a family of complex numbers; the objects of a height bound}
+\nt{$c$, $c'$, $c_0$, $\kappa$}{functions on the $m$-fold twists}
+\nt{$A_j$, $C_i$, $G$, $G'$, $l$, $l'$, $\omega$}{the constants of the inputs}
+\nt{$\delta_D(\vartheta)$, $I(\vartheta)$, $N_n(\vartheta)$}{the Gram factor; the index of the last level; the
+weights of the triangle}
+\nt{$R_D(\vartheta,j,V;y',y;\gamma)$, $\gamma$}{a Rallis term; a coset}
+\nt{$F_\vartheta(i,n)$, $a_\vartheta(i,n)$, $\jmath_i$, $u_\vartheta$}{the triangle: spaces, lifts, embeddings;
+the weighted chain}
+\nt{$S(\vartheta,i)$, $T(\vartheta)$, $S$}{endomorphisms of the rows; an endomorphism}
+\nt{$U$, $U'$, $u$, $a$, $y$, $y'$, $z$}{inner product spaces, a linear map, a scalar, vectors or forms}
+\nt{$A$, $A'$, $B$, $B'$}{constants and forms of Input~5}
+\nt{$\varrho$, $\xi$, $\mathcal{N}$, $y_{\mathbf{c}}$}{a homomorphism of algebras; an element of the group algebra;
+a subspace; a component}
+\nt{$n'$, $n''$, $j'$}{further integers and a further lift index}
+\end{multicols}
+\endgroup
+
+\end{document}

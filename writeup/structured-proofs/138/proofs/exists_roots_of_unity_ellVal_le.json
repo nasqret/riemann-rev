@@ -1,0 +1,152 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Selmer.RootsOfUnityPoints:72:7",
+ "summary": "Choose r with ‖ℓ‖ ∨ ℓ^{−δ} < r^{q+L+ℓ+ma} < 1. Then build ζ coordinate by coordinate: replacing the j-th coordinate of u by a root of unity z keeps every F_{k,d} large (Gauss norm argument, exists_root_of_unity_eval_large applied to one-variable restrictions) and makes ∏ D_n(z) large; induction over the coordinates gives ζ.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Choose r ∈ (0, 1) with max(‖ℓ‖, ℓ^{−δ}) < r^{q+L+ℓ+ma+1} (exists_pow_btwn).",
+   "lines": [
+    78,
+    79
+   ],
+   "lean": "  choose r r0 e r1 using exists_pow_btwn (x := ‖(ℓ : PadicAlgCl ℓ)‖ ⊔ ℓ ^ (-δ.toReal)) (q + L + ℓ +\n    m * a).succ_ne_zero (by simp [norm_p_lt_one, rpow_lt_one_iff, Fact.out, *]) one_pos",
+   "ambient_uses": [
+    "exists_pow_btwn"
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "computation",
+   "claim": "r < 1.",
+   "lines": [
+    80,
+    80
+   ],
+   "lean": "  simp [pow_lt_one_iff_of_nonneg r0.le] at r1"
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "fact",
+   "claim": "For every exponent n ≤ q + L + ℓ + ma + 1: ‖ℓ‖ < r^n and ℓ^{−δ} < r^n.",
+   "lines": [
+    81,
+    81
+   ],
+   "lean": "  have R n (h : n ≤ _ := by grind) := max_lt_iff.1 (e.trans_le (pow_le_pow_of_le_one r0.le r1.le h))"
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "For each n ≤ q apply exists_root_of_unity_eval_large with the bounds r^L (for the product of the D) and ℓ^{−B_k}·r^n (for the F_{k,d}), radius r: for large N and O, proceed by induction over the coordinates j ∈ σ, keeping the invariant ‖F_{k,d}(ζ^d on s, u on the rest)‖ ≥ ℓ^{−B_k}·r^{|s|} and the root-of-unity and D-bounds on the coordinates of s; at the end (s = σ) the bounds give the claim (|σ| ≤ q).",
+   "lines": [
+    82,
+    88
+   ],
+   "lean": "  refine .mono (.all fun n : Set.Iic q ↦ exists_root_of_unity_eval_large (Option.rec (r ^ L) fun k :\n    κ × Set.Icc 1 m ↦ ℓ ^ (-B k.1 : ℝ) * r ^ n.1) (by rintro ⟨⟩ <;> bound [pos ℓ]) r0 r1 (R _).1)\n    fun N Y ↦ .mono (.all Y) fun O Y σ T _ _ hq D F u hD hL hu hB ↦ (univ.induction_on (motive :=\n    (fun T s ↦ ∃ ζ, (∀ k, ℓ ^ (-B k.1 : ℝ) * r ^ #s ≤ ‖((F k).eval (s.piecewise (ζ · ^ k.2.1) (u\n    k))).1‖) ∧ ∀ j ∈ s, T ζ j) (_ : _ → Set σ)) ⟨1, by simp [← ellVal_le_iff, *]⟩ fun j s _ ⟨ζ, H,\n    h⟩ ↦ ?_).imp fun ζ ↦\n    .imp (by grw [← (R _).2.le]; simp [rpow_add, pos, ↓ellVal_le_iff]) (· · (by simp))",
+   "uses": [
+    {
+     "decl": "exists_root_of_unity_eval_large"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "fact",
+   "claim": "If x^d = y_j, then G(y) is the value at x − 1 of G with the j-th variable replaced by (1 + X)^d and the others by the constants y_i.",
+   "lines": [
+    89,
+    90
+   ],
+   "lean": "  have p d x y (h : x ^ d = (y j).1) G : (MvPolynomial.eval y G : ↑O).1 = aeval (x - 1)\n    (G.aeval fun i ↦ ite (i = j) ((1 + X) ^ d) (C (y i)))",
+   "typed_fact": "(MvPolynomial.eval y G : ↑O).1 = aeval (x - 1)\n    (G.aeval fun i ↦ ite (i = j) ((1 + X) ^ d) (C (y i)))"
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "computation",
+   "claim": "By induction on the polynomial G.",
+   "lines": [
+    91,
+    91
+   ],
+   "lean": "  apply G.induction_on <;> simp +contextual [*, apply_ite]"
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Choose z, an ℓ^N-th root of unity, at which the one-variable polynomials (in X = x − 1) obtained from ∏ D_n (shifted: taylor) and from the F_{k,d} restricted to the j-th coordinate have values at least r^L and ℓ^{−B_k} r^{|s|+1}: their Gauss norms of radius r are that large, since otherwise the value at u_{k,d,j} − 1 (divisible by a root of (X^d − u)^a, of norm < r^n) would be too small (pow_le_norm_aeval).",
+   "lines": [
+    92,
+    100
+   ],
+   "lean": "  choose z Z W using Y ⟨_, s.card_le_univ.trans hq⟩ (Option.rec (taylor 1 (univ.prod D)) _) (·.rec\n    ⟨(univ.prod D).natDegree, by simp [leadingCoeff_prod, natDegree_prod_le, hL.trans',\n    pow_le_pow_iff_right_of_lt_one₀, *]⟩ fun k ↦ (not_forall₂.1 (mt (pow_le_norm_aeval ((X ^ k.2.1 -\n    C (u k j).1) ^ a) (O.1.val 1) r0.le) (by simpa [leadingCoeff_X_pow_sub_C k.2.2.1, norm_sub_rev]\n    using ((dvd_iff_norm_le ..).1 (hu ..)).trans_lt (R _ (by grw [k.2.2.2]; lia)).1))).rec\n    fun w ⟨hw, W⟩ ↦ (exists_norm_finsetSum_le ..).imp fun i h ↦ by\n      simp [norm_sub_rev] at hw W ⊢\n      grw [H, p k.2 w, aeval_eq_sum_range, h.2, O.1.smul_def] <;> simp [*]\n      gcongr)",
+   "indivisible": "one `choose … using` command whose argument is a single term (the application of the induction hypothesis Y with its two polynomial families and their norm bounds)",
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "step": "5"
+    }
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "fact",
+   "claim": "v_ℓ(D_n(z)) ≤ δ for every n: D_n divides ∏ D_n, whose value at z has norm ≥ r^L > ℓ^{−δ}.",
+   "lines": [
+    101,
+    102
+   ],
+   "lean": "  have V n := ellVal_le_iff.2 <| ((dvd_iff_norm_le ..).1 (eval_dvd (dvd_prod_of_mem D\n    (mem_univ n)))).trans' (by grw [(R L.succ).2, pow_succ', W none, taylor_eval_sub])",
+   "uses": [
+    {
+     "step": "7"
+    },
+    {
+     "decl": "ellVal_le_iff"
+    }
+   ]
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "witness",
+   "claim": "Update the j-th coordinate of ζ to z; the root-of-unity property of the other coordinates is kept.",
+   "lines": [
+    103,
+    103
+   ],
+   "lean": "  refine ⟨update ζ j z, fun k ↦ ?_, by grind⟩"
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The invariant holds for s ∪ {j}: ‖F_{k,d}(…)‖ ≥ ℓ^{−B_k}·r^{|s|+1} by step 7 and the evaluation identity of step 5.",
+   "lines": [
+    104,
+    105
+   ],
+   "lean": "  simpa +contextual [pow_succ, mul_rotate' r, p k.2 z, piecewise, *] using\n    (W k).trans congr(‖$(aeval_algebraMap_apply _ (z - 1) _)‖).ge",
+   "uses": [
+    {
+     "step": "5"
+    },
+    {
+     "step": "7"
+    }
+   ]
+  }
+ ]
+}

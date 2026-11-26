@@ -1,0 +1,288 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Exchange.StableSpaces:57:7",
+ "name": "IntegralFrame.partner_mem_of_unimodular_vanishing",
+ "summary": "Apply `partner_mem_of_stdColDatum` to the translate of the Gauss-type sum Σ = ∑_r η(det r)·S_{ϖ l(r)} (r over the b × b matrices over the residue ring): Σ ∈ P by hypothesis (2), since an admissible Λ with Λ(Σ) ≠ 0 forces, by the matrix Gauss sum, T to be unimodular, where Λ(S₀) = 0; and the translate of Σ is a positive integer multiple of a standard datum.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "statement",
+   "claim": "Not a step of the proof: lines 59–62 are the rest of the statement, which ends before the `:=` on line 62 (a second-reader message). The line census takes the `:=` of `let S (z : Matrix b b F) y :=` on line 59 for the start of the value, so the check requires these lines to be owned here. They state: S_z(y) = stdColDatum(χ, K′)(y + L·z·(K′·y)); if every S_z lies in M, and every Ψ′ ∈ M lies in P as soon as Λ(Ψ′) = 0 for every b × b matrix T and every linear functional Λ with Λ(S_z) = ψ(tr(T·z))·Λ(S₀) for all z and (T primitive ⇒ Λ(S₀) = 0), S₀ = stdColDatum(χ, K′), then Ψ ∈ P.",
+   "lines": [
+    59,
+    62
+   ],
+   "lean": "  let S (z : Matrix b b F) y := stdColDatum χ A.K' (y + A.L * z * (A.K' * y))\n  (∀ z, S z ∈ M) →\n    (∀ Ψ ∈ M, (∀ T (Λ : _ →ₗ[ℂ] ℂ), (∀ z, Λ (S z) = ψ (T * z).trace • Λ (stdColDatum χ\n  A.K')) → (IsPrimitiveMatrix O T → Λ (stdColDatum χ A.K') = 0) → Λ Ψ = 0) → Ψ ∈ P) → Ψ ∈ P := by"
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "step",
+   "claim": "Unpack the tameness of χ: the finite residue ring R, the reduction π : O → R, a primitive character η of R (u), the reduction being surjective with kernel ϖO (κ), and invOnUnits(χ, x) = η(π x) (d).",
+   "lines": [
+    63,
+    63
+   ],
+   "lean": "  obtain ⟨R, π, η, κ, u, d⟩ := id hχ"
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "step",
+   "claim": "For a b × b matrix r over R let l(r) be a lift of r to O (with l(1) = 1).",
+   "lines": [
+    64,
+    64
+   ],
+   "lean": "  let l r := ite (r = 1) 1 (@map b b _ _ r (surjInv κ.1))",
+   "uses": [
+    {
+     "step": "2"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "step",
+   "claim": "Assume (hM) every S_z lies in M and (h₂) the hypothesis on M.",
+   "lines": [
+    65,
+    65
+   ],
+   "lean": "  intro S hM h₂"
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "step",
+   "claim": "The blocks of A are integral and satisfy the frame identities (`IntegralFrame.blocks_spec`); since ψ has conductor O there is a primitive additive character φ of R with φ(π x) = ψ(ϖ⁻¹x) on O (`exists_primitive_residue_addChar`); and l(r) reduces to r (hl).",
+   "lines": [
+    66,
+    67
+   ],
+   "lean": "  obtain ⟨⟨c, _, aK, aL, aK', _⟩, ⟨φ, hφ, e⟩, hl⟩ := A.blocks_spec,\n    exists_primitive_residue_addChar κ hψ.2, fun r ↦ congrFun₂ (by aesop : (l r).map π = r)",
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "step": "3"
+    },
+    {
+     "decl": "IntegralFrame.blocks_spec"
+    },
+    {
+     "decl": "exists_primitive_residue_addChar"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "step",
+   "claim": "Apply `partner_mem_of_stdColDatum` to x = L − ϖK (integral), s = K′ (K′(L − ϖK) = −ϖ·1 up to the scalar, by the frame identities) and the translate by −ϖ⁻¹ of Σ = ∑_r η(det r)·S_{ϖ l(r)}: Σ ∈ M (hM, sums), so Σ ∈ P by h₂ provided every admissible Λ kills Σ (proved by contradiction in the next steps); the translate of Σ is a natural-number multiple of stdColDatum(χ, K′) (the number of r with non-zero term, shown at the end), non-zero at x because r = 1 contributes.",
+   "lines": [
+    68,
+    71
+   ],
+   "lean": "  use partner_mem_of_stdColDatum hP hS hΨ Q (hP (-V.ϖ⁻¹ • 1) _ (h₂ (∑ r, η r.det • S (V.ϖ.2 •\n    (l r).map (↑))) (sum_mem (by bound)) fun T Λ hZ _ ↦ by_contra ?_)) (aL.sub (aK.smul ϖ_mem)) c\n    (by simp [*]) _ (fun y ↦ .trans (sum_apply ..) ((sum_filter_ne_zero _).symm.trans\n    (sum_eq_card_nsmul ?_))) (card_ne_zero.2 ⟨1, by simp [l, ← Units.smul_def, S, invOnUnits, *]⟩)",
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "step": "5"
+    },
+    {
+     "decl": "partner_mem_of_stdColDatum"
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "step",
+   "claim": "Let Λ be admissible for T (hZ) and suppose Λ(Σ) ≠ 0 (q): by hZ, Λ(Σ) = (∑_r η(det r)·ψ(tr(T·ϖ l(r))))·Λ(S₀).",
+   "lines": [
+    72,
+    72
+   ],
+   "lean": "  simp_intro q [hZ, ← mul_assoc, ← sum_mul]",
+   "uses": [
+    {
+     "step": "6"
+    }
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "step",
+   "claim": "T has entries in O: for integral s and each pair of indices, S_{z + s·e_{ab}} = S_z (the standard datum does not see the integral change), so ψ(tr(T s e_{ab})) = 1 whenever Λ(S₀) ≠ 0, and the conductor property of ψ (hψ) gives T_{ba} ∈ O.",
+   "lines": [
+    73,
+    76
+   ],
+   "lean": "  have i a b := (hψ.2 _).1 fun s _ ↦ by simpa [trace_mul_single] using ((right_eq_mul₀ q.2).1\n    (.trans\n    (congrArg _ (by grind [stdColDatum, IsIntMatrix.add, mul, IsIntMatrix.sub, =_ Matrix.mul_assoc,\n    add_sub_cancel_right, Matrix.mul_add, IsIntMatrix, zero_mem])) (hZ (.single b a s))))",
+   "uses": [
+    {
+     "step": "7"
+    }
+   ]
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "step",
+   "claim": "The matrix Gauss sum (`matrix_gauss_sum`, η and φ primitive): ∑_r η(det r)·φ(tr(T̄ r)) = η⁻¹(det T̄) times the sum at 1, T̄ the reduction of T; the character relation d at det T; and ψ(tr(T·ϖ l(r))) = φ(tr(T̄ r)) (e); and if stdColDatum(χ, 1)(T) ≠ 0 then T is primitive (`isPrimitiveMatrix_of_stdColDatum_ne_zero`).",
+   "lines": [
+    77,
+    79
+   ],
+   "lean": "  obtain := (matrix_gauss_sum hφ u (η ·.det) (by simp)).1 (of (π ⟨_, i · ·⟩)), d (det (of (⟨_, i ·\n    ·⟩))), isPrimitiveMatrix_of_stdColDatum_ne_zero (χ := χ) .one T, (e <| trace <|\n    of (⟨_, i · ·⟩) * l ·)",
+   "uses": [
+    {
+     "step": "5"
+    },
+    {
+     "step": "8"
+    },
+    {
+     "decl": "matrix_gauss_sum"
+    },
+    {
+     "decl": "isPrimitiveMatrix_of_stdColDatum_ne_zero"
+    }
+   ]
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "step",
+   "claim": "Hence Λ(Σ) = η⁻¹(det T̄)·G·Λ(S₀), non-zero only when det T̄ is a unit, i.e. T is primitive; but then Λ(S₀) = 0 by admissibility: a contradiction. There remains the pointwise form of the translate of Σ.",
+   "lines": [
+    80,
+    80
+   ],
+   "lean": "  simp_all [matrixFourier, trace, mul_apply, det_apply', η.inv_apply_eq_inv, IsIntMatrix]",
+   "uses": [
+    {
+     "step": "7"
+    },
+    {
+     "step": "9"
+    }
+   ]
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "step",
+   "claim": "Fix y and a matrix r over R with a non-zero term at y (hr).",
+   "lines": [
+    81,
+    81
+   ],
+   "lean": "  simp_intro r hr"
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "block",
+   "claim": "For this r: the character relation at det l(r) gives a unit g of O with …, l(r) is integral, and so is the argument of the standard datum (`isIntMatrix_of_stdColDatum_ne_zero`, K′ integral).",
+   "lines": [
+    82,
+    83
+   ],
+   "lean": "  obtain ⟨_, g, i, k, _⟩ := d (l r).det, show IsIntMatrix O ((l r).map (·.1)) by\n    simp [IsIntMatrix], isIntMatrix_of_stdColDatum_ne_zero aK' hr.2",
+   "head_span": [
+    82,
+    3,
+    82,
+    41
+   ],
+   "head_lines": [
+    82,
+    82
+   ],
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "step": "11"
+    },
+    {
+     "decl": "isIntMatrix_of_stdColDatum_ne_zero"
+    }
+   ]
+  },
+  {
+   "id": "12.1",
+   "parent": "12",
+   "kind": "step",
+   "claim": "l(r), read as a matrix over F, has entries in O.",
+   "lines": [
+    82,
+    83
+   ],
+   "span": [
+    82,
+    42,
+    83,
+    68
+   ],
+   "lean": "show IsIntMatrix O ((l r).map (·.1)) by\n    simp [IsIntMatrix], isIntMatrix_of_stdColDatum_ne_zero aK' hr.2",
+   "typed_fact": "IsIntMatrix O ((l r).map (·.1))",
+   "uses": [
+    {
+     "step": "3"
+    }
+   ]
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "step",
+   "claim": "Further instances of the character relation d (at the determinants of the matrices involved), integrality of L·(…) − ϖ·(…), and multiplicativity of invOnUnits on integral units (`invOnUnits_mul`).",
+   "lines": [
+    84,
+    86
+   ],
+   "lean": "  obtain := d (det (of (⟨_, g.mul k · ·⟩) - of (⟨_, ϖ_mem⟩ * ⟨_, mul c i · ·⟩))), d (det (of (⟨_,\n    g.mul k · ·⟩))), (aL.mul (g.mul k)).sub (i.smul ϖ_mem), invOnUnits_mul (χ :=\n    χ) g.det_mem k.det_mem",
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "step": "5"
+    },
+    {
+     "step": "12"
+    }
+   ]
+  },
+  {
+   "id": "14",
+   "parent": null,
+   "kind": "step",
+   "claim": "With these, every non-zero term η(det r)·S_{ϖ l(r)}(−ϖ⁻¹·y) equals stdColDatum(χ, K′)(y), so the translate of Σ is (the number of such r)·stdColDatum(χ, K′), as required by step 6.",
+   "lines": [
+    87,
+    88
+   ],
+   "lean": "  simp_all [↓S, ↓← det_mul, det_apply, (κ.2 _).2, ← Matrix.mul_assoc, Units.smul_def,\n    smul_smul, ← mul_assoc, -MulMemClass.mk_mul_mk]",
+   "uses": [
+    {
+     "step": "6"
+    },
+    {
+     "step": "13"
+    }
+   ]
+  }
+ ]
+}

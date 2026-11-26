@@ -1,0 +1,76 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Exchange.AlgebraicPartDefs:58:7",
+ "name": "Data.fitsParams_auxPair",
+ "summary": "Compute paramV of the auxiliary pair by the step formula, then check the four fields of FitsParams entry by entry.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "step",
+   "claim": "|V| = r + t (`Data.card_V`); let a = posRank(D, j) and u(p) = 0 for p < a, t otherwise.",
+   "lines": [
+    59,
+    59
+   ],
+   "lean": "  have := D.card_V; let a := D.posRank j; let u p := ite (p < a) 0 D.t",
+   "uses": [
+    {
+     "decl": "Data.card_V"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "step",
+   "claim": "At each τ and x: paramV(auxPair(D, ϑ, j))(τ, x) is given by the step formula (`hcParameter_eq_of_steps`) with steps r + 2·(ϱ(τ, p − u(p)) + w_j(τ) − a) or r + 2(t/2 − p), strictly decreasing (`Data.varsigma_strictAnti`), the diagram sum rewritten (`sum_Ico_reflect`).",
+   "lines": [
+    60,
+    64
+   ],
+   "lean": "  have L τ x : (D.auxPair ϑ j).paramV τ x = _ := hcParameter_eq_of_steps τ (fun p ↦\n    D.r + 2 * ite (u p ≤ p - a) (D.rowParameter τ (p - u p) + D.w j τ - a) (D.t / 2 - p))\n    (fun p ↦ by clear x; grind [D.varsigma_strictAnti τ (p - u p).lt_add_one]) (q :=\n    a) (by grind) (by rw [hcParameter, diagramWeight_apply, sum_subset_zero_on_sdiff,\n    sum_Ico_reflect ((D.auxPair ϑ j).colsMinus τ) 1 this.le.step] <;> grind) _ (by lia)",
+   "typed_fact": "(D.auxPair ϑ j).paramV τ x = _",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "decl": "hcParameter_eq_of_steps"
+    },
+    {
+     "decl": "Data.varsigma_strictAnti"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "step",
+   "claim": "The fields of FitsParams: the gap conditions of paramV (`AuxPair.isHCParam_paramV`) and of paramW (`hasGap_paramW`, with the size bound), the correspondence of parameters entry by entry (each basis index c matched with the index basisNumber(c) + u(basisNumber(c))), the numbering by decreasing parameter (`Data.paramW_lt_iff`, `Data.card_filter_basisNumber`), and the vanishing of the column numbers beyond the numbers of signs (`Data.card_neg_signsW`).",
+   "lines": [
+    65,
+    71
+   ],
+   "lean": "  refine ⟨fun τ ↦ ⟨(AuxPair.isHCParam_paramV _).hasGap .., (hasGap_paramW ..).neg.mono\n    (this ▸ D.le_of_hasLogBound), ?_, fun c ↦ .inl ⟨(Fintype.equivFin _).symm ⟨D.basisNumber c + u\n    (D.basisNumber c), ?_⟩, ?_⟩⟩, by intros; dsimp [auxPair, signsW]; split <;> simp [paramW_lt_iff,\n    tsub_tsub] <;> rw [card_filter_basisNumber] <;>\n    first | rw [tsub_zero] | grind, ?_, ?_⟩ <;> simp [↓L, auxPair, ↓card_rowIndex, pairSign,\n    IsMatchedPair, reindex_equiv D.basisNumber.symm, Fin.exists_iff, paramW, signsW,\n    apply_ite] <;> grind [D.card_filter_basisNumber 0 a, card_neg_signsW]",
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "decl": "AuxPair.isHCParam_paramV"
+    },
+    {
+     "decl": "Data.paramW_lt_iff"
+    },
+    {
+     "decl": "Data.card_filter_basisNumber"
+    },
+    {
+     "decl": "Data.card_neg_signsW"
+    }
+   ]
+  }
+ ]
+}

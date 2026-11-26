@@ -1,0 +1,428 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Trace.GoodFormTransfer:56:7",
+ "name": "Data.trace_heckeOnGood_eq",
+ "summary": "Rigid labels let one twist every primitive label at each chosen place to a primitive label that occurs neither for V nor for V', agreeing with it off irreducible characteristic polynomials. On good forms p acts as p composed with e0; subtracting the twisted idempotents (which kill every eigenpart) and splitting by eigenparts, the trace becomes a sum of coefficients times sums <b_i, R(h) b_i> over orthonormal bases, where only group elements h with an irreducible characteristic polynomial at a chosen place survive; for these the comparison of simple trace formulas gives the same value on V and V'.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let F be the finite set of eigensystems d whose eigenpart is nonzero on V or on V'.",
+   "lines": [
+    57,
+    57
+   ],
+   "lean": "  let F := ((D.finite_eigenPart V ⊤).union (D.finite_eigenPart V' ⊤)).toFinset",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Data.finite_eigenPart"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "setup",
+   "claim": "For each eigensystem q choose pi_q in heckeAlgebra(D) acting, on every space, as the identity on the q-part and as 0 on the d-parts for d in F other than q.",
+   "lines": [
+    58,
+    58
+   ],
+   "lean": "  choose π hb using (D.exists_hecke_proj_eigenPart · F)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "setup",
+   "claim": "For each q, p pi_q is the action of an element b_q of the group algebra of the elements of G_f trivial at the chosen places.",
+   "lines": [
+    59,
+    59
+   ],
+   "lean": "  choose b e using (p * π · |>.2)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "2"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "setup",
+   "claim": "For each eigensystem q and chosen place w choose a map c -> Q_{q,w}(c) on polynomials over k_w such that: if c is a primitive label of degree r, then Q_{q,w}(c) is a primitive label of degree r outside occurringLabels(D, V, q, w) and occurringLabels(D, V', q, w); and labelIdem(c), labelIdem(Q_{q,w}(c)) have the same coefficient at every element with reducible characteristic polynomial. This applies exists_labelIdem_eq_off_irreducible with r = 3^(e+1), 9 | |k_w| - 1, and the two sets of occurring labels, which have at most one element each by HasRigidLabels(D, V) and HasRigidLabels(D, V').",
+   "lines": [
+    60,
+    61
+   ],
+   "lean": "  choose Q l c using fun q w ↦ (exists_labelIdem_eq_off_irreducible (D.card_rowIndex.trans\n    D.r_pow.choose_spec) (D.dvd_card_resField_sub_one w).1 · (o q w) (o' q w))",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "exists_labelIdem_eq_off_irreducible"
+    },
+    {
+     "decl": "Data.card_rowIndex"
+    },
+    {
+     "decl": "Data.dvd_card_resField_sub_one"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "fact",
+   "claim": "For every space W with principalForms(D, W) finite-dimensional, whose occurring labels are among those of V or V' and whose eigenparts outside F vanish: the trace of heckeOnGood(D, W)(p) equals the trace on principalForms(D, W) of sum_{q in F} (p pi_q)_W composed with the action of e0(D) - sum_{c in goodTupleFamilies(D)} tupleIdem(RowIndex(D), (Q_{q,w}(c_w))_w).",
+   "lines": [
+    62,
+    74
+   ],
+   "lean": "  have E {s} W [Module.Finite ℂ (@D.principalForms _ s W)] (m : D.occurringLabels W ≤\n    D.occurringLabels V ⊔ D.occurringLabels V' ∧ ∀ d ∉ F,\n    D.eigenPart W d = ⊥ := by simp +contextual [F, top_inf_eq]) : trace ℂ _ (D.heckeOnGood W p) =\n    trace ℂ _ (∑ q ∈ F, (p * π q).1 W * (D.principalRep W).asAlgebraHom\n    (D.e₀ - ∑ c ∈ D.goodTupleFamilies, tupleIdem D.RowIndex fun w ↦ Q q w (c w))) :=\n    ((trace_comp_comm' (rangeRestrict _) ((goodForms ..).subtype ∘ₗ _)).trans (congrArg\n    _ (ext fun _ ↦ (D.isCentralProj_e₀.1.map _).isProj_range.codRestrict_apply_cod _))).symm.trans\n    (congrArg _ (eqLocus_eq_top.1 (top_unique (D.iSup_eigenPart W ▸ iSup_le fun d v e ↦ by\n    cases em' (d ∈ F); simp_all\n    simp [-map_sub, hb _ d, principalRep_mem_eigenPart, *, apply_ite]\n    simp; rw [← map_sum, sum_eq_zero fun c h ↦ ((mem_filter.1 (Fintype.mem_piFinset.1\n      (mem_map_equiv.1 h) 0)).2.2.imp (l d ⟨0, ·⟩ _)).elim fun w a ↦ piTensorElem_apply_eq_zero _\n      (by_contra (a.2 <| m.1 d _ ⟨a.1, v, e, ·⟩))]; simp; rfl))))",
+   "head_lines": [
+    62,
+    66
+   ],
+   "typed_fact": "trace ℂ _ (D.heckeOnGood W p) =\n    trace ℂ _ (∑ q ∈ F, (p * π q).1 W * (D.principalRep W).asAlgebraHom\n    (D.e₀ - ∑ c ∈ D.goodTupleFamilies, tupleIdem D.RowIndex fun w ↦ Q q w (c w)))",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "step": "2"
+    },
+    {
+     "step": "4"
+    }
+   ]
+  },
+  {
+   "id": "5.1",
+   "parent": "5",
+   "kind": "fact",
+   "claim": "The trace of p on goodForms(D, W), the image of the central idempotent e0(D), equals the trace of p_W composed with the action of e0(D) on principalForms(D, W).",
+   "lines": [
+    67,
+    68
+   ],
+   "lean": "    ((trace_comp_comm' (rangeRestrict _) ((goodForms ..).subtype ∘ₗ _)).trans (congrArg\n    _ (ext fun _ ↦ (D.isCentralProj_e₀.1.map _).isProj_range.codRestrict_apply_cod _))).symm.trans",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Data.isCentralProj_e₀"
+    }
+   ],
+   "ambient_uses": [
+    "LinearMap.trace_comp_comm'"
+   ]
+  },
+  {
+   "id": "5.2",
+   "parent": "5",
+   "kind": "reduction",
+   "claim": "It remains that the two endomorphisms agree on principalForms(D, W), which is the sum of its eigenparts; let v be in the d-part.",
+   "lines": [
+    69,
+    74
+   ],
+   "lean": "    (congrArg _ (eqLocus_eq_top.1 (top_unique (D.iSup_eigenPart W ▸ iSup_le fun d v e ↦ by\n    cases em' (d ∈ F); simp_all\n    simp [-map_sub, hb _ d, principalRep_mem_eigenPart, *, apply_ite]\n    simp; rw [← map_sum, sum_eq_zero fun c h ↦ ((mem_filter.1 (Fintype.mem_piFinset.1\n      (mem_map_equiv.1 h) 0)).2.2.imp (l d ⟨0, ·⟩ _)).elim fun w a ↦ piTensorElem_apply_eq_zero _\n      (by_contra (a.2 <| m.1 d _ ⟨a.1, v, e, ·⟩))]; simp; rfl))))",
+   "head_lines": [
+    69,
+    69
+   ],
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Data.iSup_eigenPart"
+    }
+   ]
+  },
+  {
+   "id": "5.2.1",
+   "parent": "5.2",
+   "kind": "case",
+   "claim": "If d is not in F, the d-part of W is 0, so v = 0 and both sides vanish.",
+   "lines": [
+    70,
+    70
+   ],
+   "lean": "    cases em' (d ∈ F); simp_all",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "5.2.2",
+   "parent": "5.2",
+   "kind": "computation",
+   "claim": "If d is in F: pi_q kills v for q other than d and fixes it for q = d, and the action of C[G(D)] preserves the d-part; so the sum reduces to p_W(e0 v) minus p_W of the twisted sum applied to v.",
+   "lines": [
+    71,
+    71
+   ],
+   "lean": "    simp [-map_sub, hb _ d, principalRep_mem_eigenPart, *, apply_ite]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Data.principalRep_mem_eigenPart"
+    }
+   ]
+  },
+  {
+   "id": "5.2.3",
+   "parent": "5.2",
+   "kind": "fact",
+   "claim": "Each tupleIdem(RowIndex(D), (Q_{d,w}(c_w))_w), c a good family, kills v: c has a primitive label c_w at some chosen place w above g0, so Q_{d,w}(c_w) is a primitive label occurring neither for V nor for V' at d, hence not for W; its idempotent acting at w kills the d-part, and so does the tensor product.",
+   "lines": [
+    72,
+    74
+   ],
+   "lean": "    simp; rw [← map_sum, sum_eq_zero fun c h ↦ ((mem_filter.1 (Fintype.mem_piFinset.1\n      (mem_map_equiv.1 h) 0)).2.2.imp (l d ⟨0, ·⟩ _)).elim fun w a ↦ piTensorElem_apply_eq_zero _\n      (by_contra (a.2 <| m.1 d _ ⟨a.1, v, e, ·⟩))]; simp; rfl))))",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "piTensorElem_apply_eq_zero"
+    },
+    {
+     "decl": "Data.occurringLabels"
+    },
+    {
+     "decl": "Data.goodTupleFamilies"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Apply step 5 to V and to V'; write both traces as sums sum_i <b_i, T b_i> over orthonormal bases and expand the group-algebra elements over their supports. Both sides become sums over q in F, over g in G(D) weighted by the coefficient of e0(D) - sum_c tupleIdem(Q_q(c)) at g, and over h in the support of b_q, of sum_i <b_i, R(h liftResidue(g)) b_i>.",
+   "lines": [
+    75,
+    76
+   ],
+   "lean": "  simp [E V, E V', trace_eq_sum_inner _ (stdOrthonormalBasis ..), ← e, asAlgebraHom_eq_sum_support,\n    inner_sum, inner_smul_right, univ.sum_comm, ← mul_sum, -MulMemClass.coe_mul]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "step": "5"
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "It suffices to show, for each q in F, each g in G(D) where that coefficient is nonzero, and each h in the support of b_q (trivial at the chosen places), that sum_i <b_i, R(h liftResidue(g)) b_i> is the same for V and V'.",
+   "lines": [
+    77,
+    77
+   ],
+   "lean": "  congr! 5 with q _ g h k",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Some component g_i of g (i a chosen place) has irreducible characteristic polynomial: otherwise, by the choice of Q, the coefficients of e0(D) and of sum_c tupleIdem(Q_q(c)) at g agree and the coefficient vanishes.",
+   "lines": [
+    78,
+    78
+   ],
+   "lean": "  let ⟨i, hi⟩ : ∃ i, Irreducible (g i).1.charpoly := by contrapose! h; simp [e₀, tupleIdem, ← c, h]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "4"
+    }
+   ]
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "By the comparison of simple trace formulas for the element h liftResidue(g) and the level chosenLevel(D), with B = h2(D) and gap h(D), these sums are the same for every space whose type kernel is a cusp kernel of order h2(D) (true for V and V') and whose parameter has gap h(D); its hypotheses on E(D) (roots of unity of order 5040, evenly many infinite places) and on the sizes hold for the data. It remains: every element of h liftResidue(g) chosenLevel(D) has irreducible characteristic polynomial at some finite place.",
+   "lines": [
+    79,
+    82
+   ],
+   "lean": "  refine (Space.exists_trace_eq (h := k.1 * _) (B := D.h₂) (by cases D.m_pow; simp [towerDeg,\n    P.card_infinitePlace_E, parity_simps, *]) (finrank_eq_two_mul_card_infinitePlace D.E ▸\n    D.nat_le_of_hasLogBound) ?_ _ D.h D.le_of_hasLogBound).elim fun _ Z ↦ by\n    simp at Z; erw [Z, Z] <;> apply_rules [isCuspKernel_paramW]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "8"
+    },
+    {
+     "decl": "Space.exists_trace_eq"
+    },
+    {
+     "decl": "Data.isCuspKernel_paramW"
+    },
+    {
+     "decl": "Data.nat_le_of_hasLogBound"
+    },
+    {
+     "decl": "Data.le_of_hasLogBound"
+    }
+   ]
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let x = h liftResidue(g) b with b in chosenLevel(D).",
+   "lines": [
+    83,
+    83
+   ],
+   "lean": "  rintro _ ⟨_, ⟨b, hb, ⟨⟩⟩, ⟨⟩⟩",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "fact",
+   "claim": "The component of liftResidue(g) b at the chosen place i is an integral matrix t in GL(O_w).",
+   "lines": [
+    84,
+    84
+   ],
+   "lean": "  obtain ⟨t : GL _ (LocInt _), ht⟩ := mem_Kf_iff.1 (liftResidue g * b).2 (D.chosen i)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "10"
+    }
+   ]
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "fact",
+   "claim": "The reduction of t is g_i (b reduces to 1 and liftResidue(g) to g), so the characteristic polynomial of t reduces to that of g_i, which is irreducible.",
+   "lines": [
+    85,
+    86
+   ],
+   "lean": "  erw [← mul_one g, ← hb, ← reduceFamily_liftResidue g, ← map_mul, show reduceFamily _ _ i =\n    _ from reduceAt_eq_of_atPlace ht.symm, charpoly_map] at hi",
+   "head_lines": [
+    85,
+    85
+   ],
+   "head_span": [
+    85,
+    3,
+    85,
+    68
+   ],
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "8"
+    },
+    {
+     "step": "11"
+    }
+   ]
+  },
+  {
+   "id": "12.1",
+   "parent": "12",
+   "kind": "fact",
+   "claim": "The reduction of liftResidue(g) b at the place i is the reduction of its component t.",
+   "lines": [
+    85,
+    86
+   ],
+   "span": [
+    85,
+    68,
+    86,
+    42
+   ],
+   "lean": "show reduceFamily _ _ i =\n    _ from reduceAt_eq_of_atPlace ht.symm",
+   "typed_fact": "reduceFamily _ _ i =",
+   "uses": [
+    {
+     "decl": "Kf.reduceAt_eq_of_atPlace"
+    },
+    {
+     "decl": "reduceFamily_liftResidue"
+    }
+   ]
+  },
+  {
+   "id": "12.2",
+   "parent": "12",
+   "kind": "fact",
+   "claim": "Reduction commutes with taking the characteristic polynomial.",
+   "lines": [
+    86,
+    86
+   ],
+   "span": [
+    86,
+    42,
+    86,
+    63
+   ],
+   "lean": ", charpoly_map] at hi",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "fact",
+   "claim": "The component of x at the chosen place i is t, since h is trivial at the chosen places; its characteristic polynomial is the image of that of t.",
+   "lines": [
+    87,
+    87
+   ],
+   "lean": "  constructor; erw [← ht.trans (c := Gf.atPlace _ _) (by simp [mem_trivialOn.1 k.2]), charpoly_map]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "11"
+    }
+   ]
+  },
+  {
+   "id": "14",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "A monic polynomial over O_w whose reduction is irreducible is irreducible, also over the fraction field E_w; so x has irreducible characteristic polynomial at the chosen place i.",
+   "lines": [
+    88,
+    89
+   ],
+   "lean": "  exact t.1.charpoly_monic |> fun m ↦\n    m.irreducible_iff_irreducible_map_fraction_map.1 (m.irreducible_of_irreducible_map _ _ hi)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "12"
+    },
+    {
+     "step": "13"
+    }
+   ],
+   "ambient_uses": [
+    "Polynomial.Monic.irreducible_of_irreducible_map"
+   ]
+  }
+ ]
+}

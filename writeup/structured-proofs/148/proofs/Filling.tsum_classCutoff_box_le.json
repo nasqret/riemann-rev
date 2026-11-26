@@ -1,0 +1,370 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Filling.BoxPartition:513:7",
+ "summary": "Colour p by its moved frame F_p ∈ V: distinct frames are 1/(N·boxSize)-separated and bounded, so there are at most b^{6n² dim V} colours; within a colour the cutoffs β_{k_p} sum to at most 1. Separation comes from integrality: close frames force equal frames, by a descending induction over the entries.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Use the size facts (of_size_bounds: 1 ≤ b, …) and restrict the sum to the support of w.",
+   "lines": [
+    518,
+    519
+   ],
+   "lean": "  ∑' p, w p ≤ .ofReal (S.b ^ (6 * 𝔰.n ^ 2 * finrank ℝ V)) * x := S.of_size_bounds fun _ _ _ o ↦ by\n  intros; rw [← tsum_subtype_support]",
+   "uses": [
+    {
+     "decl": "New.Filling.NearTerms:288:7"
+    }
+   ],
+   "ambient_uses": [
+    "tsum_subtype_support"
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "fact",
+   "claim": "0 < boxSize and 0 < N·boxSize.",
+   "lines": [
+    520,
+    520
+   ],
+   "lean": "  have ⟨r, ε⟩ : 0 < S.boxSize ∧ 0 < S.N * S.boxSize := by simp [boxSize, *]",
+   "typed_fact": "0 < S.boxSize ∧ 0 < S.N * S.boxSize",
+   "uses": [
+    {
+     "decl": "New.Filling.Setup:247:5"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Call the support A and extract from H, for p ∈ A: the term (K), the coset (hδ), the box (hB) and the weight bound (h).",
+   "lines": [
+    521,
+    521
+   ],
+   "lean": "  generalize w.support = A at *; choose K hδ hB h using Subtype.forall'.1 H",
+   "uses": []
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "Colouring: choose representatives on which p ↦ F_p is injective with the same image, and apply tsum_le_of_encard_range_le with colours F_p ∈ V. The number of colours is at most the packing bound for points of V pairwise at distance ≥ 1/(N·boxSize) (shown below: closer frames coincide) and of norm ≤ 2·boxSize (encard_le_of_separated); equal frames make p, q related: k_p = k_q and γ_p⁻¹γ_q ∈ 𝖴⁰_{k_p}(g) (termsOver.eq_and_mem_classUnip₀). It remains to bound the sum over a related set B.",
+   "lines": [
+    522,
+    527
+   ],
+   "lean": "  refine (exists_image_eq_injOn_of_subset_range le_rfl).elim fun u ⟨e, i⟩ ↦\n    tsum_le_of_encard_range_le _ (e ▸ i.encard_image ▸ .trans' ?_ (encard_le_of_separated (f :=\n    fun p ↦ (⟨_, hV _ (choice ⟨p⟩).2 _ p.2⟩ : V)) (inv_pos.2 ε) (add_pos r r).le (fun p a q b ↦\n    Not.imp_symm fun n ↦ i a b (frameImage_inv_mul_eq_iff.1 ?_)) (by simp_all [norm_sub_le_of_le,\n    frameBox]))) (K · |> termsOver.eq_and_mem_classUnip₀ <| K ·)\n    (R := fun p q ↦ k p = k q ∧ (γ p)⁻¹ * γ q ∈ S.classUnip₀ (k p)) fun B H p a o ↦ by",
+   "uses": [
+    {
+     "decl": "New.Filling.BoxPartition:270:7"
+    },
+    {
+     "decl": "Lib.Adelic.QuotientMeasure.Packing:118:7"
+    },
+    {
+     "decl": "New.Filling.NearTerms:309:7"
+    },
+    {
+     "decl": "New.Filling.NearTerms:192:7"
+    },
+    {
+     "decl": "New.Filling.BesselSystem:36:5"
+    },
+    {
+     "decl": "New.Filling.Setup:244:5"
+    }
+   ],
+   "ambient_uses": [
+    "exists_image_eq_injOn_of_subset_range",
+    "le_rfl",
+    "inv_pos",
+    "add_pos",
+    "norm_sub_le_of_le"
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "For a related set B ∋ p: ∑_{q∈B} w_q ≤ x·∑_{q∈B} β_{k_p}(δ_q⁻¹y'); the map from B to 𝖴_{k_p}(g) built from δ_q⁻¹γ_q and γ_q⁻¹γ_p is injective (hi), so the sum is at most x·∑_{u∈𝖴_{k_p}(g)} β_{k_p}(u·(γ_p⁻¹y')) = x (tsum_classCutoff_eq_one).",
+   "lines": [
+    528,
+    532
+   ],
+   "lean": "    grw [← one_mul x, ← tsum_classCutoff_eq_one (k p) (S.ratToInf (γ p)⁻¹ * y'),\n      ← tsum_comp_le_tsum_of_injective\n      (f := fun q ↦ ⟨_, (o q q.2 p a).1 ▸ mul_mem (hδ ⟨_, H q.2⟩) (o q q.2 p a).2.1⟩)\n      fun q r this ↦ Subtype.ext (hi (o _ q.2 _ r.2).1 (by simpa)), ← ENNReal.tsum_mul_right]\n    gcongr with q; simpa [o q _ p a] using h ⟨_, H q.2⟩",
+   "uses": [
+    {
+     "decl": "New.Filling.BoxPartition:507:7"
+    },
+    {
+     "decl": "New.Filling.Setup:215:5"
+    }
+   ],
+   "ambient_uses": [
+    "one_mul",
+    "tsum_comp_le_tsum_of_injective",
+    "mul_mem",
+    "Subtype.ext",
+    "ENNReal.tsum_mul_right"
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "computation",
+   "claim": "The packing count (1 + 2·(2 boxSize)·N·boxSize)^{dim V} is ≤ b^{6n² dim V}: boxSize = b^{2n²}, N ≤ b^{60n} and n ≥ 10⁵.",
+   "lines": [
+    533,
+    534
+   ],
+   "lean": "  grw [pow_mul, N_le, boxSize, ← two_mul, o, o]; simp [← pow_add, ← pow_succ', field]\n  grw [one_le_pow₀ ‹_›, ← two_mul, o, ← pow_succ']; gcongr; nlinarith [S.ϱ_le]",
+   "uses": [
+    {
+     "decl": "New.Filling.Setup:247:5"
+    }
+   ],
+   "ambient_uses": [
+    "pow_mul",
+    "two_mul",
+    "pow_add",
+    "pow_succ'",
+    "one_le_pow₀"
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Separation: for p, q ∈ A with |F_p − F_q| < 1/(N·boxSize), put g = γ_p⁻¹γ_q and let F_u be the frame vectors of ratToInf(u)_v⁻¹(γ_p⁻¹y)_v.",
+   "lines": [
+    535,
+    535
+   ],
+   "lean": "  set g := _ * γ q; let F u v := frameVector ((S.ratToInf u v)⁻¹ * ((S.ratToInf (γ p))⁻¹ * y) v)",
+   "uses": [
+    {
+     "decl": "Lib.DiscreteSeries.Bessel.UnipotentCoords:60:5"
+    },
+    {
+     "decl": "New.Filling.Setup:215:5"
+    }
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "fact",
+   "claim": "J: if a function f of rational points takes algebraic-integer values on terms (z) and |Φ_v(f(g) − f(1))| ≤ N·boxSize·|F_g − F_1| at every v (h), then f(g) = f(1): f(g) − f(1) is an algebraic integer with all |Φ_v| < 1 (eq_zero_of_norm_Φ).",
+   "lines": [
+    536,
+    539
+   ],
+   "lean": "  have J {f : _ → E} (z : ∀ {s c γ}, γ ∈ S.termsOver _ s c → IsIntegral ℤ (f γ)) a (h : ∀ v, _ ≤ _\n    * ‖F g v a - F 1 v a‖) := sub_eq_zero.1 (eq_zero_of_norm_Φ ((@z _ _ g (.mul (.inv (K p))\n    (K q))).sub (z (S.classUnip _).one_mem.2)) fun v ↦ (h v).trans_lt\n    ((lt_div_iff₀' ε).1 (by simp_all [g, F, pi_norm_lt_iff])))",
+   "uses": [
+    {
+     "decl": "Lib.Adelic.Reduction.MinkowskiSecond:18:7"
+    },
+    {
+     "decl": "New.Filling.Setup:237:5"
+    },
+    {
+     "decl": "New.Filling.Setup:240:5"
+    }
+   ],
+   "ambient_uses": [
+    "sub_eq_zero",
+    "lt_div_iff₀'",
+    "pi_norm_lt_iff"
+   ]
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "It suffices that the rows of g − 1 outside the e-block vanish (the hypothesis this): then the e-rows vanish too, by a descending induction over a (WellFoundedGT.fix) with J for the entries (e_a, f_b), so g = 1 on the frame, i.e. γ_pf = γ_qf.",
+   "lines": [
+    540,
+    549
+   ],
+   "lean": "  suffices _ from Matrix.ext (Sum.rec (WellFoundedGT.fix fun a I b ↦ J (f := (·.1 _ _))\n    (by have := termsOver.isIntMatrix_termPosition · (.inl a) (𝔰.besselFrame b); cases b <;>\n    simpa [coe_termPosition]) b fun v ↦ by\n    choose w hw r using exists_norm_le_of_besselSize_le (hB p v).2\n    grw [frameVector_sub_eq_sum (Matrix.ext this),\n      ← (div_le_iff₀' _).2 (norm_sum_le_mul_norm_sum_frameVector _ _ (.inl a)),\n      r, sum_eq_single a (by clear * - I hw; simp_all [mem_besselU, FI.level]; grind)] <;>\n      simp [mem_besselU.1 hw, ↓basisScale_besselFrame, field, ↓Units.norm_pos]\n    grw [abs_kappa_le, ← one_le_abs_kappa, ← pow_mul, boxSize, ← S.N_prime.one_le, Nat.sub_le]\n    simp [← pow_add]; gcongr; nlinarith [S.ϱ_le]) this)",
+   "head_lines": [
+    540,
+    540
+   ],
+   "typed_fact": "_",
+   "uses": [
+    {
+     "step": "8"
+    }
+   ],
+   "ambient_uses": [
+    "Matrix.ext",
+    "WellFoundedGT.fix"
+   ]
+  },
+  {
+   "id": "9.1",
+   "parent": "9",
+   "kind": "fact",
+   "claim": "The entries (e_a, f_b) of g are algebraic integers (the positions of terms are integral; termsOver.isIntMatrix_termPosition).",
+   "lines": [
+    541,
+    542
+   ],
+   "lean": "    (by have := termsOver.isIntMatrix_termPosition · (.inl a) (𝔰.besselFrame b); cases b <;>\n    simpa [coe_termPosition]) b fun v ↦ by",
+   "uses": [
+    {
+     "decl": "New.Filling.NearTerms:252:7"
+    },
+    {
+     "decl": "New.Filling.LevelBridge:59:7"
+    },
+    {
+     "decl": "Lib.General.LinearAlgebra.ExtendColumns:88:5"
+    }
+   ]
+  },
+  {
+   "id": "9.2",
+   "parent": "9",
+   "kind": "computation",
+   "claim": "The archimedean bound: with w ∈ 𝖴 such that ‖w·(γ_p⁻¹y)_v‖ ≤ besselSize, F_g − F_1 at index b is ∑_a Φ_v((g − 1)(e_a, f_b))·(scale ratio)·frameVector(·, a) (frameVector_sub_eq_sum, using this); by the induction hypothesis only the term a remains, and norm_sum_le_mul_norm_sum_frameVector bounds it.",
+   "lines": [
+    543,
+    547
+   ],
+   "lean": "    choose w hw r using exists_norm_le_of_besselSize_le (hB p v).2\n    grw [frameVector_sub_eq_sum (Matrix.ext this),\n      ← (div_le_iff₀' _).2 (norm_sum_le_mul_norm_sum_frameVector _ _ (.inl a)),\n      r, sum_eq_single a (by clear * - I hw; simp_all [mem_besselU, FI.level]; grind)] <;>\n      simp [mem_besselU.1 hw, ↓basisScale_besselFrame, field, ↓Units.norm_pos]",
+   "uses": [
+    {
+     "decl": "New.Filling.BoxPartition:443:7"
+    },
+    {
+     "decl": "New.RealPlace.FrameNorm:28:7"
+    },
+    {
+     "decl": "New.RealPlace.FrameNorm:38:7"
+    },
+    {
+     "decl": "Lib.General.LinearAlgebra.ColumnLattices:70:7"
+    },
+    {
+     "decl": "Lib.General.LinearAlgebra.ExtendColumns:77:5"
+    },
+    {
+     "decl": "New.Filling.Setup:169:7"
+    }
+   ],
+   "ambient_uses": [
+    "Matrix.ext",
+    "div_le_iff₀'",
+    "sum_eq_single",
+    "Units.norm_pos"
+   ]
+  },
+  {
+   "id": "9.3",
+   "parent": "9",
+   "kind": "computation",
+   "claim": "The scale ratio and the sizes combine to at most N·boxSize (|κ_v| ≤ b^{23}, |κ_v| ≥ 1, boxSize = b^{2n²}, N ≥ 1, n ≥ 10⁵).",
+   "lines": [
+    548,
+    549
+   ],
+   "lean": "    grw [abs_kappa_le, ← one_le_abs_kappa, ← pow_mul, boxSize, ← S.N_prime.one_le, Nat.sub_le]\n    simp [← pow_add]; gcongr; nlinarith [S.ϱ_le]) this)",
+   "uses": [
+    {
+     "decl": "New.Filling.Setup:247:5"
+    }
+   ],
+   "ambient_uses": [
+    "pow_mul",
+    "Nat.sub_le",
+    "pow_add"
+   ]
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The frame products agree: Z(g)_{ba} = Z(1)_{ba} for all a, b, by J with f = Z(·)_{ba} (integral on terms, isIntegral_frameProducts) and the bound |Φ_v(Z(g) − Z(1))_{ba}| ≤ N·boxSize·|F_g − F_1| (realFrameGram_eq_inner, norm_inner_J₁_le, realFrameGram_ratToInf, the boxes).",
+   "lines": [
+    550,
+    553
+   ],
+   "lean": "  have h a b := J (isIntegral_frameProducts · b a) a fun v ↦ by\n    grw [mul_assoc, ← (hB p v).1 b, ← norm_inner_J₁_le, map_sub, map_sub, inner_sub_right]\n    simp [F, ↓← realFrameGram_eq_inner, ↓realFrameGram_ratToInf, ← mul_sub, ← pow_add,\n      field]; bound [S.one_le_abs_kappa]",
+   "uses": [
+    {
+     "step": "8"
+    },
+    {
+     "decl": "New.Filling.NearTerms:315:7"
+    },
+    {
+     "decl": "New.RealPlace.FrameNorm:80:7"
+    },
+    {
+     "decl": "New.RealPlace.FrameNorm:77:7"
+    },
+    {
+     "decl": "New.Filling.Setup:375:15"
+    }
+   ],
+   "ambient_uses": [
+    "mul_assoc",
+    "map_sub",
+    "inner_sub_right",
+    "mul_sub",
+    "pow_add"
+   ]
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "From the unitarity of g (diagonal of gᴴJg = J) and eq_zero_of_ratMiddle_form_eq_zero applied to the middle columns of g − 1: these columns vanish once their z-coordinates do and their h-norm is 0.",
+   "lines": [
+    554,
+    555
+   ],
+   "lean": "  rcases congr(diag $(g.2)), (S.eq_zero_of_ratMiddle_form_eq_zero <|\n    (g.1.1 - 1).col · ∘ .inr ∘ .inl)",
+   "uses": [
+    {
+     "decl": "New.Filling.NearTerms:209:7"
+    }
+   ]
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Unfolding frameGram, splitGram and middleGram, the rows of g − 1 outside the e-block vanish, which is the hypothesis this of step 9.",
+   "lines": [
+    556,
+    556
+   ],
+   "lean": "  simp_all [frameGram, splitGram, middleGram, forall_fin_succ']",
+   "uses": [
+    {
+     "decl": "Lib.General.LinearAlgebra.ExtendColumns:152:5"
+    },
+    {
+     "decl": "Lib.General.LinearAlgebra.ExtendColumns:97:5"
+    },
+    {
+     "decl": "Lib.General.LinearAlgebra.ExtendColumns:93:5"
+    }
+   ],
+   "ambient_uses": [
+    "forall_fin_succ'"
+   ]
+  }
+ ]
+}

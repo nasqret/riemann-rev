@@ -1,0 +1,789 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Lift.FewLowJumps:35:7",
+ "name": "Lift.KummerChart.PairingSide.relLength_deepConstants_le",
+ "summary": "Reduce to Σ over the steps (u, n') of f·mult(u)·cost(a, n') and induct over that finite set: raising c at one (a, u) costs at most f·mult(u)·cost(a, c(a, u)) in length, because among f·mult(u) + 1 constants with deep lifts a combination with a unit coefficient lifts deeper (exists_comb_of_jumpMultiplicity_le), its E-part being moved by a cost-zero operator from E·M into E^{p^a}M ⊆ pM + M'.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Multiply hA at u by f·jumpMultiplicity(Y, i', u) and sum over u ∈ U_{i'};",
+   "lines": [
+    40,
+    40
+   ],
+   "span": [
+    40,
+    3,
+    40,
+    94
+   ],
+   "lean": "replace hA := sum_le_sum fun u m ↦ mul_le_mul_left (hA u m) (k.f * S.jumpMultiplicity i' u)",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "computation",
+   "claim": "expand the sums;",
+   "lines": [
+    41,
+    41
+   ],
+   "span": [
+    41,
+    3,
+    41,
+    54
+   ],
+   "lean": "simp [add_mul, -mem_Icc, sum_mul, sum_sigma'] at hA",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "fact",
+   "claim": "by hr and hn the right side is ≤ A·r(i') + B·n(i').",
+   "lines": [
+    42,
+    42
+   ],
+   "span": [
+    42,
+    3,
+    42,
+    63
+   ],
+   "lean": "grw [← mul_sum, hr, ← mul_sum, inter_subset_right, hn] at hA",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "It suffices: the relative length is ≤ Σ_{(u, n')∈I} f·mult(u)·cost(a, n'), I = {(u, n') : u ∈ U_{i'}, c(a, u) ≤ n' < c'(a, u)}.",
+   "lines": [
+    43,
+    43
+   ],
+   "span": [
+    43,
+    3,
+    43,
+    13
+   ],
+   "lean": "grw [← hA]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "3"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Discard hA.",
+   "lines": [
+    44,
+    44
+   ],
+   "span": [
+    44,
+    3,
+    44,
+    11
+   ],
+   "lean": "clear hA",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "induction",
+   "claim": "Induction on the finite set I by erasing one element (for all c):",
+   "lines": [
+    45,
+    94
+   ],
+   "span": [
+    45,
+    3,
+    94,
+    79
+   ],
+   "lean": "induction' E : (S.U i').sigma fun u ↦ Ico (c a u) (c' a u) using eraseInduction with I ih\n    generalizing c\n  subst E\n  obtain w | ⟨u, hu⟩ := by\n    simpa using not_or_of_imp (exists_min_image {v ∈ S.U i' | c a v < c' a v} id)\n  exact (relLength_eq_zero.2 (map_mono fun _ ↦\n    And.imp id (.imp id (mem_withExponents_of_le <| · ·)))).trans_le bot_le\n  have M : locKisinPart (S.kerWithExponents i c) ≤ locKisinPart\n    (S.extLattice.withExponents i (raisedAtE 0)) := fun _ ↦ (mem_withExponents_of_le ·.1)\n  grw [← add_sum_erase (a := ⟨u, c a u⟩), relLength_trans _ (ih (c := raiseExponent c a u) ..)]\n  grw [deepConstants, deepConstants, ← relLength_comap, comap_map_eq, relLength_mono le_rfl\n    (sup_le_sup_left (fun _ ↦ (·.2) : locKisinPart (S.kerWithExponents i c) ≤ _) _),\n    relLength_le_of_relations] <;> intro x hx\n  refine (S.exists_reaches_deep {⟨a, c a u⟩}).rec fun A ⟨R, d⟩ ↦\n    mem_sup.2 ⟨_, ⟨R.mem_of_stable M hx.1 hx.2, d hx.2 _ ?_⟩, _, neg_mem (R hx.2), by simp⟩\n  swap\n  choose x' n m b e using (mem_sup.1 <| hx · |>.2)\n  choose y d q B using (exists_inclKer_eq_of_projTriv_eq_zero <| b ·)\n  peel 3 exists_comb_of_jumpMultiplicity_le c hk .refl a i f\n    (by clear * - hu ho; grind [AntitoneOn]) (⟨_, B · (m _).2⟩) d with b t\n  obtain ⟨w, m, z, o, s⟩ := mem_sup.1 t\n  have t := sum_smul_mem (t := univ) _ b fun l _ ↦ (hx l).1\n  have m : ⟨_, S.inclKer.wittMap_mem_kisinLoc w.2⟩ ∈ locKisinPart (S.kerWithExponents i _) :=\n    ⟨S.inclKer.map_mem_withExponents le_rfl m, by simp⟩\n  have e : _ ∈ S.deepElements i (raiseExponent c a u) :=\n    ⟨sub_mem (smul_mem _ ↑p t.2.1) (kerWithExponents_le_deepElements m).1, by\n    simpa -implicitDefEqProofs [eq_sub_of_add_eq' s, smul_sum, smul_comm _ (b _), ← e, q, add_sub]\n      using (invariantsMod _).add_mem (sum_smul_mem _ b fun l _ ↦\n      (n l).2.2) (smul_sub_mem_withExponents (S.inclKer.map_mem_withExponents le_rfl o))⟩\n  -- an operator of cost `0` moves `E M` into `E ^ p ^ a M ⊆ p M + M'`: apply it to `x`\n  obtain ⟨A, R, d⟩ :=\n    S.exists_reaches_deep (.image (.mk 0) ((S.U i).biUnion fun v ↦ Ioo (c 0 v) (c 0 v + p ^ a)))\n  rw [sum_eq_zero] at R\n  obtain ⟨y, z⟩ := R.mem_of_stable le_rfl m (kerWithExponents_le_deepElements m)\n  have m₂ := frobEUnit_zpow_mem_withExponents (c' := c) 0 (-p ^ a)\n    (mem_withExponents_of_deep y (d (kerWithExponents_le_deepElements m) (fun b v ↦ c b v +\n    raisedAtE (p ^ a) b 0) ?_).2) fun _ v _ ↦ by clear * - ha; grind [ha v 0, dvd_zero]\n  obtain ⟨r, f⟩ : ↑p ∣ k.frobE 0 ^ p ^ a - k.frobE a := by simpa [k.dvd_iff_coe_dvd, frobE_eq, hk.1,\n    phi_pow_smul_z, ← sub_sub, dvd_sub_left] using sub_dvd_pow_sub_pow (k.z + p) k.z _\n  have n := (locKisinPart (S.kerWithExponents i c)).sub_mem (x :=\n    r • ⟨_, frobEUnit_zpow_smul_mem_kisinLoc.2 (A _).2⟩) ⟨smul_mem _ r.1 m₂, by\n    simp [by simpa using z]⟩ (R t.2)\n  refine mem_sup.2 ⟨_, ⟨sub_mem t.1 (M n), (sub_mem t.2 (kerWithExponents_le_deepElements\n    n)).imp_right fun m g ↦ mem_withExponents_of_smul not_frobE_dvd_p (m g).1.1 ?_⟩, _, n, by simp⟩\n  convert (invariantsMod _).add_mem (R.mem_of_stable kerWithExponents_le_deepElements e e).2\n    (smul_sub_mem_withExponents (frobEUnit_zpow_mem_withExponents a 1 m₂)) g\n  simp [S_smul, ← sub_eq_iff_comm.1 f, ← frobEUnit_pow_smul, ← zpow_natCast (k.frobEUnit 0),\n    sub_smul, mul_smul, smul_sub, smul_comm g, Nat.cast_smul_eq_nsmul, -map_smul]\n  abel\n  all_goals clear * - hu ha hc hk; cases a <;> grind [cost_le_of_isUnramified]",
+   "head_lines": [
+    45,
+    46
+   ],
+   "head_span": [
+    45,
+    3,
+    46,
+    19
+   ],
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "6.1",
+   "parent": "6",
+   "kind": "setup",
+   "claim": "I is the set of c.",
+   "lines": [
+    47,
+    47
+   ],
+   "span": [
+    47,
+    3,
+    47,
+    10
+   ],
+   "lean": "subst E",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "6.2",
+   "parent": "6",
+   "kind": "split",
+   "claim": "Either c(a, v) ≥ c'(a, v) for every v ∈ U_{i'}, or some u ∈ U_{i'} has c(a, u) < c'(a, u) (chosen minimal):",
+   "lines": [
+    48,
+    94
+   ],
+   "span": [
+    48,
+    3,
+    94,
+    79
+   ],
+   "lean": "obtain w | ⟨u, hu⟩ := by\n    simpa using not_or_of_imp (exists_min_image {v ∈ S.U i' | c a v < c' a v} id)\n  exact (relLength_eq_zero.2 (map_mono fun _ ↦\n    And.imp id (.imp id (mem_withExponents_of_le <| · ·)))).trans_le bot_le\n  have M : locKisinPart (S.kerWithExponents i c) ≤ locKisinPart\n    (S.extLattice.withExponents i (raisedAtE 0)) := fun _ ↦ (mem_withExponents_of_le ·.1)\n  grw [← add_sum_erase (a := ⟨u, c a u⟩), relLength_trans _ (ih (c := raiseExponent c a u) ..)]\n  grw [deepConstants, deepConstants, ← relLength_comap, comap_map_eq, relLength_mono le_rfl\n    (sup_le_sup_left (fun _ ↦ (·.2) : locKisinPart (S.kerWithExponents i c) ≤ _) _),\n    relLength_le_of_relations] <;> intro x hx\n  refine (S.exists_reaches_deep {⟨a, c a u⟩}).rec fun A ⟨R, d⟩ ↦\n    mem_sup.2 ⟨_, ⟨R.mem_of_stable M hx.1 hx.2, d hx.2 _ ?_⟩, _, neg_mem (R hx.2), by simp⟩\n  swap\n  choose x' n m b e using (mem_sup.1 <| hx · |>.2)\n  choose y d q B using (exists_inclKer_eq_of_projTriv_eq_zero <| b ·)\n  peel 3 exists_comb_of_jumpMultiplicity_le c hk .refl a i f\n    (by clear * - hu ho; grind [AntitoneOn]) (⟨_, B · (m _).2⟩) d with b t\n  obtain ⟨w, m, z, o, s⟩ := mem_sup.1 t\n  have t := sum_smul_mem (t := univ) _ b fun l _ ↦ (hx l).1\n  have m : ⟨_, S.inclKer.wittMap_mem_kisinLoc w.2⟩ ∈ locKisinPart (S.kerWithExponents i _) :=\n    ⟨S.inclKer.map_mem_withExponents le_rfl m, by simp⟩\n  have e : _ ∈ S.deepElements i (raiseExponent c a u) :=\n    ⟨sub_mem (smul_mem _ ↑p t.2.1) (kerWithExponents_le_deepElements m).1, by\n    simpa -implicitDefEqProofs [eq_sub_of_add_eq' s, smul_sum, smul_comm _ (b _), ← e, q, add_sub]\n      using (invariantsMod _).add_mem (sum_smul_mem _ b fun l _ ↦\n      (n l).2.2) (smul_sub_mem_withExponents (S.inclKer.map_mem_withExponents le_rfl o))⟩\n  -- an operator of cost `0` moves `E M` into `E ^ p ^ a M ⊆ p M + M'`: apply it to `x`\n  obtain ⟨A, R, d⟩ :=\n    S.exists_reaches_deep (.image (.mk 0) ((S.U i).biUnion fun v ↦ Ioo (c 0 v) (c 0 v + p ^ a)))\n  rw [sum_eq_zero] at R\n  obtain ⟨y, z⟩ := R.mem_of_stable le_rfl m (kerWithExponents_le_deepElements m)\n  have m₂ := frobEUnit_zpow_mem_withExponents (c' := c) 0 (-p ^ a)\n    (mem_withExponents_of_deep y (d (kerWithExponents_le_deepElements m) (fun b v ↦ c b v +\n    raisedAtE (p ^ a) b 0) ?_).2) fun _ v _ ↦ by clear * - ha; grind [ha v 0, dvd_zero]\n  obtain ⟨r, f⟩ : ↑p ∣ k.frobE 0 ^ p ^ a - k.frobE a := by simpa [k.dvd_iff_coe_dvd, frobE_eq, hk.1,\n    phi_pow_smul_z, ← sub_sub, dvd_sub_left] using sub_dvd_pow_sub_pow (k.z + p) k.z _\n  have n := (locKisinPart (S.kerWithExponents i c)).sub_mem (x :=\n    r • ⟨_, frobEUnit_zpow_smul_mem_kisinLoc.2 (A _).2⟩) ⟨smul_mem _ r.1 m₂, by\n    simp [by simpa using z]⟩ (R t.2)\n  refine mem_sup.2 ⟨_, ⟨sub_mem t.1 (M n), (sub_mem t.2 (kerWithExponents_le_deepElements\n    n)).imp_right fun m g ↦ mem_withExponents_of_smul not_frobE_dvd_p (m g).1.1 ?_⟩, _, n, by simp⟩\n  convert (invariantsMod _).add_mem (R.mem_of_stable kerWithExponents_le_deepElements e e).2\n    (smul_sub_mem_withExponents (frobEUnit_zpow_mem_withExponents a 1 m₂)) g\n  simp [S_smul, ← sub_eq_iff_comm.1 f, ← frobEUnit_pow_smul, ← zpow_natCast (k.frobEUnit 0),\n    sub_smul, mul_smul, smul_sub, smul_comm g, Nat.cast_smul_eq_nsmul, -map_smul]\n  abel\n  all_goals clear * - hu ha hc hk; cases a <;> grind [cost_le_of_isUnramified]",
+   "head_lines": [
+    48,
+    49
+   ],
+   "head_span": [
+    48,
+    3,
+    49,
+    82
+   ],
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "6.2.1",
+   "parent": "6.2",
+   "kind": "case",
+   "claim": "no step: deepConstants(c) ⊆ deepConstants(c') (mem_withExponents_of_le, hc), so the relative length is 0.",
+   "lines": [
+    50,
+    51
+   ],
+   "span": [
+    50,
+    3,
+    51,
+    76
+   ],
+   "lean": "exact (relLength_eq_zero.2 (map_mono fun _ ↦\n    And.imp id (.imp id (mem_withExponents_of_le <| · ·)))).trans_le bot_le",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Lift.KummerChart.JumpLattice.mem_withExponents_of_le"
+    },
+    {
+     "decl": "relLength_eq_zero"
+    }
+   ]
+  },
+  {
+   "id": "6.2.2",
+   "parent": "6.2",
+   "kind": "case",
+   "claim": "a step at u:",
+   "lines": [
+    52,
+    94
+   ],
+   "span": [
+    52,
+    3,
+    94,
+    79
+   ],
+   "lean": "have M : locKisinPart (S.kerWithExponents i c) ≤ locKisinPart\n    (S.extLattice.withExponents i (raisedAtE 0)) := fun _ ↦ (mem_withExponents_of_le ·.1)\n  grw [← add_sum_erase (a := ⟨u, c a u⟩), relLength_trans _ (ih (c := raiseExponent c a u) ..)]\n  grw [deepConstants, deepConstants, ← relLength_comap, comap_map_eq, relLength_mono le_rfl\n    (sup_le_sup_left (fun _ ↦ (·.2) : locKisinPart (S.kerWithExponents i c) ≤ _) _),\n    relLength_le_of_relations] <;> intro x hx\n  refine (S.exists_reaches_deep {⟨a, c a u⟩}).rec fun A ⟨R, d⟩ ↦\n    mem_sup.2 ⟨_, ⟨R.mem_of_stable M hx.1 hx.2, d hx.2 _ ?_⟩, _, neg_mem (R hx.2), by simp⟩\n  swap\n  choose x' n m b e using (mem_sup.1 <| hx · |>.2)\n  choose y d q B using (exists_inclKer_eq_of_projTriv_eq_zero <| b ·)\n  peel 3 exists_comb_of_jumpMultiplicity_le c hk .refl a i f\n    (by clear * - hu ho; grind [AntitoneOn]) (⟨_, B · (m _).2⟩) d with b t\n  obtain ⟨w, m, z, o, s⟩ := mem_sup.1 t\n  have t := sum_smul_mem (t := univ) _ b fun l _ ↦ (hx l).1\n  have m : ⟨_, S.inclKer.wittMap_mem_kisinLoc w.2⟩ ∈ locKisinPart (S.kerWithExponents i _) :=\n    ⟨S.inclKer.map_mem_withExponents le_rfl m, by simp⟩\n  have e : _ ∈ S.deepElements i (raiseExponent c a u) :=\n    ⟨sub_mem (smul_mem _ ↑p t.2.1) (kerWithExponents_le_deepElements m).1, by\n    simpa -implicitDefEqProofs [eq_sub_of_add_eq' s, smul_sum, smul_comm _ (b _), ← e, q, add_sub]\n      using (invariantsMod _).add_mem (sum_smul_mem _ b fun l _ ↦\n      (n l).2.2) (smul_sub_mem_withExponents (S.inclKer.map_mem_withExponents le_rfl o))⟩\n  -- an operator of cost `0` moves `E M` into `E ^ p ^ a M ⊆ p M + M'`: apply it to `x`\n  obtain ⟨A, R, d⟩ :=\n    S.exists_reaches_deep (.image (.mk 0) ((S.U i).biUnion fun v ↦ Ioo (c 0 v) (c 0 v + p ^ a)))\n  rw [sum_eq_zero] at R\n  obtain ⟨y, z⟩ := R.mem_of_stable le_rfl m (kerWithExponents_le_deepElements m)\n  have m₂ := frobEUnit_zpow_mem_withExponents (c' := c) 0 (-p ^ a)\n    (mem_withExponents_of_deep y (d (kerWithExponents_le_deepElements m) (fun b v ↦ c b v +\n    raisedAtE (p ^ a) b 0) ?_).2) fun _ v _ ↦ by clear * - ha; grind [ha v 0, dvd_zero]\n  obtain ⟨r, f⟩ : ↑p ∣ k.frobE 0 ^ p ^ a - k.frobE a := by simpa [k.dvd_iff_coe_dvd, frobE_eq, hk.1,\n    phi_pow_smul_z, ← sub_sub, dvd_sub_left] using sub_dvd_pow_sub_pow (k.z + p) k.z _\n  have n := (locKisinPart (S.kerWithExponents i c)).sub_mem (x :=\n    r • ⟨_, frobEUnit_zpow_smul_mem_kisinLoc.2 (A _).2⟩) ⟨smul_mem _ r.1 m₂, by\n    simp [by simpa using z]⟩ (R t.2)\n  refine mem_sup.2 ⟨_, ⟨sub_mem t.1 (M n), (sub_mem t.2 (kerWithExponents_le_deepElements\n    n)).imp_right fun m g ↦ mem_withExponents_of_smul not_frobE_dvd_p (m g).1.1 ?_⟩, _, n, by simp⟩\n  convert (invariantsMod _).add_mem (R.mem_of_stable kerWithExponents_le_deepElements e e).2\n    (smul_sub_mem_withExponents (frobEUnit_zpow_mem_withExponents a 1 m₂)) g\n  simp [S_smul, ← sub_eq_iff_comm.1 f, ← frobEUnit_pow_smul, ← zpow_natCast (k.frobEUnit 0),\n    sub_smul, mul_smul, smul_sub, smul_comm g, Nat.cast_smul_eq_nsmul, -map_smul]\n  abel\n  all_goals clear * - hu ha hc hk; cases a <;> grind [cost_le_of_isUnramified]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "6.2.2.1",
+   "parent": "6.2.2",
+   "kind": "fact",
+   "claim": "kerWithExponents(S, i, c) ⊆ withExponents(Ỹ, i, raisedAtE(0)) (−u ≤ c by hc).",
+   "lines": [
+    52,
+    53
+   ],
+   "span": [
+    52,
+    3,
+    53,
+    90
+   ],
+   "lean": "have M : locKisinPart (S.kerWithExponents i c) ≤ locKisinPart\n    (S.extLattice.withExponents i (raisedAtE 0)) := fun _ ↦ (mem_withExponents_of_le ·.1)",
+   "typed_fact": "locKisinPart (S.kerWithExponents i c) ≤ locKisinPart\n    (S.extLattice.withExponents i (raisedAtE 0))",
+   "uses": [
+    {
+     "decl": "Lift.KummerChart.JumpLattice.mem_withExponents_of_le"
+    }
+   ]
+  },
+  {
+   "id": "6.2.2.2",
+   "parent": "6.2.2",
+   "kind": "reduction",
+   "claim": "Split off (u, c(a, u)) and use the induction hypothesis for raiseExponent(c, a, u) (relLength_trans): it remains relLength(deepConstants(c), deepConstants(raiseExponent(c, a, u))) ≤ f·mult(u)·cost(a, c(a, u)).",
+   "lines": [
+    54,
+    54
+   ],
+   "span": [
+    54,
+    3,
+    54,
+    96
+   ],
+   "lean": "grw [← add_sum_erase (a := ⟨u, c a u⟩), relLength_trans _ (ih (c := raiseExponent c a u) ..)]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Lift.relLength_trans"
+    },
+    {
+     "decl": "Lift.KummerChart.JumpLattice.raiseExponent"
+    }
+   ]
+  },
+  {
+   "id": "6.2.2.3",
+   "parent": "6.2.2",
+   "kind": "reduction",
+   "claim": "Pull back along projTrivLoc (relLength_comap) and enlarge the target by the kernel part; by relLength_le_of_relations it suffices: p^{cost} times an element lands in the target, and any f·mult(u) + 1 elements x_l of the source with p·x_l in the target have a combination with a coefficient 1 in the target.",
+   "lines": [
+    55,
+    57
+   ],
+   "span": [
+    55,
+    3,
+    57,
+    46
+   ],
+   "lean": "grw [deepConstants, deepConstants, ← relLength_comap, comap_map_eq, relLength_mono le_rfl\n    (sup_le_sup_left (fun _ ↦ (·.2) : locKisinPart (S.kerWithExponents i c) ≤ _) _),\n    relLength_le_of_relations] <;> intro x hx",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "relLength_comap"
+    },
+    {
+     "decl": "Lift.relLength_le_of_relations"
+    }
+   ]
+  },
+  {
+   "id": "6.2.2.4",
+   "parent": "6.2.2",
+   "kind": "fact",
+   "claim": "p^{cost(a, c(a,u))}·x lands in the target: the operator of exists_reaches_deep for the single step (a, c(a, u)) has this cost and raises the depth (Reaches.mem_of_stable).",
+   "lines": [
+    58,
+    59
+   ],
+   "span": [
+    58,
+    3,
+    59,
+    92
+   ],
+   "lean": "refine (S.exists_reaches_deep {⟨a, c a u⟩}).rec fun A ⟨R, d⟩ ↦\n    mem_sup.2 ⟨_, ⟨R.mem_of_stable M hx.1 hx.2, d hx.2 _ ?_⟩, _, neg_mem (R hx.2), by simp⟩",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "6.2.2.1"
+    },
+    {
+     "decl": "Lift.KummerChart.PairingSide.exists_reaches_deep"
+    },
+    {
+     "decl": "Lift.KummerChart.PairingSide.Reaches.mem_of_stable"
+    }
+   ]
+  },
+  {
+   "id": "6.2.2.5",
+   "parent": "6.2.2",
+   "kind": "setup",
+   "claim": "Turn to the relation condition.",
+   "lines": [
+    60,
+    60
+   ],
+   "span": [
+    60,
+    3,
+    60,
+    7
+   ],
+   "lean": "swap",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "6.2.2.6",
+   "parent": "6.2.2",
+   "kind": "choice",
+   "claim": "For each l write p·x_l = x'_l + (kernel element) with x'_l deep for raiseExponent(c, a, u) (n, m, b, e),",
+   "lines": [
+    61,
+    61
+   ],
+   "span": [
+    61,
+    3,
+    61,
+    51
+   ],
+   "lean": "choose x' n m b e using (mem_sup.1 <| hx · |>.2)",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "6.2.2.7",
+   "parent": "6.2.2",
+   "kind": "choice",
+   "claim": "and the kernel elements as inclKer(y_l) with y_l ∈ kisinLoc(Y) of exponents c (exists_inclKer_eq_of_projTriv_eq_zero).",
+   "lines": [
+    62,
+    62
+   ],
+   "span": [
+    62,
+    3,
+    62,
+    70
+   ],
+   "lean": "choose y d q B using (exists_inclKer_eq_of_projTriv_eq_zero <| b ·)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Lift.KummerChart.PairingSide.exists_inclKer_eq_of_projTriv_eq_zero"
+    }
+   ]
+  },
+  {
+   "id": "6.2.2.8",
+   "parent": "6.2.2",
+   "kind": "fact",
+   "claim": "exists_comb_of_jumpMultiplicity_le (unramified, ho and the minimality of u) gives coefficients b_l, one equal to 1, with Σ_l b_l y_l in the E-raised part plus the (a, u)-raised part (t).",
+   "lines": [
+    63,
+    64
+   ],
+   "span": [
+    63,
+    3,
+    64,
+    75
+   ],
+   "lean": "peel 3 exists_comb_of_jumpMultiplicity_le c hk .refl a i f\n    (by clear * - hu ho; grind [AntitoneOn]) (⟨_, B · (m _).2⟩) d with b t",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Lift.KummerChart.JumpLattice.exists_comb_of_jumpMultiplicity_le"
+    }
+   ]
+  },
+  {
+   "id": "6.2.2.9",
+   "parent": "6.2.2",
+   "kind": "choice",
+   "claim": "Write Σ_l b_l y_l = w + z with w having o + 1 at E (m) and z having raiseExponent(c, a, u) (o) (s).",
+   "lines": [
+    65,
+    65
+   ],
+   "span": [
+    65,
+    3,
+    65,
+    40
+   ],
+   "lean": "obtain ⟨w, m, z, o, s⟩ := mem_sup.1 t",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "6.2.2.10",
+   "parent": "6.2.2",
+   "kind": "fact",
+   "claim": "Σ_l b_l x_l lies in the source (t).",
+   "lines": [
+    66,
+    66
+   ],
+   "span": [
+    66,
+    3,
+    66,
+    60
+   ],
+   "lean": "have t := sum_smul_mem (t := univ) _ b fun l _ ↦ (hx l).1",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "6.2.2.11",
+   "parent": "6.2.2",
+   "kind": "fact",
+   "claim": "inclKer(w) lies in locKisinPart(kerWithExponents(S, i, c + [E])).",
+   "lines": [
+    67,
+    68
+   ],
+   "span": [
+    67,
+    3,
+    68,
+    56
+   ],
+   "lean": "have m : ⟨_, S.inclKer.wittMap_mem_kisinLoc w.2⟩ ∈ locKisinPart (S.kerWithExponents i _) :=\n    ⟨S.inclKer.map_mem_withExponents le_rfl m, by simp⟩",
+   "typed_fact": "⟨_, S.inclKer.wittMap_mem_kisinLoc w.2⟩ ∈ locKisinPart (S.kerWithExponents i _)",
+   "uses": [
+    {
+     "decl": "Lift.KummerChart.JumpLattice.Hom.map_mem_withExponents"
+    }
+   ]
+  },
+  {
+   "id": "6.2.2.12",
+   "parent": "6.2.2",
+   "kind": "fact",
+   "claim": "p·Σ_l b_l x_l − inclKer(w) ∈ deepElements(S, i, raiseExponent(c, a, u)): it is Σ b_l x'_l + inclKer(z), and both parts are deep for the raised exponents.",
+   "lines": [
+    69,
+    73
+   ],
+   "span": [
+    69,
+    3,
+    73,
+    90
+   ],
+   "lean": "have e : _ ∈ S.deepElements i (raiseExponent c a u) :=\n    ⟨sub_mem (smul_mem _ ↑p t.2.1) (kerWithExponents_le_deepElements m).1, by\n    simpa -implicitDefEqProofs [eq_sub_of_add_eq' s, smul_sum, smul_comm _ (b _), ← e, q, add_sub]\n      using (invariantsMod _).add_mem (sum_smul_mem _ b fun l _ ↦\n      (n l).2.2) (smul_sub_mem_withExponents (S.inclKer.map_mem_withExponents le_rfl o))⟩",
+   "typed_fact": "_ ∈ S.deepElements i (raiseExponent c a u)",
+   "uses": [
+    {
+     "step": "6.2.2.6"
+    },
+    {
+     "step": "6.2.2.9"
+    },
+    {
+     "step": "6.2.2.11"
+    },
+    {
+     "decl": "Lift.KummerChart.PairingSide.kerWithExponents_le_deepElements"
+    },
+    {
+     "decl": "Lift.KummerChart.JumpLattice.smul_sub_mem_withExponents"
+    }
+   ]
+  },
+  {
+   "id": "6.2.2.13",
+   "parent": "6.2.2",
+   "kind": "choice",
+   "claim": "An operator of cost 0 moves E·M into E^{p^a}M ⊆ pM + M': exists_reaches_deep for the steps {0} × ⋃_v (c(0, v), c(0, v) + p^a), whose costs vanish by ha (no multiple of p there, unramified).",
+   "lines": [
+    74,
+    76
+   ],
+   "span": [
+    74,
+    3,
+    76,
+    97
+   ],
+   "lean": "-- an operator of cost `0` moves `E M` into `E ^ p ^ a M ⊆ p M + M'`: apply it to `x`\n  obtain ⟨A, R, d⟩ :=\n    S.exists_reaches_deep (.image (.mk 0) ((S.U i).biUnion fun v ↦ Ioo (c 0 v) (c 0 v + p ^ a)))",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Lift.KummerChart.PairingSide.exists_reaches_deep"
+    }
+   ]
+  },
+  {
+   "id": "6.2.2.14",
+   "parent": "6.2.2",
+   "kind": "computation",
+   "claim": "Its cost is 0.",
+   "lines": [
+    77,
+    77
+   ],
+   "span": [
+    77,
+    3,
+    77,
+    24
+   ],
+   "lean": "rw [sum_eq_zero] at R",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "6.2.2.15",
+   "parent": "6.2.2",
+   "kind": "fact",
+   "claim": "Applied to inclKer(w): A(inclKer w) is deep (y) and differs from it by a kernel element (z).",
+   "lines": [
+    78,
+    78
+   ],
+   "span": [
+    78,
+    3,
+    78,
+    81
+   ],
+   "lean": "obtain ⟨y, z⟩ := R.mem_of_stable le_rfl m (kerWithExponents_le_deepElements m)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "6.2.2.11"
+    },
+    {
+     "decl": "Lift.KummerChart.PairingSide.Reaches.mem_of_stable"
+    },
+    {
+     "decl": "Lift.KummerChart.PairingSide.kerWithExponents_le_deepElements"
+    }
+   ]
+  },
+  {
+   "id": "6.2.2.16",
+   "parent": "6.2.2",
+   "kind": "fact",
+   "claim": "E^{−p^a}·A(inclKer w) has exponents c (m₂): its depth gains p^a at E (mem_withExponents_of_deep), and dividing by E^{p^a} lowers the exponent at E by p^a (frobEUnit_zpow_mem_withExponents).",
+   "lines": [
+    79,
+    81
+   ],
+   "span": [
+    79,
+    3,
+    81,
+    88
+   ],
+   "lean": "have m₂ := frobEUnit_zpow_mem_withExponents (c' := c) 0 (-p ^ a)\n    (mem_withExponents_of_deep y (d (kerWithExponents_le_deepElements m) (fun b v ↦ c b v +\n    raisedAtE (p ^ a) b 0) ?_).2) fun _ v _ ↦ by clear * - ha; grind [ha v 0, dvd_zero]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Lift.KummerChart.JumpLattice.frobEUnit_zpow_mem_withExponents"
+    },
+    {
+     "decl": "Lift.KummerChart.JumpLattice.mem_withExponents_of_deep"
+    }
+   ]
+  },
+  {
+   "id": "6.2.2.17",
+   "parent": "6.2.2",
+   "kind": "fact",
+   "claim": "p divides E^{p^a} − φ^a(E) in S (E = z + p, φ^a(z) = z^{p^a}): E^{p^a} − φ^a(E) = p·r'.",
+   "lines": [
+    82,
+    83
+   ],
+   "span": [
+    82,
+    3,
+    83,
+    87
+   ],
+   "lean": "obtain ⟨r, f⟩ : ↑p ∣ k.frobE 0 ^ p ^ a - k.frobE a := by simpa [k.dvd_iff_coe_dvd, frobE_eq, hk.1,\n    phi_pow_smul_z, ← sub_sub, dvd_sub_left] using sub_dvd_pow_sub_pow (k.z + p) k.z _",
+   "typed_fact": "↑p ∣ k.frobE 0 ^ p ^ a - k.frobE a",
+   "uses": [
+    {
+     "decl": "Lift.KummerChart.phi_pow_smul_z"
+    }
+   ]
+  },
+  {
+   "id": "6.2.2.18",
+   "parent": "6.2.2",
+   "kind": "fact",
+   "claim": "Write W₀ = inclKer(w), Y₀ = E^{−p^a}·A(W₀) (so A(W₀) = E^{p^a}·Y₀ with Y₀ of exponents c, m₂) and X = Σ_l b_l x_l; A has cost 0, so A(X) − X is a kernel element (Reaches). Hence n := r'·Y₀ − (A(X) − X) lies in locKisinPart(kerWithExponents(S, i, c)) (n).",
+   "lines": [
+    84,
+    86
+   ],
+   "span": [
+    84,
+    3,
+    86,
+    37
+   ],
+   "lean": "have n := (locKisinPart (S.kerWithExponents i c)).sub_mem (x :=\n    r • ⟨_, frobEUnit_zpow_smul_mem_kisinLoc.2 (A _).2⟩) ⟨smul_mem _ r.1 m₂, by\n    simp [by simpa using z]⟩ (R t.2)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "6.2.2.16"
+    },
+    {
+     "step": "6.2.2.17"
+    }
+   ]
+  },
+  {
+   "id": "6.2.2.19",
+   "parent": "6.2.2",
+   "kind": "witness",
+   "claim": "The combination: X = (X − n) + n with n a kernel element and X − n in the target: it is in the source (M) and deep for raiseExponent(c, a, u): each Galois difference of X − n has the raised exponents because p times it does (the identity below) and no φ^b(E) divides p (not_frobE_dvd_p; mem_withExponents_of_smul). (The divisibility is φ^b(E) ∤ p, not p ∤ φ^b(E).)",
+   "lines": [
+    87,
+    88
+   ],
+   "span": [
+    87,
+    3,
+    88,
+    100
+   ],
+   "lean": "refine mem_sup.2 ⟨_, ⟨sub_mem t.1 (M n), (sub_mem t.2 (kerWithExponents_le_deepElements\n    n)).imp_right fun m g ↦ mem_withExponents_of_smul not_frobE_dvd_p (m g).1.1 ?_⟩, _, n, by simp⟩",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "6.2.2.1"
+    },
+    {
+     "step": "6.2.2.18"
+    },
+    {
+     "decl": "Lift.KummerChart.JumpLattice.mem_withExponents_of_smul"
+    },
+    {
+     "decl": "Lift.KummerChart.PairingSide.kerWithExponents_le_deepElements"
+    }
+   ]
+  },
+  {
+   "id": "6.2.2.20",
+   "parent": "6.2.2",
+   "kind": "computation",
+   "claim": "p(X − n) = A(pX − W₀) + φ^a(E)·Y₀ (with a plus sign, used by add_mem): A(pX − W₀) is deep for the raised exponents (Reaches.mem_of_stable with 6.2.2.12, pX − W₀ being deep) and φ^a(E)·Y₀ has the raised exponents at level a (frobEUnit_zpow_mem_withExponents), so every Galois difference of the sum has them,",
+   "lines": [
+    89,
+    90
+   ],
+   "span": [
+    89,
+    3,
+    90,
+    77
+   ],
+   "lean": "convert (invariantsMod _).add_mem (R.mem_of_stable kerWithExponents_le_deepElements e e).2\n    (smul_sub_mem_withExponents (frobEUnit_zpow_mem_withExponents a 1 m₂)) g",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "6.2.2.12"
+    },
+    {
+     "step": "6.2.2.16"
+    },
+    {
+     "decl": "Lift.KummerChart.PairingSide.Reaches.mem_of_stable"
+    },
+    {
+     "decl": "Lift.KummerChart.JumpLattice.frobEUnit_zpow_mem_withExponents"
+    }
+   ]
+  },
+  {
+   "id": "6.2.2.21",
+   "parent": "6.2.2",
+   "kind": "computation",
+   "claim": "the identity: p(X − n) = p·A(X) − p·r'Y₀ = A(pX − W₀) + φ^a(E)·Y₀, since A(W₀) = E^{p^a}Y₀ = (φ^a(E) + p·r')·Y₀ (6.2.2.17) and A is additive;",
+   "lines": [
+    91,
+    92
+   ],
+   "span": [
+    91,
+    3,
+    92,
+    82
+   ],
+   "lean": "simp [S_smul, ← sub_eq_iff_comm.1 f, ← frobEUnit_pow_smul, ← zpow_natCast (k.frobEUnit 0),\n    sub_smul, mul_smul, smul_sub, smul_comm g, Nat.cast_smul_eq_nsmul, -map_smul]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "6.2.2.17"
+    }
+   ]
+  },
+  {
+   "id": "6.2.2.22",
+   "parent": "6.2.2",
+   "kind": "computation",
+   "claim": "(an additive identity).",
+   "lines": [
+    93,
+    93
+   ],
+   "span": [
+    93,
+    3,
+    93,
+    7
+   ],
+   "lean": "abel",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "6.2.2.23",
+   "parent": "6.2.2",
+   "kind": "fact",
+   "claim": "The remaining numeric conditions follow from hu, ha, hc and cost_le_of_isUnramified (cases a = 0 and a > 0).",
+   "lines": [
+    94,
+    94
+   ],
+   "span": [
+    94,
+    3,
+    94,
+    79
+   ],
+   "lean": "all_goals clear * - hu ha hc hk; cases a <;> grind [cost_le_of_isUnramified]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Lift.KummerChart.JumpLattice.cost_le_of_isUnramified"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,298 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Rows.SparseThetaSum:133:7",
+ "name": "norm_modKernel_sub_realInner_le",
+ "summary": "Take Ψ = the average over t of conj(θ[Ψ_t, Q](g, h))·Ψ_t; by Poisson summation the kernel is a lattice sum of Fock matrix coefficients, the term 0 being ⟨v, ω(u,u')v⟩; the other lattice vectors are at distance ≥ m (first minimum), and the Gaussian decay of the coefficients sums to the error.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "witness",
+   "claim": "Take Ψ = 𝔼_t conj(θ[Ψ_t, Q](g, h))·Ψ_t (Ψ_t = traceChar t) and fix u, u'.",
+   "lines": [
+    140,
+    140
+   ],
+   "lean": "  use 𝔼 t, conj (modKernel S T a b 𝔪 (traceChar t) Q g h) • traceChar t, fun u u' ↦ ?_",
+   "uses": []
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let L be the Hom lattice moved by (g, h).",
+   "lines": [
+    141,
+    141
+   ],
+   "lean": "  let L := (S.hom T).move (G.onHom (g, h))",
+   "uses": []
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "Rewrite hm with L (step 3.1).",
+   "lines": [
+    142,
+    142
+   ],
+   "span": [
+    142,
+    3,
+    142,
+    95
+   ],
+   "lean": "rw [show hom .. = L by simp [L, move, hom, Units.ext_iff, mul_kronecker_mul, G.onHom]] at hm",
+   "head_lines": [
+    142,
+    142
+   ],
+   "head_span": [
+    142,
+    3,
+    142,
+    7
+   ],
+   "uses": []
+  },
+  {
+   "id": "3.1",
+   "parent": "3",
+   "kind": "identity",
+   "claim": "The moved Hom lattice is L.",
+   "lines": [
+    142,
+    142
+   ],
+   "span": [
+    142,
+    7,
+    142,
+    95
+   ],
+   "lean": "show hom .. = L by simp [L, move, hom, Units.ext_iff, mul_kronecker_mul, G.onHom]] at hm",
+   "typed_fact": "hom .. = L",
+   "uses": [
+    {
+     "step": "2"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Every nonzero y with c·y in the lattice has real coordinates of norm at least m (first minimum, hm).",
+   "lines": [
+    143,
+    146
+   ],
+   "lean": "  have A (y : {y | c • y ∈ L.baseLattice ∧ y ≠ 0}) : m ≤ ‖WithLp.toLp 2\n    (realCoord (L.vecAtPoint y))‖ := by grw [← mul_le_mul_iff_right₀ L.firstMinimum_pos,\n    ← norm_smul_of_nonneg, firstMinimum_le y.2.1, mul_comm, ← norm_smul_of_nonneg] <;> simp [*,\n    abs_of_nonneg, archCoords, val_scaleIdele_fst, ← mul_assoc, ← mul_rotate √_, y.2.2]; grw [hm]",
+   "typed_fact": "m ≤ ‖WithLp.toLp 2\n    (realCoord (L.vecAtPoint y))‖",
+   "uses": [
+    {
+     "step": "3"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "witness",
+   "claim": "The sum over such y of |y|^{−2q} is bounded (tsum_inv_pow_le_of_separated, the points being m-separated): p, r.",
+   "lines": [
+    147,
+    148
+   ],
+   "lean": "  have ⟨p, r⟩ := tsum_inv_pow_le_of_separated (n := 2 * q) m0 (fun y z h ↦ by simpa [sub_div]\n    using (A ⟨y - z, by grind [smul_sub, sub_mem]⟩)) A (by simp_all; omega)",
+   "uses": [
+    {
+     "step": "4"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "fact",
+   "claim": "The data pairing summed over t (hasSum_dataInner) times |matrices mod 𝔪|⁻¹: the kernel is a lattice sum (h4).",
+   "lines": [
+    149,
+    152
+   ],
+   "lean": "  have h4 :=\n    (hasSum_sum (s := ⊤) fun t _ ↦ let φ := ω _ (G.onHom (g, h)) ∘ modDatum S T 𝔪 (traceChar t)\n    hasSum_dataInner _ (φ (realPairWeil γ γ' (u, u') v)) (φ v)).mul_left\n    (Fintype.card (Matrix n n' 𝔪.ResRing) : ℂ)⁻¹",
+   "uses": [
+    {
+     "decl": "dataInner_traceChar"
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Simplify h4: the ω-action, dataInner_traceChar, the sum of additive characters over t (primitive character).",
+   "lines": [
+    153,
+    154
+   ],
+   "lean": "  simp [dataInner_omega_left, ω_ϱ, rep_apply_apply, dataInner_traceChar, finCoord, ← Finset.sum_mul,\n    sum_addChar_trace_mul, Modulus.isPrimitive_primAddChar, ← ext_iff] at h4",
+   "uses": [
+    {
+     "step": "6"
+    },
+    {
+     "decl": "dataInner_traceChar"
+    }
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "Bound the difference by the sum over the nonzero lattice points of the bound of the Heisenberg matrix coefficients (norm_realInner_realHeisOp_le: decay |y|^{−2q}·(100(d + 2q))^q…), summable by step 5; the support condition and the identification of the term 0 remain.",
+   "lines": [
+    155,
+    157
+   ],
+   "lean": "  refine ((((hasSum_subtype_iff_of_support_subset ?_).2 (hasSum_ite_sub_hasSum h4\n    0)).norm_le_of_bounded (p.hasSum.mul_left _) fun y ↦ .trans ?_ (norm_realInner_realHeisOp_le\n    (pairHomInf (u, u')) hv hQ le_rfl (by simp) (m0.trans_le (A y)))).trans' ?_).trans ?_",
+   "uses": [
+    {
+     "step": "5"
+    },
+    {
+     "step": "7"
+    }
+   ]
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Introduce a lattice point y.",
+   "lines": [
+    158,
+    158
+   ],
+   "lean": "  simp_intro y h",
+   "uses": []
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Support: c·y lies in the lattice (hc, reduction idempotents).",
+   "lines": [
+    159,
+    160
+   ],
+   "lean": "  simpa [L, baseLattice] using\n    (hc _ <| (𝔪.reduction_idem_mul ⟨_, h.2.1 _ _⟩).symm.trans <| h.2.2.1.2 · ·)",
+   "uses": []
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Split the term y = 0 from the others.",
+   "lines": [
+    161,
+    161
+   ],
+   "lean": "  simp; split_ifs <;> simp [L, realPairWeil]",
+   "uses": []
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "computation",
+   "claim": "The term 0 is the kernel θ[Ψ, Q](g(u,1), h(u',1)) (modKernel, pairWeil_integrated, the average over t).",
+   "lines": [
+    162,
+    164
+   ],
+   "lean": "  rw [← modKernelBilin_apply]; simp [modKernel, pairTheta, ← mk_mul_mk, mul_comm (conj _),\n    modDatum, *, pairWeil_integrated,\n    Finset.expect, NNRat.smul_def, ← ZeroMemClass.zero_def, realCoord.eq_unfold, ← Pi.zero_def]",
+   "uses": [
+    {
+     "decl": "modKernelBilin"
+    }
+   ]
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Collect the conjugates in the Weil representation.",
+   "lines": [
+    165,
+    165
+   ],
+   "lean": "  simp [pairWeil, mul_mul_mul_comm _ _ (_ * _), ← coe_inv_eq_conj, mul_mul_mul_comm _ _⁻¹]",
+   "uses": []
+  },
+  {
+   "id": "14",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Bound the coefficient of each nonzero y: real parts by norms, r, hq, and the norm of the pair element (step 14.1).",
+   "lines": [
+    166,
+    170
+   ],
+   "span": [
+    166,
+    3,
+    170,
+    91
+   ],
+   "lean": "nth_grw 1 [Complex.re_le_norm, r, hq, hq, pow_mul, mul_assoc,\n    ← mul_pow, show ‖(pairHomInf _).1.1‖ ≤ maxOpNorm u * _ from\n    (NonUnitalStarAlgHom.norm_apply_le ({ blockMatrix with .. } : _ →⋆ₙₐ[ℂ] Matrix (InfinitePlace E\n    × n' × n) _ _) _).trans ((pi_norm_le_iff_of_nonempty _).2 fun w ↦ (norm_pairHom_le ..).trans (by\n    gcongr <;> apply norm_le_pi_norm _ w))] <;> simp [U.one_le_norm, submatrix_smul, star]",
+   "head_lines": [
+    166,
+    167
+   ],
+   "head_span": [
+    166,
+    3,
+    167,
+    16
+   ],
+   "uses": [
+    {
+     "step": "5"
+    }
+   ]
+  },
+  {
+   "id": "14.1",
+   "parent": "14",
+   "kind": "fact",
+   "claim": "‖pairHomInf(u, u')‖ ≤ maxOpNorm u·maxOpNorm u' (norm_pairHom_le, block matrices).",
+   "lines": [
+    167,
+    170
+   ],
+   "span": [
+    167,
+    16,
+    170,
+    91
+   ],
+   "lean": "show ‖(pairHomInf _).1.1‖ ≤ maxOpNorm u * _ from\n    (NonUnitalStarAlgHom.norm_apply_le ({ blockMatrix with .. } : _ →⋆ₙₐ[ℂ] Matrix (InfinitePlace E\n    × n' × n) _ _) _).trans ((pi_norm_le_iff_of_nonempty _).2 fun w ↦ (norm_pairHom_le ..).trans (by\n    gcongr <;> apply norm_le_pi_norm _ w))] <;> simp [U.one_le_norm, submatrix_smul, star]",
+   "typed_fact": "‖(pairHomInf _).1.1‖ ≤ maxOpNorm u * _",
+   "uses": []
+  },
+  {
+   "id": "15",
+   "parent": null,
+   "kind": "computation",
+   "claim": "The remaining linear identity (linear_combination).",
+   "lines": [
+    171,
+    171
+   ],
+   "lean": "  linear_combination",
+   "uses": []
+  }
+ ]
+}

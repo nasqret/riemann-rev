@@ -1,0 +1,681 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.DiscreteSeries.BesselExistence:108:7",
+ "summary": "Choose x by Witt's theorem so that x carries an explicit family of vectors (columns of p·C, built from Lagrange weights at the nodes 0, t_0, …, t_{2ϱ+1}, t_i = Λ(l)(e(i)) − a) to the frame f and the X₀-basis vectors along τ; the size bound comes from besselSize_le_of_dual. In the basis q = x·p the matrix diag(Λ(l)) becomes, on the frame, a + (shift), so that its trace against s₁ − 1 is the simple-root character σ(s₁) − conj σ(s₁) plus the U(κ) part; the other fields of IsTwoFactor follow from the structure of besselGraph(𝔰).",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "lines": [
+    113,
+    113
+   ],
+   "lean": "  let t i := l.lowestKType (e (.inr i)) - a",
+   "claim": "Let t_i = Λ(l)(e(i)) − a for i ∈ {0, …, 2ϱ + 1}.",
+   "uses": [],
+   "typed_fact": null
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "fact",
+   "lines": [
+    114,
+    114
+   ],
+   "lean": "  have : 1 ≤ b := by bound",
+   "claim": "1 ≤ b (from b1).",
+   "uses": [],
+   "typed_fact": "1 ≤ b"
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "fact",
+   "lines": [
+    115,
+    115
+   ],
+   "lean": "  have tb i : t i ^ 2 ≤ b ^ 5 := by simp [t]; nlinarith [(H.weight_mem i).symm, sq_nonneg (b ^ 2)]",
+   "claim": "tb: t_i² ≤ b⁵ for every i: −3B − a ≤ t_i ≤ −B − a < 0 (weight_mem), so |t_i| ≤ 3B + a ≤ 2b² and t_i² ≤ 4b⁴ ≤ b⁵.",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "step": "2"
+    },
+    {
+     "decl": "IsSteep"
+    }
+   ],
+   "typed_fact": "t i ^ 2 ≤ b ^ 5"
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "fact",
+   "lines": [
+    116,
+    117
+   ],
+   "lean": "  have ⟨c, c1, hc⟩ := exists_lagrange_weights (.vecCons (f :=\n    t) (H.weight_strictAnti.add_const _) (sub_neg.2 (by rify; linarith [(H.weight_mem 0).2])))",
+   "claim": "Lagrange weights for the strictly decreasing nodes (0, t_0, …, t_{2ϱ+1}) (t is strictly decreasing and t_0 < 0): c_k ≥ 1 with c_k² = (−1)^k∏_{j≠k}(x_k − x_j) (c1) and the coefficient formula (hc).",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "decl": "IsSteep"
+    },
+    {
+     "decl": "exists_lagrange_weights"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "setup",
+   "lines": [
+    118,
+    119
+   ],
+   "lean": "  let C := (fromBlocks (l := X) 1 0 0\n    (of fun i n ↦ (c 0 ^ 0 ^ n * t i ^ n / c i.succ : ℂ))).submatrix e.symm id",
+   "claim": "Let C be the matrix with rows indexed by the basis of V (through e⁻¹) and columns by X ⊔ ℕ: the identity on X, and C_{e(i), k} = c₀^{0^k}·t_i^k/c_{i+1} (c₀ if k = 0, else 1) on the steep rows.",
+   "uses": [],
+   "typed_fact": null
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "setup",
+   "lines": [
+    120,
+    120
+   ],
+   "lean": "  let V := p.p.1 * C",
+   "claim": "Let V = p·C (its columns are vectors of V).",
+   "uses": [],
+   "typed_fact": null
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "fact",
+   "lines": [
+    121,
+    127
+   ],
+   "lean": "  have hC : ∀ {a b}, a.elim 0 .pred + b.elim 0 .pred ≤ 2 * 𝔰.ϱ → (Vᴴ * 𝔰.J₁ * V) a b = fromBlocks\n      1 0 0 (of fun j k ↦ ite (j + k = 0) 1 (ite (j + k = 2 * 𝔰.ϱ + 2) (-1) 0)) a b := by\n    simp [V, ↓gram_mul, p.gram_eq, ↓mul_apply (N := C), signMatrix, reindex_equiv e, C, H.sign_inl,\n      H.sign_inr, @eq_comm X]\n    intro a b h; linear_combination (norm := skip) c 0 ^ 0 ^ a * c 0 ^ 0 ^ b * congr(ofReal\n      $((hc (.X ^ (a + b)) (by simp; norm_cast; lia)).trans (sum_univ_succ _)))\n    simp [mul_add, mul_sum, pow_succ, zero_pow_eq]; grind [ofReal_eq_zero, ofReal_one]",
+   "head_lines": [
+    121,
+    122
+   ],
+   "claim": "hC: for column indices a, b ∈ X ⊔ ℕ with a' + b' ≤ 2ϱ (a' = 0 on X, k − 1 for k ∈ ℕ): (VᴴJ₁(𝔰)V)_ab is 1 on X × X (diagonal), 0 between X and ℕ, and for ℕ-columns j, k it is 1 if j + k = 0, −1 if j + k = 2ϱ + 2, and 0 otherwise.",
+   "uses": [],
+   "typed_fact": "∀ {a b}, a.elim 0 .pred + b.elim 0 .pred ≤ 2 * 𝔰.ϱ → (Vᴴ * 𝔰.J₁ * V) a b = fromBlocks\n      1 0 0 (of fun j k ↦ ite (j + k = 0) 1 (ite (j + k = 2 * 𝔰.ϱ + 2) (-1) 0)) a b"
+  },
+  {
+   "id": "7.1",
+   "parent": "7",
+   "kind": "computation",
+   "lines": [
+    123,
+    124
+   ],
+   "lean": "    simp [V, ↓gram_mul, p.gram_eq, ↓mul_apply (N := C), signMatrix, reindex_equiv e, C, H.sign_inl,\n      H.sign_inr, @eq_comm X]",
+   "claim": "Expand VᴴJ₁V = Cᴴ(pᴴJ₁p)C = Cᴴdiag(ε)C with the signs ε = 1 on e(X) and (−1)^i on e(i) (IsSteep).",
+   "uses": [
+    {
+     "decl": "gram_mul"
+    },
+    {
+     "decl": "IsSteep"
+    },
+    {
+     "decl": "reindex_equiv"
+    },
+    {
+     "decl": "signMatrix"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "7.2",
+   "parent": "7",
+   "kind": "computation",
+   "lines": [
+    125,
+    126
+   ],
+   "lean": "    intro a b h; linear_combination (norm := skip) c 0 ^ 0 ^ a * c 0 ^ 0 ^ b * congr(ofReal\n      $((hc (.X ^ (a + b)) (by simp; norm_cast; lia)).trans (sum_univ_succ _)))",
+   "claim": "For ℕ-columns a, b the entry is Σ_i (−1)^i t_i^{a+b}/c_{i+1}² (times c₀ factors), which hc applied to X^{a+b} (degree ≤ 2ϱ + 2) evaluates: the top coefficient of X^{a+b} minus the node-0 term.",
+   "uses": [
+    {
+     "step": "4"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "7.3",
+   "parent": "7",
+   "kind": "computation",
+   "lines": [
+    127,
+    127
+   ],
+   "lean": "    simp [mul_add, mul_sum, pow_succ, zero_pow_eq]; grind [ofReal_eq_zero, ofReal_one]",
+   "claim": "Simplify the resulting sums to the stated values (1 for a + b = 0, −1 for a + b = 2ϱ + 2, 0 otherwise).",
+   "uses": [],
+   "typed_fact": null
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "setup",
+   "lines": [
+    128,
+    128
+   ],
+   "lean": "  let f := @Sum.map X _ Unit ℕ id 0 ⊕ᵥ .inr ∘ .succ ∘ @val 𝔰.n",
+   "claim": "Let f map the columns X ⊔ {∗} ⊔ {0, …, n − 1} into X ⊔ ℕ: x ↦ x, ∗ ↦ 0, k ↦ k + 1.",
+   "uses": [],
+   "typed_fact": null
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "setup",
+   "lines": [
+    129,
+    129
+   ],
+   "lean": "  let Y := inclMatrix ℂ (.inr ∘ .inl ∘ .inl ∘ τ ⊕ᵥ 𝔰.besselFrame)",
+   "claim": "Let Y = ι_ℂ((x_{τ(·)}) ⊕ besselFrame): the columns x_{τ(y)} (y ∈ X ⊔ {∗}, basis vectors of X₀) followed by the frame vectors f_0, …, f_ϱ.",
+   "uses": [
+    {
+     "decl": "inclMatrix"
+    },
+    {
+     "decl": "Shape.besselFrame"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "fact",
+   "lines": [
+    130,
+    137
+   ],
+   "lean": "  have ⟨g, z⟩ : ∃ g : 𝔰.G₁, (g.1 * p.p).1 * C.submatrix id f = Y := by\n    simp [-Subtype.exists]; refine witt ⟨I, by simp⟩ isHermitian isUnit ⟨_,\n      (Matrix.mul_assoc ..).trans (nonsing_inv_mul _\n      (det_eq_one_of_unitriangular (lev := 0 ⊕ᵥ Fin.val) (Z := diagonal (1 ⊕ᵥ -1) * (Vᴴ *\n      𝔰.J₁).submatrix (f ∘ .inl ⊕ᵥ (.inr <| 2 * 𝔰.ϱ + 1 - Fin.val ·)) id * _) (fun a b h ↦ ?_) ▸\n      isUnit_one))⟩ ⟨_, inclMatrix_gram_eq_one (by simp)⟩ (ext fun a b ↦ (hC ?_).trans ?_)\n    on_goal 3 => erw [Matrix.mul_assoc, diagonal_mul, hC]\n    all_goals revert a b; simp [mul_apply, Y, splitGram, middleGram, f]; grind",
+   "head_lines": [
+    130,
+    130
+   ],
+   "claim": "There is g ∈ G₁(𝔰) with (g·p)·C' = Y, where C' consists of the columns of C selected by f (z).",
+   "uses": [],
+   "typed_fact": "∃ g : 𝔰.G₁, (g.1 * p.p).1 * C.submatrix id f = Y"
+  },
+  {
+   "id": "10.1",
+   "parent": "10",
+   "kind": "computation",
+   "lines": [
+    131,
+    135
+   ],
+   "lean": "    simp [-Subtype.exists]; refine witt ⟨I, by simp⟩ isHermitian isUnit ⟨_,\n      (Matrix.mul_assoc ..).trans (nonsing_inv_mul _\n      (det_eq_one_of_unitriangular (lev := 0 ⊕ᵥ Fin.val) (Z := diagonal (1 ⊕ᵥ -1) * (Vᴴ *\n      𝔰.J₁).submatrix (f ∘ .inl ⊕ᵥ (.inr <| 2 * 𝔰.ϱ + 1 - Fin.val ·)) id * _) (fun a b h ↦ ?_) ▸\n      isUnit_one))⟩ ⟨_, inclMatrix_gram_eq_one (by simp)⟩ (ext fun a b ↦ (hC ?_).trans ?_)",
+   "claim": "Witt's theorem for J₁(𝔰): the columns of pC' and of Y have the same Gram matrices (hC; Y's columns are orthonormal basis vectors of X₀ and the frame, whose Gram matrix is that of hC), Y has orthonormal columns (inclMatrix_gram_eq_one), and the required nondegeneracy holds because a matrix built from (VᴴJ₁) is unitriangular for the levels (det = 1).",
+   "uses": [
+    {
+     "step": "7"
+    },
+    {
+     "decl": "witt"
+    },
+    {
+     "decl": "det_eq_one_of_unitriangular"
+    },
+    {
+     "decl": "inclMatrix_gram_eq_one"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "10.2",
+   "parent": "10",
+   "kind": "computation",
+   "lines": [
+    136,
+    136
+   ],
+   "lean": "    on_goal 3 => erw [Matrix.mul_assoc, diagonal_mul, hC]",
+   "claim": "In the third remaining goal, rewrite with hC.",
+   "uses": [
+    {
+     "step": "7"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "10.3",
+   "parent": "10",
+   "kind": "computation",
+   "lines": [
+    137,
+    137
+   ],
+   "lean": "    all_goals revert a b; simp [mul_apply, Y, splitGram, middleGram, f]; grind",
+   "claim": "The remaining entrywise identities between Gram matrices are checked from the definitions of Y, splitGram, middleGram and f.",
+   "uses": [
+    {
+     "decl": "Shape.Form.splitGram"
+    },
+    {
+     "decl": "Shape.middleGram"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "witness",
+   "lines": [
+    138,
+    144
+   ],
+   "lean": "  use g, pow_succ' b _ ▸ ge_trans (by gcongr) (besselSize_le_of_dual g (by bound) (.toLp 2 <| Vᵀ <|\n    .inr ·.succ) (fun k ↦ by ext; simpa [frameVector, Y, ↓mul_inclMatrix] using! (congr((g⁻¹.1.1 *\n    $z) _ (.inr k)).symm)) (fun k h ↦ (l2_opNorm_mulVec _ (.toLp 2 _)).trans (le_of_sq_le_sq (by\n    simp [CStarRing.norm_of_mem_unitary p.2, PiLp.norm_sq_eq_of_L2, reindex_equiv e, div_pow,\n      pow_right_comm _ _ 2]; grw [← (c1 _).1, tb]; simp [← pow_mul]\n    grw [(by bound : _ + 2 ≤ b), ← pow_succ']; gcongr; lia) (by bound))) fun a b h ↦ .trans\n    (dotProduct_comm ..) (by simpa +arith using! @hC (.inr a.succ) (.inr b.succ) h))",
+   "claim": "Take x = g. besselSize(g) ≤ b^(5n) by besselSize_le_of_dual with the vectors V_a = the column a + 1 of V: they are the moved frame vectors g⁻¹f_{a+1} (from z), their lengths are bounded by a power M of b (p unitary, c ≥ 1, t_i² ≤ b⁵, 2ϱ + 2 ≤ b) with 8(ϱ + 1)·M ≤ b^(5n) (b1), and their J₁-products are those required (hC).",
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "step": "4"
+    },
+    {
+     "step": "7"
+    },
+    {
+     "step": "10"
+    },
+    {
+     "decl": "besselSize_le_of_dual"
+    },
+    {
+     "decl": "frameVector"
+    },
+    {
+     "decl": "mul_inclMatrix"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "fact",
+   "lines": [
+    145,
+    145
+   ],
+   "lean": "  have hq := gram_mul_of_gram_eq g.2 p.gram_eq; set q := _ * p.p",
+   "claim": "hq: q = g·p satisfies qᴴJ₁q = diag(ε); set q.",
+   "uses": [
+    {
+     "step": "10"
+    },
+    {
+     "decl": "gram_mul_of_gram_eq"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "fact",
+   "lines": [
+    146,
+    147
+   ],
+   "lean": "  have J s : subOnePair (besselPairHom g) s = (q⁻¹.1 * (s.1.1 - 1) * q,\n    s.1.2.1.1 - 1) := by simp [q, besselPairHom, frameEquiv, U.conj]",
+   "claim": "J: for s ∈ besselGraph(𝔰), subOnePair(besselPairHom(g), s) = (q⁻¹(s₁ − 1)q, s₂ − 1).",
+   "uses": [
+    {
+     "step": "12"
+    },
+    {
+     "decl": "besselPairHom"
+    },
+    {
+     "decl": "subOnePair"
+    },
+    {
+     "decl": "frameEquiv"
+    },
+    {
+     "decl": "U.conj"
+    }
+   ],
+   "typed_fact": "subOnePair (besselPairHom g) s = (q⁻¹.1 * (s.1.1 - 1) * q,\n    s.1.2.1.1 - 1)"
+  },
+  {
+   "id": "14",
+   "parent": null,
+   "kind": "deduction",
+   "lines": [
+    148,
+    151
+   ],
+   "lean": "  refine ⟨H, fun s ↦ ?_, fun s ↦ ?_, by simp [simpleRootSum_mul]; intros; ring, by simp, by\n    simp [ha], by simp [ha, ite_nonneg], fun v hw ↦\n    (exists_unitary_sub_one_eq_inclMatrix τ (by simp) hw.1).rec fun (⟨k, _⟩ : USign 1) hk ↦\n    ⟨𝔰.besselGraphChart (1, ⟨k, by rwa [← signMatrix_one]⟩), (J _).trans (Prod.ext ?_ hk)⟩⟩",
+   "claim": "Assemble IsTwoFactor: IsSteep is H; phase_eq and trace_eq are left as goals (steps 15–21 and 22); phase_mul: σ is additive on 𝖲 (simpleRootSum_mul), so φ(st) = φ(s) + φ(t); re_phase: Re(σ − conj σ) = 0; sign_weight_right and weight_bounds_right from ha (the signs on κ are all 1, Λ(u) = 0 off τ(∗), a ≥ 0); exists_diagonal: for v ∈ U(X), exists_unitary_sub_one_eq_inclMatrix with τ gives k ∈ U(κ) with k − 1 = ι_ℂ(τ∘inl)(v − 1)ι_ℂ(τ∘inl)ᴴ (hk); take s = besselGraphChart(𝔰)(1, k) = (embedH(k), k); its second component is right by hk, the first is left as a goal (steps 23–25).",
+   "uses": [
+    {
+     "step": "13"
+    },
+    {
+     "decl": "IsSteep"
+    },
+    {
+     "decl": "simpleRootSum_mul"
+    },
+    {
+     "decl": "exists_unitary_sub_one_eq_inclMatrix"
+    },
+    {
+     "decl": "Shape.besselGraphChart"
+    },
+    {
+     "decl": "signMatrix_one"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "15",
+   "parent": null,
+   "kind": "computation",
+   "lines": [
+    152,
+    152
+   ],
+   "lean": "  rw [HCParam.phase, J, trace_mul_comm, mul_assoc, trace_mul_cycle]",
+   "claim": "phase_eq: phase(l, u, subOnePair) = tr(diag(Λ(l))q⁻¹(s₁ − 1)q) − tr(diag(Λ(u))(s₂ − 1)) = tr(q·diag(Λ(l))·q⁻¹·(s₁ − 1)) − … (cyclicity).",
+   "uses": [
+    {
+     "step": "13"
+    },
+    {
+     "decl": "HCParam.phase"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "16",
+   "parent": null,
+   "kind": "setup",
+   "lines": [
+    153,
+    153
+   ],
+   "lean": "  set D := _ * q⁻¹.1",
+   "claim": "Let D = q·diag(Λ(l))·q⁻¹.",
+   "uses": [],
+   "typed_fact": null
+  },
+  {
+   "id": "17",
+   "parent": null,
+   "kind": "fact",
+   "lines": [
+    154,
+    157
+   ],
+   "lean": "  have d i := by simpa [↓mul_inclMatrix, Y, f, @eq_comm 𝔰.BesselIndex i] using (z ▸ by\n    simp [D, q.1.mul_apply, f, C, t, reindex_equiv e, H.weight_eq_zero, sum_mul, ← sum_add_distrib]\n    constructor <;> congr! 1 <;> ring : ∀ j, let m := Sum.map id castSucc j\n    (D * Y) i m = (f m).elim (fun _ ↦ 0) (Y i m * a + Y i (.inr (j.elim 0 succ)) * c 0 ^ 0 ^ ·))",
+   "claim": "d: D acts on the columns of Y as a + shift: D·Y_m = 0 for the X-columns, and D·Y_m = a·Y_m + c₀^{0^k}·Y_{m+1} for the column m of index k (from z and t_i = Λ(l)(e(i)) − a, with Λ(l) = 0 on e(X)).",
+   "uses": [
+    {
+     "step": "10"
+    },
+    {
+     "step": "16"
+    },
+    {
+     "decl": "IsSteep"
+    },
+    {
+     "decl": "reindex_equiv"
+    },
+    {
+     "decl": "mul_inclMatrix"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "18",
+   "parent": null,
+   "kind": "fact",
+   "lines": [
+    158,
+    158
+   ],
+   "lean": "  have o : ∀ c x, 𝔰.besselFrame c = .inr x ↔ c = 𝔰.top ∧ .inl (.inr ()) = x := by simp",
+   "claim": "o: besselFrame(c) lies in the middle block iff c is the top index (the frame vector z).",
+   "uses": [
+    {
+     "decl": "Shape.besselFrame"
+    }
+   ],
+   "typed_fact": "∀ c x, 𝔰.besselFrame c = .inr x ↔ c = 𝔰.top ∧ .inl (.inr ()) = x"
+  },
+  {
+   "id": "19",
+   "parent": null,
+   "kind": "computation",
+   "lines": [
+    159,
+    163
+   ],
+   "lean": "  rw [← sub_eq_zero, ← besselGraph_trace_mul_sub_eq_zero s (M := D - besselCharMatrix\n    (𝔰.middleGram 1)) (by simp [besselCharMatrix, *, splitGram, ↓Sum.forall, ↓fun b\n    j ↦ by simpa [mul_apply, splitGram, d, add_mul] using (congrFun₂ (show 𝔰.J₁ * D =\n    Dᴴ * 𝔰.J₁ by simp [D, signMatrix, ← gram_inv_of_gram_eq hq, mul_comm,\n    conjTranspose_nonsing_inv, ← mul_assoc (diagonal _)]) (.inl b) j)]; lia)]",
+   "head_lines": [
+    159,
+    161
+   ],
+   "head_span": [
+    159,
+    3,
+    161,
+    71
+   ],
+   "claim": "Apply besselGraph_trace_mul_sub_eq_zero with M = D − besselCharMatrix(middleGram 1): tr((D − C_char)(s₁ − embedH(s₂))) = 0, once M is shown block upper triangular for the levels; this uses d, o and the symmetry J₁D = DᴴJ₁ (step 19.1).",
+   "uses": [
+    {
+     "step": "16"
+    },
+    {
+     "step": "17"
+    },
+    {
+     "step": "18"
+    },
+    {
+     "decl": "besselGraph_trace_mul_sub_eq_zero"
+    },
+    {
+     "decl": "Filling.besselCharMatrix"
+    },
+    {
+     "decl": "Shape.Form.splitGram"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "19.1",
+   "parent": "19",
+   "kind": "fact",
+   "lines": [
+    161,
+    163
+   ],
+   "span": [
+    161,
+    71,
+    163,
+    78
+   ],
+   "lean": "show 𝔰.J₁ * D =\n    Dᴴ * 𝔰.J₁ by simp [D, signMatrix, ← gram_inv_of_gram_eq hq, mul_comm,\n    conjTranspose_nonsing_inv, ← mul_assoc (diagonal _)]) (.inl b) j)]; lia)]",
+   "claim": "J₁(𝔰)·D = Dᴴ·J₁(𝔰): D is self-adjoint for J₁, since q⁻¹ = diag(ε)qᴴJ₁ (from hq) and diag(Λ(l)) commutes with diag(ε).",
+   "uses": [
+    {
+     "step": "12"
+    },
+    {
+     "decl": "gram_inv_of_gram_eq"
+    }
+   ],
+   "typed_fact": "𝔰.J₁ * D ="
+  },
+  {
+   "id": "20",
+   "parent": null,
+   "kind": "computation",
+   "lines": [
+    164,
+    165
+   ],
+   "lean": "  simp [↓trace_besselCharMatrix_mul, simpleRootSum_inv,\n    simpleRootSum_eq_zero_of_mem_besselH, -val_toBesselH_apply_coe]",
+   "claim": "tr(C_char·s₁) = σ(s₁) + conj σ(s₁⁻¹) = σ(s₁) − conj σ(s₁) (trace_besselCharMatrix_mul, σ(s₁⁻¹) = −σ(s₁) on 𝖲), and σ(embedH(s₂)) = 0.",
+   "uses": [
+    {
+     "decl": "Filling.trace_besselCharMatrix_mul"
+    },
+    {
+     "decl": "Filling.simpleRootSum_inv"
+    },
+    {
+     "decl": "simpleRootSum_eq_zero_of_mem_besselH"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "21",
+   "parent": null,
+   "kind": "computation",
+   "lines": [
+    166,
+    166
+   ],
+   "lean": "  simp [trace, mul_apply, diagonal, reindex_equiv τ, *]; ring",
+   "claim": "The remaining part: tr(D(embedH(s₂) − 1)) = tr(diag(Λ(u))(s₂ − 1)), the action on X₀ along τ with weights from ha.",
+   "uses": [
+    {
+     "step": "17"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "22",
+   "parent": null,
+   "kind": "computation",
+   "lines": [
+    167,
+    168
+   ],
+   "lean": "  rw [J, trace_mul_cycle, ← sub_eq_zero,\n    ← besselGraph_trace_mul_sub_eq_zero s blockTriangular_one]; simp [trace]; ring",
+   "claim": "trace_eq: tr(q⁻¹(s₁ − 1)q) = tr(s₁ − 1) = tr(embedH(s₂) − 1) = tr(s₂ − 1), using besselGraph_trace_mul_sub_eq_zero with M = 1.",
+   "uses": [
+    {
+     "step": "13"
+    },
+    {
+     "decl": "besselGraph_trace_mul_sub_eq_zero"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "23",
+   "parent": null,
+   "kind": "fact",
+   "lines": [
+    169,
+    169
+   ],
+   "lean": "  have m i x := by simpa [f, C, mul_apply, reindex_equiv e, Y] using congrFun₂ z i (.inl (.inl x))",
+   "claim": "m: for x ∈ X, q maps the basis vector at e(x) to the basis vector of X₀ at τ(x) (from z).",
+   "uses": [
+    {
+     "step": "10"
+    },
+    {
+     "decl": "reindex_equiv"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "24",
+   "parent": null,
+   "kind": "computation",
+   "lines": [
+    170,
+    170
+   ],
+   "lean": "  erw [mul_assoc, Units.inv_mul_eq_iff_eq_mul]; simp_rw [← Matrix.mul_assoc, mul_inclMatrix]",
+   "claim": "exists_diagonal, first component: it suffices that embedH(k)·q = q·(1 + ι_ℂ(e∘inl)(v − 1)ι_ℂ(e∘inl)ᴴ), written columnwise.",
+   "uses": [
+    {
+     "decl": "mul_inclMatrix"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "25",
+   "parent": null,
+   "kind": "computation",
+   "lines": [
+    171,
+    173
+   ],
+   "lean": "  ext i; revert i; simp [mul_apply, m, (eq_add_of_sub_eq hk : k.1 = _), reindex_equiv τ,\n    fun x j ↦ by simpa [mul_apply, m, splitGram, middleGram, signMatrix, diagonal,\n    H.sign_inl] using congrFun₂ hq (e (.inl x)) j]",
+   "claim": "Entrywise: both sides agree on the columns e(X) (by m and hk: k = 1 + ι(v − 1)ιᴴ along τ) and elsewhere, using qᴴJ₁q = diag(ε) (hq) and the signs ε = 1 on e(X).",
+   "uses": [
+    {
+     "step": "12"
+    },
+    {
+     "step": "23"
+    },
+    {
+     "decl": "IsSteep"
+    },
+    {
+     "decl": "Shape.Form.splitGram"
+    },
+    {
+     "decl": "Shape.middleGram"
+    }
+   ],
+   "typed_fact": null
+  }
+ ]
+}

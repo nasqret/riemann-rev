@@ -1,0 +1,170 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Exchange.RowLadder:40:7",
+ "name": "Data.descent_past_gridPathMap",
+ "summary": "Induction on a: for a = 0 nothing moves; at a + 1, apply the induction hypothesis and then cross one square (`Data.IsTidy.exists_square_move` with the square law of `Data.exists_squareLaw_grid`); the denominators multiply, so their costs add (a + 1 in all), and the order of the short sum grows by 2 at each square.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "step",
+   "claim": "Induction on a (i the induction hypothesis).",
+   "lines": [
+    46,
+    46
+   ],
+   "lean": "  induction' a with a i",
+   "ambient_uses": [
+    "Nat.rec"
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "step",
+   "claim": "a = 0: take κ = 1, c = 1 (costing nothing, `Data.CostsSquares.one`) and Φ = Λ: the edge sets agree, and gridPathMap(S, z, 0, b) = descentMove(S(verticalEdge(z, 0, b))) ∘ gridPathMap(S, z, 0, b + 1) by the definition of legDescents (b < m).",
+   "lines": [
+    47,
+    49
+   ],
+   "lean": "  · use 1, 1, .one, fun _ _ w Λ _ C ↦ ⟨Λ, by\n      convert! C using 1; simp [gridPath, legEdges]; grind, by simp [gridPathMap,\n      legDescents.eq_1 _ z b, h]⟩",
+   "uses": [
+    {
+     "decl": "Data.legDescents"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "step",
+   "claim": "Step a → a + 1: the induction hypothesis i at a (a < a + 1 ≤ b) gives κ′, c′ costing a squares (g′) and the move H′.",
+   "lines": [
+    50,
+    50
+   ],
+   "lean": "  choose κ' c' g' H' using i (by lia)"
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "step",
+   "claim": "The square law at the square (a, b) of grid z (`Data.exists_squareLaw_grid`, a < m, b < m): κ, σ, c costing one square (g), and the law Q(ϑ).",
+   "lines": [
+    51,
+    51
+   ],
+   "lean": "  choose κ σ c g Q using exists_squareLaw_grid z (h.trans' h') h",
+   "uses": [
+    {
+     "decl": "Data.exists_squareLaw_grid"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "step",
+   "claim": "Take κ′κ and c′c, which costs a + 1 squares (`Data.CostsSquares.mul`); fix ϑ, n, w, Λ with the edge condition and tidiness C.",
+   "lines": [
+    52,
+    52
+   ],
+   "lean": "  use κ' * κ, c' * c, g'.mul g .refl, fun ϑ n w Λ _ C ↦ ?_",
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "step": "4"
+    },
+    {
+     "decl": "Data.CostsSquares.mul"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "step",
+   "claim": "Rewrite the edge set gridPath(z, a + 1, b) by its rows.",
+   "lines": [
+    53,
+    53
+   ],
+   "lean": "  simp [gridPath, Finset.range_add_one] at C ⊢"
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "step",
+   "claim": "Apply H′ to Λ: Φ tidy of order n + 2a with the move M.",
+   "lines": [
+    54,
+    54
+   ],
+   "lean": "  obtain ⟨Φ, C, M⟩ := H' ϑ _ _ Λ (by grind) (w.insert_union .. ▸ C)",
+   "uses": [
+    {
+     "step": "3"
+    }
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "step",
+   "claim": "Rewrite the new edge set.",
+   "lines": [
+    55,
+    55
+   ],
+   "lean": "  simp [↓Finset.insert_union, gridPath] at C"
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "step",
+   "claim": "Cross the square (a, b) with `Data.IsTidy.exists_square_move` (identity and empty-sum identifications, ψ = 1, the square law Q(ϑ), admissibility and node conditions): a tidy Φ′ of order n + 2a + 2 with the square identity M′; it remains to compose M with M′.",
+   "lines": [
+    56,
+    59
+   ],
+   "lean": "  refine (C.exists_square_move _ (.refl _) (.sumEmpty ..) (.sumEmpty _ Empty) 1 (Q ϑ) (by\n    simp [IsAdmissibleFamily, Units.ext_iff, ← Matrix.ext_iff]; grind)\n    (by simp [-Prod.forall]; grind [legEdges])).imp\n    fun Φ' ↦ .imp_right fun M' F l hl ↦ (M F (l · ∘ₗ _) (by grind [DependsOn])).trans ?_",
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "step": "7"
+    },
+    {
+     "decl": "Data.IsTidy.exists_square_move"
+    }
+   ]
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "step",
+   "claim": "Compose: M followed by M′ applied to the pair (gridPathMap(S, z, a, ·)(F), l(S)), which depends only on w and the path (`Data.gridPathMap_congr`), gives the identity with κ′κ/(c′c)(ϑ).",
+   "lines": [
+    60,
+    62
+   ],
+   "lean": "  simpa [Fintype.card_congr Matrix.of.symm, ← mul_assoc, div_mul_div_comm] using! congr(κ' / _ *\n    $(M' (fun S _ ↦ (gridPathMap S z a _ F, l S)) (by clear * - hl; grind [DependsOn,\n    gridPathMap_congr, gridPath])))",
+   "uses": [
+    {
+     "step": "7"
+    },
+    {
+     "step": "9"
+    },
+    {
+     "decl": "Data.gridPathMap_congr"
+    }
+   ]
+  }
+ ]
+}

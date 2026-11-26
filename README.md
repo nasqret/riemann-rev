@@ -10,11 +10,11 @@
 
 <a href="#how-this-page-stays-current"><img alt="record as of: 2026-11-20 23:51 UTC" src="https://img.shields.io/badge/record_as_of-2026--11--20_23%3A51_UTC-0969da"></a> <a href="https://github.com/Deicyde/riemann-hypothesis/tree/40e56bab026552e089d7afcfeff08d2defb9c005"><img alt="archive: 175,187 Lean modules" src="https://img.shields.io/badge/archive-175%2C187_Lean_modules-57606a"></a> <img alt="Lean: 4.33.1" src="https://img.shields.io/badge/Lean-4.33.1-57606a"> <a href="https://github.com/leanprover-community/mathlib4/tree/0df444a360eaa60ab8c11dca51a86af692955474"><img alt="Mathlib: 0df444a3" src="https://img.shields.io/badge/Mathlib-0df444a3-57606a"></a> <a href="https://github.com/nasqret/riemann-rev/actions/workflows/checks.yml"><img alt="checks of this repository" src="https://github.com/nasqret/riemann-rev/actions/workflows/checks.yml/badge.svg"></a> <a href="https://github.com/nasqret/riemann-rev/actions/workflows/pages.yml"><img alt="build of the site" src="https://github.com/nasqret/riemann-rev/actions/workflows/pages.yml/badge.svg"></a>
 
-**New:** [the condensed proof, our note (PDF)](https://nasqret.github.io/riemann-rev/summary/grh-condensed-summary.pdf) · [lsernau/grh-lean](https://github.com/lsernau/grh-lean/tree/72fead102f663d5c7a407964a13dc0cf9d977207)
+**New:** [the write-up of the condensed proof, a working draft (PDF)](https://nasqret.github.io/riemann-rev/writeup/handout.pdf) · [for AI agents](writeup/AGENTS.md) · [the condensed proof, our note (PDF)](https://nasqret.github.io/riemann-rev/summary/grh-condensed-summary.pdf) · [lsernau/grh-lean](https://github.com/lsernau/grh-lean/tree/72fead102f663d5c7a407964a13dc0cf9d977207)
 
 **Read it online:** [site](https://nasqret.github.io/riemann-rev/) · [atlas](https://nasqret.github.io/riemann-rev/atlas/) · [proof atlas](https://nasqret.github.io/riemann-proof-atlas/) · [guide](https://nasqret.github.io/riemann-rev/guide/proof-guide.pdf) · [book](https://nasqret.github.io/riemann-rev/book/) · [blueprint](https://nasqret.github.io/riemann-rev/blueprint/atlas-blueprint.pdf)
 
-[The condensed proof](#the-condensed-proof-25-november-2026) · [Status](#status-dashboard) · [The theorem](#the-theorem) · [New here?](#new-here-start-here) · [Route of the proof](#the-route-of-the-proof) · [Contents](#what-is-in-this-repository) · [Check it yourself](#check-it-yourself) · [Transparency](#transparency) · [FAQ](#questions-and-answers)
+[The write-up](#the-write-up-a-working-draft-26-november-2026) · [The condensed proof](#the-condensed-proof-25-november-2026) · [Status](#status-dashboard) · [The theorem](#the-theorem) · [New here?](#new-here-start-here) · [Route of the proof](#the-route-of-the-proof) · [Contents](#what-is-in-this-repository) · [Check it yourself](#check-it-yourself) · [Transparency](#transparency) · [FAQ](#questions-and-answers)
 
 </div>
 
@@ -24,6 +24,15 @@
 > **What is claimed.** On 20 November 2026 Levent Alpöge announced, in a four-page note written with the AI system Claude, a proof of the Riemann hypothesis and of its analogue for Dirichlet $`L`$-functions. The proof was published only as a formal proof in the Lean proof assistant: 175,187 files that a computer can check, and that no human is expected to read from beginning to end.
 >
 > **Where things stand** (record of 2026-11-20 23:51 UTC). Two independent kernels accepted the complete proof, and all five theorems matched the canonical Mathlib challenge. The human-readable mathematics has not been written up yet, and the argument has not been through the traditional refereeing of the mathematical community. Nothing here is this repository's own claim that the theorem is true; it reports the records listed below, with their sources.
+
+## The write-up, a working draft (26 November 2026)
+
+> [!IMPORTANT]
+> **The condensed proof read as mathematics, unit by unit.** 44 notes cover all 24 units of the formal argument, from the five final theorems down, in the order of the argument; classical results are quoted from the literature (a catalogue of 2,944 background declarations, 113 of them compared with their published statements). Every statement links to the Lean lines it renders, at the pinned commit. Made by AI agents and checked by programs, read again by an independent AI reader and by AI referees; **not yet refereed by a human**, and it does not say that RH is proved.
+>
+> **[Read the handout (PDF)](https://nasqret.github.io/riemann-rev/writeup/handout.pdf)** · [catalogue of quoted results (PDF)](https://nasqret.github.io/riemann-rev/writeup/catalogue-full.pdf) · [the folder: structured proofs, LaTeX sources, catalogue](writeup/) · **[guide for AI agents](writeup/AGENTS.md)**
+
+What it is for: to be read, checked and rewritten, by people and by their agents. The structured proofs give every proof as a tree of small steps, each quoting the exact Lean lines it renders; a program checks every quotation against the source. [`writeup/README.md`](writeup/README.md) says how it was made and what that does and does not check; corrections are welcome as issues, with the note and the Lean lines.
 
 ## The condensed proof (25 November 2026)
 

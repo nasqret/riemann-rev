@@ -1,0 +1,654 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Filling.BoxPartition:453:7",
+ "summary": "Construct ω: for q in 𝖴_c(g)/ker θ (θ the frame matrices at infinity) let I(y, q) be the indicator that the frame of y moved by q is bounded by b^{60ϱ+92}·besselSize; ω = I(·, 1)/∑_q I(·, q). A finite induction over the entries of the frame matrix, with integral Eichler elements and rational approximation, shows ∑_q I > 0; finiteness comes from discreteness.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "b ≥ 1000, and for u ∈ 𝖴_c(g) every rescaled ratToInf(u)_v lies in 𝖴 (m).",
+   "lines": [
+    454,
+    455
+   ],
+   "lean": "  S.IsBoxPartition c (epsilon (S.IsBoxPartition c)) := have := S.thousand_le_b\n  have m (u : S.classUnip c) := u.2.1.ratToInf_mem_unitriangularOn",
+   "uses": [
+    {
+     "decl": "New.Filling.Setup:240:5"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "induction",
+   "claim": "R: for t with t_v ∈ 𝖴 at every v and a finite set s of index pairs, there is u ∈ 𝖴_c(g) such that every entry (p₁, p₂) ∈ s of the frame matrix of t_v·ratToInf(u)_v has absolute value ≤ b^{60ϱ+91}, at every v. By induction on s, adding pairs in increasing order of the first index.",
+   "lines": [
+    456,
+    479
+   ],
+   "lean": "  have R {t : _ → _} (ht : ∀ v, t v ∈ besselU) (s : Finset (_ × _)) : ∃ u : S.classUnip c, ∀ᵉ (v)\n    (p ∈ s), ‖frameMatrix (t v * S.ratToInf u v) p.1 p.2‖ ≤ S.b ^ (60 * 𝔰.ϱ + 91) :=\n    s.induction_on_min_value (·.1) (by simp) fun ⟨k, b⟩ s n hs ⟨w, H⟩ ↦ by\n    have T v := frameMatrix_unitriangular (mul_mem (ht v) (m w v))\n    if h : b ≤ k then use w; simp_all [apply_ite norm]; bound else\n      cases' k with k; grind\n      choose x o hx using exists_rat_near_of_mem_differentIdeal (mod_cast S.varpi_ne_zero)\n        (by simp [S.span_ϖ]) _ 0; simp at T o\n      choose u e using exists_eichler_classUnip c k (l :=\n        (if · = 𝔰.besselFrame b then -x * S.N else 0)) (by clear * - h; cases b <;> aesop)\n        (by cases b <;> simp [intVectors, vecMul, ite_mem, mul_mem, o, apply_ite (algebraMap ..),\n        (_ * star S.piBar).mul_inv_of_eq S.piBar_mul_star, -_root_.mul_inv_rev]) 0\n      use w * u, fun v ↦ ?_\n      let r := S.g * S.N * (S.basisScale v (𝔰.besselFrame b) / S.basisScale v (.inl k))\n      erw [map_mul, ← mul_assoc,\n        frameMatrix_mul (m u v), show frameMatrix (S.ratToInf u v) = 1 - .single k.castSucc b\n        (r * Φ v x) by cases b <;> simp [forall_fin_succ', r, frameMatrix, apply_ite (Φ v),\n        apply_inr_of_mem_besselU u.2.1, e] <;> clear * - <;> grind [basisScale_ne_zero], mul_sub]\n      simp [ite_and, T] at H ⊢; use ?_, by grind\n      grw [← mul_div_cancel₀ (frameMatrix ..), ← mul_sub, norm_mul, hx v,\n        S.f_le_b] <;> simp [r, ↓basisScale_besselFrame, basisScale]\n      grw [div_le_one_of_le₀ (by gcongr <;> grind [one_le_abs_kappa]), levelPrime_le, levelPrime_le,\n        N_le, IsAdmissible.ϖ_le]\n      ring_nf; field_simp; repeat bound",
+   "head_lines": [
+    456,
+    458
+   ],
+   "typed_fact": "∃ u : S.classUnip c, ∀ᵉ (v)\n    (p ∈ s), ‖frameMatrix (t v * S.ratToInf u v) p.1 p.2‖ ≤ S.b ^ (60 * 𝔰.ϱ + 91)",
+   "uses": [
+    {
+     "decl": "Lib.General.LinearAlgebra.ExtendColumns:163:5"
+    },
+    {
+     "decl": "New.Filling.Setup:240:5"
+    },
+    {
+     "decl": "Lib.General.LinearAlgebra.ExtendColumns:159:5"
+    },
+    {
+     "decl": "New.Filling.Setup:215:5"
+    }
+   ]
+  },
+  {
+   "id": "2.1",
+   "parent": "2",
+   "kind": "fact",
+   "claim": "For the current u = w, t_v·ratToInf(w)_v ∈ 𝖴 has unitriangular frame matrix (T).",
+   "lines": [
+    459,
+    459
+   ],
+   "lean": "    have T v := frameMatrix_unitriangular (mul_mem (ht v) (m w v))",
+   "uses": [
+    {
+     "decl": "Lib.Adelic.Witt.FrameAction:159:7"
+    }
+   ],
+   "ambient_uses": [
+    "mul_mem"
+   ]
+  },
+  {
+   "id": "2.2",
+   "parent": "2",
+   "kind": "case",
+   "claim": "If the new pair (k, b) has b ≤ k, its entry is δ_kb (≤ 1), and u = w keeps all bounds.",
+   "lines": [
+    460,
+    460
+   ],
+   "lean": "    if h : b ≤ k then use w; simp_all [apply_ite norm]; bound else",
+   "uses": [],
+   "ambient_uses": [
+    "apply_ite"
+   ]
+  },
+  {
+   "id": "2.3",
+   "parent": "2",
+   "kind": "case",
+   "claim": "Otherwise b > k: correct the entry with an Eichler element.",
+   "lines": [
+    461,
+    479
+   ],
+   "lean": "      cases' k with k; grind\n      choose x o hx using exists_rat_near_of_mem_differentIdeal (mod_cast S.varpi_ne_zero)\n        (by simp [S.span_ϖ]) _ 0; simp at T o\n      choose u e using exists_eichler_classUnip c k (l :=\n        (if · = 𝔰.besselFrame b then -x * S.N else 0)) (by clear * - h; cases b <;> aesop)\n        (by cases b <;> simp [intVectors, vecMul, ite_mem, mul_mem, o, apply_ite (algebraMap ..),\n        (_ * star S.piBar).mul_inv_of_eq S.piBar_mul_star, -_root_.mul_inv_rev]) 0\n      use w * u, fun v ↦ ?_\n      let r := S.g * S.N * (S.basisScale v (𝔰.besselFrame b) / S.basisScale v (.inl k))\n      erw [map_mul, ← mul_assoc,\n        frameMatrix_mul (m u v), show frameMatrix (S.ratToInf u v) = 1 - .single k.castSucc b\n        (r * Φ v x) by cases b <;> simp [forall_fin_succ', r, frameMatrix, apply_ite (Φ v),\n        apply_inr_of_mem_besselU u.2.1, e] <;> clear * - <;> grind [basisScale_ne_zero], mul_sub]\n      simp [ite_and, T] at H ⊢; use ?_, by grind\n      grw [← mul_div_cancel₀ (frameMatrix ..), ← mul_sub, norm_mul, hx v,\n        S.f_le_b] <;> simp [r, ↓basisScale_besselFrame, basisScale]\n      grw [div_le_one_of_le₀ (by gcongr <;> grind [one_le_abs_kappa]), levelPrime_le, levelPrime_le,\n        N_le, IsAdmissible.ϖ_le]\n      ring_nf; field_simp; repeat bound",
+   "uses": []
+  },
+  {
+   "id": "2.3.1",
+   "parent": "2.3",
+   "kind": "setup",
+   "claim": "The row k is not the last (k = ϱ would force b ≤ k); write k for the row index < ϱ.",
+   "lines": [
+    461,
+    461
+   ],
+   "lean": "      cases' k with k; grind",
+   "uses": []
+  },
+  {
+   "id": "2.3.2",
+   "parent": "2.3",
+   "kind": "setup",
+   "claim": "Choose x ∈ E with x integral at the finite places and |z_v − Φ_v(x)| ≤ (2f)²|Φ_v(ϖ)| at every v, for the target values z_v that cancel the current entry (exists_rat_near_of_mem_differentIdeal with d = ϖ, which generates the different).",
+   "lines": [
+    462,
+    463
+   ],
+   "lean": "      choose x o hx using exists_rat_near_of_mem_differentIdeal (mod_cast S.varpi_ne_zero)\n        (by simp [S.span_ϖ]) _ 0; simp at T o",
+   "uses": [
+    {
+     "decl": "Lib.Adelic.Transference.MassBasic:116:7"
+    },
+    {
+     "decl": "New.Filling.Setup:144:20"
+    }
+   ]
+  },
+  {
+   "id": "2.3.3",
+   "parent": "2.3",
+   "kind": "deduction",
+   "claim": "An integral Eichler element u ∈ 𝖴_c(g) (exists_eichler_classUnip in row k with l = −xN at the column f_b and s = 0; l is supported on free entries and l·classBasis(c) is integral, using π̄π = N).",
+   "lines": [
+    464,
+    467
+   ],
+   "lean": "      choose u e using exists_eichler_classUnip c k (l :=\n        (if · = 𝔰.besselFrame b then -x * S.N else 0)) (by clear * - h; cases b <;> aesop)\n        (by cases b <;> simp [intVectors, vecMul, ite_mem, mul_mem, o, apply_ite (algebraMap ..),\n        (_ * star S.piBar).mul_inv_of_eq S.piBar_mul_star, -_root_.mul_inv_rev]) 0",
+   "uses": [
+    {
+     "decl": "New.Filling.BoxPartition:252:7"
+    },
+    {
+     "decl": "Lib.General.LinearAlgebra.ExtendColumns:88:5"
+    },
+    {
+     "decl": "Lib.General.LinearAlgebra.AdelicRingDefs:49:5"
+    }
+   ],
+   "ambient_uses": [
+    "ite_mem",
+    "mul_mem",
+    "apply_ite"
+   ]
+  },
+  {
+   "id": "2.3.4",
+   "parent": "2.3",
+   "kind": "witness",
+   "claim": "Take w·u; check the bounds at every v.",
+   "lines": [
+    468,
+    468
+   ],
+   "lean": "      use w * u, fun v ↦ ?_",
+   "uses": []
+  },
+  {
+   "id": "2.3.5",
+   "parent": "2.3",
+   "kind": "setup",
+   "claim": "r = gN·basisScale(f_b)/basisScale(e_k).",
+   "lines": [
+    469,
+    469
+   ],
+   "lean": "      let r := S.g * S.N * (S.basisScale v (𝔰.besselFrame b) / S.basisScale v (.inl k))",
+   "uses": [
+    {
+     "decl": "New.Filling.Setup:132:5"
+    },
+    {
+     "decl": "Lib.General.LinearAlgebra.ExtendColumns:88:5"
+    }
+   ]
+  },
+  {
+   "id": "2.3.6",
+   "parent": "2.3",
+   "kind": "computation",
+   "claim": "The frame matrix of t_v·ratToInf(wu)_v is that of t_v·ratToInf(w)_v times that of ratToInf(u)_v (frameMatrix_mul),",
+   "lines": [
+    470,
+    471
+   ],
+   "span": [
+    470,
+    7,
+    471,
+    34
+   ],
+   "lean": "erw [map_mul, ← mul_assoc,\n        frameMatrix_mul (m u v), ",
+   "uses": [
+    {
+     "decl": "Lib.Adelic.Witt.FrameAction:184:7"
+    }
+   ],
+   "ambient_uses": [
+    "map_mul",
+    "mul_assoc"
+   ]
+  },
+  {
+   "id": "2.3.7",
+   "parent": "2.3",
+   "kind": "fact",
+   "claim": "and the frame matrix of ratToInf(u)_v is 1 − r·Φ_v(x)·E_{k,b} (entrywise from the Eichler element).",
+   "lines": [
+    471,
+    473
+   ],
+   "span": [
+    471,
+    34,
+    473,
+    98
+   ],
+   "lean": "show frameMatrix (S.ratToInf u v) = 1 - .single k.castSucc b\n        (r * Φ v x) by cases b <;> simp [forall_fin_succ', r, frameMatrix, apply_ite (Φ v),\n        apply_inr_of_mem_besselU u.2.1, e] <;> clear * - <;> grind [basisScale_ne_zero], mul_sub]",
+   "typed_fact": "frameMatrix (S.ratToInf u v) = 1 - .single k.castSucc b",
+   "uses": [
+    {
+     "decl": "Lib.Adelic.Witt.FrameAction:169:7"
+    },
+    {
+     "decl": "New.Filling.Setup:181:15"
+    },
+    {
+     "decl": "Lib.General.LinearAlgebra.ExtendColumns:159:5"
+    },
+    {
+     "decl": "New.Filling.Setup:215:5"
+    }
+   ],
+   "ambient_uses": [
+    "forall_fin_succ'",
+    "apply_ite",
+    "mul_sub"
+   ]
+  },
+  {
+   "id": "2.3.8",
+   "parent": "2.3",
+   "kind": "reduction",
+   "claim": "The entries of the earlier pairs keep their bounds (H; the correction only changes column b in row k), and it remains to bound the new entry (k, b).",
+   "lines": [
+    474,
+    474
+   ],
+   "lean": "      simp [ite_and, T] at H ⊢; use ?_, by grind",
+   "uses": [],
+   "ambient_uses": [
+    "ite_and"
+   ]
+  },
+  {
+   "id": "2.3.9",
+   "parent": "2.3",
+   "kind": "computation",
+   "claim": "The new entry is r·(z_v − Φ_v(x)) with z_v = old entry/r, of absolute value ≤ r·(2f)²|Φ_v(ϖ)| ≤ r·(2b)²·|Φ_v(ϖ)| (f ≤ b).",
+   "lines": [
+    475,
+    476
+   ],
+   "lean": "      grw [← mul_div_cancel₀ (frameMatrix ..), ← mul_sub, norm_mul, hx v,\n        S.f_le_b] <;> simp [r, ↓basisScale_besselFrame, basisScale]",
+   "uses": [
+    {
+     "decl": "Lib.General.LinearAlgebra.ExtendColumns:159:5"
+    },
+    {
+     "decl": "New.Filling.Setup:169:7"
+    },
+    {
+     "decl": "New.Filling.Setup:132:5"
+    }
+   ],
+   "ambient_uses": [
+    "mul_div_cancel₀",
+    "mul_sub",
+    "norm_mul"
+   ]
+  },
+  {
+   "id": "2.3.10",
+   "parent": "2.3",
+   "kind": "computation",
+   "claim": "And this is ≤ b^{60ϱ+91}: the scale ratio is ≤ 1·… (|κ_v| ≥ 1), q₀q₁ ≤ b^{22}, N ≤ b^{60n}, |Φ_v(ϖ)| ≤ b (IsAdmissible).",
+   "lines": [
+    477,
+    479
+   ],
+   "lean": "      grw [div_le_one_of_le₀ (by gcongr <;> grind [one_le_abs_kappa]), levelPrime_le, levelPrime_le,\n        N_le, IsAdmissible.ϖ_le]\n      ring_nf; field_simp; repeat bound",
+   "uses": [],
+   "ambient_uses": [
+    "div_le_one_of_le₀"
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "setup",
+   "claim": "θ: the homomorphism from 𝖴_c(g) to the units of ∏_v (frame matrices), u ↦ (frameMatrix(ratToInf(u)_v))_v.",
+   "lines": [
+    480,
+    481
+   ],
+   "lean": "  let θ := MonoidHom.toHomUnits ⟨⟨fun (u : S.classUnip c) v ↦ frameMatrix (S.ratToInf u v), by\n    simp [frameMatrix, submatrix_one, besselFrame_injective]⟩, by simp [← frameMatrix_mul (m _ _)]⟩",
+   "uses": [
+    {
+     "decl": "New.Filling.Setup:240:5"
+    },
+    {
+     "decl": "Lib.General.LinearAlgebra.ExtendColumns:159:5"
+    },
+    {
+     "decl": "New.Filling.Setup:215:5"
+    },
+    {
+     "decl": "Lib.Adelic.Witt.FrameAction:157:7"
+    },
+    {
+     "decl": "Lib.Adelic.Witt.FrameAction:184:7"
+    }
+   ],
+   "ambient_uses": [
+    "submatrix_one"
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "fact",
+   "claim": "The quotient 𝖴_c(g)/ker θ is countable.",
+   "lines": [
+    482,
+    482
+   ],
+   "lean": "  have := (mk'_surjective θ.ker).countable",
+   "uses": []
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "setup",
+   "claim": "I(y, q) = 1 if ‖∑_a θ(q)_{v,ab}·frameVector(y_v, a)‖ ≤ b^{60ϱ+92}·besselSize(y_v) for all v, b, and 0 otherwise.",
+   "lines": [
+    483,
+    484
+   ],
+   "lean": "  let I y := {q | ∀ v b, ‖∑ a, (kerLift θ q).1 v a b • frameVector (y v) a‖ ≤\n    S.b ^ (60 * 𝔰.ϱ + 92) * besselSize (y v)}.indicator (M := ℝ≥0∞) 1",
+   "uses": [
+    {
+     "decl": "Lib.DiscreteSeries.Bessel.UnipotentCoords:60:5"
+    },
+    {
+     "decl": "New.Filling.BesselSystem:29:5"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Each y ↦ I(y, q) is measurable.",
+   "lines": [
+    485,
+    485
+   ],
+   "lean": "  have _ q : Measurable (I · q) := by apply Measurable.ite <;> measurability",
+   "typed_fact": "Measurable (I · q)",
+   "uses": [],
+   "ambient_uses": [
+    "Measurable.ite"
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "witness",
+   "claim": "Take ω(y) = I(y, 1)·(∑_q I(y, q))⁻¹: it is measurable, and ω(y) ≠ 0 with InCut(y_v, b) gives |frameVector(y_v, a)| ≤ b^{60ϱ+92}·b^{6n+2} ≤ b^{2n²} = boxSize, i.e. y_v ∈ frameBox(boxSize). Next, the sum property: for a with ∑ over each 𝖴⁰-coset equal to 1,",
+   "lines": [
+    486,
+    487
+   ],
+   "lean": "  epsilon_spec ⟨(I · 1) * (∑' q, I · q)⁻¹, by fun_prop, fun y v h r a ↦ by\n    simp_all [I]; grw [h.1, r, boxSize, ← pow_add]; gcongr <;> nlinarith [S.ϱ_le], fun y a ha ↦ by",
+   "uses": [
+    {
+     "decl": "New.Filling.Setup:247:5"
+    }
+   ],
+   "ambient_uses": [
+    "epsilon_spec",
+    "pow_add"
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "fact",
+   "claim": "∑_a θ(u)_{v,ab}·frameVector(y, a) = frameVector(ratToInf(u)_v⁻¹·y, b) (frameVector_eq_sum).",
+   "lines": [
+    488,
+    489
+   ],
+   "lean": "  have f u y v b : ∑ a, (θ u).1 v a b • frameVector y a =\n    frameVector ((S.ratToInf u v)⁻¹ * y) b := by simp [frameVector_eq_sum b (m u v), θ]",
+   "typed_fact": "∑ a, (θ u).1 v a b • frameVector y a =\n    frameVector ((S.ratToInf u v)⁻¹ * y) b",
+   "uses": [
+    {
+     "decl": "New.RealPlace.FrameNorm:19:7"
+    },
+    {
+     "decl": "Lib.DiscreteSeries.Bessel.UnipotentCoords:60:5"
+    },
+    {
+     "decl": "New.Filling.Setup:215:5"
+    }
+   ]
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Rewrite the coset hypothesis ha",
+   "lines": [
+    490,
+    490
+   ],
+   "span": [
+    490,
+    3,
+    490,
+    7
+   ],
+   "lean": "rw [",
+   "uses": []
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "fact",
+   "claim": "using that 𝖴⁰_c(g), as a subgroup of 𝖴_c(g), is the kernel of θ (an element of 𝖴_c(g) is in 𝖴⁰ iff its frame matrices are 1).",
+   "lines": [
+    490,
+    491
+   ],
+   "span": [
+    490,
+    7,
+    491,
+    99
+   ],
+   "lean": "show Subgroup.subgroupOf .. = θ.ker by ext u; simp_all [θ, classUnip₀, frameMatrix,\n    Subgroup.mem_inf.1 u.2, mem_besselU0_iff, apply_ite, map_eq_one_iff, RingHom.injective]] at ha",
+   "typed_fact": "Subgroup.subgroupOf .. = θ.ker",
+   "uses": [
+    {
+     "decl": "Lib.Adelic.Witt.FrameAction:162:7"
+    },
+    {
+     "decl": "New.Filling.Setup:244:5"
+    },
+    {
+     "decl": "Lib.General.LinearAlgebra.ExtendColumns:159:5"
+    }
+   ],
+   "ambient_uses": [
+    "apply_ite",
+    "map_eq_one_iff",
+    "RingHom.injective"
+   ]
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Rearrange the sum over 𝖴_c(g) as a sum over cosets of ker θ times the sums over ker θ (cosetProdEquiv), which are 1,",
+   "lines": [
+    492,
+    492
+   ],
+   "span": [
+    492,
+    3,
+    492,
+    9
+   ],
+   "lean": "simp [",
+   "uses": [
+    {
+     "decl": "Lib.Adelic.QuotientMeasure.Unimodular:61:22"
+    }
+   ]
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "fact",
+   "claim": "using I(ratToInf(u)·y, q) = I(y, u⁻¹q) for u ∈ 𝖴_c(g) (besselSize is invariant under 𝖲); so the sum equals (∑_q I(y, q))·(∑_q I(y, q))⁻¹.",
+   "lines": [
+    492,
+    495
+   ],
+   "span": [
+    492,
+    9,
+    495,
+    96
+   ],
+   "lean": "show ∀ (u : S.classUnip c) q, I (S.ratToInf u * y) q = I y (u⁻¹ * q) by simp [forall_mk, I,\n    f, indicator, ← mk_mul, -map_mul, -mk_inv, S.ratToInf.map_mul,\n    besselSize_besselS_mul (mem_unitriGroup_of_mem_besselU (m _ _))], ha, -mk_inv,\n    ← (cosetProdEquiv θ.ker).tsum_eq, (mul_right_injective _).tsum_eq (f := I y), ← image_univ]",
+   "typed_fact": "∀ (u : S.classUnip c) q, I (S.ratToInf u * y) q = I y (u⁻¹ * q)",
+   "uses": [
+    {
+     "decl": "New.RealPlace.FrameNorm:44:7"
+    },
+    {
+     "decl": "New.Filling.Setup:240:5"
+    },
+    {
+     "decl": "New.Filling.Setup:215:5"
+    },
+    {
+     "decl": "Lib.DiscreteSeries.Bruhat.FloorGroups:118:15"
+    },
+    {
+     "decl": "Lib.Adelic.QuotientMeasure.Unimodular:61:22"
+    }
+   ],
+   "ambient_uses": [
+    "mul_right_injective"
+   ]
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Choose w_v ∈ 𝖴 with ‖w_v·y_v‖ ≤ besselSize(y_v) (exists_norm_le_of_besselSize_le).",
+   "lines": [
+    496,
+    496
+   ],
+   "lean": "  choose w hw r using (exists_norm_le_of_besselSize_le (y := y ·) le_rfl)",
+   "uses": [
+    {
+     "decl": "New.RealPlace.FrameNorm:38:7"
+    }
+   ],
+   "ambient_uses": [
+    "le_rfl"
+   ]
+  },
+  {
+   "id": "14",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "So the sum is 1 provided ∑_q I(y, q) is neither 0 nor ∞.",
+   "lines": [
+    497,
+    497
+   ],
+   "lean": "  apply ENNReal.mul_inv_cancel _ (mt (tsum_subtype ..).trans _) <;> simp",
+   "uses": [],
+   "ambient_uses": [
+    "ENNReal.mul_inv_cancel",
+    "tsum_subtype"
+   ]
+  },
+  {
+   "id": "15",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Nonzero: by R with t = w and all pairs, some u ∈ 𝖴_c(g) makes all frame-matrix entries of w_v·ratToInf(u)_v at most b^{60ϱ+91}, so I(y, u) = 1 (norm_sum_le_mul_norm_sum_frameVector, ‖w_v y_v‖ ≤ besselSize). Finite: the q with I(y, q) = 1 have frame matrices in a compact set, which contains the images of only finitely many elements of 𝖴_c(g) (finite_classUnip_inter_compact).",
+   "lines": [
+    498,
+    504
+   ],
+   "span": [
+    498,
+    3,
+    504,
+    25
+   ],
+   "lean": "exacts [(R hw .univ).imp' (↑) fun u H v b ↦ by grw [kerLift_mk, f, pow_succ', frameVector_eq_sum b\n    (mul_mem (hw v) (m _ _)), norm_sum_le, norm_smul_le, H v (_, b), norm_frameVector_le, ← r,\n    ← succ_le_b] <;> simp, ((S.finite_classUnip_inter_compact c _ (isCompact_univ_pi fun v ↦\n    (isCompact_closedBall 0 _).matrix)).preimage (Units.val_injective.comp (kerLift_injective\n    θ)).injOn).subset (forall_mk.2 fun u h ↦ ⟨fun v _ a b ↦ by simpa [besselFrame_injective.eq_iff]\n    using! ((norm_sum_le_mul_norm_sum_frameVector (s := 1) (·) _ (𝔰.besselFrame a)).trans (by grw\n    [h v b])), u, rfl⟩)]",
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "decl": "New.RealPlace.FrameNorm:25:7"
+    },
+    {
+     "decl": "New.RealPlace.FrameNorm:28:7"
+    },
+    {
+     "decl": "New.Filling.Setup:332:7"
+    },
+    {
+     "decl": "New.RealPlace.FrameNorm:19:7"
+    },
+    {
+     "decl": "Lib.General.LinearAlgebra.ExtendColumns:88:5"
+    }
+   ],
+   "ambient_uses": [
+    "pow_succ'",
+    "mul_mem",
+    "norm_sum_le",
+    "norm_smul_le",
+    "isCompact_univ_pi",
+    "isCompact_closedBall"
+   ]
+  },
+  {
+   "id": "16",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "ω ≤ 1 (I(y, 1) ≤ ∑_q I(y, q)), and ω(sy) = ω(y) for s_v ∈ 𝖴⁰ ⊔ 𝖧 at every v (frame vectors and besselSize are invariant: frameVector_mul, besselSize_besselS_mul).",
+   "lines": [
+    504,
+    505
+   ],
+   "span": [
+    504,
+    25,
+    505,
+    82
+   ],
+   "lean": ", fun _ ↦ div_le_of_le_mul (by simp [ENNReal.le_tsum]), by simp_all [I,\n    frameVector_mul, besselSize_besselS_mul (besselU0_sup_besselH_le_besselS _)]⟩",
+   "uses": [
+    {
+     "decl": "New.RealPlace.FrameNorm:15:7"
+    },
+    {
+     "decl": "New.RealPlace.FrameNorm:44:7"
+    },
+    {
+     "decl": "Lib.Adelic.Poincare.BesselSubgroup:40:7"
+    }
+   ],
+   "ambient_uses": [
+    "div_le_of_le_mul",
+    "ENNReal.le_tsum"
+   ]
+  }
+ ]
+}

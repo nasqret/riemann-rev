@@ -1,0 +1,426 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Patching.OnePrime:15:7",
+ "name": "exists_line_stabilizer_log",
+ "summary": "Take for H the stabiliser of the first coordinate line and a(h) = l(h_00), l : k_w^× → ℤ/m sending ū to 1. The transfer of a agrees with d∘det, d(x) = Tr_a(diag(x, 1, …, 1)), on diagonal matrices (conjugate the entries to the first place) and on transvections (killed since q ≡ 1 mod m), hence everywhere. For γ = diag(ū, 1, …, 1), comparing the transfer of the central element ū·1 (a(ū)^[GL_N:H], index ≡ N mod m) with d(ū^N) gives N·d(ū) = N, so N!·d(ū) = N!.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "definition",
+   "claim": "Let H be the parabolic subgroup of GL_N(k_w) for the level function i ↦ min(1, i): the matrices whose first column vanishes below the (0,0) entry, i.e. the stabiliser of the first coordinate line.",
+   "lines": [
+    22,
+    22
+   ],
+   "span": [
+    22,
+    3,
+    22,
+    60
+   ],
+   "lean": "let H := parabolic (R := ResField w) (min 1 ∘ @Fin.val N)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "parabolic"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "choice",
+   "claim": "Choose a function Λ : E_w → k_w^× such that Λ(x) is the residue residueOrZero(x) whenever that residue is a unit (L records this).",
+   "lines": [
+    23,
+    23
+   ],
+   "span": [
+    23,
+    3,
+    23,
+    64
+   ],
+   "lean": "choose! Λ L using (@id <| IsUnit <| residueOrZero (w := w) ·)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "residueOrZero"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "fact",
+   "claim": "For every unit x of k_w, every y ∈ O_w and every z ∈ E_w: if the residue of y is x and y = z in E_w, then x = Λ(z) (residueOrZero of an integral element is its residue).",
+   "lines": [
+    24,
+    25
+   ],
+   "span": [
+    24,
+    3,
+    25,
+    55
+   ],
+   "lean": "have K {x y z} : residue _ y = x.1 → ↑y = z → x =\n    Λ z := by grind [residueOrZero_coe, x.ext, IsUnit]",
+   "typed_fact": "residue _ y = x.1 → ↑y = z → x =\n    Λ z",
+   "uses": [
+    {
+     "decl": "residueOrZero"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "fact",
+   "claim": "There is a homomorphism l : k_w^× → ℤ/m with l(Λ(u)) = 1: by step 3, Λ(u) = ū, which generates the cyclic group k_w^× of order q_w − 1 (hu, card_ResField); since m ∣ q_w − 1 (hm), the generator 1 of ℤ/m has order dividing that of ū, and the homomorphism from the cyclic group sending ū to 1 exists.",
+   "lines": [
+    26,
+    28
+   ],
+   "span": [
+    26,
+    3,
+    28,
+    99
+   ],
+   "lean": "have ⟨l, hz⟩ : ∃ l : _ →* Multiplicative (ZMod m), l (Λ u) = .ofAdd 1 :=\n    ⟨_, (@K _ _ u rfl rfl).rec (monoidHomOfForallMemZpowers_apply_gen hu\n    (by simpa [orderOf_eq_card_of_forall_mem_zpowers hu, card_units, ← card_ResField] using! hm))⟩",
+   "typed_fact": "∃ l : _ →* Multiplicative (ZMod m), l (Λ u) = .ofAdd 1",
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "decl": "card_ResField"
+    }
+   ],
+   "ambient_uses": [
+    "monoidHomOfForallMemZpowers",
+    "orderOf_eq_card_of_forall_mem_zpowers"
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "definition",
+   "claim": "Let a = l ∘ (h ↦ h_00) : H → ℤ/m; the (0,0) entry is multiplicative on H because for h, h' ∈ H one has (hh')_00 = Σ_x h_0x h'_x0 = h_00 h'_00, the entries h'_x0 (x ≥ 1) being zero.",
+   "lines": [
+    29,
+    31
+   ],
+   "span": [
+    29,
+    3,
+    31,
+    86
+   ],
+   "lean": "let a := l.comp (⟨⟨(·.1 0 0), by simp⟩, fun _ h ↦ mul_apply.trans\n    (Fintype.sum_eq_single 0 fun x hx ↦ by\n    simp [@h.2 x 0 (by simpa [Fin.pos_iff_ne_zero] using hx)])⟩ : H →* _).toHomUnits;",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "step": "4"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "definition",
+   "claim": "Let d(x) = Tr_a(diag(x, 1, …, 1)) for x ∈ k_w^×, a homomorphism k_w^× → ℤ/m.",
+   "lines": [
+    31,
+    32
+   ],
+   "span": [
+    31,
+    87,
+    32,
+    53
+   ],
+   "lean": "let d :=\n      a.transfer.comp (diagGL.comp (.mulSingle _ 0))",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "5"
+    },
+    {
+     "decl": "diagGL"
+    }
+   ],
+   "ambient_uses": [
+    "MonoidHom.transfer"
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Rewrite the hypothesis hm as: q_w − 1 = 0 in ℤ/m, with q_w = |k_w|.",
+   "lines": [
+    33,
+    33
+   ],
+   "span": [
+    33,
+    3,
+    33,
+    59
+   ],
+   "lean": "simp [← card_ResField, ← ZMod.natCast_eq_zero_iff] at hm",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "card_ResField"
+    }
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "fact",
+   "claim": "For every g ∈ GL_N(k_w), Tr_a(g) = d(det g). Every invertible matrix over a field is generated by diagonal matrices and transvections; apply this induction principle to the property that the matrix comes from an element of the submonoid where Tr_a and d∘det agree.",
+   "lines": [
+    34,
+    41
+   ],
+   "span": [
+    34,
+    3,
+    41,
+    71
+   ],
+   "lean": "have D {g} : g ∈ a.transfer.eqLocusM (d.comp det) := (Submonoid.mem_map_iff_mem\n    coeHom_injective).1 (diagonal_transvection_induction_of_det_ne_zero _ _ g.det_ne_zero (fun D h ↦\n    ⟨_, mulSingle_induction (diagGL · ∈ _) (fun i ↦ mk0 (D i) (by simp_all [prod_eq_zero_iff])) (by\n    simp) (by simp_all) fun i x ↦ .trans (by simp [mul_assoc, d, mulSingle_comp_equiv,\n    eq_mul_inv_of_mul_eq (diagGL_mul_permGL (mulSingle i _) (.swap 0 i))]) congr(d $(x.ext (by\n    simp [← Units.coe_prod]))), rfl⟩) (fun t ↦ ⟨t.toSpecialLinearGroup, by simpa [*, ↓map_nsmul]\n    using! (congr(AddMonoidHom.mk' (fun c ↦ (a.transfer (toGL (transvection t.3 c))).toAdd) (by\n    simp [transvection_add]) $card_nsmul_eq_zero')), rfl⟩) (by bound))",
+   "head_lines": [
+    34,
+    35
+   ],
+   "head_span": [
+    34,
+    3,
+    35,
+    90
+   ],
+   "typed_fact": "g ∈ a.transfer.eqLocusM (d.comp det)",
+   "uses": [],
+   "ambient_uses": [
+    "Matrix.diagonal_transvection_induction_of_det_ne_zero"
+   ]
+  },
+  {
+   "id": "8.1",
+   "parent": "8",
+   "kind": "case",
+   "claim": "Diagonal matrices: diag(D_0, …, D_{N−1}) with all D_i ≠ 0 is the product of the matrices diag(1, …, D_i, …, 1); the matrix with x at place i is conjugate by the permutation matrix of the transposition (0 i) to diag(x, 1, …, 1), and Tr_a, a homomorphism to a commutative group, is invariant under conjugation; so Tr_a of each factor is d(x) = d of its determinant, and both sides are multiplicative.",
+   "lines": [
+    35,
+    39
+   ],
+   "span": [
+    35,
+    91,
+    39,
+    38
+   ],
+   "lean": "(fun D h ↦\n    ⟨_, mulSingle_induction (diagGL · ∈ _) (fun i ↦ mk0 (D i) (by simp_all [prod_eq_zero_iff])) (by\n    simp) (by simp_all) fun i x ↦ .trans (by simp [mul_assoc, d, mulSingle_comp_equiv,\n    eq_mul_inv_of_mul_eq (diagGL_mul_permGL (mulSingle i _) (.swap 0 i))]) congr(d $(x.ext (by\n    simp [← Units.coe_prod]))), rfl⟩)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "6"
+    },
+    {
+     "decl": "diagGL_mul_permGL"
+    }
+   ],
+   "ambient_uses": [
+    "Pi.mulSingle_induction"
+   ]
+  },
+  {
+   "id": "8.2",
+   "parent": "8",
+   "kind": "case",
+   "claim": "Transvections: a transvection has determinant 1; the map c ↦ Tr_a(transvection(i, j, c)) is additive from k_w to ℤ/m, so q_w·Tr_a(transvection(i, j, c)) = Tr_a of the transvection with entry q_w·c = 0, which is 1; as q_w ≡ 1 mod m (step 7), Tr_a of the transvection is trivial, equal to d(1).",
+   "lines": [
+    39,
+    41
+   ],
+   "span": [
+    39,
+    39,
+    41,
+    59
+   ],
+   "lean": "(fun t ↦ ⟨t.toSpecialLinearGroup, by simpa [*, ↓map_nsmul]\n    using! (congr(AddMonoidHom.mk' (fun c ↦ (a.transfer (toGL (transvection t.3 c))).toAdd) (by\n    simp [transvection_add]) $card_nsmul_eq_zero')), rfl⟩)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "7"
+    }
+   ],
+   "ambient_uses": [
+    "Matrix.transvection_add",
+    "card_nsmul_eq_zero'"
+   ]
+  },
+  {
+   "id": "8.3",
+   "parent": "8",
+   "kind": "case",
+   "claim": "Products: if the property holds for A and B, it holds for AB (the agreement set is a submonoid).",
+   "lines": [
+    41,
+    41
+   ],
+   "span": [
+    41,
+    60,
+    41,
+    71
+   ],
+   "lean": "(by bound))",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "witness",
+   "claim": "Take H, a, lg = l ∘ Λ, d ∘ Λ and γ = diag(Λ(u), 1, …, 1).",
+   "lines": [
+    42,
+    46
+   ],
+   "span": [
+    42,
+    3,
+    46,
+    83
+   ],
+   "lean": "refine ⟨_, a, l ∘ Λ, d ∘ Λ, _, fun g ↦ by\n    simpa [blockParahoric, proIwahori, residuePreimage, ↓Subgroup.copy_eq] using ⟨by bound, fun _ ↦\n      congrArg l (K rfl rfl), D.trans (congrArg d (K (RingHom.map_det ..) (𝒪[_].subtype.map_det\n      _))), fun _ k ↦ ⟨D.trans (d.map_one ▸ congrArg d (ext (det_eq_one_of_unitriangular k))),\n      fun _ ↦ l.map_one ▸ congrArg l (ext (by simpa using! k 0 0))⟩⟩, hz, rfl, ?_⟩",
+   "head_lines": [
+    42,
+    42
+   ],
+   "head_span": [
+    42,
+    3,
+    42,
+    44
+   ],
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "step": "5"
+    },
+    {
+     "step": "6"
+    }
+   ]
+  },
+  {
+   "id": "9.1",
+   "parent": "9",
+   "kind": "fact",
+   "claim": "The four properties for g ∈ GL_N(O_w), after unfolding blockParahoric, proIwahori and residuePreimage: (a) ḡ ∈ H iff g_{i0} ∈ 𝔭_w for i ≥ 1; (b) a(ḡ) = l(ḡ_00) = l(Λ(g_00)) by step 3; (c) Tr_a(ḡ) = d(det ḡ) = d(Λ(det g)) by step 8 and step 3, reduction commuting with det; (d) for g in the pro-p Iwahori group ḡ is upper unitriangular, so det ḡ = 1 and Tr_a(ḡ) = d(1) = 1, and ḡ_00 = 1, so a(ḡ) = l(1) = 1.",
+   "lines": [
+    43,
+    46
+   ],
+   "span": [
+    43,
+    5,
+    46,
+    70
+   ],
+   "lean": "simpa [blockParahoric, proIwahori, residuePreimage, ↓Subgroup.copy_eq] using ⟨by bound, fun _ ↦\n      congrArg l (K rfl rfl), D.trans (congrArg d (K (RingHom.map_det ..) (𝒪[_].subtype.map_det\n      _))), fun _ k ↦ ⟨D.trans (d.map_one ▸ congrArg d (ext (det_eq_one_of_unitriangular k))),\n      fun _ ↦ l.map_one ▸ congrArg l (ext (by simpa using! k 0 0))⟩⟩,",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "step": "8"
+    },
+    {
+     "decl": "blockParahoric"
+    },
+    {
+     "decl": "proIwahori"
+    },
+    {
+     "decl": "residuePreimage"
+    },
+    {
+     "decl": "det_eq_one_of_unitriangular"
+    }
+   ]
+  },
+  {
+   "id": "9.2",
+   "parent": "9",
+   "kind": "fact",
+   "claim": "lg(u) = l(Λ(u)) = 1 by step 4; Tr_a(γ) = d(Λ(u)) holds by definition; the last property remains.",
+   "lines": [
+    46,
+    46
+   ],
+   "span": [
+    46,
+    71,
+    46,
+    83
+   ],
+   "lean": "hz, rfl, ?_⟩",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "4"
+    }
+   ]
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "computation",
+   "claim": "N!·Tr_a(γ) = N!: the scalar matrix Λ(u)·1 is central, so Tr_a(Λ(u)·1) = a(Λ(u)·1)^[GL_N(k_w):H] = l(Λ(u))^[GL_N(k_w):H]; by step 8 it is also d(det(Λ(u)·1)) = d(Λ(u))^N. The index of the line stabiliser is Σ_{j<N} q_w^j ≡ N mod m (index_stabilizer_line, q_w ≡ 1 mod m), so N·d(Λ(u)) = N in ℤ/m, and N! = N·(N−1)! gives N!·d(Λ(u)) = N!.",
+   "lines": [
+    47,
+    50
+   ],
+   "span": [
+    47,
+    3,
+    50,
+    81
+   ],
+   "lean": "simpa [*, index_stabilizer_line 0 (H := H) fun _ ↦ forall_congr' (by grind), mul_assoc,\n    ← mul_factorial_pred NeZero.out, mul_comm N] using! congr(_ * ($(D.symm.trans\n    ((a.transfer_eq_pow (scalar _ _) (by simp [← map_pow, ← GeneralLinearGroup.scalar_commute])\n    ).trans congr(l $(ext (v := Λ u ^ H.index) (by simp [← map_pow])))))).toAdd)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "7"
+    },
+    {
+     "step": "8"
+    },
+    {
+     "decl": "index_stabilizer_line"
+    }
+   ],
+   "ambient_uses": [
+    "MonoidHom.transfer_eq_pow",
+    "Nat.mul_factorial_pred"
+   ]
+  }
+ ]
+}

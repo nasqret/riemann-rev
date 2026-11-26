@@ -1,0 +1,1755 @@
+% !TEX program = lualatex
+% ---------------------------------------------------------------------------------------------
+%  Readback note 42: Box partitions of arithmetic unipotent groups: frame counts, the covolume, amplitude sums
+%
+%  Build:  python3 tools/rb.py note <slug>
+%
+%  One unit of a Lean artifact, rewritten as ordinary mathematics. The prose is hand-written. Lean names,
+%  line ranges and counts come from data.tex; quoted Lean statements are copied from the artifact by the build.
+%
+%  Rules of the text: standard terminology; every symbol is explained where it first appears and listed again
+%  in the notation at the end; no letter has two meanings; a proof is complete or says what it takes for granted;
+%  Lean names appear only in the LEAN lines and in the concordance.
+%
+%  The signature rule (the build enforces it): a function, relation or predicate that the artifact defines is
+%  written only through its notation macro, which the build makes from the spec (`notation`) with one slot for
+%  each explicit argument of the Lean definition. No argument is fixed and dropped, also not "for brevity" and
+%  not for one section. Every argument and every hypothesis of a stated declaration stands inside its
+%  statement, or in a Setting that the statement cites by number; only implicit and instance arguments (the
+%  ambient objects) may stand in the conventions.
+% ---------------------------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\ifdefined\pdfvariable\pdfvariable suppressoptionalinfo \numexpr 1+2+4+8\relax\fi
+\usepackage[a4paper,hmargin=35mm,top=22mm,bottom=27mm,footskip=12mm,nohead]{geometry}
+
+\usepackage{fontspec}
+\directlua{
+  luaotfload.add_fallback("gfallback", {"STIXTwoMath-Regular.otf:mode=node;", "DejaVuSans.ttf:mode=node;"})
+  luaotfload.add_fallback("gmonofallback", {"DejaVuSansMono.ttf:mode=node;", "STIXTwoMath-Regular.otf:mode=node;"})
+}
+\setmainfont{LibertinusSerif}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-Semibold,BoldItalicFont=*-SemiboldItalic,RawFeature={fallback=gfallback}]
+\setsansfont{Inter}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,RawFeature={fallback=gfallback}]
+\setmonofont{JetBrainsMono}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,Scale=MatchLowercase,
+  RawFeature={-calt;-liga;fallback=gmonofallback}]
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage[math-style=TeX]{unicode-math}
+\setmathfont{LibertinusMath-Regular.otf}
+
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows.meta,positioning,backgrounds}
+\usepackage[protrusion=true,expansion=true]{microtype}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{multicol}
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+
+\definecolor{ink}{HTML}{0F172A}
+\definecolor{inksoft}{HTML}{475569}
+\definecolor{inkfaint}{HTML}{94A3B8}
+\definecolor{rulegrey}{HTML}{CBD5E1}
+\definecolor{arith}{HTML}{C2410C}
+\definecolor{est}{HTML}{7C3AED}
+\definecolor{ana}{HTML}{0891B2}
+\definecolor{ok}{HTML}{047857}
+\definecolor{leancol}{HTML}{3730A3}
+
+\title{Box partitions of arithmetic unipotent groups: frame counts, the covolume, amplitude sums}
+\author{grh-compact}
+\date{}
+
+% ------------------------------------------------------------------------------------- macros
+\newcommand{\leanfont}{\ttfamily\fontsize{8.6}{10.5}\selectfont\color{leancol}}
+\newcommand{\lean}[1]{\csname LN@#1\endcsname}
+\newcommand{\fillin}[1]{{\color{arith}\itshape[#1]}}  % a place of the template that is not written yet; the build reports every one that is left
+\newcommand{\leanquote}[1]{\csname LQ@#1\endcsname}
+\input{data.tex}
+\input{macros148.tex}
+
+\linespread{1.08}                       % 11 pt on 14.7 pt
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt plus 1.5pt minus 0.5pt}
+\setlength{\abovedisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\belowdisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\abovedisplayshortskip}{3pt plus 2pt}
+\setlength{\belowdisplayshortskip}{6pt plus 2pt minus 2pt}
+\emergencystretch=1.5em
+\clubpenalty=10000 \widowpenalty=10000 \displaywidowpenalty=10000
+\relpenalty=7000 \binoppenalty=9000
+\raggedbottom
+\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\sffamily\fontsize{7.6}{9}\selectfont\color{inkfaint}\thepage\,/\,\pageref*{LastPage}}
+\setlist{topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=4pt,leftmargin=2.1em,labelsep=0.55em}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\len}{\operatorname{len}}
+\newcommand{\cok}{\operatorname{cok}}
+\newcommand{\End}{\operatorname{End}}
+\newcommand{\Hom}{\operatorname{Hom}}
+\newcommand{\Gal}{\operatorname{Gal}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\kw}[1]{\emph{#1}}
+\newcommand{\m}[1]{\mbox{$#1$}}        % a short formula that must not be broken across lines
+\newcommand{\head}[1]{\par\addvspace{17pt plus 4pt minus 2pt}\Needspace{6\baselineskip}%
+  \noindent{\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\sect}[2]{\refstepcounter{section}\label{#2}\par\addvspace{19pt plus 4pt minus 2pt}\Needspace{7\baselineskip}%
+  \noindent\llap{{\fontsize{13.2}{16}\selectfont\bfseries\color{inkfaint}\thesection}\hspace{9pt}}%
+  {\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\subhead}[1]{\par\addvspace{9pt plus 2pt}\Needspace{4\baselineskip}\noindent\textbf{#1}\enspace\ignorespaces}
+% where a statement lives in the Lean archive
+\newcommand{\leantag}{{\sffamily\bfseries\fontsize{6.3}{8}\selectfont\color{leancol}\addfontfeatures{LetterSpace=7}LEAN}}
+\newcommand{\sep}{\unskip\nobreak\hspace{5pt}{\color{inkfaint}\textperiodcentered}\hspace{5pt plus 2pt}\ignorespaces}
+\newcommand{\leanline}[1]{\par\nopagebreak\vspace{-2.5pt}{\fontsize{8.9}{12.4}\selectfont\color{inksoft}\raggedright
+  \noindent\llap{\leantag\hspace{9pt}}#1\par}\vspace{1pt}}
+% a displayed statement in a tinted box: #1 colour, #2 text
+\newcommand{\statement}[2]{\par\addvspace{7pt}\begingroup\setlength{\fboxsep}{8.5pt}\setlength{\fboxrule}{0.6pt}%
+  \noindent\fcolorbox{#1!30!white}{#1!3!white}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{#2}}%
+  \endgroup\par\addvspace{7pt}}
+\newcommand{\nt}[2]{\par\noindent\hangindent=1.1em\hangafter=1 #1\enspace{\color{inksoft}#2}\par\vspace{1pt}}
+\newcommand{\legdot}[1]{\tikz[baseline=-0.62ex]\fill[#1] (0,0) circle (2.5pt);\hspace{3pt}}
+\newcommand{\crow}[4]{\csname CS@#1\endcsname & #2 & \textcolor{inksoft}{#3} & \textcolor{inksoft}{#4}\\}
+\newcommand{\leanquoteline}[2]{\par\noindent\hangindent=\dimexpr#1\fontdimen2\font+2.2em\relax\hangafter=1
+  \hspace*{#1\fontdimen2\font}#2}
+\newcommand{\quoted}[1]{\par\vspace{3pt}{\ttfamily\fontsize{7.5}{10.4}\selectfont\color{leancol}\raggedright
+  \setlength{\parskip}{0pt}\leanquote{#1}\par}\vspace{4pt}}
+\newcommand{\bx}[3]{{\sffamily\bfseries\fontsize{7.3}{9.2}\selectfont\color{#1!82!black}#2}\\[1.5pt]#3}
+\newcommand{\cs}[2]{\expandafter\newcommand\csname CS@#1\endcsname{#2}}
+
+% theorems
+\newtheoremstyle{plainx}{7pt plus 2pt}{7pt plus 2pt}{\itshape}{}{\bfseries}{.}{0.5em}{}
+\newtheoremstyle{uprightx}{7pt plus 2pt}{7pt plus 2pt}{}{}{\bfseries}{.}{0.5em}{}
+\theoremstyle{plainx}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{uprightx}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{setting}[theorem]{Setting}          % hypotheses shared by several statements; each of them cites it by number
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\renewcommand{\qedsymbol}{{\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.5pt}\fbox{\rule{0pt}{0.46em}\hspace{0.46em}}}}
+% what holds throughout the note: the ambient objects only (implicit and instance arguments), never a hypothesis
+\newenvironment{conventions}{\par\addvspace{5pt}\noindent\textbf{Conventions.}\enspace\ignorespaces}{\par\addvspace{3pt}}
+\makeatletter
+\renewenvironment{proof}[1][Proof]{\par\pushQED{\qed}\normalfont\topsep0pt\partopsep0pt
+  \trivlist\item[\hskip\labelsep\itshape #1.]\ignorespaces}{\popQED\endtrivlist\@endpefalse}
+\makeatother
+
+% ----- notions of the background library and of the record S that this note writes by hand (no declaration of the
+% ----- unit stands behind them); the definitions of the unit come from macros148.tex and data.tex
+\newcommand{\fm}[1]{\operatorname{fm}(#1)}                 % frameMatrix
+\newcommand{\colL}[1]{\langle #1\rangle_{\hO}}             % colLattice Ô M: the Ô-span of the columns of M
+\newcommand{\Wsys}[3]{W^{#1}_{#2,#3}}                      % (S.besselSys v).W σ
+\newcommand{\Isys}[2]{I_{#2}(#1)}                          % (S.besselSys v).I
+\newcommand{\muq}[1]{\mu^{\mathcal{U}\backslash}_{#1}}     % besselQuotMeasure
+\newcommand{\muU}[1]{\mu^{\mathcal{U}}_{#1}}               % Shape.besselHaar
+\newcommand{\Fw}[1]{\mathbb{F}_{#1}}                       % ResField w
+\newcommand{\cj}[1]{\overline{#1}}
+\newcommand{\NmE}{\operatorname{N}_{E/\mathbb{Q}}}
+\newcommand{\omS}[2]{\omega_{#1,#2}}                       % the chosen box partition (Hilbert's choice in classCutoff)
+\newcommand{\bfl}[2]{\beta^{\flat}_{#1,#2}}                % the chosen cutoff of U^0_c(g) in classCutoff
+\newcommand{\spanE}{\operatorname{span}}
+\newcommand{\Mid}{\operatorname{mid}}
+\newcommand{\RePt}{\operatorname{Re}}
+\newcommand{\ImPt}{\operatorname{Im}}
+\newcommand{\lev}{\operatorname{lev}}
+\newcommand{\rev}{\operatorname{rev}}
+\newcommand{\col}{\operatorname{col}}
+\newcommand{\Tr}{\operatorname{Tr}}
+\newcommand{\sP}{\mathsf{P}}
+\newcommand{\sA}{\mathsf{A}}
+\newcommand{\sB}{\mathsf{B}}
+\newcommand{\sC}{\mathsf{C}}
+\newcommand{\sw}{\mathsf{w}}
+\newcommand{\rF}[1]{#1_{\mathbb{F}}}                       % entrywise reduction to the residue field F (proof of Theorem A)
+
+% where each declaration of the concordance is treated: \cs{key}{place}, the place naming a \label or a lettered item
+\cs{isStablebesselS}{Lemma~\ref{l:stableS}}
+\cs{measurePreservingpiorbitMeasure}{Lemma~\ref{l:unfold}}
+\cs{tsumintegralapply}{Lemma~\ref{l:sumint}}
+\cs{besselFnmulofmemclassUnip}{Lemma~\ref{l:Winv}}
+\cs{besselKernelbesselUmul}{Lemma~\ref{l:Winv}}
+\cs{lintegralclassCutoffmulprod}{Lemma~\ref{l:cutprod}}
+\cs{amplitudeAbslttopandcutle}{Theorem D}
+\cs{summableamplitude}{Corollary~\ref{c:summable}}
+\cs{hasSumamplitudeSumchangeofweight}{Theorem E}
+\cs{amplitudeSummove}{Proposition~\ref{p:moves}}
+\cs{amplitudeSumbesselUmul}{Proposition~\ref{p:moves}}
+\cs{amplitudeSumeqzeroofnotagrees}{Theorem F}
+\cs{amplitudeSumbesselSone}{Theorem F}
+\cs{liouvillegram}{Lemma~\ref{l:liouville}}
+\cs{linkMetric}{Definition~\ref{d:linkmetric}}
+\cs{linkDiscSq}{Definition~\ref{d:linkmetric}}
+\cs{framePairlasteqzFormPairmul}{Lemma~\ref{l:formulas}}
+\cs{classCoordeqfromBlocks}{Lemma~\ref{l:formulas}}
+\cs{HasIntegralLifts}{Definition~\ref{d:lifts}}
+\cs{finranklink}{Lemma~\ref{l:lagr}}
+\cs{gramclassCoordX}{Lemma~\ref{l:formulas}}
+\cs{classCoordgram}{Lemma~\ref{l:formulas}}
+\cs{linkMetricposDef}{Lemma~\ref{l:posdef}}
+\cs{gramlinkFormeqzerooflelink}{Lemma~\ref{l:lagr}}
+\cs{detgramlinkMetricnezero}{Lemma~\ref{l:posdef}}
+\cs{cardeqfinrankcolSpan}{Lemma~\ref{l:formulas}}
+\cs{gramlinkMatrixmul}{Lemma~\ref{l:gramlink}}
+\cs{classCoordmulframePair}{Lemma~\ref{l:formulas}}
+\cs{classCoordmulisotropicFramePair}{Lemma~\ref{l:formulas}}
+\cs{isIntMatrixframePair}{Lemma~\ref{l:formulas}}
+\cs{legenIndexdetoffixesNormAtLeast}{Theorem A}
+\cs{existsmemclassUnip}{Lemma~\ref{l:eichler}}
+\cs{existseichlerclassUnip}{Lemma~\ref{l:eichlerrow}}
+\cs{tsumleofencardrangele}{Lemma~\ref{l:colour}}
+\cs{tsumleofcolouring}{Lemma~\ref{l:colourcoset}}
+\cs{encardintegralle}{Lemma~\ref{l:intcount}}
+\cs{submoduleIndexsmulintVectors}{Lemma~\ref{l:scaled}}
+\cs{submoduleIndexsmulnezero}{Lemma~\ref{l:scaled}}
+\cs{IndexBelow}{Definition~\ref{d:pad}}
+\cs{xRows}{Definition~\ref{d:pad}}
+\cs{paddedLeading}{Definition~\ref{d:pad}}
+\cs{detpaddedLeading}{Lemma~\ref{l:paddet}}
+\cs{frameMiddle}{Definition~\ref{d:pad}}
+\cs{latticeDisc}{Definition~\ref{d:indices}}
+\cs{frameValueIndex}{Definition~\ref{d:indices}}
+\cs{xRowsIndex}{Definition~\ref{d:indices}}
+\cs{saturationIndex}{Definition~\ref{d:indices}}
+\cs{pairInvariant}{Definition~\ref{d:gauge}}
+\cs{termElem}{Definition~\ref{d:gauge}}
+\cs{minorNorm}{Definition~\ref{d:gauge}}
+\cs{classGauge}{Definition~\ref{d:gauge}}
+\cs{IsNearRep}{Definition~\ref{d:gauge}}
+\cs{invPowWeight}{Definition~\ref{d:weights}}
+\cs{termWeight}{Definition~\ref{d:weights}}
+\cs{pairWeight}{Definition~\ref{d:weights}}
+\cs{IsLabelledTerm}{Definition~\ref{d:weights}}
+\cs{minorNormpos}{Lemma~\ref{l:levels}}
+\cs{inv}{Lemma~\ref{l:levels}}
+\cs{paddedLeadingmulinv}{Lemma~\ref{l:levels}}
+\cs{existssharedframevector}{Lemma~\ref{l:levels}}
+\cs{xRowsconjTransposemuleq}{Lemma~\ref{l:xrows}}
+\cs{frameVectorsubeqsum}{Lemma~\ref{l:framediff}}
+\cs{isBoxPartitionepsilon}{Proposition~\ref{p:boxexists}}
+\cs{tsumclassCutoffeqone}{Lemma~\ref{l:sumone}}
+\cs{tsumclassCutoffboxle}{Theorem B}
+\cs{existsclassUnipmulmemboxedPoints}{Lemma~\ref{l:sumone}}
+\cs{measurableclassCutoff}{Lemma~\ref{l:sumone}}
+\cs{lintegralclassCutoffequnipCovolume}{Theorem C}
+
+\begin{document}
+\color{ink}
+
+{\raggedright
+{\sffamily\bfseries\fontsize{7.2}{9}\selectfont\color{leancol}\addfontfeatures{LetterSpace=8}READBACK NOTE 42\par}
+\vspace{5pt}
+{\fontsize{21.5}{25.5}\selectfont\bfseries Box partitions of arithmetic unipotent groups: frame counts, the covolume, amplitude sums\par}
+\vspace{5pt}
+{\fontsize{12.4}{16}\selectfont\itshape\color{inksoft} One unit of the Lean artifact \ArtifactName, read back into
+mathematics\par}}
+\vspace{8pt}
+{\color{rulegrey}\hrule height 0.6pt}
+\vspace{7pt}
+\thispagestyle{empty}
+
+\textbf{Summary.} The filling theorem of the artifact (Theorem~B of the write-up, ``enough forms'') rests on a
+second moment of Poincar\'e series along a Bessel subgroup of a unitary group. Unfolded, this moment is a sum of
+\emph{amplitudes} over rational elements, weighted by cutoffs for the arithmetic unipotent groups
+$\clU{S}{c}$. This note treats the three files that build the first layer of estimates: the congruence that
+agreeing unipotent characters force on pairings of frames (Theorem~A); cutoffs supported in boxes and the
+resulting count of frames (Theorem~B); the exact covolume of $\clU{S}{c}$ (Theorem~C); and the amplitude sums
+themselves: convergence, comparison of full and cut Bessel functions, change of weight, vanishing for
+characters that do not agree, and the identity term (Theorems D, E, F).
+
+\statement{leancol}{\fontsize{9.6}{13.2}\selectfont\textbf{What this note is.} The artifact \ArtifactName{} is a
+body of Lean code whose final theorems state the Riemann hypothesis and its analogue for Dirichlet $L$-functions.
+That is a claim: its authors report that Lean's kernel accepts the code, a replay of that check by the owner of
+this write-up is recorded elsewhere, and nothing was compiled for this note; no mathematician has read the proof
+through. This note treats the second part of the set-up of one unit (the folder of the filling theorem):
+\UnitInNote{} of its \UnitMembers{} declarations, those of three files. The objects of the first part, the note
+\emph{The filling data: Bessel subgroups, links of frames, Siegel's lemma and strong approximation} (Note~S below),
+are recalled in Section~\ref{s:setting}, and its results are quoted as \emph{Inputs}, like the results of other
+units and of the background library. Every statement of this note was compared, argument by argument, with the
+Lean text, and the proofs are complete relative to the Inputs. The Lean text read is \PinText; Appendix~A is the
+concordance of \ConcDecls{} declarations.}
+
+\sect{The statements}{s:intro}
+The notation is that of Note~S and is recalled in Section~\ref{s:setting}. In a few words: $E$ is a CM field,
+$\fs=(\varrho,\kappa,k_0)$ a shape, and $S$ filling data; $V$ is the hermitian space with basis
+$e_0,\dots,e_{\varrho-1}$, $x_i$ $(i\in\kappa)$, $z$, $e^*_{\varrho-1},\dots,e^*_0$, the $e_a$ and $e^*_a$ in
+hyperbolic pairs, the $x_i$ orthonormal and $h(z,z)=-\NS{S}$; the \emph{frame} is
+$\fr{0},\dots,\fr{\varrho}=e_0,\dots,e_{\varrho-1},z$; $\UT{T}$ is the unipotent group of the flag of the $e_a$, and
+$\ST{T}\supseteq\UT{T}$ the Bessel subgroup; $\Cl{S}$ is a finite set of classes, $\GRes{S}$ a finite group (a
+product of general linear groups over the residue fields of the chosen places above $\gS{S}=\qS{S}{0}\qS{S}{1}$),
+and $\clU{S}{c}$ the group of the rational $u\in\UT{\Trat{S}{E}}$ whose position at the class $c$ is congruent to
+$1$ modulo $\gS{S}$.
+
+\begin{setting}\label{set:su}
+$E$ is a CM field with a CM type, $\fs$ is a shape and $S\in\Fill{E}{\fs}$ are filling data (Section~\ref{s:setting}).
+Moreover $E$ is \emph{stably unramified}: it contains a primitive root of unity of order $5040$.
+\end{setting}
+
+\begin{setting}\label{set:adm}
+$E$ is a CM field with a CM type that is stably unramified (it contains a primitive root of unity of order
+$5040$), $\fs$ is a shape, and $S\in\Fill{E}{\fs}$ are filling data that are \emph{admissible}: the standing
+hypotheses of Note~S hold for $S$; they are recalled in \ref{r:adm}.
+\end{setting}
+
+\statement{arith}{\phantomsection\label{t:A}\textbf{Theorem A (agreeing characters force congruences).}\enspace
+In Setting~\ref{set:su}, let $k\in\KS{S}$ be such that $\Agr{S}{\redS{S}(k)}$, and let $x$ be a natural number. Let
+$\Omega$ be a finite set with a bijection $\rho\colon\Omega\to\{1,2\}$, let $t$ be a matrix over $\AEf$ with rows
+$\Ix{\fs}$ and columns $\Omega$ that is integral, and put $C=\fpair{k}^{*}\,t$; its rows are indexed by the pairs
+$(i,a)$, $i\in\{1,2\}$, $0\le a\le\varrho$, the row $(1,a)$ belonging to $\fr{a}$ and the row $(2,a)$ to $k\fr{a}$.
+Suppose that $C_{(i,a),l}=0$ for all $i\in\{1,2\}$, $a<\varrho$ and $l\in\Omega$, and let
+\[\delta=\det\bigl(C_{(\rho(l),\varrho),\,l'}\bigr)_{l,l'\in\Omega}.\]
+If $\delta$ is a unit of $\AEf$ and $\FixN{\redS{S}(k)}{x}$, then $x\le\gix{\delta}$.}
+
+Here $\gix{\delta}$ is the generalized index (for $\delta\in\hO$ a unit of $\AEf$ it is $\#\hO/\delta\hO$), and
+$\FixN{s}{x}$ says that $s$, or its inverse adjoint, fixes a non-zero vector of the span of the frame modulo
+chosen places whose norms have product at least $x$. The columns of $t$ are two integral linear forms
+$v\mapsto t_l^{*}v$ that vanish on $X=\spanE(e_a)$ and on $kX$; $\delta$ is the determinant of their values at
+$z$ and $kz$. So wherever the frames of $1$ and of $k$ meet modulo a chosen place, that place divides $\delta$.
+
+\statement{arith}{\phantomsection\label{t:B}\textbf{Theorem B (frame count).}\enspace
+In Setting~\ref{set:adm}, let $c\in\Cl{S}$, $s\in\GRes{S}$, let $\sP$ be a set, $y,y'\in\prod_\tau\Gone{\fs}$ and
+$x\in[0,\infty]$, and for every $p\in\sP$ let $d_p\in\Cl{S}$, $\gamma_p,\delta_p\in\GS{S}{E}$ and
+$\sw_p\in[0,\infty]$ be given. Suppose that
+\begin{enumerate}[label=(\roman*),itemsep=1pt]
+\item for $p,q\in\sP$, if $d_p=d_q$ and $\delta_p=\delta_q$ then $p=q$;
+\item for every $p$ with $\sw_p\ne0$: $\gamma_p\in\terms{S}{c}{s}{d_p}$,\ \ $\delta_p^{-1}\gamma_p\in\clU{S}{d_p}$,\ \
+$\rinf{S}(\gamma_p)^{-1}y\in\bxp{S}$,\ \ and\ \ $\sw_p\le\cutoff{S}{d_p}\bigl(\rinf{S}(\delta_p)^{-1}y'\bigr)\cdot x$;
+\item $V$ is a real subspace of the space of families $(v_{\tau,a})$ of vectors of $\CC^{\Ix{\fs}}$, indexed by
+the infinite places $\tau$ of $E$ and $0\le a\le\varrho$, and $F_p-F_q\in V$ for all $p,q$ with $\sw_p\ne0\ne\sw_q$,
+where $F_p=\bigl((\rinf{S}(\gamma_p)_\tau^{-1}y_\tau)^{-1}\fr{a}\bigr)_{\tau,a}$.
+\end{enumerate}
+Then\quad $\sum_{p\in\sP}\sw_p\ \le\ \bS{S}^{\,6\,\nn{\fs}^2\dim_{\RR}V}\cdot x$.}
+
+\statement{arith}{\phantomsection\label{t:C}\textbf{Theorem C (the covolume).}\enspace
+In Setting~\ref{set:adm}, for every $c\in\Cl{S}$ and every $y\in\prod_\tau\Gone{\fs}$,
+\[\int_{\prod_\tau\UT{\Trg{\fs}{1}}}\cutoff{S}{c}\bigl((u_\tau y_\tau)_\tau\bigr)\,d\Bigl(\prod_\tau\muU{\fs}\Bigr)(u)\ =\ \ucov{S},\]
+the integral over the product, over the infinite places $\tau$ of $E$, of the unipotent groups of $\Gone{\fs}$
+with their Haar measures $\muU{\fs}$ of \ref{r:haar}; $\ucov{S}$ is the explicit number of \ref{r:const}.}
+
+Since $\sum_{u\in\clU{S}{c}}\cutoff{S}{c}(\rinf{S}(u)y)=1$, Theorem~C says that the image of $\clU{S}{c}$ is a lattice
+of covolume $\ucov{S}$ in $\prod_\tau\UT{\Trg{\fs}{1}}$, whatever the class $c$.
+
+\statement{arith}{\phantomsection\label{t:D}\textbf{Theorem D (convergence; full against cut).}\enspace
+In Setting~\ref{set:adm}, let $\sigma\in\{\full,\cut\}$ be a side, $\Xi\subseteq\GS{S}{E}$ a set, $c\in\Cl{S}$ and
+$s\in\GRes{S}$, and put $X(d)=\Xi\cap\terms{S}{c}{s}{d}$ for $d\in\Cl{S}$. Then:
+\begin{enumerate}[label=(\arabic*),itemsep=1pt]
+\item for every $c'\in\Cl{S}$ there is a real number $M\ge0$ such that for all $y\in\prod_\tau\Gone{\fs}$
+\[\sum_{\gamma\in X(c')}\cutoff{S}{c'}\bigl(\rinf{S}(\gamma)^{-1}y\bigr)\prod_\tau\bigl\|\Wsys{\sigma}{S}{\tau}\bigl((\rinf{S}(\gamma)^{-1}y)_\tau\bigr)\bigr\|\ \le\ M,\]
+and moreover $\sum_{\gamma\in X(c')}\ampabs{\sigma}{S}{c}{c'}{\gamma}<\infty$;
+\item with $f=\ninf{E}$ and $k=\kk{\fs}$,
+\[\sum_{d\in\Cl{S}}\ \sum_{\gamma\in X(d)}\int\cutoff{S}{c}(y)\,\cutoff{S}{d}\bigl(\rinf{S}(\gamma)^{-1}y\bigr)\,
+\bigl\|\besker{\sigma}{S}{\gamma}{y}-\besker{\cut}{S}{\gamma}{y}\bigr\|\,dy\ \le\ \frac{\ucov{S}}{2\,\bS{S}^{\,k^3f}}.\]
+\end{enumerate}}
+
+\statement{arith}{\phantomsection\label{t:E}\textbf{Theorem E (change of weight).}\enspace
+In Setting~\ref{set:adm}, let $\sigma$ be a side, $\Xi\subseteq\GS{S}{E}$ a set with $\IsStab{S}{\Xi}$, let
+$c,c'\in\Cl{S}$ and $s\in\GRes{S}$, and put $X=\Xi\cap\terms{S}{c}{s}{c'}$. Let
+$\phi\colon\GS{S}{E}\times\prod_\tau\Gone{\fs}\to[0,\infty]$ be such that every $\phi(\gamma,\cdot)$ is measurable and
+\[\sum_{(u,u')\in\clU{S}{c}\times\clU{S}{c'}}\phi\bigl(u\gamma u'^{-1},\ \rinf{S}(u)\,y\bigr)=1
+\qquad\text{for all }\gamma\in X\text{ and all }y.\]
+Then for every $\gamma\in X$ the function $y\mapsto\phi(\gamma,y)\,\besker{\sigma}{S}{\gamma}{y}$ is integrable, the
+family of its integrals is summable with
+\[\sum_{\gamma\in X}\int\phi(\gamma,y)\,\besker{\sigma}{S}{\gamma}{y}\,dy\ =\ \ampsum{\sigma}{S}{\Xi}{c}{s}{c'},\]
+and\quad $\displaystyle\sum_{\gamma\in X}\int\phi(\gamma,y)\,\bigl\|\besker{\sigma}{S}{\gamma}{y}-\besker{\cut}{S}{\gamma}{y}\bigr\|\,dy
+\ \le\ \frac{\ucov{S}}{2\,\bS{S}^{\,\kk{\fs}^3\ninf{E}}}$.}
+
+\statement{arith}{\phantomsection\label{t:F}\textbf{Theorem F (characters that do not agree; the identity term).}\enspace
+In Setting~\ref{set:adm}, let $c,c'\in\Cl{S}$.
+\begin{enumerate}[label=(\roman*),itemsep=1pt]
+\item Let $\sigma$ be a side, $\Xi\subseteq\GS{S}{E}$ a set with $\IsStab{S}{\Xi}$, and $s\in\GRes{S}$. If $s$
+does not agree, that is, if $\Agr{S}{s}$ fails, then $\ampsum{\sigma}{S}{\Xi}{c}{s}{c'}=0$.
+\item For $\Xi=\ST{\Trat{S}{E}}$, the group of rational points of the Bessel subgroup, for the full Bessel
+functions, and for all $i,j\in\Bc{S}$, the coordinate $(i,j)$ of $\ampsum{\full}{S}{\ST{\Trat{S}{E}}}{c}{1}{c'}$ is
+$\ucov{S}$ if $c=c'$ and $i=j$, and $0$ otherwise.
+\end{enumerate}}
+
+Theorems A to C are proved in Sections \ref{s:agree}, \ref{s:boxes} and \ref{s:covol}; Theorems D, E, F in
+Section~\ref{s:ampl}. Sections \ref{s:links}, \ref{s:eichler} and \ref{s:count} hold the tools: a positive form on
+links, integral Eichler elements, and covering lemmas, together with the definitions of the indices,
+discriminants and weights that the later estimates of the unit use (Note~E, \emph{The energy of amplitude sums},
+and Note~P, on the pairing of links).
+
+\sect{The setting}{s:setting}
+\begin{conventions}\phantomsection\label{c:conventions}
+Throughout, $E$ is a CM field with a fixed CM type: a number field that is a totally imaginary quadratic extension
+of a totally real field, with its complex conjugation $x\mapsto\cj{x}$ and, for every infinite place $\tau$, a chosen
+embedding $x\mapsto x_\tau$ of $E$ into $\CC$; $\ninf{E}$ is the number of its infinite places, $d_E$ its
+discriminant, $\AEf$ its ring of finite adeles with the involution induced by conjugation, and $\hO\subset\AEf$ the
+closure of the integers. The letter $\fs$ denotes a shape, and $S$, $S'$, $S_1$ denote filling data in
+$\Fill{E}{\fs}$ \ref{r:data}. $E'$ is a number field. $R$ and $A$ are commutative rings with an involution,
+$T$ is an $\fs$-form over $R$, and $O$ a subring. Index sets written $\Omega$, $\Omega'$ are finite sets; $\sP$ is
+an arbitrary set with a subset $\sA$; a matrix has its rows and columns indexed by the sets that are named, and
+$M^{*}$ is its conjugate transpose. An element $k$, $\gamma$, $\gamma'$, $\gamma_2$ of a unitary group is
+identified with its matrix. A side is an element $\sigma$ of $\{\full,\cut\}$. Indices of frames and levels are
+counted from $0$, as in the formal text; $j$, $j'$ denote levels and $c$, $c'$, $d$ classes. A sum of numbers in
+$[0,\infty]$ over an arbitrary set is the supremum of its finite partial sums. A matrix over a ring
+containing $\hO$ is \emph{integral} if its entries lie in $\hO$ (or in the subring $O$ that is named).
+\end{conventions}
+
+\subhead{Recollections from Note~S.} The following objects are defined in Note~S (and, for the first three
+items, in the background library); they are recalled without their formal names, which are in the concordance of
+that note.
+\begin{enumerate}[label=(R\arabic*),leftmargin=3.1em,itemsep=3pt]
+\item\label{r:space} \emph{Shapes, forms, groups.} A shape $\fs=(\varrho,\kappa,k_0)$ is a natural number
+$\varrho$, a finite set $\kappa$ and an element $k_0\in\kappa$; $\kk{\fs}=\#\kappa$, $\nn{\fs}=\varrho+1$. Its
+index set $\Ix{\fs}$ labels the vectors $e_0,\dots,e_{\varrho-1}$; $x_i$ $(i\in\kappa)$; $z$;
+$e^*_{\varrho-1},\dots,e^*_0$, so $\rr{\fs}=\#\Ix{\fs}=2\varrho+\kk{\fs}+1$; the middle index set
+$\Mx{\fs}=\kappa\sqcup\{z\}$ labels the $x_i$ and $z$. An $\fs$-form over $R$ is a matrix $T$ on $\Mx{\fs}$; $\JT{T}$
+is the matrix on $\Ix{\fs}$ that pairs $e_a$ with $e^*_a$ by $1$, is $T$ on the middle block and $0$ elsewhere;
+$h_T(v,w)=v^{*}\JT{T}w$, and $\GT{T}$ is the group of the invertible $g$ with $g^{*}\JT{T}g=\JT{T}$. For $N\in R$,
+$\Trg{\fs}{N}$ is the diagonal form with entries $1$ on $\kappa$ and $-N$ at $z$, and
+$\Gone{\fs}=\GT{\Trg{\fs}{1}}$ over $\CC$. The \emph{level} of an index is $\lev(e_a)=a$, $\lev(x_i)=\lev(z)=\varrho$,
+$\lev(e^*_a)=2\varrho-a$. The \emph{frame} is $\fr{a}=e_a$ for $a<\varrho$ and $\fr{\varrho}=z$; we write $\mathfrak f$ for
+the matrix with columns $\fr{0},\dots,\fr{\varrho}$, so that $g\mathfrak f$ has the columns $g\fr{a}$ and
+$\mathfrak f x=\sum_a x_a\fr{a}$, and $X=\spanE(e_0,\dots,e_{\varrho-1})$. The subgroups of $\GT{T}$ are: $\UT{T}$,
+the $g$ with $g_{il}=\delta_{il}$ whenever $\lev(l)\le\lev(i)$; $\UoT{T}$, the $g\in\UT{T}$ with
+$g\mathfrak f=\mathfrak f$; $\HT{T}$, the $g$ fixing all $e_a$, $e^*_a$ and $z$; and the Bessel subgroup $\ST{T}$,
+the $g$ with $g(i,\fr{a})=\delta_{i,\fr{a}}$ whenever $\lev(i)\ge a$. Then $\UT{T}$ and $\HT{T}$ lie in $\ST{T}$, and
+$\ST{T}$ normalizes $\UT{T}$. For $g\in\GT{T}$, $\sd{g}=\sum_{a<\varrho}g(\fr{a},\fr{a+1})$, the frame matrix is
+$\fm{g}=(g(\fr{a},\fr{b}))_{a,b}$, and $\ZT{T}{g}=(h_T(\fr{a},g\fr{b}))_{a,b}$; $\lmin{l}{Z}$ is the leading
+principal minor of order $l$ of a square matrix $Z$. On $\UT{T}$ the map $\fm{\cdot}$ is multiplicative with
+upper unitriangular values, and $\fm{g}=1$ exactly for $g\in\UoT{T}$.
+\item\label{r:real} \emph{At the complex numbers.} For $y\in\Gone{\fs}$, $\|y\|$ is the operator norm of its
+matrix on the Euclidean space $\CC^{\Ix{\fs}}$, the vectors $y^{-1}\fr{a}$ are its \emph{frame vectors},
+$\bsize{y}=\inf_{s\in\ST{\Trg{\fs}{1}}}(\|sy\|+1)$, and $\Zr{y}=\ZT{\Trg{\fs}{1}}{y}$. For real $b$,
+$\InCut{y}{b}$ means $\bsize{y}\le b^{\,6\nn{\fs}+2}$, and for real $\rho$ the set $\frbox{\rho}$ consists of the
+$y$ with $\|y^{-1}\fr{a}\|\le\rho$ for all $a$.
+\item\label{r:haar} \emph{Haar measures.} $dy$ is the Haar measure of $\Gone{\fs}$ fixed by the background
+library, and also its product on $\prod_\tau\Gone{\fs}$. On the unipotent group $\UT{\Trg{\fs}{1}}$ of $\Gone{\fs}$
+the library fixes a measure $\muU{\fs}$ that is invariant under left and right translations and under
+inversion, and $\muq{\fs}=\beta\,dy$ for a chosen measurable $\beta\ge0$ with
+$\int\beta(uy)\,d\muU{\fs}(u)=1$ for all $y$. The map $(x,u)\mapsto ux$ carries $\muq{\fs}\times\muU{\fs}$ to $dy$; so
+$\int F\,d\muq{\fs}$ is the integral over the quotient by the unipotent group of a function $F\ge0$ that is
+invariant under it.
+\item\label{r:data} \emph{Filling data.} A record $S\in\Fill{E}{\fs}$ has, among its components: a prime number
+$\NS{S}$; two prime numbers $\qS{S}{0},\qS{S}{1}\ne\NS{S}$, with product $\gS{S}$; a finite idele $\piS{S}\in\hO$
+with $\piS{S}\,\cj{\piS{S}}=\NS{S}$; an integer $\vpS{S}$ of $E$ that generates the different, with
+$\cj{\vpS{S}}=-\vpS{S}$; a real number $\bS{S}$; for $i\in\{0,1\}$ a set $\ChS{S}{i}$ of $\ninf{E}$ finite places of
+$E$ of norm $\qS{S}{i}$, the \emph{chosen places}, pairwise distinct, none the conjugate of another; and for
+every infinite place $\tau$ a Bessel system \ref{r:bessel}. For $r\in\hO$, $\gS{S}$ divides $r$ if and only if
+$r$ and $\cj{r}$ vanish modulo every chosen place. Among the conditions: $\varrho\ge10^5$;
+$1000\,(2\varrho+2)^9\le\kk{\fs}\le\ninf{E}$; $\ninf{E}\le\bS{S}/1000$; $\varrho+1\le\bS{S}$; and
+$\bS{S}^{10}\le\qS{S}{i}\le\bS{S}^{11}$.
+\item\label{r:groups} \emph{Groups and coordinates.} $\Trat{S}{R}=\Trg{\fs}{\NS{S}}$ over $R$ and
+$\GS{S}{R}=\GT{\Trat{S}{R}}$. The lattice basis $\latB{S}$ is the matrix over $\AEf$ that is the identity on the
+$e_a$ and $e^*_a$ and has the columns $x_i$ $(i\ne k_0)$, $x_{k_0}/\cj{\piS{S}}+z/\NS{S}$ and $z$ on the middle
+block; in this basis the form has the Gram matrix $\JT{\Tlat{S}{\AEf}}$, where $\Tlat{S}{R}$ has diagonal entries $1$
+at $i\ne k_0$, $0$ at $k_0$, $-\NS{S}$ at $z$, and entries $-1$ at $(k_0,z)$ and $(z,k_0)$. $\GFin{S}=\GT{\Tlat{S}{\AEf}}$;
+$\KS{S}$ is its subgroup of the integral elements with integral inverse; $\GRes{S}=\prod_{i}\prod_{w\in\ChS{S}{i}}\GL_{\Ix{\fs}}(\Fw{w})$,
+with $\Fw{w}$ the residue field at $w$; $\redS{S}\colon\KS{S}\to\GRes{S}$ is the reduction of entries modulo the
+chosen places, $\KgS{S}$ its kernel, and $\redim{S}{A}=\redS{S}(A\cap\KS{S})$ for a subgroup $A$ of $\GFin{S}$. The maps
+$\rfin{S}\colon\GS{S}{E}\to\GFin{S}$, $\gamma\mapsto\latB{S}^{-1}\gamma\,\latB{S}$, and
+$\rinf{S}\colon\GS{S}{E}\to\prod_\tau\Gone{\fs}$, $(\rinf{S}(\gamma)_\tau)_{il}=(\gamma_{il})_\tau\,\bscale{S}{\tau}{l}/\bscale{S}{\tau}{i}$,
+are homomorphisms, with the scales of \ref{r:const}; $\rinf{S}$ maps $\UT{\Trat{S}{E}}$, $\UoT{\Trat{S}{E}}$,
+$\ST{\Trat{S}{E}}$ into the groups of the same name of $\Gone{\fs}$. $\Cl{S}$ is the finite set of double cosets
+of the finite adelic points of the unitary group of $X_0=\spanE(x_i)$ by its rational points and the level of the
+record; every class $c$ has a fixed representative $\tilde c$ (a unitary matrix on $\AEf^{\kappa}$), and
+$\clB{S}{c}=\operatorname{diag}(1,\tilde c,1,1)\,\latB{S}$ (blocks $e$, $\kappa$, $z$, $e^*$), $\clC{S}{c}=\clB{S}{c}^{-1}$,
+$\clCX{S}{c}=\mbc{\fs}{\piS{S}}\,\tilde c^{-1}$, where $\mbc{\fs}{\piS{S}}$ is the matrix with rows $\Mx{\fs}$ and
+columns $\kappa$ that expresses the $x_i$ in the middle part of the lattice basis; $\hc{S}{c}\in\GFin{S}$ is the
+image of $\tilde c$. For $c,c'\in\Cl{S}$ and $\gamma\in\GS{S}{E}$ the \emph{position} is
+$\pos{S}{c}{c'}{\gamma}=\hc{S}{c}^{-1}\rfin{S}(\gamma)\hc{S}{c'}=\clB{S}{c}^{-1}\gamma\,\clB{S}{c'}\in\GFin{S}$;
+for $s\in\GRes{S}$, $\terms{S}{c}{s}{c'}$ is the set of the $\gamma$ with $\pos{S}{c}{c'}{\gamma}\in\KS{S}$ of
+reduction $s$ (the \emph{terms over} $(c,s,c')$);
+$\clU{S}{c}=\{u\in\UT{\Trat{S}{E}}:\pos{S}{c}{c}{u}\in\KgS{S}\}$ and $\clUo{S}{c}=\clU{S}{c}\cap\UoT{\Trat{S}{E}}$.
+$\GS{S}{E}$ is countable.
+\item\label{r:char} \emph{Characters and reductions.} $\gid{S}$ is the idele of $\gS{S}$; $\sdc{S}$ is the
+additive character $x\mapsto\psi_f(-x/\vpS{S})$ of $\AEf$, $\psi_f$ the standard character; and
+$\uchar{S}{u}=\sdc{S}\bigl(\gid{S}^{-1}\sd{u}\bigr)$ for $u\in\GFin{S}$. For a chosen place $w$ and
+$\epsilon\in\{0,1\}$, $\rag{S}{(w,\epsilon)}\colon\hO\to\Fw{w}$ is the reduction modulo $w$, preceded by the
+conjugation if $\epsilon=1$; $\ioia{S}{\epsilon}$ is the automorphism of $\GL_{\Ix{\fs}}(\Fw{w})$ that is the
+identity if $\epsilon=0$ and $s\mapsto J^{-1}(s^{-1})^{\mathsf T}J$, $J=\JT{\Tlat{S}{\Fw{w}}}$, if $\epsilon=1$. For
+$w\in\ChS{S}{i}$ and $\mathbf d=(\epsilon,v)$ with $0\ne v\in\Fw{w}^{\varrho+1}$, $\vfix{S}{w}{\mathbf d}$ is the subgroup
+of the $s\in\GRes{S}$ such that $\ioia{S}{\epsilon}(s_{i,w})$ fixes $\mathfrak f v$. For a natural number $x$,
+$\FixN{s}{x}$ means: there is a finite set $\sA$ of pairs $(w,\epsilon)$ such that $x$ is at most the product of
+the norms of the places $w$ over $(w,\epsilon)\in\sA$, and for each of them some $v\ne0$ with
+$s\in\vfix{S}{w}{(\epsilon,v)}$. An element $s\in\GRes{S}$ \emph{agrees}, $\Agr{S}{s}$, if
+$\uchar{S}{u}=\uchar{S}{u'}$ for all $u,u'\in\KS{S}\cap\UT{\Tlat{S}{\AEf}}$ with $\redS{S}(u)\,s=s\,\redS{S}(u')$.
+A set $\Xi\subseteq\GS{S}{E}$ is \emph{stable}, $\IsStab{S}{\Xi}$, if $u^{-1}\gamma u'\in\Xi\Leftrightarrow\gamma\in\Xi$
+for all $u,u'\in\UT{\Trat{S}{E}}$ and all $\gamma$.
+\item\label{r:links} \emph{Frames and links.} For $\gamma\in\GT{T}$: $\fpair{\gamma}$ is the matrix with the
+columns $\fr{a}$ and $\gamma\fr{a}$ ($0\le a\le\varrho$, indexed by $(1,a)$ and $(2,a)$), $\ifpair{\gamma}$ its
+submatrix of the columns with $a<\varrho$; $\lmat{\gamma}$ is the matrix of $t\mapsto(\Mid t,\Mid\gamma^{-1}t)$,
+where $\Mid t\in R^{\Mx{\fs}}$ is the middle part of $t\in R^{\Ix{\fs}}$; the \emph{link} is
+$\link{\gamma}=\lmat{\gamma}\{t:\ifpair{\gamma}^{*}\JT{T}t=0\}\subseteq R^{\Mx{\fs}\sqcup\Mx{\fs}}$; $\zfp{T}$ is the
+matrix with two rows that sends $(p,p')$ to $((Tp)_z,(Tp')_z)$; and $\clink{\gamma}{\gamma'}\subseteq R^{\kappa}$
+consists of the $\kappa$-parts of the first components of the $(p,p')\in\link{\gamma}\cap\link{\gamma'}$ with
+$\zfp{T}(p,p')=0$. For filling data, $\ratG{S}=\JT{\Trat{S}{E}}$,
+$\lform{S}=\operatorname{diag}(\Trat{S}{E},-\Trat{S}{E})$, $\Zf{S}{\gamma}=\ZT{\Trat{S}{E}}{\gamma}$,
+$\tdisc{S}{\gamma}=\fdisc{\NS{S}}{\Zf{S}{\gamma}}$ with
+$\fdisc{N}{Z}=\det Z\,\cj{\det Z}-N^2\,\lmin{\varrho}{Z}\,\cj{\lmin{\varrho}{Z}}$, and
+$\tdnorm{S}{\gamma}=\prod_\tau|\tdisc{S}{\gamma}_\tau|$. For $j\le\varrho+1$, $\IsNF{j}{\gamma}$ (normal form of
+level $j$) means: there is $c_0\in R$ with $c_0\cj{c_0}=1$ such that for every $a$ with $j\le a\le\varrho$ there
+are $x,y\in R^{\varrho+1}$ with $\mathfrak f x=\gamma\mathfrak f y$, $x_a=c_0$, $y_a=1$ and $x_b=y_b=0$ for $b>a$; and
+$\HasLev{S}{j}{\gamma}$ means $\IsNF{j}{\gamma}$, $\lmin{j}{\Zf{S}{\gamma}}\ne0$, and $j=\varrho+1$ exactly if
+$\tdisc{S}{\gamma}\ne0$. $\Cong{S}{c}{c'}{\gamma}{\gamma'}$ means that $\gamma,\gamma'\in\terms{S}{c}{s}{c'}$ for one
+$s$. For a matrix $M$ over $E$, $\fadm{M}$ is the same matrix over $\AEf$. For matrices $L,H$ over $\AEf$ with
+$LH=1$ and a subspace $V$ of the space $E^{\Omega}$ on which $H$ acts, $\slb{H}{V}$ is a chosen matrix $\fadm{y}\,a$,
+$y$ a basis matrix of $V$ and $a$ an invertible matrix over $\AEf$, such that $H\,\slb{H}{V}$ is integral with an
+integral left inverse, and $\sld{H}{V}=\sqrt{\gix{\det(\slb{H}{V}^{*}\slb{H}{V})}}$. Finally
+$\cw{S}{i}=\#\redim{S}{\ST{\Tlat{S}{\AEf}}}\cdot\#\Cl{S}\cdot\NS{S}^{-\kk{\fs}\ninf{E}}\,(2\,\tailS{S}^2)^{i}$.
+\item\label{r:bessel} \emph{Bessel systems.} The Bessel system of $S$ at $\tau$ provides a finite non-empty set
+$\Isys{S}{\tau}$, a real number $\deg_\tau(S)>0$ and continuous functions
+$\Wsys{\full}{S}{\tau},\Wsys{\cut}{S}{\tau}\colon\Gone{\fs}\to\CC^{\Isys{S}{\tau}}$, with properties of which we
+use those of Input~(S7). $\Bc{S}=\prod_\tau\Isys{S}{\tau}$; for $y\in\prod_\tau\Gone{\fs}$, $i\in\Bc{S}$ and a side
+$\sigma$, $\besfn{\sigma}{S}{y}{i}=\prod_\tau\Wsys{\sigma}{S}{\tau}(y_\tau)_{i_\tau}$, and for $\gamma\in\GS{S}{E}$ the
+\emph{kernel} $\besker{\sigma}{S}{\gamma}{y}\in\CC^{\Bc{S}\times\Bc{S}}$ has the coordinates
+$\besfn{\sigma}{S}{y}{i}\,\cj{\besfn{\sigma}{S}{\rinf{S}(\gamma)^{-1}y}{j}}$, with the Euclidean norm.
+\item\label{r:cutoff} \emph{Boxes, cutoffs, amplitudes.} $\bxs{S}=\bS{S}^{2\nn{\fs}^2}$; $\bxp{S}$ is the set of
+the $y\in\prod_\tau\Gone{\fs}$ with $y_\tau\in\frbox{\bxs{S}}$ and $\InCut{y_\tau}{\bS{S}}$ for all $\tau$; and
+$\IsNr{S}{\gamma}$ if some $y\in\bxp{S}$ has $\rinf{S}(\gamma)^{-1}y\in\bxp{S}$. A function
+$\omega\colon\prod_\tau\Gone{\fs}\to[0,\infty]$ is a \emph{box partition} for $c\in\Cl{S}$, $\IsBP{S}{c}{\omega}$, if:
+(i) $\omega$ is measurable; (ii) if $\omega(y)\ne0$ and $\InCut{y_\tau}{\bS{S}}$ then $y_\tau\in\frbox{\bxs{S}}$;
+(iii) for every $y$ and every $\alpha\colon\clU{S}{c}\to[0,\infty]$ with
+$\sum_{u\in\clUo{S}{c}}\alpha(u\gamma)=1$ for all $\gamma$, one has
+$\sum_{\gamma\in\clU{S}{c}}\alpha(\gamma)\,\omega(\rinf{S}(\gamma)y)=1$; (iv) $\omega\le1$; (v) $\omega(sy)=\omega(y)$
+whenever every $s_\tau$ lies in the group generated by $\UoT{\Trg{\fs}{1}}$ and $\HT{\Trg{\fs}{1}}$. The cutoff is
+$\cutoff{S}{c}=\bfl{S}{c}\cdot\omS{S}{c}$, where $\bfl{S}{c}$ is a chosen measurable function with
+$\sum_{u\in\clUo{S}{c}}\bfl{S}{c}(\rinf{S}(u)y)=1$ for all $y$ (Input~(S6)) and $\omS{S}{c}$ is a chosen box
+partition for $c$ if there is one (and an arbitrary function otherwise). The amplitudes are
+\[\amp{\sigma}{S}{c}{c'}{\gamma}=\int\cutoff{S}{c}(y)\,\cutoff{S}{c'}\bigl(\rinf{S}(\gamma)^{-1}y\bigr)\,\besker{\sigma}{S}{\gamma}{y}\,dy,\]
+\[\ampsum{\sigma}{S}{\Xi}{c}{s}{c'}=\sum_{\gamma\in\Xi\cap\terms{S}{c}{s}{c'}}\amp{\sigma}{S}{c}{c'}{\gamma},\]
+and $\ampabs{\sigma}{S}{c}{c'}{\gamma}\in[0,\infty]$ is the first integral with the kernel replaced by its norm. In the
+first integral a value $\infty$ of the weight is read as $0$; by Lemma~\ref{l:sumone}(a) the weight is at most $1$.
+\item\label{r:const} \emph{Constants.} $\kapS{S}{\tau}=\gS{S}\,\vpS{S}_\tau/(2\pi i)$, a non-zero real number.
+The scales are $\bscale{S}{\tau}{e_a}=\kapS{S}{\tau}^{\varrho-a}/\sqrt{\NS{S}}$, $\bscale{S}{\tau}{x_i}=1$,
+$\bscale{S}{\tau}{z}=1/\sqrt{\NS{S}}$, $\bscale{S}{\tau}{e^*_a}=\bscale{S}{\tau}{e_a}^{-1}$; so
+$\bscale{S}{\tau}{\fr{a}}=\kapS{S}{\tau}^{\varrho-a}/\sqrt{\NS{S}}$ for $a\le\varrho$. Further
+$\fscale{S}{\tau}{a}=\kapS{S}{\tau}^{2(\varrho-a)}/\NS{S}$,
+$\fsprod{S}=\prod_\tau\prod_{a\le\varrho}\fscale{S}{\tau}{a}^{\kk{\fs}+2(\varrho-a)}$, $\tailS{S}=\bS{S}^{\kk{\fs}\ninf{E}/4}$, and,
+with $k=\kk{\fs}$, $f=\ninf{E}$ and $\volO{E}=2^{f}/\sqrt{|d_E|}$,
+\[\ucov{S}=\Bigl(\frac{\gS{S}^{\varrho(2\varrho+2k+1)}}{\NS{S}^{k}}\Bigr)^{f}\cdot\frac{|d_E|^{\varrho/4}}{\volO{E}^{\varrho(\varrho+k)}\ \fsprod{S}}\ >0.\]
+\item\label{r:adm} \emph{Admissibility.} The filling data $S$ are admissible if a list of conditions of Note~S
+holds, of which this note uses: $|\vpS{S}_\tau|\le\bS{S}$ and $1\le|\kapS{S}{\tau}|\le\bS{S}^{23}$ for all $\tau$;
+$\NS{S}\le\bS{S}^{60\nn{\fs}}$; $\#\Bc{S}\le\bS{S}^{2\kk{\fs}\ninf{E}}$; and that the level of the record is the
+preimage of $\KgS{S}$, which enters through Input~(S3).
+\end{enumerate}
+
+\statement{ana}{\textbf{Inputs from Note~S} (of this unit; \emph{The filling data: Bessel subgroups, links of
+frames, Siegel's lemma and strong approximation}). $S\in\Fill{E}{\fs}$ throughout; $c,c',d\in\Cl{S}$.
+
+\textbf{(S1)} \emph{Levels and characters.} $\KgS{S}$ is the set of the $k\in\KS{S}$ with $\gid{S}^{-1}(k-1)$
+integral. $\JT{\Tlat{S}{\AEf}}$ is hermitian, integral with integral inverse. For $a\in\AEf$:
+$\sdc{S}(ra)=1$ for all $r\in\hO$ if and only if $a\in\hO$. For $r\in\hO$: $\gid{S}^{-1}r\in\hO$ if and only if
+$\rag{S}{(w,\epsilon)}(r)=0$ for all chosen $w$ and both $\epsilon$. Every family of residues
+$(t_{w,\epsilon})$, $t_{w,\epsilon}\in\Fw{w}$, is the family of the $\rag{S}{(w,\epsilon)}(r)$ of some $r\in\hO$. For
+$k\in\KS{S}$, a chosen place $w\in\ChS{S}{i}$ and $\epsilon\in\{0,1\}$: the entrywise image of $k$ under
+$\rag{S}{(w,\epsilon)}$ is $\ioia{S}{\epsilon}(\redS{S}(k)_{i,w})$. The residue field of $w\in\ChS{S}{i}$ has
+$\qS{S}{i}$ elements.
+
+\textbf{(S2)} \emph{Eichler elements.} Let $A$ carry an element $\tau_0$ with $\tau_0+\cj{\tau_0}=1$, and let $T$
+be an $\fs$-form over $A$ with $\JT{T}$ hermitian and invertible. Every linear form on $A^{\Ix{\fs}}$ is
+$h_T(v,\cdot)$ for some $v$. Let $a\le\varrho$, $j\in A^{\varrho+1}$ with $j_b=0$ for $b\ge a$, $r\in A$, and let
+$\mu=h_T(v,\cdot)$ vanish at $\fr{b}$ for all $b<a$. Then there is $u\in\UT{T}$ with
+$\sd{u}=r\sum_{b=1}^{\varrho}\mu(\fr{b})\,j_{b-1}$ whose matrix is
+$1+\xi\,v^{*}\JT{T}-(v+\varsigma\xi)\,\xi^{*}\JT{T}$, with $\xi=r\,\mathfrak f j$ and $\varsigma=\tau_0\,h_T(v,v)$.
+
+\textbf{(S3)} \emph{Positions and terms.} $\clC{S}{c}^{*}\,\JT{\Tlat{S}{\AEf}}\,\clC{S}{c}=\fadm{\ratG{S}}$, and
+$\pos{S}{c}{c'}{\gamma}\,\mathfrak f=\clC{S}{c}\,\fadm{\gamma\mathfrak f}$. If $\gamma\in\terms{S}{c}{s}{c'}$ and
+$\gamma'\in\terms{S}{c'}{s'}{d}$ then $\gamma\gamma'\in\terms{S}{c}{ss'}{d}$ and
+$\gamma^{-1}\in\terms{S}{c'}{s^{-1}}{c}$; for such $\gamma$ the matrix $\pos{S}{c}{c'}{\gamma}$ is integral and all
+entries of $\Zf{S}{\gamma}$ are integral over $\mathbb Z$. Let $S$ be admissible. If $\gamma\in\ST{\Trat{S}{E}}$ and
+$\pos{S}{c}{d}{\gamma}\in\KgS{S}$, then $c=d$ and $\gamma\in\clU{S}{c}$. If $\gamma\in\terms{S}{c}{s}{c'}$,
+$\gamma'\in\terms{S}{c}{s}{d}$ and $\gamma\mathfrak f=\gamma'\mathfrak f$, then $c'=d$ and $\gamma^{-1}\gamma'\in\clUo{S}{c'}$.
+
+\textbf{(S4)} \emph{Characters of the unipotent group.} For $\gamma\in\UT{\Trat{S}{E}}$, every side $\sigma$ and
+all $y$, $i$: $\besfn{\sigma}{S}{\rinf{S}(\gamma)y}{i}=\uchar{S}{\rfin{S}(\gamma)}^{-1}\,\besfn{\sigma}{S}{y}{i}$. If
+$u,v\in\UT{\Tlat{S}{\AEf}}$ and $u^{-1}\hc{S}{c}^{-1}v\,\hc{S}{c}\in\KgS{S}$, then $\uchar{S}{v}=\uchar{S}{u}$; this
+holds with any element of the image of the finite adelic unitary group of $X_0$ in the place of $\hc{S}{c}$. For
+every $u\in\UT{\Tlat{S}{\AEf}}$ there is $u_0\in\UT{\Trat{S}{E}}$ with $u^{-1}\pos{S}{c}{c}{u_0}\in\KgS{S}$ and
+$\uchar{S}{\rfin{S}(u_0)}=\uchar{S}{u}$.
+
+\textbf{(S5)} \emph{Frames.} For $\gamma\in\GT{T}$ and $t\in R^{\Ix{\fs}}$: $\ifpair{\gamma}^{*}\JT{T}t=0$ if and only if
+the $e^*$-coordinates of $t$ and of $\gamma^{-1}t$ vanish. For $\gamma\in\GS{S}{E}$ and $p\in E^{\Mx{\fs}\sqcup\Mx{\fs}}$:
+$p\in\link{\gamma}$ if and only if $q^{*}\lform{S}\,p=0$ for all $q\in\link{\gamma}$. If $\IsNF{j}{\gamma}$ then
+$\IsNF{j}{\gamma^{-1}}$, and for every $y\in R^{\varrho+1}$ there are $x,y'$ with $\mathfrak f x=\gamma\mathfrak f y'$ and
+$y'_a=y_a$ for $a\ge j$. If $\gamma\in\GS{S}{E}$ and $\mathfrak f x=\gamma\mathfrak f y$, then
+$\Zf{S}{\gamma}\,y=-\NS{S}\,x_\varrho\,\epsilon_\varrho$ with $\epsilon_\varrho$ the last unit vector. If
+$v\in E^{\Mx{\fs}}$ has $v_z=0$ and $v^{*}\Trat{S}{E}\,v=0$, then $v=0$. For $s,s'\in\GT{T}$:
+$(s^{-1}s')\mathfrak f=\mathfrak f$ if and only if $s\mathfrak f=s'\mathfrak f$. And
+$\Zr{\rinf{S}(\gamma)_\tau}_{ab}=\kapS{S}{\tau}^{\varrho-a}\kapS{S}{\tau}^{\varrho-b}\,\NS{S}^{-1}\,(\Zf{S}{\gamma}_{ab})_\tau$.
+
+\textbf{(S6)} \emph{Discreteness.} For a finite family of indices and a compact set $\mathcal C$ of families of
+complex matrices, only finitely many points of $\mathcal C$ are of the form
+$(\text{the submatrix of }\rinf{S}(u)_\tau\text{ on these indices})_\tau$ with $u\in\clU{S}{c}$. For every subgroup
+$\Gamma$ of $\clU{S}{c}$ there is a measurable $\beta\colon\prod_\tau\Gone{\fs}\to[0,\infty]$ with
+$\sum_{u\in\Gamma}\beta(\rinf{S}(u)y)=1$ for all $y$.
+
+\textbf{(S7)} \emph{Bessel systems.} For both sides $t$, all $n\in\UT{\Trg{\fs}{1}}$ and $y\in\Gone{\fs}$:
+$\Wsys{t}{S}{\tau}(ny)=e^{\sd{n}-\cj{\sd{n}}}\,\Wsys{t}{S}{\tau}(y)$. There are a measurable
+$A_\tau\colon\Gone{\fs}\to[0,\infty]$, invariant under left translation by $\UT{\Trg{\fs}{1}}$, and a finite measure
+$m_\tau$ on $\Gone{\fs}$ such that, with $\theta_\tau(y)=1$ if $\Wsys{\full}{S}{\tau}(y)=\Wsys{\cut}{S}{\tau}(y)$ and
+$\theta_\tau(y)=\bS{S}^{3\rr{\fs}^3\ninf{E}}$ otherwise:
+$\theta_\tau(y)\,\|\Wsys{t}{S}{\tau}(y)\|\le A_\tau(y)\le m_\tau\{g:\InCut{yg}{\bS{S}}\}$ for both sides $t$ and all $y$,
+and $m_\tau(\Gone{\fs})\int A_\tau\,d\muq{\fs}\le\bS{S}^{2\rr{\fs}^3}\,\#\Isys{S}{\tau}$. Moreover
+$\|\besker{\sigma}{S}{\gamma}{y}\|=\prod_\tau\|\Wsys{\sigma}{S}{\tau}(y_\tau)\|\cdot\prod_\tau\|\Wsys{\sigma}{S}{\tau}((\rinf{S}(\gamma)^{-1}y)_\tau)\|$,
+$y\mapsto\besker{\sigma}{S}{\gamma}{y}$ is continuous, and
+$\|\amp{\sigma}{S}{c}{c'}{\gamma}\|\le\ampabs{\sigma}{S}{c}{c'}{\gamma}$.}
+
+\statement{ana}{\textbf{Inputs from other units.} \textbf{(J1)}, unit~132 (the real place). The maps $y\mapsto y^{-1}\fr{a}$ and $y\mapsto\bsize{y}$ are continuous on $\Gone{\fs}$. For $y\in\Gone{\fs}$:
+$\|y^{-1}\fr{a}\|\le\|y\|$; if $s$ lies in the group generated by $\UoT{\Trg{\fs}{1}}$ and $\HT{\Trg{\fs}{1}}$ then
+$(sy)^{-1}\fr{a}=y^{-1}\fr{a}$; if $s\in\UT{\Trg{\fs}{1}}$ then $y^{-1}\fr{a}=\sum_b\fm{s}_{ba}\,(sy)^{-1}\fr{b}$; if
+$s\in\ST{\Trg{\fs}{1}}$ then $\bsize{sy}=\bsize{y}$; there is $u\in\UT{\Trg{\fs}{1}}$ with $\|uy\|\le\bsize{y}$; for
+complex numbers $c_a$, an index $i\in\Ix{\fs}$ and $s\in\Gone{\fs}$,
+$\bigl|\sum_a c_a\,s(i,\fr{a})\bigr|\le\|sy\|\cdot\bigl\|\sum_a c_a\,y^{-1}\fr{a}\bigr\|$, and likewise for the sum
+over $a<\varrho$ only; $|\langle v,\JT{\Trg{\fs}{1}}w\rangle|\le\|v\|\,\|w\|$; and for $x,y'\in\Gone{\fs}$,
+$\Zr{x}_{ab}=\langle y'^{-1}\fr{a},\,\JT{\Trg{\fs}{1}}\,(x^{-1}y')^{-1}\fr{b}\rangle$. The coordinates of
+$\Wsys{\full}{S}{\tau}$ are orthonormal: $\int\Wsys{\full}{S}{\tau}(y)_i\,\cj{\Wsys{\full}{S}{\tau}(y)_j}\,d\muq{\fs}(y)=\delta_{ij}$.
+
+\textbf{(J2)}, units 113 and 57 (generalized index). $\gix{\cdot}$ is multiplicative on $\AEf$, zero on
+non-units, positive on units and invariant under conjugation; $\gix{a}=\#\hO/a\hO$ for a unit $a\in\hO$;
+$\gix{x}=|\NmE(x)|=\prod_\tau|x_\tau|^2$ for $x\in E$; in particular $\gix{n}=n^{2\ninf{E}}$ for a natural number
+$n$. For an invertible integral matrix $M$ over $\AEf$ on a finite set $\Omega$, the index of $M\hO^{\Omega}$ in
+$\hO^{\Omega}$ is $\gix{\det M}$ (unit~57).
+
+\textbf{(J3)}, unit~114 (packing). In a real normed space $V$ of finite dimension, a set of points that are
+pairwise at distance at least $m>0$ and of norm at most $r\ge0$ has at most $(1+2r/m)^{\dim V}$ elements.
+
+\textbf{(J4)}, unit~121. An algebraic integer $x$ of a number field with $|x_\tau|<1$ at all infinite places
+$\tau$ is $0$.
+
+\textbf{(J5)}, unit~112 (duality). Over a field $F$, let $P,P'$ be matrices with the same finite set of rows
+and the same finite set of columns, $\mathfrak a,\mathfrak a'$ sets of columns and $X,Y$ vectors. If every linear form $m$ that
+kills the columns of $P$ in $\mathfrak a$ and the columns of $P'$ in $\mathfrak a'$ satisfies $m(PX)=m(P'Y)$, then
+$Px=P'y$ for some $x$ equal to $X$ outside $\mathfrak a$ and some $y$ equal to $Y$ outside $\mathfrak a'$.
+
+\textbf{(J6)}, unit~123. If $E$ is stably unramified, the integers of $E$ contain $\omega_0$ with
+$\omega_0+\cj{\omega_0}=1$.
+
+\noindent The catalogue of the write-up classes (J2) to (J6) as elementary and gives no reference for them.}
+
+\subhead{Definitions of this note.} They are stated where they are first needed: the link metric and the link
+discriminant (Definition~\ref{d:linkmetric}), integral lifts (Definition~\ref{d:lifts}), and the indices, gauges
+and weights of the later estimates (Definitions \ref{d:pad} to \ref{d:weights}).
+
+\sect{A positive form on links; class coordinates}{s:links}
+The link of $\gamma$ is a Lagrangian subspace for the indefinite form $\lform{S}$ (Input~(S5)). To measure
+lattices in links one needs a positive form; it is obtained by changing the sign of $\lform{S}$ on the second
+copy and correcting the two $z$-directions.
+
+\begin{definition}[link metric, link discriminant]\label{d:linkmetric}
+Let $S\in\Fill{E}{\fs}$ and write $T=\Trat{S}{E}$. The \emph{link metric} is the matrix over $E$ on
+$\Mx{\fs}\sqcup\Mx{\fs}$
+\[\lmet{S}=\tfrac12\operatorname{diag}(T,T)+\NS{S}^{-1}\,\zfp{T}^{*}\,\zfp{T}.\]
+For a finite set $\Omega$, a matrix $v$ over $E$ with rows $\Mx{\fs}\sqcup\Mx{\fs}$ and columns $\Omega$, and an
+invertible matrix $e$ over $\AEf$ on $\Omega$, the \emph{link discriminant} is
+\[\ldsq{S}{v}{e}=\bigl|\NmE\det\bigl(v^{*}\,\lmet{S}\,v\bigr)\bigr|\cdot\gix{\det e}^{2},\]
+the squared discriminant, for the link metric, of the lattice with the adelic basis $\fadm{v}\,e$.
+\end{definition}
+\leanline{\lean{linkMetric}\sep\lean{linkDiscSq}}
+
+\begin{definition}[integral lifts]\label{d:lifts}
+Let $S\in\Fill{E}{\fs}$, $c\in\Cl{S}$, $\gamma\in\GS{S}{E}$, let $\Omega'$ be a set and $m$ a matrix over $\AEf$ with
+rows $\Mx{\fs}\sqcup\Mx{\fs}$ and columns $\Omega'$. We write $\HIL{c}{\gamma}{m}$, and say that $m$ \emph{has
+integral lifts} for $c$ and $\gamma$, if there are a finite set $\Omega$, a matrix~$t$ over $E$ with rows $\Ix{\fs}$
+and columns $\Omega$, and a matrix $w$ over $\AEf$ with rows $\Omega$ and columns $\Omega'$, such that
+\[\ifpair{\gamma}^{*}\,\ratG{S}\,t=0,\qquad\clC{S}{c}\,\fadm{t}\,w\ \text{ is integral},\qquad\fadm{\lmat{\gamma}\,t}\,w=m.\]
+So the columns of $m$ are the images in the link of vectors of the lattice of the class $c$ that are adelic
+combinations of rational vectors orthogonal to $X$ and to $\gamma X$.
+\end{definition}
+\leanline{\lean{HasIntegralLifts}}
+
+\begin{lemma}[class coordinates and frames]\label{l:formulas}
+Let $S\in\Fill{E}{\fs}$, $c,c'\in\Cl{S}$ and $\gamma\in\GS{S}{E}$.
+\begin{enumerate}[label=(\alph*),itemsep=1pt]
+\item For $k\in\GT{T}$, the two rows $(1,\varrho)$ and $(2,\varrho)$ of $\fpair{k}^{*}\JT{T}$ form the matrix
+$\zfp{T}\,\lmat{k}$.
+\item $\clC{S}{c}$ is block diagonal for the blocks $e$, middle, $e^*$: the identity on the outer blocks, and on
+the middle block the matrix whose columns at $\kappa$ are those of $\clCX{S}{c}$ and whose column at $z$ is the
+unit vector at $z$.
+\item $\clCX{S}{c}^{*}\ \Tlat{S}{\AEf}\ \clCX{S}{c}=1$.
+\item For matrices $t$, $t'$ over $E$ with rows $\Ix{\fs}$ and any sets of columns,
+\[(\clC{S}{c}\fadm{t})^{*}\,\JT{\Tlat{S}{\AEf}}\,(\clC{S}{c}\fadm{t'})=\fadm{t^{*}\,\ratG{S}\,t'}.\]
+\item $\clC{S}{c}\,\fadm{\fpair{\gamma}}=\fpair{k}$ and $\clC{S}{c}\,\fadm{\ifpair{\gamma}}=\ifpair{k}$ for
+$k=\pos{S}{c}{c'}{\gamma}$.
+\item If $k\in\GT{T}$ is integral over the subring $O$ of $R$, then so is $\fpair{k}$.
+\item If a matrix $v$ over a field, with a finite set $\Omega'$ of rows and a finite set $\Omega$ of columns,
+has a left inverse, then $\#\Omega$ is the dimension of the span of its columns.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) The row of $\fpair{k}^{*}\JT{T}$ at $(1,\varrho)$ is the linear form $t\mapsto h_T(z,t)=(T\Mid t)_z$, and the
+row at $(2,\varrho)$ is $t\mapsto h_T(kz,t)=h_T(z,k^{-1}t)=(T\Mid k^{-1}t)_z$, because $k$ is unitary. These are the
+two rows of $\zfp{T}\lmat{k}$. (b) By \ref{r:groups}, $\clB{S}{c}$ is the product of two matrices that are the
+identity on the outer blocks, with middle blocks $\operatorname{diag}(\tilde c,1)$ and the middle block of
+$\latB{S}$. The inverse of the latter has the columns $\mbc{\fs}{\piS{S}}$ at $\kappa$ and the unit vector at $z$,
+since $z$ belongs to the lattice basis. Hence the middle block of $\clC{S}{c}=\clB{S}{c}^{-1}$ has the columns
+$\mbc{\fs}{\piS{S}}\tilde c^{-1}=\clCX{S}{c}$ at $\kappa$ and the unit vector at $z$. (c) Restrict the first
+identity of Input~(S3) to the rows and columns of $\kappa$ and use (b): the block of $\ratG{S}$ on $\kappa$ is $1$.
+(d) is the first identity of (S3) multiplied by $\fadm{t}^{*}$ and $\fadm{t'}$. (e) By (S3),
+$k\mathfrak f=\clC{S}{c}\fadm{\gamma\mathfrak f}$, and $\clC{S}{c}\mathfrak f=\mathfrak f$ by (b); omitting the columns of
+$z$ and $kz$ gives the second identity. (f) The entries of $\fpair{k}$ are entries of $1$ and of $k$. (g) The
+matrix is injective, so its rank is $\#\Omega$.
+\end{proof}
+\leanline{\lean{framePairlasteqzFormPairmul}\sep\lean{classCoordeqfromBlocks}\sep\lean{gramclassCoordX}\sep
+\lean{classCoordgram}\sep\lean{classCoordmulframePair}\sep\lean{classCoordmulisotropicFramePair}\sep
+\lean{isIntMatrixframePair}\sep\lean{cardeqfinrankcolSpan}}
+
+\begin{lemma}[the link is Lagrangian]\label{l:lagr}
+Let $S\in\Fill{E}{\fs}$ and $\gamma\in\GS{S}{E}$.
+\begin{enumerate}[label=(\alph*),itemsep=1pt]
+\item $\dim_E\link{\gamma}=\kk{\fs}+1$.
+\item If $v$ and $u$ are matrices over $E$ with rows $\Mx{\fs}\sqcup\Mx{\fs}$ and finite sets of columns
+$\Omega'$ and $\Omega$, whose columns all lie in $\link{\gamma}$, then $v^{*}\,\lform{S}\,u=0$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+By Input~(S5) the link is its own orthogonal for the hermitian form $\lform{S}$ on $E^{\Mx{\fs}\sqcup\Mx{\fs}}$;
+this is (b). The form is non-degenerate, because $\Trat{S}{E}=\operatorname{diag}(1,\dots,1,-\NS{S})$ is invertible.
+So the orthogonal of the link has dimension $2(\kk{\fs}+1)-\dim\link{\gamma}$, and (a) follows. (The formal proof
+applies the rank theorem to $p\mapsto v^{*}\lform{S}p$ for a basis matrix $v$ of the link.)
+\end{proof}
+\leanline{\lean{finranklink}\sep\lean{gramlinkFormeqzerooflelink}}
+
+\begin{lemma}[positivity of the link metric]\label{l:posdef}
+Let $S\in\Fill{E}{\fs}$.
+\begin{enumerate}[label=(\alph*),itemsep=1pt]
+\item For every infinite place $\tau$ of $E$ the image of $\lmet{S}$ under $x\mapsto x_\tau$ is positive
+definite.
+\item If a matrix $v$ over $E$ with rows $\Mx{\fs}\sqcup\Mx{\fs}$ and a finite set $\Omega'$ of columns has a left
+inverse, then $\det(v^{*}\,\lmet{S}\,v)\ne0$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) With $T=\Trat{S}{E}$, the matrix $\zfp{T}$ has the entry $-\NS{S}$ at the two positions (first row, first
+$z$) and (second row, second $z$) and zeros elsewhere, so $\zfp{T}^{*}\zfp{T}$ is diagonal with entries
+$\NS{S}^2$ at the two $z$ and $0$ elsewhere. Hence $\lmet{S}$ is the diagonal matrix with entries $\tfrac12$ at
+the indices of $\kappa$ and $-\tfrac12\NS{S}+\NS{S}=\tfrac12\NS{S}$ at the two $z$: rational and positive. (b)
+Under $x\mapsto x_\tau$ the matrix $v$ stays injective, so $v_\tau^{*}(\lmet{S})_\tau v_\tau$ is positive definite
+by (a), and its determinant $\det(v^{*}\lmet{S}v)_\tau$ is positive.
+\end{proof}
+\leanline{\lean{linkMetricposDef}\sep\lean{detgramlinkMetricnezero}}
+
+\begin{lemma}[products in two links]\label{l:gramlink}
+Let $S\in\Fill{E}{\fs}$, $\gamma,\gamma'\in\GS{S}{E}$, and let $t$, $t'$ be matrices over $E$ with rows $\Ix{\fs}$
+and sets of columns $\Omega$, $\Omega'$ such that $\ifpair{\gamma}^{*}\,\ratG{S}\,t=0$ and
+$\ifpair{\gamma'}^{*}\,\ratG{S}\,t'=0$. Then for all $\alpha,\alpha'\in E$, with $T=\Trat{S}{E}$,
+\[(\lmat{\gamma}t)^{*}\,\operatorname{diag}(\alpha T,-\alpha'T)\,(\lmat{\gamma'}t')
+=\alpha\,t^{*}\,\ratG{S}\,t'-\alpha'\,t^{*}\,\ratG{S}\,(\gamma\gamma'^{-1})\,t'.\]
+\end{lemma}
+\begin{proof}
+Let $t_i$ and $t'_l$ be columns of $t$ and $t'$. By Input~(S5) the $e^*$-coordinates of $t_i$, $\gamma^{-1}t_i$,
+$t'_l$ and $\gamma'^{-1}t'_l$ vanish, and for two vectors $v,w$ without $e^*$-coordinates
+$h_T(v,w)=(\Mid v)^{*}T\,\Mid w$. Since $\lmat{\gamma}t_i=(\Mid t_i,\Mid\gamma^{-1}t_i)$, the entry $(i,l)$ of the
+left side is $\alpha\,h_T(t_i,t'_l)-\alpha'\,h_T(\gamma^{-1}t_i,\gamma'^{-1}t'_l)$, and
+$h_T(\gamma^{-1}t_i,\gamma'^{-1}t'_l)=h_T(t_i,\gamma\gamma'^{-1}t'_l)$ because $\gamma$ is unitary.
+\end{proof}
+\leanline{\lean{gramlinkMatrixmul}}
+
+\begin{lemma}[a Liouville inequality for Gram determinants]\label{l:liouville}
+Let $E$ be stably unramified, let $\Omega$, $\Omega'$ be finite sets, $Q$ a matrix over $E$ on $\Omega'$ whose
+image $Q_\tau$ is positive definite for every infinite place $\tau$, let $a,b$ be matrices over $E$ with rows
+$\Omega'$ and columns $\Omega$ such that $\det(a^{*}Qb)\ne0$, and $v,v'$ invertible matrices over $\AEf$ on
+$\Omega$. Let $x\ge0$ be a real number such that $x\le\gix{\delta}$ whenever
+$\delta=\det\bigl(v^{*}\,\fadm{a^{*}Qb}\,v'\bigr)$ is a unit of $\AEf$. Then
+\[x^2\ \le\ \gix{\det v}^2\cdot\bigl|\NmE\det(a^{*}Qa)\bigr|\cdot\bigl|\NmE\det(b^{*}Qb)\bigr|\cdot\gix{\det v'}^2.\]
+\end{lemma}
+\begin{proof}
+$\delta=\cj{\det v}\cdot\det(a^{*}Qb)\cdot\det v'$ is a product of units, so $x\le\gix{\delta}$, and by (J2)
+$\gix{\delta}=\gix{\det v}\,|\NmE\det(a^{*}Qb)|\,\gix{\det v'}$ with $|\NmE\det(a^{*}Qb)|=\prod_\tau|\det(a^{*}Qb)_\tau|^2$.
+At every $\tau$ the block matrix with blocks $a_\tau^{*}Q_\tau a_\tau$, $a_\tau^{*}Q_\tau b_\tau$, $b_\tau^{*}Q_\tau a_\tau$,
+$b_\tau^{*}Q_\tau b_\tau$ is positive semidefinite, being $(a_\tau\ b_\tau)^{*}Q_\tau(a_\tau\ b_\tau)$. For such a matrix
+with square blocks $P_1$, $A_1$, $A_1^{*}$, $P_2$ one has $|\det A_1|^2\le\det P_1\cdot\det P_2$ (an elementary
+input from unit~112; the artifact calls it the Cauchy--Schwarz inequality for determinants). Hence
+$|\det(a^{*}Qb)_\tau|^{4}\le|\det(a^{*}Qa)_\tau|^{2}\,|\det(b^{*}Qb)_\tau|^{2}$, and the product over $\tau$ gives
+$|\NmE\det(a^{*}Qb)|^2\le|\NmE\det(a^{*}Qa)|\cdot|\NmE\det(b^{*}Qb)|$. Squaring the bound for $x$ finishes the proof.
+\end{proof}
+\leanline{\lean{liouvillegram}}
+
+\sect{Agreeing characters: proof of Theorem A}{s:agree}
+\begin{proof}[Proof of Theorem A]
+\emph{Step 1: reduction to congruences.} By \ref{r:char}, the hypothesis $\FixN{\redS{S}(k)}{x}$ gives a finite
+set $\sA$ of pairs $p=(w_p,\epsilon_p)$ of a chosen place and $\epsilon_p\in\{0,1\}$, with
+$x\le\prod_{p\in\sA}\#\Fw{w_p}$ (the norm of a chosen place is the number of elements of its residue field,
+(S1)), and for every $p\in\sA$ a vector $v_p\ne0$ in $\Fw{w_p}^{\varrho+1}$ such that
+$\ioia{S}{\epsilon_p}(\redS{S}(k)_{w_p})$ fixes $\mathfrak f v_p$.
+
+Put $Q=t^{*}\fpair{k}=C^{*}$. Its entries lie in $\hO$, because $t$ is integral, $\hO$ is stable under the
+conjugation, and $k\in\KS{S}$ is integral. Its columns are indexed by the pairs $(i,a)$; those with $a<\varrho$
+vanish. Let $Q^{\circ}$ be the matrix on $\Omega$ whose column $l$ is the column $(\rho(l),\varrho)$ of $Q$, and
+$\delta'=\det Q^{\circ}$. Then $\delta'=\cj{\delta}$, so $\delta'\in\hO$ is a unit of $\AEf$ and, by (J2),
+$\gix{\delta}=\gix{\delta'}=\#\hO/\delta'\hO$. By (S1) the ring homomorphism
+$\hO\to\prod_{p\in\sA}\Fw{w_p}$, $r\mapsto(\rag{S}{p}(r))_{p}$, is surjective; let $\mathfrak a$ be its kernel, so
+that $\#\hO/\mathfrak a=\prod_{p\in\sA}\#\Fw{w_p}\ge x$. If $\rag{S}{p}(\delta')=0$ for every $p\in\sA$, then
+$\delta'\hO\subseteq\mathfrak a$ and $\gix{\delta}=\#\hO/\delta'\hO\ge\#\hO/\mathfrak a\ge x$. So it suffices to
+prove that $\rag{S}{p}(\delta')=0$ for every $p\in\sA$.
+
+\emph{Step 2: the frames do not meet where $\delta'$ is a unit.} Fix $p=(w,\epsilon)\in\sA$, write
+$\mathbb F=\Fw{w}$, and let a subscript $\mathbb F$ denote the image under $\rag{S}{p}$, entry by entry. Suppose that
+$\rF{\delta'}=\det\rF{Q^{\circ}}\ne0$ in $\mathbb F$. By (S1), $\rF{k}\in\GL_{\Ix{\fs}}(\mathbb F)$ equals
+$\ioia{S}{\epsilon}(\redS{S}(k)_{w})$, so $\rF{k}\,\mathfrak f v_p=\mathfrak f v_p$. We claim:
+\[\text{if }\xi,\eta\in\mathbb F^{\varrho+1}\text{ satisfy }\mathfrak f\xi=\rF{k}\,\mathfrak f\eta,\text{ then }\xi=0.\tag{$*$}\]
+For $\xi=\eta=v_p$ this contradicts $v_p\ne0$, and the theorem follows. We prove by descending induction on
+$a\in\{\varrho,\dots,0\}$ that $\xi_a=0$ for all pairs $(\xi,\eta)$ as in $(*)$.
+
+\emph{The case $a=\varrho$.} For such a pair, $\rF{Q}\,(\xi,-\eta)=\rF{t}^{*}(\mathfrak f\xi-\rF{k}\,\mathfrak f\eta)=0$,
+where $(\xi,-\eta)$ has the coordinate $\xi_a$ at $(1,a)$ and $-\eta_a$ at $(2,a)$. The columns $(i,a)$ of
+$\rF{Q}$ with $a<\varrho$ vanish, so $\xi_\varrho$ times the column $(1,\varrho)$ equals $\eta_\varrho$ times the
+column $(2,\varrho)$. These two columns are those of $\rF{Q^{\circ}}$, which is invertible. Hence
+$\xi_\varrho=\eta_\varrho=0$.
+
+\emph{The step.} Let $a<\varrho$, suppose the assertion holds for all indices above $a$, and let
+$\mathfrak f\xi=\rF{k}\,\mathfrak f\eta$. Then $\xi_b=0$ for $b>a$ and $\eta_\varrho=0$. For
+$\zeta\in\mathbb F^{\varrho+1}$ write $\zeta^{+}=(0,\zeta_0,\dots,\zeta_{\varrho-1})$. We shall prove that
+\[m(\mathfrak f\xi^{+})=m(\rF{k}\,\mathfrak f\eta^{+})\tag{$**$}\]
+for every linear form $m$ on $\mathbb F^{\Ix{\fs}}$ with $m(\fr{b})=0$ for $b\le a$ and $m(\rF{k}\fr{b})=0$ for
+$b<\varrho$.
+By the duality (J5), applied to the matrices $\mathfrak f$ and $\rF{k}\,\mathfrak f$, the sets of columns
+$\{b\le a\}$ and $\{b<\varrho\}$ and the vectors $\xi^{+}$, $\eta^{+}$, there are then $\xi',\eta'$ with
+$\mathfrak f\xi'=\rF{k}\,\mathfrak f\eta'$ and $\xi'_b=\xi^{+}_b$ for $b>a$. By the induction hypothesis at $a+1$,
+$\xi_a=\xi^{+}_{a+1}=\xi'_{a+1}=0$.
+
+\emph{Proof of $(**)$: integral lifts.} By (S1) there is a map $o\colon\mathbb F\to\hO$ with $o(0)=0$,
+$\rag{S}{p}(o(\theta))=\theta$, and $\rag{S}{p'}(o(\theta))=0$ for every pair $p'\ne p$. Then, for every chosen
+place $w'$, $\rag{S}{(w',\epsilon)}\bigl(\cj{o(\theta)}\bigr)=\rag{S}{(w',1-\epsilon)}(o(\theta))=0$. For a matrix $M$
+over $\mathbb F$ on $\Ix{\fs}$ and $\zeta\in\mathbb F^{\varrho+1}$ put
+\[\mathsf A(M,\zeta)=\sum_{b=1}^{\varrho}o\bigl(m(M\fr{b})\bigr)\,o(\zeta_{b-1})\in\hO,\qquad\text{so that}\qquad
+\rag{S}{p}\bigl(\mathsf A(M,\zeta)\bigr)=m(M\mathfrak f\zeta^{+}).\]
+Thus $(**)$ says that $\mathsf A(1,\xi)-\mathsf A(\rF{k},\eta)$ vanishes under $\rag{S}{p}$. By the two
+equivalences of (S1) it suffices to show that
+\[\sdc{S}\Bigl(r\,\gid{S}^{-1}\bigl(\mathsf A(1,\xi)-\mathsf A(\rF{k},\eta)\bigr)\Bigr)=1\qquad\text{for every }r\in\hO.\]
+
+\emph{Eichler elements over $\hO$.} Fix $r\in\hO$. Let $a_0\le\varrho$, let $\zeta\in\mathbb F^{\varrho+1}$ have
+$\zeta_b=0$ for $b\ge a_0$, and let $M$ be such that $m(M\fr{b})=0$ for $b<a_0$. We claim that there is
+$u\in\KS{S}\cap\UT{\Tlat{S}{\AEf}}$ with $\sd{u}=r\,\mathsf A(M,\zeta)$ whose entrywise image under
+$\rag{S}{(w',\epsilon)}$ is $1$ for every chosen place $w'\ne w$, and is $1+\rF{r}\,(\mathfrak f\zeta)(mM)$ for
+$w'=w$; here $(\mathfrak f\zeta)(mM)$ is the product of a column and a row. Indeed, apply (S2) to the ring $\hO$
+with its conjugation and the form $\Tlat{S}{\hO}$: its Gram matrix $J$ is hermitian and invertible over $\hO$ by
+(S1), and $\hO$ contains $\omega_0$ with $\omega_0+\cj{\omega_0}=1$ by (J6). The linear form
+$\mu=o\circ(mM)$ on $\hO^{\Ix{\fs}}$ is $v^{*}J$ for some $v$, it vanishes at $\fr{b}$ for $b<a_0$ since $o(0)=0$,
+and $j=o\circ\zeta$ vanishes at $b\ge a_0$. So (S2) gives $u$ unitary over $\hO$, in the unipotent group, with
+$\sd{u}=r\sum_{b\ge1}\mu(\fr{b})\,j_{b-1}=r\,\mathsf A(M,\zeta)$ and with matrix
+$1+\xi_0\,\mu-(v+\varsigma\xi_0)\,\xi_0^{*}J$, where $\xi_0=r\,\mathfrak f j$. It is integral with integral inverse,
+so it lies in $\KS{S}$. Under $\rag{S}{(w',\epsilon)}$ the entries $\cj{r}\,\cj{o(\zeta_b)}$ of $\xi_0^{*}$ go to $0$,
+while $\xi_0$ goes to $\rF{r}\,\mathfrak f\zeta$ and $\mu$ to $mM$ if $w'=w$, and $\xi_0$ goes to $0$ if $w'\ne w$.
+
+\emph{Conclusion.} Let $u$ be the element of the claim for $(a_0,\zeta,M)=(a+1,\xi,1)$ and $u'$ the one for
+$(\varrho,\eta,\rF{k})$; the hypotheses hold by the properties of $\xi$, $\eta$ and $m$. We compare
+$\redS{S}(u)\,\redS{S}(k)$ and $\redS{S}(k)\,\redS{S}(u')$ in $\GRes{S}$. At the component of a chosen place $w'$,
+after the automorphism $\ioia{S}{\epsilon}$, these are by (S1) the entrywise images of $uk$ and $ku'$ under
+$\rag{S}{(w',\epsilon)}$. For $w'\ne w$ both are the image of $k$. For $w'=w$ they are
+\[\bigl(1+\rF{r}\,(\mathfrak f\xi)\,m\bigr)\rF{k}=\rF{k}+\rF{r}\,(\mathfrak f\xi)(m\rF{k})\quad\text{and}\quad
+\rF{k}\bigl(1+\rF{r}\,(\mathfrak f\eta)(m\rF{k})\bigr)=\rF{k}+\rF{r}\,(\rF{k}\,\mathfrak f\eta)(m\rF{k}),\]
+which agree because $\mathfrak f\xi=\rF{k}\,\mathfrak f\eta$. Hence $\redS{S}(u)\,\redS{S}(k)=\redS{S}(k)\,\redS{S}(u')$,
+and since $\redS{S}(k)$ agrees, $\uchar{S}{u}=\uchar{S}{u'}$, that is
+$\sdc{S}(\gid{S}^{-1}r\,\mathsf A(1,\xi))=\sdc{S}(\gid{S}^{-1}r\,\mathsf A(\rF{k},\eta))$. As $\sdc{S}$ is an
+additive character, this is the required identity.
+\end{proof}
+\leanline{\lean{legenIndexdetoffixesNormAtLeast}}
+
+\sect{Integral Eichler elements of the arithmetic unipotent group}{s:eichler}
+Rational elements of $\clU{S}{c}$ with prescribed entries are produced by Eichler transformations. A position
+$(a,l)$, $a<\varrho$, $l\in\Ix{\fs}$, is called \emph{free} if $l=e_b$ or $l=e^*_b$ with $b>a$, or if $l$ is a
+middle index (this is a notion of unit~118); and $[P]$ denotes $1$ if the statement $P$ holds and $0$ otherwise.
+
+\begin{lemma}[Eichler elements with several columns]\label{l:eichler}
+In Setting~\ref{set:su}, let $c\in\Cl{S}$, let $\Omega$ be a finite set, $p\colon\Omega\to\{0,\dots,\varrho-1\}$ a
+map, and $x$ the matrix with rows $\Ix{\fs}$ and columns $\Omega$ whose column $b$ is the unit vector $e_{p(b)}$.
+Let $u$ be a matrix over $E$ with rows $\Ix{\fs}$ and columns $\Omega$, and $s$ a matrix over $E$ on $\Omega$, such
+that
+\begin{enumerate}[label=(\roman*),itemsep=1pt]
+\item $u(e^*_a,b)=0$ for all $a$, $b$, $b'$ with $a\le p(b')$;
+\item $s^{*}=-s$;
+\item the matrices $\clC{S}{c}\,\fadm{u}$ and $\fadm{s}$ are integral.
+\end{enumerate}
+Then there are $\gamma\in\clU{S}{c}$ and $\lambda\in E$ with
+\[\gamma=1+\gS{S}\Bigl(x\,u^{*}\ratG{S}-\bigl(u+x\,(\lambda\,u^{*}\ratG{S}\,u-s)\bigr)\,x^{*}\ratG{S}\Bigr),\]
+and if $(u^{*}\ratG{S})(b,\fr{a})=0$ for all $b\in\Omega$ and all $a\le\varrho$, then $\gamma\in\clUo{S}{c}$.
+\end{lemma}
+\begin{proof}
+Write $J=\ratG{S}$ and $g=\gS{S}$, take $\omega_0$ from (J6), and put $\lambda=g\,\omega_0$,
+$B=\lambda\,u^{*}Ju-s$ and $N=x\,u^{*}J-(u+xB)\,x^{*}J$, so that the matrix in question is $1+gN$. The columns of
+$x$ are isotropic and mutually orthogonal, and by (i) they are orthogonal to the columns of $u$:
+$x^{*}Jx=0$ and $x^{*}Ju=0$. Moreover $x^{*}J$ vanishes at all frame vectors, and $\clC{S}{c}\,\fadm{x}=\fadm{x}$ by
+Lemma~\ref{l:formulas}(b).
+
+\emph{Unitarity.} $(1+gN)^{*}J(1+gN)=J$ means $N^{*}J+JN+g\,N^{*}JN=0$. Now
+$JN+N^{*}J=-Jx\,(B+B^{*})\,x^{*}J$, the terms $Jxu^{*}J$ and $Jux^{*}J$ cancelling; and in $N^{*}JN$ every product
+contains $x^{*}Jx$, $x^{*}Ju$ or $u^{*}Jx$, except $Jx\,(u^{*}Ju)\,x^{*}J$. Since $s^{*}=-s$ and $u^{*}Ju$ is hermitian,
+$B+B^{*}=(\lambda+\cj{\lambda})\,u^{*}Ju=g\,u^{*}Ju$. So the sum vanishes, and $\gamma=1+gN\in\GS{S}{E}$.
+
+\emph{$\gamma$ lies in the unipotent group.} The row $b$ of $u^{*}J$ has the entry $\cj{u(e^*_a,b)}$ at $e_a$,
+which by (i) vanishes unless $a>p(b')$ for all $b'$. So the entries of $x\,u^{*}J$ sit in rows $e_{p(b')}$ and in
+columns of level greater than $p(b')$. The matrix $x^{*}J$ has its entries in the columns $e^*_{p(b)}$, of level
+$2\varrho-p(b)\ge\varrho+1$, and the rows of $u+xB$ that do not vanish are rows $e_a$, middle rows, or rows
+$e^*_a$ with $a>p(b)$ for all $b$, all of level less than $2\varrho-p(b)$. Hence $N$ is strictly upper
+triangular for the levels and $\gamma\in\UT{\Trat{S}{E}}$.
+
+\emph{The position.} By \ref{r:groups}, $\pos{S}{c}{c}{\gamma}=1+\gid{S}\,\clC{S}{c}\fadm{N}\clC{S}{c}^{-1}$, and by
+(S3), $\fadm{J}\,\clC{S}{c}^{-1}=\clC{S}{c}^{*}\,J'$ with $J'=\JT{\Tlat{S}{\AEf}}$. Therefore, writing
+$\hat x=\clC{S}{c}\fadm{x}$ and $\hat u=\clC{S}{c}\fadm{u}$,
+\[\clC{S}{c}\,\fadm{N}\,\clC{S}{c}^{-1}=\bigl(\hat x\,\hat u^{*}-(\hat u+\hat x\,\fadm{B})\,\hat x^{*}\bigr)\,J',
+\qquad\fadm{B}=\fadm{\lambda}\,\hat u^{*}J'\hat u-\fadm{s},\]
+the last by Lemma~\ref{l:formulas}(d). All matrices on the right are integral, by (iii) and (S1). So
+$\gid{S}^{-1}(\pos{S}{c}{c}{\gamma}-1)$ is integral; then $\pos{S}{c}{c}{\gamma}$ is integral, and so is its inverse
+$J'^{-1}\pos{S}{c}{c}{\gamma}^{*}J'$. By (S1) the position lies in $\KgS{S}$, that is $\gamma\in\clU{S}{c}$.
+
+\emph{The frame.} If $u^{*}J$ vanishes at the frame vectors, then $N\fr{a}=0$ for all $a$, so
+$\gamma\mathfrak f=\mathfrak f$ and $\gamma\in\clUo{S}{c}$.
+\end{proof}
+\leanline{\lean{existsmemclassUnip}}
+
+\begin{lemma}[Eichler elements in one row]\label{l:eichlerrow}
+In Setting~\ref{set:su}, let $c\in\Cl{S}$ and $a<\varrho$, let $l$ be a row vector over $E$ indexed by $\Ix{\fs}$
+with $l_j=0$ unless $(a,j)$ is a free position, such that the row vector $\fadm{l}\,\clB{S}{c}$ is integral, and
+let $s$ be an integer of $E$ with $\cj{s}=-s$. Then there is $\gamma\in\clU{S}{c}$ such that for all $b<\varrho$
+and all $j\in\Ix{\fs}$ with $j\ne e^*_a$ or $l=0$,
+\[\gamma(e_b,j)=\delta_{e_b,j}+\gS{S}\,[b=a]\,\bigl(l_j+[j=e^*_a]\,s\bigr).\]
+\end{lemma}
+\begin{proof}
+Since $J=\ratG{S}$ is invertible there is a column vector $v$ with $v^{*}J=l$. We apply
+Lemma~\ref{l:eichler} with $\Omega$ a single point, $p=a$, $x=e_a$, the column $u=v$ and the matrix $(s)$.
+Condition (i): $\cj{v(e^*_{a'})}=l_{e_{a'}}=0$ for $a'\le a$, because $(a,e_{a'})$ is not free. Condition (ii) is
+$\cj{s}=-s$. Condition (iii): $v=J^{-1}l^{*}$, and from (S3), $\clC{S}{c}\fadm{J}^{-1}=J'^{-1}\clB{S}{c}^{*}$ with
+$J'=\JT{\Tlat{S}{\AEf}}$; so $\clC{S}{c}\fadm{v}=J'^{-1}(\fadm{l}\,\clB{S}{c})^{*}$, which is integral by hypothesis
+and (S1). The lemma gives $\gamma\in\clU{S}{c}$ and $\lambda$ with
+$\gamma=1+\gS{S}\bigl(e_a\,l-(v+e_a(\lambda\,v^{*}Jv-s))\,e_a^{*}J\bigr)$. The row vector $e_a^{*}J$ is the unit row
+at $e^*_a$. So for $j\ne e^*_a$ the entry $\gamma(e_b,j)$ is $\delta_{e_b,j}+\gS{S}[b=a]\,l_j$; and if $l=0$ then
+$v=0$ and $\gamma(e_b,e^*_a)=\gS{S}[b=a]\,s$.
+\end{proof}
+\leanline{\lean{existseichlerclassUnip}}
+
+\sect{Covering lemmas; indices, gauges and weights}{s:count}
+The first four lemmas are elementary counting tools; of them this note uses only the first. The definitions that
+follow, and the two lemmas after them, prepare the later estimates of the unit.
+
+\begin{lemma}[colouring]\label{l:colour}
+Let $\sP$ and $\sC$ be sets, $\sA\subseteq\sP$, let $\bowtie$ be a relation on $\sP$, $m,x\in[0,\infty]$, and
+$\sw\colon\sP\to[0,\infty]$. Let $\col\colon\sA\to\sC$ be a map whose image has at most $m$ elements and such that
+$\col(p)=\col(q)$ implies $p\bowtie q$. Suppose that $\sum_{p\in\sB}\sw_p\le x$ for every non-empty
+$\sB\subseteq\sA$ with $p\bowtie q$ for all $p,q\in\sB$. Then $\sum_{p\in\sA}\sw_p\le m\cdot x$.
+\end{lemma}
+\begin{proof}
+The sum over $\sA$ is the sum, over the colours in the image of $\col$, of the sums over the fibres. Each fibre
+is non-empty and consists of pairwise related elements, so its sum is at most $x$; and there are at most $m$
+colours.
+\end{proof}
+\leanline{\lean{tsumleofencardrangele}}
+
+\begin{lemma}[colouring by cosets]\label{l:colourcoset}
+Let $\sP$ be a set, $\sA\subseteq\sP$, $\Omega$ a finite set, $\mathsf M$ an abelian group with subgroups
+$\mathsf L$, $\mathsf L'$ such that the index of $\mathsf L\cap\mathsf L'$ in $\mathsf L'$ is finite, and
+$f\colon\sP\to\mathsf M^{\Omega}$ a map with $f(p)_i\in\mathsf L'$ for all $p\in\sA$ and $i\in\Omega$. Let
+$\sw\colon\sP\to[0,\infty]$ and $x\in[0,\infty]$, and suppose that $\sum_{p\in\sB}\sw_p\le x$ for every non-empty
+$\sB\subseteq\sA$ such that $f(p)_i-f(q)_i\in\mathsf L$ for all $p,q\in\sB$ and $i\in\Omega$. Then
+\[\sum_{p\in\sA}\sw_p\ \le\ [\mathsf L':\mathsf L\cap\mathsf L']^{\#\Omega}\cdot x.\]
+\end{lemma}
+\begin{proof}
+Colour $p\in\sA$ by the family of the classes of the $f(p)_i$ in $\mathsf L'/(\mathsf L\cap\mathsf L')$. There are
+at most $[\mathsf L':\mathsf L\cap\mathsf L']^{\#\Omega}$ colours, and two elements of one colour have
+$f(p)_i-f(q)_i\in\mathsf L$ for all $i$. Lemma~\ref{l:colour} applies.
+\end{proof}
+\leanline{\lean{tsumleofcolouring}}
+
+\begin{lemma}[bounded integral vectors]\label{l:intcount}
+Let $E'$ be a number field with a chosen complex embedding $x\mapsto x_\tau$ at each of its infinite places
+$\tau$, let $\sP$ be a set, $\sA\subseteq\sP$, $\Omega$ a finite set, $r\ge0$ a real number, and
+$F\colon\sP\to E'^{\,\Omega}$ a map that is injective on $\sA$ and such that, for all $p\in\sA$ and $i\in\Omega$,
+$F(p)_i$ is integral over $\mathbb Z$ and $|(F(p)_i)_\tau|\le r$ for all $\tau$. Then
+$\#\sA\le(1+2r)^{\,2\,\#\Omega\,\ninf{E'}}$, where $\ninf{E'}$ is the number of infinite places of $E'$.
+\end{lemma}
+\begin{proof}
+Map $p\in\sA$ to the point $((F(p)_i)_\tau)_{i,\tau}$ of the real vector space $\CC^{\Omega\times\{\tau\}}$, of
+dimension $2\,\#\Omega\,\ninf{E'}$, with the supremum norm. All these points have norm at most $r$. Two of them at
+distance less than $1$ belong to $p,q$ for which every $F(p)_i-F(q)_i$ is an algebraic integer with all
+absolute values less than $1$, hence $0$ by (J4), so $p=q$ by injectivity. The packing bound (J3) with $m=1$
+gives the claim.
+\end{proof}
+\leanline{\lean{encardintegralle}}
+
+\begin{lemma}[index of a scaled lattice]\label{l:scaled}
+Let $E'$ be a CM field that is stably unramified, $\Omega$ a finite set, and $c$ a finite idele of $E'$ that lies
+in the closure $\hat O_{E'}$ of the integers. Then the index of $c\,\hat O_{E'}^{\Omega}$ in $\hat O_{E'}^{\Omega}$
+is $\gix{c}^{\#\Omega}$; in particular it is finite and not zero.
+\end{lemma}
+\begin{proof}
+This is (J2) for the invertible integral matrix $c\cdot1$, of determinant $c^{\#\Omega}$; and $\gix{c}>0$.
+\end{proof}
+\leanline{\lean{submoduleIndexsmulintVectors}\sep\lean{submoduleIndexsmulnezero}}
+
+\subhead{Indices, gauges and weights.} In the following definitions an index $[\mathsf L':\mathsf L\cap\mathsf L']$
+of subgroups of a group is read as $0$ when it is infinite, as in the formal text, and $\colL{M}$ denotes the
+$\hO$-module generated by the columns of a matrix $M$ over $\AEf$.
+
+\begin{definition}[rows, padded matrices, middle parts]\label{d:pad}
+Let $j\le\varrho+1$ be a level. $\IdxB{j}$ is the set of the $a\in\{0,\dots,\varrho-1\}$ with $a<j$. For a matrix
+$Z$ with rows $0,\dots,\varrho$ and $\varrho+1$ columns, $\xrows{Z}$ is its submatrix of the rows
+$0,\dots,\varrho-1$. For a square matrix $Z$ of size $\varrho+1$ over a commutative ring, $\padl{j}{Z}$ is the
+matrix whose rows $a<j$ are those of $Z$ and whose other rows are those of the identity. For a square matrix
+$\gamma$ on $\Ix{\fs}$, $\fmid{\gamma}$ is its submatrix of the rows in $\Mx{\fs}$ and the columns $\fr{0},\dots,\fr{\varrho}$:
+the middle parts of the vectors $\gamma\fr{a}$.
+\end{definition}
+\leanline{\lean{IndexBelow}\sep\lean{xRows}\sep\lean{paddedLeading}\sep\lean{frameMiddle}}
+
+\begin{lemma}\label{l:paddet}
+For a level $j\le\varrho+1$ and a square matrix $Z$ of size $\varrho+1$ over a commutative ring $R$:
+$\det\padl{j}{Z}=\lmin{j}{Z}$.
+\end{lemma}
+\begin{proof}
+Expanding along the rows $a\ge j$, which are rows of the identity, leaves the determinant of the upper left
+block of size $j$.
+\end{proof}
+\leanline{\lean{detpaddedLeading}}
+
+\begin{definition}[lattice discriminants and indices]\label{d:indices}
+Let $E$ be stably unramified, $S\in\Fill{E}{\fs}$ and $c\in\Cl{S}$; write $T'=\Tlat{S}{\AEf}$ and, for
+$k\in\GFin{S}$, $Z'(k)=\ZT{T'}{k}$.
+\begin{enumerate}[label=(\alph*),itemsep=1pt]
+\item $\latd{S}{c}$ is the function on the subspaces $V$ of $E^{\kappa}$ given by
+$\latd{S}{c}(V)=\sld{\clCX{S}{c}}{V}$, the discriminant of \ref{r:links} for the matrix $H=\clCX{S}{c}$, which
+has the left inverse $\clCX{S}{c}^{*}T'$ by Lemma~\ref{l:formulas}(c). It is the discriminant of the lattice cut
+out by $V$ in the $X_0$-part of the lattice of the class $c$.
+\item For $k\in\GFin{S}$, a finite idele $a$ and a subspace $V$ of $E^{\kappa}$,
+\[\fvi{S}{c}{k}{a}{V}=[\mathsf L_2:a\,\mathsf L_1\cap\mathsf L_2],\]
+where\quad $\mathsf L_1=\colL{(\xrows{Z'(k)})^{*}}$\quad and\quad
+$\mathsf L_2=\colL{{\fmid{k}}^{*}\,T'\,\clCX{S}{c}\,\slb{\clCX{S}{c}}{V}}$.
+\item For a level $j\le\varrho+1$ and $k\in\GFin{S}$, $\xri{S}{j}{k}=[\mathsf L_1:\mathsf L_1^{(j)}\cap\mathsf L_1]$,
+where $\mathsf L_1$ is as in (b) and $\mathsf L_1^{(j)}$ is generated by the columns of the conjugate transpose
+of the submatrix of $Z'(k)$ of the rows $a\in\IdxB{j}$.
+\item For $k\in\GFin{S}$, $\sati{S}{k}$ is the index of $\colL{\ifpair{k}}$ in the module of the vectors of
+$\hO^{\Ix{\fs}}$ that lie in the $\AEf$-span of the columns of $\ifpair{k}$.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{latticeDisc}\sep\lean{frameValueIndex}\sep\lean{xRowsIndex}\sep\lean{saturationIndex}}
+
+In (b), $\mathsf L_1$ is spanned by the vectors $(\cj{h(e_i,k\fr{l})})_l$, $i<\varrho$, and $\mathsf L_2$ by the
+vectors $(h(k\fr{l},y))_l$ for $y$ in the basis of the lattice cut out by $V$; in (d), the columns of $\ifpair{k}$
+are the $e_a$ and $ke_a$.
+
+\begin{definition}[invariants of pairs, gauges, near representatives]\label{d:gauge}
+Let $E$ be stably unramified, $S\in\Fill{E}{\fs}$, $c,c'\in\Cl{S}$, $\gamma,\gamma'\in\GS{S}{E}$ and $j\le\varrho+1$
+a level.
+\begin{enumerate}[label=(\alph*),itemsep=1pt]
+\item For a pair $p=(c',\gamma)$: $\telem{S}{c}{p}=\pos{S}{c}{c'}{\gamma}$.
+\item $\pinv{S}{c}{c'}{\gamma}{\gamma'}=\latd{S}{c}(V)\cdot\fvi{S}{c}{k}{1}{V}\cdot\sati{S}{k}$ with
+$V=\clink{\gamma}{\gamma'}$ and $k=\pos{S}{c}{c'}{\gamma}$.
+\item $\mnorm{S}{j}{\gamma}=\bigl|\NmE\lmin{j}{\Zf{S}{\gamma}}\bigr|\cdot\NS{S}^{-2\,[j=\varrho+1]\,\ninf{E}}$.
+\item $\cgauge{S}{j}{c}{c'}{\gamma}=\max\bigl(\tdnorm{S}{\gamma},\ \NS{S}^{\ninf{E}}\,\mnorm{S}{j}{\gamma}\bigr)\big/
+\bigl(\xri{S}{j}{k}\cdot\xri{S}{j}{k^{-1}}\bigr)$ with $k=\pos{S}{c}{c'}{\gamma}$.
+\item $\IsNRep{S}{c}{c'}{\gamma}$ means that $\IsNr{S}{\gamma}$ and that $\gamma$ is the chosen representative of
+its double coset $\clUo{S}{c}\,\gamma\,\clUo{S}{c'}$ (one representative is chosen in every double coset).
+\end{enumerate}
+\end{definition}
+\leanline{\lean{termElem}\sep\lean{pairInvariant}\sep\lean{minorNorm}\sep\lean{classGauge}\sep\lean{IsNearRep}}
+
+\begin{definition}[weights and labelled terms]\label{d:weights}
+Let $E$ be stably unramified, $S\in\Fill{E}{\fs}$, $c\in\Cl{S}$, $j\le\varrho+1$ a level, and write
+$k=\kk{\fs}$.
+\begin{enumerate}[label=(\alph*),itemsep=1pt]
+\item For a function $n\colon\GFin{S}\to\mathbb N$ and a pair $p=(c',\gamma)\in\Cl{S}\times\GS{S}{E}$:
+$\ipw{S}{c}{n}{p}=n\bigl(\telem{S}{c}{p}\bigr)^{-k}\in[0,\infty)$, read as $0$ when $n(\telem{S}{c}{p})=0$.
+\item For a natural number $i$, pairs $p,p'\in\Cl{S}\times\GS{S}{E}$ and a subspace $V$ of $E^{\kappa}$:
+\[\termw{S}{j}{i}{c}{p}{p'}{V}=\cw{S}{i}^{-1}\cdot\latd{S}{c}(V)^{-(k+1)}\cdot\ipw{S}{c}{n_{j,V}}{p}\cdot\ipw{S}{c}{\sati{S}{\cdot}}{p'},\]
+where $n_{j,V}(k')=[\hO^{\IdxB{j}}:\gid{S}\hO^{\IdxB{j}}]\cdot\fvi{S}{c}{k'}{1}{V}$ for $k'\in\GFin{S}$, and an inverse
+of $0$ is read as $0$.
+\item For $c'\in\Cl{S}$ and $\gamma,\gamma'\in\GS{S}{E}$, with $V=\clink{\gamma}{\gamma'}$:
+\[\pairw{S}{j}{c}{c'}{\gamma}{\gamma'}=\termw{S}{j}{k-\dim V}{c}{(c',\gamma)}{(c',\gamma')}{V}\]
+if $\Cong{S}{c}{c'}{\gamma}{\gamma'}$, $\IsNRep{S}{c}{c'}{\gamma}$, $\HasLev{S}{j}{\gamma}$, $\IsNRep{S}{c}{c'}{\gamma'}$
+and $\HasLev{S}{j}{\gamma'}$ all hold (the difference $k-\dim V$ being $0$ if $\dim V>k$), and
+$\pairw{S}{j}{c}{c'}{\gamma}{\gamma'}=0$ otherwise.
+\item For $t\in\redim{S}{\ST{\Tlat{S}{\AEf}}}$ and a pair $p=(c',\gamma)$: $\IsLab{S}{j}{c}{t}{p}$ means that
+$\IsNRep{S}{c}{c'}{\gamma}$, $\HasLev{S}{j}{\gamma}$, and $\gamma\in\terms{S}{c}{s}{c'}$ for some $s\in\GRes{S}$ whose
+component in the subgroup $\redim{S}{\ST{\Tlat{S}{\AEf}}}$, for a fixed bijection of $\GRes{S}$ with the product of
+the set of cosets of this subgroup and the subgroup, is $t$.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{invPowWeight}\sep\lean{termWeight}\sep\lean{pairWeight}\sep\lean{IsLabelledTerm}}
+
+By Lemma~\ref{l:scaled} and (J2), $[\hO^{\IdxB{j}}:\gid{S}\hO^{\IdxB{j}}]=\gS{S}^{2\ninf{E}\min(j,\varrho)}$.
+
+\begin{lemma}[terms of level $j$]\label{l:levels}
+Let $S\in\Fill{E}{\fs}$, let $j\le\varrho+1$ be a level and $\gamma\in\GS{S}{E}$ with $\HasLev{S}{j}{\gamma}$. Then:
+\begin{enumerate}[label=(\alph*),itemsep=1pt]
+\item $\HasLev{S}{j}{\gamma^{-1}}$;
+\item $\mnorm{S}{j}{\gamma}>0$;
+\item $\padl{j}{\Zf{S}{\gamma}}$ is invertible: $\padl{j}{\Zf{S}{\gamma}}\cdot\padl{j}{\Zf{S}{\gamma}}^{-1}=1$;
+\item for every frame index $b$ with $j\le b$ there is $w\in E^{\varrho+1}$ with
+\[\mathfrak f w=\gamma\mathfrak f\cdot\bigl(\text{column $b$ of }\padl{j}{\Zf{S}{\gamma}}^{-1}\bigr):\]
+this combination of the vectors $\gamma\fr{a}$ lies in the span of the frame.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(b) and (c) hold because $\lmin{j}{\Zf{S}{\gamma}}\ne0$ and by Lemma~\ref{l:paddet}. (a) The normal form passes
+to $\gamma^{-1}$ by (S5). Since $\gamma$ is unitary, $\Zf{S}{\gamma^{-1}}=\Zf{S}{\gamma}^{*}$, so the leading minors of
+$\Zf{S}{\gamma^{-1}}$ are the conjugates of those of $\Zf{S}{\gamma}$, and
+$\tdisc{S}{\gamma^{-1}}=\tdisc{S}{\gamma}$. (d) By (S5), applied to the unit vector $\epsilon_b$, there are $w$ and
+$y'$ with $\mathfrak f w=\gamma\mathfrak f y'$ and $y'_a=\delta_{ab}$ for $a\ge j$. By (S5) again,
+$\Zf{S}{\gamma}y'$ is a multiple of the last unit vector; as $b\le\varrho$ forces $j\le\varrho$, the rows $a<j$
+of $\Zf{S}{\gamma}y'$ vanish. So $\padl{j}{\Zf{S}{\gamma}}\,y'=\epsilon_b$, and $y'$ is the column $b$ of the inverse.
+\end{proof}
+\leanline{\lean{inv}\sep\lean{minorNormpos}\sep\lean{paddedLeadingmulinv}\sep\lean{existssharedframevector}}
+
+\begin{lemma}\label{l:xrows}
+Let $k\in\GT{T}$ and let $n$ be a matrix over $R$ with rows $\Ix{\fs}$ and a set $\Omega$ of columns. If
+$\ifpair{k}^{*}\,\JT{T}\,n=0$ and $\zfp{T}\,\lmat{k}\,n=0$, then
+\[(\xrows{\ZT{T}{k}})^{*}\cdot(-n_e)={\fmid{k}}^{*}\,T\,n_{\Mid},\]
+where $n_e$ and $n_{\Mid}$ are the submatrices of $n$ of the rows $e_0,\dots,e_{\varrho-1}$ and of the middle rows.
+\end{lemma}
+\begin{proof}
+Let $n_l$ be a column of $n$ and $b\le\varrho$. The entries $(b,l)$ of the two sides are
+\[-\sum_{a<\varrho}h_T(k\fr{b},e_a)\,n_l(e_a)\qquad\text{and}\qquad(\Mid k\fr{b})^{*}\,T\,\Mid n_l.\]
+By (S5) the $e^*$-coordinates of $n_l$ vanish, so
+\[h_T(k\fr{b},n_l)=\sum_{a<\varrho}h_T(k\fr{b},e_a)\,n_l(e_a)+(\Mid k\fr{b})^{*}T\,\Mid n_l.\]
+Finally
+$h_T(k\fr{b},n_l)=0$: for $b<\varrho$ by the first hypothesis, and for $b=\varrho$ by the second and
+Lemma~\ref{l:formulas}(a).
+\end{proof}
+\leanline{\lean{xRowsconjTransposemuleq}}
+
+\sect{Box partitions and the frame count}{s:boxes}
+Throughout this section $\mathcal U=\UT{\Trg{\fs}{1}}$ is the unipotent group of $\Gone{\fs}$, and in Setting~\ref{set:adm}
+we abbreviate $b=\bS{S}$, $n=\nn{\fs}$, $N=\NS{S}$, $f=\ninf{E}$; these are abbreviations of numbers, not of
+functions.
+
+\begin{lemma}[frame vectors of two elements]\label{l:framediff}
+Let $S\in\Fill{E}{\fs}$ and let $\gamma,\gamma'\in\GS{S}{E}$ be such that $\gamma\mathfrak f$ and $\gamma'\mathfrak f$ have the
+same rows outside the rows $e_0,\dots,e_{\varrho-1}$. Then for every $y\in\Gone{\fs}$, every infinite place $\tau$ of
+$E$ and every frame index $l$,
+\[\bigl(\rinf{S}(\gamma)_\tau^{-1}y\bigr)^{-1}\fr{l}-\bigl(\rinf{S}(\gamma')_\tau^{-1}y\bigr)^{-1}\fr{l}
+=\sum_{a<\varrho}\bigl((\gamma-\gamma')(e_a,\fr{l})\bigr)_\tau\,\frac{\bscale{S}{\tau}{\fr{l}}}{\bscale{S}{\tau}{e_a}}\ y^{-1}\fr{a}.\]
+\end{lemma}
+\begin{proof}
+$(\rinf{S}(\gamma)_\tau^{-1}y)^{-1}\fr{l}=y^{-1}\rinf{S}(\gamma)_\tau\fr{l}=\sum_{i\in\Ix{\fs}}\rinf{S}(\gamma)_\tau(i,\fr{l})\,y^{-1}e_i$,
+with $e_i$ the unit vectors; by \ref{r:groups} the coefficient is $(\gamma(i,\fr{l}))_\tau\,\bscale{S}{\tau}{\fr{l}}/\bscale{S}{\tau}{i}$.
+In the difference only the rows $i=e_a$ remain, and $y^{-1}e_a=y^{-1}\fr{a}$.
+\end{proof}
+\leanline{\lean{frameVectorsubeqsum}}
+
+\statement{ana}{\textbf{Input.} \textbf{(J7)}, unit~99 (classed as elementary by the catalogue, without a
+reference). Let $d\ne0$ lie in the different of $E$. For every family $(z_\tau)$ of complex numbers there is an
+integer $x$ of $E$ with $|z_\tau-x_\tau|\le(2\,\ninf{E})^2\,|d_\tau|$ for all infinite places $\tau$. (The formal
+statement also prescribes $x$ modulo $\hO$ by a finite adele; it is used with the adele $0$.)}
+
+\begin{proposition}[box partitions exist]\label{p:boxexists}
+In Setting~\ref{set:adm}, for every $c\in\Cl{S}$ the chosen function $\omS{S}{c}$ of \ref{r:cutoff} is a box
+partition for $c$: $\IsBP{S}{c}{\omS{S}{c}}$.
+\end{proposition}
+\begin{proof}
+It suffices to construct one box partition for $c$; the choice then picks one. By \ref{r:groups},
+$\rinf{S}(u)_\tau\in\mathcal U$ for $u\in\clU{S}{c}$.
+
+\emph{Step 1: reduction of frame matrices.} We claim: for every family $(t_\tau)$ of elements of $\mathcal U$ there
+is $u\in\clU{S}{c}$ such that all entries of the frame matrices $\fm{t_\tau\rinf{S}(u)_\tau}$ have absolute value at
+most $b^{60\varrho+91}$. The entries $(k,l)$ with $k\ge l$ are $0$ or $1$ \ref{r:space}. We treat the pairs
+$(k,l)$, $k<l$, one after the other, the rows $k$ in decreasing order. Suppose that $u_0\in\clU{S}{c}$ satisfies
+the bound at the pairs already treated, and let $(k,l)$ be the next pair; write
+$F_\tau=\fm{t_\tau\rinf{S}(u_0)_\tau}$ and
+\[r_\tau=\gS{S}\,N\,\bscale{S}{\tau}{\fr{l}}/\bscale{S}{\tau}{e_k}=\gS{S}\,N\,\kapS{S}{\tau}^{\,k-l}.\]
+By (J7), with $d=\vpS{S}$, there is an integer $x$ of $E$ with
+$|F_{\tau,kl}/r_\tau-x_\tau|\le(2f)^2|\vpS{S}_\tau|$ for all $\tau$. Let $\lambda$ be the row vector with the entry $-xN$
+at $\fr{l}$ and $0$ elsewhere. The position $(k,\fr{l})$ is free because $l>k$, and $\fadm{\lambda}\,\clB{S}{c}$ is
+integral: the row $e_l$ of $\clB{S}{c}$ is a unit row, and its row $z$ is that of $\latB{S}$, with the entries
+$1/N$ at $k_0$ and $1$ at $z$ \ref{r:groups}. Lemma~\ref{l:eichlerrow}, with $s=0$, gives $u_1\in\clU{S}{c}$ with
+$u_1(e_{k'},i)=\delta_{e_{k'},i}+\gS{S}[k'=k]\,\lambda_i$ for $i\ne e^*_k$. By the formula for $\rinf{S}$, and because the
+last row of the frame matrix of an element of $\mathcal U$ is a unit row, $\fm{\rinf{S}(u_1)_\tau}=1-r_\tau x_\tau\,E_{kl}$
+with $E_{kl}$ the elementary matrix. As $\fm{\cdot}$ is multiplicative on $\mathcal U$,
+\[\fm{t_\tau\rinf{S}(u_0u_1)_\tau}=F_\tau\,(1-r_\tau x_\tau E_{kl}):\]
+the column $l$ of $F_\tau$ changes by $-r_\tau x_\tau$ times its column $k$, which is $0$ below the row $k$ and $1$ in
+the row $k$. So the rows below $k$ and the other entries of the row $k$ are unchanged, and the entry $(k,l)$ becomes
+$r_\tau(F_{\tau,kl}/r_\tau-x_\tau)$, of absolute value at most
+\[|r_\tau|\,(2f)^2\,|\vpS{S}_\tau|\ \le\ b^{22}\cdot b^{60n}\cdot b^{2}\cdot b\ \le\ b^{60\varrho+91},\]
+by $|\kapS{S}{\tau}|\ge1$ and $l>k$, $\gS{S}\le b^{22}$, $N\le b^{60n}$, $2f\le b$ and $|\vpS{S}_\tau|\le b$
+\ref{r:data} and \ref{r:adm}. After the last pair the claim is proved.
+
+\emph{Step 2: the function.} The map $\theta\colon u\mapsto(\fm{\rinf{S}(u)_\tau})_\tau$ is a homomorphism on $\clU{S}{c}$
+with kernel $\clUo{S}{c}$ \ref{r:space}. For $y\in\prod_\tau\Gone{\fs}$ and a coset $q=u\,\clUo{S}{c}$ let
+$\mathsf I(y,q)=1$ if
+\[\Bigl\|\sum_{a}\theta(u)_{\tau,al}\ y_\tau^{-1}\fr{a}\Bigr\|\ \le\ b^{60\varrho+92}\,\bsize{y_\tau}\qquad\text{for all $\tau$ and all $l\le\varrho$,}\]
+and $\mathsf I(y,q)=0$ otherwise. By (J1) the vector in the norm is $(\rinf{S}(u)_\tau^{-1}y_\tau)^{-1}\fr{l}$. Put
+$\Sigma(y)=\sum_q\mathsf I(y,q)$ and $\omega(y)=\mathsf I(y,1)/\Sigma(y)$. For $u\in\clU{S}{c}$, (J1) gives
+$\bsize{\rinf{S}(u)_\tau y_\tau}=\bsize{y_\tau}$, hence $\mathsf I(\rinf{S}(u)y,q)=\mathsf I(y,u^{-1}q)$ and
+$\Sigma(\rinf{S}(u)y)=\Sigma(y)$.
+
+\emph{$\Sigma(y)\ge1$.} By (J1) choose $w_\tau\in\mathcal U$ with $\|w_\tau y_\tau\|\le\bsize{y_\tau}$, and let $u$ be as
+in Step~1 for $t=w$. By (J1) for $w_\tau\rinf{S}(u)_\tau\in\mathcal U$,
+$(\rinf{S}(u)_\tau^{-1}y_\tau)^{-1}\fr{l}=\sum_a\fm{w_\tau\rinf{S}(u)_\tau}_{al}\,(w_\tau y_\tau)^{-1}\fr{a}$, of norm at most
+$(\varrho+1)\,b^{60\varrho+91}\,\|w_\tau y_\tau\|\le b^{60\varrho+92}\,\bsize{y_\tau}$. So $\mathsf I(y,u\,\clUo{S}{c})=1$.
+
+\emph{$\Sigma(y)<\infty$.} If $\mathsf I(y,u\,\clUo{S}{c})=1$ then, by the last inequality of (J1) with $s=1$ and the
+index $\fr{a}$, $|\theta(u)_{\tau,al}|\le\|y_\tau\|\,b^{60\varrho+92}\,\bsize{y_\tau}$ for all $a,l$. So $\theta(u)$ lies in
+a compact set that depends only on $y$, and by (S6) only finitely many values $\theta(u)$ occur there; $\theta$
+is injective on cosets.
+
+\emph{The five properties.} (i) Every $\mathsf I(\cdot,q)$ is the indicator of a set defined by inequalities
+between continuous functions, and there are countably many $q$. (ii) If $\omega(y)\ne0$ then $\mathsf I(y,1)=1$, so
+$\|y_\tau^{-1}\fr{l}\|\le b^{60\varrho+92}\bsize{y_\tau}$; if also $\InCut{y_\tau}{b}$ this is at most
+$b^{60\varrho+92+6n+2}\le b^{2n^2}=\bxs{S}$, as $\varrho\ge10^5$. (iii) Let $\alpha$ be as in \ref{r:cutoff}. Then
+\[\sum_{\gamma\in\clU{S}{c}}\alpha(\gamma)\,\omega(\rinf{S}(\gamma)y)=\frac{1}{\Sigma(y)}\sum_{q}\mathsf I(y,q^{-1})\sum_{\gamma\in q}\alpha(\gamma)
+=\frac{1}{\Sigma(y)}\sum_q\mathsf I(y,q^{-1})=1,\]
+because the sum of $\alpha$ over a coset of $\clUo{S}{c}$ is $1$ and $0<\Sigma(y)<\infty$. (iv)
+$\mathsf I(y,1)\le\Sigma(y)$. (v) If every $s_\tau$ lies in the group generated by $\UoT{\Trg{\fs}{1}}$ and
+$\HT{\Trg{\fs}{1}}$, which is contained in $\ST{\Trg{\fs}{1}}$, then by (J1) the frame vectors and the numbers
+$\bsize{\cdot}$ of $sy$ and $y$ agree, so $\mathsf I(sy,q)=\mathsf I(y,q)$ for all $q$.
+\end{proof}
+\leanline{\lean{isBoxPartitionepsilon}}
+
+\begin{lemma}[the cutoffs]\label{l:sumone}
+In Setting~\ref{set:adm}, let $c\in\Cl{S}$.
+\begin{enumerate}[label=(\alph*),itemsep=1pt]
+\item $\sum_{u\in\clU{S}{c}}\cutoff{S}{c}\bigl(\rinf{S}(u)\,y\bigr)=1$ for every $y\in\prod_\tau\Gone{\fs}$.
+\item $\cutoff{S}{c}$ is measurable.
+\item If $y\in\prod_\tau\Gone{\fs}$ satisfies $\InCut{y_\tau}{\bS{S}}$ for all $\tau$, then there is $u\in\clU{S}{c}$
+with $\rinf{S}(u)\,y\in\bxp{S}$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) Apply property (iii) of the box partition $\omS{S}{c}$ (Proposition~\ref{p:boxexists}) to
+$\alpha(\gamma)=\bfl{S}{c}(\rinf{S}(\gamma)y)$, whose sums over the cosets $\clUo{S}{c}\gamma$ are $1$ by the choice of
+$\bfl{S}{c}$. (b) Both factors are measurable. (c) By (a) some $u\in\clU{S}{c}$ has
+$\cutoff{S}{c}(\rinf{S}(u)y)\ne0$, hence $\omS{S}{c}(\rinf{S}(u)y)\ne0$. Since $\rinf{S}(u)_\tau\in\mathcal U$, (J1)
+gives $\InCut{\rinf{S}(u)_\tau y_\tau}{\bS{S}}$, and property (ii) puts $\rinf{S}(u)_\tau y_\tau$ in $\frbox{\bxs{S}}$.
+\end{proof}
+\leanline{\lean{tsumclassCutoffeqone}\sep\lean{measurableclassCutoff}\sep\lean{existsclassUnipmulmemboxedPoints}}
+
+\begin{proof}[Proof of Theorem B]
+Let $\sA=\{p:\sw_p\ne0\}$, and give the space of families $(v_{\tau,a})$ the norm $\sup_{\tau,a}\|v_{\tau,a}\|$. Since
+$\rinf{S}(\gamma_p)^{-1}y\in\bxp{S}$, we have $\|F_p\|\le\bxs{S}$ for $p\in\sA$.
+
+\emph{Step 1: close frames are equal.} Let $p,q\in\sA$ with $\varepsilon=\|F_p-F_q\|<(N\,\bxs{S})^{-1}$. We show
+$\gamma_p\mathfrak f=\gamma_q\mathfrak f$. Put $g=\gamma_p^{-1}\gamma_q$ and $y^{\circ}=\rinf{S}(\gamma_p)^{-1}y\in\bxp{S}$. By
+(S3), $g\in\terms{S}{d_p}{1}{d_q}$, and $1\in\terms{S}{d_p}{1}{d_p}$. For $u\in\GS{S}{E}$ let $F'(u)$ be the family
+of the vectors $(\rinf{S}(u)_\tau^{-1}y^{\circ}_\tau)^{-1}\fr{a}$; then $F'(1)=F_p$ and $F'(g)=F_q$.
+
+(a) $\Zf{S}{g}=\Zf{S}{1}$. By (J1), $\Zr{\rinf{S}(u)_\tau}_{la}$ is the hermitian product of
+$(y^{\circ}_\tau)^{-1}\fr{l}$ with the image under $\JT{\Trg{\fs}{1}}$ of the component $(\tau,a)$ of $F'(u)$. So, by (J1) again,
+$|\Zr{\rinf{S}(g)_\tau}_{la}-\Zr{1}_{la}|\le\bxs{S}\,\varepsilon$, and by the last formula of (S5) and $|\kapS{S}{\tau}|\ge1$,
+$|(\Zf{S}{g}_{la}-\Zf{S}{1}_{la})_\tau|\le N\,\bxs{S}\,\varepsilon<1$ for all $\tau$. The entries of $\Zf{S}{g}$ and
+$\Zf{S}{1}$ are algebraic integers (S3); by (J4) they agree.
+
+(b) \emph{The rows of $g\mathfrak f$ and $\mathfrak f$ outside the rows $e_a$ agree.} $\Zf{S}{1}$ is the diagonal matrix
+with the entries $0,\dots,0,-N$. The entry $(a,l)$ of $\Zf{S}{g}$ is $g(e^*_a,\fr{l})$ for $a<\varrho$ and
+$-N\,g(z,\fr{l})$ for $a=\varrho$. So the rows $e^*_a$ and $z$ of $g\mathfrak f$ are those of $\mathfrak f$. Let $v_l$ be the
+middle part of $(g-1)\fr{l}$; its $z$-coordinate is $0$. The vectors $g\fr{l}$ and $\fr{l}$ have no
+$e^*$-coordinates, so $h(g\fr{l},g\fr{l})=h(\fr{l},\fr{l})$ reads
+$(v_l+\Mid\fr{l})^{*}T(v_l+\Mid\fr{l})=(\Mid\fr{l})^{*}T\,\Mid\fr{l}$ with $T=\Trat{S}{E}$; as $T$ is diagonal and
+$\Mid\fr{l}$ is $0$ or the unit vector at $z$, this gives $v_l^{*}Tv_l=0$, and $v_l=0$ by (S5).
+
+(c) \emph{The rows $e_a$.} We show $(g-1)(e_a,\fr{l})=0$ for all $l$, by descending induction on $a<\varrho$. By
+(b) and Lemma~\ref{l:framediff} (for $g$ and $1$), the component $(\tau,l)$ of $F'(g)-F'(1)$ is
+$\sum_{a'<\varrho}c_{a'}\,(y^{\circ}_\tau)^{-1}\fr{a'}$ with
+$c_{a'}=((g-1)(e_{a'},\fr{l}))_\tau\,\bscale{S}{\tau}{\fr{l}}/\bscale{S}{\tau}{e_{a'}}$, and $c_{a'}=0$ for $a'>a$ by the
+induction hypothesis. By (J1) there is $w\in\mathcal U$ with $\|wy^{\circ}_\tau\|\le\bsize{y^{\circ}_\tau}\le b^{6n+2}$, and
+\[\Bigl|\sum_{a'<\varrho}c_{a'}\,w(e_a,e_{a'})\Bigr|\ \le\ \|wy^{\circ}_\tau\|\cdot\Bigl\|\sum_{a'<\varrho}c_{a'}\,(y^{\circ}_\tau)^{-1}\fr{a'}\Bigr\|\ \le\ b^{6n+2}\,\varepsilon.\]
+As $w(e_a,e_{a'})$ is $0$ for $a'<a$ and $1$ for $a'=a$, the left side is $|c_a|$. Hence
+\[\bigl|((g-1)(e_a,\fr{l}))_\tau\bigr|\ \le\ |\kapS{S}{\tau}|^{\,l-a}\,b^{6n+2}\,\varepsilon\ \le\ b^{23\varrho+6n+2}\,\varepsilon\ \le\ \bxs{S}\,\varepsilon<1,\]
+using $1\le|\kapS{S}{\tau}|\le b^{23}$. The numbers $g(e_a,\fr{l})$ are algebraic integers: by \ref{r:groups} the
+matrices $\clB{S}{\cdot}$ are the identity on the rows $e_a$ and fix the frame vectors, so $g(e_a,\fr{l})$ is an
+entry of the position $\pos{S}{d_p}{d_q}{g}$, which is integral by (S3). By (J4), $(g-1)(e_a,\fr{l})=0$.
+
+So $g\mathfrak f=\mathfrak f$, that is $\gamma_p\mathfrak f=\gamma_q\mathfrak f$ by (S5).
+
+\emph{Step 2: the count.} Let $\sA_0\subseteq\sA$ contain exactly one $p$ for every matrix $\gamma_p\mathfrak f$, $p\in\sA$.
+By Step~1 the points $F_p$, $p\in\sA_0$, are pairwise at distance at least $(N\bxs{S})^{-1}$. Fix $p_0\in\sA_0$; the
+points $F_p-F_{p_0}$ lie in $V$, by (iii), and have norm at most $2\,\bxs{S}$. By (J3),
+\[\#\sA_0\ \le\ \bigl(1+4N\,\bxs{S}^2\bigr)^{\dim_{\RR}V}\ \le\ b^{\,6n^2\dim_{\RR}V},\]
+since $1+4N\bxs{S}^2\le b^{3+60n+4n^2}\le b^{6n^2}$.
+
+Colour $p\in\sA$ by the matrix $\gamma_p\mathfrak f$; there are $\#\sA_0$ colours. Call $p,q$ related if $d_p=d_q$ and
+$\gamma_p^{-1}\gamma_q\in\clUo{S}{d_p}$. Two elements of one colour are related, by (S3) and (ii). Let
+$\sB\subseteq\sA$ be a set of pairwise related elements and $p\in\sB$; write $d=d_p$. For $q\in\sB$ put
+$u_q=\delta_q^{-1}\gamma_p=(\delta_q^{-1}\gamma_q)(\gamma_q^{-1}\gamma_p)\in\clU{S}{d}$; by (i) the map $q\mapsto u_q$ is
+injective on $\sB$. By (ii) and Lemma~\ref{l:sumone}(a),
+\[\sum_{q\in\sB}\sw_q\ \le\ x\sum_{q\in\sB}\cutoff{S}{d}\bigl(\rinf{S}(u_q)\,\rinf{S}(\gamma_p)^{-1}y'\bigr)\ \le\ x.\]
+Lemma~\ref{l:colour} gives $\sum_{p\in\sA}\sw_p\le\#\sA_0\cdot x$, which is the assertion.
+\end{proof}
+\leanline{\lean{tsumclassCutoffboxle}}
+
+\sect{The covolume of the arithmetic unipotent group}{s:covol}
+As before $\mathcal U=\UT{\Trg{\fs}{1}}$. For $a<\varrho$ let $\mathrm{Fr}(a)$ be the set of the $l\in\Ix{\fs}$ such
+that $(a,l)$ is a free position (Section~\ref{s:eichler}): the $e_b$ and $e^*_b$ with $b>a$ and the middle indices;
+it has $2(\varrho-1-a)+\kk{\fs}+1$ elements.
+
+\statement{ana}{\textbf{Inputs.} \textbf{(J8)}, unit~118 (coordinates of the unipotent group). The
+\emph{coordinates} of $u\in\mathcal U$ are the complex numbers $u(e_a,l)$, $a<\varrho$, $l\in\mathrm{Fr}(a)$, and the
+real numbers $\ImPt u(e_a,e^*_a)$, $a<\varrho$. The coordinate map is injective on $\mathcal U$ and carries the measure
+$\muU{\fs}$ to Lebesgue measure.
+
+\textbf{(J9)}, unit~106 (fundamental domains). (i) Let $\Omega$ be a finite set, $(t_{l,\tau})$ non-zero complex
+numbers indexed by $l\in\Omega$ and the infinite places $\tau$ of $E$, and $M$ an invertible matrix over $\AEf$ on
+$\Omega$. The group of the families $(t_{l,\tau}\,x_{l,\tau})_{l,\tau}$, for $x\in E^{\Omega}$ with $M\fadm{x}$ integral,
+has a measurable set $F\subseteq\CC^{\Omega\times\{\tau\}}$ of volume
+$\prod_\tau\bigl|\prod_lt_{l,\tau}\bigr|^2\big/\bigl(\gix{\det M}\,\volO{E}^{\#\Omega}\bigr)$ that contains exactly one
+translate of every point by the group. (ii) Let $E$ be stably unramified and $(t_\tau)$ non-zero real numbers.
+The group of the families $(t_\tau\,\ImPt s_\tau)_\tau$, for integers $s$ of $E$ with $\cj{s}=-s$, has a measurable set
+$F\subseteq\RR^{\{\tau\}}$ of volume $\prod_\tau|t_\tau|\cdot|d_E|^{1/4}$ with the same property. (iii) Let $G$ be a
+group, $\Gamma$ a subgroup, $(V_i)_{i\in\iota}$ a finite family of abelian groups with a degree
+$\deg\colon\iota\to\mathbb N$, $\mathsf c=(\mathsf c_i)\colon G\to\prod_iV_i$ an injective map, and for every $i$ a
+submonoid $L_i\subseteq V_i$ and a set $F_i\subseteq V_i$ that contains exactly one translate of every point
+by $L_i$. Suppose that (1) for every $i$ and every $l\in L_i$ there is $\gamma\in\Gamma$ with $\mathsf c_i(\gamma)=l$ and
+$\mathsf c_{i'}(\gamma)=\mathsf c_{i'}(1)$ for all $i'\ne i$ with $\deg i'\le\deg i$; and (2) for every $i$ and every
+$\gamma\in\Gamma$ with $\mathsf c_{i'}(\gamma)=\mathsf c_{i'}(1)$ for all $i'$ with $\deg i'<\deg i$, one has
+$\mathsf c_i(\gamma)\in L_i$ and $\mathsf c_i(x\gamma)=\mathsf c_i(\gamma)+\mathsf c_i(x)$ for all $x\in G$. Then for every
+$x\in G$ there is exactly one $\gamma\in\Gamma$ with $\mathsf c(x\gamma)\in\prod_iF_i$.
+
+The catalogue classes these inputs as elementary and gives no reference.}
+
+\begin{lemma}[additivity of the coordinates]\label{l:additive}
+Let $u\in\mathcal U$ and $a<\varrho$. Suppose that the coordinates of $u$ in the rows $e_b$, $b>a$, vanish: the
+entries $u(e_b,l)$, $l\in\mathrm{Fr}(b)$, and the numbers $\ImPt u(e_b,e^*_b)$.
+\begin{enumerate}[label=(\alph*),itemsep=1pt]
+\item Then $(xu)(e_a,l)=x(e_a,l)+u(e_a,l)$ for all $x\in\mathcal U$ and all $l\in\mathrm{Fr}(a)$.
+\item If moreover $u(e_a,l)=0$ for all $l\in\mathrm{Fr}(a)$, then $\RePt u(e_a,e^*_a)=0$ and
+$(xu)(e_a,e^*_a)=x(e_a,e^*_a)+u(e_a,e^*_a)$ for all $x\in\mathcal U$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+Since $(xu)(e_a,l)=x(e_a,l)+u(e_a,l)+\sum_i(x-1)(e_a,i)\,(u-1)(i,l)$ and $(x-1)(e_a,i)=0$ unless $\lev(i)>a$, it
+suffices to show that $(u-1)(i,l)=0$ for all $i$ with $\lev(i)>a$, that is for $i=e_b$ with $b>a$, $i$ a middle
+index, or $i=e^*_b$; and for $l\in\mathrm{Fr}(a)$ in (a), $l=e^*_a$ in (b).
+
+Let $J=\JT{\Trg{\fs}{1}}$; then $J^2=1$, so $uJu^{*}=J$: writing $\rho_i$ for the row $i$ of $u$ and
+$\langle\rho,\rho'\rangle=\rho J\rho'^{*}$, we have $\langle\rho_i,\rho_{i'}\rangle=J(i,i')$. Let $c>a$, or $c=a$ in
+case (b). Outside the columns $e^*_d$ the row $\rho_{e_c}$ is the unit row at $e_c$, because $u\in\mathcal U$ and
+its free entries vanish. Hence $\langle\rho,\rho_{e_c}\rangle=\rho(e^*_c)+\sum_d\rho(e_d)\,\cj{u(e_c,e^*_d)}$ for every
+row vector $\rho$.
+
+For $i$ a middle index or $i=e^*_b$ we have $\rho_i(e_d)=0$, so $u(i,e^*_c)=J(i,e_c)=\delta_{i,e^*_c}$. Now let $i=e_b$ with $b>a$, or $b=a$ in case (b). Then $\rho_{e_b}(e_d)=\delta_{bd}$, so
+$u(e_b,e^*_c)+\cj{u(e_c,e^*_b)}=0$. If $b<c$ the first term is a free entry of the row $e_b$, hence $0$, and so is
+the second; by symmetry both terms vanish whenever $b\ne c$. If $b=c$ the relation says $\RePt u(e_b,e^*_b)=0$;
+for $b>a$ also $\ImPt u(e_b,e^*_b)=0$ by hypothesis, and for $b=a$ this is the first assertion of (b). This proves
+$(u-1)(i,e^*_c)=0$ for all $i$ of level greater than $a$ and all such $c$.
+
+It remains to treat, in (a), the columns $l=e_c$ with $c>a$ and the middle columns $l$. There $u(i,l)=\delta_{il}$
+if $\lev(i)\ge\lev(l)$, and otherwise $i=e_b$ with $a<b$, and $(b,l)$ is a free position.
+\end{proof}
+
+\begin{proof}[Proof of Theorem C]
+Write $g=\gS{S}$, $N=\NS{S}$, $k=\kk{\fs}$, $f=\ninf{E}$. Let $G=\prod_\tau\mathcal U$ with the measure
+$\mu=\prod_\tau\muU{\fs}$, let $\varphi\colon\clU{S}{c}\to G$, $u\mapsto(\rinf{S}(u)_\tau)_\tau$, an injective
+homomorphism \ref{r:groups}, and $\Gamma$ its image.
+
+\emph{The class basis.} By \ref{r:groups}, $\clB{S}{c}$ is block diagonal: the identity on the $e_a$ and $e^*_a$,
+and a matrix $m_c$ on $\Mx{\fs}$, the product of $\operatorname{diag}(\tilde c,1)$ and the middle block of $\latB{S}$,
+whose determinant is $\cj{\piS{S}}^{-1}$. As $\tilde c$ is unitary, $\gix{\det\tilde c}^2=1$; and
+$\gix{\piS{S}}^2=\gix{N}=N^{2f}$ by (J2). Hence $\gix{\det m_c}=N^{-f}$. For $a<\varrho$ let $m(a)$ be the transpose
+of the block of $\clB{S}{c}$ on $\mathrm{Fr}(a)$: for a row vector $x$ supported on $\mathrm{Fr}(a)$,
+$m(a)x$ is the restriction of $x\,\clB{S}{c}$ to $\mathrm{Fr}(a)$, and $x\,\clB{S}{c}$ vanishes outside
+$\mathrm{Fr}(a)$. Its determinant is $\det m_c$.
+
+\emph{Graded coordinates.} The index set $\iota$ consists of the pairs $(a,\mathrm{fr})$ and $(a,\mathrm{sk})$,
+$a<\varrho$, with $\deg(a,\mathrm{fr})=2(\varrho-1-a)$ and $\deg(a,\mathrm{sk})=2(\varrho-1-a)+1$. For
+$u=(u_\tau)\in G$ put $\mathsf c_{a,\mathrm{fr}}(u)=(u_\tau(e_a,l))_{l\in\mathrm{Fr}(a),\tau}$ and
+$\mathsf c_{a,\mathrm{sk}}(u)=(\ImPt u_\tau(e_a,e^*_a))_\tau$. By (J8), $\mathsf c$ is injective and carries $\mu$ to
+Lebesgue measure. Let
+\[t_{l,\tau}=g\,\bscale{S}{\tau}{l}/\bscale{S}{\tau}{e_a}\quad(l\in\mathrm{Fr}(a)),\qquad t'_\tau=g/\fscale{S}{\tau}{a},\]
+let $L_{a,\mathrm{fr}}$ be the group of the families $(t_{l,\tau}x_{l,\tau})$, $x\in E^{\mathrm{Fr}(a)}$ with
+$m(a)\fadm{x}$ integral, and $L_{a,\mathrm{sk}}$ the group of the families $(t'_\tau\ImPt s_\tau)$, $s$ an integer of $E$
+with $\cj{s}=-s$. Let $F_{a,\mathrm{fr}}$, $F_{a,\mathrm{sk}}$ be the sets given by (J9)(i),(ii).
+
+\emph{Condition (1) of (J9)(iii).} Let $(t_{l,\tau}x_{l,\tau})\in L_{a,\mathrm{fr}}$, and extend $x$ by $0$ to a row
+vector on $\Ix{\fs}$. Then $\fadm{x}\,\clB{S}{c}$ is integral, and Lemma~\ref{l:eichlerrow} with $s=0$ gives
+$u\in\clU{S}{c}$ with $u(e_b,l)=\delta_{e_b,l}+g\,[b=a]\,x_l$ for all $b<\varrho$ and $l\ne e^*_a$. By the formula for
+$\rinf{S}$, $\mathsf c_{a,\mathrm{fr}}(\varphi(u))=(t_{l,\tau}x_{l,\tau})$, and all other coordinates of $\varphi(u)$
+vanish, except possibly $\mathsf c_{a,\mathrm{sk}}$, whose degree is larger. Let $(t'_\tau\ImPt s_\tau)\in L_{a,\mathrm{sk}}$.
+Lemma~\ref{l:eichlerrow} with $l=0$ gives $u\in\clU{S}{c}$ with $u(e_b,j)=\delta_{e_b,j}+g\,[b=a]\,[j=e^*_a]\,s$ for
+all $b$ and $j$. Since $\bscale{S}{\tau}{e^*_a}/\bscale{S}{\tau}{e_a}=1/\fscale{S}{\tau}{a}$ is real,
+$\mathsf c_{a,\mathrm{sk}}(\varphi(u))=(t'_\tau\ImPt s_\tau)$, and all other coordinates vanish.
+
+\emph{Condition (2).} Let $u\in\clU{S}{c}$, let $i=(a,\mathrm{fr})$ or $i=(a,\mathrm{sk})$, and suppose that the
+coordinates of $\varphi(u)$ of degree less than $\deg i$ vanish. The additivity
+$\mathsf c_i(x\varphi(u))=\mathsf c_i(\varphi(u))+\mathsf c_i(x)$ is Lemma~\ref{l:additive}, applied at every $\tau$. For
+the membership in $L_i$ note first that the row $e_a$ of $\gid{S}^{-1}\fadm{u-1}\,\clB{S}{c}$ is integral: this matrix
+equals $\clB{S}{c}\,\gid{S}^{-1}(\pos{S}{c}{c}{u}-1)$, the row $e_a$ of $\clB{S}{c}$ is a unit row, and
+$\gid{S}^{-1}(\pos{S}{c}{c}{u}-1)$ is integral by (S1). If $i=(a,\mathrm{fr})$, put $x_l=g^{-1}u(e_a,l)$ for
+$l\in\mathrm{Fr}(a)$; then $\mathsf c_i(\varphi(u))=(t_{l,\tau}x_{l,\tau})$, and $m(a)\fadm{x}$ is the restriction to
+$\mathrm{Fr}(a)$ of that integral row, because the entries of the row $e_a$ of $u-1$ outside $\mathrm{Fr}(a)$ sit
+in columns $e^*_d$, $d\le a$, on which $\clB{S}{c}$ is the identity. If $i=(a,\mathrm{sk})$, put
+$s=g^{-1}u(e_a,e^*_a)$. It is integral at all finite places, hence an integer of $E$; and
+$\RePt\rinf{S}(u)_\tau(e_a,e^*_a)=0$ by Lemma~\ref{l:additive}(b), that is $s_\tau+\cj{s_\tau}=0$ for all $\tau$, so
+$\cj{s}=-s$. Then $\mathsf c_i(\varphi(u))=(t'_\tau\ImPt s_\tau)\in L_{a,\mathrm{sk}}$.
+
+\emph{Unfolding.} Let $\mathfrak B=\prod_iF_i$ and $D=\mathsf c^{-1}(\mathfrak B)\subseteq G$. By (J9)(iii), for every
+$x\in G$ there is exactly one $\gamma\in\Gamma$ with $x\gamma\in D$; applied to $x^{-1}$: exactly one $\gamma\in\Gamma$
+with $\gamma x\in D^{-1}$. So $G$ is the disjoint union of the sets $\gamma^{-1}D^{-1}$, and by the left invariance of
+$\mu$ and Lemma~\ref{l:sumone}(a),
+\[\int_G\cutoff{S}{c}(uy)\,d\mu(u)=\int_{D^{-1}}\sum_{\gamma\in\clU{S}{c}}\cutoff{S}{c}\bigl(\rinf{S}(\gamma)\,uy\bigr)\,d\mu(u)=\mu(D^{-1})=\mu(D),\]
+the last by the invariance of $\mu$ under inversion \ref{r:haar}. By (J8), $\mu(D)$ is the Lebesgue measure of
+$\mathfrak B$, the product of the volumes of the $F_i$.
+
+\emph{The volume.} The scales of the $e_b$ and $e^*_b$ are inverse to each other, so
+$\prod_{l\in\mathrm{Fr}(a)}|\bscale{S}{\tau}{l}|^2=|\bscale{S}{\tau}{z}|^2=N^{-1}$, and
+$|\bscale{S}{\tau}{e_a}|^{-2}=\fscale{S}{\tau}{a}^{-1}$. With $n_a=\#\mathrm{Fr}(a)$, (J9) and
+$\gix{\det m(a)}=N^{-f}$ give
+\[\vol(F_{a,\mathrm{fr}})=\frac{g^{2n_af}}{\volO{E}^{\,n_a}}\prod_\tau\fscale{S}{\tau}{a}^{-n_a},\qquad
+\vol(F_{a,\mathrm{sk}})=g^{f}\,|d_E|^{1/4}\prod_\tau\fscale{S}{\tau}{a}^{-1}.\]
+Now $n_a+1=k+2(\varrho-a)$ and $\sum_{a<\varrho}n_a=\varrho(\varrho+k)$, so the product over $a<\varrho$ of these volumes is
+\[g^{\varrho(2\varrho+2k+1)f}\ \volO{E}^{-\varrho(\varrho+k)}\ |d_E|^{\varrho/4}\ \prod_\tau\prod_{a<\varrho}\fscale{S}{\tau}{a}^{-(k+2(\varrho-a))}.\]
+This is $\ucov{S}$ \ref{r:const}: the factor $a=\varrho$ of $\fsprod{S}$ is $\prod_\tau\fscale{S}{\tau}{\varrho}^{k}=N^{-kf}$,
+which cancels the factor $N^{-kf}$ of $\ucov{S}$.
+\end{proof}
+\leanline{\lean{lintegralclassCutoffequnipCovolume}}
+
+\begin{lemma}[unfolding in products]\label{l:unfold}
+Let $A$ be a subgroup of $\Gone{\fs}$ and $\mu_A$ a measure on $A$ that is a unimodular Haar measure with a
+cutoff: a $\sigma$-finite Haar measure of $A$, invariant under right translations and inversion, for which
+there is a measurable $\beta\ge0$ on $\Gone{\fs}$ with $\int_A\beta(ay)\,d\mu_A(a)=1$ for all $y$; let
+$\mu_{A\backslash}=\beta\,dy$ for the chosen such $\beta$. Then for every finite set $\Omega$ the map
+$\bigl((x_p)_p,(a_p)_p\bigr)\mapsto(a_px_p)_p$ carries the measure
+$\bigl(\prod_{p\in\Omega}\mu_{A\backslash}\bigr)\times\bigl(\prod_{p\in\Omega}\mu_A\bigr)$ to the Haar measure
+$\prod_{p\in\Omega}dy$ of $\Gone{\fs}^{\Omega}$.
+\end{lemma}
+\begin{proof}
+For one factor this is the unfolding of the background library of unit~114, recalled in \ref{r:haar}. A product of
+measure preserving maps preserves the product measures, and regrouping the factors does.
+\end{proof}
+\leanline{\lean{measurePreservingpiorbitMeasure}}
+
+The formal text records here that $\mu_{A\backslash}$ is $\sigma$-finite, the chosen $\beta$ being finite almost
+everywhere, and later that $\GRes{S}$ is finite; both are unnamed instances.
+
+\begin{lemma}[integrals against a cutoff]\label{l:cutprod}
+In Setting~\ref{set:adm}, let $c\in\Cl{S}$ and, for every infinite place $\tau$ of $E$, let
+$F_\tau\colon\Gone{\fs}\to[0,\infty]$ be measurable and invariant under left translation by $\mathcal U$. Then
+\[\int\cutoff{S}{c}(y)\prod_\tau F_\tau(y_\tau)\,dy=\ucov{S}\cdot\prod_\tau\int F_\tau\,d\muq{\fs}.\]
+\end{lemma}
+\begin{proof}
+By Lemma~\ref{l:unfold} for $A=\mathcal U$ and the set of the infinite places, the left side is
+$\int\!\!\int\cutoff{S}{c}\bigl((u_\tau x_\tau)_\tau\bigr)\prod_\tau F_\tau(u_\tau x_\tau)\,d\mu(u)\,d\bigl(\prod_\tau\muq{\fs}\bigr)(x)$. The
+factors $F_\tau(u_\tau x_\tau)=F_\tau(x_\tau)$ do not depend on $u$, the integral of the cutoff over $u$ is $\ucov{S}$ by
+Theorem~C, and the remaining integral over $x$ is the product of the integrals of the $F_\tau$.
+\end{proof}
+\leanline{\lean{lintegralclassCutoffmulprod}}
+
+\sect{Amplitude sums}{s:ampl}
+In this section $\mathcal U=\UT{\Trg{\fs}{1}}$, and for $\gamma\in\GS{S}{E}$ and $y\in\prod_\tau\Gone{\fs}$ we write
+$\gamma^{-1}y$ for $\rinf{S}(\gamma)^{-1}y$ and $\gamma y$ for $\rinf{S}(\gamma)y$. All integrals over $y$ are over
+$\prod_\tau\Gone{\fs}$ for the Haar measure $dy$, which is invariant under these translations.
+
+\begin{lemma}\label{l:stableS}
+For $S\in\Fill{E}{\fs}$, the group $\ST{\Trat{S}{E}}$ of the rational points of the Bessel subgroup is stable:
+$\IsStab{S}{\ST{\Trat{S}{E}}}$.
+\end{lemma}
+\begin{proof}
+It is a group that contains $\UT{\Trat{S}{E}}$ \ref{r:space}.
+\end{proof}
+\leanline{\lean{isStablebesselS}}
+
+\begin{lemma}[coordinates of a sum of integrals]\label{l:sumint}
+Let $(\mathsf Y,\mu)$ be a measure space, $\sP$ a countable set, $I$ a finite set, and for $p\in\sP$ let
+$g_p\colon\mathsf Y\to\CC^{I}$ be measurable, with $\sum_{p\in\sP}\int\|g_p\|\,d\mu<\infty$. Then for every $i\in I$,
+\[\Bigl(\sum_{p\in\sP}\int g_p\,d\mu\Bigr)_i=\int\sum_{p\in\sP}g_p(x)_i\,d\mu(x).\]
+\end{lemma}
+\begin{proof}
+Each $g_p$ is integrable and its integral has the coordinates $\int(g_p)_i\,d\mu$; the sum of the integrals
+converges absolutely, so its coordinate $i$ is $\sum_p\int(g_p)_i\,d\mu$; and since
+$\sum_p\int|(g_p)_i|\,d\mu<\infty$, sum and integral may be exchanged.
+\end{proof}
+\leanline{\lean{tsumintegralapply}}
+
+\begin{lemma}[invariance of the Bessel functions and of the kernel]\label{l:Winv}
+Let $S\in\Fill{E}{\fs}$ and let $\sigma$ be a side.
+\begin{enumerate}[label=(\alph*),itemsep=1pt]
+\item For $c\in\Cl{S}$, $u\in\clU{S}{c}$, $y\in\prod_\tau\Gone{\fs}$ and $i\in\Bc{S}$:
+$\besfn{\sigma}{S}{\rinf{S}(u)\,y}{i}=\besfn{\sigma}{S}{y}{i}$.
+\item For $u,u'\in\UT{\Trat{S}{E}}$, $\gamma\in\GS{S}{E}$ and $y\in\prod_\tau\Gone{\fs}$:
+\[\besker{\sigma}{S}{u\gamma u'^{-1}}{\rinf{S}(u)\,y}=\uchar{S}{\rfin{S}(u)}^{-1}\,\uchar{S}{\rfin{S}(u')}\cdot\besker{\sigma}{S}{\gamma}{y}.\]
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) By (S4), $\besfn{\sigma}{S}{\rinf{S}(u)y}{i}=\uchar{S}{\rfin{S}(u)}^{-1}\besfn{\sigma}{S}{y}{i}$. The position
+$\pos{S}{c}{c}{u}=\hc{S}{c}^{-1}\rfin{S}(u)\hc{S}{c}$ lies in $\KgS{S}$, so the second statement of (S4), for the pair
+$(1,\rfin{S}(u))$, gives $\uchar{S}{\rfin{S}(u)}=\uchar{S}{1}=1$. (b) The coordinate $(i,j)$ of the left side is
+$\besfn{\sigma}{S}{\rinf{S}(u)y}{i}$ times the conjugate of
+$\besfn{\sigma}{S}{\rinf{S}(u')\rinf{S}(\gamma)^{-1}y}{j}$. By (S4) these are
+$\uchar{S}{\rfin{S}(u)}^{-1}\besfn{\sigma}{S}{y}{i}$ and the conjugate of
+$\uchar{S}{\rfin{S}(u')}^{-1}\besfn{\sigma}{S}{\rinf{S}(\gamma)^{-1}y}{j}$, and the values of $\uchar{S}{\cdot}$ have absolute
+value $1$.
+\end{proof}
+\leanline{\lean{besselFnmulofmemclassUnip}\sep\lean{besselKernelbesselUmul}}
+
+\begin{proof}[Proof of Theorem D]
+Write $b=\bS{S}$, $n=\nn{\fs}$, $r=\rr{\fs}$, $k=\kk{\fs}$, $f=\ninf{E}$. Take $A_\tau$, $m_\tau$ and $\theta_\tau$ from
+(S7) and put, for $y\in\prod_\tau\Gone{\fs}$ and a side $t$,
+\[\mathbf A(y)=\prod_\tau A_\tau(y_\tau),\qquad\mathbf W^{t}(y)=\prod_\tau\|\Wsys{t}{S}{\tau}(y_\tau)\|,\qquad
+\Theta(y)=\prod_\tau\theta_\tau(y_\tau)\ \ge1,\]
+so that $\Theta(y)\,\mathbf W^{t}(y)\le\mathbf A(y)$, and $\|\besker{t}{S}{\gamma}{y}\|=\mathbf W^{t}(y)\,\mathbf W^{t}(\gamma^{-1}y)$.
+
+\emph{Step 1: the frame count.} We claim that for every $y$, with $C_0=b^{12n^3rf}$,
+\[\sum_{d\in\Cl{S}}\ \sum_{\gamma\in X(d)}\cutoff{S}{d}(\gamma^{-1}y)\,\mathbf A(\gamma^{-1}y)\ \le\ C_0\prod_\tau m_\tau(\Gone{\fs}).\tag{1}\]
+Let $m=\prod_\tau m_\tau$, a finite measure on $\prod_\tau\Gone{\fs}$, and for a point $v$ let $Q(v)$ be the set of the
+$g$ with $\InCut{v_\tau g_\tau}{b}$ for all $\tau$. By (S7), $\mathbf A(v)\le m(Q(v))$. So the left side of (1) is at
+most the integral over $g$, for $m$, of
+\[\sum_{d}\ \sum_{\gamma\in X(d)}\cutoff{S}{d}(\gamma^{-1}y)\,1_{Q(\gamma^{-1}y)}(g),\]
+and it suffices to bound this sum by $C_0$ for every $g$. Fix $g$ and apply Theorem~B to the following data: the
+index set $\sP$ of the pairs $p=(d,\gamma)$ with $\gamma\in X(d)$; $d_p=d$, $\delta_p=\gamma$; the weight
+$\sw_p=\cutoff{S}{d}(\gamma^{-1}y)\,1_{Q(\gamma^{-1}y)}(g)$; $x=1$; the point $y$ in the place of $y'$ and the point
+$yg=(y_\tau g_\tau)_\tau$ in the place of $y$; and $V$ the whole space of families, of real dimension $2rnf$. For $p$
+with $\sw_p\ne0$ we have $g\in Q(\gamma^{-1}y)$, so by Lemma~\ref{l:sumone}(c) there is $u_p\in\clU{S}{d}$ with
+$\rinf{S}(u_p)(\gamma^{-1}y)g\in\bxp{S}$; put $\gamma_p=\gamma u_p^{-1}$. Then hypothesis (i) of Theorem~B is clear;
+for (ii), $\gamma_p\in\terms{S}{c}{s}{d}$ by (S3), $\delta_p^{-1}\gamma_p=u_p^{-1}\in\clU{S}{d}$,
+$\gamma_p^{-1}(yg)=\rinf{S}(u_p)(\gamma^{-1}y)g\in\bxp{S}$, and $\sw_p\le\cutoff{S}{d}(\delta_p^{-1}y)$; and (iii) is
+empty. Theorem~B bounds the sum by $b^{6n^2\cdot2rnf}=C_0$.
+
+\emph{Step 2: integration.} Multiply (1) by $\cutoff{S}{c}(y)\,\mathbf A(y)$ and integrate over $y$. By
+Lemma~\ref{l:cutprod} and (S7),
+$\int\cutoff{S}{c}(y)\mathbf A(y)\,dy=\ucov{S}\prod_\tau\int A_\tau\,d\muq{\fs}$ and
+$\prod_\tau m_\tau(\Gone{\fs})\int A_\tau\,d\muq{\fs}\le b^{2r^3f}\,\#\Bc{S}$. Hence
+\[\sum_{d\in\Cl{S}}\ \sum_{\gamma\in X(d)}\int\cutoff{S}{c}(y)\,\cutoff{S}{d}(\gamma^{-1}y)\,\mathbf A(y)\,\mathbf A(\gamma^{-1}y)\,dy
+\ \le\ C_0\,b^{2r^3f}\,\#\Bc{S}\cdot\ucov{S}.\tag{2}\]
+
+\emph{Assertion (1) of the theorem.} Since $\mathbf W^{\sigma}\le\mathbf A$, the first sum is at most the left side
+of (1), so $M=C_0\prod_\tau m_\tau(\Gone{\fs})$ will do. By (S7) and the definition,
+$\ampabs{\sigma}{S}{c}{c'}{\gamma}=\int\cutoff{S}{c}(y)\cutoff{S}{c'}(\gamma^{-1}y)\mathbf W^{\sigma}(y)\mathbf W^{\sigma}(\gamma^{-1}y)\,dy$, and
+the sum of these over $\gamma\in X(c')$ is at most the left side of (2), which is finite.
+
+\emph{Assertion (2).} We claim that for all $\gamma$ and $y$
+\[\bigl\|\besker{\sigma}{S}{\gamma}{y}-\besker{\cut}{S}{\gamma}{y}\bigr\|\ \le\ 2\,b^{-3r^3f}\,\mathbf A(y)\,\mathbf A(\gamma^{-1}y).\]
+If $\Theta(y)=\Theta(\gamma^{-1}y)=1$, the full and the cut Bessel functions agree at all $y_\tau$ and all
+$(\gamma^{-1}y)_\tau$, and the left side is $0$. Otherwise $\Theta(y)\,\Theta(\gamma^{-1}y)\ge b^{3r^3f}$, and for both
+sides $t$, $\|\besker{t}{S}{\gamma}{y}\|=\mathbf W^{t}(y)\mathbf W^{t}(\gamma^{-1}y)\le b^{-3r^3f}\mathbf A(y)\mathbf A(\gamma^{-1}y)$;
+the claim follows by the triangle inequality. With (2) and $\#\Bc{S}\le b^{2kf}$ \ref{r:adm}, the left side of
+assertion (2) is at most
+\[2\,b^{-3r^3f}\cdot C_0\,b^{2r^3f}\,b^{2kf}\cdot\ucov{S}=2\,b^{(12n^3r+2k-r^3)f}\,\ucov{S}.\]
+Now $r=k+2n-1$ with $2n-1\le k$ \ref{r:data}, so $r\le2k$ and $r^3-k^3\ge3k^2$, while
+$12n^3r+2k\le24n^3k+2k\le2k^2$ because $k\ge1000(2n)^9$. Hence the exponent is at most $-(k^3+k^2)f$, and
+$2\,b^{-k^2f}\le\tfrac12$.
+\end{proof}
+\leanline{\lean{amplitudeAbslttopandcutle}}
+
+\begin{corollary}\label{c:summable}
+In Setting~\ref{set:adm}, for every side $\sigma$, every set $\Xi\subseteq\GS{S}{E}$, all $c,c'\in\Cl{S}$ and
+$s\in\GRes{S}$, the family of the amplitudes $\amp{\sigma}{S}{c}{c'}{\gamma}$, $\gamma\in\Xi\cap\terms{S}{c}{s}{c'}$, is
+absolutely summable.
+\end{corollary}
+\begin{proof}
+$\|\amp{\sigma}{S}{c}{c'}{\gamma}\|\le\ampabs{\sigma}{S}{c}{c'}{\gamma}$ by (S7), and Theorem~D(1).
+\end{proof}
+\leanline{\lean{summableamplitude}}
+
+\begin{proof}[Proof of Theorem E]
+The countable group $\Delta=\clU{S}{c}\times\clU{S}{c'}$ acts on $\mathsf P=X\times\prod_\tau\Gone{\fs}$ by
+$(u,u')\cdot(\gamma,y)=(u\gamma u'^{-1},\rinf{S}(u)y)$: indeed $u\gamma u'^{-1}\in\Xi$ because $\Xi$ is stable, and
+$u\gamma u'^{-1}\in\terms{S}{c}{s}{c'}$ by (S3), as $u\in\terms{S}{c}{1}{c}$ and $u'^{-1}\in\terms{S}{c'}{1}{c'}$. The action
+preserves the measure $\mu_{\mathsf P}$ on $\mathsf P$ that is the product of the counting measure on $X$ and $dy$. By
+Lemma~\ref{l:Winv}(a) the functions $\mathsf K^{t}(\gamma,y)=\besker{t}{S}{\gamma}{y}$ are invariant under $\Delta$,
+for both sides $t$. Put $\beta_0(\gamma,y)=\cutoff{S}{c}(y)\,\cutoff{S}{c'}(\gamma^{-1}y)$. By
+Lemma~\ref{l:sumone}(a),
+\[\sum_{(u,u')\in\Delta}\beta_0\bigl((u,u')\cdot(\gamma,y)\bigr)=\sum_{u}\cutoff{S}{c}(\rinf{S}(u)y)\cdot\sum_{u'}\cutoff{S}{c'}\bigl(\rinf{S}(u')\gamma^{-1}y\bigr)=1,\]
+and $\phi$ has the same property by hypothesis; in particular $\phi\le1$ on $\mathsf P$. For a measurable
+$\Delta$-invariant $F\colon\mathsf P\to[0,\infty]$ we get, inserting the sum of $\beta_0$ and then moving $\delta$ to
+the other side by the invariance of $\mu_{\mathsf P}$ and of $F$,
+\begin{align*}\int\phi F\,d\mu_{\mathsf P}&=\sum_{\delta\in\Delta}\int\phi(p)F(p)\beta_0(\delta p)\,d\mu_{\mathsf P}(p)\\
+&=\sum_{\delta\in\Delta}\int\phi(\delta^{-1}p)F(p)\beta_0(p)\,d\mu_{\mathsf P}(p)=\int\beta_0F\,d\mu_{\mathsf P}.\tag{3}\end{align*}
+For $F=\|\mathsf K^{\sigma}\|$ the right side is $\sum_{\gamma\in X}\ampabs{\sigma}{S}{c}{c'}{\gamma}$, finite by Theorem~D(1).
+So every $y\mapsto\phi(\gamma,y)\besker{\sigma}{S}{\gamma}{y}$ is integrable, the sums below converge absolutely, and
+the computation (3), now with the vector valued $\mathsf K^{\sigma}$ in the place of $F$ and Fubini's theorem,
+gives
+\[\sum_{\gamma\in X}\int\phi(\gamma,y)\besker{\sigma}{S}{\gamma}{y}\,dy=\sum_{\gamma\in X}\int\beta_0(\gamma,y)\besker{\sigma}{S}{\gamma}{y}\,dy
+=\ampsum{\sigma}{S}{\Xi}{c}{s}{c'}.\]
+Finally (3) for $F=\|\mathsf K^{\sigma}-\mathsf K^{\cut}\|$ bounds the last sum of the theorem by the term $d=c'$ of
+Theorem~D(2).
+\end{proof}
+\leanline{\lean{hasSumamplitudeSumchangeofweight}}
+
+\begin{proposition}[moves]\label{p:moves}
+In Setting~\ref{set:adm}, let $\sigma$ be a side and $\Xi\subseteq\GS{S}{E}$ a set with $\IsStab{S}{\Xi}$.
+\begin{enumerate}[label=(\alph*),itemsep=1pt]
+\item Let $c,c_1,c',c_1'\in\Cl{S}$, $t,t'\in\GRes{S}$, and let $\eta,\eta'\in\ST{\Trat{S}{E}}$ be such that
+$\eta\in\terms{S}{c}{t}{c_1}$ and $\eta'\in\terms{S}{c'}{t'}{c_1'}$, and that
+$\gamma\in\Xi\Leftrightarrow\eta\gamma\eta'^{-1}\in\Xi$ for all $\gamma\in\GS{S}{E}$. Let $L$ be a continuous $\CC$-linear
+map of $\CC^{\Bc{S}\times\Bc{S}}$ to itself such that
+$\besker{\sigma}{S}{\eta\gamma\eta'^{-1}}{\rinf{S}(\eta)\,y}=L\bigl(\besker{\sigma}{S}{\gamma}{y}\bigr)$ for all $\gamma$ and $y$.
+Then for every $s\in\GRes{S}$,
+\[\ampsum{\sigma}{S}{\Xi}{c}{t\,s\,t'^{-1}}{c'}=L\bigl(\ampsum{\sigma}{S}{\Xi}{c_1}{s}{c_1'}\bigr).\]
+\item Let $u,u'\in\KS{S}\cap\UT{\Tlat{S}{\AEf}}$, $c,c'\in\Cl{S}$ and $s\in\GRes{S}$. Then
+\[\ampsum{\sigma}{S}{\Xi}{c}{\redS{S}(u)\,s\,\redS{S}(u')^{-1}}{c'}=\uchar{S}{u}^{-1}\,\uchar{S}{u'}\cdot\ampsum{\sigma}{S}{\Xi}{c}{s}{c'}.\]
+\end{enumerate}
+\end{proposition}
+\begin{proof}
+(a) By (S3), $\gamma\in\terms{S}{c_1}{s}{c_1'}$ if and only if $\eta\gamma\eta'^{-1}\in\terms{S}{c}{t\,s\,t'^{-1}}{c'}$. For
+$\eta'=\eta$ and $s=1$ this shows, together with the fact that $\eta$ normalizes $\UT{\Trat{S}{E}}$, that
+$u\mapsto\eta u\eta^{-1}$ is a bijection of $\clU{S}{c_1}$ onto $\clU{S}{c}$; likewise for $\eta'$. Put
+$\phi(\gamma,y)=\cutoff{S}{c}(\eta y)\,\cutoff{S}{c'}(\eta'\gamma^{-1}y)$. For $\gamma\in X_1=\Xi\cap\terms{S}{c_1}{s}{c_1'}$,
+\[\sum_{(u,u')\in\clU{S}{c_1}\times\clU{S}{c_1'}}\phi\bigl(u\gamma u'^{-1},uy\bigr)
+=\sum_{u}\cutoff{S}{c}\bigl((\eta u\eta^{-1})\,\eta y\bigr)\cdot\sum_{u'}\cutoff{S}{c'}\bigl((\eta'u'\eta'^{-1})\,\eta'\gamma^{-1}y\bigr)=1\]
+by the two bijections and Lemma~\ref{l:sumone}(a). Theorem~E, for $(c_1,s,c_1')$, gives
+$\ampsum{\sigma}{S}{\Xi}{c_1}{s}{c_1'}=\sum_{\gamma\in X_1}\int\phi(\gamma,y)\besker{\sigma}{S}{\gamma}{y}\,dy$. A continuous linear map
+commutes with these sums and integrals, so by the hypothesis on $L$ and the substitution $y\mapsto\eta^{-1}y$,
+\begin{align*}L\bigl(\ampsum{\sigma}{S}{\Xi}{c_1}{s}{c_1'}\bigr)&=\sum_{\gamma\in X_1}\int\cutoff{S}{c}(y)\,\cutoff{S}{c'}\bigl((\eta\gamma\eta'^{-1})^{-1}y\bigr)\,
+\besker{\sigma}{S}{\eta\gamma\eta'^{-1}}{y}\,dy\\&=\sum_{\gamma\in X_1}\amp{\sigma}{S}{c}{c'}{\eta\gamma\eta'^{-1}}.\end{align*}
+As $\gamma\mapsto\eta\gamma\eta'^{-1}$ maps $X_1$ bijectively onto $\Xi\cap\terms{S}{c}{t\,s\,t'^{-1}}{c'}$, this is the left
+side of the assertion.
+
+(b) By (S4) there is $x\in\UT{\Trat{S}{E}}$ with $u^{-1}\pos{S}{c}{c}{x}\in\KgS{S}$ and
+$\uchar{S}{\rfin{S}(x)}=\uchar{S}{u}$; then $\pos{S}{c}{c}{x}\in u\,\KgS{S}$, so $x\in\terms{S}{c}{\redS{S}(u)}{c}$.
+Let $x'$ be the same for $u'$ and $c'$. Apply (a) with $\eta=x$, $\eta'=x'$, $c_1=c$, $c_1'=c'$,
+$t=\redS{S}(u)$, $t'=\redS{S}(u')$: the condition on $\Xi$ holds by stability, and by Lemma~\ref{l:Winv}(b) the
+multiplication by $\uchar{S}{u}^{-1}\uchar{S}{u'}$ can be taken for $L$.
+\end{proof}
+\leanline{\lean{amplitudeSummove}\sep\lean{amplitudeSumbesselUmul}}
+
+\begin{proof}[Proof of Theorem F]
+(i) Suppose $\ampsum{\sigma}{S}{\Xi}{c}{s}{c'}\ne0$, and let $u,u'\in\KS{S}\cap\UT{\Tlat{S}{\AEf}}$ with
+$\redS{S}(u)\,s=s\,\redS{S}(u')$. Then $\redS{S}(u)\,s\,\redS{S}(u')^{-1}=s$, and Proposition~\ref{p:moves}(b) gives
+$\ampsum{\sigma}{S}{\Xi}{c}{s}{c'}=\uchar{S}{u}^{-1}\uchar{S}{u'}\,\ampsum{\sigma}{S}{\Xi}{c}{s}{c'}$, hence
+$\uchar{S}{u}=\uchar{S}{u'}$. So $s$ agrees.
+
+(ii) Write $\Xi=\ST{\Trat{S}{E}}$; it is stable by Lemma~\ref{l:stableS}. A term $\gamma\in\Xi$ over $(c,1,c')$ has
+$\pos{S}{c}{c'}{\gamma}\in\KgS{S}$, so by (S3) $c=c'$ and $\gamma\in\clU{S}{c}$. Thus for $c\ne c'$ the sum is empty.
+Let $c=c'$, and let $\phi(\gamma,y)=\cutoff{S}{c}(y)$ if $\gamma=1$ and $\phi(\gamma,y)=0$ otherwise. For
+$\gamma\in\Xi\cap\terms{S}{c}{1}{c}\subseteq\clU{S}{c}$ the condition $u\gamma u'^{-1}=1$ determines $u'=u\gamma$, so
+$\sum_{(u,u')}\phi(u\gamma u'^{-1},uy)=\sum_{u\in\clU{S}{c}}\cutoff{S}{c}(uy)=1$. By Theorem~E, with
+$\besker{\full}{S}{1}{y}$ of coordinates $\besfn{\full}{S}{y}{i}\,\cj{\besfn{\full}{S}{y}{j}}$,
+\[\ampsum{\full}{S}{\Xi}{c}{1}{c}_{(i,j)}=\int\cutoff{S}{c}(y)\,\besfn{\full}{S}{y}{i}\,\cj{\besfn{\full}{S}{y}{j}}\,dy.\]
+By (S7), $\Wsys{\full}{S}{\tau}(ny)_{i_\tau}\cj{\Wsys{\full}{S}{\tau}(ny)_{j_\tau}}=\Wsys{\full}{S}{\tau}(y)_{i_\tau}\cj{\Wsys{\full}{S}{\tau}(y)_{j_\tau}}$
+for $n\in\mathcal U$, the factor $e^{\sd{n}-\cj{\sd{n}}}$ having absolute value $1$. So we may unfold as in
+Lemma~\ref{l:cutprod} (for integrable complex functions, by Lemma~\ref{l:unfold} and Fubini's theorem): the
+integral over $\prod_\tau\mathcal U$ of the cutoff is $\ucov{S}$ by Theorem~C, and there remains
+\[\ucov{S}\cdot\prod_\tau\int\Wsys{\full}{S}{\tau}(y)_{i_\tau}\,\cj{\Wsys{\full}{S}{\tau}(y)_{j_\tau}}\,d\muq{\fs}(y)=\ucov{S}\prod_\tau\delta_{i_\tau j_\tau}\]
+by the orthonormality (J1).
+\end{proof}
+\leanline{\lean{amplitudeSumeqzeroofnotagrees}\sep\lean{amplitudeSumbesselSone}}
+
+\sect{Notes on the formal text}{s:notes}
+\subhead{Arguments that the census reads differently from Lean.} The notations of this note show the explicit
+arguments of the Lean definitions. For four definitions the census of the artifact, which reads the arguments
+from the text, lists other arguments than Lean takes, and the notation follows Lean: integral lifts
+(Definition~\ref{d:lifts}; Lean takes the class, $\gamma$ and $m$, the census adds the bound matrix $t$), and the
+three weights of Definition~\ref{d:weights}(a)--(c) (the census adds a variable $k$ of the file, because the
+definitions contain $\kk{\fs}$). Likewise the census lists a matrix variable of the file (and, for the first of them, instances of the file's
+field) among the arguments of
+Lemma~\ref{l:intcount}, Lemma~\ref{l:sumone}(c) and Theorem~B, and a type among those of Lemma~\ref{l:eichler}, where
+the statements only bind variables of the same name; and it stops at the first \texttt{let} of the statements
+of Theorems A, D and E and of Lemma~\ref{l:liouville}, whose remaining arguments were read in the Lean text. The
+notation $\latd{S}{c}$ is a function of the subspace, as in Lean. The discriminant $\sld{H}{V}$ of Note~S takes in
+Lean the proof that $H$ has the left inverse $L$; we show $H$.
+
+\subhead{The side.} In Lean the side is an instance argument with the default value ``full''. Theorems D and E
+compare the kernel of the side $\sigma$ with the cut kernel; for $\sigma=\cut$ their second assertions are empty.
+Theorem~F(ii) is stated for the full side only, as in Lean.
+
+\subhead{Where the formal statements are more general or more special.} Theorem~A needs no admissibility, and
+its number $x$ is a natural number. In Lemma~\ref{l:liouville} the hypothesis on $x$ is conditional on $\delta$
+being a unit, although under the other hypotheses $\delta$ always is one. In Theorem~B the element $s$ only
+serves to make the $\gamma_p$ terms over a common $s$. Proposition~\ref{p:boxexists} is stated in Lean for the
+function selected by a choice operator, as here. Lemma~\ref{l:formulas}(g) holds over any field. In
+Lemma~\ref{l:framediff} the second element enters only through its matrix. Lemma~\ref{l:levels}(c) is stated in
+Lean as the identity $\padl{j}{Z}\padl{j}{Z}^{-1}=1$ for the matrix inverse of the library, which is $0$ for
+singular matrices.
+
+\subhead{What the three files do not use themselves.} Lemmas \ref{l:gramlink}, \ref{l:liouville},
+\ref{l:colourcoset}, \ref{l:intcount}, \ref{l:scaled}, \ref{l:levels}, \ref{l:xrows}, \ref{l:sumint},
+Lemma~\ref{l:lagr}, Lemma~\ref{l:posdef} and the definitions of Sections \ref{s:links} and~\ref{s:count} are used
+only by later files of the unit (the pairing of links and the energy estimates). Theorem~A is used in the
+estimate of pairs of terms, Theorems B to F throughout the second moment.
+
+\subhead{Proofs that differ from the formal ones.} Lemma~\ref{l:lagr}(a): the formal proof applies the rank
+theorem to a basis of the link, we use that the link is its own orthogonal. Theorem~B: the formal proof takes a
+subset on which the colouring is injective with the same image, and measures distances from a chosen element;
+this is Step~2. Theorem~C: Lemma~\ref{l:additive} is inside the formal proof, where the vanishing of the entries
+is found by a decision procedure from the same relations between rows. Theorem~D: the comparison of the
+exponents at the end is done by a decision procedure in Lean and by hand here. Theorem~E: the formal proof uses
+the library's measure on a quotient and the fact that the distribution of an invariant function does not
+depend on the cutoff (unit~114); identity~(3) is the same fact, proved directly. In Proposition~\ref{p:boxexists}
+the formal induction adds the pairs with the row index decreasing, as here.
+
+\subhead{Related work named by the authors.} The comments at the head of the first file name, as related
+work on the sorting of double cosets by unipotent characters and on second moments, papers of Friedberg (1987), Y.~Liu
+(2014), Furusawa and Shalika (2003), Michel, Ramakrishnan and Yang (2023), Kowalski, Saha and Tsimerman (2012)
+and Blomer (2023). These are the authors' pointers; they were not opened for this note, and the formal proofs
+do not depend on them.
+
+\subhead{How this note was written.} From the dossier of the unit: the texts of the members of the three files
+and their structured proofs. I read the three Lean files completely. The proofs of Theorems A, B, C and D and of
+Proposition~\ref{p:boxexists}, which the readers of the dossier marked as their least certain, I read line by
+line in the Lean text, and the proofs given here follow those lines; the full statements of Theorems A, B, D, E
+and of Lemma~\ref{l:liouville} were read in the source, beyond the point where the census cuts them. Every
+statement of this note was compared with its Lean statement, argument by argument. Of the Inputs I read the
+Lean statements (for Note~S in its files, for the other units in theirs), and not the proofs; the description of
+the Inputs (J2) to (J9) as elementary is the catalogue's. Two remarks on the dossier: its reading of the
+induction in Proposition~\ref{p:boxexists} says that the pairs are added with increasing row index, while the Lean
+text adds them with decreasing row index; and the statement of Theorem~D is complete in its text although the
+census lists only the side among its arguments. Nothing was compiled for this note. The program check of the
+unit's dossier covered \UnitSteps{} leaf steps of \UnitProofs{} proofs.
+
+\head{Appendix A. Concordance with the Lean artifact}
+The formal names of the objects: \texttt{S.b}, \texttt{S.N}, \texttt{S.g}, \texttt{S.piBar}, \texttt{S.ϖ} are
+$\bS{S}$, $\NS{S}$, $\gS{S}$, $\piS{S}$, $\vpS{S}$; \texttt{𝔰.n}, \texttt{𝔰.k}, \texttt{𝔰.r} are $\nn{\fs}$, $\kk{\fs}$,
+$\rr{\fs}$; an infinite place \texttt{v} is $\tau$ and \texttt{Φ v x} is $x_\tau$; \texttt{numInfPlaces E} is
+$\ninf{E}$; \texttt{besselU}, \texttt{besselU0}, \texttt{besselH}, \texttt{besselS} are $\UT{T}$, $\UoT{T}$, $\HT{T}$,
+$\ST{T}$; \texttt{classUnip}, \texttt{classUnip₀}, \texttt{classCutoff}, \texttt{unipCovolume} are $\clU{S}{c}$,
+$\clUo{S}{c}$, $\cutoff{S}{c}$, $\ucov{S}$; \texttt{termsOver}, \texttt{termPosition}, \texttt{ratToInf},
+\texttt{ratToFin} are $\terms{S}{c}{s}{c'}$, $\pos{S}{c}{c'}{\gamma}$, $\rinf{S}$, $\rfin{S}$; \texttt{genIndex} is
+$\gix{\cdot}$; \texttt{frameVector y a} is $y^{-1}\fr{a}$ and \texttt{frameImage} $\gamma$ is $\gamma\mathfrak f$; a set
+\texttt{T} of rational elements is $\Xi$; the elements \texttt{σ}, \texttt{σ'} of Proposition~\ref{p:moves} are
+$\eta$, $\eta'$; the types \texttt{σ}, \texttt{τ}, \texttt{τ'}, \texttt{ι}, \texttt{m} of indices are $\Omega$,
+$\Omega'$; the type \texttt{α} is $\sP$. Three statements, as the artifact has them:
+\quoted{tsumclassCutoffboxle}
+\quoted{lintegralclassCutoffequnipCovolume}
+\quoted{amplitudeSumbesselSone}
+{\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}\setlength{\tabcolsep}{0pt}
+\begin{longtable}{@{}p{27mm}p{60mm}p{42mm}r@{}}
+\textbf{In this note} & \textbf{Lean declaration} & \textbf{File} & \textbf{Lines}\\\midrule\endhead
+\ConcordanceRows
+\end{longtable}}
+
+\head{Notation}
+\begingroup\fontsize{8.6}{10.9}\selectfont\raggedright
+\setlength{\columnsep}{9mm}\setlength{\parskip}{0pt}
+\begin{multicols}{2}
+\nt{$E$, $x\mapsto\cj{x}$, $x_\tau$}{a CM field with a CM type, its conjugation, the embedding at the infinite place $\tau$}
+\nt{$\ninf{E}$, $d_E$, $\volO{E}$}{number of infinite places; discriminant; $2^{\ninf{E}}/\sqrt{|d_E|}$}
+\nt{$\AEf$, $\hO$, $\Fw{w}$}{finite adeles; closure of the integers; residue field of a finite place $w$}
+\nt{$\fs=(\varrho,\kappa,k_0)$}{a shape; $\kk{\fs}$, $\nn{\fs}$, $\rr{\fs}$, $\Ix{\fs}$, $\Mx{\fs}$ as in \ref{r:space}}
+\nt{$e_a$, $x_i$, $z$, $e^*_a$; $X$, $X_0$}{the basis of the space; the spans of the $e_a$ and of the $x_i$}
+\nt{$\fr{a}$, $\mathfrak f$, $\lev$}{the frame, its matrix, the level of an index}
+\nt{$T$, $\JT{T}$, $h_T$, $\GT{T}$}{an $\fs$-form over a ring $R$ (or $A$), its Gram matrix, the form, the unitary group}
+\nt{$\UT{T}$, $\UoT{T}$, $\HT{T}$, $\ST{T}$}{unipotent group, its part fixing the frame, the group of $X_0$, the Bessel subgroup}
+\nt{$\Trg{\fs}{N}$, $\Gone{\fs}$, $\mathcal U$}{the diagonal form; the group at $\CC$; its unipotent group}
+\nt{$\sd{g}$, $\fm{g}$, $\ZT{T}{g}$, $\Zr{y}$, $\lmin{l}{Z}$}{sum of the superdiagonal entries on the frame; frame matrix; frame Gram matrices; leading minor}
+\nt{$\bsize{y}$, $\InCut{y}{b}$, $\frbox{\rho}$}{size modulo the Bessel subgroup, the cut condition, the frame box}
+\nt{$dy$, $\muU{\fs}$, $\muq{\fs}$, $\mu$}{Haar measures; the measure for the quotient by $\mathcal U$; in Section~\ref{s:covol} the product measure}
+\nt{$S$, $S'$, $S_1$}{filling data; $\NS{S}$, $\qS{S}{i}$, $\gS{S}$, $\piS{S}$, $\vpS{S}$, $\bS{S}$, $\ChS{S}{i}$ as in \ref{r:data}}
+\nt{$\Trat{S}{R}$, $\Tlat{S}{R}$, $\GS{S}{R}$, $\GFin{S}$}{forms and groups of \ref{r:groups}}
+\nt{$\KS{S}$, $\KgS{S}$, $\GRes{S}$, $\redS{S}$, $\redim{S}{A}$}{integral subgroup, principal level, finite group, reduction, reduced image}
+\nt{$\latB{S}$, $\rfin{S}$, $\rinf{S}$, $\bscale{S}{\tau}{i}$}{lattice basis; finite and real coordinates; the scales}
+\nt{$\Cl{S}$, $c$, $c'$, $d$, $\tilde c$, $\hc{S}{c}$}{classes, their representatives}
+\nt{$\clB{S}{c}$, $\clC{S}{c}$, $\clCX{S}{c}$, $\mbc{\fs}{p}$, $m_c$, $m(a)$}{class basis, class coordinates, their $X_0$-part; blocks of the class basis}
+\nt{$\pos{S}{c}{c'}{\gamma}$, $\terms{S}{c}{s}{c'}$}{position; terms over $(c,s,c')$}
+\nt{$\clU{S}{c}$, $\clUo{S}{c}$}{arithmetic unipotent group of level $\gS{S}$, its part fixing the frame}
+\nt{$\gid{S}$, $\sdc{S}$, $\psi_f$, $\uchar{S}{u}$}{idele of $\gS{S}$; additive characters; the unipotent character}
+\nt{$\rag{S}{(w,\epsilon)}$, $\ioia{S}{\epsilon}$, $\vfix{S}{w}{\mathbf d}$}{reductions, inverse adjoint, fixer of a vector of the frame}
+\nt{$\FixN{s}{x}$, $\Agr{S}{s}$, $\IsStab{S}{\Xi}$}{$s$ fixes vectors at places of norm product $\ge x$; $s$ agrees; $\Xi$ is stable}
+\nt{$\fpair{\gamma}$, $\ifpair{\gamma}$, $\lmat{\gamma}$, $\link{\gamma}$, $\zfp{T}$, $\clink{\gamma}{\gamma'}$}{frames, link matrix, link, the $z$-rows, common link}
+\nt{$\ratG{S}$, $\lform{S}$, $\Zf{S}{\gamma}$, $\tdisc{S}{\gamma}$, $\fdisc{N}{Z}$, $\tdnorm{S}{\gamma}$}{Gram matrix, link form, frame products, discriminants}
+\nt{$\IsNF{j}{\gamma}$, $\HasLev{S}{j}{\gamma}$, $\Cong{S}{c}{c'}{\gamma}{\gamma'}$}{normal form, level $j$, congruent terms}
+\nt{$\fadm{M}$, $\slb{H}{V}$, $\sld{H}{V}$, $\gix{a}$}{a matrix over the adeles; lattice basis and discriminant of a subspace; generalized index}
+\nt{$\Wsys{\sigma}{S}{\tau}$, $\Isys{S}{\tau}$, $\Bc{S}$, $\deg$}{Bessel functions of the system at $\tau$, their index sets, tuples of indices, the constant of the system}
+\nt{$\besfn{\sigma}{S}{y}{i}$, $\besker{\sigma}{S}{\gamma}{y}$}{product Bessel function, kernel}
+\nt{$\bxs{S}$, $\bxp{S}$, $\IsNr{S}{\gamma}$, $\IsBP{S}{c}{\omega}$}{box size, boxed points, near elements, box partitions}
+\nt{$\cutoff{S}{c}$, $\bfl{S}{c}$, $\omS{S}{c}$}{the cutoff of the class $c$ and its two factors}
+\nt{$\amp{\sigma}{S}{c}{c'}{\gamma}$, $\ampabs{\sigma}{S}{c}{c'}{\gamma}$, $\ampsum{\sigma}{S}{\Xi}{c}{s}{c'}$}{amplitude, its absolute version, amplitude sum}
+\nt{$\kapS{S}{\tau}$, $\fscale{S}{\tau}{a}$, $\fsprod{S}$, $\tailS{S}$, $\ucov{S}$, $\cw{S}{i}$}{constants of \ref{r:const} and \ref{r:links}}
+\nt{$\lmet{S}$, $\ldsq{S}{v}{e}$, $\HIL{c}{\gamma}{m}$}{link metric, link discriminant, integral lifts (Section~\ref{s:links})}
+\nt{$\IdxB{j}$, $\xrows{Z}$, $\padl{j}{Z}$, $\fmid{\gamma}$}{Definition~\ref{d:pad}}
+\nt{$\latd{S}{c}$, $\fvi{S}{c}{k}{a}{V}$, $\xri{S}{j}{k}$, $\sati{S}{k}$}{Definition~\ref{d:indices}; $\mathsf L_1$, $\mathsf L_2$, $T'$, $Z'$ there}
+\nt{$\telem{S}{c}{p}$, $\pinv{S}{c}{c'}{\gamma}{\gamma'}$, $\mnorm{S}{j}{\gamma}$, $\cgauge{S}{j}{c}{c'}{\gamma}$, $\IsNRep{S}{c}{c'}{\gamma}$}{Definition~\ref{d:gauge}}
+\nt{$\ipw{S}{c}{n}{p}$, $\termw{S}{j}{i}{c}{p}{p'}{V}$, $\pairw{S}{j}{c}{c'}{\gamma}{\gamma'}$, $\IsLab{S}{j}{c}{t}{p}$}{Definition~\ref{d:weights}}
+\nt{$\Omega$, $\Omega'$, $\iota$; $\sP$, $\sA$, $\sB$, $\sC$, $\sw$, $\col$}{finite index sets; sets, colours and weights of the counting lemmas}
+\nt{$\sigma$; $\Xi$; $\gamma,\gamma',\gamma_2,\gamma_p,\delta_p$; $u,u'$; $s,t,t'$}{a side; a set of rational elements; rational elements; unipotent elements; elements of $\GRes{S}$ (also matrices where said)}
+\nt{$y,y',y^{\circ}$; $g$; $k$; $\eta,\eta'$}{points at infinity; a group element, or $\gS{S}$ where said; an element of $\KS{S}$ or $\GFin{S}$, or $\kk{\fs}$ where said; elements of the Bessel subgroup, or vectors in Section~\ref{s:agree}}
+\nt{$a,b,l,i,j,j'$; $p,q$; $r$; $n$, $N$, $f$, $M$, $m$, $x$}{indices and levels; elements of $\sP$ or pairs, $p$ also a map in Lemma~\ref{l:eichler}; a real number or an adele, $\rr{\fs}$ where said; numbers, with the abbreviations said in each proof}
+\nt{$C$, $Q$, $Q^{\circ}$, $\delta$, $\delta'$, $\rho$, $\mathfrak a$, $\mathbb F$, $o$, $\mathsf A$, $\xi,\zeta,\theta$, $\xi_0$, $\mu$, $v$, $\varsigma$, $\omega_0$, $\tau_0$, $\epsilon$}{objects of Theorem~A and its proof (Section~\ref{s:agree}) and of Input~(S2)}
+\nt{$B$, $\lambda$, $\hat x$, $\hat u$, $J$, $J'$, $P$}{matrices and scalars of Section~\ref{s:eichler}; Gram matrices; a statement in $[P]$}
+\nt{$\alpha$, $\alpha'$, $\beta$, $\beta_0$, $\phi$, $\varepsilon$}{scalars; cutoffs and weights; a distance}
+\nt{$\theta$, $\mathsf I$, $\Sigma$, $F_\tau$, $E_{kl}$, $r_\tau$, $w_\tau$, $w$}{objects of Section~\ref{s:boxes}; $w$ also a finite place}
+\nt{$F_p$, $F'$, $V$, $v_l$, $c_a$, $D$, $\mathfrak B$, $G$, $\Gamma$, $\varphi$, $\mathsf c$, $L_i$, $F_i$, $\mathrm{Fr}(a)$, $t_{l,\tau}$}{frames and spaces of Theorem~B; objects of Section~\ref{s:covol}}
+\nt{$A_\tau$, $m_\tau$, $\theta_\tau$, $\mathbf A$, $\mathbf W$, $\Theta$, $C_0$, $X(d)$, $X_1$, $\Delta$, $\mathsf K$, $\mathsf Y$, $g_p$, $L$, $\mu_{\mathsf P}$, $\mathsf M$, $\mathsf L$}{objects of Section~\ref{s:ampl} and of the counting lemmas}
+\nt{$\psi$, $\pi$, $\nu$, $\varpi$, $\mathcal C$, $H$, $O$, $R$, $A$, $U$, $W$, $Y$, $Z$, $K$, $I$, $e$, $h$, $z$, $d$}{letters inside the notations above ($\psi_f$, $2\pi i$, $\ucov{S}$, $\vpS{S}$, a compact set, a matrix, rings, and the symbols of the macros)}
+\end{multicols}
+\endgroup
+
+\end{document}

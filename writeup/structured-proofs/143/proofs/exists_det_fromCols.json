@@ -1,0 +1,97 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Rows.StackedDeterminants:304:7",
+ "name": "exists_det_fromCols",
+ "summary": "Clear the columns of Zᴴ by an invertible V (Hermite form over ℂ); then multiplicativity of determinants for [U₁ | W]ᴴ·[X | Z] gives det[X | Z] = γ·det(U₁ᴴX) with Y = U₁ᴴ, and the case W = Z, X = U₁ gives the bound.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "witness",
+   "claim": "Choose V ∈ GL_L(ℂ) such that the columns of Zᴴ·V outside the image of N (embedded by inr and e⁻¹) vanish (Hermite form: exists_mul_clear_cols for the trivial valuation pair, i.e. over ℂ itself).",
+   "lines": [
+    306,
+    306
+   ],
+   "lean": "  (isValuationPair_top.exists_mul_clear_cols Zᴴ (.trans .inr e.symm.toEmbedding)).elim fun V _ ↦ by",
+   "uses": [
+    {
+     "decl": "IsValuationPair.exists_mul_clear_cols"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let U = V with its columns relabelled by e⁻¹, a matrix with column blocks U₁ (indexed by a) and U₂ (indexed by N); by step 1, Zᴴ·U₁ = 0.",
+   "lines": [
+    307,
+    307
+   ],
+   "lean": "  let U := V.1.submatrix id e.symm",
+   "uses": [
+    {
+     "step": "1"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "fact",
+   "claim": "For all W (L×N) and X (L×a): det([U₁ | W]_eᴴ·[X | Z]_e) = det([U₁ | W]_eᴴ)·det([X | Z]_e); since U₁ᴴZ = 0 the product is block triangular, so after simplification det(U₁ᴴX)·det(WᴴZ) = conj det([U₁ | W]_e)·det([X | Z]_e) (det of conjugate transpose and of a transpose, submatrices of products).",
+   "lines": [
+    308,
+    310
+   ],
+   "lean": "  have G W X := ((U.toCols₁.fromCols W).submatrix id e)ᴴ.det_mul ((fromCols X Z).submatrix id e)\n  simp [↓det_conjTranspose, ← submatrix_mul, ↓det_transpose, mul_comm,\n    (conjTranspose_injective (by aesop) : U.toCols₁ᴴ * Z = 0)] at *",
+   "uses": [
+    {
+     "step": "2"
+    }
+   ],
+   "ambient_uses": [
+    "Matrix.det_mul",
+    "Matrix.det_conjTranspose",
+    "Matrix.det_transpose"
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Taking W = U₂ (so that [U₁ | U₂]_e = V is invertible, det V ≠ 0): for every X, det([X | Z]_e) = γ·det((U₁ᴴX)ᵀ) with γ = det(U₂ᴴZ)/conj(det V).",
+   "lines": [
+    311,
+    311
+   ],
+   "lean": "  have H X := by simpa [← eq_div_iff, U, mul_div_right_comm] using (G U.toCols₂ X).symm",
+   "uses": [
+    {
+     "step": "3"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Take Y = U₁ᴴ and this γ. For the bound apply step 3 with W = Z and X = U₁: |det[U₁ | Z]_e|² = det(U₁ᴴU₁)·det(ZᴴZ), while det[U₁ | Z]_e = γ·det(U₁ᴴU₁) by step 4; so |γ|²·|det(YYᴴ)|² = |det(YYᴴ)|·|det(ZᴴZ)|. The case split on the resulting product equation (det(YYᴴ) = 0, where the left side vanishes, or not, where one divides) gives |γ|²·|det(YYᴴ)| ≤ |det(ZᴴZ)|.",
+   "lines": [
+    312,
+    313
+   ],
+   "lean": "  exact ⟨_, _, H, by cases (by simpa [H, ← mul_assoc, U] using congr(‖$(G Z U.toCols₁)‖)) <;>\n    simp [*, field]⟩",
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "step": "4"
+    }
+   ]
+  }
+ ]
+}

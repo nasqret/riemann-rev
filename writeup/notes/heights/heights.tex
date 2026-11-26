@@ -1,0 +1,1138 @@
+% !TEX program = lualatex
+% ---------------------------------------------------------------------------------------------
+%  Readback note 7: Heights and the product formula; few translates nearly span; the height of one Gram determinant
+%
+%  Build:  python3 tools/rb.py note <slug>
+%
+%  One unit of a Lean artifact, rewritten as ordinary mathematics. The prose is hand-written. Lean names,
+%  line ranges and counts come from data.tex; quoted Lean statements are copied from the artifact by the build.
+%
+%  Rules of the text: standard terminology; every symbol is explained where it first appears and listed again
+%  in the notation at the end; no letter has two meanings; a proof is complete or says what it takes for granted;
+%  Lean names appear only in the LEAN lines and in the concordance.
+%
+%  The signature rule (the build enforces it): a function, relation or predicate that the artifact defines is
+%  written only through its notation macro, which the build makes from the spec (`notation`) with one slot for
+%  each explicit argument of the Lean definition. No argument is fixed and dropped, also not "for brevity" and
+%  not for one section. Every argument and every hypothesis of a stated declaration stands inside its
+%  statement, or in a Setting that the statement cites by number; only implicit and instance arguments (the
+%  ambient objects) may stand in the conventions.
+% ---------------------------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\ifdefined\pdfvariable\pdfvariable suppressoptionalinfo \numexpr 1+2+4+8\relax\fi
+\usepackage[a4paper,hmargin=35mm,top=22mm,bottom=27mm,footskip=12mm,nohead]{geometry}
+
+\usepackage{fontspec}
+\directlua{
+  luaotfload.add_fallback("gfallback", {"STIXTwoMath-Regular.otf:mode=node;", "DejaVuSans.ttf:mode=node;"})
+  luaotfload.add_fallback("gmonofallback", {"DejaVuSansMono.ttf:mode=node;", "STIXTwoMath-Regular.otf:mode=node;"})
+}
+\setmainfont{NewCM10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookItalic,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldItalic,SmallCapsFont=*-Book,SmallCapsFeatures={Letters=SmallCaps},
+  RawFeature={fallback=gfallback}]
+\setsansfont{NewCMSans10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookOblique,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldOblique,RawFeature={fallback=gfallback}]
+\setmonofont{JetBrainsMono}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,Scale=MatchLowercase,
+  RawFeature={-calt;-liga;fallback=gmonofallback}]
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage[math-style=TeX]{unicode-math}
+\setmathfont{NewCMMath-Book.otf}
+\emergencystretch=2.5em\relax
+
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows.meta,positioning,backgrounds}
+\usepackage[protrusion=true,expansion=true]{microtype}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{multicol}
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+
+\definecolor{ink}{HTML}{0F172A}
+\definecolor{inksoft}{HTML}{475569}
+\definecolor{inkfaint}{HTML}{94A3B8}
+\definecolor{rulegrey}{HTML}{CBD5E1}
+\definecolor{arith}{HTML}{C2410C}
+\definecolor{est}{HTML}{7C3AED}
+\definecolor{ana}{HTML}{0891B2}
+\definecolor{ok}{HTML}{047857}
+\definecolor{leancol}{HTML}{3730A3}
+
+\title{Heights and the product formula; few translates nearly span; the height of one Gram determinant}
+\author{grh-compact}
+\date{}
+
+% ------------------------------------------------------------------------------------- macros
+\newcommand{\leanfont}{\ttfamily\fontsize{8.6}{10.5}\selectfont\color{leancol}}
+\newcommand{\lean}[1]{\csname LN@#1\endcsname}
+\newcommand{\fillin}[1]{{\color{arith}\itshape[#1]}}  % a place of the template that is not written yet; the build reports every one that is left
+\newcommand{\leanquote}[1]{\csname LQ@#1\endcsname}
+\input{data.tex}
+
+\linespread{1.08}                       % 11 pt on 14.7 pt
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt plus 1.5pt minus 0.5pt}
+\setlength{\abovedisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\belowdisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\abovedisplayshortskip}{3pt plus 2pt}
+\setlength{\belowdisplayshortskip}{6pt plus 2pt minus 2pt}
+\emergencystretch=1.5em
+\clubpenalty=10000 \widowpenalty=10000 \displaywidowpenalty=10000
+\relpenalty=7000 \binoppenalty=9000
+\raggedbottom
+\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\sffamily\fontsize{7.6}{9}\selectfont\color{inkfaint}\thepage\,/\,\pageref*{LastPage}}
+\setlist{topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=4pt,leftmargin=2.1em,labelsep=0.55em}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\len}{\operatorname{len}}
+\newcommand{\cok}{\operatorname{cok}}
+\newcommand{\End}{\operatorname{End}}
+\newcommand{\Hom}{\operatorname{Hom}}
+\newcommand{\Gal}{\operatorname{Gal}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\kw}[1]{\emph{#1}}
+\newcommand{\m}[1]{\mbox{$#1$}}        % a short formula that must not be broken across lines
+\newcommand{\head}[1]{\par\addvspace{17pt plus 4pt minus 2pt}\Needspace{6\baselineskip}%
+  \noindent{\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\sect}[2]{\refstepcounter{section}\label{#2}\par\addvspace{19pt plus 4pt minus 2pt}\Needspace{7\baselineskip}%
+  \noindent\llap{{\fontsize{13.2}{16}\selectfont\bfseries\color{inkfaint}\thesection}\hspace{9pt}}%
+  {\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\subhead}[1]{\par\addvspace{9pt plus 2pt}\Needspace{4\baselineskip}\noindent\textbf{#1}\enspace\ignorespaces}
+% where a statement lives in the Lean archive
+\newcommand{\leantag}{{\sffamily\bfseries\fontsize{6.3}{8}\selectfont\color{leancol}\addfontfeatures{LetterSpace=7}LEAN}}
+\newcommand{\sep}{\unskip\nobreak\hspace{5pt}{\color{inkfaint}\textperiodcentered}\hspace{5pt plus 2pt}\ignorespaces}
+\newcommand{\leanline}[1]{\par\nopagebreak\vspace{-2.5pt}{\fontsize{8.9}{12.4}\selectfont\color{inksoft}\raggedright
+  \noindent\llap{\leantag\hspace{9pt}}#1\par}\vspace{1pt}}
+% a displayed statement in a tinted box: #1 colour, #2 text
+\newcommand{\statement}[2]{\par\addvspace{7pt}\begingroup\setlength{\fboxsep}{8.5pt}\setlength{\fboxrule}{0.6pt}%
+  \noindent\fcolorbox{#1!30!white}{#1!3!white}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{#2}}%
+  \endgroup\par\addvspace{7pt}}
+\newcommand{\nt}[2]{\par\noindent\hangindent=1.1em\hangafter=1 #1\enspace{\color{inksoft}#2}\par\vspace{1pt}}
+\newcommand{\legdot}[1]{\tikz[baseline=-0.62ex]\fill[#1] (0,0) circle (2.5pt);\hspace{3pt}}
+\newcommand{\crow}[4]{\csname CS@#1\endcsname & #2 & \textcolor{inksoft}{#3} & \textcolor{inksoft}{#4}\\}
+\newcommand{\leanquoteline}[2]{\par\noindent\hangindent=\dimexpr#1\fontdimen2\font+2.2em\relax\hangafter=1
+  \hspace*{#1\fontdimen2\font}#2}
+\newcommand{\quoted}[1]{\par\vspace{3pt}{\ttfamily\fontsize{7.5}{10.4}\selectfont\color{leancol}\raggedright
+  \setlength{\parskip}{0pt}\leanquote{#1}\par}\vspace{4pt}}
+\newcommand{\bx}[3]{{\sffamily\bfseries\fontsize{7.3}{9.2}\selectfont\color{#1!82!black}#2}\\[1.5pt]#3}
+\newcommand{\cs}[2]{\expandafter\newcommand\csname CS@#1\endcsname{#2}}
+
+% theorems
+\newtheoremstyle{plainx}{7pt plus 2pt}{7pt plus 2pt}{\itshape}{}{\bfseries}{.}{0.5em}{}
+\newtheoremstyle{uprightx}{7pt plus 2pt}{7pt plus 2pt}{}{}{\bfseries}{.}{0.5em}{}
+\theoremstyle{plainx}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{uprightx}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{setting}[theorem]{Setting}          % hypotheses shared by several statements; each of them cites it by number
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\renewcommand{\qedsymbol}{{\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.5pt}\fbox{\rule{0pt}{0.46em}\hspace{0.46em}}}}
+% what holds throughout the note: the ambient objects only (implicit and instance arguments), never a hypothesis
+\newenvironment{conventions}{\par\addvspace{5pt}\noindent\textbf{Conventions.}\enspace\ignorespaces}{\par\addvspace{3pt}}
+\makeatletter
+\renewenvironment{proof}[1][Proof]{\par\pushQED{\qed}\normalfont\topsep0pt\partopsep0pt
+  \trivlist\item[\hskip\labelsep\itshape #1.]\ignorespaces}{\popQED\endtrivlist\@endpefalse}
+\makeatother
+
+% where each declaration of the concordance is treated: \cs{key}{place}, the place naming a \label or a lettered item
+\cs{pairs}{Definition~\ref{d:pairs}}
+\cs{hle}{Definition~\ref{d:height}}
+\cs{pf}{Lemma~\ref{l:pf}}
+\cs{mono}{Lemma~\ref{l:mono}}
+\cs{ofle}{Lemma~\ref{l:ofle}}
+\cs{mul}{Proposition~\ref{p:products}}
+\cs{prod}{Proposition~\ref{p:products}}
+\cs{pow}{Proposition~\ref{p:products}}
+\cs{nonneg}{Theorem 1}
+\cs{groupsum}{Lemma~\ref{l:groupsum}}
+\cs{minors}{Proposition~\ref{p:minors}}
+\cs{dyad}{Definition~\ref{d:dyad}}
+\cs{innerdyad}{Lemma~\ref{l:innerdyad}}
+\cs{variance}{Proposition~\ref{p:variance}}
+\cs{spread}{Definition~\ref{d:spread}}
+\cs{few}{Theorem 3}
+\cs{extend}{Lemma~\ref{l:extend}}
+\cs{onedet}{Theorem 2}
+\cs{algpadic}{Input 1}
+\cs{steinitz}{Input 2}
+\cs{card}{Input 3}
+\cs{jiota}{Definition~\ref{d:jiota}}
+\cs{intmat}{Theorem 2}
+\cs{detmem}{Theorem 2}
+\cs{orth}{Proposition~\ref{p:minors}}
+\cs{invT}{Proposition~\ref{p:minors}}
+\cs{transposeGL}{Proposition~\ref{p:minors}}
+\newcommand{\CC}{\mathbb{C}}
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\NN}{\mathbb{N}}
+\newcommand{\QQ}{\mathbb{Q}}
+\newcommand{\Ql}{\mathbb{Q}_\ell}
+\newcommand{\Qlb}{\bar{\mathbb{Q}}_\ell}
+\newcommand{\Cl}{\mathbb{C}_\ell}
+\newcommand{\AutC}{\operatorname{Aut}(\mathbb{C})}
+\newcommand{\IX}{\mathcal{I}}
+\newcommand{\Hs}{\mathcal{H}}
+\newcommand{\Ls}{\mathcal{L}}
+\newcommand{\Ts}{\mathcal{T}}
+\newcommand{\Us}{\mathcal{U}}
+\newcommand{\re}{\operatorname{Re}}
+\newcommand{\ord}{\operatorname{ord}}
+\newcommand{\Nm}{\operatorname{Nm}}
+\newcommand{\GL}{\operatorname{GL}}
+\newcommand{\Gram}{\operatorname{Gram}}
+\newcommand{\codim}{\operatorname{codim}}
+\newcommand{\tp}{\mathrm{t}}
+\newcommand{\one}{\mathbf{1}}
+\newcommand{\abs}[1]{\lvert #1\rvert}
+\newcommand{\norm}[1]{\lVert #1\rVert}
+\newcommand{\ip}[2]{\langle #1,#2\rangle}
+\newcommand{\bigip}[2]{\bigl\langle #1,#2\bigr\rangle}
+\newcommand{\Row}{\mathrm{Row}}
+\newcommand{\Col}{\mathrm{Col}}
+\newcommand{\budget}{\mathrm{budget}}
+\newcommand{\hmain}{h_{\mathrm{main}}}
+\newcommand{\covol}{\operatorname{covol}}
+\newcommand{\lf}[1]{{\leanfont #1}}
+
+\begin{document}
+\color{ink}
+
+{\raggedright
+{\sffamily\bfseries\fontsize{7.2}{9}\selectfont\color{leancol}\addfontfeatures{LetterSpace=8}READBACK NOTE 7\par}
+\vspace{5pt}
+{\fontsize{21.5}{25.5}\selectfont\bfseries Heights and the product formula; few translates nearly span; the height of one Gram determinant\par}
+\vspace{5pt}
+{\fontsize{12.4}{16}\selectfont\itshape\color{inksoft} One unit of the Lean artifact \ArtifactName, read back into
+mathematics\par}}
+\vspace{8pt}
+{\color{rulegrey}\hrule height 0.6pt}
+\vspace{7pt}
+\thispagestyle{empty}
+
+
+\textbf{Summary.} A \emph{height bound} is defined for families $Z=(Z_{\ell,\iota})$ of complex numbers indexed by
+the pairs of a prime~$\ell$ and a field isomorphism $\iota\colon\CC\to\Qlb$: one auxiliary number $H\ne0$ may be
+multiplied in, and the bound adds the logarithmic size of all conjugates of~$H$ to the $\ell$-adic sizes of the
+numbers $H\,Z_{\ell,\iota}$, summed over~$\ell$. Such bounds add in products, and the product formula, applied to
+the norm of~$H$, shows that a bound for the constant family~$1$ is non-negative (Theorem~1). This lets the
+argument compare $\ell$-adic estimates that are obtained with a different auxiliary object at every embedding.
+Theorem~2 bounds the height of a family of ratios of Gram determinants, a twisted one at each embedding over one
+untwisted one, by the size of the untwisted determinant plus twice an index. The unit also holds linear algebra
+for another part of the argument: if the translates of a linear map are spread, few of them nearly span the
+target (Theorem~3); and two inequalities, one of Fourier type over a finite field, one of Hilbert--Schmidt type.
+
+\statement{leancol}{\fontsize{9.6}{13.2}\selectfont\textbf{What this note is.} The artifact \ArtifactName{} is a
+body of Lean code: the compact edition of a formal proof, due to L.~Alpöge with the AI system Claude, of the
+Riemann hypothesis and of its generalisation to Dirichlet $L$-functions. That headline is a claim. The authors
+report that every file compiles with Lean v4.35.0 against a pinned version of the library Mathlib and that Lean's
+kernel accepted the proofs; an independent build is recorded in the handout's record of checks when it reports.
+No mathematician has read the argument through, and nothing here says that the Riemann hypothesis is proved. This
+note treats one unit of the artifact, the folder on heights: all \UnitInNote{} of its \UnitMembers{} declarations.
+Their proofs are given in full. Taken for granted are three results of the background library of the artifact,
+stated as Inputs~1 to~3 with the units that own them, and standard facts of Mathlib, which are named where they
+are used. Every statement was compared with its Lean text, argument by argument. The Lean text read is \PinText;
+Appendix~A is the concordance of \ConcDecls{} declarations.}
+
+\sect{Heights, and the three main statements}{s:intro}
+Throughout, $\ell$ is a prime number, $\Ql$ is the field of $\ell$-adic numbers, $\Qlb$ is an algebraic closure
+of~$\Ql$, and $\Cl$ is the completion of~$\Qlb$. On these three fields $\abs{\,\cdot\,}_\ell$ is the absolute value
+with \m{\abs{\ell}_\ell=1/\ell}, and $\abs{\,\cdot\,}$ is the usual absolute value of~$\CC$. The group $\AutC$
+consists of all field automorphisms of~$\CC$, continuous or not.
+
+\begin{definition}[the index set]\label{d:pairs}
+$\IX$ is the set of all pairs $(\ell,\iota)$ of a prime number~$\ell$ and an isomorphism of rings
+\m{\iota\colon\CC\to\Qlb}. In this note a \kw{family indexed by~$\IX$} is a family $Z=(Z_{\ell,\iota})$ of complex
+numbers, one for each pair $(\ell,\iota)$ in~$\IX$. Such families are multiplied entry by entry, and $1$ also
+denotes the family all of whose entries are~$1$.
+\end{definition}
+\leanline{\lean{pairs}}
+
+Isomorphisms~$\iota$ exist for every~$\ell$, because $\CC$ and $\Qlb$ are algebraically closed fields of
+characteristic~$0$ and of the same cardinality (Inputs 2 and~3 in §\ref{s:setting}). None of them is continuous
+and none is distinguished. The index set is a way to speak of all embeddings into~$\Qlb$ of all number fields at
+once: the restrictions of the isomorphisms~$\iota$ to a number field contained in~$\CC$ are exactly its field
+embeddings into~$\Qlb$, again by Input~2. So for a complex number that is algebraic over~$\QQ$, its images
+under all $\iota$ are its conjugates in~$\Qlb$, just as its images under $\AutC$ are its conjugates in~$\CC$.
+The entries of a family may depend on $(\ell,\iota)$, and in the argument they do.
+
+\begin{definition}[height at most $h$]\label{d:height}
+Let $h$ be a real number and $Z=(Z_{\ell,\iota})$ a family indexed by~$\IX$. We write \m{\hle{h}{Z}}, and say that
+$Z$ \kw{has height at most~$h$}, if there are a complex number \m{H\ne0}, a real number~$\alpha$ and a sequence
+$\eta=(\eta_0,\eta_1,\eta_2,\dots)$ of real numbers such that
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=2pt]
+\item \m{\abs{\sigma(H)}\le\exp(\alpha)} for every $\sigma\in\AutC$;
+\item \m{\abs{\iota(H\,Z_{\ell,\iota})}_\ell\le\exp(\eta_\ell)} for every $(\ell,\iota)\in\IX$;
+\item there is a natural number~$n_0$ such that \m{\alpha+\sum_{\ell<n}\eta_\ell\le h} for every natural number
+\m{n\ge n_0}, the sum being over the primes~$\ell$ below~$n$.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{hle}}
+
+The sign \m{\hle{h}{Z}} is the name of a relation between $h$ and~$Z$; no number called the height of~$Z$ is defined
+or needed. With \m{H=1} and \m{\alpha=0} the definition asks that the $\ell$-adic sizes of the entries, in
+logarithms and summed over~$\ell$, be at most~$h$ (Lemma~\ref{l:ofle}). The number~$H$ allows more: it is one
+number for all $(\ell,\iota)$, a common factor whose size at the archimedean places is paid for in~(i). The
+sequence~$\eta$ is indexed by all natural numbers, as in the formal text; only its terms at the primes matter. Two
+examples: for an integer \m{n\ge1}, the constant family~$1/n$ has height at most $\log n$ (take \m{H=n},
+\m{\alpha=\log n}, \m{\eta=0}), and the constant family~$n$ has height at most $-\log n$ (take \m{H=1/n},
+\m{\alpha=-\log n}, \m{\eta=0}). So a height bound says how small a family is $\ell$-adically, all primes together,
+and it may be negative. It is not the height of Diophantine geometry: no positive parts are taken, the archimedean
+places enter only through the auxiliary number~$H$, and the entries of a family need not be the conjugates of one
+number. How negative a bound can be is limited by the first main result.
+
+\statement{arith}{\phantomsection\label{t:1}\textbf{Theorem 1} (the product formula).\enspace\emph{Let $h$ be a
+real number. If the constant family~$1$ has height at most~$h$, that is, if \m{\hle{h}{1}}, then \m{0\le h}.}}
+\leanline{\lean{nonneg}}
+
+This is the only place of the unit where arithmetic enters. The proof (§\ref{s:heights}) shows that the
+number~$H$ of the definition is algebraic and applies the product formula of~$\QQ$ to its norm~$q$, a non-zero
+rational number: the logarithms of the absolute values of~$q$ at all places of~$\QQ$ add up to zero, condition~(i)
+bounds the logarithm at the archimedean place by $\alpha$ times the degree of~$H$, and condition~(ii) bounds the
+logarithm at~$\ell$ by $\eta_\ell$ times the degree. So \m{\alpha+\sum_{\ell<n}\eta_\ell} cannot be negative once $n$
+exceeds the primes that divide the numerator or the denominator of~$q$. The argument uses Theorem~1 together with the additivity of height bounds in products: if two families $Z$ and~$Z'$ have
+entrywise product~$1$, then a bound for~$Z$ and a bound for~$Z'$ add up to a non-negative number
+(Corollary~\ref{c:reciprocal}). An upper bound for the height of~$Z'$ thus becomes a lower bound for every height
+bound of~$Z$, and this is how a covolume is bounded from below in the proof of Theorem~C of the argument
+(§\ref{s:use}).
+
+\subhead{Gram determinants.} Inner products are conjugate-linear in the first variable and linear in the second,
+as in the library. For a finite family $v=(v_i)_{i\in I}$ of vectors of a complex inner product space,
+\m{\Gram(v)=(\ip{v_i}{v_{i'}})_{i,i'\in I}} is its Gram matrix, and for a linear map~$T$ defined on these vectors
+$Tv$ is the family $(Tv_i)_{i\in I}$. For a $\CC$-linear map $T\colon W\to\Hs$ from a finite-dimensional complex inner
+product space to a complex inner product space, $T^{*}T$ is the endomorphism of~$W$ whose matrix in an orthonormal
+basis~$v$ of~$W$ is $\Gram(Tv)$; it does not depend on~$v$. Its determinant $\det(T^{*}T)$ is a non-negative real
+number, the square of the factor by which $T$ multiplies volumes, and it is non-zero exactly when $T$ is injective
+(Lemma~\ref{l:gram}).
+
+\begin{setting}[a family of linear maps, a basis, and integral structures]\label{set:gram}
+Let $W$ be a finite-dimensional complex inner product space, $\Xi$ a set, and $\theta=(\theta_{\ell,\iota})$ a
+family of elements of~$\Xi$, one for each pair $(\ell,\iota)$ in~$\IX$. For every $\vartheta\in\Xi$ let
+$\Hs_\vartheta$ be a complex inner product space and \m{T_\vartheta\colon W\to\Hs_\vartheta} a $\CC$-linear map,
+and let $\vartheta_0$ be an element of~$\Xi$. Let $I$ be a finite set and $w=(w_i)_{i\in I}$ a family of vectors
+of~$W$. Let $\alpha$, $\delta$ and~$h$ be real numbers, $c=(c_{\ell,\iota})$ a family of complex numbers indexed
+by~$\IX$, $\eta=(\eta_0,\eta_1,\eta_2,\dots)$ a sequence of real numbers, and $\nu$ a natural number. For every
+$(\ell,\iota)\in\IX$ and every homomorphism of rings \m{j\colon\CC\to\Cl} let $\Ls_{\ell,\iota}(j)$ be a subset of
+$\Hs_{\theta_{\ell,\iota}}$. For such~$j$, the homomorphism \m{\bar j\colon\CC\to\Cl} is $j$ preceded by complex
+conjugation.
+\end{setting}
+
+\statement{arith}{\phantomsection\label{t:2}\textbf{Theorem 2} (the height of one Gram determinant).\enspace\emph{In
+Setting~\ref{set:gram}, suppose that
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.2em,itemsep=2pt,topsep=3pt]
+\item the map $T_{\vartheta_0}$ is injective;
+\item the family~$w$ is linearly independent and \m{\dim W=\#I}, so that $w$ is a basis of~$W$;
+\item \m{\abs{\sigma(\det\Gram(T_{\vartheta_0}w))}\le\exp(\alpha)} for every $\sigma\in\AutC$;
+\item \m{c_{\ell,\iota}\ne0} for every $(\ell,\iota)\in\IX$, and \m{\hle{h}{\abs{c}^{-2}}} for the family
+\m{\abs{c}^{-2}=(\abs{c_{\ell,\iota}}^{-2})};
+\item \m{\sum_{n\in J}\eta_n\le\delta} for every finite set~$J$ of natural numbers;
+\item for every $(\ell,\iota)\in\IX$, every homomorphism of rings \m{j\colon\CC\to\Cl}, every
+$F\in\Ls_{\ell,\iota}(\bar j)$ and every $F'\in\Ls_{\ell,\iota}(j)$, one has \m{\abs{j(\ip{F}{F'})}_\ell\le1};
+\item for every $(\ell,\iota)\in\IX$ and every homomorphism of rings \m{j\colon\CC\to\Cl} there is a matrix
+\m{u=(u_{ii'})_{i,i'\in I}} of complex numbers such that
+\[\exp(-\eta_\ell)\cdot\abs{j(c_{\ell,\iota})}_\ell^{\,\nu}\ \le\ \abs{j(\det u)}_\ell\quad\ \text{and}\quad\
+\sum_{i'\in I}u_{ii'}\,T_{\theta_{\ell,\iota}}(w_{i'})\in\Ls_{\ell,\iota}(j)\ \text{ for all } i\in I.\]
+\end{enumerate}
+Then the family $Z=(Z_{\ell,\iota})$ of the ratios
+\[Z_{\ell,\iota}\ =\ \frac{\det(T_{\theta_{\ell,\iota}}^{*}T_{\theta_{\ell,\iota}})}{\det(T_{\vartheta_0}^{*}T_{\vartheta_0})}\]
+satisfies \m{\hle{\alpha+2\delta+\nu h}{Z}}.}}
+\leanline{\lean{onedet}}
+
+In words: the vectors $T_\vartheta w_i$ span a lattice in~$\Hs_\vartheta$, and $\det\Gram(T_\vartheta w)$ is the
+square of its covolume. Hypothesis~(c) bounds this number at the base index~$\vartheta_0$, at all its conjugates.
+The sets $\Ls_{\ell,\iota}(j)$ play the part of the $j$-integral vectors: by~(f) the pairing of a $\bar j$-integral
+vector with a $j$-integral one is $j$-integral. Hypothesis~(g) says that, at the index $\theta_{\ell,\iota}$ chosen
+for the pair $(\ell,\iota)$, suitable combinations of the vectors $T_{\theta_{\ell,\iota}}w_i$ are integral, with a
+matrix of combination whose determinant is not too small: $\eta_\ell$ bounds the logarithm of an index, and
+$c_{\ell,\iota}$ is a scalar that $\nu$ of the vectors are allowed to carry. The conclusion compares the covolume at
+$\theta_{\ell,\iota}$ with the covolume at~$\vartheta_0$: the ratio of their squares is $\ell$-adically small, all
+primes together, up to the archimedean size~$\alpha$, twice the index~$\delta$ and the cost~$h$ of each of the $\nu$
+scalars. The index counts twice because the proof needs one integral combination for the embedding $\jof{\iota}$
+of Definition~\ref{d:jiota} and one for its conjugate. The square of an index appears as it does for lattices over~$\Z$, where a lattice with integral Gram
+matrix that has index~$n$ in another one forces $n^2$ times the Gram determinant of the latter to be an integer.
+
+\subhead{Spread families.} The third statement is linear algebra over~$\CC$.
+
+\begin{definition}[spread families of linear maps]\label{d:spread}
+Let $U$ and $W$ be complex vector spaces, $\Omega$ a set, $B=(B_\gamma)_{\gamma\in\Omega}$ a family of $\CC$-linear
+maps \m{B_\gamma\colon U\to W}, and $\varepsilon$ a real number. The family~$B$ is \kw{$\varepsilon$-spread}, in
+symbols \m{\spread{B}{\varepsilon}}, if for every linear subspace \m{W'\subseteq W} there is a $\gamma\in\Omega$ with
+\[\dim B_\gamma^{-1}(W')\ \le\ \Bigl(\frac12\Bigl(1+\frac{\dim W'}{\dim W}\Bigr)+\varepsilon\Bigr)\cdot\dim U .\]
+\end{definition}
+\leanline{\lean{spread}}
+
+If $B_\gamma$ is injective and its image is in general position with respect to~$W'$, the preimage of~$W'$ has
+about the share \m{\dim W'/\dim W} of the dimension of~$U$. The definition asks less: for every $W'$ some member of
+the family must pull $W'$ back to at most the mean of this share and~$1$, up to~$\varepsilon$.
+
+\statement{arith}{\phantomsection\label{t:3}\textbf{Theorem 3} (few translates nearly span).\enspace\emph{Let $U$ be
+a finite-dimensional complex vector space with \m{U\ne0}, let $W$ be a finite-dimensional complex inner product
+space, $\Omega$ a set, $B=(B_\gamma)_{\gamma\in\Omega}$ a family of $\CC$-linear maps \m{B_\gamma\colon U\to W}, and
+\m{\varepsilon>0} a real number. If \m{\spread{B}{\varepsilon}}, then there is a finite subset
+\m{\Ts\subseteq\Omega} with
+\[\#\Ts\cdot\dim U\ \le\ 5\,\dim W\cdot\log\bigl(1+\varepsilon^{-1}\bigr)\qquad\text{and}\qquad
+(1-4\varepsilon)\,\dim W\ \le\ \dim\sum_{\gamma\in\Ts}B_\gamma(U).\]}}
+\leanline{\lean{few}}
+
+Each image $B_\gamma(U)$ has dimension at most $\dim U$, so at least \m{(1-4\varepsilon)\dim W/\dim U} members are
+needed to span a subspace of dimension \m{(1-4\varepsilon)\dim W}. The theorem says that this least number, times
+\m{5\log(1+\varepsilon^{-1})/(1-4\varepsilon)}, suffices. In the argument the maps $B_\gamma$ are the translates of
+one map by the elements~$\gamma$ of a finite group, whence the name.
+
+\sect{The setting}{s:setting}
+\begin{conventions}\phantomsection\label{c:conventions}
+The natural numbers are \m{0,1,2,\dots}, and $\#I$ is the number of elements of a finite set~$I$. The
+letter~$\ell$ always denotes a prime number; a sum \m{\sum_{\ell<n}} runs over the primes below~$n$. Vector spaces
+are over~$\CC$ unless a finite field is named. A \kw{complex inner product space} is a complex vector space with a
+positive definite hermitian form $\ip{\,\cdot\,}{\,\cdot\,}$, conjugate-linear in the first variable, and
+\m{\norm{F}^2=\ip{F}{F}}; completeness is not assumed. For a finite set~$I$, the space $\CC^I$ has the inner product
+for which the standard basis $\one=(\one_i)_{i\in I}$ is orthonormal. The tensor product of two complex inner product
+spaces carries the inner product with
+\m{\ip{F_1\otimes F_2}{F_1'\otimes F_2'}=\ip{F_1}{F_1'}\ip{F_2}{F_2'}}. For a finite-dimensional subspace~$\Hs'$ of an inner
+product space~$\Hs$, $p_{\Hs'}$ is the orthogonal projection of~$\Hs$ onto~$\Hs'$. The functions of the library are defined everywhere:
+the logarithm of a real number~$q$ is \m{\log\abs q} for \m{q\ne0} and $0$ for \m{q=0}; a quotient with
+denominator~$0$ is~$0$; and the dimension of a vector space that is not finite-dimensional is~$0$. These
+conventions enter two statements only, Lemma~\ref{l:pf} for \m{q=0} and Definition~\ref{d:spread}, which the
+formal text states without assuming finite dimension. The declarations of this unit take no ambient object that
+is fixed once for the whole note: each statement below introduces the spaces, sets and maps it is about.
+\end{conventions}
+
+\begin{definition}[the embedding attached to $\iota$]\label{d:jiota}
+For a prime number~$\ell$ and an isomorphism of rings \m{\iota\colon\CC\to\Qlb}, the homomorphism of rings
+\m{\jof{\iota}\colon\CC\to\Cl} is $\iota$ followed by the inclusion of~$\Qlb$ in~$\Cl$. So
+\m{\abs{\jof{\iota}(H)}_\ell=\abs{\iota(H)}_\ell} for every complex number~$H$.
+\end{definition}
+\leanline{\lean{jiota}\sep a definition of the background library, in the unit \emph{Lib.ClassField.Places}}
+
+\statement{inksoft}{\textbf{Inputs from the background library.} The three results below are taken for granted
+in this note. They are theorems of the background library of the artifact, which proves them from Mathlib; the
+units that own them are named, and none of these units has been read yet.
+
+\vspace{4pt}\phantomsection\label{i:1}\textbf{Input 1} (a number bounded at all $2$-adic identifications is
+algebraic; unit \emph{Lib.CM.Genus}).\enspace \emph{Let $H$ be a complex number and $Y$ a real number. If
+\m{\abs{\jof{\iota}(H)}_2\le Y} for every isomorphism of rings \m{\iota\colon\CC\to\bar{\QQ}_2}, then $H$ is
+algebraic over~$\QQ$.}
+
+\vspace{3pt}\phantomsection\label{i:2}\textbf{Input 2} (embeddings extend to isomorphisms; unit
+\emph{Lib.General.LinearAlgebra}).\enspace \emph{Let $L$ be an algebraically closed field of the same cardinality
+as~$\CC$, and let $\tau_0$ and~$\tau$ be injective homomorphisms of rings from one countable commutative ring
+to~$\CC$ and to~$L$, respectively. Then there is an isomorphism of rings \m{\iota\colon\CC\to L} with
+\m{\iota\circ\tau_0=\tau}.}
+
+\vspace{3pt}\phantomsection\label{i:3}\textbf{Input 3} (cardinality; unit
+\emph{Lib.PadicHodge.PeriodRings}).\enspace \emph{For every prime number~$\ell$, the field $\Qlb$ has the same
+cardinality as~$\CC$.}}
+\leanline{\lean{algpadic}\sep \lean{steinitz}\sep \lean{card}}
+
+Input~2 is a form of Steinitz's theorem that an algebraically closed field is determined by its characteristic
+and its transcendence degree: the catalogue of this handout records it under Steinitz~[St] as a special
+case, that of two algebraically closed fields of characteristic~$0$ and of the cardinality of the continuum, with
+an isomorphism that extends a given one between countable subrings; the place in~[St] is not confirmed.
+For Inputs 1 and~3 the catalogue has no reference: reference to be confirmed. Both are elementary, the first
+once Input~2 is granted. Input~3 holds because $\Ql$ has the cardinality of the continuum and an algebraic extension of an infinite
+field has the cardinality of that field. Input~1 has a short formal proof, which was read: if $H$ were
+transcendental, one would choose an element of~$\bar{\QQ}_2$ that is transcendental over~$\QQ$ and of absolute
+value greater than~$Y$ (the algebraic elements are countable, so the others are dense), and Input~2, applied to
+the two embeddings of the polynomial ring over~$\QQ$ in one variable that send the variable to~$H$ and to this
+element, would give an~$\iota$ violating the bound.
+
+\subhead{Facts of Mathlib.} The proofs below also use standard facts that the formal proofs take from Mathlib, the
+mathematical library of Lean: unique factorisation of integers; that the image of the norm of a finite separable
+field extension in an algebraically closed field is the product over the embeddings; that $\abs{\,\cdot\,}_\ell$
+on~$\Qlb$ restricts to the $\ell$-adic absolute value on~$\QQ$; the properties of Gram matrices collected in
+Lemma~\ref{l:gram}, where a short proof is given; Bessel's inequality, Parseval's identity and Pythagoras' theorem
+in inner product spaces; the trace of an endomorphism as the sum of its diagonal coefficients in an orthonormal
+basis; the existence of a non-trivial additive character of a finite field; and elementary linear algebra. Their
+formal statements were not read: Mathlib is not part of the artifact, and its pinned version was not at hand when
+this note was written. The dossier of the unit records these facts from their names and from the way they are
+used.
+
+\sect{Height bounds and the product formula}{s:heights}
+In this section $Z$ and $Z'$ are families indexed by~$\IX$ and $h$, $h'$ are real numbers; a triple
+$(H,\alpha,\eta)$ as in Definition~\ref{d:height} is called a \kw{witness} of \m{\hle{h}{Z}}.
+
+\begin{lemma}[monotonicity]\label{l:mono}
+Let $h$ and $h'$ be real numbers and $Z$, $Z'$ families indexed by~$\IX$. If \m{\hle{h}{Z}}, if \m{h\le h'}, and if
+\m{\abs{\iota(Z'_{\ell,\iota})}_\ell\le\abs{\iota(Z_{\ell,\iota})}_\ell} for every $(\ell,\iota)\in\IX$, then
+\m{\hle{h'}{Z'}}.
+\end{lemma}
+\begin{proof}
+A witness $(H,\alpha,\eta)$ of \m{\hle{h}{Z}} is a witness of \m{\hle{h'}{Z'}}: conditions (i) and~(iii) are
+unchanged or weaker, and
+\m{\abs{\iota(H Z'_{\ell,\iota})}_\ell=\abs{\iota(H)}_\ell\abs{\iota(Z'_{\ell,\iota})}_\ell\le\abs{\iota(H Z_{\ell,\iota})}_\ell\le\exp(\eta_\ell)},
+because $\iota$ is a homomorphism of rings and $\abs{\,\cdot\,}_\ell$ is multiplicative.
+\end{proof}
+\leanline{\lean{mono}}
+
+\begin{lemma}[families of bounded entries]\label{l:ofle}
+Let $h$ be a real number, $Z$ a family indexed by~$\IX$, and $\eta=(\eta_0,\eta_1,\eta_2,\dots)$ a sequence of real
+numbers. If \m{\sum_{\ell\in J}\eta_\ell\le h} for every finite set~$J$ of prime numbers, and if
+\m{\abs{\iota(Z_{\ell,\iota})}_\ell\le\exp(\eta_\ell)} for every $(\ell,\iota)\in\IX$, then \m{\hle{h}{Z}}.
+\end{lemma}
+\begin{proof}
+The triple $(1,0,\eta)$ is a witness: \m{\sigma(1)=1} for every $\sigma\in\AutC$, condition~(ii) is the second
+hypothesis, and (iii) holds for every~$n$ by the first hypothesis, applied to the set~$J$ of the primes below~$n$.
+\end{proof}
+\leanline{\lean{ofle}}
+
+\begin{proposition}[height bounds add in products]\label{p:products}
+Height bounds have the following three properties.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.2em,itemsep=2pt,topsep=2pt]
+\item Let $h$ and $h'$ be real numbers and $Z$, $Z'$ families indexed by~$\IX$. If \m{\hle{h}{Z}} and
+\m{\hle{h'}{Z'}}, then \m{\hle{h+h'}{ZZ'}}.
+\item Let $\Omega$ be a set and $I\subseteq\Omega$ a finite subset, and for every $i\in\Omega$ let $h_i$ be a real
+number and $Z_i$ a family indexed by~$\IX$. If \m{\hle{h_i}{Z_i}} for every $i\in I$, then
+\m{\hle{\textstyle\sum_{i\in I}h_i}{\textstyle\prod_{i\in I}Z_i}}.
+\item Let $h$ be a real number, $Z$ a family indexed by~$\IX$ with \m{\hle{h}{Z}}, and $n$ a natural number. Then
+\m{\hle{n\,h}{Z^n}}.
+\end{enumerate}
+\end{proposition}
+\begin{proof}
+(a) Let $(H,\alpha,\eta)$ and $(H',\alpha',\eta')$ be witnesses, with thresholds $n_0$ and $n_0'$ in~(iii). Then
+\m{HH'\ne0}, \m{\abs{\sigma(HH')}\le\exp(\alpha+\alpha')} for every~$\sigma$, and
+\[\abs{\iota(HH'Z_{\ell,\iota}Z'_{\ell,\iota})}_\ell=\abs{\iota(HZ_{\ell,\iota})}_\ell\cdot\abs{\iota(H'Z'_{\ell,\iota})}_\ell\le\exp(\eta_\ell+\eta'_\ell)
+\qquad\text{for every }(\ell,\iota)\in\IX .\]
+For \m{n\ge n_0+n_0'} both inequalities~(iii) hold, and their sum is the inequality~(iii) for the triple
+$(HH',\alpha+\alpha',\eta+\eta')$ and the bound \m{h+h'}.
+
+(b) By induction on the number of elements of~$I$. If $I$ is empty, the product is the constant family~$1$ and the
+sum is~$0$, and \m{\hle{0}{1}} by Lemma~\ref{l:ofle} with \m{\eta=0}. The step from $I$ to $I$ with one more element
+is~(a).
+
+(c) This is (b) for a set~$I$ of $n$ elements, with all $h_i$ equal to~$h$ and all $Z_i$ equal to~$Z$.
+\end{proof}
+\leanline{\lean{mul}\sep \lean{prod}\sep \lean{pow}}
+
+\begin{lemma}[the product formula for $\QQ$]\label{l:pf}
+Let $n$ be a natural number and $q$ a rational number, with numerator $q_{\mathrm{num}}$ and denominator
+\m{q_{\mathrm{den}}\ge1} in lowest terms (for \m{q=0} these are $0$ and~$1$). If
+\m{\max(\abs{q_{\mathrm{num}}},q_{\mathrm{den}})<n}, then
+\[\log\abs q+\sum_{\ell<n}\log\abs q_\ell=0,\]
+where $\abs q_\ell$ is the $\ell$-adic absolute value of~$q$, the sum is over the primes~$\ell$ below~$n$, and for
+\m{q=0} all the logarithms are read as~$0$.
+\end{lemma}
+\begin{proof}
+For \m{q=0} there is nothing to prove. Let \m{q\ne0}. A prime that divides $q_{\mathrm{num}}$ or $q_{\mathrm{den}}$
+is at most \m{\max(\abs{q_{\mathrm{num}}},q_{\mathrm{den}})}, hence below~$n$. Write $\ord_\ell$ for the exponent
+of~$\ell$ in an integer. By unique factorisation,
+\[\log\abs{q_{\mathrm{num}}}=\sum_{\ell<n}\ord_\ell(q_{\mathrm{num}})\log\ell\qquad\text{and}\qquad
+\log q_{\mathrm{den}}=\sum_{\ell<n}\ord_\ell(q_{\mathrm{den}})\log\ell .\]
+Since \m{\log\abs q_\ell=(\ord_\ell(q_{\mathrm{den}})-\ord_\ell(q_{\mathrm{num}}))\log\ell}, the sum of the numbers
+$\log\abs q_\ell$ over the primes \m{\ell<n} is \m{\log q_{\mathrm{den}}-\log\abs{q_{\mathrm{num}}}=-\log\abs q}.
+\end{proof}
+\leanline{\lean{pf}}
+
+\begin{proof}[Proof of Theorem 1]
+Let $(H,\alpha,\eta)$ be a witness of \m{\hle{h}{1}}, with threshold~$n_0$ in~(iii). Here (ii) reads
+\m{\abs{\iota(H)}_\ell\le\exp(\eta_\ell)} for all $(\ell,\iota)\in\IX$.
+
+\emph{The number $H$ is algebraic.} By (ii) for \m{\ell=2} and Definition~\ref{d:jiota},
+\m{\abs{\jof{\iota}(H)}_2\le\exp(\eta_2)} for every isomorphism \m{\iota\colon\CC\to\bar{\QQ}_2}, and Input~1
+applies. So $\QQ(H)$ is a number field. Write $\deg H$ for its degree over~$\QQ$, and let
+\m{q=\Nm_{\QQ(H)/\QQ}(H)} be the norm of~$H$, a rational number, non-zero because \m{H\ne0}.
+
+\emph{Local bounds.} We claim that
+\begin{equation}\label{e:local}
+\log\abs q\le\deg H\cdot\alpha\qquad\text{and}\qquad\log\abs q_\ell\le\deg H\cdot\eta_\ell\quad\text{for every
+prime }\ell.
+\end{equation}
+Fix~$\ell$. The image of~$q$ in~$\Qlb$ is the product of the numbers $\tau(H)$ over the $\deg H$ field embeddings
+\m{\tau\colon\QQ(H)\to\Qlb}. Each $\tau$ is the restriction of an isomorphism \m{\iota\colon\CC\to\Qlb}: this is
+Input~2 for the field \m{L=\Qlb}, which has the cardinality of~$\CC$ by Input~3, for the countable ring $\QQ(H)$,
+for its inclusion~$\tau_0$ in~$\CC$, and for~$\tau$. Hence \m{\abs{\tau(H)}_\ell=\abs{\iota(H)}_\ell\le\exp(\eta_\ell)}
+by~(ii), and \m{\abs q_\ell\le\exp(\deg H\cdot\eta_\ell)}, because $\abs{\,\cdot\,}_\ell$ on~$\Qlb$ restricts to the
+$\ell$-adic absolute value on~$\QQ$. The first inequality of~\eqref{e:local} is proved in the same way with $\CC$
+in the place of~$\Qlb$: the embeddings \m{\QQ(H)\to\CC} are the restrictions of the automorphisms
+$\sigma\in\AutC$ by Input~2 for \m{L=\CC}, and (i) bounds each $\abs{\sigma(H)}$ by $\exp(\alpha)$.
+
+\emph{The product formula.} Put \m{n=n_0+\max(\abs{q_{\mathrm{num}}},q_{\mathrm{den}})+1}. By~(iii),
+by~\eqref{e:local} and by Lemma~\ref{l:pf},
+\[\deg H\cdot h\ \ge\ \deg H\cdot\Bigl(\alpha+\sum_{\ell<n}\eta_\ell\Bigr)\ \ge\ \log\abs q+\sum_{\ell<n}\log\abs q_\ell\ =\ 0,\]
+and \m{\deg H\ge1}.
+\end{proof}
+\leanline{\lean{nonneg}\sep uses \lean{algpadic}, \lean{steinitz}, \lean{card} and \lean{pf}}
+
+\begin{corollary}[the form in which Theorem 1 is used]\label{c:reciprocal}
+Let $h$ and $h'$ be real numbers and $Z$, $Z'$ families indexed by~$\IX$ with \m{Z_{\ell,\iota}Z'_{\ell,\iota}=1}
+for every $(\ell,\iota)\in\IX$. If \m{\hle{h}{Z}} and \m{\hle{h'}{Z'}}, then \m{h+h'\ge0}.
+\end{corollary}
+\begin{proof}
+By Proposition~\ref{p:products}(a), \m{\hle{h+h'}{1}}; now apply Theorem~1.
+\end{proof}
+The corollary is not a declaration of the formal text; it is the last step of the formal proof of Theorem~C of
+the argument, where it is applied to the square of one family and to a second family (§\ref{s:use}).
+
+\begin{remark}[constant families]\label{r:constant}
+The proof of Theorem~1 gives more, by the same steps. Let $Z$ be the constant family with value a non-zero
+algebraic number, and let $\bar h$ be the mean of the logarithms of the absolute values of its conjugates
+in~$\CC$. If \m{\hle{h}{Z}}, then \m{h\ge-\bar h}. Indeed, for a witness $(H,\alpha,\eta)$ the number $H$ is again
+algebraic, and one applies the product formula to the norm of $H$ times the value of~$Z$, taken from the number
+field that the two generate. So a height bound for a constant family cannot fall below what the product formula
+allows, and the two examples of §\ref{s:intro} are best possible. This remark is ours; the formal text has only the
+case of the constant family~$1$.
+\end{remark}
+
+\sect{The height of one Gram determinant}{s:gram}
+\begin{lemma}[Gram matrices]\label{l:gram}
+Let $I$ be a finite set and $F=(F_i)_{i\in I}$ a family of vectors of a complex inner product space.
+\begin{enumerate}[label=\textup{(\arabic*)},leftmargin=2.2em,itemsep=2pt,topsep=2pt]
+\item $\det\Gram(F)\ne0$ if and only if the family $F$ is linearly independent.
+\item For matrices $u=(u_{ii'})$ and $u'=(u'_{ii'})$ of complex numbers indexed by \m{I\times I}, put
+\m{F_i'=\sum_{i_1\in I}u'_{ii_1}F_{i_1}} and \m{F_i''=\sum_{i_1\in I}u_{ii_1}F_{i_1}} for $i\in I$. Then
+\[\bigl(\ip{F_i'}{F_{i'}''}\bigr)_{i,i'\in I}\ =\ \overline{u'}\cdot\Gram(F)\cdot u^{\tp},\]
+where $\overline{u'}$ is the matrix of the complex conjugates of the entries of~$u'$ and $u^{\tp}$ is the transpose
+of~$u$.
+\item Let $W$ be a finite-dimensional complex inner product space with \m{\dim W=\#I}, let $w=(w_i)_{i\in I}$ be a
+family of vectors of~$W$, and let $T$ be a $\CC$-linear map from~$W$ to a complex inner product space. Then
+\m{\det\Gram(Tw)=\det(T^{*}T)\cdot\det\Gram(w)}. In particular $\det(T^{*}T)\ne0$ if and only if $T$ is injective.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+Write $[F]$ for the linear map from $\CC^I$ that sends the standard basis vector~$\one_i$ to~$F_i$. Then $\Gram(F)$
+is the matrix of the hermitian form \m{(\xi,\xi')\mapsto\ip{[F]\xi}{[F]\xi'}} on~$\CC^I$. This form is positive
+semi-definite, and it is definite exactly when $[F]$ is injective, which is~(1). Statement~(2) is the expansion
+of $\ip{F_i'}{F_{i'}''}$ by sesquilinearity. For~(3), choose an orthonormal basis~$v$ of~$W$ indexed by~$I$, and
+let $u$ be the matrix with \m{w_{i'}=\sum_{i\in I}u_{i'i}v_i}. By~(2), applied to the family~$Tv$ and then to the
+family~$v$, \m{\Gram(Tw)=\overline{u}\cdot\Gram(Tv)\cdot u^{\tp}} and \m{\Gram(w)=\overline{u}\cdot u^{\tp}}. As
+$\Gram(Tv)$ is the matrix of $T^{*}T$ in the basis~$v$, taking determinants gives the formula. The last assertion
+follows from~(1) for the family~$Tv$.
+\end{proof}
+\leanline{facts of Mathlib; the formal text writes $\det(T^{*}T)$ as the square of a function of Mathlib that is
+the volume factor of a linear map}
+
+\begin{proof}[Proof of Theorem 2]
+For every $\vartheta$ in~$\Xi$ put \m{\Gamma_\vartheta=\det\Gram(T_\vartheta w)}. By~(b) and
+Lemma~\ref{l:gram}(1) the number $\det\Gram(w)$ is not zero, and by Lemma~\ref{l:gram}(3)
+\[\Gamma_\vartheta\ =\ \det(T_\vartheta^{*}T_\vartheta)\cdot\det\Gram(w)\qquad\text{for every }\vartheta\in\Xi .\]
+By~(a), \m{\Gamma_{\vartheta_0}\ne0}. So the family of the theorem is
+\m{Z_{\ell,\iota}=\Gamma_{\theta_{\ell,\iota}}/\Gamma_{\vartheta_0}}.
+
+\emph{Reduction.} Let $Z'$ be the family with entries \m{Z'_{\ell,\iota}=Z_{\ell,\iota}\,\abs{c_{\ell,\iota}}^{2\nu}}. Then
+$Z$ is the product of~$Z'$ and of the $\nu$-th power of the family $\abs{c}^{-2}$, and this power has height at
+most~$\nu h$ by~(d) and Proposition~\ref{p:products}(c). By Proposition~\ref{p:products}(a) it suffices to show
+that \m{\hle{\alpha+2\delta}{Z'}}. We claim that the triple $(\Gamma_{\vartheta_0},\alpha,2\eta)$ is a witness.
+Condition~(i) is~(c). Condition~(iii) holds for every~$n$, by~(e) for the set~$J$ of the primes below~$n$.
+Condition~(ii) is the inequality
+\begin{equation}\label{e:ladic}
+\bigl\lvert\iota\bigl(\Gamma_{\theta_{\ell,\iota}}\cdot\abs{c_{\ell,\iota}}^{2\nu}\bigr)\bigr\rvert_\ell\ \le\ \exp(2\eta_\ell)
+\qquad\text{for every }(\ell,\iota)\in\IX,
+\end{equation}
+which remains to be proved.
+
+\emph{The $\ell$-adic bound.} Fix $(\ell,\iota)\in\IX$ and put \m{j=\jof{\iota}}, so that
+\m{\abs{\iota(\,\cdot\,)}_\ell=\abs{j(\,\cdot\,)}_\ell}. Let $u$ be a matrix as in~(g) for $(\ell,\iota)$ and~$j$,
+and $u'$ a matrix as in~(g) for $(\ell,\iota)$ and~$\bar j$. Since $\bar j$ is $j$ preceded by complex conjugation,
+the two inequalities of~(g) read
+\begin{equation}\label{e:index}
+\exp(-\eta_\ell)\,\abs{j(c_{\ell,\iota})}_\ell^{\,\nu}\le\abs{j(\det u)}_\ell
+\qquad\text{and}\qquad
+\exp(-\eta_\ell)\,\abs{j(\overline{c_{\ell,\iota}})}_\ell^{\,\nu}\le\abs{j(\det\overline{u'})}_\ell .
+\end{equation}
+Put \m{F_i'=\sum_{i_1\in I}u'_{ii_1}T_{\theta_{\ell,\iota}}(w_{i_1})} and
+\m{F_i''=\sum_{i_1\in I}u_{ii_1}T_{\theta_{\ell,\iota}}(w_{i_1})} for $i\in I$. By~(g) the vectors $F_i'$ lie in
+$\Ls_{\ell,\iota}(\bar j)$ and the vectors $F_i''$ lie in $\Ls_{\ell,\iota}(j)$, so by~(f) every entry of the matrix
+$(\ip{F_i'}{F_{i'}''})_{i,i'\in I}$ lies in the set~$O_j$ of the complex numbers whose image under~$j$ has absolute
+value at most~$1$. This set is a subring of~$\CC$, because $\abs{\,\cdot\,}_\ell$ is non-archimedean; hence the
+determinant of the matrix lies in~$O_j$ as well. By Lemma~\ref{l:gram}(2) the matrix is
+\m{\overline{u'}\cdot\Gram(T_{\theta_{\ell,\iota}}w)\cdot u^{\tp}}, with determinant
+\m{\det\overline{u'}\cdot\Gamma_{\theta_{\ell,\iota}}\cdot\det u}. Therefore
+\begin{equation}\label{e:integral}
+\abs{j(\det\overline{u'})}_\ell\cdot\abs{j(\Gamma_{\theta_{\ell,\iota}})}_\ell\cdot\abs{j(\det u)}_\ell\ \le\ 1 .
+\end{equation}
+Now \m{\abs{c_{\ell,\iota}}^{2}=\overline{c_{\ell,\iota}}\cdot c_{\ell,\iota}}, so by \eqref{e:index} and
+then~\eqref{e:integral}
+\[\bigl\lvert j\bigl(\Gamma_{\theta_{\ell,\iota}}\abs{c_{\ell,\iota}}^{2\nu}\bigr)\bigr\rvert_\ell
+\ \le\ \abs{j(\Gamma_{\theta_{\ell,\iota}})}_\ell\cdot\exp(2\eta_\ell)\cdot\abs{j(\det\overline{u'})}_\ell\cdot\abs{j(\det u)}_\ell
+\ \le\ \exp(2\eta_\ell).\]
+This is~\eqref{e:ladic}.
+\end{proof}
+\leanline{\lean{onedet}\sep uses \lean{mul}, \lean{pow}, \lean{jiota}, and from the background library
+\lean{intmat} and \lean{detmem}: a determinant of a matrix with entries in a subring lies in the subring}
+
+The proof uses hypotheses (f) and~(g) only for the two homomorphisms $\jof{\iota}$ and its conjugate, and it uses
+nothing about the sets $\Ls_{\ell,\iota}(j)$ beyond (f) and~(g). The inner product of~$W$ does not matter either:
+by Lemma~\ref{l:gram}(3) the ratio $Z_{\ell,\iota}$ is a ratio of Gram determinants of images of the basis~$w$.
+
+\subhead{Completing a family to a basis.} Theorem~2 needs a basis of~$W$. In the argument a linearly independent
+family is given, and it is completed by vectors of a second kind, for which hypothesis~(g) holds with the
+scalars~$c_{\ell,\iota}$. The following lemma provides the completion.
+
+\begin{lemma}[extension to a basis from a spanning set]\label{l:extend}
+Let $W$ be a finite-dimensional complex vector space, $n$ a natural number, $S$ a subset of~$W$ that spans~$W$,
+and \m{y_1,\dots,y_n} linearly independent vectors of~$W$. Then there are a natural number~$n'$ and vectors
+\m{z_1,\dots,z_{n'}} in~$S$ such that \m{y_1,\dots,y_n,z_1,\dots,z_{n'}} are linearly independent and
+\m{\dim W=n+n'}.
+\end{lemma}
+\begin{proof}
+Let $W_y$ be the span of \m{y_1,\dots,y_n}; it has dimension~$n$. The images of the elements of~$S$ span the
+quotient $W/W_y$, so there are \m{z_1,\dots,z_{n'}} in~$S$ whose images form a basis of $W/W_y$, and
+\m{n'=\dim W-n}. A linear relation among \m{y_1,\dots,y_n,z_1,\dots,z_{n'}} becomes, modulo~$W_y$, a relation among
+the images of the~$z_i$, so its coefficients at the~$z_i$ vanish; what is left is a relation among the~$y_i$, whose
+coefficients vanish too.
+\end{proof}
+\leanline{\lean{extend}}
+
+\sect{Few translates nearly span}{s:few}
+\begin{proof}[Proof of Theorem 3]
+If \m{\dim W=0}, the empty set has the two properties. Let \m{\dim W\ge1}. For a finite subset
+\m{\Ts'\subseteq\Omega} write \m{W_{\Ts'}=\sum_{\gamma\in\Ts'}B_\gamma(U)} and
+\[\Pi(\Ts')\ =\ \#\Ts'\cdot\dim U\ +\ 5\,\dim W\cdot\log\Bigl(1+\frac{\codim W_{\Ts'}}{\varepsilon\,\dim W}\Bigr),
+\quad\ \codim W_{\Ts'}=\dim W-\dim W_{\Ts'} .\]
+Call $\Ts'$ \emph{admissible} if \m{\Pi(\Ts')\le5\,\dim W\cdot\log(1+\varepsilon^{-1})}. The empty set is admissible,
+with equality. Among the admissible sets choose one, $\Ts$, for which $\dim W_{\Ts}$ is largest. The logarithm in
+$\Pi(\Ts)$ is non-negative, so \m{\#\Ts\cdot\dim U\le\Pi(\Ts)\le5\,\dim W\cdot\log(1+\varepsilon^{-1})}: this is the
+first inequality.
+
+For the second, suppose that \m{\dim W_{\Ts}<(1-4\varepsilon)\dim W}, that is,
+\begin{equation}\label{e:cd}
+\codim W_{\Ts}\ >\ 4\,\varepsilon\,\dim W .
+\end{equation}
+Since $B$ is $\varepsilon$-spread, there is a $\gamma\in\Omega$ with
+\[\dim B_\gamma^{-1}(W_{\Ts})\ \le\ \Bigl(\frac12\Bigl(1+\frac{\dim W_{\Ts}}{\dim W}\Bigr)+\varepsilon\Bigr)\dim U
+\ =\ \Bigl(1-\frac{\codim W_{\Ts}}{2\dim W}+\varepsilon\Bigr)\dim U .\]
+Let $\mathrm{rk}$ be the rank of the map \m{U\to W/W_{\Ts}} induced by~$B_\gamma$. Its kernel is
+$B_\gamma^{-1}(W_{\Ts})$, so
+\begin{equation}\label{e:rk}
+\mathrm{rk}\ =\ \dim U-\dim B_\gamma^{-1}(W_{\Ts})\ \ge\ \Bigl(\frac{\codim W_{\Ts}}{2\dim W}-\varepsilon\Bigr)\dim U
+\ >\ \frac{\codim W_{\Ts}}{4\dim W}\cdot\dim U\ >\ 0,
+\end{equation}
+the last two inequalities by~\eqref{e:cd} and \m{\dim U\ge1}. Put \m{\Ts''=\Ts\cup\{\gamma\}}. Then
+\m{W_{\Ts''}=W_{\Ts}+B_\gamma(U)} and \m{\codim W_{\Ts''}=\codim W_{\Ts}-\mathrm{rk}}, so that the quotient of the
+arguments of the two logarithms is \m{1-\mathrm{rk}/(\varepsilon\dim W+\codim W_{\Ts})}. This number lies in the
+interval from $0$ to~$1$, and the logarithm of a positive number is at most that number minus~$1$. As $\Ts''$ has
+at most one element more than~$\Ts$,
+\begin{align*}
+\Pi(\Ts'')-\Pi(\Ts)\ &\le\ \dim U+5\,\dim W\cdot\log\Bigl(1-\frac{\mathrm{rk}}{\varepsilon\dim W+\codim W_{\Ts}}\Bigr)\\
+&\le\ \dim U-\frac{5\,\dim W\cdot\mathrm{rk}}{\varepsilon\dim W+\codim W_{\Ts}} .
+\end{align*}
+By the first inequality of~\eqref{e:rk} and by~\eqref{e:cd},
+\[5\,\dim W\cdot\mathrm{rk}\ \ge\ \Bigl(\frac52\codim W_{\Ts}-5\,\varepsilon\dim W\Bigr)\dim U
+\ \ge\ \bigl(\codim W_{\Ts}+\varepsilon\dim W\bigr)\dim U ,\]
+the second step because \m{\tfrac32\codim W_{\Ts}\ge6\,\varepsilon\dim W}. Hence \m{\Pi(\Ts'')\le\Pi(\Ts)}, and
+$\Ts''$ is admissible. By the choice of~$\Ts$, \m{\dim W_{\Ts''}\le\dim W_{\Ts}}, so \m{B_\gamma(U)\subseteq W_{\Ts}}
+and \m{\mathrm{rk}=0}, against~\eqref{e:rk}.
+\end{proof}
+\leanline{\lean{few}\sep uses \lean{spread}}
+
+The potential $\Pi$ explains the two constants. Adding a member costs $\dim U$ in the first term. The spread
+property guarantees that a suitable member lowers the codimension by a fixed share of what is left, as long as
+\eqref{e:cd} holds, and the logarithm turns this into a drop of the second term by at least $\dim U$. The
+factor~$5$ is what makes the last display true under~\eqref{e:cd}, and $4\varepsilon$ is where the process stops.
+
+\sect{Two inequalities behind the spread property}{s:moments}
+The hypothesis of Theorem~3 is proved in another chapter, by a second moment over a finite group. The unit on
+heights holds the two general inequalities of that proof. Both concern a finite group~$G$ and a map from~$G$ to an
+inner product space whose inner products depend only on the quotient of the two arguments.
+
+\begin{lemma}[inner products of sums over a group]\label{l:groupsum}
+Let $G$ be a finite group, $\Hs$ a complex inner product space, \m{v\colon G\to\Hs} and \m{w\colon G\to\Hs} two maps,
+and \m{\omega\colon G\to\CC} a function such that \m{\ip{v(\gamma)}{w(\gamma')}=\omega(\gamma^{-1}\gamma')} for all
+$\gamma,\gamma'\in G$. Then
+\[\bigip{\,\sum_{\gamma\in G}v(\gamma)}{\sum_{\gamma\in G}w(\gamma)}\ =\ \#G\cdot\sum_{\gamma\in G}\omega(\gamma).\]
+\end{lemma}
+\begin{proof}
+The left side is \m{\sum_{\gamma}\sum_{\gamma'}\omega(\gamma^{-1}\gamma')}, and for each~$\gamma$ the map
+\m{\gamma'\mapsto\gamma^{-1}\gamma'} is a bijection of~$G$.
+\end{proof}
+\leanline{\lean{groupsum}}
+
+In the next statement $\F$ is a finite field, $\F^{I}$ is the space of vectors indexed by a finite set~$I$, and
+$\GL_I(\F)$ is the group of invertible matrices indexed by \m{I\times I}, which acts on~$\F^I$. A function $\omega$ as
+in~(b) below is a function of positive type on~$G$.
+
+\begin{proposition}[singular minors are rare]\label{p:minors}
+Let $G$ be a finite group, $\Hs$ a complex inner product space and \m{v\colon G\to\Hs} a map. Let $\F$ be a finite
+field, $I$ and $I'$ finite sets, \m{\pi\colon G\to\GL_I(\F)} a homomorphism of groups, and $A=(A_1,A_0)$ a pair of
+matrices over~$\F$ with rows indexed by~$I$ and columns indexed by~$I'$. Let \m{\omega\colon G\to\RR} be a function
+and $Y$ a real number. Suppose that
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.2em,itemsep=2pt,topsep=2pt]
+\item \m{\omega(\gamma)\ge0} for every $\gamma\in G$;
+\item \m{\ip{v(\gamma)}{v(\gamma')}=\omega(\gamma^{-1}\gamma')} for all $\gamma,\gamma'\in G$;
+\item \m{Y\ge0};
+\item for every non-zero vector \m{\xi\in\F^{I'}}, the sum of $\omega(\gamma)$ over all $\gamma\in G$ such that
+\m{(\pi(\gamma)^{\tp})^{-1}A_1\xi=A_1\xi} is at most~$Y$, and so is the sum of $\omega(\gamma)$ over all
+$\gamma\in G$ such that \m{\pi(\gamma)A_0\xi=A_0\xi}.
+\end{enumerate}
+Then
+\[\#\F\cdot\sum_{\substack{\gamma\in G\\ \det(A_1^{\tp}\pi(\gamma)A_0)=0}}\omega(\gamma)\ \ \le\ \ 2\sum_{\gamma\in G}\omega(\gamma)
+\ +\ (\#\F)^{\#I'}\sqrt{(\#\F)^{\#I}}\cdot Y .\]
+\end{proposition}
+
+The matrix \m{A_1^{\tp}\pi(\gamma)A_0} is square, indexed by \m{I'\times I'}. If the two stabilisers in~(d) carry
+little of the mass of~$\omega$, the proposition says that the set where this matrix is singular carries at most
+about the share \m{2/\#\F} of the mass.
+
+\begin{proof}
+Fix a non-trivial character~$\Psi$ of the additive group of~$\F$; its values have absolute value~$1$. For a finite
+set~$I$ and $\rho,\rho'$ in~$\F^I$ write \m{\rho\cdot\rho'=\sum_{i\in I}\rho_i\rho'_i}. The sum of a non-trivial
+character over a finite group is zero, and multiplication by a non-zero element of~$\F$ is a bijection of~$\F$.
+Hence, coordinate by coordinate,
+\begin{equation}\label{e:orth}
+\sum_{\rho'\in\F^I}\Psi(\rho\cdot\rho')\ =\ (\#\F)^{\#I}\ \text{ if }\rho=0,\qquad\text{and}\qquad=0\ \text{ otherwise.}
+\end{equation}
+For $\xi_1,\xi_0\in\F^{I'}$ and $\gamma\in G$ put
+\m{\omega_{\xi_1,\xi_0}(\gamma)=\Psi\bigl(\xi_1\cdot A_1^{\tp}\pi(\gamma)A_0\,\xi_0\bigr)\,\omega(\gamma)}.
+
+\emph{Step 1.} For fixed $\gamma$ and~$\xi_1$, by~\eqref{e:orth} for the set~$I'$, the mean over~$\xi_0$ of
+\m{\Psi(\xi_1\cdot A_1^{\tp}\pi(\gamma)A_0\,\xi_0)} is $1$ if \m{\xi_1^{\tp}A_1^{\tp}\pi(\gamma)A_0=0} and $0$ otherwise.
+The $\xi_1$ with this property form a subspace of~$\F^{I'}$; it has at least one element, and at least $\#\F$
+elements when the matrix is singular. So the sum over~$\xi_1$ of the mean over~$\xi_0$ of
+\m{\sum_{\gamma}\omega_{\xi_1,\xi_0}(\gamma)} is the sum over~$\gamma$ of $\omega(\gamma)$ times the number of
+elements of this subspace. It is a real number, and as \m{\omega\ge0} by~(a),
+\[\#\F\cdot\sum_{\substack{\gamma\in G\\ \det(A_1^{\tp}\pi(\gamma)A_0)=0}}\omega(\gamma)\ \le\
+\sum_{\xi_1\in\F^{I'}}\ (\#\F)^{-\#I'}\sum_{\xi_0\in\F^{I'}}\ \re\sum_{\gamma\in G}\omega_{\xi_1,\xi_0}(\gamma).\]
+
+\emph{Step 2.} If $\xi_1$ or $\xi_0$ is zero, then \m{\omega_{\xi_1,\xi_0}=\omega}. We claim that
+\begin{equation}\label{e:step2}
+\re\sum_{\gamma\in G}\omega_{\xi_1,\xi_0}(\gamma)\ \le\ \sqrt{(\#\F)^{\#I}}\cdot Y\qquad\text{for all non-zero }\xi_1,\xi_0\in\F^{I'} .
+\end{equation}
+In the inner product
+space $\CC^{\F^I}$, with standard basis $(\one_\rho)_{\rho\in\F^I}$, put
+\[\Psi_\rho\ =\ (\#\F)^{-\#I/2}\sum_{\rho'\in\F^I}\Psi(-\rho\cdot\rho')\,\one_{\rho'}\qquad\text{for }\rho\in\F^I .\]
+By~\eqref{e:orth} these vectors form a second orthonormal family, and
+\m{\ip{\Psi_\rho}{\one_{\rho'}}=(\#\F)^{-\#I/2}\,\Psi(\rho\cdot\rho')}. Consider in \m{\CC^{\F^I}\otimes\Hs} the two
+vectors
+\[F=\sum_{\gamma\in G}\Psi_{(\pi(\gamma)^{\tp})^{-1}A_1\xi_1}\otimes v(\gamma),\qquad
+F'=\sum_{\gamma\in G}\one_{\pi(\gamma)A_0\xi_0}\otimes v(\gamma).\]
+The dot product of \m{(\pi(\gamma)^{\tp})^{-1}A_1\xi_1} and \m{\pi(\gamma')A_0\xi_0} is
+\m{\xi_1\cdot A_1^{\tp}\pi(\gamma^{-1}\gamma')A_0\,\xi_0}. So by~(b) the inner product of the term of~$F$ at~$\gamma$
+with the term of~$F'$ at~$\gamma'$ is \m{(\#\F)^{-\#I/2}\,\omega_{\xi_1,\xi_0}(\gamma^{-1}\gamma')}, and
+Lemma~\ref{l:groupsum} gives
+\[\ip{F}{F'}\ =\ \#G\cdot(\#\F)^{-\#I/2}\sum_{\gamma\in G}\omega_{\xi_1,\xi_0}(\gamma).\]
+In the same way, the inner product of the terms of~$F$ at $\gamma$ and~$\gamma'$ is $\omega(\gamma^{-1}\gamma')$ if
+\m{(\pi(\gamma^{-1}\gamma')^{\tp})^{-1}A_1\xi_1=A_1\xi_1} and $0$ otherwise, because the family $(\Psi_\rho)$ is
+orthonormal and \m{\gamma\mapsto(\pi(\gamma)^{\tp})^{-1}} is a homomorphism. By Lemma~\ref{l:groupsum} and~(d),
+\m{\norm{F}^2\le\#G\cdot Y}; likewise \m{\norm{F'}^2\le\#G\cdot Y}. Hence
+\m{\re\ip{F}{F'}\le\norm{F}\,\norm{F'}\le\tfrac12(\norm{F}^2+\norm{F'}^2)\le\#G\cdot Y}, which is~\eqref{e:step2}.
+
+\emph{Step 3.} In the right side of Step~1, the terms with \m{\xi_1=0} contribute \m{\sum_{\gamma}\omega(\gamma)}. The
+terms with \m{\xi_1\ne0} and \m{\xi_0=0} contribute at most the same, because there are fewer than $(\#\F)^{\#I'}$
+of them and \m{\sum_{\gamma}\omega(\gamma)\ge0}. The remaining terms contribute at most
+\m{(\#\F)^{\#I'}\sqrt{(\#\F)^{\#I}}\cdot Y}, by~\eqref{e:step2} and~(c). This is the assertion.
+\end{proof}
+\leanline{\lean{minors}\sep uses \lean{groupsum}, and from the background library \lean{orth} (the relation
+\eqref{e:orth}), \lean{invT} and \lean{transposeGL} (the map \m{\gamma\mapsto(\pi(\gamma)^{\tp})^{-1}})}
+
+\begin{definition}[the dyad sum of a family]\label{d:dyad}
+Let $\Hs$ be a complex inner product space with an orthonormal basis $e=(e_{i'})_{i'\in I'}$ indexed by a finite
+set~$I'$, and let $v=(v_i)_{i\in I}$ be a family of vectors of~$\Hs$ indexed by a finite set~$I$. For $i\in I$ let
+\m{\bar v_i=(\ip{v_i}{e_{i'}})_{i'\in I'}} in~$\CC^{I'}$ be the vector of the complex conjugates of the coordinates
+of~$v_i$ in the basis~$e$. The \kw{dyad sum} of~$v$ is
+\[\dyad{e}{v}\ =\ \sum_{i\in I}\bar v_i\otimes v_i\quad\text{in }\CC^{I'}\otimes\Hs .\]
+\end{definition}
+\leanline{\lean{dyad}}
+
+\begin{lemma}[inner products of dyad sums]\label{l:innerdyad}
+Let $\Hs$ be a complex inner product space with an orthonormal basis $e=(e_{i'})_{i'\in I'}$ indexed by a finite
+set~$I'$, and let $v=(v_i)_{i\in I}$ and $w=(w_{i''})_{i''\in I''}$ be families of vectors of~$\Hs$ indexed by finite
+sets $I$ and~$I''$. Then
+\[\ip{\dyad{e}{v}}{\dyad{e}{w}}\ =\ \sum_{i\in I}\ \sum_{i''\in I''}\abs{\ip{w_{i''}}{v_i}}^{2}.\]
+\end{lemma}
+\begin{proof}
+The inner product of \m{\bar v_i\otimes v_i} and \m{\bar w_{i''}\otimes w_{i''}} is
+\m{\ip{\bar v_i}{\bar w_{i''}}\cdot\ip{v_i}{w_{i''}}}, and by Parseval's identity
+\[\ip{\bar v_i}{\bar w_{i''}}\ =\ \sum_{i'\in I'}\ip{w_{i''}}{e_{i'}}\,\ip{e_{i'}}{v_i}\ =\ \ip{w_{i''}}{v_i} .\]
+The product of $\ip{w_{i''}}{v_i}$ and its complex conjugate $\ip{v_i}{w_{i''}}$ is
+$\abs{\ip{w_{i''}}{v_i}}^2$.
+\end{proof}
+\leanline{\lean{innerdyad}}
+
+Under the identification of \m{\CC^{I'}\otimes\Hs} with the endomorphisms of~$\Hs$ that the basis~$e$ provides, the
+dyad sum of~$v$ is the positive operator \m{F\mapsto\sum_{i\in I}\ip{v_i}{F}\,v_i}, and the inner product of the
+lemma is the trace of the product of two such operators. This remark is ours and is not used.
+
+\begin{proposition}[a variance inequality]\label{p:variance}
+Let $\Hs$ be a finite-dimensional complex inner product space, $e=(e_{i'})_{i'\in I'}$ an orthonormal basis of~$\Hs$
+indexed by a finite set~$I'$, and $I$ a finite set. Let \m{T\colon\CC^I\to\Hs} and \m{C\colon\Hs\to\Hs} be
+$\CC$-linear maps, \m{\Us\subseteq\CC^I} and \m{\Hs'\subseteq\Hs} linear subspaces, and $\mu$ a real number. Suppose
+that \m{\sum_{i\in I}\norm{(T^{*}T-1)\one_i}\le\mu}, where $T^{*}$ is the adjoint of~$T$, and that
+\m{(T-C\,T)(\Us)\subseteq\Hs'}. Then
+\[\dim\Us\ -\ \mu\ -\ \sum_{i\in I}\norm{C\,T\one_i}^2\ \ \le\ \ \re\ip{\dyad{e}{T\one}}{\dyad{e}{e'}},\]
+where $T\one$ is the family $(T\one_i)_{i\in I}$ and $e'$ is the orthonormal basis of~$\Hs'$, indexed by
+\m{\{1,\dots,\dim\Hs'\}}, that the library provides.
+\end{proposition}
+
+By Lemma~\ref{l:innerdyad} and Parseval's identity in~$\Hs'$ the right side is the real number
+\m{\sum_{i\in I}\norm{p_{\Hs'}T\one_i}^2}, the square of the Hilbert--Schmidt norm of \m{p_{\Hs'}T}; it does not depend
+on the choice of~$e'$. So the proposition says: if $T$ is nearly an isometry, and if on a subspace~$\Us$ it lands
+in~$\Hs'$ up to the small map~$C\,T$, then the part of~$T$ in~$\Hs'$ has Hilbert--Schmidt norm squared at least about
+$\dim\Us$.
+
+\begin{proof}
+Let $v=(v_{i''})_{i''\in I''}$ be an orthonormal basis of~$\Us$, so that \m{\#I''=\dim\Us}.
+
+\emph{Step 1.} The endomorphism \m{p_{\Us}(1-T^{*}T)} of~$\CC^I$ maps into~$\Us$, so its trace can be computed in the
+basis~$v$ of~$\Us$ and also in the standard basis:
+\[\dim\Us-\sum_{i''\in I''}\norm{Tv_{i''}}^2\ =\ \sum_{i''\in I''}\ip{v_{i''}}{(1-T^{*}T)v_{i''}}\ =\ \sum_{i\in I}\ip{p_{\Us}\one_i}{(1-T^{*}T)\one_i}.\]
+The left side is real, and the real part of the right side is at most
+\m{\sum_{i\in I}\norm{p_{\Us}\one_i}\,\norm{(1-T^{*}T)\one_i}\le\mu}. Hence
+\m{\dim\Us-\mu\le\sum_{i''\in I''}\norm{Tv_{i''}}^2}.
+
+\emph{Step 2.} For each~$i''$ the vector \m{Tv_{i''}-C\,Tv_{i''}} lies in~$\Hs'$, so $Tv_{i''}$ and $C\,Tv_{i''}$ have the
+same component orthogonal to~$\Hs'$. By Pythagoras' theorem,
+\m{\norm{Tv_{i''}}^2\le\norm{p_{\Hs'}Tv_{i''}}^2+\norm{C\,Tv_{i''}}^2}.
+
+\emph{Step 3.} For every $\CC$-linear map \m{C'\colon\Hs\to\Hs},
+\[\sum_{i''\in I''}\norm{C'Tv_{i''}}^2=\sum_{i'\in I'}\ \sum_{i''\in I''}\abs{\ip{(C'T)^{*}e_{i'}}{v_{i''}}}^2
+\ \le\ \sum_{i'\in I'}\norm{(C'T)^{*}e_{i'}}^2=\sum_{i\in I}\norm{C'T\one_i}^2,\]
+by Parseval's identity in~$\Hs$, Bessel's inequality for the orthonormal family~$v$, and Parseval's identity
+in~$\CC^I$.
+
+Steps 1 and~2, and Step~3 for \m{C'=p_{\Hs'}} and for \m{C'=C}, give
+\[\dim\Us-\mu\ \le\ \sum_{i\in I}\norm{p_{\Hs'}T\one_i}^2+\sum_{i\in I}\norm{C\,T\one_i}^2 ,\]
+and the first sum is the right side of the assertion, as was said after the statement.
+\end{proof}
+\leanline{\lean{variance}\sep uses \lean{innerdyad}}
+
+\sect{Where the results are used}{s:use}
+The heights serve Theorem~C of the argument, and the linear algebra of §§\ref{s:few} and~\ref{s:moments} serves
+Theorem~B. The notation of this section is that of the overview of the handout: $D$ is admissible data, with third
+scale~$b$ and number of lifts~$m$; $\Row(D)$ is the space of rows; for an $m$-fold twist~$\vartheta$ of~$D$,
+\m{\Theta_{D,\vartheta}\colon\Row(D)\to\mathcal{A}_{D,\vartheta}} is the chain of lifts and
+\m{\mathfrak{z}_D(\vartheta)=\det(\Theta_{D,\vartheta}^{*}\Theta_{D,\vartheta})}. What follows was read in the
+statements and in the last steps of the formal proofs; the chapters named give the proofs.
+
+\subhead{Theorem C: a covolume is bounded from below.} Let \m{y_1,\dots,y_n} be linearly independent rows with
+\m{n\ge(1-4/b^2)\dim\Row(D)}, of $D$-index at most~$\delta$, whose lifts at the trivial twist satisfy
+\m{\covol_\sigma^2(\Theta_{D,1}y_1,\dots,\Theta_{D,1}y_n)\le\exp(V)} for every $\sigma\in\AutC$. Chapter~VIII provides
+a family $\theta=(\theta_{\ell,\iota})$ of $m$-fold twists, one for each pair in~$\IX$, that is fit for~$D$. Two
+height bounds are then proved.
+
+\emph{First bound.} The family \m{\mathfrak{z}_D(\theta_{\ell,\iota})/\mathfrak{z}_D(1)} has height at most
+\m{V+2\delta+b\cdot\dim\Row(D)}. This is Theorem~2 for \m{W=\Row(D)}, for the set~$\Xi$ of the $m$-fold twists with
+\m{\vartheta_0=1}, for \m{T_\vartheta=\Theta_{D,\vartheta}}, and for the sets $\Ls_{\ell,\iota}(j)$ of the
+$j$-integral forms, for which (f) is the integrality of the pairing. The basis~$w$ consists of \m{y_1,\dots,y_n}
+and of~$n'$ further rows \m{z_1,\dots,z_{n'}} given by Lemma~\ref{l:extend}, taken from a spanning set of crude
+rows that Chapter~VII constructs. These come with scalars~$c_{\ell,\iota}$, ratios of a twisted to an untwisted constant, for which the family
+$\abs{c}^{-2}$ has a height bound. The matrix of~(g) is made of two blocks: the matrix that the $D$-index
+provides for the~$y_i$, with \m{\abs{j(\det u)}_\ell\ge\exp(-\eta_\ell)}, and $c_{\ell,\iota}$ times the unit matrix
+for the~$z_i$; so \m{\nu=n'}, and hypothesis~(e) holds with the $\delta$ of the $D$-index. The number~$\alpha$ is $V$
+plus a term for the~$z_i$. There are at most \m{(4/b^2)\dim\Row(D)} vectors~$z_i$, and the last lines of the formal
+proof bound what each of them adds to $\alpha$ and to~$\nu h$ by~$b^3/4$: this is the term \m{b\cdot\dim\Row(D)}.
+
+\emph{Second bound.} The family \m{\mathfrak{z}_D(1)^2/\mathfrak{z}_D(\theta_{\ell,\iota})^2} has height at most
+\[2\,\dim\Row(D)\cdot\bigl(2\log b\cdot\budget(D)-\hmain(D)\bigr).\]
+Here $\mathfrak{z}_D(\vartheta)$ is a constant times the
+product of the volumes of the $m$ single lifts, each ratio of an untwisted to a twisted volume has a height
+bound (Chapter~VII), and Proposition~\ref{p:products} and Lemma~\ref{l:mono} combine them.
+
+\begin{center}
+\begin{tikzpicture}[x=1mm,y=1mm,>={Stealth[length=1.6mm]},
+  bx/.style={draw=rulegrey,line width=0.5pt,rounded corners=1.2pt,fill=arith!3!white,inner xsep=5pt,inner ysep=4pt,
+    align=center,font=\fontsize{8.3}{10.4}\selectfont},
+  gx/.style={bx,fill=inksoft!5!white},
+  lb/.style={font=\fontsize{7.2}{8.8}\selectfont\color{inksoft},align=center}]
+\node[gx] (a) at (0,9) {first bound:\\index and size (Theorem~2)};
+\node[gx] (b) at (0,-9) {second bound:\\congruences (Chapters VII, VIII)};
+\node[bx] (c) at (52,0) {the square of the first family\\times the second is~$1$};
+\node[bx] (d) at (101,0) {Theorem~C};
+\draw[->,inksoft] (a.east) -- (c);
+\draw[->,inksoft] (b.east) -- (c);
+\draw[->,inksoft] (c) -- node[lb,above=1pt] {Theorem~1} (d);
+\end{tikzpicture}
+\end{center}
+
+The square of the first family times the second is the constant family~$1$. By
+Proposition~\ref{p:products} and Theorem~1, twice the first bound plus the second is non-negative:
+\[\dim\Row(D)\cdot\bigl(\hmain(D)-2\log b\cdot\budget(D)-b\bigr)\ \le\ V+2\delta,\]
+which gives Theorem~C because \m{b\le\log b\cdot\budget(D)}. The twist $\theta_{\ell,\iota}$ depends on the pair
+$(\ell,\iota)$, so the numbers $\mathfrak{z}_D(\theta_{\ell,\iota})$ are not the conjugates of one algebraic number,
+and no product formula applies to them. The height carries the $\ell$-adic bounds of the two families through the
+multiplication, and the product formula is applied at the end to the auxiliary numbers~$H$ alone. The complete
+deduction belongs to the note on the unit \emph{New.Endgame}, which ends the argument.
+
+\subhead{Other height bounds.} Height bounds for families of ratios of a twisted to an untwisted quantity
+(values of Hecke $L$-functions, volumes of single lifts, the constants above) are proved in the units
+\emph{New.Rows}, \emph{New.Exchange} and \emph{New.Selmer}, and combined by Lemma~\ref{l:mono} and
+Proposition~\ref{p:products}.
+
+\subhead{Theorem B: enough forms.} Theorem~3 is applied with \m{W=\Row(D)}, with $U$ the space of columns
+$\Col(D)$, with the finite group~$\mathsf{G}(D)$ as index set and with \m{\varepsilon=b^{-2}}. The map~$B_\gamma$ is
+a fixed operator from the columns onto the ramified columns followed by the Poincaré map
+\m{\mathcal{P}_D(\gamma)}, in the normalisation of Chapter~VI. That this family is $b^{-2}$-spread is the filling
+theorem of that chapter. Its proof is a second moment over the group: Proposition~\ref{p:variance} is applied to
+each translate and summed, with Lemmas \ref{l:groupsum} and~\ref{l:innerdyad}, and Proposition~\ref{p:minors} is
+applied inside an induction, to a function of positive type and to the set where a minor is singular. Theorem~3
+then gives the finite set~$\Ts$ of Theorem~B, with \m{\#\Ts\cdot\dim\Col(D)\le5\,\dim\Row(D)\cdot\log(1+b^2)} and a
+span of dimension at least \m{(1-4/b^2)\dim\Row(D)}.
+
+\sect{Notes on the formal text}{s:notes}
+\begin{enumerate}[label=\textup{\arabic*.},leftmargin=1.6em,itemsep=5pt]
+\item \emph{Two ways to add up the local exponents.} Definition~\ref{d:height} asks for the bound on the sums
+of~$\eta$ over the primes below~$n$, for all large~$n$. Lemma~\ref{l:ofle} assumes the bound for all finite sets
+of primes, and hypothesis~(e) of Theorem~2 for all finite sets of natural numbers. The formal text has these three
+forms, and they are kept here. In the definition the formal text says that the bound holds eventually; the
+threshold~$n_0$ is this statement written out.
+\item \emph{Functions defined everywhere.} The formal Lemma~\ref{l:pf} includes \m{q=0}, by the convention
+\m{\log0=0}. Definition~\ref{d:spread} is stated for arbitrary complex vector spaces, with the library's dimension;
+Theorem~3 uses it for finite-dimensional spaces only.
+\item \emph{Theorem 2.} The formal statement asks (f) and~(g) for every homomorphism \m{j\colon\CC\to\Cl}, and its
+proof uses two of them for each $(\ell,\iota)$. The sets $\Ls_{\ell,\iota}(j)$ are arbitrary subsets. The formal
+conclusion is written with the volume factor of the library, squared, and the quotient is formed in~$\CC$. The cost
+$2\delta$ comes from the two matrices of the proof, one for $\jof{\iota}$ and one for its conjugate, and
+$\nu h$ from the family $\abs{c}^{-2}$, which is bounded independently. The base map $T_{\vartheta_0}$ must be
+injective, so that the witness $\Gamma_{\vartheta_0}$ is not zero.
+\item \emph{Theorem 3.} The formal statement takes $W$ to be an inner product space; the proof does not use the
+inner product. It chooses an admissible set whose span is maximal for inclusion; the proof above takes the
+largest dimension, which amounts to the same.
+\item \emph{Proposition~\ref{p:minors}.} The formal statement gives the pair~$A$ as a function on the two truth
+values; $A_1$ is its value at ``true'' and $A_0$ its value at ``false''. The condition in~(d) is written with one
+formula for both, through an automorphism of $\GL_I(\F)$ that is the identity for $A_0$ and the passage to the
+inverse of the transpose for~$A_1$, a definition of the background library. The formal proof takes a character
+from Mathlib and the relation~\eqref{e:orth} from the background library, where it is stated for finite commutative
+rings; here it is proved for a field in one line.
+\item \emph{Proposition~\ref{p:variance}.} The basis~$e$ enters the statement only through the dyad sums, and the
+basis~$e'$ is the one that the library attaches to a finite-dimensional inner product space.
+\item \emph{Arguments read from the text.} The list of arguments of each declaration was made by a program from
+the text of the files. For some declarations of the second file it contains variables of the surrounding
+section whose names are bound again inside the statement (a basis, a second map on~$G$, a field, an index set).
+Lean does not take them as arguments, as the dossier notes, and where such a variable is explicit the uses of the
+lemma in the artifact confirm it. In the accounts of this note they are matched with the bound variables of the
+same name.
+\item \emph{What the final theorems use.} All declarations of the unit are stated here. Whether each of them is
+reached from the final theorems is for the kernel-based ledger of the handout to say.
+\item \emph{Literature named by the formal text.} The file on heights calls the product formula through a norm
+and adelic norms changed place by place standard, and names as related work Gaudron (2006), Bombieri and Gubler
+(2006, ch.~1) and notes of K.~Conrad. The file on determinants names Wolsey (1982) for greedy covering with a
+logarithmic loss, and Bost (2001) and Laurent (1994) for size against divisibility of a determinant. The
+references are listed below as the artifact gives them, with the state that its own list of references records;
+we have not compared them.
+\end{enumerate}
+
+\subhead{How this note was written.} From the dossier of the unit: its statements in words, its structured
+proofs, and its imports. The program check of the dossier covered \UnitSteps{} leaf steps of \UnitProofs{}
+proofs, found the \UnitMembers{} statements at their lines and compared the quotations of the imports with the
+source; a second reading of the dossier by the reading agent asked for no correction. I read the files of the
+unit completely, statements and proofs, and compared every statement of this note with its Lean text argument by
+argument, in Lean's order of quantifiers. I also read: the statements of the imported declarations in the
+background library and the proof of Input~1; the formal proofs of Theorem~C and of its two height bounds, the
+statement and the last lines of the proof of Theorem~B, the statement of the filling theorem, and the places where
+the two inequalities of §\ref{s:moments} are applied; the authors' list of references. I did not read Mathlib, and
+I did not run a build. Shorter than, or different from, the formal proofs: Lemma~\ref{l:pf} (the formal proof is
+one call of automation on the prime factorisation); the bound for $\norm{F}^2$ in Proposition~\ref{p:minors}, which
+the formal proof obtains from one general identity for an orthonormal family and an automorphism of the linear
+group; Step~1 of Proposition~\ref{p:variance}, which follows the same two traces; the arithmetic at the end of
+Theorem~3, which the formal proof leaves to automation and which is written out here. Lemma~\ref{l:gram},
+Corollary~\ref{c:reciprocal}, Remark~\ref{r:constant}, the examples and the diagram are mine.
+
+\head{Appendix A. Concordance with the Lean artifact}
+{\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}\setlength{\tabcolsep}{0pt}
+\begin{longtable}{@{}p{30mm}p{56mm}p{43mm}r@{}}
+\textbf{In this note} & \textbf{Lean declaration} & \textbf{File} & \textbf{Lines}\\\midrule\endhead
+\ConcordanceRows
+\end{longtable}}
+
+\subhead{Letters of the formal text and of this note.} The letters of this note follow the overview of the
+handout where it has fixed them, and differ from those of the formal text. Heights: the formal text writes
+\lf{c}, \lf{y} for our $h$, $Z$; \lf{e} for~$\eta$; \lf{M} for the bound~$n$ of the primes. Section~\ref{s:moments}:
+it writes \lf{H} for~$\Hs$; \lf{k} for~$\F$; \lf{n}, \lf{m}, \lf{l} for the index sets $I$, $I'$, $I''$; \lf{u},
+\lf{v} for the maps $v$, $w$ on~$G$; \lf{a}, \lf{b}, \lf{s} for the elements of~$G$; \lf{f} and \lf{Θ}
+for~$\omega$; \lf{b} for the basis~$e$; \lf{P}, \lf{R}, \lf{U}, \lf{A}, \lf{ε} for $T$, $C$, $\Us$, $\Hs'$, $\mu$.
+Theorem~3: \lf{V}, \lf{W} for $U$, $W$; \lf{Θ} or \lf{S} for~$\Omega$; \lf{η} for~$\varepsilon$; \lf{F} for~$W'$;
+\lf{t} for~$\Ts$. Lemma~\ref{l:extend}: \lf{V} for~$W$ and \lf{k} for~$n'$. Theorem~2: \lf{Θ} for~$\Xi$;
+\lf{H ϑ} for~$\Hs_\vartheta$; \lf{u} for the maps~$T$; \lf{o} for~$\vartheta_0$; \lf{S} and \lf{x} for $I$
+and~$w$; \lf{g} for~$h$; \lf{γ} for~$c$; \lf{e} for~$\eta$; \lf{U} for~$J$; \lf{Λ} for~$\Ls$; \lf{k} for~$\nu$;
+\lf{m} for the matrix~$u$.
+
+\subhead{Statements as they are written in the artifact.} The definition of a height bound and Theorem~1:
+\quoted{hle}
+\quoted{nonneg}
+Theorem~2:
+\quoted{onedet}
+The spread property and Theorem~3:
+\quoted{spread}
+\quoted{few}
+Propositions \ref{p:minors} and~\ref{p:variance}:
+\quoted{minors}
+\quoted{variance}
+
+\head{Notation}
+\begingroup\fontsize{8.6}{10.9}\selectfont\raggedright
+\setlength{\columnsep}{9mm}\setlength{\parskip}{0pt}
+\begin{multicols}{2}
+\nt{$\ell$}{a prime number}
+\nt{$\Ql$, $\Qlb$, $\Cl$}{the $\ell$-adic numbers, an algebraic closure, its completion}
+\nt{$\abs{\,\cdot\,}_\ell$, $\abs{\,\cdot\,}$}{the absolute value with $\abs{\ell}_\ell=1/\ell$; the absolute value of~$\CC$}
+\nt{$\iota$}{an isomorphism of rings from $\CC$ to $\Qlb$, or to a field~$L$}
+\nt{$\IX$}{the set of the pairs $(\ell,\iota)$}
+\nt{$\sigma$, $\AutC$}{a field automorphism of~$\CC$; the group of all of them}
+\nt{$Z$, $Z'$, $Z_i$}{families of complex numbers indexed by~$\IX$, with entries $Z_{\ell,\iota}$}
+\nt{$h$, $h'$, $h_i$}{real numbers, bounds for heights}
+\nt{$\hle{h}{Z}$}{$Z$ has height at most~$h$}
+\nt{$H$, $\alpha$, $\eta$}{a witness: a non-zero complex number, a real number, a sequence $(\eta_0,\eta_1,\dots)$ of real numbers}
+\nt{$n$, $n_0$, $n'$}{natural numbers; a threshold; the number of added vectors}
+\nt{$q$, $q_{\mathrm{num}}$, $q_{\mathrm{den}}$}{a rational number, its numerator and denominator}
+\nt{$\ord_\ell$, $\Nm$, $\deg H$}{exponent of~$\ell$; norm of a field extension; degree of $\QQ(H)$ over~$\QQ$}
+\nt{$\bar h$}{in Remark~\ref{r:constant}: a mean of logarithms}
+\nt{$j$, $\bar j$, $\jof{\iota}$}{a homomorphism of rings $\CC\to\Cl$; $j$ after complex conjugation; $\iota$ followed by the inclusion}
+\nt{$O_j$}{the complex numbers with $\abs{j(\,\cdot\,)}_\ell\le1$}
+\nt{$L$; $\tau$, $\tau_0$}{an algebraically closed field; injective homomorphisms of rings}
+\nt{$Y$}{a real number, a bound}
+\nt{$I$, $I'$, $I''$; $i$, $i'$, $i''$, $i_1$}{finite sets; their elements (in Theorem~2 and Lemma~\ref{l:gram}, $i$ and $i'$ both run over~$I$)}
+\nt{$\#I$}{the number of elements}
+\nt{$\Hs$, $\Hs'$, $\Hs_\vartheta$}{complex inner product spaces; $\Hs'$ a subspace of~$\Hs$}
+\nt{$\ip{\,\cdot\,}{\,\cdot\,}$, $\norm{\,\cdot\,}$}{inner product, conjugate-linear in the first variable; its norm}
+\nt{$F$, $F'$, $F''$, $F_i$}{vectors of an inner product space}
+\nt{$v$, $w$}{families of vectors, or maps from~$G$ to~$\Hs$; $Tv$ the family $(Tv_i)$}
+\nt{$\Gram(v)$}{the Gram matrix $(\ip{v_i}{v_{i'}})$}
+\nt{$T$, $T_\vartheta$, $T^{*}$}{$\CC$-linear maps into inner product spaces; the adjoint; $T^{*}T$ as in §\ref{s:intro}}
+\nt{$W$, $W'$, $W_y$, $W_{\Ts}$}{a finite-dimensional complex vector space; subspaces}
+\nt{$\Xi$, $\vartheta$, $\vartheta_0$, $\theta$}{a set; its elements; a family $(\theta_{\ell,\iota})$ of elements}
+\nt{$c$}{a family of non-zero complex numbers $c_{\ell,\iota}$}
+\nt{$\delta$, $\nu$}{a real number, a bound for an index; a natural number}
+\nt{$J$}{a finite set of natural numbers}
+\nt{$\Ls_{\ell,\iota}(j)$}{a subset of $\Hs_{\theta_{\ell,\iota}}$}
+\nt{$u$, $u'$, $\overline{u'}$, $u^{\tp}$}{matrices of complex numbers; conjugate entries; transpose}
+\nt{$\Gamma_\vartheta$}{$\det\Gram(T_\vartheta w)$}
+\nt{$U$, $\Omega$, $B$, $B_\gamma$}{a complex vector space; a set; a family of linear maps $U\to W$}
+\nt{$\varepsilon$, $\spread{B}{\varepsilon}$}{a real number; $B$ is $\varepsilon$-spread}
+\nt{$\Ts$, $\Ts'$, $\Ts''$}{finite subsets of~$\Omega$}
+\nt{$\Pi$, $\mathrm{rk}$, $\codim$}{the potential, a rank, a codimension, in the proof of Theorem~3}
+\nt{$S$; $y_i$, $z_i$}{a spanning set; vectors}
+\nt{$G$, $\gamma$, $\gamma'$}{a finite group; elements of~$G$, or of~$\Omega$}
+\nt{$\omega$, $\omega_{\xi_1,\xi_0}$}{a function on~$G$; its product with character values}
+\nt{$\F$, $\GL_I(\F)$, $\pi$}{a finite field; invertible matrices; a homomorphism $G\to\GL_I(\F)$}
+\nt{$A=(A_1,A_0)$}{a pair of matrices over~$\F$}
+\nt{$\xi$, $\xi'$, $\xi_1$, $\xi_0$, $\rho$, $\rho'$}{vectors with coordinates indexed by a finite set}
+\nt{$\Psi$, $\Psi_\rho$}{a non-trivial additive character of~$\F$; the normalised characters of~$\F^I$}
+\nt{$\one$, $\one_i$}{the standard basis of $\CC^I$}
+\nt{$e$, $e'$}{orthonormal bases of $\Hs$ and of~$\Hs'$}
+\nt{$\dyad{e}{v}$, $\bar v_i$}{the dyad sum; conjugate coordinates}
+\nt{$C$, $C'$, $\Us$, $\mu$}{linear maps $\Hs\to\Hs$; a subspace of~$\CC^I$; a real number}
+\nt{$p_{\Us}$, $p_{\Hs'}$}{orthogonal projections}
+\nt{$D$, $b$, $m$, $V$}{in §\ref{s:use}: admissible data, its third scale, its number of lifts; a real number}
+\nt{$\Row(D)$, $\Col(D)$, $\mathsf{G}(D)$}{rows, columns, the finite group of the data}
+\nt{$\Theta_{D,\vartheta}$, $\mathcal{A}_{D,\vartheta}$, $\mathfrak{z}_D(\vartheta)$}{the chain of lifts, its target, $\det(\Theta_{D,\vartheta}^{*}\Theta_{D,\vartheta})$}
+\nt{$\mathcal{P}_D(\gamma)$}{the Poincaré map translated by~$\gamma$}
+\nt{$\covol_\sigma$}{in §\ref{s:use}: the covolume at~$\sigma$, as in the overview of the handout}
+\nt{$\budget(D)$, $\hmain(D)$}{the budget and the main amount of the data}
+\end{multicols}
+\endgroup
+
+\head{References}
+{\fontsize{9.2}{12.6}\selectfont
+\noindent\hangindent=2.2em\hangafter=1 [St]\enspace E.~Steinitz, Algebraische Theorie der Körper, J.~reine angew.\
+Math.\ 137 (1910) 167--309. Taken from the catalogue of quoted results of this handout; place not confirmed.\par
+\vspace{4pt}\noindent Named by the formal text as related work, copied from its list of references with the state recorded
+there; not compared by us. For the file on heights: Gaudron, Pentes des fibrés vectoriels adéliques sur un corps
+global, 2006 (work found, no place given); Bombieri--Gubler, Heights in Diophantine Geometry, 2006 (place confirmed
+at second hand); K.~Conrad, Zorn's lemma and some applications~II, notes (not compared, no place given). For the
+file on determinants: Wolsey, Greedy algorithm for the submodular set covering problem, 1982; Bost, Algebraic
+leaves of algebraic foliations over number fields, 2001; Laurent, Linear forms in two logarithms and interpolation
+determinants, 1994 (for these three: work found, no place given).\par}
+
+\end{document}

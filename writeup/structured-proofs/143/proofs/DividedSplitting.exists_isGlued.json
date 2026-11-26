@@ -1,0 +1,285 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Rows.GluedFormTheta:259:7",
+ "name": "DividedSplitting.exists_isGlued",
+ "summary": "Lift s, put [t; ϖ·1] in Hermite form over Ô, build block matrices C, G with C·G = ϖ·1 from it, take the divided lattice of exists_reducedInverse_eq, and check the two conditions of IsGlued modulo M².",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "witness",
+   "claim": "Lift s entrywise to integral adeles t (the reduction is surjective).",
+   "lines": [
+    260,
+    260
+   ],
+   "lean": "  choose t hs using (reduction_surjective _ <| s · ·)",
+   "uses": [
+    {
+     "decl": "Modulus.reduction"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "witness",
+   "claim": "Hermite form of the stacked matrix [t; ϖ·1_N] over Ô (a valuation-pair ring): an invertible U over Ô and D with the identities P (U·[t; ϖ·1] in echelon form, with lower block U₂₂·D = ϖ·1) and Q.",
+   "lines": [
+    261,
+    262
+   ],
+   "lean": "  obtain ⟨U, -, D, -, P, Q⟩ :=\n    isValuationPair_Ohat.top.hermite .inr ((of t).fromRows (O.genIntAdele • 1))",
+   "uses": [
+    {
+     "decl": "IsValuationPair.hermite"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "witness",
+   "claim": "Apply exists_reducedInverse_eq to C = (U₂₂, I_fixedEmb·I_zᵀ; 0, diag(1 on z(r), ϖ elsewhere)) and G = (D, −D_fixedEmb·I_zᵀ; 0, diag(ϖ on z(r), 1 elsewhere)), both relabelled by ε: this gives L with L.reducedInverse = G mod M² (e), once C·G = ϖ·1 is checked, using step 3.1.",
+   "lines": [
+    263,
+    270
+   ],
+   "span": [
+    263,
+    3,
+    270,
+    91
+   ],
+   "lean": "obtain ⟨L, e⟩ := DividedLattice.exists_reducedInverse_eq (O := O) ((fromBlocks U.1.toBlocks₂₂\n    (inclMatrix (Ô E) V.fixedEmb * (inclMatrix (Ô E) z)ᵀ) 0 (.diagonal (if · ∈ Set.range z then 1\n    else O.genIntAdele))).reindex V.ε V.ε) ((fromBlocks D (-D.submatrix id V.fixedEmb *\n    (inclMatrix (Ô E) z)ᵀ) 0 (.diagonal (if · ∈ Set.range z then O.genIntAdele else 1))).reindex\n    V.ε V.ε) (by simp +contextual [← mul_inclMatrix, ← U.1.toBlocks₂₂.mul_assoc,\n                   inclMatrix_transpose_mul, Matrix.mul_assoc\n                   _ _ᵀ, show U.1.toBlocks₂₂ * D = O.genIntAdele • 1 from congr(toRows₂ $P).symm]\n                 simp [entrywise, reindex_equiv V.ε, inclMatrix, diagonal_apply, mul_sum])",
+   "head_lines": [
+    263,
+    269
+   ],
+   "head_span": [
+    263,
+    3,
+    269,
+    26
+   ],
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "decl": "DividedLattice.exists_reducedInverse_eq"
+    }
+   ]
+  },
+  {
+   "id": "3.1",
+   "parent": "3",
+   "kind": "identity",
+   "claim": "U₂₂·D = ϖ·1 (the lower rows of P); with it the block product C·G is ϖ·1 (simp).",
+   "lines": [
+    269,
+    270
+   ],
+   "span": [
+    269,
+    26,
+    270,
+    91
+   ],
+   "lean": "show U.1.toBlocks₂₂ * D = O.genIntAdele • 1 from congr(toRows₂ $P).symm]\n                 simp [entrywise, reindex_equiv V.ε, inclMatrix, diagonal_apply, mul_sum])",
+   "typed_fact": "U.1.toBlocks₂₂ * D = O.genIntAdele • 1",
+   "uses": [
+    {
+     "step": "2"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Reduce P and Q modulo M²: the reduction of t is s.",
+   "lines": [
+    271,
+    272
+   ],
+   "lean": "  apply_fun (·.map O.chosenModulusSq.reduction) at P Q\n  simp [map_smul', (Matrix.ext hs : (of t).map O.chosenModulusSq.reduction = s)] at P Q",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "step": "2"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "Take this L. The indicator identity is proved through the intermediate condition 'x_incl = Y⁻¹ and G·x = ϖ̄·I_incl' (steps 6, 7), and the column condition with K from clearing the columns of s outside the divided embedding (exists_mul_clear_cols over O_E/M², a valuation-pair ring) (step 8).",
+   "lines": [
+    273,
+    275
+   ],
+   "lean": "  refine ⟨L, fun x c ↦ .trans ?_ (Finset.sum_congr rfl fun Y _ ↦ if_congr (P := x.submatrix O.incl\n    id = Y⁻¹.1 ∧ L.reducedInverse * x = V.genResidue • inclMatrix _ O.incl) ?_ rfl rfl),\n    ((isValuationPair_resRing _).exists_mul_clear_cols s V.dividedEmb).imp fun K h ↦ ?_⟩",
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "decl": "IsValuationPair.exists_mul_clear_cols"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "fact",
+   "claim": "First: (c if G·x = ϖ̄·I_incl) = Σ_Y (c if x_incl = Y⁻¹ and G·x = ϖ̄·I_incl). If G·x = ϖ̄·I_incl, then ϖ̄·(1 − x_incl) = 0 (from the shape of G, e, ε_ι), so exactly one Y of the congruence group has Y⁻¹ = x_incl (exists_congruenceGroup_inv_eq_one_sub with 1 − x_incl); otherwise both sides are 0.",
+   "lines": [
+    276,
+    280
+   ],
+   "lean": "  · split_ifs with h <;> simp [h]\n    have ⟨Y, f⟩ := V.exists_congruenceGroup_inv_eq_one_sub (Y := 1 - x.submatrix O.incl id)\n      (Matrix.ext (by simpa [e, ← V.ε_ι, apply_ite, mul_apply, inclMatrix, diagonal_apply,\n      mul_sub, reindex_equiv V.ε] using congrFun₂ h.symm <| O.incl ·))\n    simp at f; rw [← f]; norm_cast; simp",
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "decl": "DividedSplitting.exists_congruenceGroup_inv_eq_one_sub"
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Second: for each Y, the condition 'x_incl = Y⁻¹ and G·x = ϖ̄·I_incl' is equivalent to the block conditions on X = x·Y of IsGlued. Rewrite with step 7.1, Y·Y⁻¹ = 1 and the congruence property of Y.",
+   "lines": [
+    281,
+    290
+   ],
+   "span": [
+    281,
+    3,
+    290,
+    10
+   ],
+   "lean": "· erw [show ∀ X Y : Matrix N r O.chosenModulusSq.ResRing, V.stackOverGenScalar s * X =\n      V.stackOverGenScalar s * Y ↔ D.map O.chosenModulusSq.reduction * X =\n      D.map O.chosenModulusSq.reduction * Y by grind [Matrix.mul_assoc, stackOverGenScalar],\n      ← Units.mul_eq_one_iff_eq_inv, ← inclMatrix_transpose_mul, ←\n      mul_left_inj_of_invertible (m := n) Y.1, smul_mul, ← Matrix.mul_smul,\n      (mul_smul_one ..).symm.trans Y.2, Matrix.mul_assoc, L.reducedInverse.mul_assoc]\n    generalize x * Y.1.1 = X\n    simp +contextual [e, entrywise, reindex_equiv V.ε, ← V.ε_ι, inclMatrix,\n      apply_ite O.chosenModulusSq.reduction, diagonal_apply, iff_def, sum_mul, sum_comm]\n    grind",
+   "head_lines": [
+    281,
+    281
+   ],
+   "head_span": [
+    281,
+    3,
+    281,
+    10
+   ],
+   "uses": []
+  },
+  {
+   "id": "7.1",
+   "parent": "7",
+   "kind": "identity",
+   "claim": "For N×r matrices X, Y over O_E/M²: [s; ϖ̄·1]·X = [s; ϖ̄·1]·Y iff D̄·X = D̄·Y (D̄ the reduction of D), by the Hermite identities P, Q modulo M² (grind); then rewrite with inclusion matrices and the invertibility of Y.",
+   "lines": [
+    281,
+    286
+   ],
+   "span": [
+    281,
+    10,
+    286,
+    86
+   ],
+   "lean": "show ∀ X Y : Matrix N r O.chosenModulusSq.ResRing, V.stackOverGenScalar s * X =\n      V.stackOverGenScalar s * Y ↔ D.map O.chosenModulusSq.reduction * X =\n      D.map O.chosenModulusSq.reduction * Y by grind [Matrix.mul_assoc, stackOverGenScalar],\n      ← Units.mul_eq_one_iff_eq_inv, ← inclMatrix_transpose_mul, ←\n      mul_left_inj_of_invertible (m := n) Y.1, smul_mul, ← Matrix.mul_smul,\n      (mul_smul_one ..).symm.trans Y.2, Matrix.mul_assoc, L.reducedInverse.mul_assoc]",
+   "typed_fact": "∀ X Y : Matrix N r O.chosenModulusSq.ResRing, V.stackOverGenScalar s * X =",
+   "uses": [
+    {
+     "step": "4"
+    }
+   ]
+  },
+  {
+   "id": "7.2",
+   "parent": "7",
+   "kind": "setup",
+   "claim": "Name X = x·Y.",
+   "lines": [
+    287,
+    287
+   ],
+   "lean": "    generalize x * Y.1.1 = X",
+   "uses": []
+  },
+  {
+   "id": "7.3",
+   "parent": "7",
+   "kind": "computation",
+   "claim": "Unfold G (e), the relabelling by ε (ε_ι), the inclusion matrices and the diagonal blocks entrywise.",
+   "lines": [
+    288,
+    289
+   ],
+   "lean": "    simp +contextual [e, entrywise, reindex_equiv V.ε, ← V.ε_ι, inclMatrix,\n      apply_ite O.chosenModulusSq.reduction, diagonal_apply, iff_def, sum_mul, sum_comm]",
+   "uses": [
+    {
+     "step": "3"
+    }
+   ]
+  },
+  {
+   "id": "7.4",
+   "parent": "7",
+   "kind": "computation",
+   "claim": "The two conditions agree entrywise (grind).",
+   "lines": [
+    290,
+    290
+   ],
+   "lean": "    grind",
+   "uses": []
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Third: for the K of step 5, ϖ̄·((columns ε(inl ·) of G)·K)_{xy} = 0 off the divided embedding: unfold G and the relabelling.",
+   "lines": [
+    291,
+    291
+   ],
+   "lean": "  simp [e, ← submatrix_map, reindex_equiv V.ε, mul_apply, -map_apply]",
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "step": "5"
+    }
+   ]
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "computation",
+   "claim": "It reduces to the vanishing in those columns of ϖ̄ times products of D̄ with the cleared columns of s̄, by Q and the clearing property h, and of ϖ̄·ϖ̄-multiples products vanishing modulo M² (reduction_levelModulus_eq_zero_iff).",
+   "lines": [
+    292,
+    294
+   ],
+   "lean": "  simp +contextual [↓← mul_apply (M := D.map _), ← Q, Matrix.mul_assoc, h, mul_sum, ← map_mul, sq,\n    mul_apply (N := fromRows _ _), mul_left_comm V.genResidue, reduction_levelModulus_eq_zero_iff.2,\n    mul_assoc, ← mul_assoc V.genResidue]",
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "decl": "reduction_levelModulus_eq_zero_iff"
+    }
+   ]
+  }
+ ]
+}

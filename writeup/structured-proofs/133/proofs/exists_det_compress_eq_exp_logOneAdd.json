@@ -1,0 +1,233 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.DiscreteSeries.MinorExpansion:18:7",
+ "summary": "Write log det(1 + PX) = ∫₀¹ tr((1 + sPX)⁻¹PX) ds and tr(Q lg X) = ∫₀¹ tr(Q(1 + sX)⁻¹X) ds; the difference plus ∫₀¹ s·½tr(Y²) ds = ¼tr(Y²) is r. Its integrand is rewritten, using h0 and the inverse identities, as a combination of four traces of products of small factors, each bounded by products of norms; the total is at most 100δc².",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "fact",
+   "lines": [
+    22,
+    22
+   ],
+   "lean": "  obtain ⟨p, ⟨δ0, _⟩ : 0 ≤ δ ∧ 0 ≤ c⟩ := norm_proj_mul_le hP hX, by grind [norm_nonneg]",
+   "claim": "‖PX‖ ≤ δ (norm_proj_mul_le), and 0 ≤ δ, 0 ≤ c (from ‖X‖ ≤ δ and ‖Y‖ ≤ c).",
+   "uses": [
+    {
+     "decl": "norm_proj_mul_le"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "fact",
+   "lines": [
+    23,
+    24
+   ],
+   "lean": "  obtain ⟨a, ⟨i, d⟩, j, k⟩ := (norm_le_insert' _ Y).trans (by grw [hY, h1, hδ]),\n    trace_mul_logOneAdd (p.trans hδ) 1, trace_mul_logOneAdd (hX.trans hδ) Q",
+   "claim": "Collect: ‖[P, X]‖ ≤ ‖Y‖ + ‖[P, X] − Y‖ ≤ c + c/2 (a; by hY, h1, hδ); the function s ↦ tr((1 + sPX)⁻¹PX) is interval integrable on [0, 1] with integral tr lg(PX) (i, d); and s ↦ tr(Q(1 + sX)⁻¹X) is interval integrable with integral tr(Q·lg(X)) (j, k).",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "decl": "trace_mul_logOneAdd"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "witness",
+   "lines": [
+    25,
+    27
+   ],
+   "lean": "  refine ⟨_, ?_, congr(‖$(integral_add (i.sub j) (.mul_const (continuous_ofReal.intervalIntegrable\n    ..) (2⁻¹ * (Y * Y).trace)))‖).ge.trans\n    ((norm_integral_le_of_norm_le_const fun s h ↦ ?_).trans (by aesop))⟩",
+   "claim": "Take r = ∫₀¹ [tr((1 + sPX)⁻¹PX) − tr(Q(1 + sX)⁻¹X) + s·½tr(Y²)] ds. Two goals remain: the identity det(1 + PX) = exp(tr(Q lg X) − ¼tr(Y²) + r) (step 4), and, since |r| is at most the supremum of the integrand's modulus over s ∈ (0, 1] times 1, the pointwise bound: for each such s the integrand has modulus at most 100δc² (steps 5–10).",
+   "uses": [
+    {
+     "step": "2"
+    }
+   ],
+   "ambient_uses": [
+    "intervalIntegral.integral_add",
+    "MeasureTheory.norm_integral_le_of_norm_le_const"
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "identity",
+   "lines": [
+    28,
+    28
+   ],
+   "lean": "  simp_all [det_one_add_eq_exp_trace_logOneAdd (p.trans hδ), integral_ofReal]; ring",
+   "claim": "The identity: det(1 + PX) = exp(tr lg(PX)) (det_one_add_eq_exp_trace_logOneAdd, ‖PX‖ ≤ 1/2), and tr lg(PX) = r + tr(Q lg X) − ∫₀¹ s ds·½tr(Y²) = r + tr(Q lg X) − ¼tr(Y²) (d, k).",
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "decl": "det_one_add_eq_exp_trace_logOneAdd"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "fact",
+   "lines": [
+    29,
+    30
+   ],
+   "lean": "  obtain ⟨⟨⟨_, f, F⟩, w⟩, ⟨_, e, E⟩, v⟩ := inv_one_add_bounds (norm_smul_le_of_le_one s hX),\n    inv_one_add_bounds (norm_smul_le_of_le_one s p)",
+   "claim": "For the fixed s ∈ [0, 1]: 1 + sX and 1 + sPX are invertible, with the two-sided inverse identities (f, F for 1 + sX; e, E for 1 + sPX) and ‖(1 + sX)⁻¹ − 1‖ ≤ 2δ (w), ‖(1 + sPX)⁻¹ − 1‖ ≤ 2δ (v).",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "decl": "inv_one_add_bounds"
+    },
+    {
+     "decl": "norm_smul_le_of_le_one"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "setup",
+   "lines": [
+    31,
+    31
+   ],
+   "lean": "  set W := (1 + s • X)⁻¹; set V := (1 + s • (P * X))⁻¹; set A := ⁅P, X⁆; set D := Q - P",
+   "claim": "Notation: W = (1 + sX)⁻¹, V = (1 + sPX)⁻¹, A = [P, X], D = Q − P.",
+   "uses": [],
+   "typed_fact": null
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "setup",
+   "lines": [
+    32,
+    32
+   ],
+   "lean": "  let Z := W - 1; let N := Z * (A * Z + A) + A * Z",
+   "claim": "Notation: Z = W − 1 and N = Z(AZ + A) + AZ.",
+   "uses": [],
+   "typed_fact": null
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "identity",
+   "lines": [
+    33,
+    40
+   ],
+   "lean": "  rw [show _ + _ = trace ((P * D + Q * D - D) * (A - Y + Z * A - s • (N + A) * X)) - trace (s • (P *\n    A) * ((N + A) * (V - 1) + N)) - trace ((D - P * D - P * D) * D * (X + Z * X)) - trace ((s / 2) •\n    (A - Y) * (A + Y)) by\n      linear_combination (norm := (\n      simp +zetaDelta [hP, hQ, trace_mul_comm P, trace_mul_comm V, trace_mul_comm Y (_ * _),\n        trace_mul_comm X (P * X), mul_sub, sub_mul]; ring))\n        h0 + congr(($E * P * W * X * P + V * P * (A * ($F * P * (1 - W) + W * P *\n      $f) - $f * X * P) + (1 - P) * $e * P * X - ⁅P, D⁆ * ($F * P * W - W * P * $f) * X).trace)]",
+   "head_lines": [
+    33,
+    33
+   ],
+   "head_span": [
+    33,
+    3,
+    33,
+    7
+   ],
+   "claim": "Rewrite the integrand as tr((PD + QD − D)(A − Y + ZA − s(N + A)X)) − tr(s·PA·((N + A)(V − 1) + N)) − tr((D − 2PD)·D·(X + ZX)) − tr((s/2)(A − Y)(A + Y)).",
+   "uses": [],
+   "typed_fact": null
+  },
+  {
+   "id": "8.1",
+   "parent": "8",
+   "kind": "identity",
+   "lines": [
+    33,
+    40
+   ],
+   "span": [
+    33,
+    7,
+    40,
+    97
+   ],
+   "lean": "show _ + _ = trace ((P * D + Q * D - D) * (A - Y + Z * A - s • (N + A) * X)) - trace (s • (P *\n    A) * ((N + A) * (V - 1) + N)) - trace ((D - P * D - P * D) * D * (X + Z * X)) - trace ((s / 2) •\n    (A - Y) * (A + Y)) by\n      linear_combination (norm := (\n      simp +zetaDelta [hP, hQ, trace_mul_comm P, trace_mul_comm V, trace_mul_comm Y (_ * _),\n        trace_mul_comm X (P * X), mul_sub, sub_mul]; ring))\n        h0 + congr(($E * P * W * X * P + V * P * (A * ($F * P * (1 - W) + W * P *\n      $f) - $f * X * P) + (1 - P) * $e * P * X - ⁅P, D⁆ * ($F * P * W - W * P * $f) * X).trace)]",
+   "claim": "The identity of step 8, proved by linear_combination from h0 (tr([P, Q]Y) = 0) and the inverse identities f, F, e, E of step 5, with P² = P, Q² = Q, cyclicity of the trace and ring normalisation.",
+   "uses": [
+    {
+     "step": "5"
+    },
+    {
+     "step": "6"
+    },
+    {
+     "step": "7"
+    }
+   ],
+   "typed_fact": "_ + _ = trace ((P * D + Q * D - D) * (A - Y + Z * A - s • (N + A) * X)) - trace (s • (P *\n    A) * ((N + A) * (V - 1) + N)) - trace ((D - P * D - P * D) * D * (X + Z * X)) - trace ((s / 2) •\n    (A - Y) * (A + Y))"
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "computation",
+   "lines": [
+    41,
+    43
+   ],
+   "lean": "  apply le_trans; apply_rules (transparency :=\n    .reducible) (maxDepth := 99) [@norm_smul_le_of_le_one, norm_proj_mul_le hP, norm_proj_mul_le hQ,\n    @norm_trace_mul_le, norm_sub_le_of_le, norm_add_le_of_le, norm_mul_le_of_le] <;> grind",
+   "claim": "Bound each of the four traces by products of norms: |tr(AB)| ≤ ‖A‖‖B‖, ‖PA‖ ≤ ‖A‖ and ‖QA‖ ≤ ‖A‖ for the projections, ‖sA‖ ≤ ‖A‖ for s ∈ [0, 1], triangle inequality and submultiplicativity; the factors are bounded by ‖X‖ ≤ δ, ‖Z‖ ≤ 2δ, ‖V − 1‖ ≤ 2δ, ‖A − Y‖ ≤ δc, ‖Y‖ ≤ c, ‖A‖ ≤ 3c/2, ‖D‖ ≤ c (grind closes the resulting comparisons).",
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "step": "5"
+    },
+    {
+     "decl": "norm_smul_le_of_le_one"
+    },
+    {
+     "decl": "norm_proj_mul_le"
+    },
+    {
+     "decl": "norm_trace_mul_le"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "computation",
+   "lines": [
+    44,
+    44
+   ],
+   "lean": "  nlinarith [mul_nonneg δ0 (sq_nonneg c), sq_nonneg (δ * c)]",
+   "claim": "The resulting polynomial in δ and c is at most 100δc² (using δ ≤ 1/2, δc² ≥ 0 and (δc)² ≥ 0).",
+   "uses": [
+    {
+     "step": "1"
+    }
+   ],
+   "typed_fact": null
+  }
+ ]
+}

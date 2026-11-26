@@ -1,0 +1,93 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Curve.TightFrameExists:71:7",
+ "summary": "Write N = l·r and r = l^a·M with l ∤ M. Differentiating X^N − 1 = (X^r − 1)·Φ_N(X)·q(X) at ζ gives N = Φ_N′(ζ)(ζ^r − 1)q(ζ)ζ; differentiating Φ_N(X) = Φ_{lM}(X^{l^a}) and Φ_{lM}·Φ_M = Φ_M(X^l) at ζ shows that N divides Φ_N′(ζ)(ζ^r − 1)M; the quotient V divides M.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "fact",
+   "claim": "l is prime and divides N; write N = l·r; N ≠ 0.",
+   "lines": [
+    74,
+    74
+   ],
+   "lean": "  have ⟨hl, ⟨r, e⟩, hN⟩ := N.mem_primeFactors.1 l.2",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "fact",
+   "claim": "X^N − 1 = (X^r − 1)·Φ_N(X)·q(X) for a polynomial q over R (r is a proper divisor of N), and r = l^a·M with l ∤ M.",
+   "lines": [
+    75,
+    76
+   ],
+   "lean": "  obtain ⟨⟨q, hq⟩, a, M, hM, rfl⟩ := @X_pow_sub_one_mul_cyclotomic_dvd_X_pow_sub_one_of_dvd R _ r N\n    (by simp_all [hl.one_lt, zero_lt_iff]), r.exists_eq_pow_mul_and_not_dvd (by lia) _ hl.ne_one",
+   "typed_fact": null,
+   "uses": [],
+   "ambient_uses": [
+    "X_pow_sub_one_mul_cyclotomic_dvd_X_pow_sub_one_of_dvd",
+    "Nat.exists_eq_pow_mul_and_not_dvd"
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Two identities in R. (i) Expanding Φ_M(X^l) = Φ_{Ml}(X)·Φ_M(X) (l prime, l ∤ M; `cyclotomic_expand_eq_cyclotomic_mul`) by X ↦ X^{l^a} gives Φ_M(X^{l^{a+1}}) = Φ_N(X)·Φ_M(X^{l^a}), since Φ_{Ml}(X^{l^a}) = Φ_{M·l^{a+1}}(X) = Φ_N(X); differentiating at ζ, where Φ_N(ζ) = 0, gives l^{a+1}·ζ^{l^{a+1}−1}·Φ_M′(ζ^{l^{a+1}}) = Φ_N′(ζ)·Φ_M(ζ^{l^a}). (ii) Differentiating X^N − 1 = (X^r − 1)·Φ_N(X)·q(X) at ζ and multiplying by ζ gives N = Φ_N′(ζ)·(ζ^r − 1)·q(ζ)·ζ.",
+   "lines": [
+    77,
+    80
+   ],
+   "lean": "  have := by simpa [← expand_mul, expand_pow_cyclotomic hl, ← e, M.mul_comm, mul_assoc, hζ.1,\n    derivative_expand, (hζ.isRoot_cyclotomic hN.bot_lt).eq_zero, pow_sub_one_mul hN,\n    derivative_X_pow, -Nat.cast_mul] using congr(((expand R (l ^ a)\n    $(cyclotomic_expand_eq_cyclotomic_mul hl hM R)).derivative.eval ζ, (derivative $hq).eval ζ * ζ))",
+   "typed_fact": null,
+   "uses": [],
+   "ambient_uses": [
+    "Polynomial.derivative_expand",
+    "Polynomial.derivative_X_pow"
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "It suffices to show that N divides Φ_N′(ζ)(ζ^r − 1)M in R: write the quotient as V. Then M ≤ N (M ∣ r ∣ N), N = l·r, a prime factor of N divides M iff it is not l (r = l^a M, l ∤ M), and V ∣ M: from (ii), N·M = Φ_N′(ζ)(ζ^r − 1)M·q(ζ)ζ = N·V·q(ζ)ζ, and N is cancellable in characteristic 0, so M = V·q(ζ)ζ.",
+   "lines": [
+    81,
+    83
+   ],
+   "lean": "  refine Dvd.elim ?_ (⟨_, M, by grw [e, ← hl.one_le]; lia, e, by grind [Nat.Prime.dvd_mul,\n    Nat.prime_eq_prime_of_dvd_pow, Nat.prime_dvd_prime_iff_eq], ·, ⟨q.eval ζ * ζ,\n    nsmul_right_injective hN (by grind)⟩, ·⟩)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "3"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "N divides Φ_N′(ζ)(ζ^r − 1)M: by (i), l^{a+1} divides Φ_N′(ζ)·Φ_M(ζ^{l^a}), which divides Φ_N′(ζ)·((ζ^{l^a})^M − 1) = Φ_N′(ζ)·(ζ^r − 1) because Φ_M divides X^M − 1; multiplying by M and using l^{a+1}·M = l·r = N gives the divisibility.",
+   "lines": [
+    84,
+    85
+   ],
+   "lean": "  convert mul_dvd_mul_right ((dvd_of_mul_right_dvd (Dvd.intro_left _ this.1)).trans\n    (mul_dvd_mul_left _ (eval_dvd (cyclotomic.dvd_X_pow_sub_one ..)))) _ <;> simp [e] <;> ring",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "3"
+    }
+   ],
+   "ambient_uses": [
+    "Polynomial.cyclotomic.dvd_X_pow_sub_one",
+    "Polynomial.eval_dvd"
+   ]
+  }
+ ]
+}

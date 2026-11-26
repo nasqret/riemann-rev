@@ -1,0 +1,132 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Exchange.RealPair:40:7",
+ "name": "exists_contDiff_witt",
+ "summary": "With w = (x*Jx)⁻¹x* and the J-skew L(a) = (a x w − x w a*)J, the map a ↦ exp(L(a))(a − L(a)) has derivative 1 at a = 1; its smooth local inverse A gives k(y) = exp(L(A(p(y)))) with p(y) = 1 − (x − y)wJ, since p(y)x = y.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "step",
+   "claim": "Let w = (x*Jx)⁻¹·x*.",
+   "lines": [
+    43,
+    43
+   ],
+   "lean": "  let w := (xᴴ * J * x)⁻¹ * xᴴ"
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "step",
+   "claim": "Let L(a) = (a·x·w − x·w·a*)·J, a J-skew matrix (in the Lie algebra of U(J)).",
+   "lines": [
+    44,
+    44
+   ],
+   "lean": "  let L a := (a * x * w - x * w * aᴴ) * J",
+   "uses": [
+    {
+     "step": "1"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "step",
+   "claim": "Let p(y) = 1 − (x − y)·w·J; then p(x) = 1 and p(y)·x = y (w J x = 1).",
+   "lines": [
+    45,
+    45
+   ],
+   "lean": "  let p y := 1 - (x - y) * w * J",
+   "uses": [
+    {
+     "step": "1"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "step",
+   "claim": "L is continuously differentiable over ℝ, hence differentiable at 1, with derivative i.",
+   "lines": [
+    46,
+    46
+   ],
+   "lean": "  have ⟨_, i⟩ := (by fun_prop : ContDiff ℝ 1 L).differentiable_one 1",
+   "uses": [
+    {
+     "step": "2"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "step",
+   "claim": "The map F(a) = exp(L(a))·(a − L(a)) is differentiable at 1 with derivative a ↦ L′(a) + a − L′(a) = a, the identity, by the chain rule (the derivative of exp at 0 is the identity, `hasFDerivAt_exp_zero`, and L(1) = 0), in the L²-operator norm.",
+   "lines": [
+    47,
+    48
+   ],
+   "lean": "  open Norms.L2Operator in have hT := (HasFDerivAt.comp 1 (by simpa [L] using\n    hasFDerivAt_exp_zero) i).fun_mul' ((hasFDerivAt_id 1).fun_sub i)",
+   "uses": [
+    {
+     "step": "4"
+    }
+   ],
+   "ambient_uses": [
+    "hasFDerivAt_exp_zero",
+    "HasFDerivAt.comp"
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "step",
+   "claim": "By the inverse function theorem F has a smooth local inverse A near F(1) = 1 (`HasStrictFDerivAt.to_localInverse`, `exists_contDiff_eventuallyEq`): F(A(b)) = b for b near 1 (e).",
+   "lines": [
+    49,
+    50
+   ],
+   "lean": "  have ⟨A, _, e⟩ := exists_contDiff_eventuallyEq (.to_localInverse (f' := 1) (by fun_prop)\n    (hT.congr_fderiv (by simp [L]; apply sub_add_cancel)) (by simp))",
+   "uses": [
+    {
+     "step": "5"
+    },
+    {
+     "decl": "exists_contDiff_eventuallyEq"
+    }
+   ],
+   "ambient_uses": [
+    "HasStrictFDerivAt.to_localInverse"
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "step",
+   "claim": "Take k(y) = exp(L(A(p(y)))) ∈ U(J) (`expU`, L(a) being J-skew), smooth in y. For y near x, p(y) is near 1, so F(A(p(y))) = p(y); multiplying by x on the right, exp(L(a))·(a − L(a))·x = p(y)·x = y with a = A(p(y)), and (a − L(a))·x = x·(w a* J x) (as w J x = 1), so k(y)·x·c = y with c = w a* J x.",
+   "lines": [
+    51,
+    54
+   ],
+   "lean": "  use (expU ⟨L <| A <| p ·, by simp [unitaryLie, L, w, *, conjTranspose_nonsing_inv]⟩), by fun_prop,\n    .mono ((by fun_prop : Continuous p).tendsto' _ _ (by simp [L, p]) ((e.fun_comp _).trans\n    (HasStrictFDerivAt.eventually_right_inverse _))) fun y e ↦ ⟨_, by\n    simpa +zetaDelta [xᴴ.mul_assoc J x ▸ d] using congr($e * x)⟩",
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "step": "6"
+    },
+    {
+     "decl": "expU"
+    }
+   ]
+  }
+ ]
+}

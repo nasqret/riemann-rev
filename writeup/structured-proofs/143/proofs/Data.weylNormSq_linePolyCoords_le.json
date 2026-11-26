@@ -1,0 +1,296 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Rows.LineCoordinates:201:7",
+ "name": "Data.weylNormSq_linePolyCoords_le",
+ "summary": "By HasWeightNormLe.prod, the product of the determinants is the polynomial of a vector of the summed weight with norm at most the product of the norms; each determinant is, by exists_det_fromCols, γ times a single minor, whose vector is γ·weylEval with |γ|² bounded by Gram determinants of g⁴-bounded matrices.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "S1",
+   "parent": null,
+   "kind": "statement",
+   "claim": "(Part of the statement: it contains `let y := …`, and the line census of the checker takes that := for the declaration's, so these lines count as the value.) The identity toPoly y = … and the norm bound.",
+   "lines": [
+    201,
+    204
+   ],
+   "lean": "lemma weylNormSq_linePolyCoords_le z : let y := φ ∘ eval z ∘ linePolyCoords j i Y; toPoly _ _ y =\n    .map (φ.comp (eval z)) (inFirstCols (stackedDetProd (posEquiv j) (detRows j i Y))) ∧\n    (((∀ τ a b, ‖φ (Φ τ (Y a b))‖ ≤ D.gProd ^ 4) ∧ ∀ x, ‖φ (z x)‖ ≤ D.gProd ^ 4) → weylNormSq y ≤\n    ↑(D.gProd ^ 9) ^ (31 * D.m * ∑ τ, card (DetIndex j τ))) := by",
+   "uses": []
+  },
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "It suffices to show HasWeightNormLe for the specialised product (under the hypotheses), with witness ξ equal to y.",
+   "lines": [
+    205,
+    205
+   ],
+   "lean": "  clear_aux_decl; refine (?_ : HasWeightNormLe ..).elim fun ξ h ↦ (?_ : _ ∘ _ = ξ) ▸ h",
+   "uses": [
+    {
+     "decl": "HasWeightNormLe"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Expand stackedDetProd as a product over τ and l of single stacked determinants, and the exponent as a sum.",
+   "lines": [
+    206,
+    206
+   ],
+   "lean": "  simp_rw [stackedDetProd, map_prod, Fintype.card_eq_sum_ones, mul_sum, ← prod_pow_eq_pow_sum]",
+   "uses": [
+    {
+     "decl": "stackedDetProd"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "Apply HasWeightNormLe.prod twice (over τ, then over l ∈ DetIndex j τ), each factor with the weight of one column of height h = l.elim(·.1)(posRank j) at τ.",
+   "lines": [
+    207,
+    208
+   ],
+   "lean": "  convert HasWeightNormLe.prod (n := BigIndex j) fun τ _ ↦ .prod (κ := fun l : DetIndex j τ ↦\n    Pi.single τ (Pi.single (l.elim (·.1) fun _ ↦ D.posRank j) 1)) fun l _ ↦ ?_",
+   "uses": [
+    {
+     "decl": "HasWeightNormLe.prod"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "computation",
+   "claim": "The summed weights are the weight k⁺ (sums over Fin and ranges).",
+   "lines": [
+    209,
+    209
+   ],
+   "lean": "  simp [funext_iff, Fintype.sum_sigma, sum_fin_eq_sum_range, ← mem_range]",
+   "uses": []
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Close the weight identity (grind) and name h the height of the column l.",
+   "lines": [
+    210,
+    210
+   ],
+   "lean": "  grind; generalize e : l.elim .. = h",
+   "uses": []
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "fact",
+   "claim": "h ≤ k + j − 1, (k + j − 1) − h ≤ j, and h < |BigIndex j|.",
+   "lines": [
+    211,
+    212
+   ],
+   "lean": "  have ⟨H, A, B⟩ : h ≤ D.posRank j ∧ D.posRank j - h ≤ j ∧\n    h < card (BigIndex j) := by simp; grind [Fin, Sigma]",
+   "typed_fact": "h ≤ D.posRank j ∧ D.posRank j - h ≤ j ∧\n    h < card (BigIndex j)",
+   "uses": []
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let E be the bijection regrouping Fin (k + j − 1) ⊕ LPlusIndex j as (Fin h ⊕ Fin ((k + j − 1) − h)) ⊕ LPlusIndex j.",
+   "lines": [
+    213,
+    214
+   ],
+   "lean": "  let E := ((finSumFinEquiv.trans (finCongr (Nat.add_sub_of_le H))).symm.sumCongr\n    (.refl (LPlusIndex j))).trans (.sumAssoc ..)",
+   "uses": []
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let Z be the complex matrix of the remaining columns: φ applied to detRows j i Y τ l stacked over the values of z, read through E.",
+   "lines": [
+    215,
+    216
+   ],
+   "lean": "  let Z :=\n    of (φ <| (detRows j i Y τ l).fromRows (fromCols 0 (of (z ⟨τ, ·, ·⟩))) · <| E.symm <| .inr ·)",
+   "uses": []
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "witness",
+   "claim": "By exists_det_fromCols: a matrix Y' and γ with det([X | Z]) = γ·det((Y'X)ᵀ) for all X and |γ|²·|det(Y'Y'ᴴ)| ≤ |det(ZᴴZ)| (d, b).",
+   "lines": [
+    217,
+    217
+   ],
+   "lean": "  choose Y γ d b using exists_det_fromCols ((posEquiv j).trans E) Z",
+   "uses": [
+    {
+     "step": "8"
+    },
+    {
+     "decl": "exists_det_fromCols"
+    }
+   ]
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "witness",
+   "claim": "Take the vector γ·weylEval(rows of Y'ᵀ): its polynomial is the specialised determinant of l, proved in steps 10.1–10.6.",
+   "lines": [
+    218,
+    226
+   ],
+   "lean": "  use γ • weylEval _ _ fun (x, i) ↦ (List.ofFn (Yᵀ (.inr x.2)))[i]!, funext fun x ↦\n    .symm (.trans (by\n    simp [stackedDet, AlgHom.map_det, RingHom.map_det]\n    refine det_eq_of_eq_det_one_mul (fromBlocks 1 0 (of fun u a ↦\n      ite (h + a < D.posRank j) (x (⟨τ, u⟩, h + a)) 0) 1) (by simp) (Matrix.ext fun a ↦\n      (reindex_equiv ((posEquiv j).trans E).symm).1.2 ?_)\n    cases l <;> cases a <;> simp [Z] at e ⊢ <;> simp +contextual [E, inFirstCols, e, Fin.cast]\n    all_goals first | lia | intro b; rw [univ.sum_eq_single ⟨b, by grind⟩] <;> clear * - <;> grind)\n    ((d (fromRows 0 (of (x ⟨⟨τ, ·⟩, ·⟩)))).trans ?_))",
+   "head_lines": [
+    218,
+    219
+   ],
+   "uses": [
+    {
+     "step": "9"
+    }
+   ]
+  },
+  {
+   "id": "10.1",
+   "parent": "10",
+   "kind": "computation",
+   "claim": "Push φ and the evaluation through the determinant.",
+   "lines": [
+    220,
+    220
+   ],
+   "lean": "    simp [stackedDet, AlgHom.map_det, RingHom.map_det]",
+   "uses": []
+  },
+  {
+   "id": "10.2",
+   "parent": "10",
+   "kind": "reduction",
+   "claim": "The two determinants agree after multiplication by a unipotent block matrix of determinant 1 (det_eq_of_eq_det_one_mul), compared row by row after relabelling.",
+   "lines": [
+    221,
+    223
+   ],
+   "lean": "    refine det_eq_of_eq_det_one_mul (fromBlocks 1 0 (of fun u a ↦\n      ite (h + a < D.posRank j) (x (⟨τ, u⟩, h + a)) 0) 1) (by simp) (Matrix.ext fun a ↦\n      (reindex_equiv ((posEquiv j).trans E).symm).1.2 ?_)",
+   "uses": []
+  },
+  {
+   "id": "10.3",
+   "parent": "10",
+   "kind": "computation",
+   "claim": "Compare the rows by cases on l and on the row index (inFirstCols, E).",
+   "lines": [
+    224,
+    224
+   ],
+   "lean": "    cases l <;> cases a <;> simp [Z] at e ⊢ <;> simp +contextual [E, inFirstCols, e, Fin.cast]",
+   "uses": []
+  },
+  {
+   "id": "10.4",
+   "parent": "10",
+   "kind": "computation",
+   "claim": "Close the remaining sums (a single nonzero term) by lia and grind.",
+   "lines": [
+    225,
+    225
+   ],
+   "lean": "    all_goals first | lia | intro b; rw [univ.sum_eq_single ⟨b, by grind⟩] <;> clear * - <;> grind)",
+   "uses": []
+  },
+  {
+   "id": "10.5",
+   "parent": "10",
+   "kind": "computation",
+   "claim": "Use step 9 at X = (0; values of x).",
+   "lines": [
+    226,
+    226
+   ],
+   "lean": "    ((d (fromRows 0 (of (x ⟨⟨τ, ·⟩, ·⟩)))).trans ?_))",
+   "uses": [
+    {
+     "step": "9"
+    }
+   ]
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The norm bound for the factor: |γ|²·|det(Y'Y'ᴴ)| ≤ |det(ZᴴZ)| ≤ ‖Z‖^{2·size} ≤ (g⁴·…)^{…} (norm_det_le_norm_pow, the operator norm of ZᴴZ, entries ≤ g⁴), with the sizes bounded by the scales (nat_le_of_hasLogBound).",
+   "lines": [
+    227,
+    232
+   ],
+   "lean": "  refine fun q ↦ .trans ?_ (b.trans (by\n    grw [norm_det_le_norm_pow, l2_opNorm_conjTranspose_mul_self, ← sq,\n      l2_opNorm_le_of_apply (M := D.gProd ^ 4)\n      (by cases l <;> simp [Z, E, apply_ite, q, NeZero.one_le, one_le_pow₀])]; norm_cast\n    simp; exact pow_le_pow (by grw [A, Nat.sub_le, j.2.2]; exact D.nat_le_of_hasLogBound)\n      D.nat_le_of_hasLogBound (by grw [A, Nat.sub_le, j.2.2]; grind)))",
+   "uses": [
+    {
+     "step": "9"
+    },
+    {
+     "decl": "Data.le_of_hasLogBound"
+    }
+   ]
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "computation",
+   "claim": "weylNormSq(γ·weylEval) = |γ|²·Re(…) ≤ |γ|²·|det(Y'Y'ᴴ)| by the determinant comparison for positive semidefinite matrices (norm_det_le_norm_det_of_posSemidef).",
+   "lines": [
+    233,
+    235
+   ],
+   "lean": "  grw [weylNormSq_smul, weylNormSq, re_le_norm,\n    ← norm_det_le_norm_det_of_posSemidef (posSemidef_self_mul_conjTranspose\n    Y.toCols₂) (by convert Y.toCols₁.posSemidef_self_mul_conjTranspose; ext; simp)]",
+   "uses": [
+    {
+     "step": "9"
+    }
+   ]
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Evaluate weylEval against the kernel (weylKernel, highestPoly, minors, determinants of transposes).",
+   "lines": [
+    236,
+    237
+   ],
+   "lean": "  iterate 2 simp [star_weylEval, weylKernel, highestPoly, tableauPoly, minor, det_apply,\n    rowSubst, ↓det_transpose, Fin.val_eq_val _ ⟨h, B⟩, -sum_sum_type, @sum_sum_type (Fin _)]",
+   "uses": []
+  },
+  {
+   "id": "14",
+   "parent": null,
+   "kind": "computation",
+   "claim": "The coordinates: firstColsCoord commutes with φ and evaluation (map_fockPairing), giving y = the vector.",
+   "lines": [
+    238,
+    238
+   ],
+   "lean": "  simp [_root_.funext_iff, firstColsCoord, map_fockPairing, MvPolynomial.map_map, ← h.1]",
+   "uses": [
+    {
+     "decl": "firstColsCoord"
+    }
+   ]
+  }
+ ]
+}

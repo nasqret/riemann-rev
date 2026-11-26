@@ -1,0 +1,317 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Exchange.GridMove:242:7",
+ "name": "Data.IsTidy.exists_square_move",
+ "summary": "Φ = G(1), the bind of Λ by the partner kernel `graphKernel` χ ε, a weight d and the Fourier factor ψ: tidiness from the equivariance of the kernel and the averaging property of d; the identity from `exists_partner_kernel` (L′ = c∑δL) applied term by term in the short sum of Λ.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "statement",
+   "claim": "Not a step of the proof: lines 253–254 are the rest of the statement, which ends before the `:=` on line 254 (a second-reader message). The line census takes the `:=` of `let x :=` on line 253 for the start of the value, so the check requires these lines to be owned here. They state: the right side of the identity, C·Φ(S ↦ L(f(S, x′₂))((S(v, r) | x′₁))), x′ = S(U, R) reindexed by ρ, τ with row blocks x′₁, x′₂.",
+   "lines": [
+    253,
+    254
+   ],
+   "lean": "    * M (f S k) (fromRows (S (p, v)) x.toCols₁)) = C * Φ fun S ↦ let x := (S (U, R)).submatrix ρ τ\n  L (f S x.toRows₂) (fromCols (S (v, r)) x.toRows₁) := by"
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "step",
+   "claim": "Unpack the hypotheses: U ≠ v (uv), the μ-edge alternative (μ), the bounds on the nodes (bQ), the conditions on w (hw); the short-sum presentation of Λ (W, c, s, the root-of-unity and left-inverse property hc, and Λ = ∑ c·f(s), hΛ); and the partner kernel for χ, ε over the residue ring (a valuation pair, `Modulus.isValuationPair_resRing`): a weight d with the root-of-unity and left-inverse properties (d₁), its average equal to the kernel, and L′ = c∑δL under SquareLaw (d₄) (`exists_partner_kernel`).",
+   "lines": [
+    255,
+    256
+   ],
+   "lean": "  obtain ⟨⟨uv, μ, bQ, hw⟩, ⟨_, W, c, s, -, hc, hΛ⟩, d, d₁, d₄⟩ := h, H.2,\n    exists_partner_kernel χ ε (Modulus.isValuationPair_resRing _)",
+   "uses": [
+    {
+     "decl": "exists_partner_kernel"
+    },
+    {
+     "decl": "Modulus.isValuationPair_resRing"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "step",
+   "claim": "Simplify these hypotheses (left inverses on μ-edges, products of pairs).",
+   "lines": [
+    257,
+    257
+   ],
+   "lean": "  simp [-Prod.forall, LeftInvOnMuEdges] at hw hQ hc bQ"
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "step",
+   "claim": "Let y(S) = (S(p, v); first column block of S(Q, U) reindexed by τ, σ).",
+   "lines": [
+    258,
+    258
+   ],
+   "lean": "  let y (S : EdgeTuple ϑ) := fromRows (S (p, v)) ((S (Q, U)).submatrix τ σ).toCols₁"
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "step",
+   "claim": "Let t(S, M) be the tuple equal to S on w and to M₁ on (U, R), M₂ on (v, r), 0 elsewhere.",
+   "lines": [
+    259,
+    259
+   ],
+   "lean": "  let t S (M : _ × _) : EdgeTuple ϑ := w.piecewise S (update (update 0 (U, R) M.1) (v, r) M.2)"
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "step",
+   "claim": "For a weight d let G(d) = bind(Λ, (S, M) ↦ d(y(S))·graphKernel(χ, ε)((M₂ | (M₁ reindexed)₁), y(S))·ψ(tr((M₁·S(Q, U))₂₂)), t).",
+   "lines": [
+    260,
+    261
+   ],
+   "lean": "  let G (d : _ → ℂ) := Λ.bind (fun S M ↦ d (y S) * graphKernel χ ε (M.2.fromCols (M.1.submatrix ρ\n    τ).toRows₁) (y S) * ψ ((M.1 * S (Q, U)).submatrix (ρ ∘ .inr) (σ ∘ .inr)).trace) t",
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "step": "5"
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "block",
+   "claim": "Equivariance of G: for every admissible g, every k ∈ GL(NodeIndex(p)), every weight d and f: G(d moved by blockGL(g(v), g(U)) and k)(f∘tupleAction(g)) = edgeCharProd(g, w ∪ {(U, R), (v, r)})·G(d)(f).",
+   "lines": [
+    262,
+    275
+   ],
+   "lean": "  have I g (hg : IsAdmissibleFamily g) (k : GL (D.NodeIndex p) (gridModulus ϑ).ResRing) d f :\n    G (d <| (blockGL (g v, reindexGL τ.symm (g U)))⁻¹.1 * · * k.1) (f <| tupleAction g ·) =\n    edgeCharProd g (insert (U, R) (insert (v, r) w)) * G d f := by\n    erw [(?_ : edgeCharProd .. = _ / _ * _), mul_assoc, ← H.1 _ ((hQ g hg).2 k).1]\n    simp [G, hΛ, mul_sum, graphKernel_equivariant χ ε (blockGL (g v, reindexGL τ.symm (g U))) (g r)\n      k _ (y (s _)), W.sum_comm, mul_assoc, mul_left_comm _ (_ / _), -coe_units_inv]\n    rw [eq_comm, ← ((injective_gl_inv_mul_mul (g R) (g U)).prodMap\n      (injective_gl_inv_mul_mul (g r) (g v))).bijective_of_finite.sum_comp]\n    congr! 9 <;> simp [y, t, tupleAction, *, entrywise, ← Matrix.mul_assoc, ← map_inv,\n      reindex_equiv σ, reindex_equiv ρ, reindex_equiv τ]\n    ext1; simp [piecewise, update]\n    split_ifs <;> subst_vars <;> simp [tupleAction, *, ← map_inv]\n    simp +contextual [edgeCharProd, mt (hw _), *, MulChar.inv_apply_eq_inv', uv.symm]\n    field [MulChar.apply_eq_zero_iff]",
+   "head_lines": [
+    262,
+    264
+   ],
+   "typed_fact": "G (d <| (blockGL (g v, reindexGL τ.symm (g U)))⁻¹.1 * · * k.1) (f <| tupleAction g ·) =\n    edgeCharProd g (insert (U, R) (insert (v, r) w)) * G d f",
+   "uses": [
+    {
+     "step": "6"
+    }
+   ]
+  },
+  {
+   "id": "7.1",
+   "parent": "7",
+   "kind": "step",
+   "claim": "Write edgeCharProd(g, …) as a quotient times edgeCharProd of the updated family on w ∪ {(p, v), (Q, U)}, and use the equivariance of Λ (H) for the admissible updated family (hQ).",
+   "lines": [
+    265,
+    265
+   ],
+   "lean": "    erw [(?_ : edgeCharProd .. = _ / _ * _), mul_assoc, ← H.1 _ ((hQ g hg).2 k).1]"
+  },
+  {
+   "id": "7.2",
+   "parent": "7",
+   "kind": "step",
+   "claim": "Expand G with the short sum of Λ and the equivariance of graphKernel under blockGL(g(v), g(U)), g(r), k (`graphKernel_equivariant`).",
+   "lines": [
+    266,
+    267
+   ],
+   "lean": "    simp [G, hΛ, mul_sum, graphKernel_equivariant χ ε (blockGL (g v, reindexGL τ.symm (g U))) (g r)\n      k _ (y (s _)), W.sum_comm, mul_assoc, mul_left_comm _ (_ / _), -coe_units_inv]",
+   "uses": [
+    {
+     "decl": "graphKernel_equivariant"
+    }
+   ]
+  },
+  {
+   "id": "7.3",
+   "parent": "7",
+   "kind": "step",
+   "claim": "Change variables in the sum over the matrices M by M ↦ (g(R)⁻¹M₁g(U), g(r)⁻¹M₂g(v)), a bijection (`injective_gl_inv_mul_mul`).",
+   "lines": [
+    268,
+    269
+   ],
+   "lean": "    rw [eq_comm, ← ((injective_gl_inv_mul_mul (g R) (g U)).prodMap\n      (injective_gl_inv_mul_mul (g r) (g v))).bijective_of_finite.sum_comp]",
+   "uses": [
+    {
+     "decl": "injective_gl_inv_mul_mul"
+    }
+   ]
+  },
+  {
+   "id": "7.4",
+   "parent": "7",
+   "kind": "step",
+   "claim": "Compare the summands: the moved tuples and the reindexed blocks agree (tupleAction, reindexing by σ, ρ, τ).",
+   "lines": [
+    270,
+    271
+   ],
+   "lean": "    congr! 9 <;> simp [y, t, tupleAction, *, entrywise, ← Matrix.mul_assoc, ← map_inv,\n      reindex_equiv σ, reindex_equiv ρ, reindex_equiv τ]"
+  },
+  {
+   "id": "7.5",
+   "parent": "7",
+   "kind": "step",
+   "claim": "The tuples t agree pointwise (piecewise and update).",
+   "lines": [
+    272,
+    272
+   ],
+   "lean": "    ext1; simp [piecewise, update]"
+  },
+  {
+   "id": "7.6",
+   "parent": "7",
+   "kind": "step",
+   "claim": "Case by case on the edge (subst of the equal nodes).",
+   "lines": [
+    273,
+    273
+   ],
+   "lean": "    split_ifs <;> subst_vars <;> simp [tupleAction, *, ← map_inv]"
+  },
+  {
+   "id": "7.7",
+   "parent": "7",
+   "kind": "step",
+   "claim": "The character factors: by X, hw and U ≠ v the edge characters of the new edges equal those of the old ones.",
+   "lines": [
+    274,
+    274
+   ],
+   "lean": "    simp +contextual [edgeCharProd, mt (hw _), *, MulChar.inv_apply_eq_inv', uv.symm]"
+  },
+  {
+   "id": "7.8",
+   "parent": "7",
+   "kind": "step",
+   "claim": "Clear denominators (the character values are non-zero).",
+   "lines": [
+    275,
+    275
+   ],
+   "lean": "    field [MulChar.apply_eq_zero_iff]"
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "step",
+   "claim": "If S(Q, U) has a left inverse, so does the second row block of y(S).",
+   "lines": [
+    276,
+    277
+   ],
+   "lean": "  have l S : HasLeftInv (S (Q, U)) → HasLeftInv (y S).toRows₂ := .imp' (·.submatrix (σ ∘ .inl) τ)\n    (by simp_all [y, entrywise, reindex_equiv τ])",
+   "typed_fact": "HasLeftInv (S (Q, U)) → HasLeftInv (y S).toRows₂",
+   "uses": [
+    {
+     "step": "4"
+    }
+   ]
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "step",
+   "claim": "Take Φ = G(1): it is equivariant (step 7 with d = 1), and G(1) = G(d) (left open) is a short sum of order n + 2 on the new edges by `Data.IsShortSum.bind` (|matrices on two edges| ≤ tupleBound², `Data.card_matrix_le_tupleBound`), provided the weights are roots of unity with left-invertible tuples (left open); the identity remains.",
+   "lines": [
+    278,
+    279
+   ],
+   "lean": "  refine ⟨G 1, ⟨(I · · 1 1), (LinearMap.ext fun f ↦ ?_ : G 1 = G d) ▸ H.2.bind (by\n    simp [sq, mul_le_mul', card_matrix_le_tupleBound, *]) fun S M n m ↦ ?_⟩, fun f hL ↦ ?_⟩",
+   "uses": [
+    {
+     "step": "7"
+    },
+    {
+     "decl": "Data.IsShortSum.bind"
+    },
+    {
+     "decl": "Data.card_matrix_le_tupleBound"
+    }
+   ]
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "step",
+   "claim": "G(1) = G(d): average the equivariance of step 7 over k ∈ GL(NodeIndex(p)) with g = 1; the average of d(y·k) times the kernel is the kernel (d₁).",
+   "lines": [
+    280,
+    281
+   ],
+   "lean": "  · simpa +unfoldPartialApp [tupleAction, edgeCharProd, G, hΛ, expect_sum_comm, d₁, ← expect_mul,\n      ← mul_expect] using congr(𝔼 k, $(I 1 (by simp [IsAdmissibleFamily]) k d f))",
+   "uses": [
+    {
+     "step": "7"
+    }
+   ]
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "step",
+   "claim": "The weights are roots of unity and the tuples left invertible on the μ-edges: from d₁ (the product of the kernel weight with a value of ψ, a root of unity in a finite group), the left-inverse transfer of d₁ and step 8.",
+   "lines": [
+    282,
+    286
+   ],
+   "lean": "  · simp +contextual [t, uv, mt (hw _), -Prod.forall, LeftInvOnMuEdges] at m ⊢\n    obtain ⟨E, e', e⟩ := (d₁ ..).1 (left_ne_zero_of_mul n)\n    use E.mul (ψ.toMonoidHom.isOfFinOrder (isMulTorsion_of_finite _)), fun _ ↦ (e' (m.1 (by\n      lia))).imp' (·.fromCols 0 |>.submatrix τ.symm ρ.symm) (by simp [entrywise, reindex_equiv ρ,\n      reindex_equiv τ]), fun _ ↦ e (l _ (m.2.1 (by lia))), m.2.2",
+   "uses": [
+    {
+     "step": "8"
+    }
+   ]
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "step",
+   "claim": "The identity: expand both sides by the short sum of Λ (hΛ) and compare term by term.",
+   "lines": [
+    287,
+    287
+   ],
+   "lean": "  erw [hΛ, hΛ, mul_sum]; congr with i"
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "step",
+   "claim": "For each term: if c(i) = 0 both sides vanish; otherwise the tuple s(i) is left invertible on the μ-edges (hc), so `exists_partner_kernel` (d₄) applies to the square law q at y(s(i)): M = C·∑ δ·L; then sum over the blocks (`sum_eq_sum_fromRows`, `sum_eq_sum_fromCols`), using that f depends only on w (hL).",
+   "lines": [
+    288,
+    293
+   ],
+   "lean": "  exact (or_not.imp_right (hc i)).elim (by simp [·]) fun ⟨_, m', m, _⟩ ↦ .trans congr(_ * ∑ k, _ *\n    $(d₄ _ _ _ (q _) (y _) (μ.symm.imp (m' ·.1) (l _ <| m ·.1)))) (by\n    simp [@hL (w.piecewise _ _) _ fun _ ↦ (ite_eq_left ·), t, uv, mt (hw _), sum_prod_type,\n      reindex_equiv\n      (reindex ρ τ), sum_eq_sum_fromRows, mul_comm (graphKernel ..), sum_eq_sum_fromCols, mul_sum,\n      @sum_comm (Matrix T ..), mul_left_comm C, mul_assoc, trace, mul_apply, reindex_equiv τ])",
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "step": "8"
+    },
+    {
+     "decl": "sum_eq_sum_fromRows"
+    },
+    {
+     "decl": "sum_eq_sum_fromCols"
+    }
+   ]
+  }
+ ]
+}

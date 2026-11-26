@@ -1,0 +1,138 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Filling.NearTerms:65:7",
+ "summary": "Each T of codimension s is cut out by s nonzero lattice vectors with product of lengths bounded by Siegel's lemma; summing over the s-tuples of lattice vectors and using that lattice vectors are 1-separated gives a convergent bound.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Every nonzero vector x of the lattice E^κ ∩ uÔ^κ has length ‖x‖ ≥ 1 (the first minimum of a definite space with equal signs is ≥ 1).",
+   "lines": [
+    69,
+    70
+   ],
+   "lean": "  have O (x : {x ∈ ((stdSpace ..).move (1, u)).baseLattice | x ≠ 0}) :=\n    (one_le_firstMinimum).trans (x.2.rec firstMinimum_le)",
+   "uses": [
+    {
+     "decl": "Lib.Adelic.Reduction.FirstMinimum:79:7"
+    },
+    {
+     "decl": "Lib.Adelic.Reduction.FirstMinimum:33:7"
+    },
+    {
+     "decl": "Lib.Adelic.Unitary.SpaceDefs:310:14"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "fact",
+   "claim": "The nonzero lattice vectors are 1-separated (differences of distinct ones are nonzero lattice vectors) and of norm ≥ 1; hence ∑_x ‖x‖^{−2f(k+1)} converges and is at most 5^{2f(k+1)} (tsum_inv_pow_le_of_separated with m = 1, the real dimension being 2fk ≤ 2f(k+1) − 2).",
+   "lines": [
+    71,
+    72
+   ],
+   "lean": "  choose a b using tsum_inv_pow_le_of_separated one_pos (fun x y _ ↦ by\n    simpa using O ⟨x - y, by aesop⟩) O",
+   "uses": [
+    {
+     "decl": "Lib.Adelic.QuotientMeasure.Packing:141:7"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Rewrite the right side using 200 = 5²·8 and the bound of step 2: (200fk·rd_E)^{f(k+1)s} ≥ (8fk·rd_E)^{f(k+1)s}·(∑_x ‖x‖^{−2f(k+1)})^s ≥ (8fk·rd_E)^{f(k+1)s}·∑ over s-tuples (X_1, …, X_s) of nonzero lattice vectors of ∏_i ‖X_i‖^{−2f(k+1)} (tsum_prod_le_prod_tsum), and group the tuples by the subspace T = ker(conj X) they cut out.",
+   "lines": [
+    73,
+    76
+   ],
+   "lean": "  grw [(by ring : 200 = (5 / 1 : ℝ) ^ 2 * 8), rootDiscr, mul_assoc, mul_assoc, pow_mul, mul_pow,\n    ← pow_mul, ofReal_pow, ← b, ← tsum_mul_right, ofReal_tsum_of_nonneg _ ((a _).mul_right _), ←\n    Fin.prod_const, ← tsum_prod_le_prod_tsum, ← tsum_fiberwise _ fun X ↦\n    (Subtype.val ∘ X)ᵀᴴ.mulVecLin.ker]",
+   "uses": [
+    {
+     "decl": "Lib.Adelic.Reduction.MinkowskiSecond:197:7"
+    }
+   ],
+   "ambient_uses": [
+    "mul_assoc",
+    "pow_mul",
+    "mul_pow",
+    "tsum_fiberwise"
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "Compare termwise in T: if dim T + s ≠ k the term on the left is 0; otherwise it remains to bound d(T)^{−(k+1)} by (8fk·rd_E)^{f(k+1)s} times the sum over the tuples cutting out T (hypothesis hs).",
+   "lines": [
+    77,
+    77
+   ],
+   "lean": "  gcongr; split_ifs with hs",
+   "uses": []
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "By Siegel's lemma there is X cutting out T, with nonzero lattice rows and (∏‖X_i‖)^{2f} ≤ (8fs·rd_E)^{fs}·d(T); moreover ∏‖X_i‖ ≥ 1 by step 1.",
+   "lines": [
+    78,
+    78
+   ],
+   "lean": "  choose X e h H using siegel_lemma u hs; have := Finset.univ.one_le_prod₀ fun i _ ↦ O ⟨_, h i⟩",
+   "uses": [
+    {
+     "decl": "New.Filling.NearTerms:27:7"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "The sum over tuples is at least the term of this X, so it suffices that (∏‖X_i‖)^{2f(k+1)} ≤ (8fk·rd_E)^{f(k+1)s}·d(T)^{k+1} (all quantities positive).",
+   "lines": [
+    79,
+    80
+   ],
+   "lean": "  grw [← ENNReal.le_tsum ⟨(⟨_, h ·⟩), e⟩, ← ofReal_prod_of_nonneg, ← one_div,\n    sublatticeDisc, div_le_of_le_mul₀] <;> try positivity",
+   "uses": [
+    {
+     "decl": "New.Filling.GramLiouville:58:19"
+    }
+   ],
+   "ambient_uses": [
+    "ENNReal.le_tsum"
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "computation",
+   "claim": "This follows by raising Siegel's bound to the power k+1, since s ≤ k (dim T + s = k) makes 8fs·rd_E ≤ 8fk·rd_E, and the exponents match (f s (k+1)); the remaining inequalities between natural numbers close by normalisation and bounds.",
+   "lines": [
+    81,
+    83
+   ],
+   "lean": "  simp [field, Finset.prod_pow, sublatticeDisc, rootDiscr] at *\n  grw [← mul_assoc, pow_mul, H, s.le_add_left, hs]\n  ring_nf; all_goals simp [mul_add, NeZero.one_le] <;> bound",
+   "uses": [
+    {
+     "decl": "New.Filling.GramLiouville:58:19"
+    }
+   ],
+   "ambient_uses": [
+    "Finset.prod_pow",
+    "mul_assoc",
+    "pow_mul",
+    "mul_add",
+    "NeZero.one_le"
+   ]
+  }
+ ]
+}

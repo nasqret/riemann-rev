@@ -1,0 +1,173 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Rows.RowVolume:37:7",
+ "name": "Data.volume_iota_eq_prod_liftVolume",
+ "summary": "Both volumes are computed from Gram forms: the Rallis inner product formula gives the Gram form of each single lift as a constant times a Hecke operator, the triangle of lifts gives that of the chain as a constant times an operator whose determinant is the product of the same Hecke determinants; normDet_sq_eq_pow_mul_det turns both into determinants, and the constants form c.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "witness",
+   "claim": "For each lift index j choose A_j ≠ 0 such that, for every tame twist, θ_j^* is injective and its inner products are A_j·δ times the Rallis series (auxLift_injective_and_hasSum_inner; δ = gramFactor).",
+   "lines": [
+    39,
+    39
+   ],
+   "lean": "  choose! A n H using (@auxLift_injective_and_hasSum_inner _ D ⟨·, ·⟩)",
+   "uses": [
+    {
+     "decl": "Data.auxLift_injective_and_hasSum_inner"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "witness",
+   "claim": "Inner product formula for the first lift of each row i < m of the triangle: constants C_i and the series g (hasSum_inner_triLift).",
+   "lines": [
+    40,
+    40
+   ],
+   "lean": "  choose! C _ g using D.hasSum_inner_triLift false",
+   "uses": [
+    {
+     "decl": "Data.hasSum_inner_triLift"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "witness",
+   "claim": "For each m-fold twist ϑ and row i < m, a common Hecke element p (exists_common_hecke_rallis for ϑ^{(·)} on V = Y₀): the Gram form of the first lift of row i is C_i·⟨z, p y⟩ (e) and that of θ_{i+1}^* on the good forms is A_{i+1}·δ·⟨z, p y⟩ (e').",
+   "lines": [
+    41,
+    43
+   ],
+   "lean": "  choose! p e e' using fun (ϑ : D.MFoldTwist) i h ↦\n    D.exists_common_hecke_rallis (ϑ.pow _) _ (a' := _ * (D.auxPair ϑ 1).gramFactor)\n    (V := D.spaceY 0) (fun _ ↦ (g i h ϑ · _)) (H (i + 1) (by simpa) _).2",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "step": "2"
+    },
+    {
+     "decl": "Data.exists_common_hecke_rallis"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "witness",
+   "claim": "In the triangle (exists_isTriangle), the weighted chain of m lifts has Gram form κ(ϑ)·⟨x, T y⟩ with det T = the product over the rows of the determinants of C_i·(Hecke operator on good forms) (inner_weightedChain_eq): constants k (with their cost of squares) and the identity K.",
+   "lines": [
+    44,
+    46
+   ],
+   "lean": "  choose _ k _ t K using (exists_isTriangle ..).choose_spec.inner_weightedChain_eq rfl (fun ϑ i ↦\n    C i • D.heckeOnGood _ _)\n    (fun i h ϑ x ↦ (e ϑ i h x ·.1 |>.trans (inner_smul_right ..).symm)) _ _ (zero_add _)",
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "decl": "IsTriangle.inner_weightedChain_eq"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "witness",
+   "claim": "With the index of the last level ([K₀ : J_m] = C·N(Q)^l·δ^m·…: stdLevelIndex_lastResLevel_eq), take c(ϑ) = (the constant of step 4)·(∏_i C_i/A_{i+1})·|WeylIndex|·γ·|O/𝔪|^l; it costs m·m squares (the cost of step 4 times a family whose squared norm is a power of residue cardinalities: of_norm_sq_eq_mul_card_zpow). For every ϑ: 𝔷(ϑ) ≠ 0 since Θ ϑ is injective (normDet vanishes only on maps with nonzero kernel), and the product over j ∈ [1, m] is reindexed as a product over [0, m) (prod_Ico_add').",
+   "lines": [
+    47,
+    51
+   ],
+   "lean": "  refine D.stdLevelIndex_lastResLevel_eq.elim fun γ ⟨l, H⟩ ↦\n    ⟨_, k.mul (.of_norm_sq_eq_mul_card_zpow (c := fun ϑ ↦ (∏ i : Fin D.m, C i /\n    A i.succ) * Nat.card (WeylIndex (D.Y D.m) D.columnsY) * γ * Nat.card (D.𝔪 ϑ 0).ResRing ^ l) 0 _\n    (l * 2) (by simp [mul_pow, zpow_mul]; rfl)) .refl, fun ϑ ↦ ⟨by simp [𝔷, ker_eq_bot,\n    normDet_eq_zero_iff_ker_ne_bot], prod_Ico_add' (D.liftVolume ϑ) 0 _ 1 ▸ ?_⟩⟩",
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "decl": "Data.stdLevelIndex_lastResLevel_eq"
+    },
+    {
+     "decl": "Data.CostsSquares"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "fact",
+   "claim": "By normDet_sq_eq_pow_mul_det: for each i, |normDet(goodLift)²| = |A_{i+1}δ|^{dim}·|det(Hecke operator on good forms)| (from e'), and |𝔷(ϑ)| = |κ|^{dim rows}·|det T| (from K and inner_iotaAtLevel).",
+   "lines": [
+    52,
+    54
+   ],
+   "lean": "  obtain ⟨L, Z⟩ := fun i ↦ congr((‖$(normDet_sq_eq_pow_mul_det (goodLift ..) (D.heckeOnGood _ _)\n    fun _ _ ↦ e' ϑ _ (Fin.isLt i) ..)‖ : ℂ)), congr((‖$(normDet_sq_eq_pow_mul_det (D.Θ ϑ) _ fun x\n    y ↦ by erw [inner_iotaAtLevel, K, ← mul_assoc]; rfl)‖ : ℂ))",
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "step": "4"
+    },
+    {
+     "decl": "normDet_sq_eq_pow_mul_det"
+    },
+    {
+     "decl": "Data.Θ"
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Simplify: the determinants of the Hecke operator on the good forms of W_j and of Y₀ agree (det_heckeOnGood_eq, both spaces having rigid labels), and the dimensions of the rows and of the good forms on W_j agree (finrank_rows_eq_finrank_goodForms).",
+   "lines": [
+    55,
+    56
+   ],
+   "lean": "  simp [𝔷, liftVolume, prod_range, D.det_heckeOnGood_eq (hasRigidLabels_spaceW _ ⟨_,\n    _⟩) D.hasRigidLabels_spaceY_zero, ← D.finrank_rows_eq_finrank_goodForms ⟨_, _⟩, *] at L Z ⊢",
+   "uses": [
+    {
+     "step": "6"
+    },
+    {
+     "decl": "Data.det_heckeOnGood_eq"
+    },
+    {
+     "decl": "Data.finrank_rows_eq_finrank_goodForms"
+    },
+    {
+     "decl": "Data.liftVolume"
+    },
+    {
+     "decl": "Data.𝔷"
+    }
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "computation",
+   "claim": "The remaining identity of products, powers and quotients of the constants holds (simp, ring).",
+   "lines": [
+    57,
+    58
+   ],
+   "lean": "  simp [*, univ.prod_pow, div_pow, prod_eq_zero_iff, div_eq_iff, mul_div,\n    div_mul_eq_mul_div, eq_div_iff]; ring",
+   "uses": [
+    {
+     "step": "7"
+    }
+   ]
+  }
+ ]
+}

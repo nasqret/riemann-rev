@@ -1,0 +1,170 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Endgame.ShortAndEnough:86:7",
+ "name": "Data.remainder_eq",
+ "file": "New/Endgame/ShortAndEnough.lean",
+ "file_sha256": "eb7eaf3c1a7a7d91978d4c85e4be3e44526250f69aabf5507b8b0281eff7d6d3",
+ "commit": "72fead102f663d5c7a407964a13dc0cf9d977207",
+ "summary": "Sum the asks over the tops: the thick places are met exactly when ν ≡ 1 mod N₀; evaluate the sums by primeError_eq_sum at x and x₁; the main terms are those of #tops·Ask_main.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "fact",
+   "claim": "A: for every natural ν and real b: #{τ ∈ tops(D) : (−ν)·τ ∈ thick(D)}·(λ_{d,1}(ν)·b) = #thick(D)·(λ_{d,N₀}(ν)·b). Here (−ν)·τ is τ times the place named by −ν (`Data.placeOfInt`): the class of −ν mod N₁ when ν is prime to N₁, and the identity place when it is not (for instance ν = 0). Put σ = (−ν)·τ: the count is the number of thick places σ such that σ divided by the place named by −ν is a top (class ≡ 1 mod N₀). Thick places have class ≡ −1 mod N₀ (`Data.placeClass_of_thick`), so for a thick σ this holds iff the place named by −ν has class ≡ −1 mod N₀, which by the exact test `Parameters.placeClass_placeOfInt_eq_neg_one` (valid for every integer, the identity convention included) holds iff ν ≡ 1 mod N₀ — for all thick σ or for none. So if ν ≡ 1 mod N₀ the count is #thick(D) and λ_{d,1}(ν) = λ_{d,N₀}(ν); otherwise the count is 0 and λ_{d,N₀}(ν) = 0. In particular, for ν not prime to N₁ the translation is the identity, it keeps the tops (class 1 mod N₀) outside the thick set, and both sides are 0. (These terms vanish also for a reason this step does not use: such a ν with Λ(ν) ≠ 0 is a power of a prime p ∣ N₁, and χ_d(p) = 1 for these p, Different.lean 54–58, so λ_{d,1}(ν) = 0.)",
+   "lines": [
+    89,
+    93
+   ],
+   "lean": "  have A (ν : ℕ) b : #{τ ∈ D.tops | D.placeOfInt (-ν) * τ ∈ D.thick} * (lambdaClass P.d 1 ν * b) =\n      #D.thick * (lambdaClass P.d P.N₀ ν * b) := by\n    rw [card_filter, tops, sum_filter, ← (Equiv.divRight (D.placeOfInt (-ν))).sum_comp]\n    simp +contextual [← sum_filter, lambdaClass, filter_inter, Unique.eq_default,\n      placeClass_of_thick, @eq_comm _ˣ (-1), apply_ite card, div_eq_one, Set.indicator]",
+   "typed_fact": "#{τ ∈ D.tops | D.placeOfInt (-ν) * τ ∈ D.thick} * (lambdaClass P.d 1 ν * b) =\n      #D.thick * (lambdaClass P.d P.N₀ ν * b)",
+   "uses": [
+    {
+     "decl": "Data.tops"
+    },
+    {
+     "decl": "Data.placeOfInt"
+    },
+    {
+     "decl": "Data.placeClass_of_thick"
+    },
+    {
+     "decl": "Parameters.placeClass_placeOfInt_eq_neg_one"
+    },
+    {
+     "decl": "lambdaClass"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "identity",
+   "claim": "∑_{τ∈tops(D)} Ask(D, a_D, τ) = a_D·(#thick(D)·(R_{d,N₀}(x_D) − R_{d,N₀}(x₁_D)) + #tops(D)·R_{d,1}(x₁_D) + (#thick(D)·(log x_D − log x₁_D)/φ(N₀) + #tops(D)·(log x₁_D − 1 − ℓ(d)))). Write w_D((−ν)τ) = a/x₁ + [(−ν)τ thick]·(a/x − a/x₁), sum over τ with A, and evaluate the two sums by `primeError_eq_sum` at z = x₁_D and z = x_D (both ≤ a_D): ∑_ν λ_{d,M}(ν)(a/ν − a/z)⁺ = a·(R_{d,M}(z) + log z/φ(M) + Re G_{d,M}(1)); for M = 1 the constant is −1 − ℓ(d) (`re_logDerivMean_one`); for M = N₀ it cancels in the difference.",
+   "lines": [
+    97,
+    104
+   ],
+   "lean": "  have asks : ∑ τ ∈ D.tops, D.primeSum D.a τ = D.a * (#D.thick * (primeError P.d P.N₀ D.x -\n    primeError P.d P.N₀ D.x₁) + #D.tops * primeError P.d 1 D.x₁ + (#D.thick *\n    ((D.logX - D.logX₁) / P.N₀.totient) + #D.tops * (D.logX₁ - 1 - chowlaSelbergConst P.d))) := by\n    simp [A, @sum_ite D.Φ, filter_not, cast_card_sdiff, sub_mul, re_logDerivMean_one, ← mul_sum,\n      primeSum, nominalWeight, D.tops.sum_comm, primeError_eq_sum D.a D.logX₁.exp_pos\n      D.le_of_hasLogBound, primeError_eq_sum D.a D.logX.exp_pos D.le_of_hasLogBound, div_ite,\n      sub_ite, apply_ite posPart, ← sum_div]\n    field [(HasLogBound.pos D).ne']",
+   "typed_fact": "∑ τ ∈ D.tops, D.primeSum D.a τ = D.a * (#D.thick * (primeError P.d P.N₀ D.x -\n    primeError P.d P.N₀ D.x₁) + #D.tops * primeError P.d 1 D.x₁ + (#D.thick *\n    ((D.logX - D.logX₁) / P.N₀.totient) + #D.tops * (D.logX₁ - 1 - chowlaSelbergConst P.d)))",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "decl": "Data.primeSum"
+    },
+    {
+     "decl": "Data.nominalWeight"
+    },
+    {
+     "decl": "primeError_eq_sum"
+    },
+    {
+     "decl": "re_logDerivMean_one"
+    },
+    {
+     "decl": "Data.le_of_hasLogBound"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "identity",
+   "claim": "#tops(D)·Ask_main(D) = a_D·(#thick(D)·(log x_D − log x₁_D)/φ(N₀) + #tops(D)·(log x₁_D − 1 − ℓ(d))), because w̄_D = (1/f_D)(#thick·log(a/x) + (f_D − #thick)·log(a/x₁)) and f_D = #tops(D)·φ(N₀).",
+   "lines": [
+    106,
+    110
+   ],
+   "lean": "  have main : #D.tops * D.mainAsk = D.a * (#D.thick * ((D.logX - D.logX₁) / P.N₀.totient) +\n      #D.tops * (D.logX₁ - 1 - chowlaSelbergConst P.d)) := by\n    simp [mainAsk, nominalWeight, apply_ite, log_div, (HasLogBound.pos D).ne', sum_ite, filter_not,\n      cast_card_sdiff, card_infinitePlace_E, show #D.tops = _ by apply card_placeClass_eq]\n    field [(HasLogBound.pos D).ne']",
+   "head_lines": [
+    106,
+    109
+   ],
+   "head_span": [
+    106,
+    3,
+    109,
+    46
+   ],
+   "typed_fact": "#D.tops * D.mainAsk = D.a * (#D.thick * ((D.logX - D.logX₁) / P.N₀.totient) +\n      #D.tops * (D.logX₁ - 1 - chowlaSelbergConst P.d))",
+   "uses": [
+    {
+     "decl": "Data.mainAsk"
+    },
+    {
+     "decl": "Data.nominalWeight"
+    },
+    {
+     "decl": "Parameters.card_infinitePlace_E"
+    }
+   ]
+  },
+  {
+   "id": "3.1",
+   "parent": "3",
+   "kind": "fact",
+   "claim": "#tops(D) = towerDeg(s_D) (`Parameters.card_placeClass_eq`).",
+   "lines": [
+    109,
+    109
+   ],
+   "span": [
+    109,
+    46,
+    109,
+    91
+   ],
+   "lean": "show #D.tops = _ by apply card_placeClass_eq]",
+   "typed_fact": "#D.tops = _",
+   "uses": [
+    {
+     "decl": "Parameters.card_placeClass_eq"
+    },
+    {
+     "decl": "Data.tops"
+    }
+   ]
+  },
+  {
+   "id": "3.2",
+   "parent": "3",
+   "kind": "identity",
+   "claim": "Field arithmetic (a_D ≠ 0) finishes the identity.",
+   "lines": [
+    110,
+    110
+   ],
+   "lean": "    field [(HasLogBound.pos D).ne']",
+   "uses": [
+    {
+     "decl": "Data.HasLogBound.pos"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "identity",
+   "claim": "rem(D) = ∑_τ Ask(D, a_D, τ) − #tops(D)·Ask_main(D) = a_D·(#thick(D)·(R_{d,N₀}(x_D) − R_{d,N₀}(x₁_D)) + #tops(D)·R_{d,1}(x₁_D)), by steps 2 and 3.",
+   "lines": [
+    111,
+    112
+   ],
+   "lean": "  simp [*, remainder]\n  ring",
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "step": "3"
+    },
+    {
+     "decl": "Data.remainder"
+    }
+   ]
+  }
+ ]
+}

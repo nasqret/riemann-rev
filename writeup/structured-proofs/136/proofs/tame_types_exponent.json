@@ -1,0 +1,303 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Lift.ExponentTheorems:107:7",
+ "name": "Lift.tame_types_exponent",
+ "summary": "Choose a tame chart with index e = lcm(p^j − 1) ≤ p^{r²}; lattices of tame type are crystalline over Γ': on inertia s ↦ β_{s,0} is a character with open kernel and order dividing e (X^M − 1 kills, M = e), so by the stabilizer clause of tame_inertia it is trivial on the stabilizer of ϖ, which contains the inertia elements of Γ'; the Tate dual of Y ⊗ L is killed by a monic polynomial of degree ≤ N², so killsCokernel_of_isKilledBy gives p^κ cokernel killers for the three sides and scaledCupBounds_of_killsCokernel applies with a = 0. The chart's d = differentExp is 0 if e = 1 and v_p(e) + 1 = 1 otherwise (p ∤ e), not 0 in general; 3(κ + (48(η + W) + 4)d) is within the exponent 3r²(N + 1)² + 150(η + W + 1) for d ≤ 1.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "choice",
+   "claim": "Take a tame chart d with index e = lcm{p^j − 1 : 1 ≤ j ≤ r} (exists_tameChart with f = r!; p ∤ r! as p > r, and p^j − 1 | p^{r!} − 1 for j ≤ r):",
+   "lines": [
+    112,
+    114
+   ],
+   "span": [
+    112,
+    3,
+    114,
+    61
+   ],
+   "lean": "(exists_tameChart hj ⟨_, r.factorial_pos⟩ (l.out.dvd_factorial.1.mt\n  (by grind [le_self_pow])) (lcm_dvd fun _ ↦ Nat.pow_sub_one_dvd_pow_sub_one p ∘ And.elim\n  Nat.dvd_factorial ∘ mem_Icc (b := r).1)).rec fun d he ↦ by",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Lift.exists_tameChart"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "fact",
+   "claim": "the tame generator gives a Weil pair at 0 (t), and",
+   "lines": [
+    115,
+    115
+   ],
+   "span": [
+    115,
+    3,
+    115,
+    42
+   ],
+   "lean": "obtain ⟨t, hm⟩ := d.isWeilPair_tameGen,",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "fact",
+   "claim": "e ≤ p^{r²} (lcm ≤ product ≤ (p^r)^r).",
+   "lines": [
+    115,
+    117
+   ],
+   "span": [
+    115,
+    43,
+    117,
+    97
+   ],
+   "lean": "show d.e ≤ p ^ r ^ 2 by\n    grw [he, Nat.le_of_dvd _ (lcm_dvd_prod ..), prod_le_pow_card _ _ (p ^ r)] <;> simp_all\n      [← pow_mul, sq, l.out.one_lt, le_add_right, pow_le_pow_iff_right₀, Nat.one_le_iff_ne_zero]",
+   "typed_fact": "d.e ≤ p ^ r ^ 2",
+   "uses": [
+    {
+     "step": "1"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "definition",
+   "claim": "j is a bijection Γ ≅ G_p (an embedding, onto by hj).",
+   "lines": [
+    118,
+    118
+   ],
+   "span": [
+    118,
+    3,
+    118,
+    50
+   ],
+   "lean": "let J := MulEquiv.ofBijective toGp ⟨ho.1.2, hj⟩",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Every inertia element g gives the Weil pair (j⁻¹(g), 0).",
+   "lines": [
+    119,
+    119
+   ],
+   "span": [
+    119,
+    3,
+    119,
+    94
+   ],
+   "lean": "have w (g : inertiaGroup ..) := isWeilPair_zero_iff.2 ((J.apply_symm_apply g.1).symm ▸ g.2)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "4"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "fact",
+   "claim": "For every K₀ with IsTameType(p, r, N, K₀(s)) for inertial s, a lattice of class (F, K₀, U) lies in the class (filter of Γ', ⊥, U):",
+   "lines": [
+    120,
+    130
+   ],
+   "span": [
+    120,
+    3,
+    130,
+    100
+   ],
+   "lean": "have A {K U} (hK : ∀ s, IsWeilPair (toGp s) 0 → IsTameType p r N (K s)) L (H : InClass F K ..) :\n    InClass (O := O) _ ⊥ U L := ⟨.mono\n    ((isAdmissible_comp_iff ..).1 ((H.isPotCrys.comp _).isCrystalline_of_inertia_fixes fun s u ↦ by\n    simpa [linearFrob, Dpcris, ← map_nearOne _ ho.1.2 (@OverGp.isOpen_range d.Γ' ..)] using!\n      (isLocalGalois_padic.tame_inertia isUniformiser_ell\n      (valuation_natCast_eq_one d.tame) d.varpi_pow_eq ⟨⟨(linearFrob _ · 0) ∘ _, by simpa using\n      (linearFrob_pow H.isPotCrys t 0)⟩, by simp [linearFrob_mul H.isPotCrys (w _) (w _)]⟩\n      (Subgroup.isOpen_of_mem_nhds _ ((nhds _).3 (continuous_subtype_val.tendsto 1\n      (mem_comap'.1 H.isPotCrys.eventually_linearFrob_eq_one)) fun g ↦ (· (J.right_inv _) (w g))))\n      fun g ↦ by simpa [he] using (H.2.2 _ _ (hK _ (w g)).1 (w g)).2).1 (x :=\n      ⟨J s, isWeilPair_zero_iff.1 u⟩) (d.apply_varpi s))) (sup_le nearOne_le le_rfl), H.2.1, nofun⟩",
+   "head_lines": [
+    120,
+    121
+   ],
+   "head_span": [
+    120,
+    3,
+    121,
+    32
+   ],
+   "typed_fact": "InClass (O := O) _ ⊥ U L",
+   "uses": []
+  },
+  {
+   "id": "6.1",
+   "parent": "6",
+   "kind": "reduction",
+   "claim": "it is crystalline on Γ' (then admissible for the smaller class): by isCrystalline_of_inertia_fixes it suffices that β_{s,0} = 1 for every inertial s,",
+   "lines": [
+    121,
+    122
+   ],
+   "span": [
+    121,
+    33,
+    122,
+    100
+   ],
+   "lean": "⟨.mono\n    ((isAdmissible_comp_iff ..).1 ((H.isPotCrys.comp _).isCrystalline_of_inertia_fixes fun s u ↦ by",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "IsPotCrys.isCrystalline_of_inertia_fixes"
+    }
+   ]
+  },
+  {
+   "id": "6.2",
+   "parent": "6",
+   "kind": "computation",
+   "claim": "unfolding linearFrob and D_pcris,",
+   "lines": [
+    123,
+    123
+   ],
+   "span": [
+    123,
+    5,
+    123,
+    93
+   ],
+   "lean": "simpa [linearFrob, Dpcris, ← map_nearOne _ ho.1.2 (@OverGp.isOpen_range d.Γ' ..)] using!",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "6.3",
+   "parent": "6",
+   "kind": "fact",
+   "claim": "apply tame_inertia (for ϖ, ϖ^e = p, e prime to p) to f : s ↦ β_{s,0} on inertia, a homomorphism (linearFrob_pow, linearFrob_mul) with open kernel (β_{s,0} = 1 near 1); its first clause (`.1`, the stabilizer clause, TameInertia.lean 79–81): f kills the stabilizer of ϖ, provided f^e = 1,",
+   "lines": [
+    124,
+    128
+   ],
+   "span": [
+    124,
+    7,
+    128,
+    99
+   ],
+   "lean": "(isLocalGalois_padic.tame_inertia isUniformiser_ell\n      (valuation_natCast_eq_one d.tame) d.varpi_pow_eq ⟨⟨(linearFrob _ · 0) ∘ _, by simpa using\n      (linearFrob_pow H.isPotCrys t 0)⟩, by simp [linearFrob_mul H.isPotCrys (w _) (w _)]⟩\n      (Subgroup.isOpen_of_mem_nhds _ ((nhds _).3 (continuous_subtype_val.tendsto 1\n      (mem_comap'.1 H.isPotCrys.eventually_linearFrob_eq_one)) fun g ↦ (· (J.right_inv _) (w g))))",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "linearFrob_pow"
+    },
+    {
+     "step": "5"
+    }
+   ]
+  },
+  {
+   "id": "6.4",
+   "parent": "6",
+   "kind": "fact",
+   "claim": "and f^e = 1 holds as X^M − 1 kills (s, 0) with M = e (IsTameType, he); applied at J s, which fixes ϖ because s lies in the chart subgroup Γ' (d.apply_varpi), it gives β_{s,0} = 1 for the inertial s of Γ'; the other components (filter, jumps, no killing condition) are those of H.",
+   "lines": [
+    129,
+    130
+   ],
+   "span": [
+    129,
+    7,
+    130,
+    100
+   ],
+   "lean": "fun g ↦ by simpa [he] using (H.2.2 _ _ (hK _ (w g)).1 (w g)).2).1 (x :=\n      ⟨J s, isWeilPair_zero_iff.1 u⟩) (d.apply_varpi s))) (sup_le nearOne_le le_rfl), H.2.1, nofun⟩",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "decl": "Lift.IsTameType"
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "choice",
+   "claim": "From hK at the tame generator and at its inverse: monic q, q' ∈ Z_p[X] of degrees ≤ N with K(s)(q) and K(s⁻¹)(q').",
+   "lines": [
+    131,
+    131
+   ],
+   "span": [
+    131,
+    3,
+    131,
+    68
+   ],
+   "lean": "obtain ⟨⟨-, q, m, n, k⟩, -, q', m', n', k'⟩ := hK _ t, hK _ t.inv",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "2"
+    }
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Apply mem_cupOrthogonal_of_scaledCupBounds for d (classes from step 6): for Y of class (F, K) and a pairing h of the universal sides, a monic polynomial of degree ≤ deg q·deg q' kills (s⁻¹, 0) on the third side Hom(Y ⊗ L, O(1)) (exists_isKilledBy_tateDual_tensor); then scaledCupBounds_of_killsCokernel with the three cokernels killed by p^κ (killsCokernel_of_isKilledBy with m = r², e ≤ p^{r²}, and n + κ + 2 < p by hp), windows from hU, gaps from hp (NoMultipleNear: p > b + 6(W + η)). The exponent: with a = 0 the condition of scaledCupBounds_of_killsCokernel is 3(κ + (48(η + W) + 4)·d) ≤ 3r²(N + 1)² + 150(η + W + 1), d = differentExp of the tame chart: d = 0 if e = 1 and d = v_p(e) + 1 = 1 otherwise (v_p(e) = 0 as p ∤ e; KummerChartExists.lean 161–162); κ = r²(N + 1)² (hp is passed as the hypothesis n + κ + 2 < p of killsCokernel_of_isKilledBy, with n = b + 6(W + η)), and both cases fit: 3(κ + 48(η + W) + 4) ≤ 3κ + 150(η + W + 1).",
+   "lines": [
+    132,
+    139
+   ],
+   "span": [
+    132,
+    3,
+    139,
+    80
+   ],
+   "lean": "refine (d.1.mem_cupOrthogonal_of_scaledCupBounds ⟨1, by simp⟩ ho le_rfl (A hK) (A (hK ·⁻¹ ·.inv) _\n    hL) _ ⟨·, ·⟩ fun S hY h c ↦ (exists_isKilledBy_tateDual_tensor hY hL t.inv m' m k' ?_).rec fun _\n    ⟨M, u, v⟩ ↦ h.scaledCupBounds_of_killsCokernel (fun _ ↦ ⟨d.killsCokernel_of_isKilledBy ?_ ?_ M\n    hm hp (by grw [u, n, n']; lia), d.killsCokernel_of_isKilledBy ?_ ?_ m hm hp ?_,\n    d.killsCokernel_of_isKilledBy ?_ ?_ m' hm hp ?_⟩) ?_ (fun _ ↦\n    (?_ : IsInJumpWindow η (-ε) b W _ ∧ _)) ?_ ?_ c _) <;> (first | gcongr | simp_all [hY.2.2,\n    hL.2.2, KummerChart.differentExp, ↓padicValNat.eq_zero_of_not_dvd d.tame]) <;> clear * - hp n n'\n    hU <;> grind [NoMultipleNear, → Int.le_abs_of_dvd, KummerChart.letterJumps]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "6"
+    },
+    {
+     "step": "7"
+    },
+    {
+     "decl": "Lift.KummerChart.mem_cupOrthogonal_of_scaledCupBounds"
+    },
+    {
+     "decl": "Lift.exists_isKilledBy_tateDual_tensor"
+    },
+    {
+     "decl": "Lift.KummerChart.PairingSide.SidePairing.scaledCupBounds_of_killsCokernel"
+    },
+    {
+     "decl": "Lift.TameChart.killsCokernel_of_isKilledBy"
+    },
+    {
+     "decl": "Lift.NoMultipleNear"
+    }
+   ]
+  }
+ ]
+}

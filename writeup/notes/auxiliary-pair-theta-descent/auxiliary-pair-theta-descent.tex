@@ -1,0 +1,1244 @@
+% !TEX program = lualatex
+% ---------------------------------------------------------------------------------------------
+%  Readback note 9: The test datum of an auxiliary pair, joint harmonics with staircase weights, and the theta lift as a conjugate descent
+%
+%  Build:  python3 tools/rb.py note <slug>
+%
+%  One unit of a Lean artifact, rewritten as ordinary mathematics. The prose is hand-written. Lean names,
+%  line ranges and counts come from data.tex; quoted Lean statements are copied from the artifact by the build.
+%
+%  Rules of the text: standard terminology; every symbol is explained where it first appears and listed again
+%  in the notation at the end; no letter has two meanings; a proof is complete or says what it takes for granted;
+%  Lean names appear only in the LEAN lines and in the concordance.
+%
+%  The signature rule (the build enforces it): a function, relation or predicate that the artifact defines is
+%  written only through its notation macro, which the build makes from the spec (`notation`) with one slot for
+%  each explicit argument of the Lean definition. No argument is fixed and dropped, also not "for brevity" and
+%  not for one section. Every argument and every hypothesis of a stated declaration stands inside its
+%  statement, or in a Setting that the statement cites by number; only implicit and instance arguments (the
+%  ambient objects) may stand in the conventions.
+% ---------------------------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\ifdefined\pdfvariable\pdfvariable suppressoptionalinfo \numexpr 1+2+4+8\relax\fi
+\usepackage[a4paper,hmargin=35mm,top=22mm,bottom=27mm,footskip=12mm,nohead]{geometry}
+
+\usepackage{fontspec}
+\directlua{
+  luaotfload.add_fallback("gfallback", {"STIXTwoMath-Regular.otf:mode=node;", "DejaVuSans.ttf:mode=node;"})
+  luaotfload.add_fallback("gmonofallback", {"DejaVuSansMono.ttf:mode=node;", "STIXTwoMath-Regular.otf:mode=node;"})
+}
+\setmainfont{NewCM10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookItalic,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldItalic,SmallCapsFont=*-Book,SmallCapsFeatures={Letters=SmallCaps},
+  RawFeature={fallback=gfallback}]
+\setsansfont{NewCMSans10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookOblique,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldOblique,RawFeature={fallback=gfallback}]
+\setmonofont{JetBrainsMono}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,Scale=MatchLowercase,
+  RawFeature={-calt;-liga;fallback=gmonofallback}]
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage[math-style=TeX]{unicode-math}
+\setmathfont{NewCMMath-Book.otf}
+\emergencystretch=2.5em\relax
+
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows.meta,positioning,backgrounds}
+\usepackage[protrusion=true,expansion=true]{microtype}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{multicol}
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+
+\definecolor{ink}{HTML}{0F172A}
+\definecolor{inksoft}{HTML}{475569}
+\definecolor{inkfaint}{HTML}{94A3B8}
+\definecolor{rulegrey}{HTML}{CBD5E1}
+\definecolor{arith}{HTML}{C2410C}
+\definecolor{est}{HTML}{7C3AED}
+\definecolor{ana}{HTML}{0891B2}
+\definecolor{ok}{HTML}{047857}
+\definecolor{leancol}{HTML}{3730A3}
+
+\title{The test datum of an auxiliary pair, joint harmonics with staircase weights, and the theta lift as a conjugate descent}
+\author{grh-compact}
+\date{}
+
+% ------------------------------------------------------------------------------------- macros
+\newcommand{\leanfont}{\ttfamily\fontsize{8.6}{10.5}\selectfont\color{leancol}}
+\newcommand{\lean}[1]{\csname LN@#1\endcsname}
+\newcommand{\fillin}[1]{{\color{arith}\itshape[#1]}}  % a place of the template that is not written yet; the build reports every one that is left
+\newcommand{\leanquote}[1]{\csname LQ@#1\endcsname}
+\input{data.tex}
+
+\linespread{1.08}                       % 11 pt on 14.7 pt
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt plus 1.5pt minus 0.5pt}
+\setlength{\abovedisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\belowdisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\abovedisplayshortskip}{3pt plus 2pt}
+\setlength{\belowdisplayshortskip}{6pt plus 2pt minus 2pt}
+\emergencystretch=1.5em
+\clubpenalty=10000 \widowpenalty=10000 \displaywidowpenalty=10000
+\relpenalty=7000 \binoppenalty=9000
+\raggedbottom
+\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\sffamily\fontsize{7.6}{9}\selectfont\color{inkfaint}\thepage\,/\,\pageref*{LastPage}}
+\setlist{topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=4pt,leftmargin=2.1em,labelsep=0.55em}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\len}{\operatorname{len}}
+\newcommand{\cok}{\operatorname{cok}}
+\newcommand{\End}{\operatorname{End}}
+\newcommand{\Hom}{\operatorname{Hom}}
+\newcommand{\Gal}{\operatorname{Gal}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\kw}[1]{\emph{#1}}
+\newcommand{\m}[1]{\mbox{$#1$}}        % a short formula that must not be broken across lines
+\newcommand{\head}[1]{\par\addvspace{17pt plus 4pt minus 2pt}\Needspace{6\baselineskip}%
+  \noindent{\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\sect}[2]{\refstepcounter{section}\label{#2}\par\addvspace{19pt plus 4pt minus 2pt}\Needspace{7\baselineskip}%
+  \noindent\llap{{\fontsize{13.2}{16}\selectfont\bfseries\color{inkfaint}\thesection}\hspace{9pt}}%
+  {\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\subhead}[1]{\par\addvspace{9pt plus 2pt}\Needspace{4\baselineskip}\noindent\textbf{#1}\enspace\ignorespaces}
+% where a statement lives in the Lean archive
+\newcommand{\leantag}{{\sffamily\bfseries\fontsize{6.3}{8}\selectfont\color{leancol}\addfontfeatures{LetterSpace=7}LEAN}}
+\newcommand{\sep}{\unskip\nobreak\hspace{5pt}{\color{inkfaint}\textperiodcentered}\hspace{5pt plus 2pt}\ignorespaces}
+\newcommand{\leanline}[1]{\par\nopagebreak\vspace{-2.5pt}{\fontsize{8.9}{12.4}\selectfont\color{inksoft}\raggedright
+  \noindent\llap{\leantag\hspace{9pt}}#1\par}\vspace{1pt}}
+% a displayed statement in a tinted box: #1 colour, #2 text
+\newcommand{\statement}[2]{\par\addvspace{7pt}\begingroup\setlength{\fboxsep}{8.5pt}\setlength{\fboxrule}{0.6pt}%
+  \noindent\fcolorbox{#1!30!white}{#1!3!white}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{#2}}%
+  \endgroup\par\addvspace{7pt}}
+\newcommand{\nt}[2]{\par\noindent\hangindent=1.1em\hangafter=1 #1\enspace{\color{inksoft}#2}\par\vspace{1pt}}
+\newcommand{\legdot}[1]{\tikz[baseline=-0.62ex]\fill[#1] (0,0) circle (2.5pt);\hspace{3pt}}
+\newcommand{\crow}[4]{\csname CS@#1\endcsname & #2 & \textcolor{inksoft}{#3} & \textcolor{inksoft}{#4}\\}
+\newcommand{\leanquoteline}[2]{\par\noindent\hangindent=\dimexpr#1\fontdimen2\font+2.2em\relax\hangafter=1
+  \hspace*{#1\fontdimen2\font}#2}
+\newcommand{\quoted}[1]{\par\vspace{3pt}{\ttfamily\fontsize{7.5}{10.4}\selectfont\color{leancol}\raggedright
+  \setlength{\parskip}{0pt}\leanquote{#1}\par}\vspace{4pt}}
+\newcommand{\bx}[3]{{\sffamily\bfseries\fontsize{7.3}{9.2}\selectfont\color{#1!82!black}#2}\\[1.5pt]#3}
+\newcommand{\cs}[2]{\expandafter\newcommand\csname CS@#1\endcsname{#2}}
+
+% theorems
+\newtheoremstyle{plainx}{7pt plus 2pt}{7pt plus 2pt}{\itshape}{}{\bfseries}{.}{0.5em}{}
+\newtheoremstyle{uprightx}{7pt plus 2pt}{7pt plus 2pt}{}{}{\bfseries}{.}{0.5em}{}
+\theoremstyle{plainx}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{uprightx}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{setting}[theorem]{Setting}          % hypotheses shared by several statements; each of them cites it by number
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\renewcommand{\qedsymbol}{{\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.5pt}\fbox{\rule{0pt}{0.46em}\hspace{0.46em}}}}
+% what holds throughout the note: the ambient objects only (implicit and instance arguments), never a hypothesis
+\newenvironment{conventions}{\par\addvspace{5pt}\noindent\textbf{Conventions.}\enspace\ignorespaces}{\par\addvspace{3pt}}
+\makeatletter
+\renewenvironment{proof}[1][Proof]{\par\pushQED{\qed}\normalfont\topsep0pt\partopsep0pt
+  \trivlist\item[\hskip\labelsep\itshape #1.]\ignorespaces}{\popQED\endtrivlist\@endpefalse}
+\makeatother
+
+% where each declaration of the concordance is treated: \cs{key}{place}, the place naming a \label or a lettered item
+\cs{TwistGL}{Definition~\ref{d:twist}}
+\cs{twistLift}{Definition~\ref{d:twist}}
+\cs{levelIndicator}{Definition~\ref{d:indicator}}
+\cs{upsiloneqsum}{Proposition~\ref{p:sum}}
+\cs{pairWeilupsilon}{Proposition~\ref{p:law}}
+\cs{paramV}{Definition~\ref{d:paramV}}
+\cs{isHCParamparamV}{Lemma~\ref{l:hc}}
+\cs{FitsParams}{Definition~\ref{d:fits}}
+\cs{realPairWeilfockLetters}{Lemma~\ref{l:letters}}
+\cs{realPairWeilharmonicPoly}{Lemma~\ref{l:har}}
+\cs{existsisJointHarmonic}{Theorem 2}
+\cs{isEdge}{Corollary~\ref{c:edge}}
+\cs{pairWeilfockDatum}{Lemma~\ref{l:datum}}
+\cs{conjKernelequivariant}{Lemma~\ref{l:kernel}}
+\cs{thetaeqsmulstarliftswap}{Theorem 1}
+% notation of this note; objects of other units and of the background library are written with all their arguments
+\newcommand{\CC}{\mathbb{C}}
+\newcommand{\ZZ}{\mathbb{Z}}
+\newcommand{\AAf}{\mathbb{A}_{\mathrm{f}}}
+\newcommand{\FF}{\mathbb{F}}
+\newcommand{\oo}{\mathfrak{o}}
+\newcommand{\ohat}{\hat{\mathfrak{o}}}
+\newcommand{\Ginf}[1]{G_{\infty}(#1)}
+\newcommand{\Gfin}[1]{G_{\mathrm{f}}(#1)}
+\newcommand{\Gad}[1]{G(#1)}
+\newcommand{\Kz}[1]{\mathbf{K}_{0}(#1)}
+\newcommand{\std}[2]{\mathrm{I}_{#2}(#1)}
+\newcommand{\one}[1]{1_{#1}}
+\newcommand{\WO}[1]{W(#1)}
+\newcommand{\sgO}[1]{\varepsilon_{#1}}
+\newcommand{\rmi}[1]{r_{-}(#1)}
+\newcommand{\rpl}[1]{r_{+}(#1)}
+\newcommand{\incO}[1]{\operatorname{inc}_{#1}}
+\newcommand{\IncM}[1]{\operatorname{Inc}_{#1}}
+\newcommand{\ordO}[2]{\operatorname{ord}_{#1}(#2)}
+\newcommand{\kp}[3]{\kappa^{+}_{#1}(#2,#3)}
+\newcommand{\km}[3]{\kappa^{-}_{#1}(#2,#3)}
+\newcommand{\kap}[1]{\kappa_{#1}}
+\newcommand{\eO}[1]{e_{#1}}
+\newcommand{\muO}[1]{\mu_{#1}}
+\newcommand{\wtO}[2]{\operatorname{wt}_{#1}(#2)}
+\newcommand{\psiO}[2]{\psi_{#1,#2}}
+\newcommand{\MO}[1]{M_{#1}}
+\newcommand{\QO}[1]{Q_{#1}}
+\newcommand{\SigO}[1]{\Sigma_{#1}}
+\newcommand{\ChGL}[2]{\mathrm{GL}^{\mathrm{ch}}_{#2}(#1)}
+\newcommand{\chO}[1]{\chi_{#1}}
+\newcommand{\chpO}[1]{\chi'_{#1}}
+\newcommand{\omO}[1]{\omega_{#1}}
+\newcommand{\thO}[1]{\theta_{#1}}
+\newcommand{\SO}[1]{\mathcal{S}(#1)}
+\newcommand{\LO}[1]{\mathbf{L}(#1)}
+\newcommand{\KO}[1]{\mathbf{K}(#1)}
+\newcommand{\etaO}[1]{\eta_{#1}}
+\newcommand{\tetaO}[1]{\tilde{\eta}_{#1}}
+\newcommand{\Ups}[1]{\Upsilon(#1)}
+\newcommand{\PsiO}[2]{\Psi_{#1}(#2)}
+\newcommand{\Har}[2]{\operatorname{Har}_{#1}(#2)}
+\newcommand{\JO}[2]{\operatorname{J}_{#1}(#2)}
+\newcommand{\cK}[3]{\mathcal{C}_{#1}(#2,#3)}
+\newcommand{\Th}[2]{\operatorname{Th}_{#1}(#2)}
+\newcommand{\FormO}[1]{\operatorname{Form}(#1)}
+\newcommand{\Vk}[2]{\mathbb{V}_{#1,#2}}
+\newcommand{\rhoW}[2]{\rho_{#1,#2}}
+\newcommand{\vplus}[2]{v^{+}_{#1}(#2)}
+\newcommand{\gram}[3]{\langle #2,#3\rangle_{#1}}
+\newcommand{\algF}[3]{F_{#1,#2}(#3)}
+\newcommand{\Desc}[4]{\operatorname{Desc}^{#1,#2}_{#3,#4}}
+\newcommand{\RPW}[2]{\Omega_{#1,#2}}
+\newcommand{\pvO}[2]{v_{#1,#2}}
+\newcommand{\FockO}[1]{\mathcal{F}(#1)}
+\newcommand{\FockP}[2]{\mathcal{F}(#1,#2)}
+\newcommand{\pvP}[3]{v^{#1,#2}_{#3}}
+\newcommand{\Let}[3]{\operatorname{Let}_{#1,#2,#3}}
+\newcommand{\Pol}[1]{\operatorname{Pol}_{#1}}
+\newcommand{\Sch}[1]{S_{#1}}
+\newcommand{\tk}[2]{\mathbf{e}_{#1,#2}}
+\newcommand{\lkt}[2]{\Lambda_{#1}(#2)}
+\newcommand{\stw}[6]{\operatorname{sw}_{#1}(#2,#3,#4,#5)(#6)}
+\newcommand{\modD}[5]{#5\otimes[#4]^{#1,#2}_{#3}}
+\newcommand{\lmod}[2]{\mathfrak{m}_{#2}(#1)}
+\newcommand{\red}[1]{\operatorname{red}_{#1}}
+\newcommand{\heisf}[1]{\varrho(#1)}
+\newcommand{\lnm}[1]{{\leanfont #1}}
+\newcommand{\conj}[1]{\overline{#1}}
+\newcommand{\dd}{\mathrm{d}}
+
+\begin{document}
+\color{ink}
+
+{\raggedright
+{\sffamily\bfseries\fontsize{7.2}{9}\selectfont\color{leancol}\addfontfeatures{LetterSpace=8}READBACK NOTE 9\par}
+\vspace{5pt}
+{\fontsize{21.5}{25.5}\selectfont\bfseries The test datum of an auxiliary pair, joint harmonics with staircase weights, and the theta lift as a conjugate descent\par}
+\vspace{5pt}
+{\fontsize{12.4}{16}\selectfont\itshape\color{inksoft} One unit of the Lean artifact \ArtifactName, read back into
+mathematics\par}}
+\vspace{8pt}
+{\color{rulegrey}\hrule height 0.6pt}
+\vspace{7pt}
+\thispagestyle{empty}
+
+\textbf{Summary.} An \emph{auxiliary pair} is a dual pair of unitary groups over a CM field, an indefinite space~$W$
+of rank~$r$ and the standard definite space of rank \m{n>r}, with a level at two families of split places and
+a Hecke character; it carries one test datum for the Weil representation, the tensor product of the Fock vector of a
+harmonic polynomial and a finite datum~$\Upsilon$, and a map from algebraic forms on the definite group to
+functions on the indefinite one, defined as a finite sum over classes. This unit proves the three facts about
+this datum that the rest of Theorem~C's proof uses. The finite datum is a sum of translates of an indicator
+function and transforms under the level by an explicit character. The polynomial at the highest vector is a
+product, over the infinite places, of products of minors (staircases), which are joint harmonics for matched
+discrete series parameters. And the class sum is a fixed multiple of the complex conjugate of a theta descent.
+
+\statement{leancol}{\fontsize{9.6}{13.2}\selectfont\textbf{What this note is.} The artifact \ArtifactName{} is a
+body of Lean code: the compact edition of a formal proof, due to L.~Alpöge with the AI system Claude, whose final
+theorems are the Riemann hypothesis and its generalisation to Dirichlet \emph{L}-functions. That headline is a
+claim. The authors report that every file compiles and that Lean's kernel accepted the proofs; an independent
+build is recorded in the handout's record of checks when it reports. No mathematician has read the argument
+through, and nothing here says that the Riemann hypothesis is proved. This note treats one unit of the artifact:
+\UnitInNote{} of its \UnitMembers{} declarations, all that have a name (the remaining one is the remark that a
+finite product of finite groups is finite). The proofs are given in full, relative to two kinds of inputs, which
+are stated and not proved: the definition of an auxiliary pair and of its objects, which belongs to the unit on
+the rows (Setting~\ref{s:aux}); and results of the background library on the Weil representation, on joint
+harmonics and on algebraic forms (Setting~\ref{s:weil} and the facts (Q1) to (Q11)). Every statement was compared
+with its Lean text, argument by argument. The Lean text read is \PinText; Appendix~A is the concordance of
+\ConcDecls{} declarations. This is the second of three notes on the theta correspondence behind Theorem~C; it
+uses the Fock space of the note \emph{Decay of Heisenberg matrix coefficients of homogeneous Fock vectors,
+uniform in the degree}.}
+
+\sect{The statements}{s:intro}
+The objects are defined in §\ref{s:setting}. In brief: for an auxiliary pair~$O$, $\WO{O}$ is its indefinite
+space, with signs $\sgO{O}$ on the index set~$[r]$, and $\std{E}{n}$ the definite one; $\FormO{O}$ is a space of
+algebraic modular forms on the definite unitary group, with values in a representation
+\m{\rhoW{\kap{O}}{\eO{O}}} on a space \m{\Vk{n}{\kap{O}}}; \m{\Th{O}{\Xi}} is the class-sum lift of such a form, a
+function on the adelic group \m{\Gad{\sgO{O}}} of~$\WO{O}$; \m{\JO{O}{\xi}=\pvO{O}{\Har{O}{\xi}}\otimes\Ups{O}} is the
+test datum, linear in \m{\xi\in\Vk{n}{\kap{O}}}; and $\Desc{\WO{O}}{\std{E}{n}}{\chO{O}}{\chpO{O}}$ is the theta
+descent from the definite to the indefinite group.
+
+\statement{arith}{\phantomsection\label{t:1}\textbf{Theorem 1} (the class-sum lift is a conjugate
+descent).\enspace \emph{In Setting~\ref{s:weil}, let $O$ be an auxiliary pair as in Setting~\ref{s:aux} and let
+\m{\Xi\in\FormO{O}}. Then, as functions on \m{\Gad{\sgO{O}}},
+\[
+\Th{O}{\Xi}\;=\;\dim\Vk{n}{\kap{O}}\cdot\bigl[\Kz{n}:\KO{O}\bigr]\cdot
+\conj{\Desc{\WO{O}}{\std{E}{n}}{\chO{O}}{\chpO{O}}\Bigl(\JO{O}{\vplus{\kap{O}}{\paramV{O}{\,\cdot\,}{\,\cdot\,}}},\ \conj{\algF{\paramV{O}{\,\cdot\,}{\,\cdot\,}}{\one{n}}{\Xi}}\Bigr)} ,
+\]
+where \m{\paramV{O}{\,\cdot\,}{\,\cdot\,}} is the function \m{(\tau,i)\mapsto\paramV{O}{\tau}{i}}, \m{\vplus{\kap{O}}{\paramV{O}{\,\cdot\,}{\,\cdot\,}}} is the
+highest vector for it, \m{\algF{\paramV{O}{\,\cdot\,}{\,\cdot\,}}{\one{n}}{\Xi}} is the scalar function
+\m{h\mapsto\gram{\kap{O}}{\vplus{\kap{O}}{\paramV{O}{\,\cdot\,}{\,\cdot\,}}}{\rhoW{\kap{O}}{\eO{O}}(h_{\infty}^{-1})\,\Xi(h_{\mathrm{f}})}} on the
+adelic group of~$\std{E}{n}$, and the bars are complex conjugation of functions.}}
+\leanline{\lean{thetaeqsmulstarliftswap}}
+
+\statement{arith}{\phantomsection\label{t:2}\textbf{Theorem 2} (staircases are joint harmonics).\enspace
+\emph{Let $O$ be an auxiliary pair as in Setting~\ref{s:aux} and let $l$ be a family of integers $l(\tau,c)$,
+indexed by the infinite places~$\tau$ of~$E$ and \m{c\in[r]}, such that \m{\FitsParams{O}{l}}
+\textup{(Definition~\ref{d:fits})}. Then there is a family \m{\Phi=(\Phi_{\tau})} of complex polynomials in the
+variables \m{X_{ic}}, \m{i\in[n]}, \m{c\in[r]}, one for each infinite place~$\tau$, with these three properties.}
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=1pt,topsep=2pt]
+\item \emph{For every~$\tau$, $\Phi_{\tau}$ is a joint harmonic \textup{(Definition~\ref{d:jh})} for the signs
+\m{(\one{n},\sgO{O})}, the weights \m{\bigl(\rmi{O},\,-(\lfloor n/2\rfloor+\wtO{O}{\tau})\bigr)} and the parameters
+\m{\bigl(\paramV{O}{\tau}{\,\cdot\,},\,-l(\tau,\,\cdot\,)\bigr)}.}
+\item \emph{\m{\Har{O}{\vplus{\kap{O}}{\paramV{O}{\,\cdot\,}{\,\cdot\,}}}=\prod_{\tau}\Phi_{\tau}\bigl((X_{\tau,i,c})_{i,c}\bigr)}: the
+polynomial of the highest vector is the product of the $\Phi_{\tau}$, each written in the variables of its place.}
+\item \emph{For every~$\tau$ and every \m{c\in[r]}, the lowest $K$-type of the parameter \m{-l(\tau,\,\cdot\,)} for
+the signs~$\sgO{O}$ is a staircase weight:}
+\[
+\lkt{\sgO{O}}{-l(\tau,\,\cdot\,)}(c)=\stw{n}{\sgO{O}}{\operatorname{ord}_{O}}{\kappa^{\pm}_{O}(\tau)}{-(\lfloor n/2\rfloor+\wtO{O}{\tau})}{c},
+\]
+\emph{where \m{\kappa^{\pm}_{O}(\tau)} is the function with \m{(1,i)\mapsto\kp{O}{\tau}{i}} and
+\m{(-1,i)\mapsto\km{O}{\tau}{i}}.}
+\end{enumerate}}
+\leanline{\lean{existsisJointHarmonic}}
+
+Theorem~1 turns a statement about a finite sum over classes of a definite group into a statement about an
+integral of a theta kernel, to which the tools of the theta correspondence apply: the vanishing results of the
+third note of this sequence, and the adjunction between \m{\operatorname{Th}_{O}} and the theta lift from
+\m{\WO{O}} (§\ref{s:use}). Theorem~2 supplies the archimedean input of that correspondence
+(Corollary~\ref{c:edge}): with the datum \m{\JO{O}{\vplus{\kap{O}}{\paramV{O}{\,\cdot\,}{\,\cdot\,}}}}, theta lifts carry forms of the
+discrete series type of~$l$ on~$\WO{O}$ to forms of the type of \m{\paramV{O}{\,\cdot\,}{\,\cdot\,}} on the definite group, and back.
+The two propositions of §\ref{s:finite} describe the finite part~$\Ups{O}$ of the datum.
+
+\sect{The setting}{s:setting}
+\begin{conventions}\phantomsection\label{c:conventions}
+Throughout, $E$ is a CM field with a CM type: a number field that is a totally imaginary quadratic extension of a
+totally real field, together with the choice, for every infinite place~$\tau$ of~$E$, of a complex embedding that
+induces~$\tau$. Complex conjugation of~$E$ and of its completions and adele rings is written \m{z\mapsto\conj{z}};
+for a matrix~$X$, \m{X^{*}} is the conjugate transpose and \m{X^{\mathsf{T}}} the transpose. Finite places are
+written~$w$; \m{\conj{w}} is the conjugate place, $E_{w}$ the completion, \m{\oo_{w}} its ring of integers and
+\m{\FF_{w}} its residue field. The finite adeles of~$E$ are~\m{\AAf}, and \m{\ohat=\prod_{w}\oo_{w}}. The index sets
+$[r]$, $[n]$ and~$[r']$ are finite sets with $r$, $n$ and~$r'$ elements; an \m{n\times r} matrix has its rows
+indexed by~$[n]$ and its columns by~$[r]$. Where a statement says so, $E$ carries Weil data, described in
+Setting~\ref{s:weil}. Signs are elements of \m{\{1,-1\}}, and \m{\one{n}} is the family of signs on~$[n]$ that is
+constantly~$1$. The Fock space \m{\mathcal{F}(\varepsilon)} of a family of signs~$\varepsilon$, the vectors
+\m{v_{\varepsilon,p}} of polynomials~$p$ and the group $U(\varepsilon)$ are those of the note on Fock vectors.
+\end{conventions}
+
+\begin{setting}[adelic unitary groups, the Weil representation, theta descents; quoted]\label{s:weil}
+The following objects are those of the background library; they are recalled, not constructed.
+
+\emph{Weil data.} The field $E$ contains a primitive root of unity of order $5040$ and is equipped with: an
+element \m{\jmath\in E} with \m{\conj{\jmath}=-\jmath} whose image under the chosen embedding at every infinite
+place has positive imaginary part; a finite idele that normalises the self-duality of~$\ohat$; and a
+\emph{splitting character}~$\upsilon$, a unitary Hecke character of~$E$ with
+\m{\upsilon(\conj{z})=\upsilon(z)^{-1}}, equal to \m{\prod_{\tau}z_{\tau}/|z_{\tau}|} on the ideles whose finite part
+is a unit of~$\ohat$. Its restriction to the ideles of norm one is written~$\upsilon_{1}$.
+
+\emph{Groups.} For a family of signs~$\varepsilon$ on~$[r]$, \m{\Ginf{\varepsilon}} is the product of one copy
+of~$U(\varepsilon)$ for each infinite place of~$E$; \m{\Gfin{r}} is the group of matrices
+\m{u\in\mathrm{GL}_{r}(\AAf)} with \m{u^{*}u=1}; and \m{\Gad{\varepsilon}=\Ginf{\varepsilon}\times\Gfin{r}}, with
+elements \m{u=(u_{\infty},u_{\mathrm{f}})}. The subgroup \m{\Kz{r}=\Gfin{r}\cap\mathrm{GL}_{r}(\ohat)} is open and
+compact; a \emph{level} is an open subgroup of it. For a finite place \m{w\ne\conj{w}}, reduction modulo~$w$ is a
+homomorphism \m{\red{w}\colon\Kz{r}\to\mathrm{GL}_{r}(\FF_{w})}. A \emph{hermitian space with a point}, of
+signs~$\varepsilon$, is a pair of a matrix~$J$ over~$E$ and an element~$\phi$ of \m{\mathrm{GL}_{r}} of the adeles
+with \m{\phi^{*}J\phi} equal to \m{\operatorname{diag}(\varepsilon)} at the infinite places and to~$1$ at the finite ones;
+its rational points, the \m{\gamma\in\mathrm{GL}_{r}(E)} with \m{\gamma^{*}J\gamma=J}, map to \m{\Gad{\varepsilon}} by
+\m{\gamma\mapsto\phi^{-1}\gamma\phi}. The \emph{standard definite space} \m{\std{E}{n}} has \m{J=1} and \m{\phi=1}, and
+signs~\m{\one{n}}; its rational points are the unitary matrices over~$E$, and \m{\gamma\mapsto\gamma_{\mathrm{f}}}
+denotes their embedding in~\m{\Gfin{n}}. An \emph{automorphic character} is a continuous unitary character of the
+adeles of norm one of~$E$ that is trivial on the elements of~$E$ of norm one. It has \emph{weight}
+\m{(e_{\tau})_{\tau}}, a family of integers, and \emph{tame part} \m{(\psi_{w})_{w}}, a family of multiplicative
+characters of the residue fields~$\FF_{w}$, extended by~$0$ to~$\FF_{w}$ and almost all trivial, if its value at
+every~$z$ with integral finite part is \m{\prod_{\tau}z_{\tau}^{e_{\tau}}\prod_{w}\psi_{w}(z\bmod w)}. The
+character \m{\upsilon_{1}} has weight~$1$ at every place and trivial tame part.
+
+\emph{The Weil representation.} For hermitian spaces with points $W$, of signs~$\varepsilon$ on~$[r]$, and $V$,
+of signs~$\varepsilon'$ on~$[n]$, and automorphic characters $\chi$,~$\chi'$, the library provides a Banach
+space \m{\mathcal{S}(W,V)} of \emph{data} on \m{\operatorname{Hom}(W,V)}; a continuous representation
+\m{\omega^{W,V}_{\chi,\chi'}} of \m{\Gad{\varepsilon}\times\Gad{\varepsilon'}} on it, in which $(u,h)$ acts by
+\m{\chi(\det h)\,\chi'(\det u)^{-1}} times the Weil representation of the unitary group of
+\m{\operatorname{Hom}(W,V)} at the map \m{X\mapsto hXu^{-1}}; and a bounded linear functional
+\m{\theta_{W,V}} on \m{\mathcal{S}(W,V)}, the \emph{theta functional}, with
+\begin{equation}\label{e:rat}
+\theta_{W,V}\bigl(\omega^{W,V}_{\chi,\chi'}(\gamma u,\gamma'h)\varphi\bigr)=\theta_{W,V}\bigl(\omega^{W,V}_{\chi,\chi'}(u,h)\varphi\bigr)
+\end{equation}
+for rational points $\gamma$,~$\gamma'$ of $W$ and~$V$. The \emph{theta descent} of a function~$Y$ on
+\m{\Gad{\varepsilon'}} with datum \m{\varphi\in\mathcal{S}(W,V)} is the function on \m{\Gad{\varepsilon}}
+\[
+\Desc{W}{V}{\chi}{\chi'}(\varphi,Y)(u)=\int_{[V]}\theta_{W,V}\bigl(\omega^{W,V}_{\chi,\chi'}(u,h)\varphi\bigr)\,Y(h)\,\dd h ,
+\]
+the integral over the quotient of \m{\Gad{\varepsilon'}} by the rational points of~$V$, with the invariant measure
+of the library.
+
+\emph{Data.} Let \m{\FockP{\varepsilon}{\varepsilon'}} be the Fock space of the signs
+\m{\varepsilon'_{i}\varepsilon_{c}} on the index set of all triples \m{(\tau,i,c)} of an infinite place, an element
+of~$[n]$ and an element of~$[r]$, and \m{\pvP{\varepsilon}{\varepsilon'}{p}} the vector in it of a polynomial~$p$
+in the variables \m{X_{\tau,i,c}}. For \m{v\in\FockP{\varepsilon}{\varepsilon'}} and \m{f\in\mathcal{S}(W,V)} there is
+a datum \m{v\otimes f\in\mathcal{S}(W,V)}, bilinear and bounded in \m{(v,f)}. A \emph{modulus} is a non-zero ideal~$\mathfrak{m}$ of the integers of~$E$ that is
+divisible by no pair \m{w,\conj{w}}. For a complex function~$\Psi$ on the \m{n\times r} matrices over the integers
+modulo~$\mathfrak{m}$ there is a \emph{finite datum} \m{[\Psi]^{W,V}_{\mathfrak{m}}}: at the places
+dividing~$\mathfrak{m}$ it is~$\Psi$ of the reduction of an integral matrix, and elsewhere it is the vacuum, the
+characteristic function of the integral matrices. With the Gaussian \m{\varphi_{0}\in\FockP{\varepsilon}{\varepsilon'}}, the datum
+\m{\modD{W}{V}{\mathfrak{m}}{\Psi}{\varphi_{0}}} is \m{[\Psi]^{W,V}_{\mathfrak{m}}} itself. Finally
+\m{\RPW{\gamma}{\gamma'}}, for families of integers $\gamma$,~$\gamma'$ indexed by the infinite places, is the
+representation of \m{\Ginf{\varepsilon}\times\Ginf{\varepsilon'}} on \m{\FockP{\varepsilon}{\varepsilon'}} in which $(u,h)$ acts by
+\m{\prod_{\tau}\det(h_{\tau})^{\gamma_{\tau}}\det(u_{\tau})^{-\gamma'_{\tau}}} times the oscillator representation at
+\m{X\mapsto hXu^{-1}}.
+\end{setting}
+\leanline{in the background library: \lnm{CMType}, \lnm{WeilData}, \lnm{WeilData.upsilonU1}, \lnm{GInf},
+\lnm{Gf}, \lnm{G}, \lnm{Kf}, \lnm{Kf.reduceAt}, \lnm{Space}, \lnm{stdSpace}, \lnm{stdEmbFin}, \lnm{AutChar},
+\lnm{AutChar.HasWeight}, \lnm{pairWeil}, \lnm{pairThetaKer}, \lnm{Space.lift}, \lnm{Space.integrated},
+\lnm{Modulus}, \lnm{vacuumDatum}, \lnm{modDatum}, \lnm{realPairWeil}}
+
+\begin{definition}[level systems; the twist group and the twist lift]\label{d:twist}
+A \kw{level system} $\Sigma$ over~$E$ consists of two finite families of finite places of~$E$, the \emph{chosen
+places}~$M_{\Sigma}$ and the \emph{twist places}~$Q_{\Sigma}$, such that all these places are distinct and none is
+the conjugate of another or of itself. For a level system~$\Sigma$ and an index set~$[n]$ put
+\[
+\TwistGL{\Sigma}{n}=\prod_{w\in Q_{\Sigma}}\mathrm{GL}_{n}(\FF_{w}),\qquad
+\ChGL{\Sigma}{n}=\prod_{w\in M_{\Sigma}}\mathrm{GL}_{n}(\FF_{w}),
+\]
+finite groups. For \m{A=(A_{w})\in\TwistGL{\Sigma}{n}}, the \kw{twist lift} \m{\twistLift{\Sigma}{A}} is the element
+of~\m{\Kz{n}} that the library chooses with \m{\red{w}=1} for \m{w\in M_{\Sigma}} and \m{\red{w}=A_{w}^{-1}} for
+\m{w\in Q_{\Sigma}}; its components at the places outside \m{M_{\Sigma}\cup Q_{\Sigma}} and their conjugates
+are~$1$.
+\end{definition}
+\leanline{\lean{TwistGL}\sep \lean{twistLift}\sep in the background library: \lnm{LevelPlaces},
+\lnm{LevelPlaces.ChosenGL} (in the unit on the rows), \lnm{liftResidue}}
+
+\begin{setting}[auxiliary pairs; Input from the unit on the rows]\label{s:aux}
+Let $E$ carry Weil data (Setting~\ref{s:weil}). An \emph{auxiliary pair}~$O$ over~$E$, for the index sets $[r]$
+and~$[n]$, consists of: a level system~$\SigO{O}$, with chosen places~$\MO{O}$ and twist places~$\QO{O}$; a
+family of signs~$\sgO{O}$ on~$[r]$ and a hermitian space with a point \m{\WO{O}} of these signs; an injective map
+\m{\incO{O}\colon[r]\to[n]}; a function \m{c\mapsto\ordO{O}{c}} from $[r]$ to the natural numbers; natural
+numbers \m{\kp{O}{\tau}{i}} and \m{\km{O}{\tau}{i}} for every infinite place~$\tau$ and every natural number~$i$; and
+an automorphic character~$\muO{O}$ of weight \m{(\wtO{O}{\tau})_{\tau}} and tame part \m{(\psiO{O}{w})_{w}}, with
+\m{\psiO{O}{w}=1} for \m{w\notin\MO{O}\cup\QO{O}}. It is required that \m{r<n}. The following objects are attached
+to~$O$.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.2em,itemsep=2pt,topsep=2pt]
+\item \m{\rmi{O}} and \m{\rpl{O}} are the numbers of \m{c\in[r]} with \m{\sgO{O}(c)=-1} and with
+\m{\sgO{O}(c)=1}. Over any ring, \m{\IncM{O}} is the \m{n\times r} matrix with entry~$1$ at the places
+\m{(\incO{O}(c),c)} and $0$ elsewhere; the \emph{$\incO{O}$-rows} of an \m{n\times r} matrix form the \m{r\times r}
+matrix of its rows with indices in the image of~$\incO{O}$, and the \emph{$\incO{O}$-block} of an \m{n\times n}
+matrix is the \m{r\times r} matrix of its entries with both indices in that image.
+\item \emph{Weights.} For an infinite place~$\tau$ and a natural number~$i$,
+\[
+\kap{O}(\tau,i)=\kp{O}{\tau}{i}+\km{O}{\tau}{n-i}\quad(\text{with }n-i=0\text{ for }i>n),\qquad
+\eO{O}(\tau)=-\sum_{1\le i<n}\km{O}{\tau}{i}.
+\]
+For a family~$\kappa$ of natural numbers \m{\kappa(\tau,i)}, the space \m{\Vk{n}{\kappa}} is the space of coordinate vectors, in a basis fixed by the library, of the Weyl module of
+\m{\prod_{\tau}\mathrm{GL}_{n}(\CC)} given at each place~$\tau$ by the diagram with \m{\kappa(\tau,i)} columns of
+length~$i$, \m{0<i<n}; the matrix of a family \m{y=(y_{\tau})} of invertible matrices on it is written
+\m{\Sch{\kappa}(y)}. The space has a hermitian
+form \m{\gram{\kappa}{\,\cdot\,}{\,\cdot\,}} with an integral Gram matrix, and a complex conjugation
+\m{\xi\mapsto\conj{\xi}} of coordinates. The representation \m{\rhoW{\kap{O}}{\eO{O}}} of \m{\Ginf{\one{n}}} on
+\m{\Vk{n}{\kap{O}}} lets \m{h=(h_{\tau})} act by
+\m{\prod_{\tau}\det(\conj{h_{\tau}})^{\eO{O}(\tau)}\,\Sch{\kap{O}}(\conj{h})}, with \m{\conj{h}} the family of the complex
+conjugate matrices; rational points of \m{\std{E}{n}} act through their images at the infinite places.
+\item \emph{Level.} \m{\LO{O}} is the group of families \m{(j_{w})} in
+\m{\prod_{w\in\MO{O}\cup\QO{O}}\mathrm{GL}_{n}(\FF_{w})} such that \m{j_{w}\IncM{O}=\IncM{O}} for \m{w\in\MO{O}} and,
+for \m{w\in\QO{O}}, the entries of~$j_{w}$ in the rows of the image of~$\incO{O}$ and the columns outside it
+vanish. Its character~\m{\etaO{O}} is
+\[
+\etaO{O}(j)=\prod_{w\in\QO{O}}\psiO{O}{w}\bigl(\det(\text{the }\incO{O}\text{-block of }j_{w})\bigr)^{-1}.
+\]
+The level
+\m{\KO{O}} is the group of \m{g'\in\Kz{n}} whose reductions \m{(\red{w}g')_{w}} lie in~\m{\LO{O}}, and
+\m{\tetaO{O}(g')=\etaO{O}\bigl((\red{w}g')_{w}\bigr)} is its character.
+\item \emph{Forms.} \m{\FormO{O}} is the space of functions \m{\Xi\colon\Gfin{n}\to\Vk{n}{\kap{O}}} with
+\[
+\Xi(\gamma_{\mathrm{f}}\,h\,g')=\tetaO{O}(g')\,\rhoW{\kap{O}}{\eO{O}}(\gamma)\,\Xi(h)
+\]
+for all rational points~$\gamma$ of~\m{\std{E}{n}}, all \m{h\in\Gfin{n}} and all \m{g'\in\KO{O}}.
+\item \emph{Characters and the Weil representation.} \m{\chO{O}=\upsilon_{1}^{\rmi{O}}} and
+\m{\chpO{O}=\muO{O}\,\upsilon_{1}^{\lfloor n/2\rfloor}}. We write \m{\SO{O}}, \m{\omO{O}} and \m{\thO{O}} for
+\m{\mathcal{S}(\WO{O},\std{E}{n})}, \m{\omega^{\WO{O},\std{E}{n}}_{\chO{O},\chpO{O}}} and
+\m{\theta_{\WO{O},\std{E}{n}}}, and \m{\FockO{O}} and \m{\pvO{O}{p}} for the Fock space
+\m{\FockP{\sgO{O}}{\one{n}}} and its vectors \m{\pvP{\sgO{O}}{\one{n}}{p}}.
+\item \emph{The finite datum.} For a family \m{X=(X_{w})} of \m{n\times r} matrices over the fields~$\FF_{w}$,
+\m{w\in\MO{O}\cup\QO{O}}, put
+\[
+\PsiO{O}{X}=\prod_{w\in\QO{O}}\psiO{O}{w}\bigl(\det(\text{the }\incO{O}\text{-rows of }X_{w})\bigr)\quad\text{if }X_{w}=\IncM{O}\text{ for all }w\in\MO{O},
+\]
+and \m{\PsiO{O}{X}=0} otherwise.
+With the moduli \m{\lmod{\SigO{O}}{1}=\prod_{w\in\MO{O}}w\prod_{w\in\QO{O}}w} and
+\m{\lmod{\SigO{O}}{2}=\prod_{w\in\MO{O}}w^{2}\prod_{w\in\QO{O}}w}, the finite datum of~$O$ is \m{\Ups{O}=[\Psi_{O}\circ\operatorname{red}]^{\WO{O},\std{E}{n}}_{\lmod{\SigO{O}}{2}}}, where
+\m{\operatorname{red}} sends a matrix modulo \m{\lmod{\SigO{O}}{2}} to the family of its reductions at the
+places of \m{\MO{O}\cup\QO{O}}.
+\item \emph{The archimedean datum.} Let \m{Y_{\tau,i,a}} be variables indexed by an infinite place, an element
+of~$[n]$ and a natural number~$a$. For signs~$s$ on~$[r]$, a function \m{o\colon[r]\to\{0,1,2,\dots\}} and a
+sign~$\sigma$, the \emph{letter substitution} \m{\Let{s}{o}{\sigma}} is the homomorphism of algebras from the
+polynomials in the \m{Y_{\tau,i,a}} to the polynomials in the \m{X_{\tau,i,c}} that sends \m{Y_{\tau,i,a}} to the sum of
+the \m{X_{\tau,i,c}} over the \m{c\in[r]} with \m{s(c)=\sigma} and \m{o(c)=a}. The library provides, for every~$\kappa$,
+a linear map \m{\Pol{\kappa}} from \m{\Vk{n}{\kappa}} to the polynomials in the \m{Y_{\tau,i,a}}, and an integral matrix
+\m{\mathrm{C}_{O}\colon\Vk{n}{\kap{O}}\to\Vk{n}{\kappa^{+}_{O}}\otimes\Vk{n}{\kappa^{-}_{O}}}, the \emph{mixed Cartan
+embedding} \textup{(Q5)}. The linear map \m{\xi\mapsto\Har{O}{\xi}}, from \m{\Vk{n}{\kap{O}}} to the polynomials in the
+\m{X_{\tau,i,c}}, is the composite of \m{\mathrm{C}_{O}} with the linear map that sends a tensor \m{\alpha\otimes\beta} to
+\m{\Let{\sgO{O}}{\operatorname{ord}_{O}}{1}(\Pol{\kappa^{+}_{O}}\alpha)\cdot\Let{\sgO{O}}{\operatorname{ord}_{O}}{-1}(\Pol{\kappa^{-}_{O}}\beta)}.
+The \emph{test datum} is \m{\JO{O}{\xi}=\pvO{O}{\Har{O}{\xi}}\otimes\Ups{O}\in\SO{O}}.
+\item \emph{The kernel and the class-sum lift.} For \m{u\in\Gad{\sgO{O}}} and \m{h\in\Gfin{n}}, \m{\cK{O}{u}{h}} is
+the linear form on \m{\Vk{n}{\kap{O}}} with
+\m{\cK{O}{u}{h}(\xi)=\conj{\thO{O}\bigl(\omO{O}(u,(1,h))\,\JO{O}{\conj{\xi}}\bigr)}}. For \m{\Xi\in\FormO{O}},
+\[
+\Th{O}{\Xi}(u)=\sum_{[h]}\frac{1}{\#\Gamma_{h}}\;\cK{O}{u}{h}\bigl(\Xi(h)\bigr),
+\]
+the sum over the double classes of \m{\Gfin{n}} modulo the rational points of \m{\std{E}{n}} on the left and
+\m{\KO{O}} on the right, with $\Gamma_{h}$ the finite group of rational points in \m{h\,\KO{O}\,h^{-1}}.
+\end{enumerate}
+\end{setting}
+\leanline{in the unit on the rows: \lnm{AuxPair} with \lnm{AuxPair.κ}, \lnm{AuxPair.detExp}, \lnm{auxLevel},
+\lnm{AuxPair.auxLevelChar}, \lnm{AuxPair.levelGroup}, \lnm{AuxPair.levelChar}, \lnm{AuxPair.FormV},
+\lnm{AuxPair.a}, \lnm{AuxPair.b}, \lnm{AuxPair.pairThetaKernel}, \lnm{AuxPair.resDetDatum},
+\lnm{AuxPair.auxDatum}, \lnm{AuxPair.harmonicPoly}, \lnm{AuxPair.fockDatum}, \lnm{AuxPair.conjKernel},
+\lnm{AuxPair.θ}\sep in the background library: \lnm{conjWeylRep}, \lnm{mixedCartan}, \lnm{letterPoly},
+\lnm{LevelPlaces.levelModulus}, \lnm{stdClassSum}}
+
+In the terminology of the theta correspondence: \m{(U(\WO{O}),U(\std{E}{n}))} is a dual pair of unitary groups of
+ranks \m{r<n} over the totally real subfield, split at the places of the level; \m{\chO{O}} and \m{\chpO{O}} are the
+two characters that split the metaplectic cover over the two groups; the datum is a pure tensor whose
+archimedean component is \m{\Har{O}{\xi}} times the Gaussian in the Fock model, whose components at the places of
+the level are given by~$\Psi_{O}$ and whose other components are unramified. The forms of \m{\FormO{O}} are
+algebraic modular forms on a definite unitary group in the sense of Gross.
+
+\begin{definition}[the level indicator]\label{d:indicator}
+Let $O$ be an auxiliary pair (Setting~\ref{s:aux}). For an \m{n\times r} matrix~$X$ over the integers of~$E$
+modulo \m{\lmod{\SigO{O}}{1}}, with reductions $X_{w}$ at the places \m{w\in\MO{O}\cup\QO{O}}, put
+\m{\levelIndicator{O}{X}=1} if \m{X_{w}=\IncM{O}} for every \m{w\in\MO{O}} and the $\incO{O}$-rows of~$X_{w}$ form the
+identity matrix for every \m{w\in\QO{O}}; and \m{\levelIndicator{O}{X}=0} otherwise.
+\end{definition}
+\leanline{\lean{levelIndicator}}
+
+\begin{definition}[the parameter on the definite side]\label{d:paramV}
+Let $O$ be an auxiliary pair (Setting~\ref{s:aux}), $\tau$ an infinite place of~$E$ and \m{i\in[n]}. Fix once
+and for all a numbering of~$[n]$ by \m{0,\dots,n-1}, and let $\pi(i)$ be the number of~$i$. Then
+\[
+\paramV{O}{\tau}{i}=2\Bigl(\eO{O}(\tau)+\sum_{\pi(i)<h<n}\kap{O}(\tau,h)\Bigr)+n-1-2\pi(i).
+\]
+\end{definition}
+\leanline{\lean{paramV}\sep in the background library: \lnm{hcParameter}}
+
+The numbers \m{\paramV{O}{\tau}{i}}, \m{i\in[n]}, are the entries of twice the sum of the highest weight of
+\m{\rhoW{\kap{O}}{\eO{O}}} at~$\tau$ and of the half sum of the positive roots of~$\mathrm{GL}_{n}$: twice the
+Harish-Chandra parameter of this representation of the compact unitary group of rank~$n$. All parameters in
+this note are doubled in this way, which keeps them integral.
+
+\begin{definition}[matched parameters, joint harmonics, staircase weights; quoted]\label{d:jh}
+Let $t$ be a family of signs on~$[n]$, $s$ a family of signs on~$[r]$, and $\gamma$,~$\gamma'$ integers. Consider
+the polynomials in the variables \m{X_{ic}}, \m{i\in[n]}, \m{c\in[r]}; the variable \m{X_{ic}} has the sign
+\m{t_{i}s_{c}}. For a variable~$X$ of sign~$1$ let $A_{X}$ be the multiplication by~$X$ and \m{B_{X}=\partial/\partial X};
+for a variable of sign~$-1$ let \m{A_{X}=-\partial/\partial X} and let $B_{X}$ be the multiplication by~$X$. The
+\emph{row} and \emph{column operators} are, with Kronecker's symbol \m{\delta_{ii'}},
+\begin{align*}
+R_{ii'}&=\sum_{c\in[r]}A_{X_{ic}}B_{X_{i'c}}+\gamma\,\delta_{ii'}&&(i,i'\in[n]),\\
+C_{cc'}&=-\sum_{i\in[n]}B_{X_{ic}}A_{X_{ic'}}+(\gamma'+n)\,\delta_{cc'}&&(c,c'\in[r]).
+\end{align*}
+They give commuting actions of the Lie algebras of \m{\mathrm{GL}_{n}} and \m{\mathrm{GL}_{r}}: the derivative of the
+oscillator representation of the pair, twisted by powers of the determinants.
+
+\emph{Parameters.} A \emph{parameter} for the signs~$t$ is a family of integers \m{l_{1}(i)}, \m{i\in[n]}; it stands
+for twice a Harish-Chandra parameter of the group~$U(t)$. Its \emph{lowest $K$-type} is the family
+\begin{align*}
+\lkt{t}{l_{1}}(i)={}&\tfrac12\bigl(l_{1}(i)+\#\{j:l_{1}(j)<l_{1}(i)\}-\#\{j:l_{1}(j)>l_{1}(i)\}\bigr)\\
+&-\#\{j:t_{j}=t_{i},\,l_{1}(j)<l_{1}(i)\}+\#\{j:t_{j}=t_{i},\,l_{1}(j)>l_{1}(i)\},
+\end{align*}
+the Harish-Chandra parameter plus the half sum of the positive roots minus the sum of the compact positive
+roots. The parameter is \emph{spread}, relative to a second index set~$[r]$, if it is injective, all
+\m{l_{1}(i)+n-1} are even, and \m{|l_{1}(i)-l_{1}(j)|\ge1000\,(n+r)^{3}} whenever \m{t_{i}\ne t_{j}}. The same words
+apply to a parameter~$l_{2}$ for the signs~$s$ on~$[r]$, with $n$ and~$r$ exchanged.
+
+\emph{Matching.} Put \m{\xi(i)=l_{1}(i)-2\gamma+r} for \m{i\in[n]} and \m{\xi'(c)=l_{2}(c)-2\gamma'-n} for \m{c\in[r]}.
+A pair \m{(i,c)} is \emph{matched} if \m{\xi(i)=-\xi'(c)} and \m{|n-r|<t_{i}s_{c}\,\xi(i)}. The parameters
+\m{(l_{1},l_{2})} \emph{match} for the signs \m{(t,s)} and the weights \m{(\gamma,\gamma')} if both are spread, every
+\m{i\in[n]} lies in a matched pair or has \m{|\xi(i)|<n-r}, and every \m{c\in[r]} lies in a matched pair or has
+\m{|\xi'(c)|<r-n}.
+
+\emph{Joint harmonics.} A polynomial~$\Phi$ is \emph{jointly highest} of weights \m{(\nu,\nu')} for the parameters
+\m{(l_{1},l_{2})} if \m{\Phi\ne0} and
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.2em,itemsep=1pt,topsep=2pt]
+\item \m{R_{ii}\Phi=\nu(i)\Phi} for all~$i$, and \m{R_{ii'}\Phi=0} whenever \m{t_{i}=t_{i'}} and
+\m{l_{1}(i')<l_{1}(i)};
+\item \m{C_{cc}\Phi=\nu'(c)\Phi} for all~$c$, and \m{C_{cc'}\Phi=0} whenever \m{s_{c}=s_{c'}} and
+\m{l_{2}(c')<l_{2}(c)};
+\item \m{\partial^{2}\Phi/\partial X_{ic}\partial X_{i'c}=0} for all~$c$ whenever \m{t_{i}\ne t_{i'}}, and
+\m{\partial^{2}\Phi/\partial X_{ic}\partial X_{ic'}=0} for all~$i$ whenever \m{s_{c}\ne s_{c'}}.
+\end{enumerate}
+It is a \emph{joint harmonic} for the signs \m{(t,s)}, the weights \m{(\gamma,\gamma')} and the parameters
+\m{(l_{1},l_{2})} if these parameters match and $\Phi$ is jointly highest of weights
+\m{(\lkt{t}{l_{1}},\lkt{s}{l_{2}})}.
+
+\emph{Staircase weights.} For signs~$s$ on~$[r]$, a function \m{o\colon[r]\to\{0,1,2,\dots\}}, natural numbers
+\m{k(\sigma,i)} for signs~$\sigma$ and natural numbers~$i$, an integer~$\gamma'$ and \m{c\in[r]},
+\[
+\stw{n}{s}{o}{k}{\gamma'}{c}=\gamma'+n\cdot[s_{c}=-1]-s_{c}\sum_{o(c)<i<n}k(s_{c},i),
+\]
+where \m{[s_{c}=-1]} is $1$ if \m{s_{c}=-1} and $0$ otherwise.
+\end{definition}
+\leanline{in the background library: \lnm{FockDualPair.std}, \lnm{oscRows}, \lnm{HCParam.lowestKType},
+\lnm{HCParam.HasGap}, \lnm{IsMatch}, \lnm{FockDualPair.IsJointHighest}, \lnm{IsJointHarmonic},
+\lnm{staircaseWeight}}
+
+Joint harmonics are the polynomials of lowest degree in which a $K$-type of one group of the pair occurs
+together with a $K$-type of the other, in Howe's description of the correspondence in the Fock model; the
+library uses them, for parameters that are far apart, to match discrete series representations of the two groups
+by their lowest $K$-types. In this note $t$ is always~\m{\one{n}}, so that conditions on pairs with \m{t_{i}\ne t_{i'}}
+are empty.
+
+\begin{definition}[parameters that fit an auxiliary pair]\label{d:fits}
+Let $O$ be an auxiliary pair (Setting~\ref{s:aux}) and $l$ a family of integers \m{l(\tau,c)}, indexed by the
+infinite places~$\tau$ of~$E$ and \m{c\in[r]}. We say that \m{\FitsParams{O}{l}} if the following four conditions
+hold.
+\begin{enumerate}[label=\textup{(F\arabic*)},leftmargin=2.6em,itemsep=1pt,topsep=2pt]
+\item For every~$\tau$, the parameters \m{\bigl(\paramV{O}{\tau}{\,\cdot\,},\,-l(\tau,\,\cdot\,)\bigr)} match for the signs
+\m{(\one{n},\sgO{O})} and the weights \m{\bigl(\rmi{O},\,-(\lfloor n/2\rfloor+\wtO{O}{\tau})\bigr)}
+(Definition~\ref{d:jh}).
+\item For every~$\tau$ and every \m{c\in[r]}, \m{\ordO{O}{c}} is the number of \m{c'\in[r]} with
+\m{\sgO{O}(c')=\sgO{O}(c)} and \m{\sgO{O}(c)\,l(\tau,c)<\sgO{O}(c)\,l(\tau,c')}.
+\item \m{\kp{O}{\tau}{i}=0} for every~$\tau$ and every \m{i>\rpl{O}}.
+\item \m{\km{O}{\tau}{i}=0} for every~$\tau$ and every \m{i>\rmi{O}}.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{FitsParams}\sep in the background library: \lnm{ParamsCorrespond}}
+
+Condition (F2) says that \m{\operatorname{ord}_{O}} numbers the indices of each sign: those of sign~$1$ by
+decreasing \m{l(\tau,c)}, those of sign~$-1$ by increasing \m{l(\tau,c)}, and that this numbering is the same at all
+infinite places. Conditions (F3) and (F4) bound the lengths of the columns of the diagrams \m{\kappa^{+}_{O}}
+and~\m{\kappa^{-}_{O}} by the numbers of positive and negative signs of~$\WO{O}$.
+
+\begin{definition}[forms of a type; edges; quoted]\label{d:edge}
+Let $s$ and~$t$ be families of signs on $[r]$ and~$[n]$. For a function~$\mathbf{e}$ on \m{\Ginf{s}}, a \emph{form
+of type~$\mathbf{e}$} on a hermitian space with a point~$W$ of signs~$s$ is a bounded continuous function~$F$ on
+\m{\Gad{s}}, left invariant under the rational points of~$W$ and right invariant under an open subgroup of
+\m{\Gfin{r}}, with \m{\int_{\Ginf{s}}\mathbf{e}(y)F(uy)\,\dd y=F(u)} for all~$u$ whenever $\mathbf{e}$ is integrable.
+For a family~$l$ of parameters \m{l(\tau,\,\cdot\,)} for the signs~$s$, \m{\tk{l}{s}} is the product over the
+infinite places of the kernels that the library attaches to the discrete series parameters \m{l(\tau,\,\cdot\,)}:
+the formal degree times the complex conjugate of the normalised matrix coefficient. Let $\Omega$ be a map from
+\m{\Ginf{s}\times\Ginf{t}} to the bounded operators of \m{\FockP{s}{t}}, $\mathbf{e}$ and~$\mathbf{e}'$ functions on
+\m{\Ginf{s}} and \m{\Ginf{t}}, and \m{v\in\FockP{s}{t}}. Then $v$ is a \emph{half edge} from $\mathbf{e}$
+to~$\mathbf{e}'$ for~$\Omega$ if
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=1pt,topsep=2pt]
+\item $\mathbf{e}$ is a cusp kernel of order~$0$ in the sense of the library: an idempotent for convolution,
+bounded, integrable against the first power of the norm, and fixed by convolution with some continuous function
+of compact support;
+\item \m{\int_{\Ginf{s}}\langle v,\Omega(y,1)v\rangle\,\conj{\mathbf{e}(y)}\,\mathbf{e}(1)^{-1}\,\dd y\ne0}, with the inner
+product of the Fock space;
+\item for every polynomial vector~$v'$ of \m{\FockP{s}{t}} there is a continuous function~$\alpha$ of compact
+support on \m{\Ginf{t}} such that, for all hermitian spaces with points $W$,~$V$ of signs $s$,~$t$, all
+characters, all data~$f$ and all forms~$Y$ of type~$\mathbf{e}$ on~$W$, if the real points act on the data
+\m{v''\otimes f} through~$\Omega$ on~$v''$, then the theta lift~$F$ of~$Y$ to~$V$ with datum \m{v\otimes f} is a form of
+type~$\mathbf{e}'$ on~$V$ as soon as it is right invariant under some open subgroup, and the theta lift of~$Y$ with
+datum \m{v'\otimes f} is \m{h\mapsto\int_{\Ginf{t}}\alpha(y)F(hy)\,\dd y}.
+\end{enumerate}
+It is an \emph{edge} from $\mathbf{e}$ to~$\mathbf{e}'$ for~$\Omega$ if in addition it is a half edge from
+\m{\conj{\mathbf{e}'}} to \m{\conj{\mathbf{e}}} for $\Omega$ with its two arguments exchanged.
+\end{definition}
+\leanline{in the background library: \lnm{Space.IsForm}, \lnm{typeKernel}, \lnm{IsCuspKernel}, \lnm{IsHalfEdge},
+\lnm{IsEdge}}
+
+\statement{inksoft}{\textbf{Quoted from the background library.} These facts are taken for granted; references
+and their state are in §\ref{s:notes}, note~7. In all of them $W$, $V$, $\varepsilon$, $\varepsilon'$, $\chi$,
+$\chi'$ are as in Setting~\ref{s:weil}, and $\omega$ stands for \m{\omega^{W,V}_{\chi,\chi'}}.
+
+\vspace{3pt}\textbf{(Q1)} \emph{Integral elements move the finite datum.} For \m{g\in\Kz{r}}, \m{g'\in\Kz{n}}, a
+modulus~$\mathfrak{m}$, a function~$\Psi$ on the \m{n\times r} matrices modulo~$\mathfrak{m}$ and
+\m{v\in\FockP{\varepsilon}{\varepsilon'}}:
+\m{\omega\bigl((1,g),(1,g')\bigr)\bigl(\modD{W}{V}{\mathfrak{m}}{\Psi}{v}\bigr)=\chi(\det g')\,\chi'(\det g)^{-1}\cdot
+\modD{W}{V}{\mathfrak{m}}{\Psi'}{v}}, where \m{\Psi'(X)=\Psi(\conj{g}'^{-1}X\,\conj{g})} and \m{\conj{g}}, \m{\conj{g}'} are the
+reductions of $g$,~$g'$ modulo~$\mathfrak{m}$. A function of the reductions at the places dividing~$\mathfrak{m}$
+gives the same finite datum for $\mathfrak{m}$ and for every modulus with the same prime divisors.
+
+\vspace{3pt}\textbf{(Q2)} \emph{Characters at integral elements.} If an automorphic character~$\mu$ has a weight
+and tame part \m{(\psi_{w})}, trivial outside a finite set~$S$ of places as in Definition~\ref{d:twist}, then
+\m{\mu(\det g)=\prod_{w\in S}\psi_{w}(\det\red{w}g)} for every \m{g\in\Kz{r}}. If $\mu$ has weight~$e$ and tame
+part~$\psi$, then \m{\mu\,\upsilon_{1}^{a}} has weight \m{(e_{\tau}+a)_{\tau}} and tame part~$\psi$, for every natural
+number~$a$.
+
+\vspace{3pt}\textbf{(Q3)} \emph{Real and finite parts act separately.} If $\chi$ has weight~$\gamma$ and
+$\chi'$ has weight~$\gamma'$, then for \m{u=(u_{\infty},u_{\mathrm{f}})}, \m{h=(h_{\infty},h_{\mathrm{f}})},
+\m{v\in\FockP{\varepsilon}{\varepsilon'}} and a datum~$f$:
+\m{\omega(u,h)(v\otimes f)=\bigl(\RPW{\gamma}{\gamma'}(u_{\infty},h_{\infty})v\bigr)\otimes\omega\bigl((1,u_{\mathrm{f}}),(1,h_{\mathrm{f}})\bigr)f}.
+
+\vspace{3pt}\textbf{(Q4)} \emph{The definite group on polynomial vectors.} Let \m{\varepsilon'=\one{n}}, let
+$\gamma$ be the constant family with value the number of negative signs of~$\varepsilon$, and $\gamma'$ any
+family of integers. For \m{y\in\Ginf{\one{n}}} and a polynomial~$p$ in the \m{X_{\tau,i,c}}:
+\m{\RPW{\gamma}{\gamma'}(1,y)\,\pvP{\varepsilon}{\one{n}}{p}=\pvP{\varepsilon}{\one{n}}{y\cdot p}}, where \m{p\mapsto y\cdot p}
+is the automorphism of the polynomial algebra that replaces the column \m{(X_{\tau,i,c})_{i}} by
+\m{y_{\tau}^{\mathsf{T}}(X_{\tau,i,c})_{i}} if \m{\varepsilon_{c}=1} and by \m{y_{\tau}^{-1}(X_{\tau,i,c})_{i}} if
+\m{\varepsilon_{c}=-1}. The map \m{p\mapsto\pvP{\varepsilon}{\one{n}}{p}} is injective.
+
+}
+\leanline{in the background library: (Q1) \lnm{pairWeil\_modDatum\_Kf}, \lnm{liftFn\_eq\_residueDatum}\sep (Q2)
+\lnm{AutChar.HasWeight.apply\_det\_eq\_prod}, \lnm{AutChar.HasWeight.hasWeight\_rankTwist}\sep (Q3)
+\lnm{pairWeil\_integrated\_all}\sep (Q4) \lnm{realPairWeil\_polyVector}, \lnm{polyVector\_injective}}
+
+\statement{inksoft}{\textbf{Quoted from the background library, continued.}
+
+\vspace{3pt}\textbf{(Q5)} \emph{Weyl modules.} For a family \m{y=(y_{\tau})} of invertible complex
+\m{n\times n} matrices and every~$\kappa$: \m{\Pol{\kappa}(\Sch{\kappa}(y)\alpha)} is obtained from
+\m{\Pol{\kappa}(\alpha)} by replacing each column \m{(Y_{\tau,i,a})_{i}} by \m{y_{\tau}^{\mathsf{T}}(Y_{\tau,i,a})_{i}}. For an
+auxiliary pair~$O$ the mixed Cartan embedding satisfies
+\[
+\mathrm{C}_{O}\,\prod_{\tau}\det(y_{\tau})^{\eO{O}(\tau)}\,\Sch{\kap{O}}(y)=\bigl(\Sch{\kappa^{+}_{O}}(y)\otimes\Sch{\kappa^{-}_{O}}(y^{-\mathsf{T}})\bigr)\,\mathrm{C}_{O},
+\]
+with \m{y^{-\mathsf{T}}} the family of the inverse transposes, and it sends the vector \m{\vplus{\kap{O}}{l_{1}}} of a
+parameter~$l_{1}$ as in (Q9) to a pure tensor of extremal vectors, whose two polynomials are products of minors
+of the matrices \m{(Y_{\tau,i,a})}. The matrices \m{\Sch{\kappa}} have polynomial entries with integral
+coefficients, so \m{\conj{\Sch{\kappa}(y)\xi}=\Sch{\kappa}(\conj{y})\conj{\xi}}.
+
+\vspace{3pt}\textbf{(Q6)} \emph{Staircases} (Kashiwara--Vergne). Let $s$ be signs on~$[r]$, $l_{1}$ an injective
+family of integers on~$[n]$, $l_{2}$ an injective family on~$[r]$, and for \m{c\in[r]} let \m{o(c)} be the number
+of~$c'$ with \m{s_{c'}=s_{c}} and \m{s_{c}l_{2}(c')<s_{c}l_{2}(c)}. Let \m{k(\sigma,a)} be natural numbers with
+\m{k(\sigma,a)=0} whenever \m{\#\{c:s_{c}=\sigma\}<a<n}, and such that \m{k(1,a)=0} or \m{k(-1,a')=0} whenever
+\m{a+a'>n}. For a sign~$\sigma$ and \m{a<n} let \m{D_{\sigma,a}} be the minor of the matrix \m{(X_{ic})} with the
+$a$ rows~$i$ for which \m{\sigma\,l_{1}(i)} is largest and the columns~$c$ with \m{s_{c}=\sigma} and \m{o(c)<a}, in
+these orders. Then, for all integers $\gamma$,~$\gamma'$, the polynomial
+\m{\prod_{\sigma}\prod_{a<n}D_{\sigma,a}^{\,k(\sigma,a)}} is jointly highest for the signs \m{(\one{n},s)}, the weights
+\m{(\gamma,\gamma')} and the parameters \m{(l_{1},l_{2})}, of weights \m{(\nu,\nu')} with
+\m{\nu'(c)=\stw{n}{s}{o}{k}{\gamma'}{c}} and
+\m{\nu(i)=\gamma-\#\{c:s_{c}=-1\}+\sum_{\sigma}\sigma\sum_{a}k(\sigma,a)}, the inner sum over the~$a$ with
+\m{\#\{j:\sigma l_{1}(j)>\sigma l_{1}(i)\}<a<n}.
+
+\vspace{3pt}\textbf{(Q7)} \emph{Existence of joint harmonics.} If \m{(l_{1},l_{2})} match for the signs \m{(t,s)}
+and the weights \m{(\gamma,\gamma')}, a joint harmonic for them exists.
+
+\vspace{3pt}\textbf{(Q8)} \emph{Uniqueness.} If \m{(l_{1},l_{2})} match, $\Phi_{0}$ is a joint harmonic for them and
+$\Phi$ is jointly highest of weights \m{(\lkt{t}{l_{1}},\nu')} for some~$\nu'$, then $\Phi_{0}$ is a complex
+multiple of~$\Phi$.
+
+}
+\leanline{in the background library: (Q5) \lnm{PolyRep.MixedCartanEmbedding}, \lnm{mixedCartan},
+\lnm{weylRep\_map}\sep (Q6) \lnm{staircase\_harmonic\_highest}\sep (Q7) \lnm{IsMatch.exists\_isJointHarmonic}\sep
+(Q8) \lnm{IsMatch.unique}}
+
+\statement{inksoft}{\textbf{Quoted from the background library, continued.}
+
+\vspace{3pt}\textbf{(Q9)} \emph{Parameters of the definite group.} Call a family \m{l_{1}(\tau,i)} a \emph{doubled
+Harish-Chandra parameter of} \m{(\kappa,e)} if every \m{l_{1}(\tau,\,\cdot\,)} is injective on~$[n]$ and each of its
+values is \m{2(e(\tau)+\sum_{a<a'<n}\kappa(\tau,a'))+n-1-2a} for some \m{a<n}. Then
+\m{\lkt{\one{n}}{l_{1}(\tau,\,\cdot\,)}(i)=e(\tau)+\sum_{a<a'<n}\kappa(\tau,a')} with $a$ the number of~$j$ with
+\m{l_{1}(\tau,j)>l_{1}(\tau,i)}. The \emph{highest vector} \m{\vplus{\kappa}{l_{1}}\in\Vk{n}{\kappa}} is the vector the
+library attaches to the orders of~$[n]$ by decreasing \m{l_{1}(\tau,\,\cdot\,)}; it has real coordinates:
+\m{\conj{\vplus{\kappa}{l_{1}}}=\vplus{\kappa}{l_{1}}}.
+
+\vspace{3pt}\textbf{(Q10)} \emph{From joint harmonics to edges.} Let $[r]$ and~$[n]$ be non-empty, $s$,~$t$ signs
+on them, $\gamma$,~$\gamma'$ families of integers and $l$,~$l'$ families of parameters, all indexed by the
+infinite places. If for every~$\tau$ the polynomial~$\Phi_{\tau}$ is a joint harmonic for the signs \m{(t,s)}, the
+weights \m{(\gamma_{\tau},-\gamma'_{\tau})} and the parameters \m{(l'(\tau,\,\cdot\,),-l(\tau,\,\cdot\,))}, then the
+vector \m{\pvP{s}{t}{p}} of \m{p=\prod_{\tau}\Phi_{\tau}((X_{\tau,i,c})_{i,c})} is an edge from \m{\tk{l}{s}} to
+\m{\tk{l'}{t}} for \m{\RPW{\gamma}{\gamma'}}.
+
+\vspace{3pt}\textbf{(Q11)} \emph{Automorphy and Schur orthogonality.} (a) Every finite datum is fixed by
+\m{\omega((1,g),(1,g'))} for $g$,~$g'$ in suitable levels; if a datum~$\varphi$ is so fixed, then
+\m{h\mapsto\theta_{W,V}(\omega(u,h)\varphi)} is continuous, left invariant under the rational points of~$V$ and right
+invariant under a level. (b) Let \m{V=\std{E}{n}}, let $l_{1}$ be a doubled Harish-Chandra parameter of
+\m{(\kappa,e)}, $\mathbf{K}$ a level in~\m{\Kz{n}}, $\Xi$ an algebraic form of weight \m{(\kappa,e)} as in
+Setting~\ref{s:aux}(d), and $\Phi$ a function on \m{\Gad{\one{n}}} with the invariance of~(a) such that
+\m{\Phi(y,h)=L_{h}\bigl(\rhoW{\kappa}{e}(y)\vplus{\kappa}{l_{1}}\bigr)} for linear forms~$L_{h}$ on \m{\Vk{n}{\kappa}}.
+If \m{h\mapsto L_{h}(\Xi(h))} is right invariant under~$\mathbf{K}$, then
+\[
+\int_{[\std{E}{n}]}\Phi(h)\,\algF{l_{1}}{\one{n}}{\Xi}(h)\,\dd h
+=\frac{1}{\dim\Vk{n}{\kappa}\cdot[\Kz{n}:\mathbf{K}]}\ \sum_{[h]}\frac{1}{\#\Gamma_{h}}\,L_{h}\bigl(\Xi(h)\bigr),
+\]
+the sum over the double classes modulo the rational points and~$\mathbf{K}$, as in
+Setting~\ref{s:aux}\textup{(h)}.}
+\leanline{in the background library:
+(Q9) \lnm{IsHCParam}, \lnm{IsHCParam.lowestKType\_eq}, \lnm{highestVector}, \lnm{star\_highestVector}\sep (Q10)
+\lnm{isEdge\_of\_isJointHarmonic}\sep (Q11) \lnm{exists\_level\_pairWeil}, \lnm{ThetaKernel.isAutomorphic},
+\lnm{Space.integral\_mul\_eq\_classIntegral}, \lnm{classIntegral\_eq\_classSum}}
+
+\sect{The finite datum}{s:finite}
+\begin{proposition}[the finite datum is a sum of translates of the level indicator]\label{p:sum}
+In Setting~\ref{s:weil}, let $O$ be an auxiliary pair (Setting~\ref{s:aux}). Then
+\[
+\Ups{O}=\sum_{A\in\TwistGL{\SigO{O}}{r}}\omO{O}\bigl((1,\twistLift{\SigO{O}}{A}),1\bigr)
+\Bigl(\modD{\WO{O}}{\std{E}{n}}{\lmod{\SigO{O}}{1}}{\levelIndicator{O}{\,\cdot\,}}{\varphi_{0}}\Bigr),
+\]
+where \m{(1,\twistLift{\SigO{O}}{A})} is the element of \m{\Gad{\sgO{O}}} with trivial component at the infinite
+places.
+\end{proposition}
+\begin{proof}
+By (Q1) both sides are finite data for the modulus \m{\lmod{\SigO{O}}{1}}, the left one of the function
+\m{X\mapsto\PsiO{O}{(X_{w})_{w}}}; so it suffices to compare functions of an \m{n\times r} matrix~$X$ modulo
+\m{\lmod{\SigO{O}}{1}}. Fix \m{A\in\TwistGL{\SigO{O}}{r}} and put \m{g=\twistLift{\SigO{O}}{A}}; its reduction is~$1$
+at the places of~$\MO{O}$ and \m{A_{w}^{-1}} at \m{w\in\QO{O}}. By (Q1) the term of~$A$ is the finite datum of
+\m{X\mapsto\chpO{O}(\det g)^{-1}\,\levelIndicator{O}{X\conj{g}}}. By (Q2), applied to \m{\chpO{O}=\muO{O}\upsilon_{1}^{\lfloor n/2\rfloor}}
+with the places \m{\MO{O}\cup\QO{O}}, we have
+\m{\chpO{O}(\det g)^{-1}=\prod_{w\in\QO{O}}\psiO{O}{w}(\det A_{w})}. And \m{\levelIndicator{O}{X\conj{g}}=1} exactly when
+\m{X_{w}=\IncM{O}} for all \m{w\in\MO{O}} and the $\incO{O}$-rows of \m{X_{w}A_{w}^{-1}} form the identity, that is, the
+$\incO{O}$-rows of~$X_{w}$ are~$A_{w}$, for all \m{w\in\QO{O}}. So the right side is the finite datum of
+\[
+X\ \longmapsto\ \sum_{A}\ \prod_{w\in\QO{O}}\psiO{O}{w}(\det A_{w})\cdot\bigl[X_{w}=\IncM{O}\ (w\in\MO{O}),\ \ \incO{O}\text{-rows of }X_{w}=A_{w}\ (w\in\QO{O})\bigr].
+\]
+If the $\incO{O}$-rows of~$X_{w}$ are invertible for every \m{w\in\QO{O}}, exactly one~$A$ contributes and the
+value is \m{\PsiO{O}{(X_{w})_{w}}}. If for some \m{w\in\QO{O}} they are not, no~$A$ contributes, and
+\m{\PsiO{O}{(X_{w})_{w}}=0} because \m{\psiO{O}{w}} vanishes at~$0$.
+\end{proof}
+\leanline{\lean{upsiloneqsum}}
+
+\begin{proposition}[the transformation law of the finite datum]\label{p:law}
+In Setting~\ref{s:weil}, let $O$ be an auxiliary pair (Setting~\ref{s:aux}), let \m{g\in\Kz{r}}, \m{g'\in\Kz{n}} and
+\m{j\in\LO{O}}, and suppose that \m{\red{w}g'=\operatorname{diag}(\red{w}g,1)\,j_{w}} for every \m{w\in\MO{O}} and
+\m{\red{w}g'=j_{w}} for every \m{w\in\QO{O}}, where \m{\operatorname{diag}(g,1)} is the matrix in
+\m{\mathrm{GL}_{n}(\FF_{w})} that acts by~$g$ on the basis vectors with indices in the image of~$\incO{O}$ and fixes
+the others. Then
+\[
+\omO{O}\bigl((1,g),(1,g')\bigr)\,\Ups{O}=\Bigl(\prod_{w\in\MO{O}}\psiO{O}{w}(\det\red{w}g)\Bigr)^{-1}\etaO{O}(j)\cdot\Ups{O}.
+\]
+\end{proposition}
+\begin{proof}
+By (Q1) the left side is the finite datum of the function
+\[
+X\ \longmapsto\ \chO{O}(\det g')\,\chpO{O}(\det g)^{-1}\,\PsiO{O}{\bigl((\red{w}g')^{-1}X_{w}\,\red{w}g\bigr)_{w}}.
+\]
+By (Q2), \m{\chO{O}=\upsilon_{1}^{\rmi{O}}} has trivial tame part, so \m{\chO{O}(\det g')=1}, and
+\[
+\chpO{O}(\det g)=\prod_{w\in\MO{O}\cup\QO{O}}\psiO{O}{w}(\det\red{w}g).
+\]
+At \m{w\in\MO{O}}: since $j_{w}$ fixes the basis vectors with indices in the image of~$\incO{O}$,
+\[
+(\red{w}g')\,\IncM{O}=\operatorname{diag}(\red{w}g,1)\,\IncM{O}=\IncM{O}\,\red{w}g .
+\]
+Hence \m{(\red{w}g')^{-1}X_{w}\,\red{w}g=\IncM{O}} if and only if \m{X_{w}=\IncM{O}}: the condition at~$\MO{O}$ is
+unchanged.
+
+At \m{w\in\QO{O}}: \m{\red{w}g'=j_{w}}, and $j_{w}^{-1}$, like~$j_{w}$, has vanishing entries in the rows of the image
+of~$\incO{O}$ and the columns outside it. So the $\incO{O}$-rows of \m{j_{w}^{-1}X_{w}\,\red{w}g} are the
+$\incO{O}$-block of~$j_{w}^{-1}$ times the $\incO{O}$-rows of~$X_{w}$ times \m{\red{w}g}, and their determinant is
+\m{\det(\incO{O}\text{-block of }j_{w})^{-1}\cdot\det(\incO{O}\text{-rows of }X_{w})\cdot\det\red{w}g}.
+
+Together: the translated function is \m{\etaO{O}(j)\prod_{w\in\QO{O}}\psiO{O}{w}(\det\red{w}g)} times~$\Psi_{O}$, and the
+factors at~$\QO{O}$ cancel against those of \m{\chpO{O}(\det g)^{-1}}.
+\end{proof}
+\leanline{\lean{pairWeilupsilon}\sep in the unit on the rows: \lnm{firstBlockHom}}
+
+For \m{g=1} the hypothesis says that \m{g'\in\KO{O}} with reductions~$j$, and the law reads
+\m{\omO{O}(1,(1,g'))\Ups{O}=\tetaO{O}(g')\Ups{O}}: the finite datum is an eigenvector of the level with the character
+of the forms. Both families of places contribute inverse character values: at~$\MO{O}$ through \m{\det\red{w}g},
+at~$\QO{O}$ through the block of~$j_{w}$, which enters~\m{\etaO{O}} with an inverse.
+
+\sect{The archimedean datum}{s:arch}
+\begin{lemma}[the parameter of the definite side]\label{l:hc}
+Let $O$ be an auxiliary pair (Setting~\ref{s:aux}). Then \m{(\tau,i)\mapsto\paramV{O}{\tau}{i}} is a doubled
+Harish-Chandra parameter of \m{(\kap{O},\eO{O})} in the sense of \textup{(Q9)}.
+\end{lemma}
+\begin{proof}
+By Definition~\ref{d:paramV}, the value at \m{(\tau,i)} is the number of (Q9) for \m{a=\pi(i)}, and
+\m{a\mapsto2(\eO{O}(\tau)+\sum_{a<a'<n}\kap{O}(\tau,a'))+n-1-2a} is strictly decreasing, hence injective.
+\end{proof}
+\leanline{\lean{isHCParamparamV}\sep in the background library: \lnm{isHCParam\_hcParameter}}
+
+\begin{lemma}[letter substitutions]\label{l:letters}
+Let $s$ be a family of signs on~$[r]$, let \m{o\colon[r]\to\{0,1,2,\dots\}}, let $\gamma'$ be a family of integers
+indexed by the infinite places, \m{y\in\Ginf{\one{n}}}, $\sigma$ a sign and $F$ a polynomial in the variables
+\m{Y_{\tau,i,a}}. Let $\gamma$ be the constant family whose value is the number of \m{c\in[r]} with \m{s(c)=-1}. Then
+\[
+\RPW{\gamma}{\gamma'}(1,y)\ \pvP{s}{\one{n}}{\Let{s}{o}{\sigma}(F)}=\pvP{s}{\one{n}}{\Let{s}{o}{\sigma}(F^{y,\sigma})},
+\]
+where \m{F^{y,\sigma}} is obtained from~$F$ by replacing each column \m{(Y_{\tau,i,a})_{i}} by
+\m{y_{\tau}^{\mathsf{T}}(Y_{\tau,i,a})_{i}} if \m{\sigma=1}, and by \m{y_{\tau}^{-1}(Y_{\tau,i,a})_{i}} if \m{\sigma=-1}.
+\end{lemma}
+\begin{proof}
+By (Q4) the left side is the vector of \m{y\cdot\Let{s}{o}{\sigma}(F)}. Both \m{F\mapsto y\cdot\Let{s}{o}{\sigma}(F)} and
+\m{F\mapsto\Let{s}{o}{\sigma}(F^{y,\sigma})} are homomorphisms of algebras, so it suffices to compare them on a
+variable \m{Y_{\tau,i,a}}. Let $z_{\tau}$ be \m{y_{\tau}^{\mathsf{T}}} or \m{y_{\tau}^{-1}} according to~$\sigma$. The
+columns~$c$ that occur in \m{\Let{s}{o}{\sigma}(Y_{\tau,i,a})} have \m{s(c)=\sigma}, so the first map gives
+\m{\sum_{c}\sum_{i'}z_{\tau}(i,i')X_{\tau,i',c}}, the sums over \m{i'\in[n]} and over the~$c$ with \m{s(c)=\sigma} and
+\m{o(c)=a}; the second gives the same double sum in the other order.
+\end{proof}
+\leanline{\lean{realPairWeilfockLetters}}
+
+\begin{lemma}[the definite group acts on the harmonic polynomials through the weight]\label{l:har}
+Let $O$ be an auxiliary pair (Setting~\ref{s:aux}), $\gamma'$ a family of integers indexed by the infinite
+places, \m{y\in\Ginf{\one{n}}} and \m{\xi\in\Vk{n}{\kap{O}}}. Let $\gamma$ be the constant family with value~\m{\rmi{O}}. Then
+\[
+\RPW{\gamma}{\gamma'}(1,y)\ \pvO{O}{\Har{O}{\conj{\xi}}}=\pvO{O}{\Har{O}{\conj{\rhoW{\kap{O}}{\eO{O}}(y)\,\xi}}}.
+\]
+\end{lemma}
+\begin{proof}
+By Setting~\ref{s:aux}(b) and (Q5),
+\[
+\conj{\rhoW{\kap{O}}{\eO{O}}(y)\,\xi}=\prod_{\tau}\det(y_{\tau})^{\eO{O}(\tau)}\,\Sch{\kap{O}}(y)\,\conj{\xi},
+\]
+and the mixed Cartan embedding sends this vector to
+\m{\bigl(\Sch{\kappa^{+}_{O}}(y)\otimes\Sch{\kappa^{-}_{O}}(y^{-\mathsf{T}})\bigr)\mathrm{C}_{O}\conj{\xi}}. Write
+\m{\mathrm{C}_{O}\conj{\xi}} as a sum of pure tensors \m{\alpha\otimes\beta}. By (Q5), in the notation of
+Lemma~\ref{l:letters},
+\[
+\Pol{\kappa^{+}_{O}}\bigl(\Sch{\kappa^{+}_{O}}(y)\alpha\bigr)=(\Pol{\kappa^{+}_{O}}\alpha)^{y,1},\qquad
+\Pol{\kappa^{-}_{O}}\bigl(\Sch{\kappa^{-}_{O}}(y^{-\mathsf{T}})\beta\bigr)=(\Pol{\kappa^{-}_{O}}\beta)^{y,-1}.
+\]
+So \m{\Har{O}{\conj{\rhoW{\kap{O}}{\eO{O}}(y)\xi}}} is the sum of the products
+\[
+\Let{\sgO{O}}{\operatorname{ord}_{O}}{1}\bigl((\Pol{\kappa^{+}_{O}}\alpha)^{y,1}\bigr)\cdot\Let{\sgO{O}}{\operatorname{ord}_{O}}{-1}\bigl((\Pol{\kappa^{-}_{O}}\beta)^{y,-1}\bigr).
+\]
+By Lemma~\ref{l:letters}, (Q4) and the injectivity in (Q4), each factor is \m{y\cdot{}} the corresponding factor of
+\m{\Har{O}{\conj{\xi}}}; as \m{p\mapsto y\cdot p} is a homomorphism of algebras, the sum is
+\m{y\cdot\Har{O}{\conj{\xi}}}. By (Q4) once more, its vector is the left side.
+\end{proof}
+\leanline{\lean{realPairWeilharmonicPoly}}
+
+\begin{proof}[Proof of Theorem 2]
+Fix an infinite place~$\tau$. Put \m{l_{1}=\paramV{O}{\tau}{\,\cdot\,}} and \m{l_{2}=-l(\tau,\,\cdot\,)}, and let
+\m{k(1,i)=\kp{O}{\tau}{i}}, \m{k(-1,i)=\km{O}{\tau}{i}}, \m{\gamma=\rmi{O}}, \m{\gamma'=-(\lfloor n/2\rfloor+\wtO{O}{\tau})}.
+
+\emph{Step 1: the staircase.} The hypotheses of (Q6) hold for \m{s=\sgO{O}}: $l_{1}$ is injective by
+Lemma~\ref{l:hc}, and $l_{2}$ is injective because it is spread, by (F1). The function~$o$ of (Q6) is
+\m{\operatorname{ord}_{O}}, by (F2): the inequality \m{s_{c}l_{2}(c')<s_{c}l_{2}(c)} is \m{s_{c}\,l(\tau,c)<s_{c}\,l(\tau,c')}.
+The vanishing of \m{k(\sigma,a)} for \m{\#\{c:s_{c}=\sigma\}<a} is (F3) and (F4). If \m{a+a'>n}, then
+\m{a+a'>r=\rpl{O}+\rmi{O}} because \m{r<n}, so \m{a>\rpl{O}} or \m{a'>\rmi{O}}, and \m{k(1,a)=0} or \m{k(-1,a')=0}. Let $\Phi_{\tau}$ be the
+polynomial of (Q6). It is jointly highest of weights \m{(\nu,\nu')} with \m{\nu'(c)=\stw{n}{\sgO{O}}{\operatorname{ord}_{O}}{k}{\gamma'}{c}}.
+
+\emph{Step 2: its weight on the definite side is the lowest $K$-type.} Let \m{i\in[n]} and let $a$ be the
+number of~$j$ with \m{l_{1}(j)>l_{1}(i)}; then \m{n-1-a} is the number of~$j$ with \m{-l_{1}(j)>-l_{1}(i)}. As
+\m{\gamma=\rmi{O}}, (Q6) gives
+\m{\nu(i)=\sum_{a<a'<n}\kp{O}{\tau}{a'}-\sum_{n-1-a<a'<n}\km{O}{\tau}{a'}}. On the other hand, by Lemma~\ref{l:hc} and
+(Q9),
+\[
+\lkt{\one{n}}{l_{1}}(i)=\eO{O}(\tau)+\sum_{a<a'<n}\kap{O}(\tau,a')
+=-\sum_{1\le a'<n}\km{O}{\tau}{a'}+\sum_{a<a'<n}\kp{O}{\tau}{a'}+\sum_{1\le a'<n-a}\km{O}{\tau}{a'},
+\]
+which is the same number. So \m{\nu=\lkt{\one{n}}{l_{1}}}.
+
+\emph{Step 3: its weight on the indefinite side.} By (F1) the parameters \m{(l_{1},l_{2})} match, so by (Q7)
+there is a joint harmonic~$\Phi_{0}$ for them, and by (Q8) and Step~2, $\Phi_{0}$ is a complex multiple
+of~$\Phi_{\tau}$. For \m{c\in[r]} the operator \m{C_{cc}} multiplies $\Phi_{0}$ by \m{\lkt{\sgO{O}}{l_{2}}(c)} and every
+multiple of~$\Phi_{\tau}$ by \m{\nu'(c)}; since \m{\Phi_{0}\ne0}, the two numbers agree. This is~(iii). It also shows that
+$\Phi_{\tau}$ is jointly highest of weights \m{(\lkt{\one{n}}{l_{1}},\lkt{\sgO{O}}{l_{2}})}, hence a joint harmonic:
+this is~(i).
+
+\emph{Step 4: the polynomial of the highest vector.} By (Q5) the mixed Cartan embedding sends
+\m{\vplus{\kap{O}}{\paramV{O}{\,\cdot\,}{\,\cdot\,}}} to a pure tensor of extremal vectors, and their polynomials are products of minors of
+the matrices \m{(Y_{\tau,i,a})}: for the diagram \m{\kappa^{+}_{O}}, the product over~$\tau$ and \m{a<n} of the
+\m{\kp{O}{\tau}{a}}-th power of the minor with the first~$a$ columns and the $a$ rows of largest \m{l_{1}}; for
+\m{\kappa^{-}_{O}}, the same with \m{\km{O}{\tau}{a}} and the $a$ rows of smallest~$l_{1}$. The letter substitutions
+\m{\Let{\sgO{O}}{\operatorname{ord}_{O}}{\pm1}} replace the column of index~$a'$ by the column \m{X_{\tau,\,\cdot\,,c}}
+with \m{\sgO{O}(c)=\pm1} and \m{\ordO{O}{c}=a'}, which is unique when it exists, by (F2). This turns the two products into
+\m{\prod_{\tau}\prod_{a}D_{1,a}^{\,k(1,a)}} and \m{\prod_{\tau}\prod_{a}D_{-1,a}^{\,k(-1,a)}} in the variables of each place, and
+their product is \m{\prod_{\tau}\Phi_{\tau}}. This is~(ii).
+\end{proof}
+\leanline{\lean{existsisJointHarmonic}}
+
+\begin{corollary}[the vector of the highest polynomial is an edge]\label{c:edge}
+In Setting~\ref{s:weil}, let $O$ be an auxiliary pair (Setting~\ref{s:aux}) with \m{[r]} not empty, and let $l$ be
+a family of integers \m{l(\tau,c)} with \m{\FitsParams{O}{l}}. Let $\gamma$ be the constant family with
+value~\m{\rmi{O}} and \m{\gamma'(\tau)=\lfloor n/2\rfloor+\wtO{O}{\tau}}. Then the vector
+\m{\pvO{O}{\Har{O}{\vplus{\kap{O}}{\paramV{O}{\,\cdot\,}{\,\cdot\,}}}}} is an edge \textup{(Definition~\ref{d:edge})} from \m{\tk{l}{\sgO{O}}} to
+\m{\tk{\paramV{O}{\,\cdot\,}{\,\cdot\,}}{\one{n}}} for the representation \m{\RPW{\gamma}{\gamma'}}, where \m{\paramV{O}{\,\cdot\,}{\,\cdot\,}} is the family
+\m{(\tau,i)\mapsto\paramV{O}{\tau}{i}}.
+\end{corollary}
+\begin{proof}
+Since \m{[r]} is not empty and \m{\incO{O}} maps it into~$[n]$, the set~$[n]$ is not empty. Theorem~2(i) and~(ii)
+give the hypothesis of (Q10) for \m{t=\one{n}}, \m{s=\sgO{O}} and \m{l'=\paramV{O}{\,\cdot\,}{\,\cdot\,}}, and its conclusion is the
+assertion.
+\end{proof}
+\leanline{\lean{isEdge}}
+
+The weights of \m{\RPW{\gamma}{\gamma'}} in the corollary are those of the characters \m{\chO{O}} and \m{\chpO{O}}, by
+(Q2). So, by (Q3), the real points act on the data \m{v\otimes f} of the Weil representation \m{\omO{O}} through
+\m{\RPW{\gamma}{\gamma'}}, and the corollary applies to the theta lifts between \m{\WO{O}} and \m{\std{E}{n}} with the
+test datum.
+
+\sect{The class-sum lift as a descent}{s:descent}
+\begin{lemma}[the transformation law of the test datum]\label{l:datum}
+In Setting~\ref{s:weil}, let $O$ be an auxiliary pair (Setting~\ref{s:aux}), \m{y\in\Ginf{\one{n}}}, \m{g'\in\KO{O}}
+and \m{\xi\in\Vk{n}{\kap{O}}}. Then
+\[
+\omO{O}\bigl(1,(y,g')\bigr)\,\JO{O}{\conj{\xi}}=\tetaO{O}(g')\cdot\JO{O}{\conj{\rhoW{\kap{O}}{\eO{O}}(y)\,\xi}}.
+\]
+\end{lemma}
+\begin{proof}
+By (Q2), \m{\chO{O}} has weight \m{\rmi{O}} at every place and \m{\chpO{O}} has weight \m{\lfloor n/2\rfloor+\wtO{O}{\tau}}
+at~$\tau$. By (Q3) the left side is the tensor product of \m{\RPW{\gamma}{\gamma'}(1,y)\pvO{O}{\Har{O}{\conj{\xi}}}}, with
+these weights, and of \m{\omO{O}(1,(1,g'))\Ups{O}}. The first is \m{\pvO{O}{\Har{O}{\conj{\rhoW{\kap{O}}{\eO{O}}(y)\xi}}}} by
+Lemma~\ref{l:har}; the second is \m{\tetaO{O}(g')\Ups{O}} by Proposition~\ref{p:law} with \m{g=1} and~$j$ the family
+of the reductions of~$g'$.
+\end{proof}
+\leanline{\lean{pairWeilfockDatum}}
+
+\begin{lemma}[the kernel is equivariant]\label{l:kernel}
+In Setting~\ref{s:weil}, let $O$ be an auxiliary pair (Setting~\ref{s:aux}), $\gamma$ a rational point of
+\m{\std{E}{n}}, \m{g'\in\KO{O}}, \m{v\in\Vk{n}{\kap{O}}}, \m{u\in\Gad{\sgO{O}}} and \m{h\in\Gfin{n}}. Then
+\[
+\cK{O}{u}{\gamma_{\mathrm{f}}\,h\,g'}\bigl(\tetaO{O}(g')\,\rhoW{\kap{O}}{\eO{O}}(\gamma)\,v\bigr)=\cK{O}{u}{h}(v).
+\]
+\end{lemma}
+\begin{proof}
+Put \m{\xi=\rhoW{\kap{O}}{\eO{O}}(\gamma)v}. As \m{\xi\mapsto\JO{O}{\conj{\xi}}} is conjugate-linear, the left side is
+\m{\tetaO{O}(g')} times the complex conjugate of
+\m{\thO{O}\bigl(\omO{O}(u,(1,\gamma_{\mathrm{f}}hg'))\JO{O}{\conj{\xi}}\bigr)}. By Lemma~\ref{l:datum} with \m{y=1},
+\[
+\omO{O}\bigl(1,(1,g')\bigr)\,\JO{O}{\conj{\xi}}=\tetaO{O}(g')\,\JO{O}{\conj{\xi}};
+\]
+the values of \m{\tetaO{O}} are roots of unity, so the two factors \m{\tetaO{O}(g')} and \m{\conj{\tetaO{O}(g')}}
+cancel. It remains to show that
+\[
+\thO{O}\bigl(\omO{O}(u,(1,\gamma_{\mathrm{f}}h))\,\JO{O}{\conj{\xi}}\bigr)=\thO{O}\bigl(\omO{O}(u,(1,h))\,\JO{O}{\conj{v}}\bigr).
+\]
+The rational point~$\gamma$ is \m{(\gamma_{\infty},\gamma_{\mathrm{f}})} in \m{\Gad{\one{n}}}, and
+\m{(1,\gamma_{\mathrm{f}}h)=\gamma\cdot(\gamma_{\infty}^{-1},h)}. By \eqref{e:rat} the left side is
+\[
+\thO{O}\Bigl(\omO{O}\bigl(u,(1,h)\bigr)\,\omO{O}\bigl(1,(\gamma_{\infty}^{-1},1)\bigr)\,\JO{O}{\conj{\xi}}\Bigr),
+\]
+and by Lemma~\ref{l:datum} with \m{g'=1} the inner datum is
+\m{\JO{O}{\conj{\rhoW{\kap{O}}{\eO{O}}(\gamma_{\infty}^{-1})\xi}}=\JO{O}{\conj{v}}}.
+\end{proof}
+\leanline{\lean{conjKernelequivariant}}
+
+\begin{proof}[Proof of Theorem 1]
+Write \m{v^{+}=\vplus{\kap{O}}{\paramV{O}{\,\cdot\,}{\,\cdot\,}}} and \m{F_{\Xi}=\algF{\paramV{O}{\,\cdot\,}{\,\cdot\,}}{\one{n}}{\Xi}}. Fix \m{u\in\Gad{\sgO{O}}} and put
+\m{\Phi(h)=\conj{\thO{O}\bigl(\omO{O}(u,h)\JO{O}{v^{+}}\bigr)}} for \m{h\in\Gad{\one{n}}}. The complex conjugate of the
+descent at~$u$ is \m{\int_{[\std{E}{n}]}\Phi(h)F_{\Xi}(h)\,\dd h}: the datum is conjugated with the value of the theta
+functional, and the two conjugations of~$F_{\Xi}$ cancel. We apply (Q11)(b) with \m{\mathbf{K}=\KO{O}},
+\m{\kappa=\kap{O}}, \m{e=\eO{O}}, \m{l_{1}=\paramV{O}{\,\cdot\,}{\,\cdot\,}} (Lemma~\ref{l:hc}) and \m{L_{h}=\cK{O}{u}{h}}.
+
+The function~$\Phi$ has the invariance of (Q11)(a), because \m{\JO{O}{v^{+}}} is a polynomial vector tensor the
+finite datum~\m{\Ups{O}}. For \m{h=(y,h_{\mathrm{f}})}, Lemma~\ref{l:datum} with \m{g'=1}, and \m{v^{+}=\conj{v^{+}}} from
+(Q9), give
+\[
+\Phi(y,h_{\mathrm{f}})=\conj{\thO{O}\bigl(\omO{O}(u,(1,h_{\mathrm{f}}))\,\JO{O}{\conj{\rhoW{\kap{O}}{\eO{O}}(y)v^{+}}}\bigr)}
+=\cK{O}{u}{h_{\mathrm{f}}}\bigl(\rhoW{\kap{O}}{\eO{O}}(y)v^{+}\bigr).
+\]
+The function \m{h\mapsto\cK{O}{u}{h}(\Xi(h))} on \m{\Gfin{n}} is right invariant under \m{\KO{O}}: by
+Setting~\ref{s:aux}(d), \m{\Xi(hg')=\tetaO{O}(g')\Xi(h)}, and Lemma~\ref{l:kernel} with \m{\gamma=1} gives
+\[\cK{O}{u}{hg'}\bigl(\tetaO{O}(g')\,\Xi(h)\bigr)=\cK{O}{u}{h}\bigl(\Xi(h)\bigr).\]
+So (Q11)(b) applies:
+\[
+\int_{[\std{E}{n}]}\Phi(h)\,F_{\Xi}(h)\,\dd h=\frac{1}{\dim\Vk{n}{\kap{O}}\cdot[\Kz{n}:\KO{O}]}\sum_{[h]}\frac{1}{\#\Gamma_{h}}\,\cK{O}{u}{h}\bigl(\Xi(h)\bigr),
+\]
+and the sum is \m{\Th{O}{\Xi}(u)} by Setting~\ref{s:aux}(h).
+\end{proof}
+\leanline{\lean{thetaeqsmulstarliftswap}}
+
+Lemma~\ref{l:kernel} with general~$\gamma$ shows that the summand of the class sum does not depend on the
+representative of the double class, so that \m{\Th{O}{\Xi}} is well defined by Setting~\ref{s:aux}(h); the proof of
+Theorem~1 uses the lemma only for \m{\gamma=1}.
+
+\sect{Where the results are used}{s:use}
+\emph{In the unit on the rows.} The auxiliary pairs of the proof are the pairs \m{(W_{j},V_{j})} of the $j$-th
+theta lift of the chain, \m{1\le j\le m}, and a parameter that fits them is provided by the unit on the exchange
+identity. A form~$\Xi$ on the definite group with \m{\Th{O}{\Xi}=0} has, by Theorem~1, vanishing theta descent
+to~\m{\WO{O}} with the test datum at the highest vector. Corollary~\ref{c:edge} extends this to the data with any
+polynomial vector at the infinite places. The third note of this sequence then extends it to all data that are
+unramified outside the level, and to the spaces \m{\WO{O}} plus hyperbolic planes; this is how forms that are not
+lifts are shown to have vanishing theta periods.
+
+\emph{In the unit on the exchange identity.} If \m{\FitsParams{O}{l}} and $\WO{O}$ is not zero, the map
+\m{\operatorname{Th}_{O}} is adjoint, for the Petersson products, to the theta lift from \m{\WO{O}} to the definite
+group with the datum \m{\JO{O}{\vplus{\kap{O}}{\paramV{O}{\,\cdot\,}{\,\cdot\,}}}}: Theorem~1 and Corollary~\ref{c:edge} are the two inputs of this
+adjunction, and Lemma~\ref{l:datum} gives the level and the weight of the lifted form.
+Proposition~\ref{p:sum} is used where the datum~$\Ups{O}$ is compared with data of full level.
+
+\emph{In the unit on the twists.} The image of \m{\operatorname{Th}_{O}} is identified with a space of theta lifts by
+the same two results.
+
+\sect{Notes on the formal text}{s:notes}
+\begin{enumerate}[label=\textup{\arabic*.},leftmargin=1.6em,itemsep=5pt]
+\item \emph{What is a definition and what is a theorem.} The class sum and the kernel of Setting~\ref{s:aux}(h)
+are the definition of \m{\operatorname{Th}_{O}} in the unit on the rows; the integral with its scalar is the theorem
+of this unit. In Theorem~1 the basic descent is bilinear in the value of the theta functional and in its input
+function; the input is the complex conjugate of~$F_{\Xi}$ and the output is conjugated again. The formal statement
+writes the scalar as the number of elements of the index set of the basis of \m{\Vk{n}{\kap{O}}} times the index
+\m{[\Kz{n}:\KO{O}\cap\Kz{n}]}; since \m{\KO{O}\subseteq\Kz{n}} this is the index of Theorem~1.
+\item \emph{Arguments read from the text, not printed by Lean.} The file declares its variables twice: the
+field, the index sets and the pair are introduced at the top and again before the definition of
+\m{\paramV{O}{\tau}{i}}, with the letters of the index sets changed. The program that reads the arguments of a
+declaration from the text cannot tell the two declarations of~$E$ apart. For the eight lemmas after the second
+declaration the dossier gives the list of arguments that Lean's rule for variables predicts, by hand, and marks
+it as not printed by Lean, since nothing was built. I read the two variable lines and the eight statements, and
+the lists agree with what I find: each statement takes the field with its two structures, the two index sets,
+the pair where it occurs, the Weil data from the lemma on edges onwards, and its own arguments, in this order.
+The statements of this note account for exactly these arguments. A print by Lean of the eight signatures is
+still to be made.
+\item \emph{Index sets.} In the formal text $[r]$ and~$[n]$ are arbitrary finite types, $r$ and~$n$ their numbers
+of elements, and the numbering~$\pi$ of Definition~\ref{d:paramV} is a bijection chosen by the library. In the
+first part of the file the two index sets are called by other letters; the note uses $[r]$ for the indefinite
+and $[n]$ for the definite side throughout. The twist group of Definition~\ref{d:twist} is defined for any index
+set; it is used for~$[r]$.
+\item \emph{The modulus.} The finite datum is defined with the modulus \m{\lmod{\SigO{O}}{2}}, in which the chosen
+places occur squared, and Proposition~\ref{p:sum} is stated with \m{\lmod{\SigO{O}}{1}}. The function~$\Psi_{O}$
+depends only on the reductions at the places, so the two data agree; the formal proof begins with this change
+of modulus.
+\item \emph{Steps carried out by automation.} The reader of the unit marked the central steps of
+Propositions \ref{p:sum} and~\ref{p:law} as descriptions of what the simplifier computes, not replayed goal by
+goal. I read these lines. The lemmas they name are those used in the proofs above: the action of integral
+elements on finite data (Q1), the values of the characters (Q2), the reductions of the twist lift, the two
+rules for products with matrices in the level (rows of a product with a matrix of block triangular shape, and
+\m{\operatorname{diag}(g,1)\IncM{O}=\IncM{O}g}), and the case distinction on the invertibility of the tested blocks,
+which is explicit in the Lean text. The proofs above are complete as mathematics; that the simplifier's steps
+are these was not replayed. In Lemma~\ref{l:har} the formal proof uses the compatibility of \m{\Pol{\kappa}} with the
+matrices \m{\Sch{\kappa}} through rules of the library that are not named in the text of the proof; the form in
+which (Q5) states it, with a transpose, is the one that makes Lemmas \ref{l:letters} and~\ref{l:har} agree, and I
+did not read its proof in the library. Likewise Step~4 of the proof of Theorem~2 describes a computation that
+the formal proof leaves to the simplifier, after unfolding the highest vector, the letter substitutions and the
+polynomials of extremal vectors.
+\item \emph{A weaker hypothesis would do, and a stronger conclusion holds.} Theorem~2 uses of (F1) only that the
+parameters match; of the requirement \m{r<n} only that \m{i+i'>n} forces \m{i>\rpl{O}} or \m{i'>\rmi{O}}. The formal
+proof of Theorem~2 does not use Weil data, and the theorem is stated without them; Corollary~\ref{c:edge} has them
+because edges are defined with theta lifts.
+\item \emph{References for the quoted facts.} The catalogue of the handout and the second reader's comparison
+with the literature give the following; where no place is named, the \emph{reference is to be confirmed}.
+(Q6): M.~Kashiwara, M.~Vergne, \emph{On the Segal--Shale--Weil representations and harmonic polynomials},
+Invent.~Math.~44 (1978), Chapter~III, Proposition~6.1 with formula~(6.2) and Theorem~6.3, and M.~G.~Davidson,
+\emph{The harmonic representation of U(p,q) and its connection with the generalized unit disk}, Pacific
+J.~Math.~129 (1987), §2, Theorem~2.9; the formal statement is a \emph{special case} (the explicit products of
+minors under the condition on the sizes, in the orders given by the parameters, with the shifts of the weights
+by the vacuum and the determinant characters). (Q7) and (Q8): R.~Howe, \emph{Transcending classical invariant
+theory}, J.~Amer.~Math.~Soc.~2 (1989); J.-S.~Li, Duke Math.~J.~61 (1990); A.~Paul, J.~Funct.~Anal.~159 (1998);
+\emph{special cases} (existence and uniqueness up to a scalar only for matched parameters with large gaps, in
+the Fock model); places not confirmed. (Q10): A.~Ichino, \emph{Theta lifting for discrete series
+representations of real unitary groups}, §7.2, Proposition~7.2, and §7.4, Lemma~7.8; Howe, loc.~cit., Theorem~1;
+the relation is \emph{unresolved}: the published results give the correspondence of the compact types, and the
+two-sided analytic conclusions of an edge need further argument; the catalogue describes the formal statement
+as a \emph{weaker form} of the correspondence of discrete series, without Howe duality and without
+non-vanishing of the lift. The Weil representation of the pair and its theta functional, (Q1) to (Q4): the
+library's file names A.~Weil, \emph{Sur certains groupes d'opérateurs unitaires}, which the artifact's list of
+references marks ``work found, no place given''; reference to be confirmed. (Q5), (Q9) and (Q11): no reference
+recorded; (Q11)(b) is Schur's orthogonality for the compact group \m{\Ginf{\one{n}}} together with the definition of
+the measure.
+\end{enumerate}
+
+\subhead{How this note was written.} From the dossier of the unit: sixteen members and seven structured proofs.
+The program check of the unit's dossier covered \UnitSteps{} leaf steps of \UnitProofs{} proofs, found the
+statements at their lines and compared the quotations of the imported declarations with the source. I read the
+whole Lean file of the unit and compared every statement with the statements above, argument by argument. In the
+unit on the rows I read the definition of an auxiliary pair and of all objects of Setting~\ref{s:aux}. In the
+background library I read the definitions behind Setting~\ref{s:weil} and Definitions \ref{d:jh} and~\ref{d:edge}
+(groups, spaces with a point, characters with weight and tame part, the Weil representation of a pair and the
+theta functional as they are packaged, the lift, finite data, the row and column operators, lowest $K$-types,
+gaps, matching, joint harmonics, staircase weights, cusp kernels, forms of a type, half edges and edges) and the
+statements of the lemmas behind (Q1) to (Q11); I read none of their proofs, and I did not read the construction of
+the space of data, of the theta functional or of the Weyl modules. The second reader of the artifact read the
+unit independently; her remarks on the two conjugations of Theorem~1, on the inverse in the character~\m{\etaO{O}}
+and on the signed ordering in (F2) agree with the text above. The proofs follow the formal ones; those of the two
+propositions of §\ref{s:finite} and of Lemma~\ref{l:kernel} are written out from the definitions and are longer than
+the structured proofs, and the remarks after the statements and §\ref{s:use} are mine. For §\ref{s:use} I read the
+statements of the consuming lemmas.
+
+\head{Appendix A. Concordance with the Lean artifact}
+{\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}\setlength{\tabcolsep}{0pt}
+\begin{longtable}{@{}p{30mm}p{56mm}p{43mm}r@{}}
+\textbf{In this note} & \textbf{Lean declaration} & \textbf{File} & \textbf{Lines}\\\midrule\endhead
+\ConcordanceRows
+\end{longtable}}
+
+\subhead{The two theorems as they are written in the artifact.}
+\quoted{thetaeqsmulstarliftswap}
+\quoted{existsisJointHarmonic}
+\subhead{Legend.} In the formal text the auxiliary pair is {\leanfont O}; {\leanfont O.signs}, {\leanfont O.W},
+{\leanfont O.incl}, {\leanfont O.ord}, {\leanfont O.colsPlus}, {\leanfont O.colsMinus}, {\leanfont O.μ},
+{\leanfont O.weight}, {\leanfont O.ψ} are \m{\sgO{O}}, \m{\WO{O}}, \m{\incO{O}}, \m{\operatorname{ord}_{O}},
+\m{\kappa^{+}_{O}}, \m{\kappa^{-}_{O}}, \m{\muO{O}}, \m{\operatorname{wt}_{O}}, \m{\psi_{O}}; {\leanfont O.κ} and
+{\leanfont O.detExp} are \m{\kap{O}} and \m{\eO{O}}; {\leanfont O.a} and {\leanfont O.b} are \m{\chO{O}} and \m{\chpO{O}};
+{\leanfont negCount O.signs} is \m{\rmi{O}}; {\leanfont O.auxDatum} is \m{\Ups{O}}, {\leanfont O.harmonicPoly} is
+\m{\operatorname{Har}_{O}}, {\leanfont O.fockDatum} is \m{\operatorname{J}_{O}}, {\leanfont O.conjKernel} is
+\m{\mathcal{C}_{O}} and {\leanfont O.θ} is \m{\operatorname{Th}_{O}}; {\leanfont O.levelGroup}, {\leanfont O.levelChar}
+and {\leanfont O.auxLevelChar} are \m{\KO{O}}, \m{\tetaO{O}} and \m{\etaO{O}}; {\leanfont Kf} is \m{\mathbf{K}_{0}}; the
+letters {\leanfont k}, {\leanfont k'} for its elements are $g$,~$g'$ here, the letter {\leanfont g} for a point of
+the adelic group of~$\WO{O}$ is~$u$, the sign {\leanfont c} of the lemma on letters is~$\sigma$, and the
+infinite places, written {\leanfont w} in part of the file, are~$\tau$. {\leanfont Space.lift} with the swapped
+kernel is the descent, {\leanfont star} on functions is complex conjugation, {\leanfont ofAlgForm} gives
+\m{\algF{l_{1}}{\one{n}}{\Xi}}, and {\leanfont realPairWeil γ γ'} is \m{\RPW{\gamma}{\gamma'}}.
+
+\head{Notation}
+\begingroup\fontsize{8.6}{10.9}\selectfont\raggedright
+\setlength{\columnsep}{9mm}\setlength{\parskip}{0pt}
+\begin{multicols}{2}
+\nt{$E$, $\tau$, $w$, $\conj{w}$}{a CM field with a CM type; an infinite place; a finite place and its conjugate}
+\nt{$E_{w}$, $\oo_{w}$, $\FF_{w}$, $\AAf$, $\ohat$}{completion, its integers, residue field; finite adeles; their
+maximal compact subring}
+\nt{$[r]$, $[n]$, $[r']$, $r$, $n$}{finite index sets; their numbers of elements (ranks of the indefinite and the
+definite space)}
+\nt{$i$, $i'$, $j$; $c$, $c'$; $a$, $a'$}{indices in $[n]$ ($j$ is also an element of \m{\LO{O}}); indices in
+$[r]$; natural numbers (column indices of diagrams, sizes of minors, exponents)}
+\nt{$X^{*}$, $X^{\mathsf{T}}$, $\conj{z}$}{conjugate transpose, transpose, complex conjugate}
+\nt{$\jmath$, $\upsilon$, $\upsilon_{1}$}{the Weil data: a purely imaginary element, the splitting character, its
+restriction to norm one}
+\nt{$\varepsilon$, $\varepsilon'$, $s$, $t$, $\sigma$, $\one{n}$}{families of signs on index sets; a sign; the
+constant family~$1$ on $[n]$}
+\nt{$U(\varepsilon)$, $\Ginf{\varepsilon}$, $\Gfin{r}$, $\Gad{\varepsilon}$}{the unitary group of the signs;
+its product over the infinite places; the finite adelic unitary group; their product}
+\nt{$u$, $h$, $y$}{points of the adelic group of the indefinite, resp.\ definite, space, with components
+$u_{\infty}$, $u_{\mathrm{f}}$, $h_{\infty}$, $h_{\mathrm{f}}$; $y$ a point of a real group, mostly of \m{\Ginf{\one{n}}} (in (Q5), $y$ is any
+family of invertible complex matrices)}
+\nt{$\Kz{n}$, $g$, $g'$, $\red{w}$, $\mathbf{K}$}{the integral points of \m{\Gfin{n}}; elements of such groups;
+reduction modulo~$w$; a level}
+\nt{$W$, $V$, $J$, $\phi$, $\std{E}{n}$}{hermitian spaces with a point; the matrix of the form and the point; the standard
+definite space}
+\nt{$\gamma$, $\gamma_{\infty}$, $\gamma_{\mathrm{f}}$}{a rational point and its components (in
+§\ref{s:descent}); otherwise $\gamma$, $\gamma'$ are weights: integers or families of integers}
+\nt{$\chi$, $\chi'$, $\mu$, $e$, $\psi_{w}$}{automorphic characters; a weight; a tame part}
+\nt{$\mathcal{S}(W,V)$, $\omega^{W,V}_{\chi,\chi'}$, $\theta_{W,V}$}{data, the Weil representation of the pair, the
+theta functional}
+\nt{$\varphi$, $f$, $v\otimes f$, $\varphi_{0}$}{data; the datum with archimedean part~$v$; the Gaussian}
+\nt{$\Desc{W}{V}{\chi}{\chi'}(\varphi,Y)$, $Y$, $\dd h$}{the theta descent of a function~$Y$ from $V$ to~$W$; the
+invariant measure}
+\nt{$\FockP{\varepsilon}{\varepsilon'}$, $\pvP{\varepsilon}{\varepsilon'}{p}$, $p$}{the Fock space of the pair; the
+vector of a polynomial~$p$}
+\nt{$X_{\tau,i,c}$, $X_{ic}$, $Y_{\tau,i,a}$, $X$}{the variables of the Fock model; those of one place; the matrix
+variables of Weyl modules; $X$ also a matrix over a residue ring, with reductions $X_{w}$}
+\nt{$\mathfrak{m}$, $[\Psi]^{W,V}_{\mathfrak{m}}$, $\Psi$, $\Psi'$}{a modulus; the finite datum of a function on
+matrices modulo~$\mathfrak{m}$}
+\nt{$\RPW{\gamma}{\gamma'}$, $\Omega$}{the representation of the real points on the Fock space with weights
+$\gamma$,~$\gamma'$; a map to operators of the Fock space}
+\nt{$\Sigma$, $M_{\Sigma}$, $Q_{\Sigma}$, $S$}{a level system, its chosen and twist places; a finite set of places}
+\nt{$\TwistGL{\Sigma}{n}$, $\ChGL{\Sigma}{n}$, $A$}{the products of \m{\mathrm{GL}_{n}(\FF_{w})} over the twist, resp.\
+chosen, places; an element of the first}
+\nt{$\twistLift{\Sigma}{A}$}{the twist lift of~$A$}
+\nt{$O$}{an auxiliary pair; $\SigO{O}$, $\MO{O}$, $\QO{O}$ its level system and places}
+\nt{$\WO{O}$, $\sgO{O}$, $\rpl{O}$, $\rmi{O}$}{its indefinite space, signs, numbers of positive and negative signs}
+\nt{$\incO{O}$, $\IncM{O}$, $\ordO{O}{c}$}{its embedding of index sets, the matrix of the embedding, its numbering}
+\nt{$\kp{O}{\tau}{i}$, $\km{O}{\tau}{i}$, $\kap{O}$, $\eO{O}$}{column numbers; the weight on the definite side}
+\nt{$\muO{O}$, $\wtO{O}{\tau}$, $\psiO{O}{w}$}{its character, with weight and tame part}
+\nt{$\Vk{n}{\kappa}$, $\Sch{\kappa}$, $\gram{\kappa}{\xi}{\eta}$, $\Pol{\kappa}$}{coordinate vectors of the Weyl
+module, its matrices, its hermitian form, its polynomial realisation}
+\nt{$\rhoW{\kappa}{e}$, $\xi$, $\eta$, $\alpha$, $\beta$, $v$}{the weight representation; vectors of Weyl modules
+($\alpha$ also a function of compact support, $v$ also a Fock vector)}
+\nt{$\LO{O}$, $\etaO{O}$, $\KO{O}$, $\tetaO{O}$}{the level in the residue groups, its character; the level,
+its character}
+\nt{$\FormO{O}$, $\Xi$}{algebraic forms on the definite group; one of them}
+\nt{$\chO{O}$, $\chpO{O}$, $\SO{O}$, $\omO{O}$, $\thO{O}$, $\FockO{O}$, $\pvO{O}{p}$}{the characters, data, Weil
+representation, theta functional, Fock space and polynomial vectors of~$O$}
+\nt{$\PsiO{O}{X}$, $\lmod{\Sigma}{1}$, $\lmod{\Sigma}{2}$, $\Ups{O}$}{the function of residue matrices, the two
+moduli, the finite datum}
+\nt{$\levelIndicator{O}{X}$}{the level indicator}
+\nt{$\Let{s}{o}{\sigma}$, $o$, $\mathrm{C}_{O}$, $F$}{the letter substitution; a numbering; the mixed Cartan
+embedding; a polynomial in the \m{Y_{\tau,i,a}} (in Definition~\ref{d:edge} and §\ref{s:descent} also a form)}
+\nt{$\Har{O}{\xi}$, $\JO{O}{\xi}$}{the harmonic polynomial and the test datum of~$\xi$}
+\nt{$\cK{O}{u}{h}$, $\Th{O}{\Xi}$, $\Gamma_{h}$}{the kernel, the class-sum lift, the stabiliser of a class}
+\nt{$\paramV{O}{\tau}{i}$, $\paramV{O}{\,\cdot\,}{\,\cdot\,}$, $\pi$}{the parameter on the definite side; the numbering of $[n]$}
+\nt{$l$, $l_{1}$, $l_{2}$, $l'$}{parameters (doubled Harish-Chandra parameters)}
+\nt{$\FitsParams{O}{l}$}{Definition~\ref{d:fits}}
+\nt{$A_{X}$, $B_{X}$, $R_{ii'}$, $C_{cc'}$, $\delta_{ii'}$}{raising and lowering operators; row and column
+operators; Kronecker's symbol}
+\nt{$\lkt{t}{l_{1}}$, $\xi(i)$, $\xi'(c)$}{the lowest $K$-type; the centred parameters}
+\nt{$\Phi$, $\Phi_{\tau}$, $\Phi_{0}$, $\nu$, $\nu'$}{polynomials (joint harmonics); weights ($\Phi$ is also an
+automorphic function in (Q11))}
+\nt{$\stw{n}{s}{o}{k}{\gamma'}{c}$, $k$, $D_{\sigma,a}$}{the staircase weight; column numbers; the minors of (Q6)}
+\nt{$\tk{l}{s}$, $\mathbf{e}$, $\mathbf{e}'$}{the discrete series kernel of~$l$; functions on the real groups}
+\nt{$\vplus{\kappa}{l_{1}}$, $v^{+}$, $\algF{l_{1}}{\one{n}}{\Xi}$, $F_{\Xi}$, $L_{h}$}{the highest vector; the scalar
+function of a form; linear forms}
+\nt{$F^{y,\sigma}$, $y\cdot p$, $z_{\tau}$}{substitutions in polynomials; a matrix}
+\nt{$z$}{an idele or adele (Setting~\ref{s:weil})}
+\end{multicols}
+\endgroup
+
+\end{document}

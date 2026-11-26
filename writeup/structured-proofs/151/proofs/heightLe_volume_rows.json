@@ -1,0 +1,228 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Endgame.LongForms:39:7",
+ "name": "Data.heightLe_volume_rows",
+ "file": "New/Endgame/LongForms.lean",
+ "file_sha256": "4e40251f0b3ffa1dc4d2f90cbb212d9dc0ed5f6fdf8a0d21d49f157cce04005c",
+ "commit": "72fead102f663d5c7a407964a13dc0cf9d977207",
+ "summary": "Complete y to a basis by good parts of crude rows; one_determinant with the index matrices of y, extended by the scalar of the crude rows, bounds the height of the volume ratios.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "witness",
+   "claim": "From I: weights e with ∑_{l∈U} e(l) ≤ δ (he) and the index matrices (I). From `Data.crude_rows`: a nowhere-zero γ (twists → ℂˣ) costing 2m·m squares (hγ), such that the forms on Y₀ are spanned by the crude forms ψ: (γ(ϑ)/γ(1))·ι_ϑ(ψ) ι-integral above every l prime to the level of ϑ, and every conjugate of every value of ι_1(ψ) of squared norm ≤ exp(x₁_D²·b_D²) (s).",
+   "lines": [
+    41,
+    41
+   ],
+   "lean": "  obtain ⟨⟨e, he, I⟩, γ, hγ, s⟩ := I, D.crude_rows",
+   "uses": [
+    {
+     "decl": "Data.IndexLe"
+    },
+    {
+     "decl": "Data.crude_rows"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "witness",
+   "claim": "Extend y to a basis of the rows: k vectors z_a from the good parts |𝖦|e₀·1(ψ) of crude forms ψ (these span the rows, by s), with y ⊕ z linearly independent (J) and dim rows(D) = n + k (c) (`exists_extend_basis_of_span_eq_top`).",
+   "lines": [
+    43,
+    44
+   ],
+   "lean": "  choose k z ψ J c using exists_extend_basis_of_span_eq_top i ((s ▸ span_image\n    (D.goodProjTranslate 1)).trans (by simp [range_smul, NeZero.ne, Module.End.one_eq_id]; rfl))",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "decl": "exists_extend_basis_of_span_eq_top"
+    },
+    {
+     "decl": "Data.goodProjTranslate"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "witness",
+   "claim": "Name the crude forms: z_a = |𝖦|e₀·1(ψ_a) (ez) with ψ_a crude (hψ).",
+   "lines": [
+    45,
+    45
+   ],
+   "lean": "  choose ψ hψ ez using ψ",
+   "uses": [
+    {
+     "step": "2"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Apply `one_determinant` to u = Θ_D (on the rows), o = 1, the basis x = y ⊕ z, and the weights e; then compare the bound with V + 2δ + dim rows(D)·b_D.",
+   "lines": [
+    47,
+    55
+   ],
+   "lean": "  refine (one_determinant D.Θ (by simp) J (by simpa) (fun _ ↦ norm_map_det_gram_le fun σ ↦\n    Sum.comp_elim .. ▸ covolumeSq_elim_le (ez · ▸ normSqAt_goodProjTranslate_le ((hψ _).2 σ))\n    (hV σ)) (by simp) (hγ θ o) he (fun _ j ↦ (integralForms ⟨j⟩).carrier) k (fun ι j _ a _ b ↦ ?_)\n    fun ι j ↦ (I _ ⟨j⟩ _ (o.1 ι)).imp' ((algebraMap ..).mapMatrix · |>.fromBlocks 0 0 ((γ (θ ι) /\n    γ 1 : ℂ) • 1)) fun _ ↦ .imp (by grw [·]; simp [← RingHom.map_det, -RingHom.mapMatrix_apply])\n    (by simpa [Matrix.one_apply] using! And.intro · fun a ↦ ez a ▸\n    goodProjTranslate_mem_integralForms ⟨j⟩ ((hψ a).1 _ _ ⟨j⟩ (o.1 ι)) 1)).mono (by\n    rw [add_right_comm V, add_assoc]; simp [c, field] at *\n    grw [(D.le_of_hasLogBound : _ + _ ≤ 4⁻¹ * D.b ^ 3)]; nlinarith [D.logB.exp_pos]) fun _ ↦ le_rfl",
+   "uses": [
+    {
+     "decl": "one_determinant"
+    },
+    {
+     "decl": "Data.Θ"
+    }
+   ]
+  },
+  {
+   "id": "4.1",
+   "parent": "4",
+   "kind": "fact",
+   "claim": "Size: every conjugate of the Gram determinant of Θ_D(1)∘(y ⊕ z) has modulus ≤ exp(V + k·(x_D⁹⁹ + x₁_D²b_D²)): the y-part has squared covolume ≤ e^V (hV), each z_a = |𝖦|e₀ψ_a has squared norm ≤ exp(x⁹⁹ + x₁²b²) at every σ (`Data.normSqAt_goodProjTranslate_le` with the crude bound), adjoining them multiplies the covolume by at most that (`covolumeSq_elim_le`), and `norm_map_det_gram_le` passes to the Gram determinant. Also Θ_D(1) is injective and y ⊕ z is a basis (J, c).",
+   "lines": [
+    47,
+    49
+   ],
+   "span": [
+    47,
+    3,
+    49,
+    12
+   ],
+   "lean": "refine (one_determinant D.Θ (by simp) J (by simpa) (fun _ ↦ norm_map_det_gram_le fun σ ↦\n    Sum.comp_elim .. ▸ covolumeSq_elim_le (ez · ▸ normSqAt_goodProjTranslate_le ((hψ _).2 σ))\n    (hV σ))",
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "step": "3"
+    },
+    {
+     "decl": "LevelPlaces.LevelForm.norm_map_det_gram_le"
+    },
+    {
+     "decl": "LevelPlaces.LevelForm.covolumeSq_elim_le"
+    },
+    {
+     "decl": "Data.normSqAt_goodProjTranslate_le"
+    }
+   ]
+  },
+  {
+   "id": "4.2",
+   "parent": "4",
+   "kind": "fact",
+   "claim": "The scalars γ_ι = γ(θ_ι)/γ(1) are non-zero and |γ_ι|^(−2) has height ≤ 2m·m·2t·x⁹⁹⁹ (hγ, θ fit); the weights e have sums ≤ δ (he); the lattices are the ι-integral forms; the exponent is k; and the pairing of two integral forms is the hole proved in step 5.",
+   "lines": [
+    49,
+    49
+   ],
+   "span": [
+    49,
+    13,
+    49,
+    99
+   ],
+   "lean": "(by simp) (hγ θ o) he (fun _ j ↦ (integralForms ⟨j⟩).carrier) k (fun ι j _ a _ b ↦ ?_)",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "step": "2"
+    },
+    {
+     "decl": "LevelPlaces.LevelForm.integralForms"
+    }
+   ]
+  },
+  {
+   "id": "4.3",
+   "parent": "4",
+   "kind": "fact",
+   "claim": "The matrices: at a prime l, an embedding j and the twist θ_ι (l prime to its level, o), I gives an integral u with exp(−e(l)) ≤ |j(det u)| and Θ(θ_ι)(∑_k u_{ik}y_k) integral; extend it by the block diag(u, γ_ι·1_k), whose determinant has |j(·)| ≥ exp(−e(l))·|j(γ_ι)|^k, and whose second block gives γ_ι·Θ(θ_ι)(z_a) = γ_ι·ι_{θ_ι}(|𝖦|e₀ψ_a), integral by the crude integrality of ψ_a and `Data.goodProjTranslate_mem_integralForms`.",
+   "lines": [
+    50,
+    53
+   ],
+   "span": [
+    50,
+    5,
+    53,
+    75
+   ],
+   "lean": "fun ι j ↦ (I _ ⟨j⟩ _ (o.1 ι)).imp' ((algebraMap ..).mapMatrix · |>.fromBlocks 0 0 ((γ (θ ι) /\n    γ 1 : ℂ) • 1)) fun _ ↦ .imp (by grw [·]; simp [← RingHom.map_det, -RingHom.mapMatrix_apply])\n    (by simpa [Matrix.one_apply] using! And.intro · fun a ↦ ez a ▸\n    goodProjTranslate_mem_integralForms ⟨j⟩ ((hψ a).1 _ _ ⟨j⟩ (o.1 ι)) 1))",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "step": "3"
+    },
+    {
+     "decl": "Data.goodProjTranslate_mem_integralForms"
+    }
+   ]
+  },
+  {
+   "id": "4.4",
+   "parent": "4",
+   "kind": "deduction",
+   "claim": "`one_determinant` gives height ≤ V + k(x⁹⁹ + x₁²b²) + 2δ + k·4m²t·x⁹⁹⁹ for ι ↦ 𝔷_D(θ_ι)/𝔷_D(1); since k = dim rows − n ≤ (4/b²)·dim rows (c, hn) and x⁹⁹ + x₁²b² + 4m²tx⁹⁹⁹ ≤ b³/4 (size comparison), the excess is ≤ dim rows(D)·b_D.",
+   "lines": [
+    53,
+    55
+   ],
+   "span": [
+    53,
+    75,
+    55,
+    100
+   ],
+   "lean": ".mono (by\n    rw [add_right_comm V, add_assoc]; simp [c, field] at *\n    grw [(D.le_of_hasLogBound : _ + _ ≤ 4⁻¹ * D.b ^ 3)]; nlinarith [D.logB.exp_pos]) fun _ ↦ le_rfl",
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "decl": "Data.le_of_hasLogBound"
+    },
+    {
+     "decl": "Data.𝔷"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "fact",
+   "claim": "The hole of step 4.2: for x integral at j∘conj and y integral at j, |j⟨x, y⟩| ≤ 1 (`LevelPlaces.LevelForm.norm_inner_le_one` with A = 1: below the chosen level every stabiliser is trivial, `Data.classAut_eq_bot_of_le_chosenLevel` with #Y₀ ≤ n_m, `Data.card_Y_le`).",
+   "lines": [
+    56,
+    58
+   ],
+   "lean": "  simpa using (norm_inner_le_one _ _ ⟨j⟩\n    (fun g ↦ by erw [D.classAut_eq_bot_of_le_chosenLevel (Subgroup.map_mono fun _ h ↦\n    funext fun _ ↦ (h (.inl _) ⟨⟩).2) (by bound [D.card_Y_le .refl])]) a b :)",
+   "uses": [
+    {
+     "decl": "LevelPlaces.LevelForm.norm_inner_le_one"
+    },
+    {
+     "decl": "Data.classAut_eq_bot_of_le_chosenLevel"
+    },
+    {
+     "decl": "Data.card_Y_le"
+    }
+   ]
+  }
+ ]
+}

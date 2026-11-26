@@ -1,0 +1,152 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Rows.CartanIntegrality:29:7",
+ "name": "DividedSplitting.norm_schur_inv_cols_le_weylGauge",
+ "summary": "Insert the diagonal matrix with M⁻¹ on S and 1 elsewhere: the product of the inverse columns with K and with diag(M on S) is integral, so its Schur matrix has norm ≤ 1, and the Schur matrix of the diagonal costs the power of |M|_p.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "witness",
+   "claim": "Lift K to k ∈ K₀ (reductionK₀ is surjective).",
+   "lines": [
+    35,
+    35
+   ],
+   "lean": "  let ⟨k, _⟩ := reductionK₀_surjective.exists.1 hS",
+   "uses": [
+    {
+     "decl": "reductionK₀_surjective"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "Write h = k⁻¹·h' and use that the Weyl gauge is invariant under K₀ (weylGauge_mul at the local level).",
+   "lines": [
+    36,
+    36
+   ],
+   "lean": "  obtain ⟨h, rfl⟩ := mul_right_surjective k⁻¹.1 h; rw [weylGauge_mul h (Kf_le_localLevel k⁻¹.2)]",
+   "uses": [
+    {
+     "step": "1"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Unfold the gauge and the Weyl representation; move the inclusion matrices through the products (e).",
+   "lines": [
+    37,
+    37
+   ],
+   "lean": "  simp_all [weylGauge, weylRep, ← Matrix.mul_assoc, mul_inclMatrix, submatrix_mul (e₂ := id)]",
+   "uses": []
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "Bound the vector by the norm of S_κ(diag(M⁻¹ on S, 1)) times S_κ of the integral matrix (columns f of (gγ)⁻¹)·k·diag(M on S, 1), whose Schur matrix has norm ≤ 1 (norm_schur_mulVec_le, entries of norm ≤ 1 after the weight embedding: norm_adeleExtension_le_one); integrality of the entries in S follows from their vanishing modulo M (reduction_levelModulus_eq_zero_iff, the goal of step 7).",
+   "lines": [
+    38,
+    41
+   ],
+   "lean": "  grw [← norm_mulVec_le (M := schur κ fun _ ↦ diagonal (S.piecewise M⁻¹ 1)), ←\n    norm_schur_mulVec_le hl.1 fun τ i j ↦ norm_adeleExtension_le_one (weightEmbedding ιₚ τ)\n    (reduction_levelModulus_eq_zero_iff.1 (?_ : (O.levelModulus 1 false).reduction ((∑ c,\n    ⟨_, L.integral i (f c)⟩ * ⟨_, k.2.isIntMatrix c j⟩) * ite (j ∈ S) ↑M 1) = 0))]",
+   "uses": [
+    {
+     "decl": "norm_schur_mulVec_le"
+    },
+    {
+     "decl": "reduction_levelModulus_eq_zero_iff"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "computation",
+   "claim": "The two Schur matrices multiply to that of the product (HasColumnsBelow.schur_mul_schur under hl), which is the original matrix; compare entrywise.",
+   "lines": [
+    42,
+    43
+   ],
+   "lean": "  erw [mulVec_mulVec, mulVec_mulVec, hl.schur_mul_schur,\n    hl.schur_mul_schur]; congr! 5; ext; erw [mul_apply, mul_apply]",
+   "uses": [
+    {
+     "decl": "HasColumnsBelow.schur_mul_schur"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Split the cases j ∈ S or not of the diagonal entry.",
+   "lines": [
+    44,
+    44
+   ],
+   "lean": "  swap; split; simp_all [← Quotient.eq_zero_iff_mem]",
+   "uses": []
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "fact",
+   "claim": "For j ∈ S the entry Σ_c (ϖγ⁻¹)_{ic}·k_{cj} vanishes modulo M (from hS: ϖ̄·(G_f·K)_{ij} = 0 modulo M² gives the entry ≡ 0 modulo M), using the definition of reducedInverse.",
+   "lines": [
+    45,
+    46
+   ],
+   "lean": "  simp_all [mul_apply, DividedLattice.reducedInverse, reductionK₀, ← map_mul, ← map_sum,\n    reduction_levelModulus_eq_zero_iff, sq, mul_assoc]",
+   "uses": [
+    {
+     "decl": "DividedLattice.reducedInverse"
+    }
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "computation",
+   "claim": "The Schur matrix of a diagonal matrix is diagonal with entries the products of powers (schur_diagonal).",
+   "lines": [
+    47,
+    48
+   ],
+   "lean": "  all_goals simp +contextual [schur_diagonal, piecewise, diagonal_apply, apply_ite (GE.ge _),\n    apply_ite, prod_pow_eq_pow_sum, ← inv_pow, mul_assoc, ← mul_sum]",
+   "uses": []
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Each diagonal entry is at most |M|_p^{−(...)} since |M|_p ≤ 1.",
+   "lines": [
+    49,
+    49
+   ],
+   "lean": "  intro i; gcongr; simp [one_le_inv₀, NeZero.ne, norm_natCast_le_one]",
+   "uses": []
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "computation",
+   "claim": "The exponent is bounded by the tableau weights (sum_tableauWeight_le) and the diagram weights, giving |S|·Σ_{i<|l|} κ(τ, i) at each τ.",
+   "lines": [
+    50,
+    51
+   ],
+   "lean": "  grw [(sum_tableauWeight_le i ..).1, (diagramWeight_apply ..).le,\n    Ioo_subset_Iio_self]; simp [Iio_eq_Ico, mul_sum]",
+   "uses": []
+  }
+ ]
+}

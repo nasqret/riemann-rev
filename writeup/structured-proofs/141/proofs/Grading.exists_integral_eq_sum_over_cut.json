@@ -1,0 +1,295 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Seesaw.IntegralAsCosetSum:67:7",
+ "summary": "Unfold the quotient integral in stages over the finite Bessel group with a cutoff; the fibres are integrals over [B] given by hb, and the finite part is a sum over T weighted by 1/coverMultiplicity, because the average over B_f of ψ(u⁻¹t) = 1_T(u⁻¹t)/coverMultiplicity(t) is 1 where coverMultiplicity(t) ≠ 0 (the u with u⁻¹t ∈ T form coverMultiplicity(t) cosets of the compact open B_f ∩ A) and 0 where it vanishes, and f vanishes there (hs). (Lines 70–73 are the rest of the statement after its `let f :=`; the line census reads them as part of the value, so they stand in the introduction.)",
+ "intro_lines": [
+  [
+   70,
+   73
+  ]
+ ],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let η be the Haar measure on B_f normalised to give B_f ∩ A measure 1.",
+   "lines": [
+    74,
+    75
+   ],
+   "lean": "  let η := haarMeasure (G := Y.besselFin) ⟨⟨_, k.isCompact.preimage_val⟩, 1,\n    k.2.preimage_val.interior_eq.ge A.one_mem⟩"
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Choose a cutoff β for the proper action of the Bessel group on G (hasCutoff_of_proper), and let α(g) = ∫ β(g, s) dη(s).",
+   "lines": [
+    76,
+    77
+   ],
+   "lean": "  let ⟨β, _, hβ'⟩ := hasCutoff_of_proper (ν := @haar Y.besselGroup ..) (X := G E ε)\n  let α g := ∫⁻ s, β (g, s) ∂η"
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "witness",
+   "claim": "Take κ = ∫ a d(α·ℙ), and fix P, y, J, T, b with the hypotheses (o: J a level, p: P generic, z: y automorphic, hI: integrability, hT: stability, hs: non-vanishing multiplicity on the support, hb: the fibre integrals).",
+   "lines": [
+    78,
+    78
+   ],
+   "lean": "  use (withDensity ℙ α)[a], @fun P y J T o b p z hI hT hs hb ↦ ?_"
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Unpack genericity and automorphy, and note that G_f/J is discrete (J is open).",
+   "lines": [
+    79,
+    79
+   ],
+   "lean": "  obtain ⟨⟨⟩, ⟨⟩⟩ := z, p, discreteTopology o.2"
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let ψ be the function on G_f/J equal to 1/coverMultiplicity(B_f, A, T, t) on T and 0 elsewhere; it is continuous on the discrete space, hence measurable.",
+   "lines": [
+    80,
+    81
+   ],
+   "lean": "  let ψ := indicator T (coverMultiplicity Y.besselFin A T · : _ → NNReal)⁻¹\n  have hφ := (by fun_prop : Continuous (ψ ∘ QuotientGroup.mk)).measurable"
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "identity",
+   "claim": "Rewrite the integral by the following chain.",
+   "lines": [
+    82,
+    92
+   ],
+   "span": [
+    82,
+    3,
+    92,
+    68
+   ],
+   "lean": "erw [← setIntegral_eq_integral_of_forall_compl_eq_zero (not_imp_comm.1 <| hs ·),\n    restrict_withDensity',\n    (integral_quotMeasure_stages _ _ id ?_ (((congrArg _ (funext fun t ↦ ?_)).trans\n    (withDensity_indicator_one (isOpen_ne_fun ..).measurableSet)).subst (measurePreserving_smul_prod\n    (ν := haar) (β := fun g ↦ α g.1 * ψ g.2) _)) (map_subgroupOf_eq_of_le inf_le_right) _ (by\n    simp +contextual [*]) ((restrict_withDensity' ..).subst hI.restrict)).2, integral_congr_ae\n    ((ae_withDensity_iff _).2 (.of_forall (hb · ∘ by simp +contextual [ψ]))), integral_const_mul,\n    ← prod_withDensity _ hφ.coe_nnreal_ennreal, integral_prod_mul _ (b ∘ _),\n    integral_withDensity_eq_integral_smul hφ, ← integral_map (f := fun t ↦ ψ t • b t) _\n    (Continuous.aestronglyMeasurable _), ← indicator_smul_left, integral_indicator T.measurableSet,\n    setIntegral_finset _ (.mono_set _ (biUnion_of_singleton _).ge)]",
+   "head_lines": [
+    82,
+    82
+   ],
+   "head_span": [
+    82,
+    3,
+    82,
+    8
+   ]
+  },
+  {
+   "id": "6.1",
+   "parent": "6",
+   "kind": "identity",
+   "claim": "f vanishes where the multiplicity vanishes (hs), so its integral equals the integral over the set where it does not; move the restriction into the density.",
+   "lines": [
+    82,
+    83
+   ],
+   "span": [
+    82,
+    8,
+    83,
+    27
+   ],
+   "lean": "← setIntegral_eq_integral_of_forall_compl_eq_zero (not_imp_comm.1 <| hs ·),\n    restrict_withDensity',"
+  },
+  {
+   "id": "6.2",
+   "parent": "6",
+   "kind": "identity",
+   "claim": "Unfold in stages (integral_quotMeasure_stages): the integral over B(E⁺)\\G is the integral, against the measure with density α(g_∞)·ψ(g_f J), of the fibre integrals over [B], using that (r, g) ↦ r·g carries Haar × that measure to the restricted measure.",
+   "lines": [
+    84,
+    87
+   ],
+   "span": [
+    84,
+    5,
+    87,
+    77
+   ],
+   "lean": "(integral_quotMeasure_stages _ _ id ?_ (((congrArg _ (funext fun t ↦ ?_)).trans\n    (withDensity_indicator_one (isOpen_ne_fun ..).measurableSet)).subst (measurePreserving_smul_prod\n    (ν := haar) (β := fun g ↦ α g.1 * ψ g.2) _)) (map_subgroupOf_eq_of_le inf_le_right) _ (by\n    simp +contextual [*]) ((restrict_withDensity' ..).subst hI.restrict)).2,",
+   "uses": [
+    {
+     "decl": "integral_quotMeasure_stages"
+    }
+   ]
+  },
+  {
+   "id": "6.3",
+   "parent": "6",
+   "kind": "identity",
+   "claim": "Replace the fibre integrals by [K₀ : J]·a(t_∞)·b(t_f J) (hb) and pull out the constant.",
+   "lines": [
+    87,
+    88
+   ],
+   "span": [
+    87,
+    78,
+    88,
+    98
+   ],
+   "lean": "integral_congr_ae\n    ((ae_withDensity_iff _).2 (.of_forall (hb · ∘ by simp +contextual [ψ]))), integral_const_mul,"
+  },
+  {
+   "id": "6.4",
+   "parent": "6",
+   "kind": "identity",
+   "claim": "Split the product density and evaluate the finite part: ∫ ψ·b over G_f/J is the finite sum ∑_{t∈T} ψ(t)·b(t) (integral of an indicator of the finite set T).",
+   "lines": [
+    89,
+    92
+   ],
+   "span": [
+    89,
+    5,
+    92,
+    68
+   ],
+   "lean": "← prod_withDensity _ hφ.coe_nnreal_ennreal, integral_prod_mul _ (b ∘ _),\n    integral_withDensity_eq_integral_smul hφ, ← integral_map (f := fun t ↦ ψ t • b t) _\n    (Continuous.aestronglyMeasurable _), ← indicator_smul_left, integral_indicator T.measurableSet,\n    setIntegral_finset _ (.mono_set _ (biUnion_of_singleton _).ge)]"
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "fact",
+   "claim": "The measurability and continuity side goals hold (fun_prop).",
+   "lines": [
+    93,
+    93
+   ],
+   "lean": "  any_goals fun_prop"
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "computation",
+   "claim": "The measure of a finite union of cosets of J is its number times μ(J) (measure_union_cosets), and μ(J) = [K₀ : J]⁻¹; the factors [K₀ : J] cancel.",
+   "lines": [
+    94,
+    96
+   ],
+   "lean": "  iterate 3 simp [real_def, map_apply measurable_coe, measure_union_cosets o.2.measurableSet, field,\n    -enorm_mul, ← T.mul_sum, NNReal.smul_def, zero_lt_iff,\n    inter_eq_left.2 o.1 ▸ measure_inter_eq_inv_relIndex isCompact_Kf o.2]",
+   "uses": [
+    {
+     "decl": "measure_union_cosets"
+    }
+   ]
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "identity",
+   "claim": "Rewrite with the definition of α and the cutoff identity hβ′.",
+   "lines": [
+    97,
+    97
+   ],
+   "lean": "  simp [smul_def, α, ← lintegral_mul_const', Prod.mul_def] at hβ' ⊢"
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "identity",
+   "claim": "Exchange the order of integration (Tonelli) and substitute by left invariance of the Haar measures on B_f ∩ A and on B_f.",
+   "lines": [
+    98,
+    100
+   ],
+   "lean": "  rw [lintegral_lintegral_swap, ← lintegral_congr (lintegral_mul_left_eq_self _ ⟨_, ·⁻¹.2⟩),\n    lintegral_lintegral_swap, ← lintegral_congr (lintegral_mul_left_eq_self _\n    ⟨_, Y.snd_mem_besselFin ·.2⟩), lintegral_lintegral_swap] <;> try fun_prop"
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Simplify the indicator.",
+   "lines": [
+    101,
+    101
+   ],
+   "lean": "  simp [lintegral_mul_const', indicator, *]"
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Use classical decidability.",
+   "lines": [
+    102,
+    102
+   ],
+   "span": [
+    102,
+    3,
+    102,
+    24
+   ],
+   "lean": "let := Classical.dec;"
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "It remains the cutoff identity at t: ∫_{B_f} ψ(u⁻¹·t_f) dη(u) is 1 if m(t_f) = coverMultiplicity(B_f, A, T, t_f) ≠ 0 and 0 otherwise (the indicator of the set where the multiplicity is non-zero, introduced in step 6.1). With hs (f ≠ 0 only where m ≠ 0) this average of the indicator of the cut is 1 on the support of f, also at points with t_f ∉ T.",
+   "lines": [
+    102,
+    102
+   ],
+   "span": [
+    102,
+    25,
+    102,
+    56
+   ],
+   "lean": "show ∫⁻ u, ψ (u⁻¹ • t.2) ∂η = _",
+   "typed_fact": "∫⁻ u, ψ (u⁻¹ • t.2) ∂η = _"
+  },
+  {
+   "id": "14",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Split on whether m(t_f) ≠ 0 (not on whether t_f ∈ T). In the integrand ψ(u⁻¹·t_f) = 1_T(u⁻¹·t_f)/m(u⁻¹·t_f) the denominator is invariant under B_f, m(u⁻¹·t_f) = m(t_f) (coverMultiplicity_smul), while the numerator 1_T is invariant only under B_f ∩ A (hT); so ψ itself is not B_f-invariant. If m(t_f) = 0 the integrand vanishes (1/0 = 0 in ℝ≥0) and both sides are 0.",
+   "lines": [
+    103,
+    103
+   ],
+   "lean": "  split_ifs with m <;> simp [ψ, indicator, coverMultiplicity_smul, apply_ite, m]",
+   "uses": [
+    {
+     "decl": "coverMultiplicity_smul"
+    }
+   ]
+  },
+  {
+   "id": "15",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "If m(t_f) ≠ 0 (the branch hypothesis): the integrand is m(t_f)⁻¹ times the indicator of {u ∈ B_f : u⁻¹·t_f ∈ T}; this set is the union of the m(t_f) cosets of B_f ∩ A in the image (T is stable under B_f ∩ A, hT), so its η-measure is m(t_f)·η(B_f ∩ A) = m(t_f) (measure_union_cosets, which needs m(t_f) ≠ 0; η(B_f ∩ A) = 1); times m(t_f)⁻¹ this is 1.",
+   "lines": [
+    104,
+    107
+   ],
+   "lean": "  erw [lintegral_indicator_const (measurable_inv.smul_const t.2 T.measurableSet), (congrArg _\n    ((subset_preimage_image ..).antisymm fun r ⟨s, h, e⟩ ↦ (hT (s⁻¹ * r) (QuotientGroup.eq.1 e :)\n    _).2 (by simpa [mul_smul]))).trans (measure_union_cosets k.2.preimage_val.measurableSet m),\n    ENNReal.inv_mul_cancel_left, haarMeasure_self] <;> simp [*]",
+   "uses": [
+    {
+     "decl": "measure_union_cosets"
+    }
+   ]
+  }
+ ]
+}

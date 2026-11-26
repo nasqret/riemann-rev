@@ -1,0 +1,1304 @@
+% !TEX program = lualatex
+% ---------------------------------------------------------------------------------------------
+%  Readback note 14: Auxiliary dual pairs, determinant polynomials and the carrier: the explicit matching of theta kernels
+%
+%  Build:  python3 tools/rb.py note <slug>
+%
+%  One unit of a Lean artifact, rewritten as ordinary mathematics. The prose is hand-written. Lean names,
+%  line ranges and counts come from data.tex; quoted Lean statements are copied from the artifact by the build.
+%
+%  Rules of the text: standard terminology; every symbol is explained where it first appears and listed again
+%  in the notation at the end; no letter has two meanings; a proof is complete or says what it takes for granted;
+%  Lean names appear only in the LEAN lines and in the concordance.
+%
+%  The signature rule (the build enforces it): a function, relation or predicate that the artifact defines is
+%  written only through its notation macro, which the build makes from the spec (`notation`) with one slot for
+%  each explicit argument of the Lean definition. No argument is fixed and dropped, also not "for brevity" and
+%  not for one section. Every argument and every hypothesis of a stated declaration stands inside its
+%  statement, or in a Setting that the statement cites by number; only implicit and instance arguments (the
+%  ambient objects) may stand in the conventions.
+% ---------------------------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\ifdefined\pdfvariable\pdfvariable suppressoptionalinfo \numexpr 1+2+4+8\relax\fi
+\usepackage[a4paper,hmargin=35mm,top=22mm,bottom=27mm,footskip=12mm,nohead]{geometry}
+
+\usepackage{fontspec}
+\directlua{
+  luaotfload.add_fallback("gfallback", {"STIXTwoMath-Regular.otf:mode=node;", "DejaVuSans.ttf:mode=node;"})
+  luaotfload.add_fallback("gmonofallback", {"DejaVuSansMono.ttf:mode=node;", "STIXTwoMath-Regular.otf:mode=node;"})
+}
+\setmainfont{NewCM10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookItalic,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldItalic,SmallCapsFont=*-Book,SmallCapsFeatures={Letters=SmallCaps},
+  RawFeature={fallback=gfallback}]
+\setsansfont{NewCMSans10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookOblique,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldOblique,RawFeature={fallback=gfallback}]
+\setmonofont{JetBrainsMono}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,Scale=MatchLowercase,
+  RawFeature={-calt;-liga;fallback=gmonofallback}]
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage[math-style=TeX]{unicode-math}
+\setmathfont{NewCMMath-Book.otf}
+\emergencystretch=2.5em\relax
+
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows.meta,positioning,backgrounds}
+\usepackage[protrusion=true,expansion=true]{microtype}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{multicol}
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+
+\definecolor{ink}{HTML}{0F172A}
+\definecolor{inksoft}{HTML}{475569}
+\definecolor{inkfaint}{HTML}{94A3B8}
+\definecolor{rulegrey}{HTML}{CBD5E1}
+\definecolor{arith}{HTML}{C2410C}
+\definecolor{est}{HTML}{7C3AED}
+\definecolor{ana}{HTML}{0891B2}
+\definecolor{ok}{HTML}{047857}
+\definecolor{leancol}{HTML}{3730A3}
+
+\title{Auxiliary dual pairs, determinant polynomials and the carrier: the explicit matching of theta kernels}
+\author{grh-compact}
+\date{}
+
+% ------------------------------------------------------------------------------------- macros
+\newcommand{\leanfont}{\ttfamily\fontsize{8.6}{10.5}\selectfont\color{leancol}}
+\newcommand{\lean}[1]{\csname LN@#1\endcsname}
+\newcommand{\fillin}[1]{{\color{arith}\itshape[#1]}}  % a place of the template that is not written yet; the build reports every one that is left
+\newcommand{\leanquote}[1]{\csname LQ@#1\endcsname}
+\input{data.tex}
+
+\linespread{1.08}                       % 11 pt on 14.7 pt
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt plus 1.5pt minus 0.5pt}
+\setlength{\abovedisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\belowdisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\abovedisplayshortskip}{3pt plus 2pt}
+\setlength{\belowdisplayshortskip}{6pt plus 2pt minus 2pt}
+\emergencystretch=1.5em
+\clubpenalty=10000 \widowpenalty=10000 \displaywidowpenalty=10000
+\relpenalty=7000 \binoppenalty=9000
+\raggedbottom
+\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\sffamily\fontsize{7.6}{9}\selectfont\color{inkfaint}\thepage\,/\,\pageref*{LastPage}}
+\setlist{topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=4pt,leftmargin=2.1em,labelsep=0.55em}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\len}{\operatorname{len}}
+\newcommand{\cok}{\operatorname{cok}}
+\newcommand{\End}{\operatorname{End}}
+\newcommand{\Hom}{\operatorname{Hom}}
+\newcommand{\Gal}{\operatorname{Gal}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\kw}[1]{\emph{#1}}
+\newcommand{\m}[1]{\mbox{$#1$}}        % a short formula that must not be broken across lines
+\newcommand{\head}[1]{\par\addvspace{17pt plus 4pt minus 2pt}\Needspace{6\baselineskip}%
+  \noindent{\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\sect}[2]{\refstepcounter{section}\label{#2}\par\addvspace{19pt plus 4pt minus 2pt}\Needspace{7\baselineskip}%
+  \noindent\llap{{\fontsize{13.2}{16}\selectfont\bfseries\color{inkfaint}\thesection}\hspace{9pt}}%
+  {\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\subhead}[1]{\par\addvspace{9pt plus 2pt}\Needspace{4\baselineskip}\noindent\textbf{#1}\enspace\ignorespaces}
+% where a statement lives in the Lean archive
+\newcommand{\leantag}{{\sffamily\bfseries\fontsize{6.3}{8}\selectfont\color{leancol}\addfontfeatures{LetterSpace=7}LEAN}}
+\newcommand{\sep}{\unskip\nobreak\hspace{5pt}{\color{inkfaint}\textperiodcentered}\hspace{5pt plus 2pt}\ignorespaces}
+\newcommand{\leanline}[1]{\par\nopagebreak\vspace{-2.5pt}{\fontsize{8.9}{12.4}\selectfont\color{inksoft}\raggedright
+  \noindent\llap{\leantag\hspace{9pt}}#1\par}\vspace{1pt}}
+% a displayed statement in a tinted box: #1 colour, #2 text
+\newcommand{\statement}[2]{\par\addvspace{7pt}\begingroup\setlength{\fboxsep}{8.5pt}\setlength{\fboxrule}{0.6pt}%
+  \noindent\fcolorbox{#1!30!white}{#1!3!white}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{#2}}%
+  \endgroup\par\addvspace{7pt}}
+\newcommand{\nt}[2]{\par\noindent\hangindent=1.1em\hangafter=1 #1\enspace{\color{inksoft}#2}\par\vspace{1pt}}
+\newcommand{\legdot}[1]{\tikz[baseline=-0.62ex]\fill[#1] (0,0) circle (2.5pt);\hspace{3pt}}
+\newcommand{\crow}[4]{\csname CS@#1\endcsname & #2 & \textcolor{inksoft}{#3} & \textcolor{inksoft}{#4}\\}
+\newcommand{\leanquoteline}[2]{\par\noindent\hangindent=\dimexpr#1\fontdimen2\font+2.2em\relax\hangafter=1
+  \hspace*{#1\fontdimen2\font}#2}
+\newcommand{\quoted}[1]{\par\vspace{3pt}{\ttfamily\fontsize{7.5}{10.4}\selectfont\color{leancol}\raggedright
+  \setlength{\parskip}{0pt}\leanquote{#1}\par}\vspace{4pt}}
+\newcommand{\bx}[3]{{\sffamily\bfseries\fontsize{7.3}{9.2}\selectfont\color{#1!82!black}#2}\\[1.5pt]#3}
+\newcommand{\cs}[2]{\expandafter\newcommand\csname CS@#1\endcsname{#2}}
+
+% theorems
+\newtheoremstyle{plainx}{7pt plus 2pt}{7pt plus 2pt}{\itshape}{}{\bfseries}{.}{0.5em}{}
+\newtheoremstyle{uprightx}{7pt plus 2pt}{7pt plus 2pt}{}{}{\bfseries}{.}{0.5em}{}
+\theoremstyle{plainx}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{uprightx}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{setting}[theorem]{Setting}          % hypotheses shared by several statements; each of them cites it by number
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\renewcommand{\qedsymbol}{{\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.5pt}\fbox{\rule{0pt}{0.46em}\hspace{0.46em}}}}
+% what holds throughout the note: the ambient objects only (implicit and instance arguments), never a hypothesis
+\newenvironment{conventions}{\par\addvspace{5pt}\noindent\textbf{Conventions.}\enspace\ignorespaces}{\par\addvspace{3pt}}
+\makeatletter
+\renewenvironment{proof}[1][Proof]{\par\pushQED{\qed}\normalfont\topsep0pt\partopsep0pt
+  \trivlist\item[\hskip\labelsep\itshape #1.]\ignorespaces}{\popQED\endtrivlist\@endpefalse}
+\makeatother
+
+% where each declaration of the concordance is treated: \cs{key}{place}, the place naming a \label or a lettered item
+\cs{FixesColsOff}{Definition~\ref{d:cols}}
+\cs{rowStabilizer}{Definition~\ref{d:cols}}
+\cs{columnDatum}{Definition~\ref{d:cols}}
+\cs{columnDatumMul}{Lemma~\ref{l:cols}}
+\cs{HasWeightNormLe}{Definition~\ref{d:wn}}
+\cs{HasWeightNormLeProd}{Lemma~\ref{l:wnprod}}
+\cs{ChosenGL}{Definition~\ref{d:levels}}
+\cs{firstBlockHom}{Definition~\ref{d:levels}}
+\cs{auxLevel}{Definition~\ref{d:levels}}
+\cs{AuxPair}{Definition~\ref{d:aux}}
+\cs{levelGroup}{Definition~\ref{d:auxobj}}
+\cs{resDetDatum}{Definition~\ref{d:auxobj}}
+\cs{auxKappa}{Definition~\ref{d:auxobj}}
+\cs{detExp}{Definition~\ref{d:auxobj}}
+\cs{auxLevelChar}{Definition~\ref{d:auxobj}}
+\cs{levelChar}{Definition~\ref{d:auxobj}}
+\cs{FormV}{Definition~\ref{d:auxobj}}
+\cs{chosenGLRep}{Definition~\ref{d:auxobj}}
+\cs{formAction}{Definition~\ref{d:auxobj}}
+\cs{tensorPoly}{Definition~\ref{d:auxobj}}
+\cs{tensorPolyVec}{Remark~\ref{r:auxfacts}}
+\cs{harmonicPoly}{Definition~\ref{d:auxobj}}
+\cs{auxA}{Definition~\ref{d:auxobj}}
+\cs{auxB}{Definition~\ref{d:auxobj}}
+\cs{pairThetaKernel}{Definition~\ref{d:auxobj}}
+\cs{auxDatum}{Definition~\ref{d:auxobj}}
+\cs{fockDatum}{Definition~\ref{d:auxobj}}
+\cs{conjKernel}{Definition~\ref{d:auxobj}}
+\cs{descent}{Definition~\ref{d:auxobj}}
+\cs{heckePolyOnForms}{Definition~\ref{d:auxobj}}
+\cs{heckePolySmul}{Remark~\ref{r:auxfacts}}
+\cs{rankDiff}{Definition~\ref{d:auxobj}}
+\cs{testValue}{Definition~\ref{d:auxobj}}
+\cs{Lifts}{Definition~\ref{d:auxobj}}
+\cs{chosenModulusSq}{Definition~\ref{d:moduli}}
+\cs{mapBlock}{Remark~\ref{r:book}}
+\cs{levelModulusIdealLe}{Remark~\ref{r:book}}
+\cs{placesLevelModulus}{Remark~\ref{r:book}}
+\cs{reduceToRzero}{Definition~\ref{d:moduli}}
+\cs{liftModSupported}{Remark~\ref{r:book}}
+\cs{atPlaceTwist}{Remark~\ref{r:book}}
+\cs{DividedSplitting}{Definition~\ref{d:div}}
+\cs{genIdele}{Definition~\ref{d:div}}
+\cs{genIntAdele}{Definition~\ref{d:div}}
+\cs{genIdeleApply}{Remark~\ref{r:book}}
+\cs{reductionZero}{Lemma~\ref{l:red}}
+\cs{genResidue}{Definition~\ref{d:div}}
+\cs{genResidueSmul}{Lemma~\ref{l:genres}}
+\cs{stackedDet}{Definition~\ref{d:stacked}}
+\cs{unitModulus}{Definition~\ref{d:moduli}}
+\cs{carrierForm}{Definition~\ref{d:carrier}}
+\cs{carrierXi}{Definition~\ref{d:carrier}}
+\cs{detFromCols}{Lemma~\ref{l:detcols}}
+\cs{twoSidedSubst}{Definition~\ref{d:stacked}}
+\cs{inFirstCols}{Definition~\ref{d:stacked}}
+\cs{stackedDetProd}{Definition~\ref{d:stacked}}
+\cs{substStackedDetProd}{Lemma~\ref{l:subst}}
+\cs{firstColsCoord}{Definition~\ref{d:stacked}}
+\cs{substFirstColsCoord}{Lemma~\ref{l:coord}}
+\cs{blockSigns}{Definition~\ref{d:real}}
+\cs{posBlockEmb}{Definition~\ref{d:real}}
+\cs{posBlockEmbSpec}{Remark~\ref{r:pos}}
+\cs{cardNegBlockSigns}{Remark~\ref{r:pos}}
+\cs{matchedPoly}{Definition~\ref{d:real}}
+\cs{posFockVector}{Definition~\ref{d:real}}
+\cs{realWeilStackedDetProd}{Lemma~\ref{l:realweil}}
+\cs{realmatching}{Proposition~\ref{p:real}}
+\cs{isRapidModKernel}{Lemma~\ref{l:rapid}}
+\cs{explicitMatchingOfSum}{Proposition~\ref{p:sum}}
+\cs{classSumRowStabilizer}{Lemma~\ref{l:stab}}
+\cs{explicitmatching}{Theorem A}
+\cs{classSumDet}{Theorem B}
+\cs{carrierIdentity}{Theorem C}
+\newcommand{\CC}{\mathbb{C}}
+\newcommand{\ZZ}{\mathbb{Z}}
+\newcommand{\NN}{\mathbb{N}}
+\newcommand{\AAA}{\mathbb{A}}
+\newcommand{\ix}[1]{\mathsf{#1}}
+\newcommand{\OEr}{\mathcal{O}_E}
+\newcommand{\Ohat}{\widehat{\mathcal{O}}_E}
+\newcommand{\UU}{\mathrm{U}}
+\newcommand{\GL}{\mathrm{GL}}
+\newcommand{\Mat}{\mathrm{M}}
+\newcommand{\KK}[1]{\mathbf{K}_{#1}}
+\newcommand{\ip}[2]{\langle #1,#2\rangle}
+\newcommand{\clsum}[2]{\sideset{}{^{\mathrm{cl}}}\sum_{#1\bmod #2}}
+\newcommand{\tk}[7]{\theta^{#1,#2}_{#3,#4;#5}[#6,#7]}
+\newcommand{\LP}[3]{\Pi_{#1}(#2,#3)}
+\newcommand{\carrier}[2]{\mathfrak{C}_{#1,#2}}
+\newcommand{\sub}[2]{\operatorname{sub}_{#1,#2}}
+\newcommand{\sdp}[2]{\Delta(#1;#2)}
+\newcommand{\mpoly}[3]{Q_{#1,#2}(#3)}
+\newcommand{\infc}{\operatorname{col}}
+\newcommand{\inputbox}[1]{\statement{inksoft}{#1}}
+\newcommand{\transp}{^{\mathsf{T}}}
+\newcommand{\herm}{^{\mathsf{H}}}
+
+\begin{document}
+\color{ink}
+
+{\raggedright
+{\sffamily\bfseries\fontsize{7.2}{9}\selectfont\color{leancol}\addfontfeatures{LetterSpace=8}READBACK NOTE · CHAPTER VII · UNIT 143 · PART 2 OF 4\par}
+\vspace{5pt}
+{\fontsize{21.5}{25.5}\selectfont\bfseries Auxiliary dual pairs, determinant polynomials and the carrier: the explicit
+matching of theta kernels\par}
+\vspace{5pt}
+{\fontsize{12.4}{16}\selectfont\itshape\color{inksoft} One unit of the Lean artifact \ArtifactName, read back into
+mathematics\par}}
+\vspace{8pt}
+{\color{rulegrey}\hrule height 0.6pt}
+\vspace{7pt}
+\thispagestyle{empty}
+
+\textbf{Summary.} This note sets up the objects with which the rows of the proof are compared with definite
+groups: the record of an \emph{auxiliary dual pair}, with its level, its space of algebraic forms, its theta descent
+and its Hecke test; the determinants of a constant matrix stacked over a matrix of variables; and the \emph{carrier},
+a fixed holomorphic theta lift of the constant~$1$. It then proves three identities between theta kernels. The
+\emph{explicit matching} (Theorem~A) says that a theta kernel summed over the classes of a definite unitary group
+equals a theta kernel integrated over a unitary group of smaller rank, with explicit determinant polynomials at the
+infinite places on both sides, up to a constant whose absolute value is given by Hecke $L$-values. Two consequences
+follow: a class sum of a kernel of two definite groups of equal rank is a constant of this kind (Theorem~B), and a
+twisted class sum against an explicit form is a constant multiple of the carrier (Theorem~C), so that a twist
+survives only as a number.
+
+\statement{leancol}{\fontsize{9.6}{13.2}\selectfont\textbf{What this note is.} The artifact \ArtifactName{} is a
+body of Lean code: the compact edition of a formal proof, due to L.~Alpöge with the AI system Claude, of the Riemann
+hypothesis and of its generalisation to Dirichlet $L$-functions. That headline is a claim. The authors report that
+every file compiles with Lean v4.35.0 against a pinned version of Mathlib and that Lean's kernel accepted the
+proofs; an independent build is recorded in the handout's record of checks when it reports. No mathematician has
+read the argument through, and nothing here says that the Riemann hypothesis is proved. This note is the second of
+four on one unit of the artifact, the folder of the rows; it treats \UnitInNote{} of the unit's \UnitMembers{}
+declarations, those of five files. All definitions are given. The lemmas of linear algebra and the three theorems
+are proved from results of the background library and from one result of another unit, the exchange theorem
+(Inputs 1 to~9); these are stated and not proved here. The archimedean step, Proposition~\ref{p:real}, was read line by
+line in the Lean text. Every statement below was compared with its Lean text, argument by argument. The Lean text
+read is \PinText; Appendix~A is the concordance of \ConcDecls{} declarations.}
+
+\sect{The statements}{s:intro}
+The objects are defined in §\ref{s:setting}: the theta kernel \m{\tk{S}{T}{\alpha}{\beta}{\mathfrak{m}}{\Psi}{P}(g,h)}
+of two hermitian spaces, the class sum \m{\clsum{h}{\KK{\ix a}}} over a definite unitary group, tame characters and
+the product \m{\LP{\mathfrak{m}}{\nu}{d}} of $L$-values in Setting~\ref{set:bg}; the determinant polynomials
+\m{\sdp{e}{\eta}} and \m{\mpoly{f}{j}{\eta}} in Definitions \ref{d:stacked} and~\ref{d:real}; the carrier in
+Definition~\ref{d:carrier}.
+
+\statement{arith}{\phantomsection\label{t:A}\textbf{Theorem A} (explicit matching).\enspace
+\emph{In Setting~\ref{set:bg}, let \m{\ix n,\ix m,\ix a,\ix b,\ix p,\ix l} be finite index sets, $s$ a sign vector on~$\ix n$
+and $W$ a hermitian space over~$E$ with index set~$\ix n$ and signs~$s$. Let \m{f\colon\ix p\sqcup\ix l\to\ix b} be a
+bijection and $V'$ a hermitian space with index set~$\ix b$ and signs \m{\blockSigns{f}{\cdot}}. Let
+\m{\sigma\colon\ix b\sqcup\ix a\to\ix n}, \m{e\colon\ix p\sqcup\ix a\to\ix m} and \m{j\colon\ix m\sqcup\ix l\to\ix n}
+be bijections with \m{s=\blockSigns{j}{\cdot}}, let \m{d\ge0} be an integer with \m{|\ix a|=|\ix b|+2d}, suppose
+\m{2|\ix l|+2\le|\ix n|}, and let \m{\iota=(\iota_\tau)} be a family of finite sets indexed by the infinite places
+of~$E$. Then there is a real number~$C$ such that for every modulus~$\mathfrak{m}$, every character~$\alpha$, weight~$\gamma$
+and character~$\chi$ of \m{\OEr/\mathfrak{m}} for which $\alpha$ is tame for \m{(\mathfrak{m},\gamma,\chi)} and
+\m{\gamma_\tau=|\ix l|-|\iota_\tau|} for all~$\tau$, there is \m{c\in\CC} with
+\[|c|^2=\frac{C}{\LP{\mathfrak{m}}{\alpha^{-1}\upsilon^{|\ix b|+d}}{d}}\]
+such that for every family \m{\eta=(\eta_{\tau k})} of complex \m{\ix p\times\ix m} matrices, \m{k\in\iota_\tau}, for all
+partners $\Phi$, $\Psi$ for \m{(\sigma,\chi^{-1})}, every character~$\beta$ and every \m{g\in\UU(W)(\AAA)}:
+\[c\cdot\clsum{h}{\KK{\ix a}}\tk{W}{I_{\ix a}}{\alpha}{\beta}{\mathfrak{m}}{\Phi}{\sdp{e}{\eta}^{j}}(g,h)
+=\int_{[\UU(V')]}\tk{V'}{W}{\alpha/\beta}{\alpha}{\mathfrak{m}}{\Psi}{\mpoly{f}{j}{\eta}}(x,g)\,dx .\]
+Here \m{\sdp{e}{\eta}^{j}} is the polynomial \m{\sdp{e}{\eta}} with the column index \m{c\in\ix m} of its variables
+replaced by \m{j(c)\in\ix n}.}}
+\leanline{\lean{explicitmatching}}
+
+\statement{arith}{\phantomsection\label{t:B}\textbf{Theorem B} (a class sum of a theta kernel as Hecke values).\enspace
+\emph{In Setting~\ref{set:bg}, let \m{m\ge1} be an even integer and let $c$ assign an integer \m{c_\tau\ge0} to each
+infinite place~$\tau$ of~$E$. Then there is a real number~$C$ such that for every modulus~$\mathfrak{m}$, every
+character~$\alpha$ and every character~$\chi$ of \m{\OEr/\mathfrak{m}} with $\alpha$ tame for
+\m{(\mathfrak{m},-c,\chi)} there is \m{\gamma\in\CC} with
+\m{|\gamma|^2=C/\LP{\mathfrak{m}}{\alpha^{-1}\upsilon^{m/2}}{m/2}} and, for every \m{g\in\UU(I_m)(\AAA)},
+\[\gamma\cdot\clsum{h}{\KK{m}}\tk{I_m}{I_m}{\alpha}{\alpha}{\mathfrak{m}}{\chi\circ\det}{\textstyle\prod_\tau\det(x_\tau)^{c_\tau}}(g,h)=1 .\]}
+
+\vspace{4pt}\phantomsection\label{t:C}\textbf{Theorem C} (the carrier: one fixed form under all twists).\enspace
+\emph{In Setting~\ref{set:bg}, let \m{m\ge1} be an even integer. Then there is a real number~$C$ such that for every
+modulus~$\mathfrak{m}$, every character~$c$ and every character~$\chi$ of \m{\OEr/\mathfrak{m}} with $c$ tame for
+\m{(\mathfrak{m},0,\chi)} there is \m{\gamma\in\CC} with
+\[|\gamma|^2=\frac{C}{\LP{\mathfrak{m}}{c^{-1}\upsilon^{m}}{m}\cdot\LP{\mathfrak{m}}{c\,\upsilon^{m/2}}{m/2}}\]
+and, for every \m{x\in\UU(I_{2m,m})(\AAA)},
+\[\gamma\cdot\clsum{h}{\KK{3m}}\carrierXi{m}{c}{h}\cdot\tk{I_{2m,m}}{I_{3m}}{\upsilon^{m}}{c}{\mathfrak{m}}{\chi\circ\det}{1}(x,h)=\carrier{E}{m}(x) .\]}}
+\leanline{\lean{classSumDet}\sep \lean{carrierIdentity}\sep in Theorems B and~C the integer~$m$ is the Lean
+variable; it is not the number of lifts of the data, which is its value where the theorems are applied}
+
+In Theorem~C the left side depends on the character~$c$, which in the applications carries the twist, and the right
+side does not: the twist is seen only through the number~$\gamma$, of known absolute value. In Theorems A to~C the
+constant~$C$ may be zero; then the corresponding number is zero and the identity says that the right side
+vanishes. That the carrier is not zero is proved in the note \emph{The height of a ratio of lift volumes}.
+
+\sect{The setting}{s:setting}
+\begin{conventions}\phantomsection\label{c:conventions}
+Finite index sets are written in sans-serif, with the letters of the formal text: \m{\ix r,\ix n,\ix N,\ix m,\ix a,\ix b,\ix c,
+\ix p,\ix l,\ix L,\ix k}; \m{|\ix n|} is the number of elements of~$\ix n$, and an \m{\ix n\times\ix r} matrix has rows
+indexed by~$\ix n$ and columns by~$\ix r$. For a matrix~$z$, \m{z\transp} is its transpose and \m{z\herm} its conjugate
+transpose. The ambient objects of the declarations of this note, their implicit and instance arguments, are: the
+commutative rings $R$ and~$S$ of §\ref{s:cols}; the finite set~$\Phi$ of places and the finite index sets of each
+statement; and, from Definition~\ref{d:aux} on, a field~$E$ that is a CM field with a CM type and with Weil data, as
+in Setting~\ref{set:bg}. Each statement names the objects it uses. In the proofs, when a statement of the formal text
+has implicit arguments that a later hypothesis determines (a modulus~$\mathfrak{m}$, characters, signs, a
+polynomial), they are introduced with that hypothesis.
+\end{conventions}
+
+\begin{setting}[the background: fields, characters, spaces, kernels, weights]\label{set:bg}
+All of this is defined in the background library of the artifact; the catalogue of the handout gives references.
+
+\emph{(a) The field.} $E$ is a CM field with a CM type (for each infinite place~$\tau$ a complex embedding that
+induces it) and with \kw{Weil data}: the choices that fix the Weil representation, among them a character~$\upsilon$ of
+the norm-one ideles of~$E$, the restriction of a splitting character. Finite places are written $w$, with residue
+field~$k_w$, norm~$q_w$ and complex conjugate~$\bar w$; $\Ohat$ is the ring of integral finite adeles, $\AAA$ the
+adeles and $\AAA_f$ the finite adeles of the totally real subfield.
+
+\emph{(b) Moduli.} A \kw{modulus} is a non-zero ideal~$\mathfrak{m}$ of~$\OEr$ divisible by at most one of $w$,
+$\bar w$ for each~$w$. It has a chosen reduction \m{\Ohat\to\OEr/\mathfrak{m}} extending the one of~$\OEr$ and a chosen
+\kw{generator}, an integral idele equal to~$1$ at the places not dividing~$\mathfrak{m}$ that generates the kernel of
+the reduction. \kw{Level places} are a pair~$S$ of finite families of finite places, the \kw{chosen places} and the
+\kw{twist places}, such that all these places are distinct and none is the conjugate of another;
+\m{\mathfrak{M}_S} and \m{\mathfrak{Q}_S} are the products of the primes of the two families, so that
+\m{\mathfrak{M}_S^{c}\mathfrak{Q}_S} and \m{\mathfrak{M}_S^{c}} are moduli for every integer \m{c\ge0}.
+
+\emph{(c) Characters.} A \kw{character} is a continuous character of the norm-one ideles of~$E$ trivial on the
+norm-one elements of~$E$. It has \kw{weight}~$e$, an integer~$e_\tau$ for each~$\tau$, and \kw{tame part}
+\m{\psi=(\psi_w)}, a character of \m{k_w^\times} for each~$w$, almost all trivial, if its value at~$u$ is
+\m{\prod_\tau u_\tau^{e_\tau}\prod_w\psi_w(u\bmod w)} whenever the finite part of~$u$ is integral. It is \kw{tame for}
+\m{(\mathfrak{m},e,\chi)}, for a modulus~$\mathfrak{m}$ and a multiplicative character~$\chi$ of \m{\OEr/\mathfrak{m}},
+if \m{\mathfrak{m}\ne(1)}, it has weight~$e$ and a tame part that is non-trivial exactly at the primes
+dividing~$\mathfrak{m}$, and $\chi$ is the product of the~$\psi_w$. For a set~$T$ of finite places, a
+character~$\nu$ and an integer \m{d\ge0}, with \m{L^{T}(z,\nu)} the Hecke $L$-function of~$\nu$ without its Euler
+factors at~$T$,
+\[\LP{T}{\nu}{d}=\Bigl(\prod_{w\in T}q_w\Bigr)^{d^2}\cdot\prod_{z=1}^{d}\bigl|L^{T}(z,\nu)\bigr|^2,\]
+and \m{\LP{\mathfrak{m}}{\nu}{d}} is this number for the set of primes dividing~$\mathfrak{m}$.
+
+\emph{(d) Spaces and groups.} For a finite index set~$\ix n$ and a sign vector \m{s\colon\ix n\to\{\pm1\}}, a
+\kw{hermitian space with index set~$\ix n$ and signs~$s$} is a hermitian matrix over~$E$ together with an adelic
+point that brings it to \m{\operatorname{diag}(s)} at the infinite places and to~$1$ at the finite places. $I_{\ix n}$
+is the standard positive definite one, $I_m$ the one with index set \m{\{1,\dots,m\}}, \m{I_{2m,m}} the diagonal
+space with $2m$ signs~$+1$ and $m$ signs~$-1$, $S^{-}$ the space~$S$ with the opposite form and \m{S\oplus T} the
+orthogonal sum. \m{\UU(S)(\AAA)} is the adelic unitary group, \m{[\UU(S)]} its automorphic quotient with its invariant
+measure, and \m{G_\infty(s)} the product over the infinite places of the real unitary groups of \m{\operatorname{diag}(s)}.
+For the definite space, \m{\KK{\ix n}=\UU(I_{\ix n})(\Ohat)} is the stabiliser of the standard lattice, and a
+\kw{level} is a subgroup of finite index in an open subgroup of it. For a level~$\Gamma$ and a function~$F$ on
+\m{\UU(I_{\ix n})(\AAA_f)}, the \kw{class sum} is
+\[\clsum{h}{\Gamma}F(h)=\sum_{\mathfrak{c}}\frac{F(h_{\mathfrak{c}})}{\#\bigl(\UU(I_{\ix n})(E)\cap h_{\mathfrak{c}}\Gamma h_{\mathfrak{c}}^{-1}\bigr)},\]
+the sum over the double cosets~$\mathfrak{c}$ of \m{\UU(I_{\ix n})(E)\backslash\UU(I_{\ix n})(\AAA_f)/\Gamma} with chosen
+representatives~$h_{\mathfrak{c}}$.
+
+\emph{(e) Theta kernels.} Let $S$ and~$T$ be hermitian spaces with index sets $\ix n$ and~$\ix n'$ and $\alpha$,
+$\beta$ characters. The Weil representation \m{\omega_{\alpha,\beta}} of \m{\UU(S)(\AAA)\times\UU(T)(\AAA)} acts on
+the Schwartz functions on \m{\operatorname{Hom}(S,T)}. At the infinite places it is realised in a Fock model: a
+complex polynomial~$P$ in the variables \m{x_{\tau,i,c}}, with $\tau$ an infinite place, \m{i\in\ix n'} and
+\m{c\in\ix n}, has a \kw{Fock vector}~$v_P$, the Fock vectors are dense in the Fock space, and the groups
+\m{G_\infty} act through the \kw{real Weil representation} \m{\omega^{\infty}_{\gamma,\gamma'}} with integer
+weights $\gamma$, $\gamma'$. For a modulus~$\mathfrak{m}$, a complex function~$\Psi$ on the \m{\ix n'\times\ix n}
+matrices over \m{\OEr/\mathfrak{m}} and a polynomial~$P$, the \kw{theta kernel} is
+\[\tk{S}{T}{\alpha}{\beta}{\mathfrak{m}}{\Psi}{P}(g,h)=\theta\bigl(\omega_{\alpha,\beta}(g,h)\,(v_P\otimes\Psi)\bigr),\qquad g\in\UU(S)(\AAA),\ h\in\UU(T)(\AAA),\]
+where $\theta$ is the theta functional and \m{v_P\otimes\Psi} the Schwartz function with archimedean part~$v_P$
+and finite part the function~$\Psi$ of the reduction modulo~$\mathfrak{m}$ at the primes dividing~$\mathfrak{m}$,
+applied to the vacuum vector elsewhere. When \m{T=I_{\ix n'}} and $h$ is a finite adelic point, the same notation
+is used with the infinite component of~$h$ equal to~$1$. Functions $\Phi$ on \m{\ix a\times\ix n} matrices and $\Psi$
+on \m{\ix n\times\ix b} matrices over a commutative ring are \kw{partners for} \m{(\sigma,\chi)}, with
+\m{\sigma\colon\ix b\sqcup\ix a\to\ix n} a bijection and $\chi$ a multiplicative character of the ring, if $\Phi$
+vanishes off the matrices formed by the rows \m{\sigma(\ix a)} of~$k^{-1}$ and $\Psi$ off those formed by the columns
+\m{\sigma(\ix b)} of~$k$, for invertible \m{\ix n\times\ix n} matrices~$k$, and the value of~$\Phi$ at the first is
+\m{\chi(\det k)} times the value of~$\Psi$ at the second.
+
+\emph{(f) Weights and polynomials.} $\Phi$ is a finite set, in the applications the set of infinite places. A
+\kw{weight}~$\kappa$ assigns to each \m{\tau\in\Phi} and each height \m{h\ge0} a number \m{\kappa_\tau(h)\ge0} of
+columns. For a finite index set~$\ix n$, the \kw{standard fillings} of weight~$\kappa$ with rows~$\ix n$ index a
+basis~$b_l$ of the polynomials in matrix variables that are semi-invariant of weight~$\kappa$ under the Borel
+subgroup: products of minors. With the integer Gram matrix~$G_\kappa$ of this basis, a complex coordinate
+vector~$\xi$ indexed by the standard fillings has the polynomial
+\m{\operatorname{pol}_\kappa(\xi)=\sum_l(G_\kappa\xi)_l\,b_l} and the squared norm
+\m{\|\xi\|_\kappa^2=\operatorname{Re}(\xi\herm G_\kappa\xi)}. The \kw{Fock pairing} of two polynomials is
+\m{\ip{P}{Q}=P(\partial)Q(0)}; the \kw{hook number}~$h_\kappa$ is the pairing with itself of the product of leading
+minors of weight~$\kappa$; the \kw{Schur matrix} \m{S_\kappa(z)} of matrices~$z_\tau$ expresses the polynomials
+\m{b_l(zy)} in the basis.
+\end{setting}
+
+\subsection*{Matrices with prescribed columns}\label{s:cols}
+\begin{definition}[stabiliser and column datum]\label{d:cols}
+Let $R$ and~$S$ be commutative rings, \m{\ix r} and~\m{\ix N} finite index sets, \m{\ix c} an index set,
+\m{\chi\colon R\to\CC} a multiplicative character (zero on the non-units), \m{\varphi\colon R\to S} a ring
+homomorphism, $w$ a \m{\ix c\times\ix N} matrix over~$S$ and \m{e\colon\ix r\hookrightarrow\ix N} an embedding. Let
+\m{I_e} be the \m{\ix N\times\ix r} matrix whose column~$i$ is the standard basis vector of index~\m{e(i)}.
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=2pt]
+\item For an \m{\ix N\times\ix N} matrix~$z$ over~$R$, \m{\FixesColsOff{e}{z}} is the proposition
+\m{z\,(1-I_eI_e\transp)=1-I_eI_e\transp}: the columns of~$z$ with index outside \m{e(\ix r)} are those of the identity
+matrix.
+\item \m{\rowStabilizer{\varphi}{w}{e}} is the subgroup of the \m{A\in\GL_{\ix N}(R)} with \m{\FixesColsOff{e}{A}} and
+\m{w\,\varphi(A)=w}.
+\item For an \m{\ix N\times\ix r} matrix~$\sigma$ over~$R$, the \kw{column datum} is
+\[\columnDatum{\chi}{\varphi}{w}{e}{\sigma}=\begin{cases}\chi\bigl(\det(I_e\transp\sigma)\bigr)&\text{if }w\,\varphi(\sigma)=w\,I_e,\\ 0&\text{otherwise,}\end{cases}\]
+where \m{I_e\transp\sigma} consists of the rows \m{e(\ix r)} of~$\sigma$.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{FixesColsOff}\sep \lean{rowStabilizer}\sep \lean{columnDatum}}
+
+\begin{lemma}[on the stabiliser the datum is a product]\label{l:cols}
+Let $R$ and~$S$ be commutative rings, \m{\ix r} and~\m{\ix N} finite index sets, \m{\ix a} and~\m{\ix c} index sets,
+$\chi$ a multiplicative character of~$R$, \m{\varphi\colon R\to S} a ring homomorphism, $w$ a \m{\ix c\times\ix N}
+matrix over~$S$ and \m{e\colon\ix r\hookrightarrow\ix N} an embedding. Let $F$ be a complex function on the
+\m{\ix N\times\ix a} matrices over~$R$ with \m{F(Ay)=F(y)} for all \m{A\in\rowStabilizer{\varphi}{w}{e}} and all~$y$.
+Then for every \m{\ix N\times\ix a} matrix~$y$ and every \m{\ix N\times\ix N} matrix~$z$ over~$R$
+\[\columnDatum{\chi}{\varphi}{w}{e}{zI_e}\cdot\bigl[\FixesColsOff{e}{z}\bigr]\,F(y)=\bigl[z\in\rowStabilizer{\varphi}{w}{e}\bigr]\,\chi(\det z)\,F(z^{-1}y),\]
+where a bracket is $1$ if the proposition in it holds and $0$ if not.
+\end{lemma}
+\begin{proof}
+Suppose \m{\FixesColsOff{e}{z}}. Then \m{z=1+(z-1)I_eI_e\transp}, so
+\[\det z=\det\bigl(1+I_e\transp(z-1)I_e\bigr)=\det(I_e\transp zI_e),\]
+since \m{I_e\transp I_e=1}; and \m{w\varphi(z)=w} holds if and only if \m{w\varphi(z)I_e=wI_e}, because the columns
+outside \m{e(\ix r)} agree on both sides. So \m{\columnDatum{\chi}{\varphi}{w}{e}{zI_e}} is \m{\chi(\det z)} if
+\m{w\varphi(z)=w}, and $0$ if not. If $z$ is not invertible, then \m{\chi(\det z)=0} and \m{z} is in no subgroup of
+\m{\GL_{\ix N}(R)}: both sides vanish. If $z$ is invertible, the left side is \m{\chi(\det z)F(y)} when $z$ lies in the
+stabiliser and $0$ otherwise, and for $z$ in the stabiliser \m{F(y)=F(z^{-1}y)} by the invariance of~$F$
+under~$z^{-1}$.
+\end{proof}
+\leanline{\lean{columnDatumMul}}
+
+\subsection*{Weights and norms of products}
+\begin{definition}[weight with a norm bound]\label{d:wn}
+Let $\Phi$ and~$\ix n$ be finite, $p$ a proposition, $\kappa$ a weight, $F$ a polynomial and $b$ a real number.
+\m{\HasWeightNormLe{p}{\kappa}{F}{b}} means: there is a coordinate vector~$\xi$ of weight~$\kappa$ with rows~$\ix n$
+such that \m{\operatorname{pol}_\kappa(\xi)=F} and, if $p$ holds, \m{\|\xi\|_\kappa^2\le b}.
+\end{definition}
+\leanline{\lean{HasWeightNormLe}}
+
+\begin{lemma}[products]\label{l:wnprod}
+Let $\Phi$ and~$\ix n$ be finite, $p$ a proposition, $s$ a finite set and, for \m{i\in s}, let $\kappa_i$ be a
+weight, $F_i$ a polynomial and $b_i$ a real number. If \m{\HasWeightNormLe{p}{\kappa_i}{F_i}{b_i}} for all \m{i\in s},
+then
+\[\HasWeightNormLe{p}{\textstyle\sum_{i\in s}\kappa_i}{\textstyle\prod_{i\in s}F_i}{\textstyle\prod_{i\in s}b_i}.\]
+\end{lemma}
+\begin{proof}
+By induction on~$s$. For the empty set the polynomial~$1$ is the polynomial of the coordinate vector of weight~$0$
+with entry~$1$, of squared norm~$1$. For the step it suffices to treat two factors
+\m{F=\operatorname{pol}_\kappa(\xi)} and \m{F'=\operatorname{pol}_{\kappa'}(\xi')}. The product \m{FF'} is semi-invariant of
+weight \m{\kappa+\kappa'}, so by Input~1 it is \m{\operatorname{pol}_{\kappa+\kappa'}(\xi'')} for some~$\xi''$, and
+by Input~2 \m{\|\xi''\|^2_{\kappa+\kappa'}\le\|\xi\|^2_\kappa\,\|\xi'\|^2_{\kappa'}}. The squared norms are \m{\ge0}, so the
+bounds multiply.
+\end{proof}
+\leanline{\lean{HasWeightNormLeProd}}
+
+\subsection*{Auxiliary pairs}
+\begin{definition}[the finite groups of level places]\label{d:levels}
+In Setting~\ref{set:bg}, let $S$ be level places of~$E$, \m{\ix r} and~\m{\ix n} finite index sets and
+\m{u\colon\ix r\hookrightarrow\ix n} an embedding.
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=2pt]
+\item \m{\ChosenGL{S}{\ix r}} is the product of the groups \m{\GL_{\ix r}(k_w)} over the chosen places~$w$ of~$S$.
+\item \m{\firstBlockHom{S}{u}{g}}, for \m{g=(g_w)\in\ChosenGL{S}{\ix r}}, is the family in the product of the groups
+\m{\GL_{\ix n}(k_w)} over all places of~$S$ equal to \m{\operatorname{diag}(g_w,1)} at the chosen places, the block~$g_w$
+on the indices \m{u(\ix r)}, and to~$1$ at the twist places; it is a homomorphism in~$g$.
+\item \m{\auxLevel{S}{u}} is the subgroup of the product of the groups \m{\GL_{\ix n}(k_w)} over all places of~$S$
+formed by the families that fix the basis vectors of index in \m{u(\ix r)} at the chosen places and whose rows of index in
+\m{u(\ix r)} vanish outside the columns \m{u(\ix r)} at the twist places.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{ChosenGL}\sep \lean{firstBlockHom}\sep \lean{auxLevel}}
+
+\begin{definition}[auxiliary pair]\label{d:aux}
+In Setting~\ref{set:bg}, let \m{\ix r} and~\m{\ix n} be finite index sets. An \kw{auxiliary pair} for
+\m{(E,\ix r,\ix n)}, an element~$O$ of \m{\AuxPair{E}{\ix r}{\ix n}}, consists of: level places of~$E$, with products
+\m{\mathfrak{M}_O} and \m{\mathfrak{Q}_O}; a sign vector~$s_O$ on~$\ix r$ and a hermitian space~$W_O$ with index
+set~$\ix r$ and signs~$s_O$; an embedding \m{e_O\colon\ix r\hookrightarrow\ix n}; a numbering
+\m{\operatorname{ord}_O\colon\ix r\to\NN}; two weights $\kappa^{+}_O$ and~$\kappa^{-}_O$; and a character~$\mu_O$ with a weight
+and a tame part~$\psi_O$ such that \m{\psi_{O,w}=1} at every finite place~$w$ that is not a place of the level
+places; with \m{|\ix r|<|\ix n|}. The second space of the pair is~$I_{\ix n}$.
+\end{definition}
+\leanline{\lean{AuxPair}}
+
+\begin{definition}[the objects of an auxiliary pair]\label{d:auxobj}
+In Setting~\ref{set:bg}, let $O$ be an auxiliary pair for \m{(E,\ix r,\ix n)}.
+\begin{enumerate}[label=\textup{(\arabic*)},leftmargin=2.3em,itemsep=2pt]
+\item \emph{Level.} \m{\levelGroup{O}} is the level in \m{\KK{\ix n}} of the elements whose reductions at the places
+of~$O$ form an element of \m{\auxLevel{O}{e_O}}. The character \m{\auxLevelChar{O}{g}} of \m{g\in\auxLevel{O}{e_O}} is the
+product over the twist places~$w$ of \m{\psi_{O,w}^{-1}} at the determinant of the block of~$g_w$ with rows and
+columns \m{e_O(\ix r)}, and \m{\levelChar{O}} is the character of \m{\levelGroup{O}} obtained by reduction.
+\item \emph{Datum at the level.} For a family \m{X=(X_w)} of \m{\ix n\times\ix r} matrices over the residue fields at
+the places of~$O$, \m{\resDetDatum{O}{X}} is the product over the twist places~$w$ of \m{\psi_{O,w}} at the determinant
+of the rows \m{e_O(\ix r)} of~$X_w$ if \m{X_w=I_{e_O}} at every chosen place, and $0$ otherwise.
+\item \emph{Weight and forms.} \m{\auxKappa{O}} is the weight and \m{\detExp{O}{\tau}} the integer given by
+\[\auxKappa{O}\colon(\tau,i)\mapsto\kappa^{+}_{O,\tau}(i)+\kappa^{-}_{O,\tau}(|\ix n|-i),\qquad
+\detExp{O}{\tau}=-\sum_{1\le i<|\ix n|}\kappa^{-}_{O,\tau}(i).\] \m{\FormV{O}} is the space of algebraic modular
+forms on~$I_{\ix n}$ of weight \m{(\auxKappa{O},\detExp{O}{\cdot})} on which \m{\levelGroup{O}} acts through
+\m{\levelChar{O}}. \m{\rankDiff{O}=|\ix n|-|\ix r|}.
+\item \emph{The finite group.} For a complex representation~$\pi$ of \m{\UU(I_{\ix n})(\AAA_f)},
+\m{\chosenGLRep{O}{\pi}} is the representation of \m{\ChosenGL{O}{\ix r}} on the vectors of~$\pi$ on which
+\m{\levelGroup{O}} acts through \m{\levelChar{O}}, in which $g$ acts by \m{\prod_w\psi_{O,w}(\det g_w)}, the product
+over the chosen places, times~$\pi$ of a lift of \m{\firstBlockHom{O}{e_O}{g}}. For the forms it is the representation
+\m{\formAction{O}} of \m{\ChosenGL{O}{\ix r}} on \m{\FormV{O}}.
+\item \emph{Polynomials.} \m{\tensorPoly{O}} is the linear map from the complex functions on pairs of standard
+fillings, of weights $\kappa^{+}_O$ and~$\kappa^{-}_O$ with rows~$\ix n$, to polynomials that sends the indicator of a
+pair \m{(l,l')} to the product of the polynomial of the indicator of~$l$, of weight~$\kappa^{+}_O$, written in the
+positive letters and of the polynomial of the indicator of~$l'$, of weight~$\kappa^{-}_O$, written in the negative
+letters: a variable \m{(\tau,i,h)} of the first is replaced by the sum of the variables \m{x_{\tau,i,c}} over the
+\m{c\in\ix r} with \m{s_O(c)=+1} and \m{\operatorname{ord}_O(c)=h}, and likewise for the second with
+\m{s_O(c)=-1}. The \kw{harmonic polynomial} of a coordinate vector~$\xi$ of weight \m{\auxKappa{O}} is
+\m{\harmonicPoly{O}(\xi)}, where \m{\harmonicPoly{O}} is \m{\tensorPoly{O}} composed with the integral Cartan
+embedding of the weight \m{\auxKappa{O}} into the tensor product of the weights $\kappa^{+}_O$ and~$\kappa^{-}_O$.
+\item \emph{Kernel.} \m{\auxA{O}=\upsilon^{r_-}}, with $r_-$ the number of signs~$-1$ of~$s_O$, and
+\m{\auxB{O}=\mu_O\,\upsilon^{\lfloor|\ix n|/2\rfloor}}. \m{\pairThetaKernel{O}} is the theta kernel of the pair
+\m{(W_O,I_{\ix n})} with these two characters: the Weil representation \m{\omega_{\auxA{O},\auxB{O}}} with the theta
+functional. \m{\auxDatum{O}} is the finite datum of the function
+\m{x\mapsto\resDetDatum{O}{(x\bmod w)_w}} of the \m{\ix n\times\ix r} matrices modulo
+\m{\mathfrak{M}_O^{2}\mathfrak{Q}_O}, and \m{\fockDatum{O}{\xi}} is the Schwartz function with archimedean part the Fock
+vector of \m{\harmonicPoly{O}(\xi)} and finite part \m{\auxDatum{O}}.
+\item \emph{Descent.} For \m{g\in\UU(W_O)(\AAA)} and \m{h\in\UU(I_{\ix n})(\AAA_f)}, \m{\conjKernel{O}{g}{h}} is the
+linear form on coordinate vectors
+\m{\xi\mapsto\overline{\theta\bigl(\omega_{\auxA{O},\auxB{O}}(g,h)\,\fockDatum{O}{\bar\xi}\bigr)}}. The \kw{descent} of a form
+\m{\Xi\in\FormV{O}} is the function on \m{\UU(W_O)(\AAA)}
+\[\descent{O}{\Xi}{g}=\clsum{h}{\levelGroup{O}}\conjKernel{O}{g}{h}\bigl(\Xi(h)\bigr).\]
+\item \emph{Hecke test.} Let $w$ be a finite place with \m{w\ne\bar w} such that neither $w$ nor~$\bar w$ is a place
+of~$O$. For \m{X\in\CC}, the operator \m{H_{O,w}(X)=\sum_{i=0}^{|\ix n|}(-X)^i q_w^{i(i-1)/2}T_{w,i}} acts on
+\m{\FormV{O}}, the $T_{w,i}$ being the Hecke operators at~$w$. The \kw{test value} is
+\m{\testValue{O}{w}=\bigl(\nu_{\auxA{O}}(w)\,q_w^{\rankDiff{O}-1}\bigr)^{-1}}, where \m{\nu_{\alpha}(w)} denotes the
+Frobenius value at~$w$ of a character~$\alpha$ in the rank at hand. A form \m{y\in\FormV{O}} \kw{lifts with
+parameters~$z$}, where $z$ assigns to each finite place a sequence of complex numbers, if at every finite
+place~$w$ as above $y$ is an eigenvector of all \m{H_{O,w}(X)}, with eigenvalue
+\[\prod_{0\le l<\rankDiff{O}}\bigl(1-q_w^{l}\,\nu_{\auxA{O}}(w)X\bigr)\cdot\sum_{i=0}^{|\ix r|}\Bigl(-\frac{q_w^{\rankDiff{O}}\,\nu_{\auxA{O}}(w)}{\nu_{\auxB{O}}(w)}\,X\Bigr)^{i}q_w^{i(i-1)/2}z(w)_i .\]
+\end{enumerate}
+\end{definition}
+\leanline{\lean{levelGroup}\sep \lean{auxLevelChar}\sep \lean{levelChar}\sep \lean{resDetDatum}\sep \lean{auxKappa}\sep
+\lean{detExp}\sep \lean{FormV}\sep \lean{rankDiff}\sep \lean{chosenGLRep}\sep \lean{formAction}\sep \lean{tensorPoly}\sep
+\lean{harmonicPoly}\sep \lean{auxA}\sep \lean{auxB}\sep \lean{pairThetaKernel}\sep \lean{auxDatum}\sep \lean{fockDatum}\sep
+\lean{conjKernel}\sep \lean{descent}\sep \lean{heckePolyOnForms}\sep \lean{testValue}\sep \lean{Lifts}}
+
+\begin{remark}[two small facts]\label{r:auxfacts}
+(i) For coordinate vectors $a$ and~$b$ of weights $\kappa^{+}_O$ and~$\kappa^{-}_O$, the map \m{\tensorPoly{O}} sends the
+function \m{(l,l')\mapsto a_l\,b_{l'}} to the product of the polynomial of~$a$ in the positive letters and the
+polynomial of~$b$ in the negative letters; this is the definition, extended bilinearly. (ii) If a form~$y$ in
+\m{\FormV{O}} is, at a place~$w$ as in Definition~\ref{d:auxobj}\,(8), an eigenvector of the Hecke polynomial of the
+right regular representation with eigenvalue \m{p(X)}, then \m{H_{O,w}(X)y=p(X)y}: the operator on the forms is the
+restriction of that Hecke polynomial.
+\end{remark}
+\leanline{\lean{tensorPolyVec}\sep \lean{heckePolySmul}}
+
+The auxiliary pairs of the proof are the pairs \m{(W_j,V_j)} of the single lifts: the adjoint lift of the note
+\emph{The volume of the chain of theta lifts as a product of lift volumes} is the adjoint of the descent of
+Definition~\ref{d:auxobj}\,(7), and the Hecke test enters the notion of a fit family of twists.
+
+\subsection*{Residue rings and the divided splitting}
+\begin{definition}[moduli of level places]\label{d:moduli}
+In Setting~\ref{set:bg}, let $S$ be level places of~$E$. \m{\chosenModulusSq{S}} is the modulus
+\m{\mathfrak{M}_S^{2}}; for \m{x\in\OEr/\mathfrak{M}_S^{2}\mathfrak{Q}_S}, \m{\reduceToRzero{x}} is its image under the
+reduction to \m{\OEr/\mathfrak{M}_S^{2}}; and \m{\unitModulus{E}} is the modulus whose ideal is~$\OEr$.
+\end{definition}
+\leanline{\lean{chosenModulusSq}\sep \lean{reduceToRzero}\sep \lean{unitModulus}}
+
+\begin{definition}[generator and divided splitting]\label{d:div}
+In Setting~\ref{set:bg}, let $O$ be an auxiliary pair for \m{(E,\ix r,\ix n)}.
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=2pt]
+\item \m{\genIdele{O}} is the chosen generator of the modulus \m{\mathfrak{M}_O}: an integral idele, equal to~$1$ at
+the places that are not chosen places of~$O$; \m{\genIntAdele{O}} is the same element, regarded in~$\Ohat$.
+\item Let \m{\ix N}, \m{\ix m}, \m{\ix a} be finite index sets and \m{z\colon\ix r\hookrightarrow\ix m} an embedding.
+A \kw{divided splitting}, an element~$\mathcal{V}$ of \m{\DividedSplitting{\ix N}{\ix m}{\ix a}{O}{z}}, consists of a
+bijection \m{\varepsilon\colon\ix N\sqcup\ix m\to\ix n} with \m{\varepsilon(z(i))=e_O(i)} for \m{i\in\ix r}, of two
+embeddings \m{\ix r\hookrightarrow\ix N} and \m{\ix a\hookrightarrow\ix N}, the \kw{fixed} and the \kw{divided}
+embedding, and of the conditions that \m{|\ix N|\le|\ix n|} and $\kappa^{+}_O$ has no column of height~$h$ with
+\m{|\ix N|\le h<|\ix n|}, and the same for $\ix m$ and~$\kappa^{-}_O$.
+\item For a divided splitting~$\mathcal{V}$, \m{\genResidue{\mathcal{V}}} is the image of \m{\genIntAdele{O}} in
+\m{\OEr/\mathfrak{M}_O^{2}}; it depends on~$O$ only.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{genIdele}\sep \lean{genIntAdele}\sep \lean{DividedSplitting}\sep \lean{genResidue}}
+
+\begin{lemma}[reduction modulo a power of the chosen primes]\label{l:red}
+In Setting~\ref{set:bg}, let $O$ be an auxiliary pair for \m{(E,\ix r,\ix n)}, \m{c\ge0} an integer and
+\m{x\in\Ohat}. Then $x$ reduces to~$0$ modulo \m{\mathfrak{M}_O^{c}} if and only if
+\m{\genIdele{O}^{-c}\,x\in\Ohat}.
+\end{lemma}
+\begin{proof}
+The kernel of the reduction modulo \m{\mathfrak{M}_O^{c}} consists of the integral adeles of valuation at
+least~$c$ at every chosen place. The idele \m{\genIdele{O}} has valuation~$1$ at the chosen places, which are prime
+factors of multiplicity one of~\m{\mathfrak{M}_O}, and is~$1$ elsewhere. So \m{\genIdele{O}^{-c}x} is integral at every place
+exactly when $x$ has valuation at least~$c$ at the chosen places.
+\end{proof}
+\leanline{\lean{reductionZero}}
+
+\begin{lemma}[multiplying by the generator tests congruence modulo the chosen primes]\label{l:genres}
+In Setting~\ref{set:bg}, let $O$ be an auxiliary pair for \m{(E,\ix r,\ix n)}, \m{\ix N}, \m{\ix m} finite index
+sets, \m{\ix a} an index set, \m{z\colon\ix r\hookrightarrow\ix m} and $\mathcal{V}$ a divided splitting in
+\m{\DividedSplitting{\ix N}{\ix m}{\ix a}{O}{z}}. Let \m{\ix k}, \m{\ix c} be index sets, $S$ a \m{\ix k\times\ix c}
+matrix over \m{\OEr/\mathfrak{M}_O^{2}\mathfrak{Q}_O} and \m{u\colon\ix c\to\ix k} a map, with $I_u$ the matrix whose
+column~$i$ is the standard basis vector of index~\m{u(i)}. Then
+\[\genResidue{\mathcal{V}}\cdot\reduceToRzero{S}=\genResidue{\mathcal{V}}\cdot I_u\quad\Longleftrightarrow\quad
+S\equiv I_u\ \text{modulo every chosen place of }O,\]
+where \m{\reduceToRzero{S}} is $S$ reduced entry by entry.
+\end{lemma}
+\begin{proof}
+Write each entry of \m{S-I_u} as the reduction of an integral adele, and let $X$ be the matrix of these adeles.
+The left side says that \m{\genIntAdele{O}X} reduces to~$0$ modulo \m{\mathfrak{M}_O^{2}}. By Lemma~\ref{l:red},
+for \m{c=2} and for \m{c=1}, this holds if and only if $X$ reduces to~$0$ modulo~\m{\mathfrak{M}_O}. Since
+\m{\mathfrak{M}_O} is a product of distinct primes, two matrices over \m{\OEr/\mathfrak{M}_O} are equal if and only if
+they are equal modulo each of these primes (Input~3). This is the right side.
+\end{proof}
+\leanline{\lean{genResidueSmul}}
+
+\begin{remark}[bookkeeping lemmas of the file]\label{r:book}
+Five further lemmas of the same file are used in the other notes of this unit and need no argument. For level
+places~$S$: the ideal \m{\mathfrak{M}_S^{2}\mathfrak{Q}_S} is contained in \m{\mathfrak{M}_S^{2}}; the primes dividing
+\m{\mathfrak{M}_S^{c}}, \m{c\ge1}, are the chosen places; the chosen lift to \m{\KK{\ix n}} of an invertible matrix
+over \m{\OEr/\mathfrak{M}_S^{2}} has component~$1$ outside the chosen places and their conjugates, and an element with
+this property has component~$1$ at every twist place; and reduction modulo a ring homomorphism of a block diagonal
+element of \m{\KK{\ix n}}, along a bijection \m{\ix N\sqcup\ix m\to\ix n}, is the block diagonal matrix of the
+reductions. For an auxiliary pair~$O$: \m{\genIdele{O}} has component~$1$ at every finite place that is not a chosen
+place.
+\end{remark}
+\leanline{\lean{levelModulusIdealLe}\sep \lean{placesLevelModulus}\sep \lean{liftModSupported}\sep
+\lean{atPlaceTwist}\sep \lean{mapBlock}\sep \lean{genIdeleApply}}
+
+\subsection*{Stacked determinants}
+\begin{definition}[stacked determinants, substitutions, coordinates]\label{d:stacked}
+Let $\Phi$ be a finite set.
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=2pt]
+\item Let \m{\ix l} and~\m{\ix n'} be finite index sets, \m{\ix n} an index set, \m{\tau\in\Phi}, $\eta$ a complex
+\m{\ix l\times\ix n} matrix and \m{j\colon\ix l\sqcup\ix n'\to\ix n} a map. The \kw{stacked determinant}
+\m{\stackedDet{\tau}{\eta}{j}} is the determinant of the square matrix, with rows and columns indexed by
+\m{\ix l\sqcup\ix n'}, whose entry at \m{(i,c)} is \m{\eta_{i,j(c)}} for \m{i\in\ix l} and the variable
+\m{x_{\tau,i,j(c)}} for \m{i\in\ix n'}: the columns~$j$ of~$\eta$ stacked over the matrix~$x_\tau$ of variables. It
+is a complex polynomial in the variables \m{x_{\tau,i,c}}, \m{i\in\ix n'}, \m{c\in\ix n}.
+\item Let \m{\ix a}, \m{\ix N}, \m{\ix L} be finite index sets, \m{e\colon\ix a\sqcup\ix N\to\ix L} a bijection,
+\m{(\iota_\tau)_{\tau\in\Phi}} a family of finite sets and \m{M=(M_{\tau k})} a family of complex \m{\ix a\times\ix L}
+matrices, \m{k\in\iota_\tau}. The \kw{product of stacked determinants} is
+\[\sdp{e}{M}=\prod_{\tau\in\Phi}\ \prod_{k\in\iota_\tau}\stackedDet{\tau}{M_{\tau k}}{e},\]
+a polynomial in the variables \m{x_{\tau,i,c}}, \m{i\in\ix N}, \m{c\in\ix L}.
+\item For families \m{c=(c_\tau)} of complex \m{\ix N\times\ix N} matrices and \m{g=(g_\tau)} of complex
+\m{\ix L\times\ix L} matrices, \m{\sub{c}{g}} is the substitution \m{x_\tau\mapsto c_\tau\transp x_\tau g_\tau\transp} on
+the polynomials in these variables: \m{x_{\tau,a,b}\mapsto\sum_{i,j}c_\tau(i,a)\,g_\tau(b,j)\,x_{\tau,i,j}}.
+\item Let \m{p\ge0} be an integer. For a polynomial~$F$ in the variables \m{x_{\tau,a,b}}, with \m{a\in\ix N} and $b$
+in the disjoint union of \m{\{0,\dots,p-1\}} and~$\ix L$, \m{\infc(F)} is $F$ regarded as a polynomial in the
+variables of the first $p$ columns, with coefficients in the polynomials in the variables of the columns~$\ix L$.
+\item For a weight~$\kappa$, such a polynomial~$F$ and a standard filling~$l$ of weight~$\kappa$ with
+rows~$\ix N$, the \kw{$l$-th coordinate of~$F$ in the first columns} is
+\[\firstColsCoord{\kappa}{F}{l}=h_\kappa^{-1}\cdot\ip{\infc(F)}{b_l},\]
+the Fock pairing taken in the variables of the first $p$ columns; it is a polynomial in the variables of the
+columns~$\ix L$.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{stackedDet}\sep \lean{stackedDetProd}\sep \lean{twoSidedSubst}\sep \lean{inFirstCols}\sep
+\lean{firstColsCoord}}
+
+\begin{lemma}[a determinant with fixed columns]\label{l:detcols}
+Let \m{\ix a}, \m{\ix N}, \m{\ix L} be finite index sets, \m{e\colon\ix L\to\ix a\sqcup\ix N} a bijection and $Z$ a
+complex \m{\ix L\times\ix N} matrix. Then there are a complex \m{\ix a\times\ix L} matrix~$Y$ and \m{\gamma\in\CC} such
+that for every complex \m{\ix L\times\ix a} matrix~$X$
+\[\det\bigl[X\mid Z\bigr]_e=\gamma\cdot\det\bigl((YX)\transp\bigr),\qquad\text{and}\qquad|\gamma|^2\cdot|\det(YY\herm)|\le|\det(Z\herm Z)| ,\]
+where \m{[X\mid Z]_e} is the square matrix with columns $X$ and~$Z$, its columns indexed by~$\ix L$ through~$e$.
+\end{lemma}
+\begin{proof}
+By Input~4 there is an invertible \m{\ix L\times\ix L} matrix whose columns, indexed through~$e$, split as
+\m{[U_1\mid U_2]} with \m{Z\herm U_1=0}, that is \m{U_1\herm Z=0}. For matrices $A$, $X$ of size \m{\ix L\times\ix a}
+and $B$ of size \m{\ix L\times\ix N},
+\[\overline{\det[A\mid B]_e}\cdot\det[X\mid Z]_e=\det\begin{pmatrix}A\herm X&A\herm Z\\ B\herm X&B\herm Z\end{pmatrix}.\]
+For \m{A=U_1} and \m{B=U_2} the upper right block vanishes, so
+\[\overline{\det[U_1\mid U_2]_e}\cdot\det[X\mid Z]_e=\det(U_1\herm X)\det(U_2\herm Z):\]
+the first assertion holds with \m{Y=U_1\herm} and \m{\gamma=\det(U_2\herm Z)/\overline{\det[U_1\mid U_2]_e}}. For \m{A=X=U_1} and \m{B=Z} the same
+identity gives \m{|\det[U_1\mid Z]_e|^2=\det(YY\herm)\det(Z\herm Z)}, and the left side is
+\m{|\gamma|^2\det(YY\herm)^2}. If \m{\det(YY\herm)\ne0}, divide by it; otherwise the inequality is trivial.
+\end{proof}
+\leanline{\lean{detFromCols}}
+
+\begin{lemma}[the substitution law]\label{l:subst}
+Let $\Phi$, \m{\ix a}, \m{\ix N}, \m{\ix L} be finite, \m{e\colon\ix a\sqcup\ix N\to\ix L} a bijection,
+\m{(\iota_\tau)} a family of finite sets, \m{M=(M_{\tau k})} a family of complex \m{\ix a\times\ix L} matrices and
+\m{c=(c_\tau)}, \m{g=(g_\tau)} families of complex \m{\ix N\times\ix N} and \m{\ix L\times\ix L} matrices. Then
+\[\sub{c}{g}\Bigl(\sdp{e}{(M_{\tau k}\,g_\tau\transp)_{\tau,k}}\Bigr)=\prod_{\tau\in\Phi}\bigl(\det c_\tau\cdot\det g_\tau\bigr)^{|\iota_\tau|}\cdot\sdp{e}{M}.\]
+\end{lemma}
+\begin{proof}
+The substitution replaces the matrix \m{M_{\tau k}g_\tau\transp} stacked over~$x_\tau$ by \m{M_{\tau k}g_\tau\transp}
+stacked over \m{c_\tau\transp x_\tau g_\tau\transp}, which is \m{\operatorname{diag}(1,c_\tau\transp)} times the matrix
+\m{M_{\tau k}} stacked over~$x_\tau$, times~\m{g_\tau\transp}. Determinants are multiplicative, and the columns are
+ordered by the same bijection~$e$ on both sides. Each of the \m{|\iota_\tau|} factors at~$\tau$ contributes
+\m{\det c_\tau\det g_\tau}.
+\end{proof}
+\leanline{\lean{substStackedDetProd}}
+
+\begin{lemma}[coordinates in the first columns]\label{l:coord}
+Let $\Phi$, \m{\ix N}, \m{\ix L} be finite, \m{p\ge0} an integer, \m{c=(c_\tau)} and \m{g=(g_\tau)} families of complex
+\m{\ix N\times\ix N} and \m{\ix L\times\ix L} matrices, $F$ and~$F'$ polynomials as in
+Definition~\ref{d:stacked}\,(iv) and \m{s\in\CC}. Suppose
+\m{\sub{c}{\operatorname{diag}(1,g)}(F')=s\cdot F}, where \m{\operatorname{diag}(1,g)} is the family of the block
+matrices with the identity on the first $p$ columns and~$g_\tau$ on~$\ix L$. Then for every weight~$\kappa$ and
+every standard filling~$l$ of weight~$\kappa$ with rows~$\ix N$
+\[\sub{c}{g}\Bigl(\sum_{l'}S_\kappa(c)_{l,l'}\cdot\firstColsCoord{\kappa}{F'}{l'}\Bigr)=s\cdot\firstColsCoord{\kappa}{F}{l}.\]
+\end{lemma}
+\begin{proof}
+Apply \m{\infc} to the hypothesis. On the variables of the first $p$ columns the substitution
+\m{\sub{c}{\operatorname{diag}(1,g)}} is the row substitution \m{y\mapsto c\transp y}, and on the coefficients it is
+\m{\sub{c}{g}}. So \m{s\cdot\infc(F)} is obtained from \m{\infc(F')} by applying \m{\sub{c}{g}} to the coefficients
+and the row substitution by~$c\transp$ to the variables. Pair with~$b_l$. A ring homomorphism applied to the
+coefficients commutes with the Fock pairing, and the row substitution by~$c\transp$ on one side is the row
+substitution by~$c$ on the other (Input~5): the pairing becomes \m{\sub{c}{g}} of \m{\ip{\infc(F')}{b_l(c\,y)}}. By the
+definition of the Schur matrix \m{b_l(cy)=\sum_{l'}S_\kappa(c)_{l,l'}b_{l'}(y)}. Dividing by~$h_\kappa$ gives the claim.
+\end{proof}
+\leanline{\lean{substFirstColsCoord}}
+
+\subsection*{The carrier}
+\begin{definition}[the carrier]\label{d:carrier}
+In Setting~\ref{set:bg}, let \m{m\ge0} be an integer.
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=2pt]
+\item The \kw{carrier} \m{\carrier{E}{m}} is the theta lift of the constant function~$1$ from the definite group
+\m{\UU(I_m^{-})} to the unitary group of signature \m{(2m,m)}: for \m{x\in\UU(I_{2m,m})(\AAA)},
+\[\carrier{E}{m}(x)=\int_{[\UU(I_m^{-})]}\tk{I_m^{-}}{I_{2m,m}}{\upsilon^{m}}{1}{\unitModulus{E}}{1}{\textstyle\prod_{\tau}\det(y^{-}_\tau)^{2m}}(g,x)\,dg,\]
+where the product runs over the infinite places~$\tau$ and \m{y^{-}_\tau} is the \m{m\times m} matrix of the
+variables \m{x_{\tau,i,c}} with $i$ in the negative block of the index set of \m{I_{2m,m}}.
+\item For a character~$c$, an index set~$\ix n'$ and \m{h\in\UU(I_{\ix n'})(\AAA_f)},
+\[\carrierXi{m}{c}{h}=\clsum{u}{\KK{m}}\tk{I_m}{I_{\ix n'}}{c}{1}{\unitModulus{E}}{1}{1}(u,h),\]
+the class sum over \m{\UU(I_m)} of the theta kernel with constant datum and polynomial~$1$.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{carrierForm}\sep \lean{carrierXi}}
+
+\subsection*{The archimedean matching}
+\begin{definition}[block signs, the positive block, the matched polynomial]\label{d:real}
+Let $E$ be a number field and \m{\ix n,\ix m,\ix a,\ix b,\ix p,\ix l} finite index sets.
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=2pt]
+\item For a bijection \m{f\colon\ix p\sqcup\ix l\to\ix b} and \m{i\in\ix b}, the sign \m{\blockSigns{f}{i}} is $+1$ if
+\m{i\in f(\ix p)} and $-1$ if \m{i\in f(\ix l)}.
+\item For a bijection \m{j\colon\ix m\sqcup\ix l\to\ix n} and \m{k\in G_\infty(1)}, the definite group on~$\ix m$,
+the element \m{\posBlockEmb{j}{k}} of \m{G_\infty(\blockSigns{j}{\cdot})} is, at each infinite place~$\tau$, the matrix
+with block~$k_\tau$ on \m{j(\ix m)} and the identity on \m{j(\ix l)}; it is a homomorphism in~$k$.
+\item For bijections $f$ and~$j$ as in (i) and~(ii), a family \m{(\iota_\tau)} of finite sets indexed by the infinite
+places and a family \m{\eta=(\eta_{\tau k})} of complex \m{\ix p\times\ix m} matrices, \m{k\in\iota_\tau}, the
+\kw{matched polynomial} is
+\[\mpoly{f}{j}{\eta}=\prod_{\tau}\det\bigl(y^{--}_\tau\bigr)^{|\iota_\tau|+|\ix n|-2|\ix l|}\cdot\prod_{\tau}\prod_{k\in\iota_\tau}\det\bigl(\eta_{\tau k}\,y^{++}_\tau\bigr),\]
+a polynomial in the variables \m{x_{\tau,i,c}}, \m{i\in\ix n}, \m{c\in\ix b}, where \m{y^{--}_\tau} is the block of the
+variables with \m{i\in j(\ix l)}, \m{c\in f(\ix l)} and \m{y^{++}_\tau} the block with \m{i\in j(\ix m)},
+\m{c\in f(\ix p)}. The exponent is a truncated difference of natural numbers.
+\item For a bijection~$j$ as in~(ii), \m{\posFockVector{j}} is the linear map from the polynomials in the variables
+\m{x_{\tau,i,c}}, \m{i\in\ix a}, \m{c\in\ix m}, to the Fock space of the pair of signs \m{\blockSigns{j}{\cdot}} on~$\ix n$
+and of the definite space on~$\ix a$: replace the column index~$c$ by \m{j(c)} and take the Fock vector.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{blockSigns}\sep \lean{posBlockEmb}\sep \lean{matchedPoly}\sep \lean{posFockVector}}
+
+\begin{remark}\label{r:pos}
+Two computations about these objects are used without comment below: \m{\posBlockEmb{j}{k}} is block diagonal for the
+signs \m{\blockSigns{j}{\cdot}}, its inverse is \m{\posBlockEmb{j}{k^{-1}}}, its minor on the positive block is
+\m{\det k_\tau} and its minor on the negative block is~$1$; and the number of \m{i\in\ix b} with
+\m{\blockSigns{f}{i}=-1} is~\m{|\ix l|}.
+\end{remark}
+\leanline{\lean{posBlockEmbSpec}\sep \lean{cardNegBlockSigns}}
+
+\inputbox{\textbf{Inputs.} The results below are taken for granted. Inputs 1 to~8 are proved in the background
+library of the artifact; the catalogue of the handout records, for each, whether a reference with its place has
+been confirmed. Input~9 belongs to the unit \emph{Exchange} of this chapter.
+
+\vspace{4pt}\textbf{Input 1} (the image of \m{\operatorname{pol}_\kappa}).\enspace Over~$\CC$, the image of
+\m{\xi\mapsto\operatorname{pol}_\kappa(\xi)} is the space of all polynomials that are semi-invariant of weight~$\kappa$;
+the product of semi-invariants of weights $\kappa$ and~$\kappa'$ is semi-invariant of weight \m{\kappa+\kappa'}.
+(Part of the standard basis theorem for Schur modules; reference to be confirmed.)
+
+\vspace{3pt}\textbf{Input 2} (norms of products).\enspace If
+\m{\operatorname{pol}_{\kappa+\kappa'}(\xi'')=\operatorname{pol}_\kappa(\xi)\operatorname{pol}_{\kappa'}(\xi')}, then
+\m{\|\xi''\|^2_{\kappa+\kappa'}\le\|\xi\|^2_\kappa\,\|\xi'\|^2_{\kappa'}}. (Reference to be confirmed.)
+
+\vspace{3pt}\textbf{Input 3} (the Chinese remainder theorem for matrices).\enspace If the ideal of a
+modulus is a product of distinct primes, two matrices over its residue ring are equal if and only if their
+reductions to the residue fields of these primes are equal.
+
+\vspace{3pt}\textbf{Input 4} (clearing columns; the Hermite normal form over a field).\enspace For a complex
+\m{\ix N\times\ix L} matrix~$M$ and an embedding \m{\ix N\hookrightarrow\ix L} there is an invertible
+\m{\ix L\times\ix L} matrix~$U$ such that the columns of~$MU$ with index outside the image of the embedding vanish.
+(The library proves it for valuation rings; a place for the reference is not confirmed.)
+
+\vspace{3pt}\textbf{Input 5} (the Fock pairing).\enspace (a) For matrices~$z_\tau$, the row substitutions by $z$ and
+by~$z\transp$ are adjoint: \m{\ip{p(zy)}{q}=\ip{p}{q(z\transp y)}}. (b) A ring homomorphism applied to the coefficients of
+two polynomials commutes with their Fock pairing. (c) For a non-zero complex polynomial~$q$, with $\bar q$ the
+polynomial with conjugated coefficients, \m{\ip{\bar q}{q}>0}.
+
+\vspace{3pt}\textbf{Input 6} (the real Weil representation on Fock vectors).\enspace Let $s$, $s'$ be sign vectors of
+signatures \m{(p_0,q_0)} and \m{(p_0',q_0')}, and let \m{x\in G_\infty(s)}, \m{y\in G_\infty(s')} be block diagonal, with
+blocks \m{x^{\pm}_\tau}, \m{y^{\pm}_\tau}. Then for every polynomial~$P$
+\[\omega^{\infty}_{\gamma,\gamma'}(x,y)\,v_P=\prod_\tau(\det y^{+}_\tau)^{\gamma_\tau-q_0}(\det y^{-}_\tau)^{\gamma_\tau-p_0}(\det x^{+}_\tau)^{q_0'-\gamma'_\tau}(\det x^{-}_\tau)^{p_0'-\gamma'_\tau}\cdot v_{P'},\]
+where $P'$ is obtained from~$P$ by the substitution \m{X\mapsto y\transp X\,(x^{-1})\transp} on the blocks of variables
+whose row and column have the same sign and \m{X\mapsto y^{-1}X\,x} on the other blocks.
+
+\vspace{3pt}\textbf{Input 7} (polarisation).\enspace Let $\mathcal{S}$ be a commutative $\CC$-algebra, $M$ a linear
+form on~$\mathcal{S}$, \m{Y=(Y_\tau)} matrices over~$\mathcal{S}$ of size \m{\ix n\times\ix a}, $q$ and~$K$ complex
+polynomials in the entries of a generic family of \m{\ix n\times\ix n} matrices and \m{r\colon\ix a\to\ix n} a
+map. If \m{M\bigl(q(u\transp Y)\bigr)=K(u)} for every family \m{u=(u_\tau)} of unitary matrices, then for every
+family \m{\eta=(\eta_{\tau k})}, \m{k\in\iota_\tau}, of complex \m{\ix a\times\ix n} matrices
+\[\Bigl\langle q,\ \prod_\tau\det(X^{r}_\tau)^{|\iota_\tau|}\Bigr\rangle\cdot M\Bigl(\prod_{\tau,k}\det(\eta_{\tau k}Y_\tau)\Bigr)
+=\Bigl\langle K,\ \prod_{\tau,k}\det(\eta_{\tau k}X^{r}_\tau)\Bigr\rangle,\]
+where $X^{r}_\tau$ consists of the columns~$r$ of the generic matrix at~$\tau$. (Reference to be confirmed.)}
+
+\inputbox{\textbf{Inputs, continued.}
+
+\vspace{4pt}\textbf{Input 8} (calculus of theta kernels).\enspace In Setting~\ref{set:bg}:
+(a) \emph{decay}: if \m{\mathfrak{m}\ne(1)} and \m{\Psi(y)\ne0} only for matrices~$y$ with a left inverse, then for
+every polynomial~$P$ and every~$h$ the function \m{g\mapsto\tk{S}{T}{\alpha}{\beta}{\mathfrak{m}}{\Psi}{P}(g,h)} decreases
+rapidly on \m{\UU(S)(\AAA)}; this is Lemma~\ref{l:rapid} below, a direct consequence of the decay estimate of the
+library and of the finiteness of the moments of~$v_P$.
+(b) \emph{invariance}: the theta functional is invariant under the rational points of both groups.
+(c) \emph{twisting}: for characters $\mu$, $\mu'$,
+\m{\tk{S}{T}{\alpha\mu}{\beta\mu'}{\mathfrak{m}}{\Psi}{P}(g,h)=\mu(\det h)\,\mu'(\det g)^{-1}\,\tk{S}{T}{\alpha}{\beta}{\mathfrak{m}}{\Psi}{P}(g,h)}.
+(d) \emph{translation by integral points}: right translation of $g$ or of~$h$ by an element~$k$ of the stabiliser
+of the standard lattice can be moved into the datum: it replaces \m{\Psi} by a character value at \m{\det k} times
+the translate of~$\Psi$ by the reduction of~$k$ modulo~$\mathfrak{m}$; for a tame character the value is that of
+its character~$\chi$ at the determinant of the reduction.
+(e) \emph{seesaw}: for an orthogonal sum in the second place, the kernel of a product of data on the two blocks of
+rows and of a product of polynomials is the product of the kernels,
+\m{\tk{S}{T\oplus V}{\alpha}{\beta\beta'}{\mathfrak{m}}{\Psi\Psi'}{PP'}(g,(h,h'))
+=\tk{S}{T}{\alpha}{\beta}{\mathfrak{m}}{\Psi}{P}(g,h)\cdot\tk{S}{V}{\alpha}{\beta'}{\mathfrak{m}}{\Psi'}{P'}(g,h')}, and likewise
+for a sum in the first place.
+(f) \emph{change of modulus}: if \m{\mathfrak{m}\subseteq\mathfrak{n}}, the kernel modulo~$\mathfrak{m}$ of a
+function that factors through the matrices modulo~$\mathfrak{n}$ is the kernel modulo~$\mathfrak{n}$ of that
+function.
+(g) \emph{negation}: there is a number of absolute value~$1$, depending on $S$ and~$T$ only, by which the kernel of
+\m{(S^{-},T)}, with the inverse characters times powers of~$\upsilon$, the conjugated polynomial and the conjugated
+datum composed with multiplication by an element of norm~$-1$, differs from the complex conjugate of the kernel of
+\m{(S,T)}.
+(h) \emph{definite groups}: for a function on \m{[\UU(I_{\ix a})]} that is invariant under \m{G_\infty} and under
+\m{\KK{\ix a}}, the integral is the class sum at level~\m{\KK{\ix a}}; a class sum at a smaller level~$\Gamma$ is
+the class sum at level \m{\KK{\ix a}} of the sum of the translates by representatives of \m{\KK{\ix a}/\Gamma}.
+
+\vspace{3pt}\textbf{Input 9} (unit \emph{Exchange}; the exchange theorem and block partners).\enspace
+(a) Let $W$, $V$, $V'$ be hermitian spaces with index sets \m{\ix n}, \m{\ix a}, \m{\ix b} and
+\m{\sigma\colon\ix b\sqcup\ix a\to\ix n} a bijection; suppose that the number~$q_W$ of negative signs of~$W$ is the
+sum of those of $V$ and~$V'$, that \m{|\ix a|=|\ix b|+2d}, that \m{2q_W+2\le|\ix n|}, and let $\mu$ be a weight with
+\m{|\ix n|\le2\mu_\tau+2q_W} for all~$\tau$ and $v$ a vector of the Fock space of \m{(V',W)} with finite moments.
+Then there are a real number~$C_0$ and a vector~$x_0$ of the Fock space of \m{(W,V)} with finite moments such that
+for every modulus~$\mathfrak{m}$, character~$\nu$ and character~$\chi$ of \m{\OEr/\mathfrak{m}} with $\nu$ tame for
+\m{(\mathfrak{m},\mu,\chi)} there is \m{c_0\ne0} with \m{|c_0|^2=C_0\cdot\LP{\mathfrak{m}}{\nu}{d}} and, for all partners
+$\Phi$, $\Psi$ for \m{(\sigma,\chi)} and all \m{g\in\UU(W)(\AAA)}, with
+\m{\alpha_0=\nu^{-1}\upsilon^{\lfloor|\ix n|/2\rfloor}},
+\[\int_{[\UU(V)]}\theta\bigl(\omega_{\alpha_0,1}(g,h)(x_0\otimes\Phi)\bigr)\,dh
+=c_0\cdot\int_{[\UU(V')]}\theta\bigl(\omega_{\alpha_0,\alpha_0}(h,g)(v\otimes\Psi)\bigr)\,dh .\]
+(b) For a multiplicative character~$\chi$ of a commutative ring and any function~$f$, the functions
+\m{\Phi(x_1\mid x_2)=\chi^{-1}(\det x_2)\,f(x_2^{-1}x_1)} and
+\m{\Psi\bigl(\begin{smallmatrix}y_1\\y_2\end{smallmatrix}\bigr)=\chi^{-1}(\det y_1)\,f(-y_2y_1^{-1})}, with $x_2$ and~$y_1$
+square, are partners for the identity bijection and~$\chi$; and partners $\Phi$, $\Psi$ for \m{(\sigma,\chi)} satisfy
+\m{\chi(\det k)\,\Phi(kx)=\Phi(x)} for invertible~$k$.}
+
+\sect{Proofs}{s:proofs}
+\subsection*{The archimedean step}
+\begin{lemma}[equivariance of the product of stacked determinants]\label{l:realweil}
+Let $E$ be a number field, \m{\ix n,\ix m,\ix a,\ix p,\ix l} finite index sets, \m{j\colon\ix m\sqcup\ix l\to\ix n} and
+\m{e\colon\ix p\sqcup\ix a\to\ix m} bijections, \m{(\iota_\tau)} a family of finite sets indexed by the infinite
+places, $\gamma$ the weight with \m{\gamma_\tau=|\ix l|-|\iota_\tau|}, and \m{\eta=(\eta_{\tau k})} a family of complex
+\m{\ix p\times\ix m} matrices. For all \m{k\in G_\infty(1)}, the definite group on~$\ix m$, and all~$u$ in the
+definite group on~$\ix a$,
+\[\omega^{\infty}_{\gamma,0}\bigl(\posBlockEmb{j}{k},u\bigr)\ \posFockVector{j}\Bigl(\sdp{e}{(\eta_{\tau k'}\,(k_\tau^{-1})\transp)_{\tau,k'}}\Bigr)
+=\prod_\tau(\det k_\tau)^{-|\iota_\tau|}\cdot\posFockVector{j}\bigl(\sdp{e}{\eta}\bigr).\]
+\end{lemma}
+\begin{proof}
+By Input~6 for the pair of signs \m{\blockSigns{j}{\cdot}}, of signature \m{(|\ix m|,|\ix l|)}, and of the definite signs
+on~$\ix a$: the element \m{(\posBlockEmb{j}{k},u)} multiplies a Fock vector by
+\m{\prod_\tau(\det u_\tau)^{\gamma_\tau-|\ix l|}=\prod_\tau(\det u_\tau)^{-|\iota_\tau|}} and substitutes
+\m{x_\tau\mapsto u_\tau\transp x_\tau(k_\tau^{-1})\transp} in the variables of the positive columns, the only ones that
+occur. By Lemma~\ref{l:subst}, with \m{c=u} and \m{g=k^{-1}}, this substitution multiplies the polynomial on the left
+by \m{\prod_\tau(\det u_\tau\det k_\tau^{-1})^{|\iota_\tau|}} and turns it into \m{\sdp{e}{\eta}}. The powers of
+\m{\det u_\tau} cancel.
+\end{proof}
+\leanline{\lean{realWeilStackedDetProd}}
+
+\begin{proposition}[the archimedean matching]\label{p:real}
+Let $E$ be a number field, \m{\ix n,\ix m,\ix a,\ix b,\ix p,\ix l} finite index sets,
+\m{f\colon\ix p\sqcup\ix l\to\ix b}, \m{j\colon\ix m\sqcup\ix l\to\ix n} and \m{e\colon\ix p\sqcup\ix a\to\ix m}
+bijections, \m{(\iota_\tau)} a family of finite sets indexed by the infinite places~$\tau$ of~$E$, and $\gamma$ the
+weight with \m{\gamma_\tau=|\ix l|-|\iota_\tau|} for all~$\tau$. Let $\mathcal{H}_1$ be the Fock space of the pair of signs
+\m{\blockSigns{j}{\cdot}} on~$\ix n$ and of the definite signs on~$\ix a$, and write $v_Q$ also for the Fock vector of a
+polynomial~$Q$ in the variables \m{x_{\tau,i,c}}, \m{i\in\ix n}, \m{c\in\ix b}, in the Fock space of the pair of signs
+\m{\blockSigns{f}{\cdot}} and \m{\blockSigns{j}{\cdot}}. Then there is such a polynomial~$Q_0$ with the following property.
+For every \m{v\in\mathcal{H}_1} there is \m{\kappa\in\CC} such that for every family \m{\lambda=(\lambda_g)} of
+continuous linear forms on~$\mathcal{H}_1$, indexed by \m{g\in G_\infty(\blockSigns{j}{\cdot})}, and every linear
+form~$\lambda'$ on the polynomials in these variables with
+\begin{enumerate}[label=\textup{(H\arabic*)},leftmargin=2.9em,itemsep=2pt]
+\item \m{\lambda_g\bigl(\omega^{\infty}_{\gamma,0}(x)\,w\bigr)=\lambda_{g\,x_1}(w)} for all~$g$, all \m{x=(x_1,x_2)} in
+the product of the two groups and all \m{w\in\mathcal{H}_1}, and
+\item \m{\lambda_x(v)=\lambda'(Q)} for all \m{x\in G_\infty(\blockSigns{j}{\cdot})} and all polynomials~$Q$ with
+\m{\omega^{\infty}_{\gamma,0}(1,x)\,v_{Q_0}=v_Q},
+\end{enumerate}
+one has, for every family \m{\eta=(\eta_{\tau k})} of complex \m{\ix p\times\ix m} matrices, \m{k\in\iota_\tau},
+\[\kappa\cdot\lambda_1\bigl(\posFockVector{j}(\sdp{e}{\eta})\bigr)=\lambda'\bigl(\mpoly{f}{j}{\eta}\bigr).\]
+\end{proposition}
+\leanline{\lean{realmatching}}
+
+In the application \m{\lambda_g(w)} is a theta integral over the definite group with archimedean vector~$w$,
+evaluated at~$g$, and \m{\lambda'(Q)} is an integral of a theta kernel with polynomial~$Q$ over the smaller group.
+Hypothesis (H2) is then the exchange identity for one vector~$v$ about which nothing explicit is known, and the
+conclusion is the same identity for explicit polynomials, at the price of the constant~$\kappa$.
+
+\begin{proof}
+Write \m{d_\tau=|\iota_\tau|}, let \m{\eta^0} be the family with \m{\eta^0_{\tau k}} the \m{\ix p\times\ix m} matrix whose
+row~$i$ is the standard basis vector of index \m{e(i)}, for all $\tau$ and~$k$, and put
+\m{Q_0=\mpoly{f}{j}{\eta^0}} and \m{v^0=\posFockVector{j}(\sdp{e}{\eta^0})}. Let \m{r\colon\ix a\to\ix n} be the
+embedding \m{i\mapsto j(e(i))}. Developing along the rows of~$\eta^0$, the stacked determinant of
+\m{\eta^0_{\tau k}} is, up to a sign, the determinant of the \m{\ix a\times\ix a} block of~$x_\tau$ in the columns
+\m{e(\ix a)}; so \m{v^0=\pm v_{q_0}} with \m{q_0=\prod_\tau\det(x^{r}_\tau)^{d_\tau}}, where \m{x^{r}_\tau} is the block of
+the variables in the columns~$r$.
+
+\emph{Step 1: the constant.} Let $\mathcal{L}$ be the set of the continuous linear forms~$\lambda$
+on~$\mathcal{H}_1$ with \m{\lambda(\omega^{\infty}_{\gamma,0}(1,u)w)=\lambda(w)} for all $u$ in the definite group
+on~$\ix a$ and all~$w$. For a complex number~$z$ of absolute value~$1$ let \m{t(z)} be the element of the definite
+group on~$\ix m$ that is, at every place, diagonal with entries $z^{-2}$ on \m{e(\ix p)} and $z^{-1}$ on
+\m{e(\ix a)}, let \m{o(z)} be the scalar~$z^{-1}$ in the definite group on~$\ix a$, and for \m{y\in\mathcal{H}_1} put
+\[\Omega(y,z)=\prod_\tau\det(o(z)_\tau)^{d_\tau}\cdot\omega^{\infty}_{\gamma,0}\bigl(\posBlockEmb{j}{t(z)},o(z)\bigr)\,y .\]
+\emph{Claim: for every \m{y\in\mathcal{H}_1} there is \m{\kappa(y)\in\CC} with
+\m{\frac{1}{2\pi}\int_0^{2\pi}\lambda\bigl(\Omega(y,e^{i\vartheta})\bigr)\,d\vartheta=\kappa(y)\,\lambda(v^0)} for all
+\m{\lambda\in\mathcal{L}}.} The left side, as a function of~$\lambda$, depends continuously on~$y$ for the
+topology of pointwise convergence, because \m{k\mapsto\posBlockEmb{j}{k}} is continuous, and the multiples of the function
+\m{\lambda\mapsto\lambda(v^0)} form a closed set of functions on~$\mathcal{L}$. So the set of the~$y$ for which
+the claim holds is closed, and since the Fock vectors of polynomials are dense it suffices to prove the claim for
+\m{y=v_P}. By Input~6, as in the proof of Lemma~\ref{l:realweil}, the element \m{(\posBlockEmb{j}{t(z)},o(z))} multiplies
+\m{v_P} by \m{\prod_\tau\det(o(z)_\tau)^{-d_\tau}}, which cancels the factor in front, and multiplies the variable \m{x_{\tau,i,c}} by \m{z^{-1}\cdot z^{2}=z} if
+the column~$c$ lies in \m{j(e(\ix p))}, by \m{z^{-1}\cdot z=1} if it lies in \m{r(\ix a)}, and by~$z$ if it is a negative
+column. So \m{\Omega(v_P,z)=v_{P_z}}, where $P_z$ is
+$P$ with every variable of a column outside \m{r(\ix a)} multiplied by~$z$. The function
+\m{T(z)=\lambda(v_{P_z})} is a polynomial in~$z$, and its mean over the unit circle is \m{T(0)=\lambda(v_q)}, where $q$
+is $P$ with the variables outside the columns~$r$ put to zero. For a family~$u$ of unitary matrices, Input~6 gives
+\m{\omega^{\infty}_{\gamma,0}(1,u)v_q=\prod_\tau(\det u_\tau)^{-d_\tau}v_{q(u\transp x^{r})}}, so the invariance of~$\lambda$ gives
+\m{\lambda(v_{q(u\transp x^{r})})=\lambda(v_q)\prod_\tau(\det u_\tau)^{d_\tau}}. This is the hypothesis of Input~7 for
+the linear form \m{F\mapsto\lambda(v_F)}, the matrices \m{Y_\tau=x^{r}_\tau}, the polynomial~$q$ and
+\m{K=\lambda(v_q)\prod_\tau\det(X_\tau)^{d_\tau}}. Its conclusion, for the family of identity matrices, is
+\m{\ip{q}{q_0}\cdot\lambda(v_{q_0})=\lambda(v_q)\cdot\ip{q_0}{q_0}}. Since \m{\ip{q_0}{q_0}>0} by Input~5\,(c) and
+\m{v_{q_0}=\pm v^0}, the claim holds for \m{y=v_P} with \m{\kappa(v_P)=\pm\ip{q}{q_0}/\ip{q_0}{q_0}}, which does not depend
+on~$\lambda$.
+
+\emph{Step 2: the identity for the families \m{\eta^0k\transp}.} Fix~$v$, put \m{\kappa=\kappa(v)}, and let $\lambda$,
+$\lambda'$ satisfy (H1) and~(H2). Let $k$ be in the definite group on~$\ix m$. By (H1) with \m{x=(1,u)}, the form
+\m{\lambda_{\posBlockEmb{j}{k}}} lies in~$\mathcal{L}$. By the claim and by (H1),
+\[\kappa\cdot\lambda_{\posBlockEmb{j}{k}}(v^0)=\frac{1}{2\pi}\int_0^{2\pi}z^{-|\ix a|\sum_\tau d_\tau}\,\lambda_{\posBlockEmb{j}{k\,t(z)}}(v)\,d\vartheta,\qquad z=e^{i\vartheta}.\]
+By Input~6 for the pair of signs \m{\blockSigns{f}{\cdot}} and \m{\blockSigns{j}{\cdot}}, the element
+\m{(1,\posBlockEmb{j}{k\,t(z)})} sends \m{v_{Q_0}} to \m{v_{Q}} with
+\m{Q=\prod_\tau\det(k_\tau t(z)_\tau)^{-d_\tau}\cdot\mpoly{f}{j}{(\eta^0_{\tau k'}\,t(z)_\tau\transp k_\tau\transp)_{\tau,k'}}}: the block
+\m{y^{--}} is unchanged and \m{y^{++}} is multiplied on the left by \m{(k\,t(z))\transp}. Since
+\m{\eta^0_{\tau k'}t(z)_\tau=z^{-2}\eta^0_{\tau k'}} and \m{\det t(z)_\tau=z^{-2|\ix p|-|\ix a|}}, this is
+\m{Q=z^{|\ix a|\sum_\tau d_\tau}\prod_\tau(\det k_\tau)^{-d_\tau}\cdot\mpoly{f}{j}{\eta^0k\transp}}. By (H2) the integrand is
+constant, and
+\[\kappa\cdot\lambda_{\posBlockEmb{j}{k}}(v^0)=\prod_\tau(\det k_\tau)^{-d_\tau}\cdot\lambda'\bigl(\mpoly{f}{j}{\eta^0k\transp}\bigr).\]
+On the other hand Lemma~\ref{l:realweil}, for $k^{-1}$ and \m{u=1}, and (H1) give
+\[\lambda_1\bigl(\posFockVector{j}(\sdp{e}{\eta^0k\transp})\bigr)=\prod_\tau(\det k_\tau)^{d_\tau}\cdot\lambda_{\posBlockEmb{j}{k}}(v^0).\]
+Together: the identity of the proposition holds for \m{\eta=\eta^0k\transp}, for every unitary~$k$.
+
+\emph{Step 3: all~$\eta$.} Both sides are values of linear forms at products of determinants \m{\det(\eta_{\tau k}Y_\tau)}.
+For the right side this is the definition of the matched polynomial, with \m{Y_\tau=y^{++}_\tau} and the fixed
+factor \m{\prod_\tau\det(y^{--}_\tau)^{d_\tau+|\ix n|-2|\ix l|}}. For the left side, a polynomial is determined by its
+values, and at every point~$\zeta$ of the space of variables Lemma~\ref{l:detcols} gives matrices
+\m{Z_\tau(\zeta)} and numbers \m{c_\tau(\zeta)} with
+\m{\stackedDet{\tau}{\eta_{\tau k}}{e}(\zeta)=c_\tau(\zeta)\det(\eta_{\tau k}Z_\tau(\zeta)\transp)} for all~$\eta$. So the
+difference of the two sides is \m{M\bigl(\prod_{\tau,k}\det(\eta_{\tau k}Y_\tau)\bigr)} for one linear form~$M$ on the
+algebra of pairs of a function of~$\zeta$ and a polynomial, with \m{Y_\tau} the pair \m{(Z_\tau\transp,y^{++}_\tau)}. By
+Step~2, $M$ vanishes on these products for the families \m{\eta^0u\transp}, $u$ unitary, which are the values
+\m{q_1(u\transp Y)} of the polynomial \m{q_1=\prod_\tau\det(X^{e}_\tau)^{d_\tau}}, with \m{X^{e}_\tau} the rows \m{e(\ix p)} of
+a generic matrix. Input~7 with \m{K=0} gives
+\m{\ip{q_1}{q_1}\cdot M\bigl(\prod_{\tau,k}\det(\eta_{\tau k}Y_\tau)\bigr)=0} for all~$\eta$, and \m{\ip{q_1}{q_1}>0} by
+Input~5\,(c).
+\end{proof}
+
+\subsection*{Kernels}
+\begin{lemma}[rapid decay of the kernel]\label{l:rapid}
+In Setting~\ref{set:bg}, let $S$ and~$V$ be hermitian spaces with finite index sets \m{\ix n} and~\m{\ix b}, $a$ and
+$\beta$ characters, $\mathfrak{m}$ a modulus with at least one prime divisor, $\Psi$ a function on the
+\m{\ix b\times\ix n} matrices over \m{\OEr/\mathfrak{m}} such that every~$y$ with \m{\Psi(y)\ne0} has a left inverse,
+$P$ a polynomial and \m{h\in\UU(V)(\AAA)}. Then \m{g\mapsto\tk{S}{V}{a}{\beta}{\mathfrak{m}}{\Psi}{P}(g,h)} decreases
+rapidly on \m{\UU(S)(\AAA)}: its product with every power of the height is bounded.
+\end{lemma}
+\begin{proof}
+The decay estimate of the library bounds the kernel, times any power of the height of~$g$, by a constant times a
+moment of the archimedean vector and a power of the height of~$h$, under exactly these hypotheses on
+$\mathfrak{m}$ and~$\Psi$; and all moments of a Fock vector~$v_P$ are finite.
+\end{proof}
+\leanline{\lean{isRapidModKernel}}
+
+\begin{lemma}[from the stabiliser to the full level]\label{l:stab}
+In Setting~\ref{set:bg}, let \m{\ix n}, \m{\ix b}, \m{\ix r} be finite index sets, \m{\ix c} an index set, $S$ a
+commutative ring, $\mathfrak{m}$ a modulus, $W$ a hermitian space with index set \m{\ix n\sqcup\ix b}, $\alpha$ and
+$\beta$ characters, $\gamma$ a weight and $\chi$ a character of \m{\OEr/\mathfrak{m}} such that $\alpha$ is tame for
+\m{(\mathfrak{m},\gamma,\chi)}. Let $P$ be a polynomial with
+\m{\omega^{\infty}_{\gamma,0}(1,u)v_P=v_P} for all~$u$ in the definite group on~$\ix b$, let
+\m{\varphi\colon\OEr/\mathfrak{m}\to S} be a ring homomorphism, $w$ a \m{\ix c\times\ix b} matrix over~$S$,
+\m{e\colon\ix r\hookrightarrow\ix b} an embedding, and $F$ a complex function on the \m{\ix b\times\ix n} matrices over
+\m{\OEr/\mathfrak{m}} with \m{F(Ay)=F(y)} for all \m{A\in\rowStabilizer{\varphi}{w}{e}} and all~$y$. Write a
+\m{\ix b\times(\ix n\sqcup\ix b)} matrix as \m{x=(x'\mid x'')}, and let $\Gamma$ be the level of the elements of
+\m{\KK{\ix b}} whose reduction modulo~$\mathfrak{m}$ lies in \m{\rowStabilizer{\varphi}{w}{e}}. Then for every
+\m{g\in\UU(W)(\AAA)}
+\[\clsum{h}{\Gamma}\tk{W}{I_{\ix b}}{\alpha}{\beta}{\mathfrak{m}}{\Psi_1}{P}(g,h)=\clsum{h}{\KK{\ix b}}\tk{W}{I_{\ix b}}{\alpha}{\beta}{\mathfrak{m}}{\Psi_0}{P}(g,h),\]
+with \m{\Psi_1(x)=\columnDatum{\chi}{\varphi}{w}{e}{x''I_e}\cdot[\FixesColsOff{e}{x''}]\,F(x')} and
+\m{\Psi_0(x)=\chi(\det x'')\,F(x''^{-1}x')}.
+\end{lemma}
+\begin{proof}
+The kernel is invariant under left translation of~$h$ by rational points: the theta functional is (Input~8\,(b)),
+and the archimedean component of a rational point fixes~$v_P$ by the hypothesis on~$P$. By Input~8\,(h) the left
+side is the class sum at level \m{\KK{\ix b}} of the sum over the cosets~$q$ of the stabiliser in
+\m{\GL_{\ix b}(\OEr/\mathfrak{m})} of the translates by lifts of~$q$. By Input~8\,(d) and the tameness of~$\alpha$,
+the translate by a lift of~$q$ is the kernel with datum \m{x\mapsto\chi(\det q)\Psi_1(q^{-1}x)}. By
+Lemma~\ref{l:cols}, with \m{z=q^{-1}x''} and \m{y=q^{-1}x'},
+\[\chi(\det q)\,\Psi_1(q^{-1}x)=\bigl[q^{-1}x''\in\rowStabilizer{\varphi}{w}{e}\bigr]\,\chi(\det x'')\,F(x''^{-1}x').\]
+If $x''$ is invertible, exactly one coset~$q$ contains~$x''$; if not, \m{\chi(\det x'')=0}. So the sum over~$q$ of
+the data is~$\Psi_0$, and the kernel is linear in its datum.
+\end{proof}
+\leanline{\lean{classSumRowStabilizer}}
+
+\begin{proposition}[matching summed against a form on a square block]\label{p:sum}
+In Setting~\ref{set:bg}, let \m{\ix n} and~\m{\ix b} be finite index sets, $V$ a hermitian space with index
+set~$\ix b$ and $U$ one with index set~$\ix n$, $\mathfrak{m}$ a modulus, $a$, $\beta$, $\beta'$ characters, $e$ a
+weight and $\chi$ a character of \m{\OEr/\mathfrak{m}} such that \m{\beta\beta'} is tame for \m{(\mathfrak{m},e,\chi)}.
+Let $\Xi$ be a function on \m{\UU(I_{\ix b})(\AAA_f)}, $F$ a function on \m{\UU(V)(\AAA)} and \m{\kappa\in\CC} with
+\begin{equation}\label{e:hF}
+\kappa\cdot\clsum{h}{\KK{\ix b}}\Xi(h)\,\tk{V}{I_{\ix b}}{a}{\beta}{\mathfrak{m}}{\chi\circ\det}{1}(x,h)=F(x)\qquad\text{for all }x\in\UU(V)(\AAA).
+\end{equation}
+Let $\mathfrak{n}$ be a modulus with \m{\mathfrak{m}\subseteq\mathfrak{n}}, $f$ a function on the \m{\ix n\times\ix b}
+matrices over \m{\OEr/\mathfrak{n}}, $P$ a polynomial, \m{g\in\UU(U)(\AAA)}, \m{\kappa'\in\CC}, and let $K$ assign to
+a function~$\Phi$ and a point \m{h\in\UU(I_{\ix b})(\AAA_f)} a function \m{K(\Phi,h)} on \m{\UU(I_{\ix n})(\AAA_f)}
+such that, for all partners $\Phi$, $\Psi$ for the identity of \m{\ix b\sqcup\ix n} and~$\chi^{-1}$ and all~$h$,
+\begin{equation}\label{e:hK}
+\kappa'\cdot\clsum{u}{\KK{\ix n}}K(\Phi,h)(u)=\int_{[\UU(V)]}\tk{V}{I_{\ix b}\oplus U}{a}{\beta\beta'}{\mathfrak{m}}{\Psi}{P}\bigl(x,(h,g)\bigr)\,dx,
+\end{equation}
+the polynomial~$P$ being read in the variables of the rows of~$U$. Then, with
+\[\Phi_0(x'\mid x'')=\chi(\det x'')\sum_{k\in\GL_{\ix b}(\OEr/\mathfrak{n})}f\bigl((x''^{-1}x'\bmod\mathfrak{n})\,k\bigr),\]
+one has
+\[\kappa'\cdot\frac{\kappa}{|\GL_{\ix b}(\OEr/\mathfrak{n})|}\cdot\clsum{u}{\KK{\ix n}}\ \clsum{h}{\KK{\ix b}}\Xi(h)\,K(\Phi_0,h)(u)
+=\int_{[\UU(V)]}F(x)\cdot\tk{V}{U}{a}{\beta'}{\mathfrak{n}}{f}{P}(x,g)\,dx .\]
+\end{proposition}
+\begin{proof}
+Let \m{\Psi(y)=\chi(\det y_1)\,f(y_2\bmod\mathfrak{n})} for a matrix~$y$ with square upper block~$y_1$ and lower
+block~$y_2$, and let \m{\Psi_0=\sum_{k}\chi(\det\tilde k)^{-1}\Psi(\,\cdot\,\tilde k)}, the sum over
+\m{k\in\GL_{\ix b}(\OEr/\mathfrak{n})} with a lift~$\tilde k$ of~$k$ to \m{\GL_{\ix b}(\OEr/\mathfrak{m})}. By
+Input~9\,(b), applied to the function \m{\sum_kf(\,\cdot\,k)} and after a change of the summation index, $\Phi_0$
+and~$\Psi_0$ are partners for~$\chi^{-1}$. So \eqref{e:hK} holds for them. A matrix~$y$ with \m{\Psi(y)\ne0} has
+$y_1$ invertible, hence a left inverse, so by Lemma~\ref{l:rapid} the kernels with datum~$\Psi$ are integrable
+over \m{[\UU(V)]}. By Input~8\,(d) the kernel with datum \m{\chi(\det\tilde k)^{-1}\Psi(\,\cdot\,\tilde k)} is the kernel
+with datum~$\Psi$ at the point~$x$ translated by an integral point, and the integral over \m{[\UU(V)]} does not
+change under such a translation. So the right side of \eqref{e:hK} is \m{|\GL_{\ix b}(\OEr/\mathfrak{n})|} times the
+integral of the kernel with datum~$\Psi$, which by the seesaw (Input~8\,(e)) and the change of modulus
+(Input~8\,(f)) is
+\[\tk{V}{I_{\ix b}}{a}{\beta}{\mathfrak{m}}{\chi\circ\det}{1}(x,h)\cdot\tk{V}{U}{a}{\beta'}{\mathfrak{n}}{f}{P}(x,g).\]
+Multiply by \m{\kappa\,\Xi(h)}, take the class sum over~$h$, which is a finite sum and commutes with the integral,
+and use~\eqref{e:hF}.
+\end{proof}
+\leanline{\lean{explicitMatchingOfSum}}
+
+\subsection*{Proofs of the theorems}
+\begin{proof}[Proof of Theorem A]
+The signs of~$W$ are \m{\blockSigns{j}{\cdot}}, so $W$ has \m{|\ix l|} negative signs, as has~$V'$, and \m{I_{\ix a}} has
+none. Take $Q_0$ and the function~$\kappa$ of Proposition~\ref{p:real} for $f$, $j$, $e$, \m{(\iota_\tau)}. Apply
+Input~9\,(a) to $W$, \m{V=I_{\ix a}}, $V'$, $\sigma$ and the vector \m{v=v_{Q_0}}, whose moments are finite; its
+numerical hypotheses hold by the assumptions on \m{|\ix a|}, \m{|\ix l|}, \m{|\ix n|} and by the weight of the
+character below. It gives $C_0$ and~$x_0$. Put \m{C=|\kappa(x_0)|^2/C_0}.
+
+Let $\mathfrak{m}$, $\alpha$, $\gamma$, $\chi$ be as in the statement. The character
+\m{\nu=\alpha^{-1}\upsilon^{|\ix b|+d}} is tame for $\mathfrak{m}$ and~$\chi^{-1}$, and
+\m{\nu^{-1}\upsilon^{\lfloor|\ix n|/2\rfloor}=\alpha}, because \m{|\ix n|=|\ix a|+|\ix b|=2(|\ix b|+d)}. Input~9\,(a)
+gives \m{c_0\ne0} with \m{|c_0|^2=C_0\,\LP{\mathfrak{m}}{\nu}{d}}; put \m{c=\kappa(x_0)/c_0}, so that $|c|^2$ is as
+stated. Fix~$\eta$, partners $\Phi$, $\Psi$ for \m{(\sigma,\chi^{-1})}, $\beta$ and~$g$. For \m{g'\in G_\infty(\blockSigns{j}{\cdot})},
+regarded as an adelic point with trivial finite part, and a vector~$w$ of the Fock space, let
+\[\lambda_{g'}(w)=\int_{[\UU(I_{\ix a})]}\theta\bigl(\omega_{\alpha,1}(gg',h)(w\otimes\Phi)\bigr)\,dh,\qquad
+\lambda'(Q)=c_0\int_{[\UU(V')]}\tk{V'}{W}{\alpha}{\alpha}{\mathfrak{m}}{\Psi}{Q}(x,g)\,dx .\]
+The forms~$\lambda_{g'}$ are continuous, and \m{\lambda'} is defined because the kernels are rapidly decreasing
+(Lemma~\ref{l:rapid}; a matrix in the support of~$\Psi$ consists of columns of an invertible matrix). Hypothesis
+(H1) holds because the theta integral intertwines the Weil representation at the infinite places with right
+translation. Hypothesis (H2), for \m{v=x_0}: if \m{\omega^{\infty}_{\gamma,0}(1,g')v_{Q_0}=v_Q}, then by the exchange
+identity at the point~$gg'$
+\[\lambda_{g'}(x_0)=c_0\int_{[\UU(V')]}\theta\bigl(\omega_{\alpha,\alpha}(x,gg')(v_{Q_0}\otimes\Psi)\bigr)dx
+=c_0\int_{[\UU(V')]}\theta\bigl(\omega_{\alpha,\alpha}(x,g)(v_{Q}\otimes\Psi)\bigr)dx=\lambda'(Q).\]
+Proposition~\ref{p:real} gives
+\m{\kappa(x_0)\,\lambda_1\bigl(\posFockVector{j}(\sdp{e}{\eta})\bigr)=\lambda'\bigl(\mpoly{f}{j}{\eta}\bigr)}. The vector
+\m{\posFockVector{j}(\sdp{e}{\eta})} is fixed by the definite group at infinity (Lemma~\ref{l:realweil} with \m{k=1}), and
+the kernel is invariant under right translation of~$h$ by \m{\KK{\ix a}}: by Input~8\,(d) the translation acts on
+the datum through~$\chi$, and the partner~$\Phi$ absorbs it (Input~9\,(b)). So by Input~8\,(h) the integral
+\m{\lambda_1} is the class sum, and after division by~$c_0$
+\[c\cdot\clsum{h}{\KK{\ix a}}\tk{W}{I_{\ix a}}{\alpha}{1}{\mathfrak{m}}{\Phi}{\sdp{e}{\eta}^{j}}(g,h)
+=\int_{[\UU(V')]}\tk{V'}{W}{\alpha}{\alpha}{\mathfrak{m}}{\Psi}{\mpoly{f}{j}{\eta}}(x,g)\,dx .\]
+Twisting by~$\beta$ in the second place on the left and by~$\beta^{-1}$ in the first place on the right multiplies
+both sides by \m{\beta(\det g)^{-1}} (Input~8\,(c)), which gives the statement.
+\end{proof}
+
+\begin{proof}[Proof of Theorem B]
+Apply Theorem~A with \m{\ix n=\ix m=\ix a=\{1,\dots,m\}}, \m{\ix p=\ix l=\ix b=\emptyset}, \m{W=I_m}, $V'$ the zero
+space, \m{d=m/2} and \m{\iota_\tau} a set of $c_\tau$ elements. The conditions \m{|\ix a|=2d} and \m{2\le m} hold since
+$m$ is even and \m{m\ge1}, and \m{\gamma_\tau=-c_\tau}. Take the empty family~$\eta$: a matrix with no rows stacked
+over~$x_\tau$ is~$x_\tau$, so \m{\sdp{e}{\eta}=\prod_\tau\det(x_\tau)^{c_\tau}}, and the matched polynomial is~$1$. Take
+the partners of Input~9\,(b) for \m{f=1}: \m{\Phi=\chi\circ\det} and \m{\Psi=1}. Take \m{\beta=\alpha}. The right side of
+Theorem~A is the integral of the constant~$1$ over the quotient of the trivial group, a positive number~$\varrho_0$.
+So Theorem~B holds with \m{\gamma=c/\varrho_0} and the constant \m{C/\varrho_0^2}.
+\end{proof}
+
+\begin{proof}[Proof of Theorem C]
+Write \m{J=I_m} and \m{S_0=I_{2m,m}}. Three facts are combined. First, by Input~8\,(g) there is~$n_0$ with
+\m{|n_0|=1} relating the kernels of \m{(J^{-},J)} to the conjugates of those of \m{(J,J)}. Second, Theorem~B with
+\m{c_\tau=0} gives a constant~$C_1$ and, for the character~$c^{-1}$, which is tame of weight~$0$ for
+\m{(\mathfrak{m},\chi^{-1})}, a number~$\gamma_1$ with
+\m{|\gamma_1|^2=C_1/\LP{\mathfrak{m}}{c\,\upsilon^{m/2}}{m/2}} and
+\m{\gamma_1\clsum{h}{\KK{m}}\tk{J}{J}{c^{-1}}{c^{-1}}{\mathfrak{m}}{\chi^{-1}\circ\det}{1}(g,h)=1}. Conjugating and passing
+to~$J^{-}$ gives \eqref{e:hF} for \m{V=J^{-}}, the functions \m{\Xi=1} and \m{F=1}, and
+\m{\kappa=\bar\gamma_1n_0/\chi(\epsilon)^m}, where $\epsilon$ is the element of norm~$-1$ of Input~8\,(g) and
+\m{|\chi(\epsilon)|=1}. Third, Theorem~A for \m{W=J\oplus S_0}, with \m{4m} indices of which $m$ are negative,
+\m{V'=J^{-}}, \m{|\ix a|=3m}, \m{d=m} and empty sets~$\iota_\tau$, so that \m{\gamma_\tau=m}, gives~$C_2$ and, for the
+character \m{c\,\upsilon^{m}}, tame of weight~$m$, a number~$\gamma_2$ with
+\m{|\gamma_2|^2=C_2/\LP{\mathfrak{m}}{c^{-1}\upsilon^{m}}{m}}; its matched polynomial is
+\m{\prod_\tau\det(y^{--}_\tau)^{2m}}, the polynomial of the carrier, and its identity is \eqref{e:hK} with
+\m{\kappa'=\gamma_2}, \m{U=S_0} and \m{K(\Phi,h)(u)} the kernel of \m{(J\oplus S_0,I_{3m})} at \m{((h,x),u)}.
+Proposition~\ref{p:sum}, with the modulus \m{\mathfrak{n}=\unitModulus{E}}, whose general linear group has one
+element, and \m{f=1}, gives
+\[\gamma_2\,\kappa\cdot\clsum{u}{\KK{3m}}\ \clsum{h}{\KK{m}}K(\Phi_0,h)(u)=\int_{[\UU(J^{-})]}\tk{J^{-}}{S_0}{\upsilon^{m}}{1}{\unitModulus{E}}{1}{\textstyle\prod_\tau\det(y^{-}_\tau)^{2m}}(x',x)\,dx'=\carrier{E}{m}(x),\]
+with \m{\Phi_0(x'\mid x'')=\chi(\det x'')}. By the seesaw in the first place (Input~8\,(e)) the kernel
+\m{K(\Phi_0,h)(u)} is the product of the kernel of \m{(J,I_{3m})} with constant datum at \m{(h,u)} and of the kernel
+of \m{(S_0,I_{3m})} with datum \m{\chi\circ\det} at \m{(x,u)}; the class sum of the first over~$h$ is
+\m{\carrierXi{m}{c}{u}}. This is Theorem~C with \m{\gamma=\gamma_2\kappa} and \m{C=C_1C_2}.
+\end{proof}
+\leanline{\lean{explicitmatching}\sep \lean{classSumDet}\sep \lean{carrierIdentity}}
+
+\sect{Where the results are used}{s:used}
+The auxiliary pairs, their forms and their descent are used throughout Chapters VII and~VIII: the single lifts of
+the chain are adjoint to descents of auxiliary pairs. The divided splitting, the stabiliser and the column datum
+serve the glued lattices of the note \emph{Glued lattices, product forms and the integral comparison forms}.
+Theorem~A, in the form of Lemma~\ref{l:stab} and with the coordinates of Lemma~\ref{l:coord}, and Theorem~C are the
+two inputs of the identity ``the twist survives only as a constant'' in the note \emph{The height of a ratio of
+lift volumes}; Lemma~\ref{l:wnprod} gives there the size of the polynomials.
+
+\sect{Notes on the formal text}{s:notes}
+\begin{enumerate}[label=\textup{\arabic*.},leftmargin=1.6em,itemsep=5pt]
+\item \emph{Arguments that only a compiler can settle.} The arguments of the declarations were read from the text.
+For seven definitions and three lemmas this reading lists a letter that the definition binds itself, as the index
+of a product or as the variable of a quantifier, and that Lean, by its rule for section variables, presumably
+does not take as an argument: the place~$\tau$ in the product of stacked determinants, in the substitution
+\m{\sub{c}{g}}, in \m{\infc}, in the matched polynomial, in the carrier, in Lemma~\ref{l:subst} and in
+Proposition~\ref{p:real}; the map~$j$ in \m{\sub{c}{g}}; the family~$\eta$ in Proposition~\ref{p:real}, where it is
+quantified in the conclusion; and the condition \m{w\ne\bar w} in the definition of ``lifts with parameters'',
+where it is quantified inside. The uses of these declarations in the files confirm the shorter lists (the carrier
+is written with the two arguments $E$ and~$m$, the matched polynomial with $f$, $j$, $\eta$). This note states
+the declarations with the arguments that their uses show; it was not confirmed by asking Lean. For this reason
+these seven definitions carry no notation made by the build.
+\item \emph{Instances listed twice.} In the lemmas of Remark~\ref{r:book} and in Lemmas \ref{l:red}
+and~\ref{l:genres} the text reading lists the assumptions on~$E$ twice, once from a variable line that a later one
+shadows.
+\item \emph{An argument that is not used.} In Lemma~\ref{l:genres} the divided splitting enters only through the
+element \m{\genResidue{\mathcal{V}}}, which depends on~$O$ alone; in Definition~\ref{d:div}\,(iii) its argument is
+unnamed in the formal text.
+\item \emph{Constants that may vanish.} Theorems A to~C assert the existence of a real number~$C$ without sign or
+non-vanishing. If \m{C=0}, the identities say that their right sides vanish. In Theorem~A the formal constant is
+\m{|\kappa(x_0)|^2/C_0}, with $C_0$ from the exchange theorem.
+\item \emph{Truncated subtraction.} The exponent \m{|\iota_\tau|+|\ix n|-2|\ix l|} of the matched polynomial, the
+rank difference \m{|\ix n|-|\ix r|} and the exponent in the test value are differences of natural numbers, which
+Lean truncates at zero; under the hypotheses of the statements they are not negative.
+\item \emph{Index sets of Theorem~C.} The second space of the kernel in Theorem~C has the index set of
+\m{I_{2m,m}}, the disjoint union of \m{\{1,\dots,2m\}} and \m{\{1,\dots,m\}}; it is written \m{I_{3m}} above.
+\item \emph{What was not reconstructed.} In the proof of Theorem~C the bookkeeping of the characters in the seesaw
+and in the negation of the first space, and in the proof of Proposition~\ref{p:sum} the exact form of the
+translation rule, are carried out in the formal text by simplification; they are described here and were not
+recomputed. In Step~3 of the proof of Proposition~\ref{p:real} the linear form~$M$ is defined in the formal text on
+pairs, after multiplication by the pair of the product of the numbers \m{c_\tau(\zeta)^{d_\tau}} and of the fixed
+factor of the matched polynomial; the proof above says this in words.
+\end{enumerate}
+
+\subhead{How this note was written.} From the dossier of the unit, whose reader calls the step claims of the long
+proofs a first reading and notes that no second reader had looked at them. After the dossier was frozen, the second reader of the write-up compared the readings of all statements of the unit
+with the Lean text and sampled its structured proofs (her message to the writer of 26 November 2026); her two
+remarks on this part, the rank of the second space in Theorem~C and the direction of the space of homomorphisms
+behind the Fock vectors of Definition~\ref{d:real}, agree with the statements above. I read the five Lean files of these
+declarations completely. The proof of the archimedean matching (Proposition~\ref{p:real}) I read line by line in
+the Lean text and recomputed its character identities by hand from Input~6: the cancellation of the determinant
+factor in~$\Omega$, the exponents of~$z$ in Steps 1 and~2, and the two uses of polarisation. These computations
+are mine; the formal proof obtains them by simplification, and I could not see its intermediate goals. I read the
+Lean statements of the exchange theorem, of the polarisation lemma, of the rule for the real Weil representation
+on Fock vectors, of the notions of a tame character, of partners and of the product of $L$-values, and the
+docstrings of the other definitions of Setting~\ref{set:bg}; I did not read the proofs of the inputs. The proofs of
+Lemmas \ref{l:cols}, \ref{l:detcols} and~\ref{l:subst} are written out by hand and are shorter than the formal ones.
+The program check of the unit's dossier covered \UnitSteps{} leaf steps of \UnitProofs{} proofs.
+
+\head{Appendix A. Concordance with the Lean artifact}
+{\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}\setlength{\tabcolsep}{0pt}
+\begin{longtable}{@{}p{30mm}p{56mm}p{43mm}r@{}}
+\textbf{In this note} & \textbf{Lean declaration} & \textbf{File} & \textbf{Lines}\\\midrule\endhead
+\ConcordanceRows
+\end{longtable}}
+
+\subhead{The three theorems and the archimedean matching as they are written in the artifact.}
+\quoted{explicitmatching}
+\quoted{classSumDet}
+\quoted{carrierIdentity}
+\quoted{realmatching}
+In these texts {\leanfont modKernel} and {\leanfont modKernelI} are the theta kernels, {\leanfont stdClassSum} the
+class sum, {\leanfont Kf} the stabiliser of the standard lattice, {\leanfont IsTameFor} tameness, {\leanfont IsPartner}
+the partners, {\leanfont lValueProd} the product of $L$-values, {\leanfont upsilonU1} the character~$\upsilon$,
+{\leanfont realPairWeil} the real Weil representation and {\leanfont polyVector} the Fock vector of a polynomial.
+
+\head{Notation}
+\begingroup\fontsize{8.6}{10.9}\selectfont\raggedright
+\setlength{\columnsep}{9mm}\setlength{\parskip}{0pt}
+\begin{multicols}{2}
+\nt{$E$, $\OEr$, $\Ohat$, $\AAA$, $\AAA_f$}{a CM field; its integers; integral finite adeles; adeles; finite adeles}
+\nt{$\tau$, $w$, $\bar w$, $k_w$, $q_w$}{an infinite place; a finite place, its conjugate, residue field and norm}
+\nt{$\upsilon$}{the character of the Weil data}
+\nt{$\ix r,\ix n,\ix N,\ix m,\ix a,\ix b,\ix c,\ix p,\ix l,\ix L,\ix k$, $\ix n'$}{finite index sets; \m{|\ix n|}
+the number of elements}
+\nt{$\mathfrak{m}$, $\mathfrak{n}$}{moduli}
+\nt{$S$ (level places), $\mathfrak{M}_S$, $\mathfrak{Q}_S$}{level places; the products of the chosen and of the
+twist primes}
+\nt{$\alpha,\beta,\beta',\mu,\mu',\nu$, $a$, $c$}{characters of the norm-one ideles}
+\nt{$\gamma,\gamma'$, $e$, $\mu$ (weights)}{integer weights at the infinite places}
+\nt{$\psi$, $\chi$}{a tame part; a multiplicative character of a residue ring}
+\nt{$\LP{T}{\nu}{d}$, $L^{T}(z,\nu)$}{the product of $L$-values; the Hecke $L$-function without Euler factors at~$T$}
+\nt{$s$, $s'$}{sign vectors}
+\nt{$S$, $T$, $U$, $V$, $V'$, $W$, $J$, $S_0$}{hermitian spaces}
+\nt{$I_{\ix n}$, $I_m$, $I_{2m,m}$, $S^{-}$}{the standard definite space; the signed space; the opposite space}
+\nt{$\UU(S)(\AAA)$, $[\UU(S)]$, $G_\infty(s)$}{adelic unitary group; automorphic quotient; archimedean group}
+\nt{$\KK{\ix n}$, $\Gamma$}{the stabiliser of the standard lattice; a level}
+\nt{$\clsum{h}{\Gamma}$, $\mathfrak{c}$, $h_{\mathfrak{c}}$}{the class sum; a class; its representative}
+\nt{$\omega_{\alpha,\beta}$, $\omega^{\infty}_{\gamma,\gamma'}$, $\theta$}{the Weil representation; its archimedean part; the
+theta functional}
+\nt{$v_P$, $x_{\tau,i,c}$}{the Fock vector of a polynomial~$P$; a variable}
+\nt{$\tk{S}{T}{\alpha}{\beta}{\mathfrak{m}}{\Psi}{P}(g,h)$}{the theta kernel}
+\nt{$\Phi$, $\Psi$, $\Psi_0$, $\Psi_1$, $\Phi_0$, $f$ (datum)}{functions on matrices over a residue ring;
+also $\Phi$ the finite set of places}
+\nt{$\sigma$}{a bijection \m{\ix b\sqcup\ix a\to\ix n}; in Definition~\ref{d:cols} a matrix}
+\nt{$\kappa$, $\kappa'$, $b_l$, $G_\kappa$, $h_\kappa$, $S_\kappa(z)$}{weights; basis polynomials; Gram matrix; hook
+number; Schur matrix}
+\nt{$\operatorname{pol}_\kappa(\xi)$, $\|\xi\|_\kappa$, $\xi$, $\xi'$, $\xi''$}{the polynomial and the norm of a coordinate
+vector}
+\nt{$\ip{P}{Q}$}{the Fock pairing}
+\nt{$R$, $\varphi$, $w$ (matrix), $I_e$, $I_u$}{a ring, a homomorphism, a matrix; inclusion matrices}
+\nt{$\FixesColsOff{e}{z}$, $\rowStabilizer{\varphi}{w}{e}$, $\columnDatum{\chi}{\varphi}{w}{e}{\sigma}$}{Definition~\ref{d:cols}}
+\nt{$\HasWeightNormLe{p}{\kappa}{F}{b}$}{Definition~\ref{d:wn}}
+\nt{$\ChosenGL{S}{\ix r}$, $\firstBlockHom{S}{u}{g}$, $\auxLevel{S}{u}$}{Definition~\ref{d:levels}}
+\nt{$O$, $\AuxPair{E}{\ix r}{\ix n}$}{an auxiliary pair; the set of them}
+\nt{$\mathfrak{M}_O$, $\mathfrak{Q}_O$, $s_O$, $W_O$, $e_O$, $\operatorname{ord}_O$, $\kappa^{\pm}_O$, $\mu_O$,
+$\psi_O$}{its components}
+\nt{$\levelGroup{O}$, $\levelChar{O}$, $\auxLevelChar{O}{g}$, $\resDetDatum{O}{X}$}{level, characters, datum}
+\nt{$\auxKappa{O}$, $\detExp{O}{\tau}$, $\FormV{O}$, $\rankDiff{O}$}{weight, determinant exponent, forms, rank
+difference}
+\nt{$\chosenGLRep{O}{\pi}$, $\formAction{O}$}{representations of \m{\ChosenGL{O}{\ix r}}}
+\nt{$\tensorPoly{O}$, $\harmonicPoly{O}$}{the tensor polynomial; the harmonic polynomial}
+\nt{$\auxA{O}$, $\auxB{O}$, $r_-$, $\pairThetaKernel{O}$}{the characters of the kernel; the number of negative
+signs; the kernel}
+\nt{$\auxDatum{O}$, $\fockDatum{O}{\xi}$, $\conjKernel{O}{g}{h}$, $\descent{O}{\Xi}{g}$}{finite datum, test datum,
+conjugate kernel, descent}
+\nt{$H_{O,w}(X)$, $T_{w,i}$, $\testValue{O}{w}$, $\nu_\alpha(w)$, $z$ (parameters)}{Hecke test}
+\nt{$\chosenModulusSq{S}$, $\reduceToRzero{x}$, $\unitModulus{E}$}{Definition~\ref{d:moduli}}
+\nt{$\genIdele{O}$, $\genIntAdele{O}$, $\genResidue{\mathcal{V}}$}{the generator of \m{\mathfrak{M}_O}; its class}
+\nt{$\mathcal{V}$, $\DividedSplitting{\ix N}{\ix m}{\ix a}{O}{z}$, $\varepsilon$}{a divided splitting; the set of them; its
+bijection}
+\nt{$\stackedDet{\tau}{\eta}{j}$, $\sdp{e}{M}$, $\sdp{e}{\eta}^{j}$}{stacked determinant; the product; with
+renamed columns}
+\nt{$\sub{c}{g}$, $\infc$, $\firstColsCoord{\kappa}{F}{l}$}{substitution; first columns; coordinates}
+\nt{$\eta$, $\eta^0$, $M$, $\iota_\tau$, $d_\tau$}{families of matrices; the index sets and their sizes}
+\nt{$\carrier{E}{m}$, $\carrierXi{m}{c}{h}$, $y^{-}_\tau$}{the carrier; the class sum of Definition~\ref{d:carrier}}
+\nt{$\blockSigns{f}{i}$, $\posBlockEmb{j}{k}$, $\posFockVector{j}$}{block signs; the positive block; Fock vectors}
+\nt{$\mpoly{f}{j}{\eta}$, $y^{++}_\tau$, $y^{--}_\tau$}{the matched polynomial; blocks of variables}
+\nt{$f$, $j$, $e$ (bijections)}{bijections of index sets}
+\nt{$d$, $m$, $p$, $h$, $i$, $k$, $l$}{integers, indices, fillings; $h$, $g$, $x$, $u$ also points of groups}
+\nt{$C$, $C_0$, $C_1$, $C_2$, $c$, $c_0$, $\gamma$, $\gamma_1$, $\gamma_2$, $\kappa$, $\kappa'$, $n_0$,
+$\varrho_0$}{constants}
+\nt{$\mathcal{H}_1$, $\mathcal{L}$, $\lambda$, $\lambda_g$, $\lambda'$, $Q_0$, $Q$, $v$, $v^0$, $x_0$}{Fock space,
+invariant forms, linear forms, polynomials, vectors of Proposition~\ref{p:real}}
+\nt{$t(z)$, $o(z)$, $\Omega(y,z)$, $T(z)$, $P_z$, $q$, $q_0$, $q_1$, $r$, $\vartheta$}{objects of its proof;
+$\vartheta$ an angle}
+\nt{$X$, $Y$, $Z$, $U_1$, $U_2$, $A$, $B$, $K$, $F$, $F'$, $\Xi$, $\zeta$, $\epsilon$}{matrices, polynomials,
+functions, points}
+\nt{$\mathcal{S}$, $M$ (linear form), $\pi$, $y$, $a$, $b$, $u$, $g$, $x$, $x'$, $x''$, $y_1$, $y_2$, $\tilde k$}{an
+algebra; a linear form; a representation; vectors, matrices, blocks}
+\nt{$L$}{in ``$L$-function'' and ``$L$-value''}
+\end{multicols}
+\endgroup
+
+\end{document}

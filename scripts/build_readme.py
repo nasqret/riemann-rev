@@ -310,11 +310,13 @@ def build() -> str:
     ]
     add(" ".join(row1) + "\n")
     add(" ".join(row2) + "\n")
-    add(f"**New:** [the condensed proof, our note (PDF)]({SITE}/summary/grh-condensed-summary.pdf) · "
+    wm = load("writeup/MANIFEST.json")              # scripts/import_writeup.py: the edition of the write-up
+    add(f"**New:** [the write-up of the condensed proof, a working draft (PDF)]({SITE}/writeup/handout.pdf) · "
+        f"[for AI agents](writeup/AGENTS.md) · [the condensed proof, our note (PDF)]({SITE}/summary/grh-condensed-summary.pdf) · "
         f"[lsernau/grh-lean](https://github.com/{cond['repo']}/tree/{cond['commit']})\n")
     add(f"**Read it online:** [site]({SITE}/) · [atlas]({SITE}/atlas/) · [proof atlas]({PROOF_ATLAS}) · "
         f"[guide]({SITE}/guide/proof-guide.pdf) · [book]({SITE}/book/) · [blueprint]({SITE}/blueprint/atlas-blueprint.pdf)\n")
-    add("[The condensed proof](#the-condensed-proof-25-november-2026) · [Status](#status-dashboard) · [The theorem](#the-theorem) · [New here?](#new-here-start-here) · "
+    add("[The write-up](#the-write-up-a-working-draft-26-november-2026) · [The condensed proof](#the-condensed-proof-25-november-2026) · [Status](#status-dashboard) · [The theorem](#the-theorem) · [New here?](#new-here-start-here) · "
         "[Route of the proof](#the-route-of-the-proof) · [Contents](#what-is-in-this-repository) · "
         "[Check it yourself](#check-it-yourself) · [Transparency](#transparency) · [FAQ](#questions-and-answers)\n")
     add("</div>\n")
@@ -331,6 +333,24 @@ def build() -> str:
         "The human-readable mathematics has not been written up yet, and the argument has not been through the "
         "traditional refereeing of the mathematical community. Nothing here is this repository's own claim that "
         "the theorem is true; it reports the records listed below, with their sources.\n")
+
+    # ------------------------------------------------------------------ the write-up (26 November 2026)
+    add("## The write-up, a working draft (26 November 2026)\n")
+    add("> [!IMPORTANT]\n"
+        f"> **The condensed proof read as mathematics, unit by unit.** {len(wm['notes'])} notes cover all "
+        f"{len(wm['units'])} units of the formal argument, from the five final theorems down, in the order of the "
+        "argument; classical results are quoted from the literature (a catalogue of "
+        f"{wm['catalogue_entries']:,} background declarations, {wm['second_reading_verdicts']} of them compared with "
+        "their published statements). Every statement links to the Lean lines it renders, at the pinned commit. "
+        "Made by AI agents and checked by programs, read again by an independent AI reader and by AI referees; "
+        "**not yet refereed by a human**, and it does not say that RH is proved.\n>\n"
+        f"> **[Read the handout (PDF)]({SITE}/writeup/handout.pdf)** · [catalogue of quoted results (PDF)]"
+        f"({SITE}/writeup/catalogue-full.pdf) · [the folder: structured proofs, LaTeX sources, catalogue](writeup/) · "
+        "**[guide for AI agents](writeup/AGENTS.md)**\n")
+    add("What it is for: to be read, checked and rewritten, by people and by their agents. The structured proofs give "
+        "every proof as a tree of small steps, each quoting the exact Lean lines it renders; a program checks every "
+        "quotation against the source. [`writeup/README.md`](writeup/README.md) says how it was made and what that does "
+        "and does not check; corrections are welcome as issues, with the note and the Lean lines.\n")
 
     # ------------------------------------------------------------------ the condensed proof (25 November 2026)
     tree = f"https://github.com/{cond['repo']}/tree/{cond['commit']}"

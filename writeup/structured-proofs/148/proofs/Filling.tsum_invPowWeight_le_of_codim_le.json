@@ -1,0 +1,632 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Filling.BlockBound:130:7",
+ "summary": "Group the pairs by Z(γ) (few values: integral matrices with entries ≤ b^{5n²} at every place); in one group apply the congruence count modulo d = M·g·det(YYᴴ), Y = paddedLeading(j, Z): each congruence class holds at most one labelled term, because two such terms p, q give an element r ∈ 𝖴⁰_c(g) with (r u_p p)f = (u_q q)f (shared vectors are short, so the matrix X·adj(Y) vanishes in the high columns); the count and the index [Ô : dÔ] give the power of b.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Use the elementary size facts (o: 2 ≤ b).",
+   "lines": [
+    134,
+    215
+   ],
+   "span": [
+    134,
+    66,
+    215,
+    98
+   ],
+   "lean": "S.of_size_bounds fun _ _ _ o ↦ by\n  cases' T.finrank_le.dest with l hl; simp at hl\n  intros; have K {p} a := (@h p a).2.choose_spec.1\n  grw [tsum_le_of_encard_range_le (R := (S.frameProducts ·.2 = S.frameProducts ·.2)) _\n    (encard_integral_le Function.uncurry (by bound) (Set.forall_mem_range.2 fun p i ↦\n    ⟨isIntegral_frameProducts (K p.2) .., ((h p.2).1.1.1.norm_frameProducts_le · ..)⟩)\n    Function.uncurry_injective.injOn) (by tauto) fun A hA p₀ h₀ e ↦ ?_]; rotate_right\n  obtain ⟨⟨⟨⟨N⟩, -, D⟩⟩, F⟩ := h (hA h₀), fun {p} a ↦ And.intro (h (hA a)) (e p a _ h₀)\n  let O := (Ô E).comap (algebraMap E _)\n  have : IsStarStable O := ⟨(by simpa [O] using star_mem_Ô ·)⟩\n  let Y := paddedLeading j (S.frameProducts p₀.2)\n  have iY :\n    IsIntMatrix O Y := by simp [O, Y, paddedLeading, ite_mem, isIntegral_frameProducts (K (hA h₀))]\n  let M := S.levelPrime 0 ^ 𝔰.n ^ 4\n  have iy := nsmul_mem (iY.mul iY.isInt_conjTranspose).det_mem S.g\n  have n0 : M • S.g • (Y * Yᴴ).det ≠ 0 := by simp [M, Y, D]\n  let d := principalIdele n0.isUnit.unit\n  have hd : ↑d ∈ Ô E := nsmul_mem iy M\n  have nd : genIndex d.1 ≤ _ := (genIndex_algebraMap _).trans_le (by\n    simp [M, Y, abs_norm_eq_prod_norm_sq, ← sq]; grw [g_le_b_pow, N.norm_map_leadingMinor_le,\n      levelPrime_le])\n  have := genIndex_pos d; simp [frameValueIndex, frameGram_termPosition, invPowWeight] at hQ ⊢\n  grw [tsum_inv_index_pow_le_of_congr hd (fun p ↦ (frameMiddle (S.termElem c p).1.1)ᴴ)\n    (fun p h _ _ ↦ (termsOver.isIntMatrix_termPosition (K (hA h))).isInt_conjTranspose\n    _ _) ((isPrimitiveMatrix_iff.2 S.isUnimodular_latMiddle.2).mul_iff.2\n    (sublatticeBasis (gram_classCoordX₀ c) T).2.1) (equivOfCardEq\n    (by simp [← hl, add_assoc]; rfl)) (le_sup_of_le_right _) (n <| S.termElem c ·) (fun p h ↦ .trans\n    (submoduleIndex_dvd_of_le .id le_sup_left (by simp)) ((F h).2 ▸ hQ p (hA h))) _ (by simp [← hl])\n    fun B hB p₁ h₁ e ↦ (F (hB h₁)).elim fun G' f ↦ ?_, nd]\n  rotate_left 2\n  choose! u hu eu using fun p h ↦ (@F p (hB h)).elim fun a b ↦\n    (a.1.2.exists_frameImage_toRows₂_eq_add (.refl _) (by simp) G'.1.2 (b ▸ f)\n    (by simpa [b] using! e _ h₁ p h <| col_mem_colLattice ·)).elim fun l i ↦ show ∃ u ∈ S.classUnip₀\n    c, ∀ i a, (u * p.2).1 (.inr i) (𝔰.besselFrame a) = p₁.2.1 (.inr i) (𝔰.besselFrame a) from\n    (S.exists_mem_classUnip c id (-fromRows 0 ((l.fromRows 0).fromRows 0)) 0 (by simp) (by simp) (by\n    simpa [classCoord_eq_fromBlocks] using i.1) (by simp) rfl).imp (by clear * - i; simp_all\n    [middleGram, Fin.forall_fin_succ', Subgroup.coe_mul, ← ext_iff, frameGram])\n  grw [tsum_le_of_colouring (fun p ↦ (frameImage (S.termPosition c p.1 (u p * p.2)).1.1).toRows₁)\n    (submoduleIndex_smul_ne_zero hd) (fun _ a _ _ ↦ termsOver.isIntMatrix_termPosition\n    (.mul (hu _ a).1.2 (K (hA (hB a)))) _ _) (fun _ ↦ 1) 1, submoduleIndex_smul_intVectors hd, nd]\n  simp; norm_cast; simp [Set.encard_le_one_iff]\n  intro C hC _ _ H' p q a b\n  let ξ := (frameImage (u q * q.2) - frameImage (u p * p.2).1.1).toRows₁\n  have ⟨X, x, iX⟩ : ∃ X, ξ = _ • X ∧ IsIntMatrix O X := ⟨_, (smul_inv_smul₀ n0 _).symm, (by\n    simpa [ξ, O, d, frameImage_termPosition, classCoord_eq_fromBlocks, Units.smul_def,\n      intVectors] using Set.mem_smul_set_iff_inv_smul_mem (a := d).1 <| H' _ b _ a ·)⟩\n  grw [hC] at a b\n  let P := xRows (S.frameProducts p₁.2)\n  let α := (xRows Y.adjugateᵀ)ᵀ\n  let T := X * α\n  have s : Tᴴ * P = -(P * α)ᴴ * X := (smul_right_inj n0).1 (by\n    simpa [x, T, mul_comm Y.det] using congr(αᴴ * $((by\n    linear_combination (norm := (ext; simp [ξ, P, eu, a, b, frameGram, mul_sub]; ring))\n      congr(submatrix $((u q * q.2).2.trans (u p * p.2).2.symm) 𝔰.besselFrame 𝔰.besselFrame) :\n      ξᴴ * P = Pᴴ * -ξ))))\n  have z i k (J : ↑j ≤ k.1) : (X * Y.adjugate) i k = 0 := (mul_eq_zero_iff_left (by simp [Y, D])).1\n    (eq_zero_of_norm_Φ (algebraMap_mem_Ô.1 ((iX.mul iY.adjugate).smul iy i k)) fun v ↦ by\n    have t p h := (F (hB h)).2 ▸ HasLevel.norm_shared_vector_lt ((F (hB h)).1.1.imp And.left id) (hu\n      p h).2 J rfl v i\n    have := congr(‖Φ v (($x * Y.adjugate) i k)‖).ge\n    simp [ξ, Y, M, inv_def, entrywise, D, ← Finset.mul_sum] at *\n    by_contra! h; grw [← h, norm_sub_le] at this\n    linarith [t _ b, t _ a])\n  let σ := (M : E) • (Yᴴ.det • T - Y.det • Tᴴ - (P * α)ᴴ * T)\n  have k : S.g • (σ * P) =\n    ξ := by cases ((lt_or_ge 𝔰.ϱ j).imp (by simpa [P, α, Y, ← ext_iff, paddedLeading,\n    f, ·.trans'] using (congr(submatrix $Y.mul_adjugate Fin.castSucc Fin.castSucc))) fun J ↦\n    Matrix.ext fun a b ↦ sum_of_injective _ Fin.castSuccEmb.2 _ _ (by simp +contextual [z, J.trans])\n    fun c ↦ mul_eq_mul_left_iff.2 ((em' _).imp (by simp +contextual [Y, P, paddedLeading, f]) (z a\n    _)) : P * α = Y.det • 1 ∨ T * P = X * Y.adjugate * Y) <;> simp [σ, adjugate_mul, *] <;> module\n  have ⟨r, _, hr, τ, er⟩ := S.exists_mem_classUnip c id 0 _ (by simp) (by simp [σ, s]; module)\n    (by simp) (show IsIntMatrix O σ by apply_rules (transparency := .reducible) [IsIntMatrix.smul,\n    IsIntMatrix.sub, IsIntMatrix.mul, IsIntMatrix.isInt_conjTranspose, IsIntMatrix.det_mem] <;>\n    simp [α, iY.adjugate _, O, P, isIntegral_frameProducts (K (hA h₀)), f]) rfl\n  apply (F (hB a)).1.eq_of_frameImage_eq (mul_mem (hr (by simp)) (hu _ a)) (hu _ b) (F (hB b)).1\n  simpa [↓frameImage_mul (s := r), ← ext_iff, er, eu, a, b, P, frameGram, ξ,\n    eq_sub_iff_add_eq'] using k\n  grw [one_le_two, add_le_mul le_rfl, o, o]\n  simp (disch := bound); gcongr; simpa; grw [show l ≤ s by lia]; lia; bound\n  rintro _ ⟨v, h, rfl⟩\n  simpa [d, Y, preimageLattice, inv_def, smul_smul, D, mul_left_comm _⁻¹, -map_mul] using\n    (iY.adjugate.isInt_conjTranspose.smul (nsmul_mem iY.det_mem M)).mulVec (M := finAdeleMat _) h",
+   "head_span": [
+    134,
+    66,
+    134,
+    99
+   ],
+   "head_lines": [
+    134,
+    134
+   ],
+   "uses": [
+    {
+     "decl": "Filling.of_size_bounds"
+    }
+   ]
+  },
+  {
+   "id": "1.1",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "dim T ≤ k: write k = dim T + l.",
+   "lines": [
+    135,
+    135
+   ],
+   "lean": "  cases' T.finrank_le.dest with l hl; simp at hl"
+  },
+  {
+   "id": "1.2",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Each p ∈ A lies over (c, s_p, p.1) (K).",
+   "lines": [
+    136,
+    136
+   ],
+   "lean": "  intros; have K {p} a := (@h p a).2.choose_spec.1"
+  },
+  {
+   "id": "1.3",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Group A by the value of Z(p.2): the values are matrices of algebraic integers with |Φ_v(entry)| ≤ b^{5n²} (near terms), so there are at most (1 + 2b^{5n²})^{2(ϱ+1)²f} of them (encard_integral_le); it suffices to bound the sum over one group (pairs with a common Z, base point p₀).",
+   "lines": [
+    137,
+    140
+   ],
+   "lean": "  grw [tsum_le_of_encard_range_le (R := (S.frameProducts ·.2 = S.frameProducts ·.2)) _\n    (encard_integral_le Function.uncurry (by bound) (Set.forall_mem_range.2 fun p i ↦\n    ⟨isIntegral_frameProducts (K p.2) .., ((h p.2).1.1.1.norm_frameProducts_le · ..)⟩)\n    Function.uncurry_injective.injOn) (by tauto) fun A hA p₀ h₀ e ↦ ?_]; rotate_right",
+   "uses": [
+    {
+     "decl": "Filling.tsum_le_of_encard_range_le"
+    },
+    {
+     "decl": "Filling.encard_integral_le"
+    },
+    {
+     "decl": "Filling.isIntegral_frameProducts"
+    },
+    {
+     "decl": "Filling.IsNear.norm_frameProducts_le"
+    }
+   ]
+  },
+  {
+   "id": "1.4",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "p₀ is near (N) with D_j(Z(p₀)) ≠ 0 (D); every p of the group is labelled with Z(p) = Z(p₀) (F).",
+   "lines": [
+    141,
+    141
+   ],
+   "lean": "  obtain ⟨⟨⟨⟨N⟩, -, D⟩⟩, F⟩ := h (hA h₀), fun {p} a ↦ And.intro (h (hA a)) (e p a _ h₀)"
+  },
+  {
+   "id": "1.5",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "O = Ô ∩ E, the ring of integers of E.",
+   "lines": [
+    142,
+    142
+   ],
+   "lean": "  let O := (Ô E).comap (algebraMap E _)"
+  },
+  {
+   "id": "1.6",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "O is stable under conjugation.",
+   "lines": [
+    143,
+    143
+   ],
+   "lean": "  have : IsStarStable O := ⟨(by simpa [O] using star_mem_Ô ·)⟩",
+   "typed_fact": "IsStarStable O"
+  },
+  {
+   "id": "1.7",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Y = paddedLeading(j, Z(p₀)).",
+   "lines": [
+    144,
+    144
+   ],
+   "lean": "  let Y := paddedLeading j (S.frameProducts p₀.2)"
+  },
+  {
+   "id": "1.8",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Y has integral entries.",
+   "lines": [
+    145,
+    146
+   ],
+   "lean": "  have iY :\n    IsIntMatrix O Y := by simp [O, Y, paddedLeading, ite_mem, isIntegral_frameProducts (K (hA h₀))]",
+   "uses": [
+    {
+     "decl": "Filling.isIntegral_frameProducts"
+    }
+   ],
+   "typed_fact": "IsIntMatrix O Y"
+  },
+  {
+   "id": "1.9",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "M = q₀^{(ϱ+1)⁴}.",
+   "lines": [
+    147,
+    147
+   ],
+   "lean": "  let M := S.levelPrime 0 ^ 𝔰.n ^ 4"
+  },
+  {
+   "id": "1.10",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "g·det(YYᴴ) is integral.",
+   "lines": [
+    148,
+    148
+   ],
+   "lean": "  have iy := nsmul_mem (iY.mul iY.isInt_conjTranspose).det_mem S.g"
+  },
+  {
+   "id": "1.11",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "M·g·det(YYᴴ) ≠ 0 (as det Y = D_j(Z) ≠ 0).",
+   "lines": [
+    149,
+    149
+   ],
+   "lean": "  have n0 : M • S.g • (Y * Yᴴ).det ≠ 0 := by simp [M, Y, D]",
+   "typed_fact": "M • S.g • (Y * Yᴴ).det ≠ 0"
+  },
+  {
+   "id": "1.12",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "d = the principal idele of M·g·det(YYᴴ).",
+   "lines": [
+    150,
+    150
+   ],
+   "lean": "  let d := principalIdele n0.isUnit.unit"
+  },
+  {
+   "id": "1.13",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "d is integral.",
+   "lines": [
+    151,
+    151
+   ],
+   "lean": "  have hd : ↑d ∈ Ô E := nsmul_mem iy M",
+   "typed_fact": "↑d ∈ Ô E"
+  },
+  {
+   "id": "1.14",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "[Ô : dÔ] = |N_{E/ℚ}(M g det(YYᴴ))| ≤ (q₀^{n⁴}·b²³·b^{11n³})^{f}-type bound (g ≤ b²³, |D_j|² ≤ b^{11n³}, q₀ ≤ b¹¹).",
+   "lines": [
+    152,
+    154
+   ],
+   "lean": "  have nd : genIndex d.1 ≤ _ := (genIndex_algebraMap _).trans_le (by\n    simp [M, Y, abs_norm_eq_prod_norm_sq, ← sq]; grw [g_le_b_pow, N.norm_map_leadingMinor_le,\n      levelPrime_le])",
+   "uses": [
+    {
+     "decl": "Filling"
+    },
+    {
+     "decl": "Filling.IsNear.norm_map_leadingMinor_le"
+    }
+   ],
+   "typed_fact": "genIndex d.1 ≤ _"
+  },
+  {
+   "id": "1.15",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "[Ô : dÔ] > 0; unfold frameValueIndex, the frame Gram of the term position and invPowWeight in hQ and in the goal.",
+   "lines": [
+    155,
+    155
+   ],
+   "lean": "  have := genIndex_pos d; simp [frameValueIndex, frameGram_termPosition, invPowWeight] at hQ ⊢"
+  },
+  {
+   "id": "1.16",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Congruence count (tsum_inv_index_pow_le_of_congr) with modulus d, rows frameMiddle(termElem)ᴴ (integral), the primitive basis of T (codimension ≤ s), and n as weight (divisibility from hQ): Σ n^{−k} ≤ [Ô : dÔ]^{…}·x, where x bounds the size of a set of p whose rows agree modulo the congruence lattice.",
+   "lines": [
+    156,
+    162
+   ],
+   "lean": "  grw [tsum_inv_index_pow_le_of_congr hd (fun p ↦ (frameMiddle (S.termElem c p).1.1)ᴴ)\n    (fun p h _ _ ↦ (termsOver.isIntMatrix_termPosition (K (hA h))).isInt_conjTranspose\n    _ _) ((isPrimitiveMatrix_iff.2 S.isUnimodular_latMiddle.2).mul_iff.2\n    (sublatticeBasis (gram_classCoordX₀ c) T).2.1) (equivOfCardEq\n    (by simp [← hl, add_assoc]; rfl)) (le_sup_of_le_right _) (n <| S.termElem c ·) (fun p h ↦ .trans\n    (submoduleIndex_dvd_of_le .id le_sup_left (by simp)) ((F h).2 ▸ hQ p (hA h))) _ (by simp [← hl])\n    fun B hB p₁ h₁ e ↦ (F (hB h₁)).elim fun G' f ↦ ?_, nd]",
+   "uses": [
+    {
+     "decl": "Filling.tsum_inv_index_pow_le_of_congr"
+    },
+    {
+     "decl": "Filling.sublatticeBasis"
+    },
+    {
+     "decl": "Filling.termsOver.isIntMatrix_termPosition"
+    }
+   ]
+  },
+  {
+   "id": "1.17",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Reorder the goals.",
+   "lines": [
+    163,
+    163
+   ],
+   "lean": "  rotate_left 2"
+  },
+  {
+   "id": "1.18",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "For p in a congruence class B with base p₁: the frames of p and p₁ differ by g·l·ξ (exists_frameImage_toRows₂_eq_add, same Z, rows congruent),",
+   "lines": [
+    164,
+    166
+   ],
+   "span": [
+    164,
+    3,
+    166,
+    77
+   ],
+   "lean": "choose! u hu eu using fun p h ↦ (@F p (hB h)).elim fun a b ↦\n    (a.1.2.exists_frameImage_toRows₂_eq_add (.refl _) (by simp) G'.1.2 (b ▸ f)\n    (by simpa [b] using! e _ h₁ p h <| col_mem_colLattice ·)).elim fun l i ↦",
+   "uses": [
+    {
+     "decl": "Filling.HasLevel.exists_frameImage_toRows₂_eq_add"
+    }
+   ]
+  },
+  {
+   "id": "1.19",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "so there is u_p ∈ 𝖴⁰_c(g) with (u_p p.2) and p₁.2 having the same e*-rows on the frame (exists_mem_classUnip with u = −(l, 0, 0)).",
+   "lines": [
+    166,
+    170
+   ],
+   "span": [
+    166,
+    78,
+    170,
+    80
+   ],
+   "lean": "show ∃ u ∈ S.classUnip₀\n    c, ∀ i a, (u * p.2).1 (.inr i) (𝔰.besselFrame a) = p₁.2.1 (.inr i) (𝔰.besselFrame a) from\n    (S.exists_mem_classUnip c id (-fromRows 0 ((l.fromRows 0).fromRows 0)) 0 (by simp) (by simp) (by\n    simpa [classCoord_eq_fromBlocks] using i.1) (by simp) rfl).imp (by clear * - i; simp_all\n    [middleGram, Fin.forall_fin_succ', Subgroup.coe_mul, ← ext_iff, frameGram])",
+   "uses": [
+    {
+     "decl": "Filling.exists_mem_classUnip"
+    }
+   ],
+   "typed_fact": "∃ u ∈ S.classUnip₀"
+  },
+  {
+   "id": "1.20",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Colour the class by the first rows of (h_c⁻¹(u_p p.2)h_{p.1})f modulo d·Ô (integral, index [Ô : dÔ]^{…}); it suffices that each colour holds at most one element.",
+   "lines": [
+    171,
+    173
+   ],
+   "lean": "  grw [tsum_le_of_colouring (fun p ↦ (frameImage (S.termPosition c p.1 (u p * p.2)).1.1).toRows₁)\n    (submoduleIndex_smul_ne_zero hd) (fun _ a _ _ ↦ termsOver.isIntMatrix_termPosition\n    (.mul (hu _ a).1.2 (K (hA (hB a)))) _ _) (fun _ ↦ 1) 1, submoduleIndex_smul_intVectors hd, nd]",
+   "uses": [
+    {
+     "decl": "Filling.tsum_le_of_colouring"
+    },
+    {
+     "decl": "Filling.submoduleIndex_smul_ne_zero"
+    },
+    {
+     "decl": "Filling.submoduleIndex_smul_intVectors"
+    },
+    {
+     "decl": "Filling.termsOver.isIntMatrix_termPosition"
+    }
+   ]
+  },
+  {
+   "id": "1.21",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Reduce to: any two elements of one colour are equal.",
+   "lines": [
+    174,
+    174
+   ],
+   "lean": "  simp; norm_cast; simp [Set.encard_le_one_iff]"
+  },
+  {
+   "id": "1.22",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Take p, q of one colour C (with the colour hypothesis H').",
+   "lines": [
+    175,
+    175
+   ],
+   "lean": "  intro C hC _ _ H' p q a b"
+  },
+  {
+   "id": "1.23",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "ξ = the difference of the first rows of (u_q q)f and (u_p p)f.",
+   "lines": [
+    176,
+    176
+   ],
+   "lean": "  let ξ := (frameImage (u q * q.2) - frameImage (u p * p.2).1.1).toRows₁"
+  },
+  {
+   "id": "1.24",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "ξ = d·X with X integral (the colour hypothesis: the difference lies in d·Ô).",
+   "lines": [
+    177,
+    179
+   ],
+   "lean": "  have ⟨X, x, iX⟩ : ∃ X, ξ = _ • X ∧ IsIntMatrix O X := ⟨_, (smul_inv_smul₀ n0 _).symm, (by\n    simpa [ξ, O, d, frameImage_termPosition, classCoord_eq_fromBlocks, Units.smul_def,\n      intVectors] using Set.mem_smul_set_iff_inv_smul_mem (a := d).1 <| H' _ b _ a ·)⟩",
+   "typed_fact": "∃ X, ξ = _ • X ∧ IsIntMatrix O X"
+  },
+  {
+   "id": "1.25",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Rewrite with the colour C.",
+   "lines": [
+    180,
+    180
+   ],
+   "lean": "  grw [hC] at a b"
+  },
+  {
+   "id": "1.26",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "P = the first ϱ rows of Z(p₁).",
+   "lines": [
+    181,
+    181
+   ],
+   "lean": "  let P := xRows (S.frameProducts p₁.2)"
+  },
+  {
+   "id": "1.27",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "α = the transpose of the first rows of adj(Y)ᵀ.",
+   "lines": [
+    182,
+    182
+   ],
+   "lean": "  let α := (xRows Y.adjugateᵀ)ᵀ"
+  },
+  {
+   "id": "1.28",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "T = Xα.",
+   "lines": [
+    183,
+    183
+   ],
+   "lean": "  let T := X * α"
+  },
+  {
+   "id": "1.29",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "TᴴP = −(Pα)ᴴX: from ξᴴP = Pᴴ(−ξ), which follows from the equality of the Gram matrices of (u_q q)f and (u_p p)f (same Z) after multiplying by αᴴ and dividing by the unit d.",
+   "lines": [
+    184,
+    188
+   ],
+   "lean": "  have s : Tᴴ * P = -(P * α)ᴴ * X := (smul_right_inj n0).1 (by\n    simpa [x, T, mul_comm Y.det] using congr(αᴴ * $((by\n    linear_combination (norm := (ext; simp [ξ, P, eu, a, b, frameGram, mul_sub]; ring))\n      congr(submatrix $((u q * q.2).2.trans (u p * p.2).2.symm) 𝔰.besselFrame 𝔰.besselFrame) :\n      ξᴴ * P = Pᴴ * -ξ))))",
+   "typed_fact": "Tᴴ * P = -(P * α)ᴴ * X"
+  },
+  {
+   "id": "1.30",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "(X·adj(Y))_{i,k} = 0 for k ≥ j: it is an algebraic integer (after multiplying by M g det) whose absolute value at every place is < 1, since it is a difference of two shared-vector coordinates, each < q₀^{n⁴}/2 by norm_shared_vector_lt.",
+   "lines": [
+    189,
+    196
+   ],
+   "lean": "  have z i k (J : ↑j ≤ k.1) : (X * Y.adjugate) i k = 0 := (mul_eq_zero_iff_left (by simp [Y, D])).1\n    (eq_zero_of_norm_Φ (algebraMap_mem_Ô.1 ((iX.mul iY.adjugate).smul iy i k)) fun v ↦ by\n    have t p h := (F (hB h)).2 ▸ HasLevel.norm_shared_vector_lt ((F (hB h)).1.1.imp And.left id) (hu\n      p h).2 J rfl v i\n    have := congr(‖Φ v (($x * Y.adjugate) i k)‖).ge\n    simp [ξ, Y, M, inv_def, entrywise, D, ← Finset.mul_sum] at *\n    by_contra! h; grw [← h, norm_sub_le] at this\n    linarith [t _ b, t _ a])",
+   "uses": [
+    {
+     "decl": "Filling.HasLevel.norm_shared_vector_lt"
+    }
+   ],
+   "typed_fact": "(X * Y.adjugate) i k = 0"
+  },
+  {
+   "id": "1.31",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "σ = M·(det(Yᴴ)T − det(Y)Tᴴ − (Pα)ᴴT).",
+   "lines": [
+    197,
+    197
+   ],
+   "lean": "  let σ := (M : E) • (Yᴴ.det • T - Y.det • Tᴴ - (P * α)ᴴ * T)"
+  },
+  {
+   "id": "1.32",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "g·(σP) = ξ: if ϱ < j then Pα = det(Y)·1; otherwise TP = X adj(Y) Y by the vanishing of step 1.30; in both cases expand σP.",
+   "lines": [
+    198,
+    203
+   ],
+   "lean": "  have k : S.g • (σ * P) =\n    ξ := by cases ((lt_or_ge 𝔰.ϱ j).imp (by simpa [P, α, Y, ← ext_iff, paddedLeading,\n    f, ·.trans'] using (congr(submatrix $Y.mul_adjugate Fin.castSucc Fin.castSucc))) fun J ↦\n    Matrix.ext fun a b ↦ sum_of_injective _ Fin.castSuccEmb.2 _ _ (by simp +contextual [z, J.trans])\n    fun c ↦ mul_eq_mul_left_iff.2 ((em' _).imp (by simp +contextual [Y, P, paddedLeading, f]) (z a\n    _)) : P * α = Y.det • 1 ∨ T * P = X * Y.adjugate * Y) <;> simp [σ, adjugate_mul, *] <;> module",
+   "uses": [
+    {
+     "step": "1.30"
+    },
+    {
+     "step": "1.29"
+    }
+   ],
+   "typed_fact": "S.g • (σ * P) =\n    ξ"
+  },
+  {
+   "id": "1.33",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "There is r ∈ 𝖴⁰_c(g) of the form 1 + g(…σ…) (exists_mem_classUnip with skew-hermitian s = σ by step 1.29)",
+   "lines": [
+    204,
+    205
+   ],
+   "span": [
+    204,
+    3,
+    205,
+    16
+   ],
+   "lean": "have ⟨r, _, hr, τ, er⟩ := S.exists_mem_classUnip c id 0 _ (by simp) (by simp [σ, s]; module)\n    (by simp) (",
+   "uses": [
+    {
+     "decl": "Filling.exists_mem_classUnip"
+    },
+    {
+     "step": "1.29"
+    }
+   ]
+  },
+  {
+   "id": "1.34",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "with σ integral (closure of integral matrices under sums, products, conjugate transpose, scalars and determinants).",
+   "lines": [
+    205,
+    207
+   ],
+   "span": [
+    205,
+    16,
+    207,
+    80
+   ],
+   "lean": "show IsIntMatrix O σ by apply_rules (transparency := .reducible) [IsIntMatrix.smul,\n    IsIntMatrix.sub, IsIntMatrix.mul, IsIntMatrix.isInt_conjTranspose, IsIntMatrix.det_mem] <;>\n    simp [α, iY.adjugate _, O, P, isIntegral_frameProducts (K (hA h₀)), f]) rfl",
+   "typed_fact": "IsIntMatrix O σ"
+  },
+  {
+   "id": "1.35",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "By IsLabelledTerm.eq_of_frameImage_eq it suffices that (r u_p p)f = (u_q q)f,",
+   "lines": [
+    208,
+    208
+   ],
+   "lean": "  apply (F (hB a)).1.eq_of_frameImage_eq (mul_mem (hr (by simp)) (hu _ a)) (hu _ b) (F (hB b)).1",
+   "uses": [
+    {
+     "decl": "Filling.IsLabelledTerm.eq_of_frameImage_eq"
+    }
+   ]
+  },
+  {
+   "id": "1.36",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "which follows from g·(σP) = ξ (step 1.32).",
+   "lines": [
+    209,
+    210
+   ],
+   "lean": "  simpa [↓frameImage_mul (s := r), ← ext_iff, er, eu, a, b, P, frameGram, ξ,\n    eq_sub_iff_add_eq'] using k",
+   "uses": [
+    {
+     "step": "1.32"
+    }
+   ]
+  },
+  {
+   "id": "1.37",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Numerics of the main goal: (1 + 2b^{5n²})^{…} ≤ (b^{…})^{…} using 1 ≤ 2 ≤ b (o).",
+   "lines": [
+    211,
+    211
+   ],
+   "lean": "  grw [one_le_two, add_le_mul le_rfl, o, o]"
+  },
+  {
+   "id": "1.38",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Compare the exponents:",
+   "lines": [
+    212,
+    212
+   ],
+   "span": [
+    212,
+    3,
+    212,
+    46
+   ],
+   "lean": "simp (disch := bound); gcongr; simpa; grw ["
+  },
+  {
+   "id": "1.39",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "l ≤ s (from k = dim T + l and k ≤ dim T + s), and the exponent inequality holds.",
+   "lines": [
+    212,
+    212
+   ],
+   "span": [
+    212,
+    46,
+    212,
+    76
+   ],
+   "lean": "show l ≤ s by lia]; lia; bound",
+   "typed_fact": "l ≤ s"
+  },
+  {
+   "id": "1.40",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Side goal of the congruence count: d·Ô^ι is contained in the congruence lattice:",
+   "lines": [
+    213,
+    213
+   ],
+   "lean": "  rintro _ ⟨v, h, rfl⟩"
+  },
+  {
+   "id": "1.41",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "for an integral v, d·v = (adj(Y)ᴴ·M·det)·(integral vector), i.e. it lies in the preimage lattice.",
+   "lines": [
+    214,
+    215
+   ],
+   "lean": "  simpa [d, Y, preimageLattice, inv_def, smul_smul, D, mul_left_comm _⁻¹, -map_mul] using\n    (iY.adjugate.isInt_conjTranspose.smul (nsmul_mem iY.det_mem M)).mulVec (M := finAdeleMat _) h"
+  }
+ ]
+}

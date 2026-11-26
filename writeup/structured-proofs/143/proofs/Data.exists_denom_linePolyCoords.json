@@ -1,0 +1,155 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Rows.LineCoordinates:248:7",
+ "name": "Data.exists_denom_linePolyCoords",
+ "summary": "H is the hook number; by the dual isometry, H times the coordinates is an integral combination of the coefficients of the determinant product, which are polynomials in the entries; homogeneity from the substitution law of firstColsCoord.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "S1",
+   "parent": null,
+   "kind": "statement",
+   "claim": "(Part of the statement: it contains `let Q := …`, and the line census of the checker takes that := for the declaration's, so these lines count as the value.) Homogeneity of Q and integrality of its coefficients.",
+   "lines": [
+    250,
+    251
+   ],
+   "lean": "  let Q := H • linePolyCoords j i Y l; (∀ c ≠ (0 : ℂ), aeval (c • .X ·) Q = c ^ d • Q) ∧\n  ∀ A : Subring ℂ, (∀ τ a b, Φ τ (Y a b) ∈ A) → Q ∈ (MvPolynomial.map A.subtype).range := by",
+   "uses": []
+  },
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "witness",
+   "claim": "The dual isometry for the weight k⁺ (exists_dual_isometry): integer matrices J, K with K·(Gram)·J = (hook number)·1 (a, c).",
+   "lines": [
+    252,
+    253
+   ],
+   "lean": "  obtain ⟨J, K, a, -, c, -⟩ :=\n    exists_dual_isometry (κ := (untwistedAuxPair j).colsPlus) (rowPos (BigIndex j)) _ rfl (by tauto)",
+   "uses": [
+    {
+     "decl": "exists_dual_isometry"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "fact",
+   "claim": "For all i, Y: (hook number)·linePolyCoords j i Y is an integral combination (by Kᵀ·Gram·Jᵀ) of the Fock pairings of the determinant product with the basis (weylGram_mul_fockPairing, symmetry of the Gram matrix).",
+   "lines": [
+    254,
+    256
+   ],
+   "lean": "  have b i Y := congr((Kᵀ * $(c ▸ weylGram_mul_fockPairing) * Jᵀ)ᵀ • linePolyCoords j i\n    Y); simp [← Matrix.mul_assoc, a, mul_smul, ↓Kᵀ.mul_smul, weylGram_isSymm.eq,\n    Int.cast_smul_eq_zsmul, -zsmul_eq_mul, -card_sum] at b",
+   "uses": [
+    {
+     "step": "1"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "witness",
+   "claim": "Take d = Σ_τ Σ_{h<|BigIndex j|} (|BigIndex j| − h)·k⁺(τ, h) and H the hook number (positive, at most (d^d)³: hookNumber_pos, hookNumber_le). Integrality: the determinant product has coefficients in A (det of a matrix with entries in A), so by step 2 every coordinate does (coord_mem_of_coeff_mem, toPoly_linePolyCoords). The degree bound and homogeneity remain.",
+   "lines": [
+    257,
+    263
+   ],
+   "lean": "  refine ⟨∑ τ, ∑ h ∈ range (card (BigIndex j)), (card (BigIndex j) - h) *\n    (untwistedAuxPair j).colsPlus τ h, ?_, _, hookNumber_pos, hookNumber_le (sum_mono fun _ ↦ ?_),\n    fun i Y l ↦ ⟨fun c h ↦ ?_, fun A hA ↦ (_root_.prod_mem fun τ _ ↦ _root_.prod_mem fun k _ ↦\n    IsIntMatrix.det_mem fun a b ↦ ?_ : _ ∈ (MvPolynomial.map (MvPolynomial.map\n    A.subtype)).range.comap inFirstCols.1).elim fun F e ↦ congr($(b ..) l ∈ _).mp (_root_.sum_mem\n    fun k _ ↦ zsmul_mem (coord_mem_of_coeff_mem (MvPolynomial.map A.subtype).range.toAddSubgroup 0\n    (by simpa using e ▸ toPoly_linePolyCoords ..) (by simp [coeff_map]) _) _)⟩⟩",
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "decl": "Data.toPoly_linePolyCoords"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "computation",
+   "claim": "d ≤ 31m·Σ_τ |DetIndex j τ| (card_detIndex, gcongr, grind).",
+   "lines": [
+    264,
+    264
+   ],
+   "lean": "  simp [↓card_detIndex, mul_sum]; gcongr 2; grind [Nat.mul_lt_mul_right]",
+   "uses": [
+    {
+     "decl": "Data.card_detIndex"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "computation",
+   "claim": "The sum for the hook number bound (sum_flip, sum_range_succ).",
+   "lines": [
+    265,
+    265
+   ],
+   "lean": "  grw [range_mono le_self_add, ← sum_flip]; grind only [sum_range_succ]",
+   "uses": []
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Homogeneity: scaling the variables by c is the two-sided substitution by (c·1, 1); by twoSidedSubst_firstColsCoord with twoSidedSubst_stackedDetProd the coordinates scale by c^d (Schur matrix of c·1 is c^{…}·1).",
+   "lines": [
+    266,
+    269
+   ],
+   "lean": "  simpa [schur_smul, Pi.smul_def, ↓card_detIndex, *, -detRows, sum_range, ← prod_pow_eq_pow_sum,\n    pow_mul, pow_sub_of_lt, ← eq_inv_smul_iff₀, smul_smul, ← division_def, div_pow, inv_mul_eq_div,\n    prod_ne_zero_iff] using congr(_ * $(twoSidedSubst_firstColsCoord (c • 1) 1\n    (twoSidedSubst_stackedDetProd _ (detRows j i Y) ..) _ l))",
+   "uses": [
+    {
+     "decl": "twoSidedSubst_firstColsCoord"
+    },
+    {
+     "decl": "twoSidedSubst_stackedDetProd"
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Integrality of the entries of the stacked matrices under inFirstCols: cases on the column index.",
+   "lines": [
+    270,
+    270
+   ],
+   "lean": "  cases a <;> simp [inFirstCols] <;> obtain b := posEquiv j b",
+   "uses": []
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Constant entries lie in A (hA).",
+   "lines": [
+    271,
+    271
+   ],
+   "lean": "  refine ⟨C (C ⟨_, ?_⟩), by simp; rfl⟩; revert k b; simp [apply_ite, hA]",
+   "uses": []
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Variable entries: they are variables X or constants C(X).",
+   "lines": [
+    272,
+    272
+   ],
+   "lean": "  cases b; exacts [⟨_, map_X ..⟩, ⟨C (.X _), by simp; rfl⟩]",
+   "uses": []
+  }
+ ]
+}

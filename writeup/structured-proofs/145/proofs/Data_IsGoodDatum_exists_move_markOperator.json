@@ -1,0 +1,258 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Columns.LocalStatement:148:7",
+ "summary": "Induction on L. For l :: L, take t′ = (∑_{i≤𝔯}(a_i·s)·T_{l,i})∘t with the Hecke-transfer coefficients a_i and s = p^{A_l}/p^{δ_p}: Hecke operators at l commute with the level actions and pass through the lift, so the lift identity gains the factor markOperator(l) = p^{A_l}T_{l,𝔯}; the raise bound is the induction hypothesis for the coset representatives times |ιₚ(a_i s)| ≤ p^{δ_p − A_l}.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "statement",
+   "claim": "Not a step of the proof: lines 149–155 are the rest of the statement (the `let`s Φ, k, C and the conclusions (a), (b), (c)); the line census takes the `:=` of `let Φ :=` for the start of the value, so the check needs them owned here.",
+   "lines": [
+    149,
+    155
+   ],
+   "lean": "  ∀ x ∈ Ψ.support, let Φ := t (translateDatum x\n    j); let k := D.liftKernel ϑ j; let C := chain (D.liftKernel ϑ) (translateDatum x)\n      (∀ a, ∀ b ∈ Kf .., k.ω (a, b) Φ = t (k.ω (a, b) (translateDatum x j))) ∧\n        (∀ y, k.lift Φ (C j y.1) = C _ ((L.map hΛ.markOperator).prod y)) ∧ ∀ g, j < D.m →\n        (∀ l, ite (l ∈ L) (g l = 1) (∃ i ≤ D.ceilLogM p, g l ∈ basicDoubleCoset _ l.1 i)) →\n        k.ω (1, atSplits hΛ.1 g) Φ ∈ k.raises 1 1 (p ^ ((L.map fun l ↦ (D.deltaP p -\n        markExponent l.1 : ℝ)).sum + ∑ l ∈ Λ, markExponent l + liftLoss Λ j)) := by",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "induction",
+   "claim": "Induction on the duplicate-free list L.",
+   "lines": [
+    156,
+    156
+   ],
+   "lean": "  induction' hn with l L hl _ ih",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "case",
+   "claim": "L = []: t = 1; (a), (b) are trivial; (c) is `mem_raises`.",
+   "lines": [
+    157,
+    157
+   ],
+   "lean": "  use 1, fun x h ↦ ⟨by simp, by tauto, fun _ _ ↦ by simpa using H.mem_raises hQ hΛ h j⟩",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Data.IsGoodDatum.mem_raises"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "case",
+   "claim": "L = l :: L′.",
+   "lines": [
+    158,
+    179
+   ],
+   "lean": "  choose t e f ih using ih; have z := hΛ.star_ne l.2\n  choose a ha u k using H.exists_hecke_transfer hQ hΛ _ l.2 z j\n  let ρ := (D.liftKernel ϑ j).ω.comp (.inr ..); let s : ℂ := p ^ markExponent l.1 / p ^ D.deltaP p\n  use (∑ i ≤ D.ceilLogM p, (a i * s) • heckeSplit ρ z i) * t; intro x r\n  have h :\n    t (D.translateDatum x j) ∈ levelSpace ρ (maxCompactAt _ l.1) := by simp +contextual [ρ, *]\n  use fun a b c ↦ ?_, fun y ↦ ?_, fun g hj hc ↦ ?_\n  simp [← e x r, c, ρ, by simpa [Kernel.ω_ω] using\n    (map_heckeSplit z · ((D.liftKernel ϑ j).ω (a, 1)) (π' := ρ) (by simp [Kernel.ω_ω]) |>.symm.trans\n    (congrArg _ (heckeSplit_comm_of_atPlace_mem z _ h (mem_Kf_iff.1 c l))))]\n  refine .trans ?_ ((k x r _ (levelSpace_anti (hΛ.maxCompactAt_le_columnLevel l.2)\n    (s • (L.map hΛ.markOperator).prod y).2)).trans ?_) <;>\n    simp [← f x r, smul_smul, s, NeZero.ne, mul_div_cancel₀, IsMarked.markOperator]\n  congr!; exact map_heckeSplit _ _ ((D.liftKernel ϑ j).lift.flip _) (by simp [ρ,\n    ← lift_equivariant _ 1])\n  simp [heckeSplit, heckeGL, heckeFun_sum, smul_sum]; refine sum_mem fun i c ↦ sum_mem fun k h ↦ ?_\n  simp at h; simp [h, Kernel.ω_ω, ρ, ← map_mul,\n    ← @id (atSplits hΛ.1 _ = _) (MonoidHom.noncommPiCoprod_mulSingle ..)]\n  refine smul_mem_raises _ (ih x r _ hj ?_) ?_\n  simp [Pi.mulSingle, Function.update]; clear * - hc h hl c; grind\n  simp [s, rpow_add, rpow_sub, NeZero.pos, norm_p_eq_inv]\n  grw [@id (‖ιₚ (a i)‖ ≤ 1) (ha hj i)]; simp [field]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "4.1",
+   "parent": "4",
+   "kind": "fact",
+   "claim": "From the induction hypothesis: t, (a), (b), (c) for L′; l̄ ≠ l.",
+   "lines": [
+    158,
+    158
+   ],
+   "lean": "  choose t e f ih using ih; have z := hΛ.star_ne l.2",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Data.IsMarked.star_ne"
+    }
+   ]
+  },
+  {
+   "id": "4.2",
+   "parent": "4",
+   "kind": "deduction",
+   "claim": "Hecke transfer at l: coefficients a_i (integral for j < m), sphericity, and the identity.",
+   "lines": [
+    159,
+    159
+   ],
+   "lean": "  choose a ha u k using H.exists_hecke_transfer hQ hΛ _ l.2 z j",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Data.IsGoodDatum.exists_hecke_transfer"
+    }
+   ]
+  },
+  {
+   "id": "4.3",
+   "parent": "4",
+   "kind": "setup",
+   "claim": "ρ := the action b ↦ k.ω(1, b); s := p^{A_l}/p^{δ_p}.",
+   "lines": [
+    160,
+    160
+   ],
+   "lean": "  let ρ := (D.liftKernel ϑ j).ω.comp (.inr ..); let s : ℂ := p ^ markExponent l.1 / p ^ D.deltaP p",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "4.4",
+   "parent": "4",
+   "kind": "witness",
+   "claim": "t′ := (∑_{i≤𝔯}(a_i s)·T_{l,i}(ρ))∘t; fix x in the support.",
+   "lines": [
+    161,
+    161
+   ],
+   "lean": "  use (∑ i ≤ D.ceilLogM p, (a i * s) • heckeSplit ρ z i) * t; intro x r",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "4.5",
+   "parent": "4",
+   "kind": "fact",
+   "claim": "t(translateDatum x j) is fixed by maxCompactAt l.",
+   "lines": [
+    162,
+    163
+   ],
+   "lean": "  have h :\n    t (D.translateDatum x j) ∈ levelSpace ρ (maxCompactAt _ l.1) := by simp +contextual [ρ, *]",
+   "typed_fact": "t (D.translateDatum x j) ∈ levelSpace ρ (maxCompactAt _ l.1)",
+   "uses": []
+  },
+  {
+   "id": "4.6",
+   "parent": "4",
+   "kind": "reduction",
+   "claim": "Three goals: (a), (b), (c).",
+   "lines": [
+    164,
+    164
+   ],
+   "lean": "  use fun a b c ↦ ?_, fun y ↦ ?_, fun g hj hc ↦ ?_",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "4.7",
+   "parent": "4",
+   "kind": "computation",
+   "claim": "(a): Hecke operators at l commute with k.ω(a, b) for b ∈ K_f (`map_heckeSplit`, `heckeSplit_comm_of_atPlace_mem`), and t commutes by the induction hypothesis.",
+   "lines": [
+    165,
+    167
+   ],
+   "lean": "  simp [← e x r, c, ρ, by simpa [Kernel.ω_ω] using\n    (map_heckeSplit z · ((D.liftKernel ϑ j).ω (a, 1)) (π' := ρ) (by simp [Kernel.ω_ω]) |>.symm.trans\n    (congrArg _ (heckeSplit_comm_of_atPlace_mem z _ h (mem_Kf_iff.1 c l))))]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "4.8",
+   "parent": "4",
+   "kind": "computation",
+   "claim": "(b): k.lift(t′Φ)(C_j y) = s·∑ a_i T_{l,i}(k.lift(tΦ)(C_j y)) = s·∑ a_i T_{l,i}(C_{j+1}(Y_{L′}y)) = s·p^{δ_p}·C_{j+1}(T_{l,𝔯}Y_{L′}y) = C_{j+1}(markOperator(l)·Y_{L′}y).",
+   "lines": [
+    168,
+    170
+   ],
+   "lean": "  refine .trans ?_ ((k x r _ (levelSpace_anti (hΛ.maxCompactAt_le_columnLevel l.2)\n    (s • (L.map hΛ.markOperator).prod y).2)).trans ?_) <;>\n    simp [← f x r, smul_smul, s, NeZero.ne, mul_div_cancel₀, IsMarked.markOperator]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "4.9",
+   "parent": "4",
+   "kind": "computation",
+   "claim": "Hecke operators at l pass through the lift (`map_heckeSplit`, lift equivariance).",
+   "lines": [
+    171,
+    172
+   ],
+   "lean": "  congr!; exact map_heckeSplit _ _ ((D.liftKernel ϑ j).lift.flip _) (by simp [ρ,\n    ← lift_equivariant _ 1])",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "4.10",
+   "parent": "4",
+   "kind": "reduction",
+   "claim": "(c): expand T_{l,i} as a sum over coset representatives; it suffices for each term.",
+   "lines": [
+    173,
+    173
+   ],
+   "lean": "  simp [heckeSplit, heckeGL, heckeFun_sum, smul_sum]; refine sum_mem fun i c ↦ sum_mem fun k h ↦ ?_",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "4.11",
+   "parent": "4",
+   "kind": "computation",
+   "claim": "Each term is k.ω(1, atSplits g′)(tΦ) with g′ = g except at l, where it is a coset representative of index i ≤ 𝔯.",
+   "lines": [
+    174,
+    175
+   ],
+   "lean": "  simp at h; simp [h, Kernel.ω_ω, ρ, ← map_mul,\n    ← @id (atSplits hΛ.1 _ = _) (MonoidHom.noncommPiCoprod_mulSingle ..)]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "4.12",
+   "parent": "4",
+   "kind": "deduction",
+   "claim": "By (c) for L′ and `smul_mem_raises` with the scalar a_i·s.",
+   "lines": [
+    176,
+    176
+   ],
+   "lean": "  refine smul_mem_raises _ (ih x r _ hj ?_) ?_",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Kernel.smul_mem_raises"
+    }
+   ]
+  },
+  {
+   "id": "4.13",
+   "parent": "4",
+   "kind": "fact",
+   "claim": "g′ satisfies the hypothesis of (c) for L′ (l ∉ L′).",
+   "lines": [
+    177,
+    177
+   ],
+   "lean": "  simp [Pi.mulSingle, Function.update]; clear * - hc h hl c; grind",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "4.14",
+   "parent": "4",
+   "kind": "estimate",
+   "claim": "|ιₚ(a_i s)| ≤ p^{δ_p − A_l} (|ιₚ a_i| ≤ 1, |p| = 1/p); the exponents add.",
+   "lines": [
+    178,
+    179
+   ],
+   "lean": "  simp [s, rpow_add, rpow_sub, NeZero.pos, norm_p_eq_inv]\n  grw [@id (‖ιₚ (a i)‖ ≤ 1) (ha hj i)]; simp [field]",
+   "typed_fact": null,
+   "uses": []
+  }
+ ]
+}

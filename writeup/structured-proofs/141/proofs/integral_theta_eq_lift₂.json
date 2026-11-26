@@ -1,0 +1,136 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Seesaw.DoubleLiftValue:27:7",
+ "summary": "Reduce by continuity and density to polynomial real data v_P, split P into a sum of products of polynomials in the two blocks of variables, apply the theta-lift property twice (hk then hk′), and match the integrals with θ(f ⊠ f′) = z·θ(f)θ(f′). (Lines 29–32 are the rest of the statement after its `let L o :=`; the line census reads them as part of the value, so they stand in the introduction.)",
+ "intro_lines": [
+  [
+   29,
+   32
+  ]
+ ],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Introduce L, and choose z ≠ 0 with θ(f ⊠ f′) = z·θ(f)·θ(f′) for the standard spaces of X, X′, X₀ (theta_arrowProduct, hz).",
+   "lines": [
+    33,
+    33
+   ],
+   "lean": "  intro L; choose z _ hz using theta_arrowProduct (stdSpace E X) (stdSpace E X') (stdSpace E X₀)",
+   "uses": [
+    {
+     "decl": "theta_arrowProduct"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let F(o, φ, g)(x) = algFormCoeff(1, t, φ)(x₁)·(θ ∘ tripleWeil(a(o), b(o))(x₁, x₂, g)), a continuous linear form on data, for x = (x₁, x₂) ∈ U(X)(𝔸) × U(X′)(𝔸).",
+   "lines": [
+    34,
+    35
+   ],
+   "lean": "  let F o (φ : AlgForm X κ e) g x := algFormCoeff 1 t φ (.fst x) • θ ((stdSpace E X').hom\n    (flipSum (stdSpace ..) (stdSpace E X₀))) ∘L tripleWeil (a o) (b o) (x.1, x.2, g)"
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "fact",
+   "claim": "For every datum f, x ↦ F(o, φ, g)(x)(f) is integrable on [U(X)] × [U(X′)]: the coefficient is automorphic (isAutomorphic_algFormCoeff), the quotient is compact (definite spaces), and the function is continuous and invariant under the rational points (theta_tripleWeil_rat_mul).",
+   "lines": [
+    36,
+    40
+   ],
+   "lean": "  have i {o φ g} f : Integrable (F o φ g · f) (.prod (stdSpace ..).quotMeasure\n    (stdSpace ..).quotMeasure) := ((stdSpace ..).isAutomorphic_algFormCoeff φ).rec fun _ _ _ ↦\n    integrable_of_cocompact (cocompact_prod (stdSpace ..).exists_isCompact_of_definite (stdSpace\n    ..).exists_isCompact_of_definite) (by simp [F, tripleWeil, -circleChar_inv_apply]; fun_prop)\n    (by simp_all [F, ↓theta_tripleWeil_rat_mul])",
+   "typed_fact": "Integrable (F o φ g · f) (.prod (stdSpace ..).quotMeasure\n    (stdSpace ..).quotMeasure)",
+   "uses": [
+    {
+     "decl": "Space.isAutomorphic_algFormCoeff"
+    },
+    {
+     "decl": "theta_tripleWeil_rat_mul"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "The set of real data u for which some t″ works is closed (the preimage, under the continuous strong integral, of the closed finite-dimensional range of φ ↦ coefficients of L(o)(y)(φ)), and the polynomial vectors v_P are dense in the Fock space (denseRange_polyVector); so it suffices to treat u = v_P. P is a sum of products of a polynomial in the variables of the Hom(X, X′)-block with one in the Hom(X′, X₀)-block (mem_rename_range_mul), and the property is additive. For a product apply hk to (P, t), giving t′ and G, and hk′ to (z·Q, t′), giving t″ and H; the identity for this t″ remains.",
+   "lines": [
+    41,
+    48
+   ],
+   "lean": "  refine (isClosed_property denseRange_polyVector ((IsLinearMap.mk' (R := ℂ) (algFormCoeff 1 ·\n    <| L · · ·) ⟨by tauto, by tauto⟩).range.closed_of_finiteDimensional.preimage_of_continuous (f :=\n    fun u o y φ g ↦ strongIntegral (.prod (stdSpace ..).quotMeasure (stdSpace ..).quotMeasure)\n    (F o φ g) (integrated _ u (arrowTensor y)))) (fun P ↦ Submodule.mul_induction_on\n    (mem_rename_range_mul (.map (·) (.map .inl (·) ∘ .swap)) (.map (·) (.map\n    .inr (·))) (by simp) P) (fun _ ⟨P, p⟩ _ ⟨Q, q⟩ ↦ (hk P t).rec fun t' G ↦ (hk' (z • Q) t').imp\n    fun _ H ↦ ?_) fun _ _ h ↦ by simpa using! add_mem h) u).imp fun _ h ↦ by\n    simpa [funext_iff, ← integral_const_mul, strongIntegral_apply, integral_prod, i] using! h.symm",
+   "uses": [
+    {
+     "decl": "denseRange_polyVector"
+    },
+    {
+     "decl": "mem_rename_range_mul"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "Test on o and y; by induction on the tensor y, sums and zero are handled by simp.",
+   "lines": [
+    49,
+    49
+   ],
+   "lean": "  ext o y; simp; induction y <;> try simp [*]"
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "identity",
+   "claim": "For y = Φ ⊗ Φ′, write the strong integral as an iterated integral (Fubini, with step 3) and replace the inner integrals by H and G.",
+   "lines": [
+    50,
+    50
+   ],
+   "lean": "  simp [↓strongIntegral_apply, ↓integral_prod_symm, i, L, -θ_apply, ← H, ← G, ← integral_const_mul]",
+   "uses": [
+    {
+     "step": "3"
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "identity",
+   "claim": "Rearrange the factors and use θ(f ⊠ f′) = z·θ(f)θ(f′) and that the arrow product intertwines tripleWeil with the two twisted pair actions (arrowProduct_twistedPairWeil).",
+   "lines": [
+    51,
+    51
+   ],
+   "lean": "  congr!; rw [mul_rotate', mul_rotate, mul_rotate', mul_assoc, ← hz, arrowProduct_twistedPairWeil]",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "decl": "arrowProduct_twistedPairWeil"
+    }
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "identity",
+   "claim": "The polynomial vector of the product P·Q is the arrow product of those of P and Q (after the renaming and flip of variables).",
+   "lines": [
+    52,
+    53
+   ],
+   "lean": "  simp [← p, ← q, arrowProduct, flipPoly, pairSign, MvPolynomial.rename_eq_aeval,\n    MvPolynomial.bind₁_bind₁]; rfl"
+  }
+ ]
+}

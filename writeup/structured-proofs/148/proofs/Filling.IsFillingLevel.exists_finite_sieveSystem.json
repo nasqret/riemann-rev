@@ -1,0 +1,296 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Filling.FiniteSystem:235:7",
+ "summary": "Take Z from exists_intermediateGroup_lines and verify the six axioms of a sieve system for the normalised kernels: ψ(0) = 1; the step identities (the floor form at level i is the ψ-twisted integral of that at i + 1 — integral_floorForm_succ below the top, and at the top the integral of the top kernel averaged over L, via floorForm_top_eq_integral and Fubini); positive semidefiniteness and continuity of the top kernel; the bottom bound (floorZeroForm(Z) against floorZeroForm(K_T), the inequality of Z and the main-term bound for K_T); and the frequency bounds from enorm_floorForm_le with K = n⁶.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Take Z with the containment hm and the inequality hk: ϰ(Z)𝖬(K_T)(b^{6k})^{#Sg} ≤ ϰ(K_T)𝖬(Z).",
+   "lines": [
+    242,
+    293
+   ],
+   "span": [
+    242,
+    37,
+    293,
+    75
+   ],
+   "lean": "(hF.exists_intermediateGroup_lines Sg d).imp fun Z ⟨hm, hk⟩ ↦ by\n  obtain ⟨n, _, _, Γ, C⟩ := S.pow_chain, S.k_le_f, S.one_le_b, hF.gauge, isCut_besselVector Z\n  have N {x : ℂ} {D} d h : ‖x / Z.massRatio.toReal‖ ≤ _ :=\n    (toReal_mono d (@ENNReal.div_le_of_le_mul' ‖x‖ₑ Z.massRatio D h)).trans' (by simp)\n  have Er {j p q ξ ω} hj (k : IsUnit ξ) H : ‖F.floorForm j p q _ ω / _‖ ≤ S.frequencyGain T ξ * _ :=\n    .trans' (by\n    simp (disch := positivity) [-Nat.cast_mul, md_g, frequencyGain, finHeadWeight, -map_prod]\n    gcongr _ * ?_ * _\n    grw [g_le_b_pow, (by linarith [S.thousand_le_b] : 2 ≤ S.b), pow_add _ 6 3, mul_assoc, pow_mul',\n      ← pow_mul, ← pow_mul, ← pow_succ']\n    gcongr; grw [Shape.n, ← S.ϱ_le]; omega) (N (by simp [denomIndex_ne_zero, mul_eq_top,\n    div_eq_top]) (IsStdLevel.enorm_floorForm_le (ξ := k.unit) Z _ hj (by omega) n.1 H))\n  refine hF.psi_eq ▸ ⟨hm, fun L hl ↦ ⟨by simp, fun j p q ξ a ↦ ?_, by\n    simp [div_eq_inv_mul, ← mul_assoc]\n    exact fun a t e ↦ .smul (α := ℂ) ⟨.ext (by simp [topKernel, ← integral_conj, e]),\n      fun x ↦ by simpa [x.sum_fintype, mul_right_comm] using!\n      (lintegral_energy_le_topKernel Z _ L.2 (Matrix.posSemidef_vecMulVec_star_self\n      x) e).1⟩ (by positivity), by simpa [div_div] using! (continuous_topKernel ..).div_const _,\n    fun p q ↦ (N ofReal_ne_top ?_).trans_eq (toReal_ofReal (by positivity)), fun j p q a ↦\n    (ite_eq_left a ▸ Er a · (.inr ⟨j, rfl, rfl, hF.g_eq ▸ (mul_sub ..).symm⟩))⟩⟩\n  split_ifs with b <;> [simp_rw [div_eq_inv_mul] at *; simp_rw [← mul_div_assoc, integral_div]]\n  exact (Γ.integral_floorForm_succ C ⟨j, b⟩ _ ξ (hF.lintegral_formMajorant_ne_top Z 0 a\n    (by omega))).rec fun i s ↦ s.symm ▸ ⟨i, (by simp [·, Pi.one_def]), (Er a · (.inl rfl))⟩\n  -- the top floor is the integral of the top kernel, up to the mean of ψ over L\n  obtain ⟨rfl, ⟨i, e⟩, o⟩ := a.eq_of_not_lt' b, hF.1.floorForm_top_eq_integral Z p q ξ,\n    L.2.measurableSet\n  have ⟨I, s⟩ := integral_skew_product (volume.map_sub_left_eq_self <|\n    (S.latMiddle _).frameGram ·⁻¹.1 𝔰.top 𝔰.top) (i.mul_prod (((by fun_prop : ContinuousOn\n    (P.ψ <| -ξ * ·) L).integrableOn_compact hl).integrable_indicator o)) (by fun_prop [frameGram])\n  refine (fun k ↦ ⟨((I.congr k).div_const _).div_const _, .symm ⟨fun u ↦ ?_, ?_⟩⟩)\n    (P.ae_isUnit.mono fun | _, ⟨t, rfl⟩ => ?_)\n  any_goals simp_rw [← integral_congr_ae k, s, integral_const_mul, integral_mul_const, ← e]\n  grw [div_right_comm, mul_div_right_comm, norm_div, norm_mul, norm_integral_le_integral_norm,\n    Er a u (by left; rfl)]\n  iterate 2 simp +contextual [norm_indicator_eq_indicator_norm, o, Pi.one_def, finHeadWeight,\n    Measure.real, toReal_eq_zero_iff, hl.measure_ne_top, L.2.measure_ne_zero _ ⟨0, L.zero_mem⟩]\n  erw [topKernel, ← integral_indicator (o.preimage (by fun_prop [frameGram]))]\n  simp [← integral_const_mul, Set.indicator, mul_sub, mul_right_comm _ _ (P.ψ _),\n    ← P.ψ.map_add_eq_mul, correlation, Level.headDensity, prod_range, ne_of_lt]\n  grw [ite_eq_left zero_le, ofReal_div_of_pos (by bound), IntermediateGroup.massRatio,\n    ← ENNReal.mul_div_mul_comm, ENNReal.le_div_iff_mul_le (by simp; left; bound),\n    ← ENNReal.mul_le_mul_iff_left (P.unitaryLevel_open_compact.1.measure_ne_zero _ ?_)\n    (hF.groupMeasure_ne_top le_rfl), ← mul_assoc, Level.enorm_floorForm_le, Level.headDensity,\n    prod_range_zero, one_mul, lintegral_mul_const_le, (?_ : lintegral .. ≤ F.floorZeroForm\n    Z), mul_right_comm, ENNReal.ofReal_pow (by bound), ← hk.ge, floorZeroForm_le_main_term ⟨_,\n    P.unitaryLevel_le_unitaryLevel_one, le_rfl⟩ 0 (by omega), sdiff_le, SemilocalField.volume_O,\n    ← hF.box_eq.2.1, add_le_add_left hF.groupMeasure_boxSet_le, ← pow_six_le]\n  any_goals simp [ENNReal.ofReal_add, pow_succ, add_assoc, ← mul_add, inv_two_add_inv_two, -inv_pow,\n    mul_eq_top]\n  ring; rfl\n  simp [Level.floorZeroForm, enorm_integral_phase_eq_upperPairing, formModulus, descConv.eq_1,\n    weylRatio, ← formIntegrandOne_eq Γ C, formIntegrandOne, ← sq, mul_pow]",
+   "head_span": [
+    242,
+    37,
+    242,
+    101
+   ],
+   "head_lines": [
+    242,
+    242
+   ],
+   "uses": [
+    {
+     "decl": "Filling.IsFillingLevel.exists_intermediateGroup_lines"
+    }
+   ]
+  },
+  {
+   "id": "1.1",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Size facts n: 10¹⁰n⁴ ≤ n⁶, 3n⁶ + 12 ≤ n⁷ ≤ k; k ≤ f; 1 ≤ b; a gauge Γ of F; besselVector(Z) is a cut vector (C).",
+   "lines": [
+    243,
+    243
+   ],
+   "lean": "  obtain ⟨n, _, _, Γ, C⟩ := S.pow_chain, S.k_le_f, S.one_le_b, hF.gauge, isCut_besselVector Z",
+   "uses": [
+    {
+     "decl": "IntegralPlace.IsStdLevel.isCut_besselVector"
+    }
+   ]
+  },
+  {
+   "id": "1.2",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "N: if ‖x‖ₑ ≤ massRatio(Z)·D then ‖x/massRatio(Z)‖ ≤ D (as real numbers).",
+   "lines": [
+    244,
+    245
+   ],
+   "lean": "  have N {x : ℂ} {D} d h : ‖x / Z.massRatio.toReal‖ ≤ _ :=\n    (toReal_mono d (@ENNReal.div_le_of_le_mul' ‖x‖ₑ Z.massRatio D h)).trans' (by simp)",
+   "typed_fact": "‖x / Z.massRatio.toReal‖ ≤ _"
+  },
+  {
+   "id": "1.3",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Er: for a unit ξ and ω as in enorm_floorForm_le (H), ‖floorForm(F, j, p, q, W_Z, ω)/massRatio(Z)‖ ≤ frequencyGain(S, T, ξ)·Λ(j, p)Λ(j, q) with Λ = finHeadWeight(n⁶): enorm_floorForm_le with K = n⁶ and t = k − n⁷ gives massRatio·√[ξ]^{k−n⁷}·den(ξ)^{−6}·(2/md(g))^{n⁶}·Λ(j,p)Λ(j,q), and (2/md(g))^{n⁶} = (2g^{2f})^{n⁶} ≤ b^{n⁹f} since md(g) = g^{−2f} (md_g), g ≤ b²³, 2 ≤ b, and 47n⁶ ≤ n⁹ (n ≥ 10⁵).",
+   "lines": [
+    246,
+    253
+   ],
+   "lean": "  have Er {j p q ξ ω} hj (k : IsUnit ξ) H : ‖F.floorForm j p q _ ω / _‖ ≤ S.frequencyGain T ξ * _ :=\n    .trans' (by\n    simp (disch := positivity) [-Nat.cast_mul, md_g, frequencyGain, finHeadWeight, -map_prod]\n    gcongr _ * ?_ * _\n    grw [g_le_b_pow, (by linarith [S.thousand_le_b] : 2 ≤ S.b), pow_add _ 6 3, mul_assoc, pow_mul',\n      ← pow_mul, ← pow_mul, ← pow_succ']\n    gcongr; grw [Shape.n, ← S.ϱ_le]; omega) (N (by simp [denomIndex_ne_zero, mul_eq_top,\n    div_eq_top]) (IsStdLevel.enorm_floorForm_le (ξ := k.unit) Z _ hj (by omega) n.1 H))",
+   "uses": [
+    {
+     "decl": "IntegralPlace.IsStdLevel.enorm_floorForm_le"
+    },
+    {
+     "decl": "Filling.IsFillingLevel.md_g"
+    }
+   ],
+   "typed_fact": "‖F.floorForm j p q _ ω / _‖ ≤ S.frequencyGain T ξ * _"
+  },
+  {
+   "id": "1.4",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "The sieve system (with ψ = charOnPlaces = P.ψ by psi_eq): ψ(0) = 1; positive semidefiniteness of the top kernel matrix for a family with common ϱ-th term (it is conjugate-symmetric, and x*Mx = ∫ energy ≥ 0 by lintegral_energy_le_topKernel with R = xx*); continuity (continuous_topKernel divided by constants); the bottom bound (step 1.15); and the off-diagonal bound (Er with ω = 1, ξ = g⁻¹(p_i⁻¹ − q_i⁻¹), g_eq).",
+   "lines": [
+    254,
+    261
+   ],
+   "lean": "  refine hF.psi_eq ▸ ⟨hm, fun L hl ↦ ⟨by simp, fun j p q ξ a ↦ ?_, by\n    simp [div_eq_inv_mul, ← mul_assoc]\n    exact fun a t e ↦ .smul (α := ℂ) ⟨.ext (by simp [topKernel, ← integral_conj, e]),\n      fun x ↦ by simpa [x.sum_fintype, mul_right_comm] using!\n      (lintegral_energy_le_topKernel Z _ L.2 (Matrix.posSemidef_vecMulVec_star_self\n      x) e).1⟩ (by positivity), by simpa [div_div] using! (continuous_topKernel ..).div_const _,\n    fun p q ↦ (N ofReal_ne_top ?_).trans_eq (toReal_ofReal (by positivity)), fun j p q a ↦\n    (ite_eq_left a ▸ Er a · (.inr ⟨j, rfl, rfl, hF.g_eq ▸ (mul_sub ..).symm⟩))⟩⟩",
+   "uses": [
+    {
+     "decl": "IntegralPlace.IsStdLevel.lintegral_energy_le_topKernel"
+    },
+    {
+     "decl": "IntegralPlace.IsStdLevel.continuous_topKernel"
+    },
+    {
+     "decl": "Filling.IsFillingLevel"
+    }
+   ]
+  },
+  {
+   "id": "1.5",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "The step identity at level i: split on whether i + 1 ≤ ϱ (then J(i+1) is a floor form; move the normalisation inside) or i = ϱ (then J(ϱ+1) is the top kernel; move the division by vol(L) inside the integral).",
+   "lines": [
+    262,
+    262
+   ],
+   "lean": "  split_ifs with b <;> [simp_rw [div_eq_inv_mul] at *; simp_rw [← mul_div_assoc, integral_div]]"
+  },
+  {
+   "id": "1.6",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "i + 1 ≤ ϱ: integral_floorForm_succ gives integrability and ∫ ψ(ξc)·floorForm(i+1, …) = floorForm(i, p, q, W, ψ(ξ·frameGram_{ii})); for ξ = 0 this is floorForm(i, p, q, W, 1), and for ξ a unit Er bounds it.",
+   "lines": [
+    263,
+    265
+   ],
+   "lean": "  exact (Γ.integral_floorForm_succ C ⟨j, b⟩ _ ξ (hF.lintegral_formMajorant_ne_top Z 0 a\n    (by omega))).rec fun i s ↦ s.symm ▸ ⟨i, (by simp [·, Pi.one_def]), (Er a · (.inl rfl))⟩\n  -- the top floor is the integral of the top kernel, up to the mean of ψ over L",
+   "uses": [
+    {
+     "decl": "Gauge.integral_floorForm_succ"
+    },
+    {
+     "decl": "IntegralPlace.IsStdLevel.lintegral_formMajorant_ne_top"
+    }
+   ]
+  },
+  {
+   "id": "1.7",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "i = ϱ (the top floor): floorForm(ϱ, p, q, W, φ_ξ) = ∫ φ_ξ(l⁻¹)⟪correlation(p, l), correlation(q, l)⟫ (floorForm_top_eq_integral), with integrability (i, e); L is measurable (o).",
+   "lines": [
+    266,
+    267
+   ],
+   "lean": "  obtain ⟨rfl, ⟨i, e⟩, o⟩ := a.eq_of_not_lt' b, hF.1.floorForm_top_eq_integral Z p q ξ,\n    L.2.measurableSet",
+   "uses": [
+    {
+     "decl": "IntegralPlace.IsStdLevel.floorForm_top_eq_integral"
+    }
+   ]
+  },
+  {
+   "id": "1.8",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Fubini for the skew product (l, c) ↦ (l, c − frameGram(l⁻¹)_top): ∫_c ψ(ξc)·(1/vol L)∫_{frameGram(l⁻¹)_top − c ∈ L} = ∫_l (1/vol L)∫_{c ∈ frameGram(l⁻¹)_top − L} ψ(ξc)·⟪…⟫ (translation invariance of the Haar measure).",
+   "lines": [
+    268,
+    270
+   ],
+   "lean": "  have ⟨I, s⟩ := integral_skew_product (volume.map_sub_left_eq_self <|\n    (S.latMiddle _).frameGram ·⁻¹.1 𝔰.top 𝔰.top) (i.mul_prod (((by fun_prop : ContinuousOn\n    (P.ψ <| -ξ * ·) L).integrableOn_compact hl).integrable_indicator o)) (by fun_prop [frameGram])",
+   "ambient_uses": [
+    "integral_skew_product"
+   ]
+  },
+  {
+   "id": "1.9",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Integrability of c ↦ ψ(ξc)·J(ϱ+1, …), and the identity for ξ = 0 (the mean of ψ(0) = 1 over L is 1, giving floorForm(ϱ, p, q, W, 1)) and a.e. for unit ξ.",
+   "lines": [
+    271,
+    272
+   ],
+   "lean": "  refine (fun k ↦ ⟨((I.congr k).div_const _).div_const _, .symm ⟨fun u ↦ ?_, ?_⟩⟩)\n    (P.ae_isUnit.mono fun | _, ⟨t, rfl⟩ => ?_)"
+  },
+  {
+   "id": "1.10",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Rewrite with Fubini and pull the constants out of the integrals.",
+   "lines": [
+    273,
+    273
+   ],
+   "lean": "  any_goals simp_rw [← integral_congr_ae k, s, integral_const_mul, integral_mul_const, ← e]"
+  },
+  {
+   "id": "1.11",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "For a unit ξ: |∫| ≤ ∫|·| and the average of ψ(ξ·) over a translate of L has modulus ≤ 1, so the bound follows from Er (first alternative).",
+   "lines": [
+    274,
+    275
+   ],
+   "lean": "  grw [div_right_comm, mul_div_right_comm, norm_div, norm_mul, norm_integral_le_integral_norm,\n    Er a u (by left; rfl)]"
+  },
+  {
+   "id": "1.12",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Simplify norms of indicators and measures (L compact with vol(L) ≠ 0, ∞).",
+   "lines": [
+    276,
+    277
+   ],
+   "lean": "  iterate 2 simp +contextual [norm_indicator_eq_indicator_norm, o, Pi.one_def, finHeadWeight,\n    Measure.real, toReal_eq_zero_iff, hl.measure_ne_top, L.2.measure_ne_zero _ ⟨0, L.zero_mem⟩]"
+  },
+  {
+   "id": "1.13",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Write the top kernel as an integral of an indicator (topKernel, integral_indicator).",
+   "lines": [
+    278,
+    278
+   ],
+   "lean": "  erw [topKernel, ← integral_indicator (o.preimage (by fun_prop [frameGram]))]"
+  },
+  {
+   "id": "1.14",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Expand the correlations and the head density, and combine ψ(a)ψ(b) = ψ(a + b).",
+   "lines": [
+    279,
+    280
+   ],
+   "lean": "  simp [← integral_const_mul, Set.indicator, mul_sub, mul_right_comm _ _ (P.ψ _),\n    ← P.ψ.map_add_eq_mul, correlation, Level.headDensity, prod_range, ne_of_lt]"
+  },
+  {
+   "id": "1.15",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "The bottom bound ‖J(0, p, q)‖ ≤ (1 + b⁻⁶)/(b^{6k})^{#Sg}: ‖floorForm(0)‖ ≤ ∫ formModulus ≤ ϰ(Z) (Level.enorm_floorForm_le, headDensity at 0 is the empty product 1; the side goal of step 1.18); massRatio(Z) = 𝖬(Z)𝖬(K(g))/unipotentMass²; then hk: ϰ(Z)(b^{6k})^{#Sg} ≤ ϰ(K_T)𝖬(Z)/𝖬(K_T), and ϰ(K_T) ≤ 𝖬(K_T)𝖬(K(g))(𝖬(K_T) + vol(R∖R^×)·2^{−n}) (floorZeroForm_le_main_term, t = 0), vol(R∖R^×) ≤ vol(R) = 1, 𝖬(K_T) = 𝖬(box) ≤ 1 + 2^{−n} (box_eq, groupMeasure_boxSet_le), and 2^{−ϱ} ≤ b⁻⁶ (pow_six_le).",
+   "lines": [
+    281,
+    288
+   ],
+   "lean": "  grw [ite_eq_left zero_le, ofReal_div_of_pos (by bound), IntermediateGroup.massRatio,\n    ← ENNReal.mul_div_mul_comm, ENNReal.le_div_iff_mul_le (by simp; left; bound),\n    ← ENNReal.mul_le_mul_iff_left (P.unitaryLevel_open_compact.1.measure_ne_zero _ ?_)\n    (hF.groupMeasure_ne_top le_rfl), ← mul_assoc, Level.enorm_floorForm_le, Level.headDensity,\n    prod_range_zero, one_mul, lintegral_mul_const_le, (?_ : lintegral .. ≤ F.floorZeroForm\n    Z), mul_right_comm, ENNReal.ofReal_pow (by bound), ← hk.ge, floorZeroForm_le_main_term ⟨_,\n    P.unitaryLevel_le_unitaryLevel_one, le_rfl⟩ 0 (by omega), sdiff_le, SemilocalField.volume_O,\n    ← hF.box_eq.2.1, add_le_add_left hF.groupMeasure_boxSet_le, ← pow_six_le]",
+   "uses": [
+    {
+     "decl": "Level.enorm_floorForm_le"
+    },
+    {
+     "decl": "IntegralPlace.IsStdLevel.floorZeroForm_le_main_term"
+    },
+    {
+     "decl": "IntegralPlace.IsStdLevel.groupMeasure_boxSet_le"
+    }
+   ]
+  },
+  {
+   "id": "1.16",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Simplify the resulting inequality of extended reals (sums of halves: 2^{−n} + 2^{−n} = 2^{−ϱ}).",
+   "lines": [
+    289,
+    290
+   ],
+   "lean": "  any_goals simp [ENNReal.ofReal_add, pow_succ, add_assoc, ← mul_add, inv_two_add_inv_two, -inv_pow,\n    mul_eq_top]"
+  },
+  {
+   "id": "1.17",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "The remaining identity of products (ring).",
+   "lines": [
+    291,
+    291
+   ],
+   "lean": "  ring; rfl"
+  },
+  {
+   "id": "1.18",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "The side goal: ∫ formModulus at level 0 ≤ ϰ(Z), since |∫_Z phase(y x y⁻¹)| = |upperPairing|·unipotentMass (enorm_integral_phase_eq_upperPairing) and the form integrand at level 0 is that squared (formIntegrandOne).",
+   "lines": [
+    292,
+    293
+   ],
+   "lean": "  simp [Level.floorZeroForm, enorm_integral_phase_eq_upperPairing, formModulus, descConv.eq_1,\n    weylRatio, ← formIntegrandOne_eq Γ C, formIntegrandOne, ← sq, mul_pow]",
+   "uses": [
+    {
+     "decl": "IntegralPlace.IsStdLevel.enorm_integral_phase_eq_upperPairing"
+    }
+   ]
+  }
+ ]
+}

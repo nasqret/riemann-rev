@@ -1,0 +1,234 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Trace.GoodFormTransfer:27:7",
+ "name": "Data.exists_common_hecke_rallis",
+ "summary": "The pairs (a Phi_V(p_V), a' Phi_V'(p_V')), p in heckeAlgebra(D), form a finite-dimensional, hence closed, subspace; (B, B') is the sum of the series of pairs of terms, so it suffices that each pair of terms lies there. For a coset i with representative r, the Hecke element (scalar) sum over q in chosenLevel/H of [q r q^(-1)], H the elements of chosenLevel conjugated by r into chosenLevel, is trivial at the chosen places, preserves principal forms, and has <z, p y> = [chosenLevel : H] <z, R(r) y>, which with the scalar of rallisTerm gives the term, for V and V' alike.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "For a space V let Phi_V be the linear map from End(principalForms(D, V)) to functions on pairs, T -> ((z, y) -> <z, T y>).",
+   "lines": [
+    31,
+    31
+   ],
+   "lean": "  let Φ {s} V : End ℂ (@D.principalForms _ s V) →ₗ[ℂ] _ := .pi fun z ↦ .pi (innerₛₗ ℂ z ∘ₗ applyₗ ·)",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Read h and h' as convergence of series of functions on pairs: sum_g a rallisTerm(D, theta, j, V, ., ., g) = B and sum_g a' rallisTerm(D, theta, j, V', ., ., g) = B'.",
+   "lines": [
+    32,
+    32
+   ],
+   "lean": "  simp_rw [← Pi.hasSum] at *",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "The pair (B, B') is the sum of the series of pairs of terms. The pairs (a Phi_V(p_V), a' Phi_V'(p_V')), p in heckeAlgebra(D), form the image of a linear map from heckeAlgebra(D) into a finite-dimensional space, hence a closed subspace; so (B, B') lies in it, which gives p with the two formulas, as soon as the pair of terms of every coset i lies in it. Fix a coset i.",
+   "lines": [
+    33,
+    35
+   ],
+   "lean": "  refine ((h.prodMk h').tsum_eq ▸ tsum_mem (((proj V ∘ₗ proj s).prod (proj V' ∘ₗ proj s') ∘ₗ\n    D.heckeAlgebra.val.toLinearMap).range.map ((a • Φ V).prodMap\n    (a' • Φ V'))).closed_of_finiteDimensional fun i ↦ ?_).elim (by rintro _ ⟨⟨p, ⟨⟩⟩, ⟨⟩⟩; tauto)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "step": "2"
+    }
+   ],
+   "ambient_uses": [
+    "Submodule.closed_of_finiteDimensional",
+    "tsum_mem / HasSum"
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Every form y in principalForms(D, V), for any space V, is fixed by right translation by every element of chosenLevel(D).",
+   "lines": [
+    36,
+    36
+   ],
+   "lean": "  have f {s V} (y : @D.principalForms _ s V) := by simpa using (y.2 ·)",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let r = cosetRep(i), the component of the coset i above the places outside m-bar m (m = mModulus(D, theta, 1)).",
+   "lines": [
+    37,
+    37
+   ],
+   "lean": "  let r := cosetRep i",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "cosetRep"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let H be the subgroup of chosenLevel(D) of the elements k with r^(-1) k r in chosenLevel(D).",
+   "lines": [
+    38,
+    38
+   ],
+   "lean": "  let H := (D.chosenLevel.comap (MulAut.conj r.1⁻¹).toMonoidHom).subgroupOf D.chosenLevel",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "5"
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "fact",
+   "claim": "H has finite index in chosenLevel(D): the conjugate of the open subgroup chosenLevel(D) is open, and an open subgroup of a compact group has finite index.",
+   "lines": [
+    39,
+    40
+   ],
+   "lean": "  have := H.fintypeOfIndexNeZero (IsLevel.isCompact.relIndex_ne_zero\n    ((IsTopologicalGroup.continuous_conj _).1 _ isOpen_levelOf))",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "6"
+    }
+   ],
+   "ambient_uses": [
+    "Subgroup.fintypeOfIndexNeZero, relIndex_ne_zero"
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "witness",
+   "claim": "The pair of terms of i is the pair of p_i, where p_i is the scalar vacuumCoeff-factor / count / [chosenLevel : H] times the family of operators y -> sum over q in chosenLevel/H of R(q r q^(-1)) y on principal forms.",
+   "lines": [
+    41,
+    47
+   ],
+   "lean": "  exact ⟨_, ⟨(_ / _ / this.card : ℂ) • ⟨fun V ↦ .restrict _ fun y hy ↦ by\n    simpa [f ⟨y, hy⟩] using sum_out_mul H (fun k ↦ V.formRep _ (k * r) y) (fun k _ h ↦ by\n    simpa using congr(V.formRep _ (k * r) $(f ⟨y, hy⟩ _ h))), ∑ q : _ ⧸ H, .single ⟨q.out * r *\n    q.out⁻¹, mem_trivialOn.2 fun _ ⟨x, e⟩ ↦ by simp [mem_supportedOn.1 r.2,\n    places_levelModulus (S := D.levelPlaces ϑ).ge ⟨.inl x, e⟩]⟩ 1, fun _ _ _ ↦ rfl⟩,\n    rfl⟩, by ext <;> simp [Φ, f, rallisTerm, cosetTerm, inner_sum, fun s\n    V ↦ (@f s V · · · ▸ V.inner_formRep _ _), mul_comm_div, mul_div_assoc] <;> apply mul_left_comm⟩",
+   "head_lines": [
+    41,
+    41
+   ],
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "step": "6"
+    },
+    {
+     "step": "7"
+    }
+   ]
+  },
+  {
+   "id": "8.1",
+   "parent": "8",
+   "kind": "fact",
+   "claim": "This operator maps principalForms(D, V) into itself: for y of principal level, the sum over coset representatives q of R(q r) y is unchanged by left translation by elements of chosenLevel(D), because y is fixed by chosenLevel(D).",
+   "lines": [
+    42,
+    43
+   ],
+   "span": [
+    42,
+    5,
+    43,
+    63
+   ],
+   "lean": "simpa [f ⟨y, hy⟩] using sum_out_mul H (fun k ↦ V.formRep _ (k * r) y) (fun k _ h ↦ by\n    simpa using congr(V.formRep _ (k * r) $(f ⟨y, hy⟩ _ h))), ",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "4"
+    }
+   ]
+  },
+  {
+   "id": "8.2",
+   "parent": "8",
+   "kind": "fact",
+   "claim": "It is the action of the group-algebra element sum_q [q r q^(-1)], whose group elements are trivial at the chosen places (r is supported off the places of m, which include the chosen places, and q lies in chosenLevel); so p_i lies in heckeAlgebra(D).",
+   "lines": [
+    43,
+    46
+   ],
+   "span": [
+    43,
+    63,
+    46,
+    5
+   ],
+   "lean": "∑ q : _ ⧸ H, .single ⟨q.out * r *\n    q.out⁻¹, mem_trivialOn.2 fun _ ⟨x, e⟩ ↦ by simp [mem_supportedOn.1 r.2,\n    places_levelModulus (S := D.levelPlaces ϑ).ge ⟨.inl x, e⟩]⟩ 1, fun _ _ _ ↦ rfl⟩,\n    ",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Data.heckeAlgebra"
+    },
+    {
+     "decl": "places_levelModulus"
+    }
+   ]
+  },
+  {
+   "id": "8.3",
+   "parent": "8",
+   "kind": "computation",
+   "claim": "For z, y: <z, sum_q R(q r q^(-1)) y> = [chosenLevel : H] <z, R(r) y>, since z and y are fixed by chosenLevel and R is unitary; with the scalar this is a rallisTerm(D, theta, j, V, z, y, i) (rallisTerm = cosetTerm / count, cosetTerm = vacuumCoeff(r) <z, R(r) y>), and the scalar does not depend on V, so the same p_i serves V and V'.",
+   "lines": [
+    46,
+    47
+   ],
+   "span": [
+    46,
+    5,
+    47,
+    100
+   ],
+   "lean": "rfl⟩, by ext <;> simp [Φ, f, rallisTerm, cosetTerm, inner_sum, fun s\n    V ↦ (@f s V · · · ▸ V.inner_formRep _ _), mul_comm_div, mul_div_assoc] <;> apply mul_left_comm⟩",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "decl": "Data.rallisTerm"
+    },
+    {
+     "decl": "cosetTerm"
+    },
+    {
+     "decl": "Space.inner_formRep"
+    }
+   ]
+  }
+ ]
+}

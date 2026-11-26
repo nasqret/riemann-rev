@@ -1,0 +1,573 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Columns.TwistedHeckeType:146:7",
+ "summary": "Reduce to the abstract `TwistingData.hasType_twisted_hecke`: columns are functions on classes (`freeLevelEquiv`); the Hecke operator at l is a sum over the cosets of the parahoric P of pullbacks by d = diag(p·1_𝔯, 1), which, after decomposing ρ_x·δ_b = γ·ρ·u with rational γ, act on values by the weight representation of γ: at the letters (tops inducing l or l̄) this is the twisted letter representation, elsewhere an integral invertible matrix. Then check: the image is the integral columns, the operator formula, and the injectivity of the source map.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "q : X_0 ≃ {0, …, k−1}.",
+   "lines": [
+    153,
+    153
+   ],
+   "lean": "  have q : D.X 0 ≃ Fin D.k := equivFinOfCardEq (by simp [↓card_X, n])",
+   "typed_fact": "D.X 0 ≃ Fin D.k",
+   "uses": []
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "setup",
+   "claim": "P := the parahoric subgroup of GL_k(W) of the two-block labelling (𝔯, k − 𝔯).",
+   "lines": [
+    154,
+    154
+   ],
+   "lean": "  let P := parahoric W (twoBlock D.k (D.ceilLogM p))",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "setup",
+   "claim": "ϖ := p as a unit of E; d := diag(ϖ on the first 𝔯 coordinates, 1 elsewhere).",
+   "lines": [
+    155,
+    156
+   ],
+   "lean": "  let ϖ : D.Eˣ := .mk0 p NeZero.out\n  let d := diagGL (if q · < D.ceilLogM p then ϖ else 1)",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "setup",
+   "claim": "jw: GL_k(W) → GL(X_0)(E) by reindexing; j_v: GL(X_0)(E) → GL(X_0)(E_v).",
+   "lines": [
+    157,
+    158
+   ],
+   "lean": "  let jw := (GeneralLinearGroup.map W.subtype).comp (reindexGL q.symm).toMonoidHom\n  let j v := GeneralLinearGroup.map (n := D.X 0) (algebraMap D.E (@LocField D.E _ _ v))",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "hM: j_v(x) ∈ K_v iff x has entries (and inverse) in the valuation subring at v.",
+   "lines": [
+    159,
+    160
+   ],
+   "lean": "  have hM {v x} : j v x ∈ Kw .. ↔ x ∈ intGL _ (v.valuation D.E).valuationSubring.1 := by\n    simp [mem_intGL, ← v_algebraMap_eq_valuation, -coe_units_inv]; rfl",
+   "head_lines": [
+    159,
+    159
+   ],
+   "typed_fact": "j v x ∈ Kw .. ↔ x ∈ intGL _ (v.valuation D.E).valuationSubring.1",
+   "uses": []
+  },
+  {
+   "id": "5.1",
+   "parent": "5",
+   "kind": "computation",
+   "claim": "Unfold integrality through the valuation of the embedding.",
+   "lines": [
+    160,
+    160
+   ],
+   "lean": "    simp [mem_intGL, ← v_algebraMap_eq_valuation, -coe_units_inv]; rfl",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Facts: W is that subring; its residue field is finite; class representatives ρ integral above p (`exists_reps_integralAbove`); l is split; maxCompactAt l ≤ columnLevel 0; p ∈ l; v_l(p) = e^{−1}; the sizes.",
+   "lines": [
+    161,
+    163
+   ],
+   "lean": "  obtain ⟨rfl, _, ⟨ρ, hρ, hρ'⟩, hl, hv, hpl, hl', ⟨⟩⟩ := hW, T.finite_residueField,\n    exists_reps_integralAbove (K := D.columnLevel 0) p, L.star_ne a,\n    L.maxCompactAt_le_columnLevel a, L.p_mem a, L.valuation_p a, id big",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Data.IsMarked.star_ne"
+    },
+    {
+     "decl": "Data.IsMarked.maxCompactAt_le_columnLevel"
+    },
+    {
+     "decl": "Data.IsMarked.p_mem"
+    },
+    {
+     "decl": "Data.IsMarked.valuation_p"
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "hP: j_l(d⁻¹·jw(β)·d) ∈ K_l iff β ∈ P.",
+   "lines": [
+    164,
+    172
+   ],
+   "lean": "  have hP {β} : j l (d⁻¹ * jw β * d) ∈ Kw .. ↔ β ∈ P := by\n    have H β : (∀ i j, l.valuation _ ((d⁻¹ * jw β * d) i j) ≤ 1) ↔ β ∈ P := q.forall₂_congr q (by\n      intros; dsimp [twoBlock]\n      split_ifs <;> simp [*, d, jw, ← map_inv, field, ϖ, ↓OrderDual.toDual_lt_toDual,\n        -WithZero.inv_exp, ← WithZero.exp_add, ← lt_mul_exp_iff_le, ↓Valuation.mem_maximalIdeal_iff]\n          <;> first\n        | use (β _ _).2.trans_lt (by trivial)\n        | use (mul_le_one' (β _ _).2 (by trivial)).trans_lt (by trivial))\n    erw [hM, mem_intGL, conj_inv, H, H β⁻¹]; simp",
+   "head_lines": [
+    164,
+    164
+   ],
+   "typed_fact": "j l (d⁻¹ * jw β * d) ∈ Kw .. ↔ β ∈ P",
+   "uses": []
+  },
+  {
+   "id": "7.1",
+   "parent": "7",
+   "kind": "deduction",
+   "claim": "H: the entries of d⁻¹·jw(β)·d are all l-integral iff β ∈ P.",
+   "lines": [
+    165,
+    171
+   ],
+   "lean": "    have H β : (∀ i j, l.valuation _ ((d⁻¹ * jw β * d) i j) ≤ 1) ↔ β ∈ P := q.forall₂_congr q (by\n      intros; dsimp [twoBlock]\n      split_ifs <;> simp [*, d, jw, ← map_inv, field, ϖ, ↓OrderDual.toDual_lt_toDual,\n        -WithZero.inv_exp, ← WithZero.exp_add, ← lt_mul_exp_iff_le, ↓Valuation.mem_maximalIdeal_iff]\n          <;> first\n        | use (β _ _).2.trans_lt (by trivial)\n        | use (mul_le_one' (β _ _).2 (by trivial)).trans_lt (by trivial))",
+   "head_lines": [
+    165,
+    165
+   ],
+   "typed_fact": "(∀ i j, l.valuation _ ((d⁻¹ * jw β * d) i j) ≤ 1) ↔ β ∈ P",
+   "uses": []
+  },
+  {
+   "id": "7.1.1",
+   "parent": "7.1",
+   "kind": "reduction",
+   "claim": "Compare entry by entry through q.",
+   "lines": [
+    166,
+    166
+   ],
+   "lean": "      intros; dsimp [twoBlock]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "7.1.2",
+   "parent": "7.1",
+   "kind": "case-split",
+   "claim": "Entry (i, j) is p^{[j<𝔯] − [i<𝔯]}·β_{ij}: integral iff β_{ij} lies in the maximal ideal whenever i ≥ 𝔯 > j (the parahoric condition); case analysis on the blocks.",
+   "lines": [
+    167,
+    171
+   ],
+   "lean": "      split_ifs <;> simp [*, d, jw, ← map_inv, field, ϖ, ↓OrderDual.toDual_lt_toDual,\n        -WithZero.inv_exp, ← WithZero.exp_add, ← lt_mul_exp_iff_le, ↓Valuation.mem_maximalIdeal_iff]\n          <;> first\n        | use (β _ _).2.trans_lt (by trivial)\n        | use (mul_le_one' (β _ _).2 (by trivial)).trans_lt (by trivial))",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "7.2",
+   "parent": "7",
+   "kind": "computation",
+   "claim": "Combine with hM for the element and its inverse.",
+   "lines": [
+    172,
+    172
+   ],
+   "lean": "    erw [hM, mem_intGL, conj_inv, H, H β⁻¹]; simp",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "fact",
+   "claim": "ψ: at a place where κ_τ is a single row of length b (b = a at tops, 0 elsewhere), the Schur matrix is the symmetric-power matrix (`schur_one_row_eq_symPowMatrix`).",
+   "lines": [
+    173,
+    174
+   ],
+   "lean": "  choose ψ hψ using fun {τ b} (h : ite (τ ∈ D.tops) D.a 0 = b) ↦ schur_one_row_eq_symPowMatrix (k :=\n    D.κ τ) (a := b) q.symm (by simp [↓card_X, n]; omega) (by grind only [card_X, κ, n])",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "fact",
+   "claim": "The v-component of the embedding of a rational γ is j_v(γ).",
+   "lines": [
+    175,
+    176
+   ],
+   "lean": "  have hj v γ : ((stdSpace ..).embFin γ).atPlace v =\n    j v γ := congr(.map (_root_.evalAt v) $(stdSpace_embFin γ))",
+   "typed_fact": "((stdSpace ..).embFin γ).atPlace v =\n    j v γ",
+   "uses": []
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "fact",
+   "claim": "hw′: an element of K_l lies in the image of jw (it is in GL_k(W)).",
+   "lines": [
+    177,
+    177
+   ],
+   "lean": "  have hw' {x} : _ ↔ x ∈ jw.range := hM.trans (reindex_equiv (reindexGL _)).2.1",
+   "typed_fact": "_ ↔ x ∈ jw.range",
+   "uses": []
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "fact",
+   "claim": "hD: j_l(d) lies in the basic double coset of index 𝔯 at l (`diagGL_mem_basicDoubleCoset`).",
+   "lines": [
+    178,
+    181
+   ],
+   "lean": "  have hD : j l d ∈ basicDoubleCoset _ l (D.ceilLogM p) := by convert (diagGL_mem_basicDoubleCoset\n    (ϖ := ϖ.map _) ((v_algebraMap_eq_valuation _).trans hl') (q.finsetCongr.symm\n    (Iio ⟨D.ceilLogM p, by omega⟩))).1 <;> simp [Units.ext_iff, j, d, Fin.lt_def, apply_ite,\n      Equiv.finsetCongr]",
+   "typed_fact": "j l d ∈ basicDoubleCoset _ l (D.ceilLogM p)",
+   "uses": []
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "fact",
+   "claim": "P has finite index; ρ is integral above p; columnLevel 0 ⊆ K_f.",
+   "lines": [
+    182,
+    183
+   ],
+   "lean": "  obtain ⟨_, r1, hKw⟩ := ofFinite (_ ⧸ P), (hρ' · ·), fun k : D.columnLevel 0 ↦\n    mem_Kf_iff.1 (IsLevel.le k.2)",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "setup",
+   "claim": "δ(x, β) := (ρ_x at l)⁻¹·j_l(jw β)·j_l(d).",
+   "lines": [
+    184,
+    184
+   ],
+   "lean": "  let δ x β := ((ρ x).atPlace l)⁻¹ * (j l (jw β) * j l d)",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "14",
+   "parent": null,
+   "kind": "fact",
+   "claim": "For every class x and coset b of P: ρ_x·δ(x, b) = (rational γ_b)·ρ_{o(b)}·u_b with u_b in the level (`exists_eq_map_mul_rep_mul`).",
+   "lines": [
+    185,
+    186
+   ],
+   "lean": "  choose o γ u G using fun b : _ × _ ⧸ P ↦\n    exists_eq_map_mul_rep_mul _ _ hρ (ρ b.1 * atSplit hl (δ b.1 b.2.out))",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "15",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Rearranged form of that identity.",
+   "lines": [
+    187,
+    187
+   ],
+   "lean": "  have H b := eq_mul_inv_of_mul_eq (eq_mul_inv_of_mul_eq (G b).symm)",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "16",
+   "parent": null,
+   "kind": "fact",
+   "claim": "γ_b = jw(b.out)·d·jw(g_b) for some g_b ∈ GL_k(W) (hw′).",
+   "lines": [
+    188,
+    188
+   ],
+   "lean": "  choose g hg using fun b ↦ (@hw' ((jw b.2.out * d)⁻¹ * γ b)).1 (by simp [← hj, δ, *])",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "17",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Rearranged form.",
+   "lines": [
+    189,
+    189
+   ],
+   "lean": "  have hγ b := eq_mul_of_inv_mul_eq (hg b).symm",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "18",
+   "parent": null,
+   "kind": "setup",
+   "claim": "ε: Column ≃ functions on classes (free level); f: integral functions → Column, O_ι-linear; c: O_ι ⊂ ℂ.",
+   "lines": [
+    190,
+    192
+   ],
+   "lean": "  let ε : D.Column ≃ₗ[ℂ] _ := freeLevelEquiv _ _ 1 D.classAut_columnLevel_eq_bot hρ\n  let f := ε.symm.1.restrictScalars _ ∘ₗ ((Algebra.linearMap embValRing ℂ).compLeft _).compLeft _\n  let c := embValRing.subtype",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "freeLevelEquiv"
+    }
+   ]
+  },
+  {
+   "id": "19",
+   "parent": null,
+   "kind": "fact",
+   "claim": "hε: (f F)(ρ_y) = c ∘ F(y).",
+   "lines": [
+    193,
+    193
+   ],
+   "lean": "  have hε F y : (f F).1.1 _ = c ∘ F y := congrFun (ε.4 _) y",
+   "typed_fact": "(f F).1.1 _ = c ∘ F y",
+   "uses": []
+  },
+  {
+   "id": "20",
+   "parent": null,
+   "kind": "construction",
+   "claim": "At a place τ that is not a letter: a matrix m_{b,τ} ∈ GL(O_ι) with schur(κ_τ)(conj Φ_τ(γ_b)) = schur(m_{b,τ}): if τ is a top it does not induce l or l̄, so γ_b is integral and invertible there; otherwise κ_τ is a row of length 0 and m = 1.",
+   "lines": [
+    194,
+    199
+   ],
+   "lean": "  choose m hm using fun b (τ : Subtype (¬Q ·)) ↦ (if h : ↑τ ∈ D.tops then ((@hM (placeOfEmb\n    (weightEmbedding ιₚ τ)) (γ b)).1 (by simp [← hj, r1 _ _ (natCast_mem_placeOfEmb _), by simpa [*,\n    inducedPlace] using τ.2, H, hKw, placeOfEmb_comp_star, star_involutive.eq_iff])).elim (⟨.map\n    (.restrict ((Φ τ).comp conj) _ _ fun _ ↦ (isEquiv_placeOfEmb _).le_one_iff_le_one.2) ·, · ▸\n    rfl⟩) else ⟨1, Matrix.ext (by simp [by simpa using hψ (ite_eq_right h) 0])⟩ : ∃ m : GL _ _,\n    schur (fun () ↦ D.κ τ) (fun _ ↦ (γ b).1.1.map (Φ τ ∘ conj)) = schur _ fun _ ↦ m.1.map c)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "isEquiv_placeOfEmb"
+    }
+   ]
+  },
+  {
+   "id": "21",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Apply `TwistingData.hasType_twisted_hecke` to f, the source map o, the matrices g_b⁻¹, the weight matrices of m at non-letters and the identification of index sets through t and ψ: it gives HasType for f.range and any operator with the explicit formula; remaining: f.range = integralColumns, the formula for markOperator (checked on class representatives), and injectivity of the source map.",
+   "lines": [
+    200,
+    202
+   ],
+   "lean": "  convert T.hasType_twisted_hecke hp big f o g⁻¹ ((weylRep _ 0).toHomUnits ∘ m) (.trans\n    (.piEquivPiSubtypeProd Q _) (.prodCongr (t.piCongr fun s ↦ (ψ (ite_eq_left ((hS _).1 (t\n    s).2).1)).symm.trans (.piUnique _)).symm (.refl _))) ?_ (fun F ↦ eq_of_eq_on_class_reps hρ ?_) _",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "TwistingData.hasType_twisted_hecke"
+    }
+   ]
+  },
+  {
+   "id": "22",
+   "parent": null,
+   "kind": "computation",
+   "claim": "f.range = integralColumns: a column is integral iff its values at the representatives have gauge ≤ 1, i.e. iff it is f of an integral function.",
+   "lines": [
+    203,
+    204
+   ],
+   "lean": "  refine le_antisymm (fun φ H ↦ ⟨fun c ↦ (⟨_, (weylGauge_le_one_iff _ (r1 c)).1\n    (by simpa using H.2 _) ·⟩), ε.3 φ⟩) fun | _, ⟨F, rfl⟩ => ⟨by simp, fun g ↦ ?_⟩",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "23",
+   "parent": null,
+   "kind": "fact",
+   "claim": "For g, decompose g = rational·ρ_c·k.",
+   "lines": [
+    205,
+    205
+   ],
+   "lean": "  choose c γ k _ using exists_eq_map_mul_rep_mul _ _ hρ g",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "24",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Then (f F)(g) is integral.",
+   "lines": [
+    206,
+    207
+   ],
+   "lean": "  simp [levelSpace_smoothFormRep_apply (f F).2, weylGauge_mul, -mul_assoc, ↓weylGauge_embFin,\n    weylGauge_le_one_iff, mem_localLevel, *]; use (F c · |>.2)",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "25",
+   "parent": null,
+   "kind": "computation",
+   "claim": "dim Column = #classes × dim(weight) (free level).",
+   "lines": [
+    208,
+    208
+   ],
+   "lean": "  simp [finrank_levelSpace_smoothFormRep D.classAut_columnLevel_eq_bot]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "26",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Injectivity: let b, b′ have the same image.",
+   "lines": [
+    209,
+    209
+   ],
+   "lean": "  simp_intro b b' h",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "27",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Then the classes agree and the rational parts differ by an element of the level that is trivial (free level, `eq_and_eq_one_of_doubleCoset_rep`), and the cosets of P agree (hP, hw′): b = b′.",
+   "lines": [
+    210,
+    217
+   ],
+   "lean": "  use (eq_and_eq_one_of_doubleCoset_rep hρ ((map_eq_one_iff _ Fact.out).1 <|\n    (D.classAut_columnLevel_eq_bot _).le ⟨⟨·, rfl⟩, ·⟩) (γ b * (γ b')⁻¹) ((mul_mem_cancel_right\n    ((u b')⁻¹ * u b).2).1 (hv ((and_congr_left mem_Kf_iff_of_supportedOn).2 ⟨by\n    simp [← mul_assoc, *, -H, -hg, -hM]\n    simpa [mul_mem_cancel_left, hw', r1, hpl, (Units.ext (diagonal_transpose _) : invTransposeGL d =\n      d⁻¹)] using! hM.2 ((invTransposeGL_mem_intGL _).2 (hM.1 (hP.2 h.2))), by simp +contextual [H,\n    h]⟩)))).elim fun e f ↦ Prod.ext e (Quotient.out_equiv_out.1 (QuotientGroup.leftRel_apply.2 (hP.1\n    (hw'.2 ⟨g b * (g b')⁻¹, by simp [hg, mul_inv_eq_one.1 f]⟩))))",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "28",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The operator formula: unfold markOperator; the Hecke operator at l is the sum over the cosets of P of pullbacks by δ (`heckeFun_eq_sum_pullback`); a side condition on the double coset is left.",
+   "lines": [
+    218,
+    220
+   ],
+   "lean": "  ext x; dsimp [IsMarked.markOperator]; erw [(heckeFun_eq_sum_pullback (J :=\n    P) _ ((mem_sphericalAt_iff hl).1 (levelSpace_anti hv (f\n    F).2)) univ (δ x) (fun z h ↦ ?_) (by simp [δ, ← hP]) _).2] <;> simp [δ, *, -hM, -map_mul]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "heckeFun_eq_sum_pullback"
+    }
+   ]
+  },
+  {
+   "id": "29",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Per coset b, insert the decomposition of step 14.",
+   "lines": [
+    221,
+    221
+   ],
+   "lean": "  congr with b; erw [G (x, b)]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "30",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Evaluate the forms at the decomposed points (level space, weight representation).",
+   "lines": [
+    222,
+    223
+   ],
+   "lean": "  simp [levelSpace_smoothFormRep_apply (f F).2, stdSpace_weightRep_apply, weylRep, lastEntry,\n    mulVec, dotProduct, ← mul_assoc, hε]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "31",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Write the weight action as a product over places, split into letters (Q) and the rest, and account for p^{A_l} and the depth powers.",
+   "lines": [
+    224,
+    226
+   ],
+   "lean": "  congr! 2; rw [pow_mul', ← prod_const, prod_filter, ← prod_pow, schur_apply_eq_prod .refl,\n    schur_apply_eq_prod .refl, ← prod_subtype_mul_prod_subtype Q, ← t.prod_comp, ← mul_rotate',\n    diagonal_pow_depth, map_prod]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "32",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Letter representation and Kronecker products.",
+   "lines": [
+    227,
+    228
+   ],
+   "lean": "  simp_rw [letterRep_apply, ← kroneckerPi_mul, ← map_mul, ← prod_mul_distrib, kroneckerPi, of_apply,\n    map_prod]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "33",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "Non-letter factors agree by m (step 20); letter factors by ψ and `symPowMatrix_map`; the letter matrices remain.",
+   "lines": [
+    229,
+    230
+   ],
+   "lean": "  refine congr((∏ τ, $((hm ..).trans (schur_map .refl ..)) _ _) * ∏ s, $((hψ ..).trans\n    (congrFun₂ ((congrArg _ ?_).trans (symPowMatrix_map c _)) ..))); clear * - hc hγ e",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "34",
+   "parent": null,
+   "kind": "case-split",
+   "claim": "Letter matrices, by the parity of s: entries of γ⁻¹ (= conjugate transpose, unitary) times the powers of p; `omega` closes the index arithmetic.",
+   "lines": [
+    231,
+    235
+   ],
+   "lean": "  have := NeZero.ne p\n  cases _ : T.isEven s <;> ext <;> (try apply congr(p * Φ _ ($(@id ((γ _).1⁻¹.1 =\n    _) (U.inv_val_eq_conjTranspose _)) _ _)).symm.trans) <;> simp [*, letterMatrix, deepIndicator,\n    mul_apply, diagonal, ← map_inv, jw, d, reindex_equiv q,\n    -sum_sum_type] <;> congr with <;> split_ifs <;> simp [*, ϖ, c, field] <;> omega",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "35",
+   "parent": null,
+   "kind": "witness",
+   "claim": "The side condition: an element z of the basic double coset is j_l(d) up to K_l on both sides; choose k₁, then γ, a, b with integrality above p (`exists_mul_mem_integralAbove`), and β with jw(β) equal to the resulting element of K_l; use β⁻¹.",
+   "lines": [
+    236,
+    239
+   ],
+   "lean": "  choose k₁ _ _ _ h using by simpa [basicDoubleCoset_eq hD, DoubleCoset.mem_doubleCoset] using h\n  choose γ a b using exists_mul_mem_integralAbove p (ρ x * atSplit hl k₁) (atSplit hl (j l d)⁻¹)\n  choose β _ using hw'.1 (by simpa [*] using a l hpl)\n  use β⁻¹; simpa [← mul_assoc, *] using b l hpl",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "exists_mul_mem_integralAbove"
+    }
+   ]
+  }
+ ]
+}

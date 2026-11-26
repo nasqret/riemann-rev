@@ -1,0 +1,619 @@
+% !TEX program = lualatex
+% ---------------------------------------------------------------------------------------------
+%  Readback note 19: Primitive labels of general linear groups over finite fields: the share of bad types and the cubic twist
+%
+%  Build:  python3 tools/rb.py note <slug>
+%
+%  One unit of a Lean artifact, rewritten as ordinary mathematics. The prose is hand-written. Lean names,
+%  line ranges and counts come from data.tex; quoted Lean statements are copied from the artifact by the build.
+%
+%  Rules of the text: standard terminology; every symbol is explained where it first appears and listed again
+%  in the notation at the end; no letter has two meanings; a proof is complete or says what it takes for granted;
+%  Lean names appear only in the LEAN lines and in the concordance.
+%
+%  The signature rule (the build enforces it): a function, relation or predicate that the artifact defines is
+%  written only through its notation macro, which the build makes from the spec (`notation`) with one slot for
+%  each explicit argument of the Lean definition. No argument is fixed and dropped, also not "for brevity" and
+%  not for one section. Every argument and every hypothesis of a stated declaration stands inside its
+%  statement, or in a Setting that the statement cites by number; only implicit and instance arguments (the
+%  ambient objects) may stand in the conventions.
+% ---------------------------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\ifdefined\pdfvariable\pdfvariable suppressoptionalinfo \numexpr 1+2+4+8\relax\fi
+\usepackage[a4paper,hmargin=35mm,top=22mm,bottom=27mm,footskip=12mm,nohead]{geometry}
+
+\usepackage{fontspec}
+\directlua{
+  luaotfload.add_fallback("gfallback", {"STIXTwoMath-Regular.otf:mode=node;", "DejaVuSans.ttf:mode=node;"})
+  luaotfload.add_fallback("gmonofallback", {"DejaVuSansMono.ttf:mode=node;", "STIXTwoMath-Regular.otf:mode=node;"})
+}
+\setmainfont{NewCM10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookItalic,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldItalic,SmallCapsFont=*-Book,SmallCapsFeatures={Letters=SmallCaps},
+  RawFeature={fallback=gfallback}]
+\setsansfont{NewCMSans10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookOblique,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldOblique,RawFeature={fallback=gfallback}]
+\setmonofont{JetBrainsMono}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,Scale=MatchLowercase,
+  RawFeature={-calt;-liga;fallback=gmonofallback}]
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage[math-style=TeX]{unicode-math}
+\setmathfont{NewCMMath-Book.otf}
+\emergencystretch=2.5em\relax
+
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows.meta,positioning,backgrounds}
+\usepackage[protrusion=true,expansion=true]{microtype}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{multicol}
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+
+\definecolor{ink}{HTML}{0F172A}
+\definecolor{inksoft}{HTML}{475569}
+\definecolor{inkfaint}{HTML}{94A3B8}
+\definecolor{rulegrey}{HTML}{CBD5E1}
+\definecolor{arith}{HTML}{C2410C}
+\definecolor{est}{HTML}{7C3AED}
+\definecolor{ana}{HTML}{0891B2}
+\definecolor{ok}{HTML}{047857}
+\definecolor{leancol}{HTML}{3730A3}
+
+\title{Primitive labels of general linear groups over finite fields: the share of bad types and the cubic twist}
+\author{grh-compact}
+\date{}
+
+% ------------------------------------------------------------------------------------- macros
+\newcommand{\leanfont}{\ttfamily\fontsize{8.6}{10.5}\selectfont\color{leancol}}
+\newcommand{\lean}[1]{\csname LN@#1\endcsname}
+\newcommand{\fillin}[1]{{\color{arith}\itshape[#1]}}  % a place of the template that is not written yet; the build reports every one that is left
+\newcommand{\leanquote}[1]{\csname LQ@#1\endcsname}
+\input{data.tex}
+
+\linespread{1.08}                       % 11 pt on 14.7 pt
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt plus 1.5pt minus 0.5pt}
+\setlength{\abovedisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\belowdisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\abovedisplayshortskip}{3pt plus 2pt}
+\setlength{\belowdisplayshortskip}{6pt plus 2pt minus 2pt}
+\emergencystretch=1.5em
+\clubpenalty=10000 \widowpenalty=10000 \displaywidowpenalty=10000
+\relpenalty=7000 \binoppenalty=9000
+\raggedbottom
+\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\sffamily\fontsize{7.6}{9}\selectfont\color{inkfaint}\thepage\,/\,\pageref*{LastPage}}
+\setlist{topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=4pt,leftmargin=2.1em,labelsep=0.55em}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\len}{\operatorname{len}}
+\newcommand{\cok}{\operatorname{cok}}
+\newcommand{\End}{\operatorname{End}}
+\newcommand{\Hom}{\operatorname{Hom}}
+\newcommand{\Gal}{\operatorname{Gal}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\kw}[1]{\emph{#1}}
+\newcommand{\m}[1]{\mbox{$#1$}}        % a short formula that must not be broken across lines
+\newcommand{\head}[1]{\par\addvspace{17pt plus 4pt minus 2pt}\Needspace{6\baselineskip}%
+  \noindent{\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\sect}[2]{\refstepcounter{section}\label{#2}\par\addvspace{19pt plus 4pt minus 2pt}\Needspace{7\baselineskip}%
+  \noindent\llap{{\fontsize{13.2}{16}\selectfont\bfseries\color{inkfaint}\thesection}\hspace{9pt}}%
+  {\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\subhead}[1]{\par\addvspace{9pt plus 2pt}\Needspace{4\baselineskip}\noindent\textbf{#1}\enspace\ignorespaces}
+% where a statement lives in the Lean archive
+\newcommand{\leantag}{{\sffamily\bfseries\fontsize{6.3}{8}\selectfont\color{leancol}\addfontfeatures{LetterSpace=7}LEAN}}
+\newcommand{\sep}{\unskip\nobreak\hspace{5pt}{\color{inkfaint}\textperiodcentered}\hspace{5pt plus 2pt}\ignorespaces}
+\newcommand{\leanline}[1]{\par\nopagebreak\vspace{-2.5pt}{\fontsize{8.9}{12.4}\selectfont\color{inksoft}\raggedright
+  \noindent\llap{\leantag\hspace{9pt}}#1\par}\vspace{1pt}}
+% a displayed statement in a tinted box: #1 colour, #2 text
+\newcommand{\statement}[2]{\par\addvspace{7pt}\begingroup\setlength{\fboxsep}{8.5pt}\setlength{\fboxrule}{0.6pt}%
+  \noindent\fcolorbox{#1!30!white}{#1!3!white}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{#2}}%
+  \endgroup\par\addvspace{7pt}}
+\newcommand{\nt}[2]{\par\noindent\hangindent=1.1em\hangafter=1 #1\enspace{\color{inksoft}#2}\par\vspace{1pt}}
+\newcommand{\legdot}[1]{\tikz[baseline=-0.62ex]\fill[#1] (0,0) circle (2.5pt);\hspace{3pt}}
+\newcommand{\crow}[4]{\csname CS@#1\endcsname & #2 & \textcolor{inksoft}{#3} & \textcolor{inksoft}{#4}\\}
+\newcommand{\leanquoteline}[2]{\par\noindent\hangindent=\dimexpr#1\fontdimen2\font+2.2em\relax\hangafter=1
+  \hspace*{#1\fontdimen2\font}#2}
+\newcommand{\quoted}[1]{\par\vspace{3pt}{\ttfamily\fontsize{7.5}{10.4}\selectfont\color{leancol}\raggedright
+  \setlength{\parskip}{0pt}\leanquote{#1}\par}\vspace{4pt}}
+\newcommand{\bx}[3]{{\sffamily\bfseries\fontsize{7.3}{9.2}\selectfont\color{#1!82!black}#2}\\[1.5pt]#3}
+\newcommand{\cs}[2]{\expandafter\newcommand\csname CS@#1\endcsname{#2}}
+
+% theorems
+\newtheoremstyle{plainx}{7pt plus 2pt}{7pt plus 2pt}{\itshape}{}{\bfseries}{.}{0.5em}{}
+\newtheoremstyle{uprightx}{7pt plus 2pt}{7pt plus 2pt}{}{}{\bfseries}{.}{0.5em}{}
+\theoremstyle{plainx}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{uprightx}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{setting}[theorem]{Setting}          % hypotheses shared by several statements; each of them cites it by number
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\renewcommand{\qedsymbol}{{\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.5pt}\fbox{\rule{0pt}{0.46em}\hspace{0.46em}}}}
+% what holds throughout the note: the ambient objects only (implicit and instance arguments), never a hypothesis
+\newenvironment{conventions}{\par\addvspace{5pt}\noindent\textbf{Conventions.}\enspace\ignorespaces}{\par\addvspace{3pt}}
+\makeatletter
+\renewenvironment{proof}[1][Proof]{\par\pushQED{\qed}\normalfont\topsep0pt\partopsep0pt
+  \trivlist\item[\hskip\labelsep\itshape #1.]\ignorespaces}{\popQED\endtrivlist\@endpefalse}
+\makeatother
+
+% where each declaration of the concordance is treated: \cs{key}{place}, the place naming a \label or a lettered item
+\cs{IsPrimitiveLabel}{Definition~\ref{d:prim}}
+\cs{scaleRoots}{Lemma~\ref{l:scale}}
+\cs{isPrimitiveRootprodroots}{Lemma~\ref{l:norm}}
+\cs{goodTuples}{Definition~\ref{d:good}}
+\cs{existslabelIdemeqoffirreducible}{Theorem 2}
+\cs{badsharele}{Theorem 1}
+\cs{IsLabel}{Definition~\ref{d:label}}
+\cs{labelIdem}{Definition~\ref{d:idem}}
+\cs{tupleIdem}{Definition~\ref{d:tuple}}
+\cs{isCentralProjsumtupleIdem}{Input 1}
+\cs{labelChardegreebounds}{Input 1}
+\cs{labelCharmuldet}{Input 2}
+\cs{isCuspidalgreenTau}{Input 2}
+\cs{existscharpolyeqpow}{Input 2}
+\cs{letotientmullog}{Input 3}
+
+\begin{document}
+\color{ink}
+
+{\raggedright
+{\sffamily\bfseries\fontsize{7.2}{9}\selectfont\color{leancol}\addfontfeatures{LetterSpace=8}READBACK NOTE 19\par}
+\vspace{5pt}
+{\fontsize{21.5}{25.5}\selectfont\bfseries Primitive labels of general linear groups over finite fields: the share of bad types and the cubic twist\par}
+\vspace{5pt}
+{\fontsize{12.4}{16}\selectfont\itshape\color{inksoft} One unit of the Lean artifact \ArtifactName, read back into
+mathematics\par}}
+\vspace{8pt}
+{\color{rulegrey}\hrule height 0.6pt}
+\vspace{7pt}
+\thispagestyle{empty}
+
+\textbf{Summary.} The rows of the proof are cut out of a space of automorphic forms by an idempotent of the group
+algebra of a product of finite general linear groups. This note treats the part of that construction which lives
+over finite fields. A \emph{label} is a squarefree monic polynomial; it names an irreducible character of
+$\mathrm{GL}_r$ of a finite field, by Green's construction. A label is \emph{primitive} when it is irreducible
+with a root that generates the multiplicative group of the extension of degree~$r$. Two results are proved.
+Theorem~1: in the regular representation of a product of $f$ groups $\mathrm{GL}_r(\F_v)$, the characters named
+by tuples of labels that avoid finitely many roots and are primitive at one factor at least have all but a share
+\m{f\varepsilon+e^{-L}}. Theorem~2: when $r$ is a power of~$3$, a primitive label has a cubic twist that avoids two
+given polynomials and whose character agrees with the original one at every element with a reducible
+characteristic polynomial.
+
+\statement{leancol}{\fontsize{9.6}{13.2}\selectfont\textbf{What this note is.} The artifact \ArtifactName{} is a
+body of Lean code: the compact edition of a formal proof, due to L.~Alpöge with the AI system Claude, of the
+Riemann hypothesis and of its generalisation to Dirichlet $L$-functions. That headline is a claim. The authors
+report that every file compiles and that Lean's kernel accepted the proofs; an independent replay is recorded in the
+handout's record of checks when it reports. No mathematician has read the argument through, and nothing here says that the Riemann
+hypothesis is proved. This note treats one file of the unit \emph{Good idempotents, labels and the transfer of
+traces}: \UnitInNote{} of the unit's \UnitMembers{} declarations (the other declarations are the subject of the
+note \emph{Good forms and rows}). The two theorems and the two lemmas are proved in full. Taken for granted,
+and stated as Inputs~1 to~3, are facts about Green's characters and about Euler's function that the artifact
+proves in its background library. Every statement was compared with its Lean text, argument by argument. The Lean
+text read is \PinText; Appendix~A is the concordance of \ConcDecls{} declarations.}
+
+\sect{The statements}{s:intro}
+The notions are defined in §\ref{s:setting}: labels and primitive labels in Definitions~\ref{d:label}
+and~\ref{d:prim}, the idempotents \m{\labelIdem{I}{c}} and \m{\tupleIdem{I}{\mathbf c}} in
+Definitions~\ref{d:idem} and~\ref{d:tuple}, the set \m{\goodTuples{M}{r}} of good tuples in
+Definition~\ref{d:good}. For an element $y$ of the complex group algebra of a finite group and an element $g$ of
+the group, $y(g)$ is the coefficient of $y$ at~$g$.
+
+\statement{arith}{\phantomsection\label{t:1}\textbf{Theorem 1} (bad types have a small share).\enspace
+\emph{Let $I$ and $A$ be finite sets, let \m{(\F_v)_{v\in A}} be a family of finite fields, let $q$, $M$, $r$, $f$ be
+natural numbers with \m{M\ge1}, and let $\varepsilon$ and $L$ be real numbers. Suppose that every $\F_v$ has $q$
+elements, that $I$ has $r$ elements and $A$ has $f$ elements, and that}
+\[
+1<r,\qquad r<q,\qquad \varepsilon\le1,\qquad \frac{1+M+2r}{q}\le\varepsilon,\qquad
+2r\,\bigl(2r\log q+1\bigr)\,L\le f .
+\]
+\emph{Then the coefficient at the identity of the element \m{1-\sum_{\mathbf c\in\goodTuples{M}{r}}\tupleIdem{I}{\mathbf c}}
+of the complex group algebra of \m{\prod_{v\in A}\mathrm{GL}_I(\F_v)} has real part at most}
+\[
+f\,\varepsilon+e^{-L}.
+\]}
+\leanline{\lean{badsharele}}
+
+\statement{arith}{\phantomsection\label{t:2}\textbf{Theorem 2} (the cubic twist).\enspace
+\emph{Let $\F$ be a finite field, $I$ a finite set and $e$ a natural number. Suppose that $I$ has \m{3^{e+1}}
+elements and that $9$ divides \m{\#\F-1}. Let \m{c\in\F[X]} be a polynomial, and let $\mathcal S_1$ and
+$\mathcal S_2$ be sets of polynomials over~$\F$ with at most one element each. Then there is a polynomial
+\m{\tilde c\in\F[X]} with the following two properties.}
+\begin{enumerate}[label=\textup{(\arabic*)},leftmargin=2.3em,itemsep=2pt]
+\item \emph{If \IsPrimitiveLabel{\#I}{c}, then \IsPrimitiveLabel{\#I}{\tilde c}, and
+\m{\tilde c\notin\mathcal S_1\cup\mathcal S_2}.}
+\item \emph{For every \m{g\in\mathrm{GL}_I(\F)} whose characteristic polynomial is not irreducible,
+\m{\labelIdem{I}{c}(g)=\labelIdem{I}{\tilde c}(g)}.}
+\end{enumerate}}
+\leanline{\lean{existslabelIdemeqoffirreducible}}
+
+In Theorem~1 the element \m{\sum_{\mathbf c}\tupleIdem{I}{\mathbf c}} is a central idempotent (Input~1), and the
+coefficient at the identity of a central idempotent is the share of its image in the regular representation: the
+dimension of the image divided by the order of the group. So Theorem~1 says that the representations whose type
+is not a good tuple fill at most the share \m{f\varepsilon+e^{-L}} of the group algebra. In the proof of the
+main theorems the fields are the residue fields at the chosen primes above one of two auxiliary primes, $M$ is a
+fixed integer, and $f$ is the number of infinite places of a large CM field; the theorem is used in
+Chapter~VI. Theorem~2 is the device that makes a comparison of trace formulas possible in the note \emph{Good
+forms and rows}: subtracting from an idempotent its cubic twist leaves an element of the group algebra supported
+on matrices with irreducible characteristic polynomial.
+
+\sect{The setting}{s:setting}
+\begin{conventions}\phantomsection\label{c:conventions}
+The natural numbers are \m{0,1,2,\dots}. Throughout, $\F$ is a finite field, $\bar{\F}$ an algebraic closure
+of~$\F$, and \m{\#\F} the number of elements of~$\F$; in a family \m{(\F_v)_{v\in A}} of finite fields the index
+set $A$ is a finite set. A finite set $I$ serves as index set of matrices: \m{\mathrm{GL}_I(\F)} is the group of
+invertible matrices over~$\F$ with rows and columns indexed by~$I$, and \m{\#I} is the number of elements of~$I$.
+The letters $r$, $M$, $q$, $f$, $e$ denote natural numbers and $c$ a polynomial in \m{\F[X]}. For a finite group
+$G$, \m{\mathbb C[G]} is its complex group algebra, $y(g)$ is the coefficient of \m{y\in\mathbb C[G]} at \m{g\in G},
+and a complex representation of~$G$ is also a module over \m{\mathbb C[G]}. A multiplicative character of~$\F$ is
+a homomorphism \m{\chi\colon\F^\times\to\mathbb C^\times}. For a unit \m{u\in\F^\times} and a polynomial \m{c\in\F[X]}
+of degree~$\delta$, \m{c^{[u]}=u^{\delta}\,c(X/u)} is the polynomial of the same degree whose roots in $\bar{\F}$ are
+$u$ times the roots of~$c$, with the same multiplicities; \m{c\mapsto c^{[u]}} is a bijection of \m{\F[X]} that
+respects products, with inverse \m{c\mapsto c^{[u^{-1}]}}.
+\end{conventions}
+
+\begin{definition}[labels]\label{d:label}
+Let $r$ be a natural number and \m{c\in\F[X]}. Then \IsLabel{r}{c} if $c$ is monic and squarefree, has degree~$r$,
+and has \m{c(0)\ne0}.
+\end{definition}
+\leanline{\lean{IsLabel}\sep a definition of the background library}
+
+\begin{definition}[primitive labels]\label{d:prim}
+Let $r$ be a natural number and \m{c\in\F[X]}. Then \IsPrimitiveLabel{r}{c} if \IsLabel{r}{c}, if $c$ is
+irreducible, and if some root \m{\xi\in\bar{\F}} of~$c$ is a primitive root of unity of order \m{(\#\F)^r-1}.
+\end{definition}
+\leanline{\lean{IsPrimitiveLabel}}
+
+So a primitive label of degree~$r$ is the minimal polynomial over~$\F$ of a generator of the cyclic group
+\m{\F_{(r)}^\times}, where \m{\F_{(r)}\subset\bar{\F}} is the subfield with \m{(\#\F)^r} elements. All roots of a
+primitive label are such generators, because they are conjugate over~$\F$.
+
+\begin{definition}[Green's characters and their idempotents]\label{d:idem}
+Fix an injective multiplicative character \m{T\colon\bar{\F}^\times\to\mathbb C^\times} (the library chooses one for
+each field). For an integer \m{\delta\ge1} and \m{x\in\F_{(\delta)}^\times}, let $\theta_x$ be the character
+$T^{n}$ of \m{\F_{(\delta)}^\times}, where $n$ is an integer with \m{T(x)=\exp\bigl(2\pi i\,n/((\#\F)^\delta-1)\bigr)};
+the map \m{x\mapsto\theta_x} is an isomorphism from \m{\F_{(\delta)}^\times} to its group of characters. For
+\m{\delta=1} it gives, for each multiplicative character $\chi$ of~$\F$, the unit \m{x_\chi\in\F^\times} with
+\m{\theta_{x_\chi}=\chi}, and \m{\chi\mapsto x_\chi} is an isomorphism of groups.
+
+The complex functions on the similarity classes of square matrices over~$\F$ of all sizes form a ring under the
+product of parabolic induction, \m{(F*H)(g)=\sum_W F(g|_W)\,H(g|_{V/W})}, the sum over the $g$-stable subspaces
+$W$ of the space $V$ on which $g$ acts. For a monic irreducible \m{P\in\F[X]} of degree~$\delta$ with a root
+\m{x\in\bar{\F}^\times}, Green's class function $\tau_P$ is \m{(-1)^\delta} times the part in size~$\delta$ of
+\m{(\beta_x\cdot\mathbb 1^{-1})*\mathbb 1}; here $\mathbb 1$ is the constant function~$1$, \m{\mathbb 1^{-1}} is its inverse in this
+ring, the dot is the pointwise product, and
+\m{\beta_x(g)} is the sum of $\theta_x$ over the eigenvalues of~$g$. For a polynomial \m{c\ne0} over~$\F$,
+\[
+\Xi_c=\tau_{P_1}*\dots*\tau_{P_s},\qquad P_1,\dots,P_s\ \text{the monic irreducible factors of $c$ with multiplicity.}
+\]
+For a finite set~$I$ and \m{c\in\F[X]}, the element \m{\labelIdem{I}{c}} of \m{\mathbb C[\mathrm{GL}_I(\F)]} is
+\[
+\labelIdem{I}{c}=\sum_{g\in\mathrm{GL}_I(\F)}\frac{\Xi_c(1)}{\#\mathrm{GL}_I(\F)}\;\overline{\Xi_c(g)}\;g
+\quad\text{if \IsLabel{\#I}{c},}\qquad \labelIdem{I}{c}=0\quad\text{otherwise.}
+\]
+\end{definition}
+\leanline{\lean{labelIdem}\sep a definition of the background library, with the class functions of its
+files on Green's characters}
+
+For a label~$c$ of degree \m{\#I} the restriction of $\Xi_c$ to \m{\mathrm{GL}_I(\F)} is an irreducible
+character, by Green's theory as the library proves it; then \m{\labelIdem{I}{c}} is the central idempotent of
+\m{\mathbb C[\mathrm{GL}_I(\F)]} that projects every representation to its part of type~$\Xi_c$. If $c$ is
+irreducible, \m{\Xi_c=\tau_c} is a cuspidal character. This note uses nothing of the construction beyond
+Inputs~1 to~3.
+
+\begin{definition}[idempotents of tuples]\label{d:tuple}
+Let \m{(\F_v)_{v\in A}} be a family of finite fields, $I$ a finite set, and \m{\mathbf c=(c_v)_{v\in A}} a family of
+polynomials \m{c_v\in\F_v[X]}. Then \m{\tupleIdem{I}{\mathbf c}} is the element
+\m{\bigotimes_{v\in A}\labelIdem{I}{c_v}} of the group algebra of \m{\prod_{v\in A}\mathrm{GL}_I(\F_v)}: its
+coefficient at \m{(g_v)_{v\in A}} is \m{\prod_{v\in A}\labelIdem{I}{c_v}(g_v)}.
+\end{definition}
+\leanline{\lean{tupleIdem}\sep a definition of the background library}
+
+\begin{definition}[good tuples]\label{d:good}
+Let \m{(\F_v)_{v\in A}} be a family of finite fields, and let $M$ and $r$ be natural numbers. The set
+\m{\goodTuples{M}{r}} consists of the families \m{\mathbf c=(c_v)_{v\in A}} of monic polynomials \m{c_v\in\F_v[X]}
+of degree~$r$ such that
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=2pt]
+\item for every \m{v\in A}: \IsLabel{r}{c_v}, and no \m{x\in\F_v} with \m{x^M=1} is a root of~$c_v$;
+\item for at least one \m{v\in A}: \IsPrimitiveLabel{r}{c_v}.
+\end{enumerate}
+It is a finite set.
+\end{definition}
+\leanline{\lean{goodTuples}}
+
+In terms of characters, (i) says that the type \m{\Xi_{c_v}} is induced from cuspidal characters among which
+there is no character \m{\chi\circ\det} of \m{\mathrm{GL}_1} with \m{\chi^M=1}, and (ii) asks for one factor
+with a cuspidal type that comes from a faithful character of \m{\F_{v,(r)}^\times}.
+
+\statement{inksoft}{\textbf{Inputs from the background library.} The statements below are proved in the
+artifact's library and are taken for granted here. For Inputs 1 and~2 the library's files name
+J.~A.~Green, \emph{The characters of the finite general linear groups}, Trans. Amer. Math. Soc. 80 (1955),
+as their source. The second reading of this write-up compared Input~1 with that paper: both parts are weaker
+consequences of its §8, Theorems 13 and~14 (pp.~441--444, with the degree formula on pp.~443--444). For Input~2
+the place in the paper is to be confirmed; the catalogue of quoted results classes Input~2(b) as folklore.
+
+\vspace{4pt}\phantomsection\label{i:1}\textbf{Input 1} (orthogonality and degree).\enspace
+\emph{Let $I$ be a finite set and \m{(\F_v)_{v\in A}} a family of finite fields. \textup{(a)} For every finite set
+$\mathcal C$ of families \m{\mathbf c=(c_v)_{v\in A}} of polynomials \m{c_v\in\F_v[X]}, the element
+\m{\sum_{\mathbf c\in\mathcal C}\tupleIdem{I}{\mathbf c}} is an idempotent whose coefficients are constant on
+conjugacy classes. \textup{(b)} If $\F$ has $q$ elements, $I$ has $r$ elements and \IsLabel{r}{c}, then
+\m{\labelIdem{I}{c}(1)} is a real number and \m{\labelIdem{I}{c}(1)\ge(1-r/q)\,q^{-r}}.}
+
+\vspace{3pt}\phantomsection\label{i:2}\textbf{Input 2} (twisting; cuspidal support).\enspace
+\emph{\textup{(a)} Let $r$ be a natural number and suppose that \IsLabel{r}{c}; let $\chi$ be a multiplicative
+character of~$\F$ and $I$ a finite set. Then \m{\Xi_c(g)\,\chi(\det g)=\Xi_{c^{[x_\chi]}}(g)} for all
+\m{g\in\mathrm{GL}_I(\F)}. \textup{(b)} Let \m{P\in\F[X]} be monic and irreducible, and let $g$ be a square matrix
+over~$\F$ with \m{\tau_P(g)\ne0}. Then the characteristic polynomial of~$g$ is a power of an irreducible
+polynomial.}
+
+\vspace{3pt}\phantomsection\label{i:3}\textbf{Input 3} (Euler's function).\enspace
+\emph{For every integer \m{n\ge1}: \m{n\le\varphi(n)\,(2\log n+1)}, where $\varphi$ is Euler's function.}}
+\leanline{\lean{isCentralProjsumtupleIdem}\sep \lean{labelChardegreebounds}\sep \lean{labelCharmuldet}\sep
+\lean{isCuspidalgreenTau}\sep \lean{existscharpolyeqpow}\sep \lean{letotientmullog}}
+
+Input~1(b) is a weak form of Green's formula for the degree of~$\Xi_c$: only this lower bound is proved, and only
+for labels. (As the second reading records it: for a label whose irreducible factors have degrees \m{d_1,\dots,d_s},
+Green's degree is \m{\prod_{n=1}^{r}(q^n-1)/\prod_{i=1}^{s}(q^{d_i}-1)} up to sign, and the bound follows
+from \m{\prod_i(q^{d_i}-1)\le q^r}.) Input~2(b) is the vanishing of cuspidal characters off the primary classes; the library proves it
+for every class function that is cuspidal in the sense that its averages over block triangular matrices with two
+diagonal blocks of positive size vanish, and proves that $\tau_P$ is cuspidal in this sense.
+
+\sect{Primitive labels}{s:prim}
+Two facts about finite fields are used without further mention. If \m{P\in\F[X]} is irreducible of degree~$\delta$
+and \m{x\in\bar{\F}} is a root of~$P$, then the roots of~$P$ are \m{x,x^{q},\dots,x^{q^{\delta-1}}} with \m{q=\#\F},
+each a simple root; and \m{x^{q^n}=x} holds exactly when $\delta$ divides~$n$.
+
+\begin{lemma}[scaling the roots]\label{l:scale}
+Let \m{c\in\F[X]}, let $u$ be a unit of~$\F$, and let $r$ and $M$ be natural numbers. Suppose that \m{u^M=1} and
+that $M^2$ divides \m{\#\F-1}. If \IsPrimitiveLabel{r}{c}, then \IsPrimitiveLabel{r}{c^{[u]}}.
+\end{lemma}
+\begin{proof}
+Put \m{q=\#\F}. The polynomial \m{c^{[u]}} is monic of degree~$r$, its roots are $u$ times those of~$c$, hence
+distinct, and \m{c^{[u]}(0)=u^r c(0)\ne0}; so \IsLabel{r}{c^{[u]}}. It is irreducible, because
+\m{c\mapsto c^{[u]}} is a bijection of \m{\F[X]} that respects products and degrees. Let $\xi$ be a root of~$c$ of
+order \m{n=q^r-1}; then $u\xi$ is a root of \m{c^{[u]}}, and it remains to see that $u\xi$ has order~$n$. Let $o$
+be the order of~$u$. It divides~$M$, so $o^2$ divides \m{q-1}, which divides~$n$. Since \m{(u\xi)^n=1}, it
+suffices to show \m{(u\xi)^{n/p}\ne1} for every prime~$p$ dividing~$n$. If $p$ divides~$o$, then $po$ divides
+$o^2$ and so~$n$; hence \m{u^{n/p}=1} and \m{(u\xi)^{n/p}=\xi^{n/p}\ne1}. If $p$ does not divide~$o$ and
+\m{(u\xi)^{n/p}=1}, then \m{\xi^{n/p}=u^{-n/p}}; the left side has order~$p$ and the order of the right side
+divides~$o$, a contradiction.
+\end{proof}
+\leanline{\lean{scaleRoots}}
+
+\begin{lemma}[the norm of a generator is a generator]\label{l:norm}
+Let \m{c\in\F[X]} and let $r$ be a natural number. Suppose \IsPrimitiveLabel{r}{c}. Then the product of the
+roots of~$c$ in~$\bar{\F}$, counted with multiplicity, is a primitive root of unity of order \m{\#\F-1}; and there
+is a natural number~$n$ such that \m{\xi^{n}} equals this product for every root $\xi$ of~$c$ in~$\bar{\F}$.
+\end{lemma}
+\begin{proof}
+Put \m{q=\#\F} and \m{n=1+q+\dots+q^{r-1}}. Let $\xi$ be any root of~$c$. As $c$ is irreducible of degree~$r$, its
+roots are \m{\xi^{q^i}}, \m{0\le i<r}, each once, and their product is~$\xi^{n}$. For the root $\xi_0$ of order
+\m{q^r-1=n\,(q-1)} the power \m{\xi_0^{n}} has order \m{q-1}.
+\end{proof}
+\leanline{\lean{isPrimitiveRootprodroots}}
+
+\sect{The cubic twist: proof of Theorem 2}{s:twist}
+\begin{proof}[Proof of Theorem 2]
+Put \m{q=\#\F} and \m{r=\#I=3^{e+1}}. If $c$ is not a primitive label of degree~$r$, take \m{\tilde c=c}: then
+(1) is empty and (2) is trivial. So assume that \IsPrimitiveLabel{r}{c}, and let $\xi$ be a root of~$c$ of order \m{q^r-1}.
+
+\emph{The element $\xi^3$ has degree $r$ over $\F$.} Its degree $\delta$ divides~$r$, since
+\m{\xi^3\in\F_{(r)}}. If \m{\delta\ne r}, then $\delta$ divides \m{r/3}, so $\xi^3$ lies in the field with
+\m{z=q^{r/3}} elements and its order \m{(q^r-1)/3} divides \m{z-1}. Then \m{z^3-1\le3(z-1)}, that is
+\m{(z-1)^2(z+2)\le0}, which is false for \m{z\ge2}. (The order of $\xi^3$ is \m{(q^r-1)/3} because $3$ divides
+\m{q-1}.)
+
+\emph{The three cubic twists of $c$ are distinct.} As $3$ divides \m{q-1}, the group $U_3$ of the \m{u\in\F} with
+\m{u^3=1} has three elements. Let \m{u,u'\in U_3} with \m{c^{[u]}=c^{[u']}}. This polynomial is irreducible and has
+the roots $u\xi$ and $u'\xi$, so \m{u'\xi=(u\xi)^{q^l}=u\,\xi^{q^l}} for some $l$ with \m{0\le l<r}. Taking cubes,
+\m{\xi^3=(\xi^3)^{q^l}}; since $\xi^3$ has degree~$r$, $r$ divides~$l$, so \m{l=0} and \m{u'=u}.
+
+\emph{Choice of $\tilde c$.} Of the three distinct polynomials \m{c^{[u]}}, \m{u\in U_3}, at most two lie in
+\m{\mathcal S_1\cup\mathcal S_2}. Choose \m{u\in U_3} with \m{c^{[u]}\notin\mathcal S_1\cup\mathcal S_2}, and put
+\m{\tilde c=c^{[u]}}. By Lemma~\ref{l:scale} with \m{M=3}, which applies because \m{u^3=1} and $9$ divides
+\m{q-1}, \IsPrimitiveLabel{r}{\tilde c}. This is (1).
+
+\emph{The coefficients.} Let $\chi$ be the multiplicative character of~$\F$ with \m{x_\chi=u}; then \m{\chi^3=1},
+because \m{\chi\mapsto x_\chi} is an isomorphism of groups. By Input~2(a),
+\m{\Xi_{\tilde c}(g)=\Xi_c(g)\,\chi(\det g)} for \m{g\in\mathrm{GL}_I(\F)}, in particular
+\m{\Xi_{\tilde c}(1)=\Xi_c(1)}. Both $c$ and $\tilde c$ are labels of degree~$r$, so by
+Definition~\ref{d:idem}
+\[
+\labelIdem{I}{\tilde c}(g)=\labelIdem{I}{c}(g)\cdot\overline{\chi(\det g)}\qquad(g\in\mathrm{GL}_I(\F)).
+\]
+Let $g$ have a characteristic polynomial that is not irreducible. If \m{\Xi_c(g)=0}, both coefficients vanish.
+Otherwise, $c$ being irreducible, \m{\Xi_c=\tau_c}, and by Input~2(b) the characteristic polynomial of~$g$ is
+$P^{n}$ with $P$ irreducible and \m{n\ge1}. Comparing degrees, $n$ divides \m{3^{e+1}}; and \m{n\ne1}, because
+the characteristic polynomial is not irreducible. So $3$ divides~$n$, and, $r$ being odd,
+\[
+\det g=(-1)^r\,P(0)^{n}=\bigl(-P(0)^{n/3}\bigr)^3
+\]
+is a cube in~$\F^\times$. Hence \m{\chi(\det g)=1}, and the two coefficients agree. This is (2).
+\end{proof}
+
+\sect{The share of bad types: proof of Theorem 1}{s:share}
+\begin{proof}[Proof of Theorem 1]
+If \m{f=0}, then $A$ is empty, the only family is the empty one, and it does not satisfy (ii) of
+Definition~\ref{d:good}; so the element in question is~$1$, with coefficient~$1$ at the identity, and
+\m{L\le0} by the last hypothesis, so \m{e^{-L}\ge1}. Let \m{f\ge1}. Put
+\[
+\varepsilon_0=\Bigl(1-\frac rq\Bigr)q^{-r},\qquad\text{so that}\quad 0\le\varepsilon_0\le q^{-r}.
+\]
+For \m{v\in A} let $\mathcal P_v$ be the set of the monic polynomials of degree~$r$ over~$\F_v$; it has $q^r$
+elements. Let \m{\mathcal B_v\subseteq\mathcal P_v} be the set of those that are not primitive labels of
+degree~$r$, and let \m{\mathcal A_v\subseteq\mathcal P_v} be the set of those that are neither of the form
+\m{(X-x)\,h} with \m{x\in\F_v}, \m{x=0} or \m{x^M=1}, and $h$ monic of degree \m{r-1}, nor of the form
+\m{u^2h} with $u$ monic of positive degree and $h$ monic.
+
+\emph{Step 1: \m{\#\mathcal A_v\cdot\varepsilon_0\ge1-\varepsilon}.} There are at most \m{1+M} elements $x$ and
+\m{q^{r-1}} polynomials~$h$, hence at most \m{(1+M)\,q^{r-1}} polynomials of the first form. A polynomial of
+degree~$r$ of the second form is given by the degree \m{d<r} of~$h$, with \m{r-d} even, by $h$ and by~$u$; for each
+$d$ there are at most \m{q^{d+(r-d)/2}\le q^{r-1}} of them, hence at most \m{r\,q^{r-1}} in all. So
+\m{\#\mathcal A_v\ge q^r\bigl(1-(1+M+r)/q\bigr)}, and, as \m{\varepsilon_0\ge0},
+\[
+\#\mathcal A_v\cdot\varepsilon_0\ \ge\ \Bigl(1-\frac{1+M+r}{q}\Bigr)\Bigl(1-\frac rq\Bigr)\ \ge\ 1-\frac{1+M+2r}{q}\ \ge\ 1-\varepsilon .
+\]
+
+\emph{Step 2: \m{\#\mathcal B_v\cdot\varepsilon_0\le1-L/f}.} The field $\bar{\F}_v$ contains exactly
+\m{\varphi(q^r-1)} primitive roots of unity of order \m{q^r-1}. Let $\xi$ be one of them and $\delta$ the degree of
+its minimal polynomial~$P$ over~$\F_v$. Then \m{\xi^{q^\delta-1}=1}, so \m{q^r-1} divides \m{q^\delta-1}; and
+\m{\xi^{q^r}=\xi}, so $\delta$ divides~$r$ and \m{q^\delta-1} divides \m{q^r-1}. Hence \m{\delta=r}, and $P$ is
+monic, irreducible, of degree~$r$, with \m{P(0)\ne0} and with the root~$\xi$: a primitive label of degree~$r$.
+Each such $P$ has $r$ roots, so there are at least \m{\varphi(q^r-1)/r} primitive labels of degree~$r$
+over~$\F_v$. By Input~3, and because \m{q^r\ge2},
+\[
+q^r\le2\,(q^r-1)\le2\,\varphi(q^r-1)\bigl(2\log(q^r-1)+1\bigr)\le2r\,(2r\log q+1)\cdot\frac{\varphi(q^r-1)}{r}.
+\]
+With the hypothesis on~$L$ this gives \m{\#(\mathcal P_v\setminus\mathcal B_v)\ge q^r/(2r(2r\log q+1))\ge q^rL/f}.
+Therefore \m{\#\mathcal B_v\le q^r(1-L/f)}, and \m{\#\mathcal B_v\cdot\varepsilon_0\le\#\mathcal B_v\,q^{-r}\le1-L/f}.
+
+\emph{Step 3: a family \m{\mathbf c\in\prod_v\mathcal A_v} that does not lie in \m{\prod_v\mathcal B_v} belongs to
+\m{\goodTuples{M}{r}}.} Let \m{c_v\in\mathcal A_v}. It is monic of degree~$r$. It has no root \m{x\in\F_v} with
+\m{x=0} or \m{x^M=1}, since a root~$x$ gives \m{c_v=(X-x)h} with $h$ monic of degree \m{r-1}. It is squarefree:
+otherwise the square of a monic irreducible polynomial~$u$ divides it, and \m{c_v=u^2h} with $h$ monic. So
+\IsLabel{r}{c_v}, and (i) holds; (ii) holds because some $c_v$ is not in~$\mathcal B_v$.
+
+\emph{Step 4: conclusion.} Let \m{y=\sum_{\mathbf c\in\goodTuples{M}{r}}\tupleIdem{I}{\mathbf c}}. By
+Definition~\ref{d:tuple}, \m{\tupleIdem{I}{\mathbf c}(1)=\prod_{v\in A}\labelIdem{I}{c_v}(1)}, and for
+\m{\mathbf c\in\goodTuples{M}{r}} every factor is a real number \m{\ge\varepsilon_0\ge0} by Input~1(b). So $y(1)$ is
+real, and with Step~3, then Steps 1 and~2 (all factors being non-negative, and \m{1-\varepsilon\ge0}),
+\[
+y(1)\ \ge\ \#\goodTuples{M}{r}\cdot\varepsilon_0^{f}\ \ge\ \prod_{v\in A}\bigl(\#\mathcal A_v\,\varepsilon_0\bigr)-\prod_{v\in A}\bigl(\#\mathcal B_v\,\varepsilon_0\bigr)
+\ \ge\ (1-\varepsilon)^f-\Bigl(1-\frac Lf\Bigr)^{f}.
+\]
+By Bernoulli's inequality, \m{(1-\varepsilon)^f\ge1-f\varepsilon}. Moreover
+\m{0\le1-L/f\le e^{-L/f}}, so that \m{(1-L/f)^f\le e^{-L}}. Hence
+\m{1-y(1)\le f\varepsilon+e^{-L}}.
+\end{proof}
+
+\sect{Where the results are used}{s:use}
+Theorem~1 is used once, in the proof of Theorem~B of the handout (enough forms, Chapter~VI): there the fields
+are the residue fields at the chosen primes above one of the primes $g_0(D)$, $g_1(D)$ of the data~$D$, with $q$ that prime, the integer $M$
+is the integer $M_\omega(D)$ of the data, and \m{L=9\log b(D)}; the bound says that the good idempotent discards a
+negligible share of the Poincaré series. The set \m{\goodTuples{M}{r}} enters the definition of the good
+idempotent of the data (note \emph{Good forms and rows}). Theorem~2 is used in the same note, in the
+comparison of the traces of Hecke operators on good forms of two unitary groups. Lemmas \ref{l:scale}
+and~\ref{l:norm} are used in the note \emph{At most one primitive label for a Hecke eigensystem}: the first
+to twist a primitive label by a character of order dividing $M_\omega(D)$, the second to see that the roots of a
+primitive label cannot all be roots of unity of order dividing~$M_\omega(D)$.
+
+\sect{Notes on the formal text}{s:notes}
+\begin{enumerate}[label=\textup{\arabic*.},leftmargin=1.6em,itemsep=5pt]
+\item \emph{Letters.} The formal text writes {\leanfont k} for the field, {\leanfont n} and {\leanfont ι} for the
+index sets $I$ and~$A$, {\leanfont a} for the unit $u$ of Lemma~\ref{l:scale} and for the exponent $e$ of
+Theorem~2, {\leanfont S} and {\leanfont T} for the sets $\mathcal S_1$ and~$\mathcal S_2$, {\leanfont P} for the
+polynomial~$\tilde c$, and {\leanfont m} for the number~$\varepsilon_0$. In this write-up these letters, except the
+last three, are kept for objects of the data of the proof.
+\item \emph{The polynomial $c^{[u]}$.} It is the library's operation of scaling the roots, \m{\sum_i c_i\,u^{\delta-i}X^i}
+for \m{c=\sum_ic_iX^i} of degree~$\delta$.
+\item \emph{Theorem~2 for a polynomial that is not a primitive label.} The statement is made for every
+polynomial~$c$; for such a $c$ the formal proof takes \m{\tilde c=c}, as here.
+\item \emph{The distinctness of the cubic twists.} The formal proof quotes a lemma of the library: for a
+prime~$l$, an exponent~$n$ and $\xi$ of order \m{q^{3^{e+1}}-1} with \m{9\mid q-1}, the conjugates of
+\m{\xi^{l^n}} over~$\F$ are distinct. It is used for \m{l=3}, \m{n=1}. The two lines given here for that case are
+mine; they do not use that $9$ divides \m{q-1}, only that $3$ does. The hypothesis \m{9\mid\#\F-1} of Theorem~2 is
+needed for Lemma~\ref{l:scale}. The formal proof finds the twist outside \m{\mathcal S_1\cup\mathcal S_2} by
+contradiction: otherwise \m{u\mapsto[c^{[u]}\in\mathcal S_1]} would embed $U_3$ into a set of two elements.
+\item \emph{Lemma~\ref{l:scale}.} The formal proof quotes from Mathlib that the order of a product of two
+commuting elements $u$, $\xi$ equals the order of~$\xi$ when \m{p\cdot\mathrm{ord}(u)} divides \m{\mathrm{ord}(\xi)}
+for every prime $p$ dividing \m{\mathrm{ord}(u)}; the proof above includes an argument for it. The case
+\m{M=0} cannot occur, since $0$ does not divide \m{\#\F-1}.
+\item \emph{Theorem~1.} The formal statement asks \m{M\ne0} through an instance argument. The sets
+$\mathcal A_v$ are written there as differences of finite sets: the monic polynomials of degree~$r$, less the
+products \m{(X-x)h} and less the products \m{u^2h} with $h$ monic of degree \m{d<r} and $u$ monic of degree
+\m{\lfloor(r-d)/2\rfloor}; products of the wrong degree are removed with them, which changes nothing. The
+case \m{f=0} needs no separate treatment there, because division by zero gives zero in Lean. The inequalities of
+Steps 1, 2 and~4 are established in the formal text by chains of rewriting under the order relation, closed by
+automatic tactics; I derived each of them by hand, as written above, and compared the terms of the chains with it.
+What the automatic tactics prove in between was not replayed.
+\item \emph{What Theorem~1 does not use.} Of Green's theory it uses only the lower bound of Input~1(b) for the
+coefficient at the identity. It does not use that the elements \m{\tupleIdem{I}{\mathbf c}} are orthogonal
+idempotents; that is needed for the interpretation as a share.
+\item \emph{Arguments.} In Definition~\ref{d:prim} the formal text does not ask that $\F$ be finite; the number
+\m{\#\F} is $0$ for an infinite field there, and the notion is used for finite fields only. The dossier of the
+unit records the arguments of the declarations of Definition~\ref{d:good} and of Theorem~1 as derived by hand
+from the text of their signatures, not as printed by Lean; they agree with what is stated here.
+\end{enumerate}
+
+\subhead{How this note was written.} From the dossier of the unit: its statements and the structured proofs of
+the two lemmas and the two theorems, which a program compared line by line with the source (\UnitSteps{} leaf
+steps in the \UnitProofs{} proofs of the unit). I read the whole Lean file of these six declarations, and in the
+library the definitions of labels, of Green's class functions and of the idempotents, and the statements of the
+six results quoted as Inputs. The statements of this note were compared with the Lean statements argument by
+argument, and the order of the quantifiers is that of the formal text. The proofs follow the formal ones, with
+the differences listed in notes 4 to~6. The interpretations after the statements and after
+Definition~\ref{d:good} are mine. The reference and its place are those that the library's files, the catalogue of this
+handout and its second reading give; I did not check them in the literature.
+
+\head{Appendix A. Concordance with the Lean artifact}
+{\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}\setlength{\tabcolsep}{0pt}
+\begin{longtable}{@{}p{30mm}p{56mm}p{43mm}r@{}}
+\textbf{In this note} & \textbf{Lean declaration} & \textbf{File} & \textbf{Lines}\\\midrule\endhead
+\ConcordanceRows
+\end{longtable}}
+
+\subhead{The two theorems as they are written in the artifact.}
+\quoted{badsharele}
+\quoted{existslabelIdemeqoffirreducible}
+In these texts {\leanfont k} is the field or the family of fields, {\leanfont n} and {\leanfont ι} are the index
+sets $I$ and~$A$, {\leanfont labelIdem n c} is \m{\labelIdem{I}{c}}, {\leanfont tupleIdem n c} is
+\m{\tupleIdem{I}{\mathbf c}}, {\leanfont goodTuples M r} is \m{\goodTuples{M}{r}}, {\leanfont .card} is the number
+of elements, and {\leanfont coeff} takes the coefficient of an element of a group algebra.
+
+\head{Notation}
+\begingroup\fontsize{8.6}{10.9}\selectfont\raggedright
+\setlength{\columnsep}{9mm}\setlength{\parskip}{0pt}
+\begin{multicols}{2}
+\nt{$\F$, $\bar{\F}$, $\#\F$}{a finite field, an algebraic closure, the number of its elements}
+\nt{$\F_{(\delta)}$}{the subfield of $\bar{\F}$ with \m{(\#\F)^\delta} elements}
+\nt{$q$}{the number of elements of the finite field or fields at hand}
+\nt{$A$, $v$, $\F_v$, $f$}{a finite index set, an index, the field with index~$v$; \m{f=\#A}}
+\nt{$I$, $\mathrm{GL}_I(\F)$}{a finite set; the invertible matrices over~$\F$ indexed by~$I$}
+\nt{$r$}{a degree; in the theorems \m{r=\#I}}
+\nt{$c$, $\tilde c$, $P$, $h$, $u$}{polynomials over a finite field; $u$ also a unit of~$\F$}
+\nt{$X$}{the variable of polynomials}
+\nt{$c^{[u]}$}{the polynomial whose roots are $u$ times those of~$c$}
+\nt{$\mathbf c=(c_v)_{v\in A}$}{a family of polynomials, \m{c_v\in\F_v[X]}}
+\nt{$M$}{a natural number: roots $x$ with \m{x^M=1} are excluded}
+\nt{$\varepsilon$, $L$}{the real numbers of Theorem~1}
+\nt{$e$}{a natural number, \m{\#I=3^{e+1}} in Theorem~2; also the basis of the natural logarithm in \m{e^{-L}}}
+\nt{$\mathcal S_1$, $\mathcal S_2$}{sets of polynomials with at most one element}
+\nt{$\mathbb C[G]$, $y(g)$}{the complex group algebra of a finite group~$G$; the coefficient of~$y$ at~$g$}
+\nt{$T$, $\theta_x$, $x_\chi$}{an injective character of $\bar{\F}^\times$; the character named by~$x$; the unit that names~$\chi$}
+\nt{$\chi$}{a multiplicative character of~$\F$}
+\nt{$\tau_P$, $\Xi_c$}{Green's class functions (Definition~\ref{d:idem})}
+\nt{$F*H$, $\mathbb 1$, $\beta_x$, $W$, $V$}{the induction product, the constant function~$1$, the sum of $\theta_x$ over eigenvalues; a stable subspace of a space}
+\nt{\m{\labelIdem{I}{c}}}{the idempotent of the label~$c$ in \m{\mathbb C[\mathrm{GL}_I(\F)]} (Definition~\ref{d:idem})}
+\nt{\m{\tupleIdem{I}{\mathbf c}}}{the tensor product of the \m{\labelIdem{I}{c_v}} (Definition~\ref{d:tuple})}
+\nt{\m{\goodTuples{M}{r}}}{the set of good tuples (Definition~\ref{d:good})}
+\nt{$\mathcal P_v$, $\mathcal A_v$, $\mathcal B_v$, $\mathcal C$}{sets of monic polynomials in the proof of Theorem~1; a finite set of families}
+\nt{$\varepsilon_0$}{the number \m{(1-r/q)\,q^{-r}}}
+\nt{$\xi$, $\xi_0$}{roots of a polynomial in $\bar{\F}$}
+\nt{$U_3$}{the group of cube roots of unity in~$\F$}
+\nt{$\varphi$}{Euler's function}
+\nt{$\pi$, $i$ in \m{2\pi i}}{the circle constant and the imaginary unit}
+\nt{$n$, $l$, $o$, $p$, $d$, $i$, $s$, $z$, $\delta$}{auxiliary integers: exponents, orders, a prime, degrees, indices}
+\nt{$g$, $x$, $y$}{a matrix or group element; an element of a field; an element of a group algebra}
+\nt{$D$, $g_0(D)$, $g_1(D)$, $M_\omega(D)$, $b(D)$}{the data of the proof and objects attached to it, named in §\ref{s:use} only: two primes, an integer, a scale}
+\end{multicols}
+\endgroup
+
+\head{References}
+{\fontsize{9.4}{12.6}\selectfont
+J.~A.~Green, \emph{The characters of the finite general linear groups}, Trans. Amer. Math. Soc. 80 (1955).
+Named by the library's files as the source of Inputs 1 and~2. Place for Input~1, as located by the
+second reading of this write-up: §8, Theorems 13--14, pp.~441--444. I did not open the paper.\par}
+
+\end{document}

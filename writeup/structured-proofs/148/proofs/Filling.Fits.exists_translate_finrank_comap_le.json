@@ -1,0 +1,295 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Filling.Moments:301:7",
+ "summary": "Normalise P = tQ with t² = 1/(cν), so ⟨ρ(b)Pe_y, ρ(a)Pe_x⟩ = amplitudeSum(G(E), x₁, a⁻¹b, y₁)/ν. For each s, with U_s = R_s⁻¹(F) and A = F: dim U_s − ε − ∑_x‖ρ(1 − e)ρ(s)Pe_x‖² ≤ Re⟨dyad(ρ(s)P), dyad(A)⟩, ε = b⁻⁴columnDim bounding P*P − 1 (the off-𝖲 amplitude sums at 1). Averaging over s, Cauchy–Schwarz and the second moment with constant one (Θ(s) = energy at {s}, sum_le_of_positive_type) give ∑_s Re⟨…⟩ ≤ #𝖦·columnDim/2·(1 + 9b⁻⁴ + φ); and, splitting 1 − e into the single-prime terms, ∑_x‖ρ(1 − e)ρ(s)Pe_x‖² ≤ ∑_i (𝖲-trace + off-𝖲 rows of 1 − g_i) ≤ 4b⁻⁴columnDim. Hence dim U_s ≤ ((1 + φ)/2 + 19/2·b⁻⁴)columnDim for some s.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "R = ρ(e), e = g₀ ⊗ g₁; fix F and φ; use the size facts of S.",
+   "lines": [
+    308,
+    308
+   ],
+   "lean": "  set R := ρ.asAlgebraHom (piTensorElem g); intro F φ; apply S.of_size_bounds; intros"
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "t ∈ ℝ with t² = (cν)⁻¹ (cν > 0); e is a central idempotent (IsCentralProj.piTensorElem); amplitudeSum(G(E)) = amplitudeSum(𝖲ᶜ) + amplitudeSum(𝖲) (amplitudeSum_split); each 1 − g_i is a central idempotent; P = t·Q.",
+   "lines": [
+    309,
+    311
+   ],
+   "lean": "  obtain ⟨⟨t, ht⟩, G, B, o⟩ := (isSquare_iff.2 (mul_pos hc S.unipCovolume_pos).le).inv,\n    IsCentralProj.piTensorElem hg, S.amplitudeSum_split .univ (S.ratMiddle E).besselSᶜ,\n    (hg · |>.one_sub); let P := t • Q",
+   "uses": [
+    {
+     "decl": "IsCentralProj.piTensorElem"
+    },
+    {
+     "decl": "Filling.amplitudeSum_split"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "hu: ⟨ρ(b)P(e_y), ρ(a)P(e_x)⟩ = amplitudeSum(G(E), x₁, a⁻¹b, y₁)(x₂, y₂)/ν (unitarity moves ρ(a) across, then hQ and t²c = 1/ν).",
+   "lines": [
+    312,
+    314
+   ],
+   "lean": "  have hu a b x y : ⟪ρ b (P (.single y 1)), ρ a (P (.single x 1))⟫_ℂ =\n      S.amplitudeSum .univ x.1 (a⁻¹ * b) y.1 (x.2, y.2) / S.unipCovolume := hρ a⁻¹ .. ▸ by\n    simp [← End.mul_apply, ← map_mul, P, ← mul_assoc, ← ofReal_mul, ← ht, hQ, field, hc.ne']",
+   "typed_fact": "⟪ρ b (P (.single y 1)), ρ a (P (.single x 1))⟫_ℂ =\n      S.amplitudeSum .univ x.1 (a⁻¹ * b) y.1 (x.2, y.2) / S.unipCovolume"
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "pr: for a central idempotent z, ρ(z) is self-adjoint (IsCentralProj.self_adjoint with the invariant inner product), so ⟨y, ρ(z)y⟩ = ⟨ρ(z)y, ρ(z)y⟩ ≥ 0.",
+   "lines": [
+    315,
+    316
+   ],
+   "lean": "  have pr {z} (hz : IsCentralProj z) y : ⟪_, _⟫_ℂ = _ :=\n    (hz.self_adjoint ρ 1 (innerₛₗ ℂ) hρ y _).trans congr(⟪y, $(hz.1.map ρ.asAlgebraHom) y⟫_ℂ)",
+   "uses": [
+    {
+     "decl": "IsCentralProj.self_adjoint"
+    }
+   ],
+   "typed_fact": "⟪_, _⟫_ℂ = _"
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "hb' i: Re(𝖲-trace of 1 − g_i) + ∑_a ‖off-𝖲 row_a of 1 − g_i‖ ≤ 2b⁻⁴columnDim (re_trace_besselS_le and sum_norm_amplitudeSum_le for 1 − g_i; Re ≤ |·| and a coordinate is at most the row norm).",
+   "lines": [
+    317,
+    318
+   ],
+   "lean": "  have hb' i := add_le_add (S.re_trace_besselS_le (o i) (hb i)) ((sum_norm_amplitudeSum_le i\n    (o i)).trans' (sum_le_sum fun a _ ↦ (PiLp.norm_apply_le _ a).trans' (re_le_norm _)))",
+   "uses": [
+    {
+     "decl": "Filling.re_trace_besselS_le"
+    },
+    {
+     "decl": "Filling.sum_norm_amplitudeSum_le"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Some s satisfies dim U_s − ε − ∑_x‖ρ(1 − e)ρ(s)Pe_x‖² ≤ columnDim/2·(1 + 9b⁻⁴ + φ): sum over s of finrank_sub_le_re_inner_dyadSum (P_s = ρ(s)P, the operator ρ(1 − e), U_s = R_s⁻¹(F), A = F ⊆ V: for v ∈ U_s, ρ(s)Pv − ρ(1 − e)ρ(s)Pv = ρ(e)ρ(s)Pv = t·R_s(v) ∈ F; ε from sum_norm_amplitudeSum_le with i = 0 and the central idempotent 1), compared with the average bound of step 8 (exists_le_of_sum_le).",
+   "lines": [
+    319,
+    323
+   ],
+   "lean": "  refine (exists_le_of_sum_le univ_nonempty (g := fun _ ↦ S.columnDim / 2 * (1 + 9 * (S.b ^ 4)⁻¹ +\n    φ)) ((sum_le_sum fun s _ ↦ finrank_sub_le_re_inner_dyadSum (stdOrthonormalBasis ..) (ρ s ∘ₗ P)\n    (ρ.asAlgebraHom (1 - piTensorElem g)) (F.comap (R.rangeRestrict ∘ₗ ρ s ∘ₗ Q)) (F.map\n    R.range.subtype) (Eq.trans_le ?_ (S.sum_norm_amplitudeSum_le 0 (.one_sub ⟨.zero, by simp⟩)))\n    fun _ ↦ (⟨_, F.smul_mem t ·, by simp [P, R]⟩)).trans ?_)).imp fun s h ↦ ?_",
+   "uses": [
+    {
+     "decl": "finrank_sub_le_re_inner_dyadSum"
+    },
+    {
+     "decl": "Filling.sum_norm_amplitudeSum_le"
+    }
+   ],
+   "ambient_uses": [
+    "Finset.exists_le_of_sum_le"
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The ε-hypothesis: (ρ(s)P)*(ρ(s)P) − 1 = P*P − 1 has entries amplitudeSum(𝖲ᶜ, x₁, 1, y₁)(x₂, y₂)/ν, since the 𝖲-part at 1 is ν·(identity) (amplitudeSum_besselS_one):",
+   "lines": [
+    324,
+    327
+   ],
+   "lean": "  · congr! 2; ext; rw [← basisFun_inner]\n    simp [inner_sub_right, LinearMap.adjoint_inner_right, inner_single_left, hu,\n      amplitudeSum_besselS_one, ite_div, add_div, B, apply_ite, S.unipCovolume_pos.ne',\n      Finsupp.single_apply, MonoidAlgebra.one_def]; grind",
+   "head_lines": [
+    324,
+    324
+   ],
+   "uses": [
+    {
+     "decl": "Filling.amplitudeSum_besselS_one"
+    }
+   ]
+  },
+  {
+   "id": "7.1",
+   "parent": "7",
+   "kind": "deduction",
+   "claim": "computed on basis vectors (adjoint, inner products of e_x; grind).",
+   "lines": [
+    325,
+    327
+   ],
+   "lean": "    simp [inner_sub_right, LinearMap.adjoint_inner_right, inner_single_left, hu,\n      amplitudeSum_besselS_one, ite_div, add_div, B, apply_ite, S.unipCovolume_pos.ne',\n      Finsupp.single_apply, MonoidAlgebra.one_def]; grind"
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "∑_s Re⟨dyad(ρ(s)P), dyad(A)⟩ ≤ #𝖦·columnDim/2·(1 + 9b⁻⁴ + φ): Re∑ = Re⟨∑_s dyad_s, dyad(A)⟩ ≤ ‖∑_s dyad_s‖·‖dyad(A)‖; ‖∑_s dyad_s‖² = #𝖦·∑_s Θ(s) with Θ(s) = energy(G(E), {s}) (inner_sum_sum_eq_card_mul: ⟨dyad_a, dyad_b⟩ = ∑_{x,y}|amplitudeSum(…, a⁻¹b, …)/ν|²);",
+   "lines": [
+    328,
+    337
+   ],
+   "lean": "  · grw [← re_sum, ← sum_inner, re_le_norm, norm_inner_le_norm, ← sq_le_sq₀, mul_pow,\n      @norm_sq_eq_re_inner ℂ, inner_sum_sum_eq_card_mul (energy (S.amplitudeSum .univ) {·}) ?H]\n    simp [@norm_sq_eq_re_inner ℂ, ↓inner_dyadSum, apply_ite, ← Submodule.coe_inner, mul_pow,\n      ← show φ *\n      _ = _ from div_mul_cancel_of_imp (mod_cast by bound [F.finrank_le]), orthonormal_iff_ite.1]\n    grw [sum_le_of_positive_type (fun _ ↦ by unfold energy; positivity) _ ?H ∅ (fun _ ↦\n      ⟨⊤, 1, by simp⟩) _ nofun, hD, ← four_mul_le_sq_add]\n    simp [mainEnergy]; field_simp [mass_pos, besselDegree_pos, ne_of_gt]; any_goals positivity\n    repeat norm_num [energy, sum_filter, norm_sq_eq, sum_prod_type, sum_div, hu, div_pow,\n      @sum_comm S.Classes _ S.BesselCoord, @sum_comm S.GRes]",
+   "head_lines": [
+    328,
+    329
+   ],
+   "uses": [
+    {
+     "decl": "inner_sum_sum_eq_card_mul"
+    },
+    {
+     "decl": "inner_dyadSum"
+    }
+   ]
+  },
+  {
+   "id": "8.1",
+   "parent": "8",
+   "kind": "deduction",
+   "claim": "‖dyad(A)‖² = ∑_{x,y}|⟨b_y, b_x⟩|² = dim F (orthonormal basis),",
+   "lines": [
+    330,
+    331
+   ],
+   "span": [
+    330,
+    5,
+    331,
+    8
+   ],
+   "lean": "simp [@norm_sq_eq_re_inner ℂ, ↓inner_dyadSum, apply_ite, ← Submodule.coe_inner, mul_pow,\n      ←"
+  },
+  {
+   "id": "8.2",
+   "parent": "8",
+   "kind": "deduction",
+   "claim": "and φ·dim range R = dim F (φ = dim F/dim range R, range R ≠ 0 when F ≠ 0),",
+   "lines": [
+    331,
+    332
+   ],
+   "span": [
+    331,
+    9,
+    332,
+    98
+   ],
+   "lean": "show φ *\n      _ = _ from div_mul_cancel_of_imp (mod_cast by bound [F.finrank_le]), orthonormal_iff_ite.1]",
+   "typed_fact": "φ *"
+  },
+  {
+   "id": "8.3",
+   "parent": "8",
+   "kind": "deduction",
+   "claim": "∑_s Θ(s) ≤ (1 + 9b⁻⁴)𝖽 (sum_le_of_positive_type with A = ∅; Θ ≥ 0 and of positive type by step 8; hB: ∑_{s∈Ω} energy({s}) = energy(Ω)), dim range R ≤ #𝖦·deg·mass (hD), and 4ab ≤ (a + b)²:",
+   "lines": [
+    333,
+    334
+   ],
+   "lean": "    grw [sum_le_of_positive_type (fun _ ↦ by unfold energy; positivity) _ ?H ∅ (fun _ ↦\n      ⟨⊤, 1, by simp⟩) _ nofun, hD, ← four_mul_le_sq_add]",
+   "uses": [
+    {
+     "decl": "Filling.sum_le_of_positive_type"
+    }
+   ],
+   "ambient_uses": [
+    "four_mul_le_sq_add"
+   ]
+  },
+  {
+   "id": "8.4",
+   "parent": "8",
+   "kind": "deduction",
+   "claim": "with 𝖽 = columnDim²/(deg·mass): (#𝖦)²(1 + 9b⁻⁴)columnDim²·φ ≤ (#𝖦·columnDim/2)²(1 + 9b⁻⁴ + φ)² (field_simp; positivity),",
+   "lines": [
+    335,
+    335
+   ],
+   "lean": "    simp [mainEnergy]; field_simp [mass_pos, besselDegree_pos, ne_of_gt]; any_goals positivity"
+  },
+  {
+   "id": "8.5",
+   "parent": "8",
+   "kind": "deduction",
+   "claim": "(the energy of {s} written as the double sum of |amplitude sums|²/ν², sums swapped).",
+   "lines": [
+    336,
+    337
+   ],
+   "lean": "    repeat norm_num [energy, sum_filter, norm_sq_eq, sum_prod_type, sum_div, hu, div_pow,\n      @sum_comm S.Classes _ S.BesselCoord, @sum_comm S.GRes]"
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "k: ∑_y ⟨Pe_y, ρ(⊗_i(1 − g_i))Pe_y⟩ ≥ 0 (pr for the central idempotent ⊗(1 − g_i)).",
+   "lines": [
+    338,
+    338
+   ],
+   "lean": "  have k := univ.sum_nonneg' fun y ↦ pr (.piTensorElem o) (P (.single y 1)) ▸ inner_self_nonneg"
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Expand: ‖ρ(1 − e)ρ(s)Pe_x‖² = ⟨Pe_x, ρ(1 − e)Pe_x⟩ (pr, unitarity, centrality); with the identity of step 11, ∑_x of it ≤ ∑_i ∑_x ⟨Pe_x, ρ(ι_i(1 − g_i))Pe_x⟩ (dropping −⊗(1 − g_i), by k), and each of these is Re(𝖲-trace) + (off-𝖲 diagonal) of 1 − g_i ≤ 2b⁻⁴columnDim (hb', amplitudeSum split by B).",
+   "lines": [
+    339,
+    339
+   ],
+   "span": [
+    339,
+    3,
+    339,
+    17
+   ],
+   "lean": "simp [add_div,"
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The identity ⊗_i(1 − g_i) = ∑_i ι_i(1 − g_i) − (1 − ⊗_i g_i) in ℂ[𝖦] (for two factors: (1 − g₀)⊗(1 − g₁) = (1 − g₀)⊗1 + 1⊗(1 − g₁) − (1 − g₀⊗g₁); ring).",
+   "lines": [
+    339,
+    344
+   ],
+   "span": [
+    339,
+    18,
+    344,
+    66
+   ],
+   "lean": "show piTensorElem (1 - g ·) = ∑ i,\n    piTensorElem (Pi.mulSingle i (1 - g i)) - (1 - piTensorElem g) by\n    ext; simp [← map_one piTensorElem, -map_one]; ring, ↓@norm_sq_eq_re_inner ℂ, ↓hρ, columnDim,\n    ↓pr G.one_sub, mul_add, mul_sum, @sum_comm (_ × _), asAlgebraHom_piTensorElem_mulSingle, B, (by\n    simpa using congr(ρ.asAlgebraHom $(G.2.commute (.single s 1)) ·).symm),\n    asAlgebraHom_eq_sum (ρ.comp _), by simpa using (hu · 1)] at *",
+   "typed_fact": "piTensorElem (1 - g ·) = ∑ i,"
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Combine: dim U_s ≤ columnDim/2(1 + 9b⁻⁴ + φ) + b⁻⁴columnDim + 4b⁻⁴columnDim = ((1 + φ)/2 + 19/2·b⁻⁴)columnDim (linarith).",
+   "lines": [
+    345,
+    345
+   ],
+   "lean": "  linarith"
+  }
+ ]
+}

@@ -1,0 +1,236 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Main:149:7",
+ "name": "eventually_primeError_le_rpow",
+ "file": "New/Main.lean",
+ "file_sha256": "b6b285737cc0c306f380442eae279fd3127693c1074e7978d80f8ffd14f4078e",
+ "commit": "72fead102f663d5c7a407964a13dc0cf9d977207",
+ "summary": "For large x take admissible data D at x; move log x₁ to a point u of the window [t, t²], t = 10⁶ log x, where R_{N₀} − (towerDeg/#thick)·R₁ is at most e^(−t); for the modified data, remainder_eq writes R_{N₀}(x) as m·rem/(m·a·#thick) plus that window quantity, and (⋆) bounds m·rem.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "It suffices to prove the bound for every x in a set that belongs to the filter atTop. Take x so large that (a) there are admissible data D for P with x_D = x, log x₁_D = x^(ε/6), (10⁶·log x)² ≤ log x₁_D, log log b_D = ε·log x and towerDeg(s_D)/log b_D ≤ #thick(D) (`exists_data`, using h); and (b) the window statement holds at t = 10⁶·log x (which tends to ∞ with x): for every X ∈ [0, e^t] there is u ∈ [t, t²] with R_{d,N₀}(e^u) − X·R_{d,1}(e^u) ≤ e^(−t). Statement (b) is `IsPolar.exists_window_sub_mul_le` for the two polar functions v ↦ R_{d,N₀}(e^v) and v ↦ R_{d,1}(e^v) (`isPolar_primeError`: d ≡ 7 mod 8, and N₀ and 1 are coprime to d, N₀ because N₁(P, 0) = N₀·towerDeg(0) is). Fix such x and D, with the hypotheses l: (10⁶·log x)² ≤ log x₁_D, e: log log b_D = ε·log x, H′: towerDeg(s_D)/log b_D ≤ #thick(D), and W: the window statement.",
+   "lines": [
+    151,
+    154
+   ],
+   "lean": "  filter_upwards [h.elim (exists_data P), tendsto_log_atTop.const_mul_atTop (r := 1e6) (by bound)\n    ((isPolar_primeError PrimeSevenModEight.mod_eight (P.coprime_N₁_d\n    0).coprime_mul_right).exists_window_sub_mul_le (isPolar_primeError PrimeSevenModEight.mod_eight\n    P.d.coprime_one_left))] with x ⟨D, _, _, l, e, H'⟩ W",
+   "uses": [
+    {
+     "decl": "exists_data"
+    },
+    {
+     "decl": "isPolar_primeError"
+    },
+    {
+     "decl": "IsPolar.exists_window_sub_mul_le"
+    },
+    {
+     "decl": "Parameters.coprime_N₁_d"
+    },
+    {
+     "decl": "PrimeSevenModEight"
+    }
+   ],
+   "ambient_uses": [
+    "Real.tendsto_log_atTop",
+    "Filter.Tendsto.const_mul_atTop",
+    "Filter.filter_upwards"
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Replace x by x_D = exp(log x_D) everywhere and simplify logarithms of exponentials: the hypotheses now speak of log x_D, log x₁_D = D.logX₁ and log b_D = D.logB.",
+   "lines": [
+    155,
+    155
+   ],
+   "lean": "  subst x; simp only [log_exp, Set.mem_preimage, ← exp_mul] at *",
+   "uses": [],
+   "ambient_uses": [
+    "Real.log_exp",
+    "Real.exp_mul"
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Record that #thick(D) has the lower size bound of towerDeg(s_D)/log b_D (from H′, `Data.hasLogLower_of_le`), and the scale conditions of D.",
+   "lines": [
+    156,
+    156
+   ],
+   "lean": "  obtain := D.hasLogLower_of_le H', D.scale",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "decl": "Data.hasLogLower_of_le"
+    },
+    {
+     "decl": "Data"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "witness",
+   "claim": "Apply W to X := towerDeg(s_D)/#thick(D): X ≥ 0, and X ≤ exp(10⁶·log x_D) by the size comparison of the data. This gives u with 10⁶·log x_D ≤ u ≤ (10⁶·log x_D)² and R_{d,N₀}(e^u) − X·R_{d,1}(e^u) ≤ exp(−10⁶·log x_D) (hypothesis w).",
+   "lines": [
+    158,
+    158
+   ],
+   "lean": "  obtain ⟨u, ⟨a, b⟩, w⟩ := W (towerDeg D.s / #D.thick) ⟨by bound, D.le_of_hasLogBound⟩",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "step": "3"
+    },
+    {
+     "decl": "Data.le_of_hasLogBound"
+    },
+    {
+     "decl": "towerDeg"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let D′ be the data D with log x₁ replaced by u (so x₁_{D′} = e^u and everything else is unchanged). D′ is admissible: of its scale conditions only 10⁶·log x ≤ log x₁, 10⁶·log x₁ ≤ log b and 6·log log x₁ ≤ log log b involve log x₁; the first is the lower bound on u, the others follow from u ≤ (10⁶·log x_D)² ≤ log x₁_D (hypothesis l) and the scale conditions of D.",
+   "lines": [
+    159,
+    159
+   ],
+   "lean": "  let D' := {D with logX₁ := u, scale := by grw [b, l] <;> grind}",
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "step": "1"
+    },
+    {
+     "decl": "Data"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "setup",
+   "claim": "The same lower size bound for #thick(D′) = #thick(D).",
+   "lines": [
+    160,
+    160
+   ],
+   "lean": "  have := D'.hasLogLower_of_le H'",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "decl": "Data.hasLogLower_of_le"
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "R_{d,N₀}(x_D) ≤ x_D^(8ε + 1/2 − 1), by the following chain.",
+   "lines": [
+    161,
+    167
+   ],
+   "lean": "  calc primeError P.d P.N₀ D.x = D'.m * D'.remainder / D'.m / D'.a / #D.thick + (primeError P.d P.N₀\n      D'.x₁ - towerDeg D.s / #D.thick * primeError P.d 1 D'.x₁) := by simp [remainder_eq, tops,\n      card_placeClass_eq, field, HasLogBound.pos D', ne_of_gt]\n    _ ≤ D'.logB ^ 2 * D'.budget / D'.m / D'.a / #D.thick + exp\n      (-(1e6 * D.logX)) := by grw [star_inequality, w]\n    -- the first term is `f log⁵ b / (m #thick) ≤ φ(N₀) log⁶ b / √x`, and `log b = x ^ ε`\n    _ ≤ _ := D'.le_of_hasLogBound (by grind)",
+   "uses": []
+  },
+  {
+   "id": "7.1",
+   "parent": "7",
+   "kind": "identity",
+   "claim": "R_{d,N₀}(x_D) = m_{D′}·rem(D′)/m_{D′}/a_{D′}/#thick(D) + (R_{d,N₀}(x₁_{D′}) − (towerDeg(s_D)/#thick(D))·R_{d,1}(x₁_{D′})): by `Data.remainder_eq` for D′, rem(D′) = a_{D′}·(#thick(D′)·(R_{d,N₀}(x_{D′}) − R_{d,N₀}(x₁_{D′})) + #tops(D′)·R_{d,1}(x₁_{D′})), where x_{D′} = x_D and #tops(D′) = towerDeg(s_D) (`Parameters.card_placeClass_eq`); m_{D′}, a_{D′} and #thick(D) are positive.",
+   "lines": [
+    161,
+    163
+   ],
+   "lean": "  calc primeError P.d P.N₀ D.x = D'.m * D'.remainder / D'.m / D'.a / #D.thick + (primeError P.d P.N₀\n      D'.x₁ - towerDeg D.s / #D.thick * primeError P.d 1 D'.x₁) := by simp [remainder_eq, tops,\n      card_placeClass_eq, field, HasLogBound.pos D', ne_of_gt]",
+   "uses": [
+    {
+     "step": "5"
+    },
+    {
+     "step": "6"
+    },
+    {
+     "decl": "Data.remainder_eq"
+    },
+    {
+     "decl": "Data.tops"
+    },
+    {
+     "decl": "Parameters.card_placeClass_eq"
+    },
+    {
+     "decl": "Data.HasLogBound.pos"
+    }
+   ]
+  },
+  {
+   "id": "7.2",
+   "parent": "7",
+   "kind": "deduction",
+   "claim": "… ≤ (log b_{D′})²·𝓑(D′)/m_{D′}/a_{D′}/#thick(D) + exp(−10⁶·log x_D): the inequality (⋆) for D′ (`star_inequality`: m_{D′}·rem(D′) ≤ (log b_{D′})²·𝓑(D′)) bounds the first term, and w the second.",
+   "lines": [
+    164,
+    165
+   ],
+   "lean": "    _ ≤ D'.logB ^ 2 * D'.budget / D'.m / D'.a / #D.thick + exp\n      (-(1e6 * D.logX)) := by grw [star_inequality, w]",
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "decl": "star_inequality"
+    }
+   ]
+  },
+  {
+   "id": "7.3",
+   "parent": "7",
+   "kind": "deduction",
+   "claim": "… ≤ x_D^(8ε + 1/2 − 1), by the size comparison for D′ (`Data.le_of_hasLogBound`), with the comparison of exponents proved from the hypotheses: the first term is f_{D′}·(log b_D)⁵/(m_{D′}·#thick(D)) ≤ φ(N₀)·(log b_D)⁶/√x_D (as f = φ(N₀)·towerDeg(s), #thick ≥ towerDeg(s)/log b, m ≥ √x), and log b_D = x_D^ε; the second is x_D^(−10⁶).",
+   "lines": [
+    167,
+    167
+   ],
+   "lean": "    _ ≤ _ := D'.le_of_hasLogBound (by grind)",
+   "uses": [
+    {
+     "step": "5"
+    },
+    {
+     "step": "6"
+    },
+    {
+     "step": "1"
+    },
+    {
+     "decl": "Data.le_of_hasLogBound"
+    }
+   ]
+  }
+ ]
+}

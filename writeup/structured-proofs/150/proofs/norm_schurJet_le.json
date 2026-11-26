@@ -1,0 +1,308 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Curve.JetDivisibility:65:7",
+ "summary": "The Schur jet is a combination, with integral coefficients y, of jets along products of minors (`sum_schur_smul_nablaBasis`), and is controlled by a jet of Θ composed with linear forms. Choose the integral frames M of `exists_null_coupling_frames` for the coefficients y: the substituted family z = p^g·M·y is null, so by IsIntegralOnNullCone the coefficients of Θ(ϖz) of degree ≤ B are integral. The jet along the product of minors equals a jet of Θ(ϖz) times a factor whose norm is ≥ |θ|^{coupling}·|ϖ|^B·p^{−m}. A jet of Θ(ϖz) along a monomial of exponent d (degree B) is d!·(an integral coefficient), and for B > 0 the factor from ∏_x d_x! has norm at most p^{−B/(p−1) + |Φ|N³(⌊log_p B⌋+1)} (Legendre: v_p(d_x!) ≥ d_x/(p−1) − (⌊log_p B⌋+1), at most |Φ|N³ variables): the factorials gain p^{−B/(p−1)} and lose at most p^{|Φ|N³(⌊log_p B⌋+1)}. (At B = 0 the bound of the statement, with Lean's Nat.log p 0 = 0, holds as well.)",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "statement",
+   "claim": "(Lines 69–71 end the statement: the line census takes the `:=` of `let N := card n'` for the start of the value, so the rest of the statement is owned here.)",
+   "lines": [
+    69,
+    71
+   ],
+   "lean": "  let N := card n'; let B := boxes κ N; let m := ∑ τ, ∑ h : Fin N, ∑ j, ∑ b, g τ h ((i' τ).1 h j b)\n      IsIntegralOnNullCone pr S ϖ θ B Θ → ‖schurJet κ Θ i' i‖ ≤ p ^ (m - ((1 / (p - 1) - ρ) * B + ω\n        * ∑ e ∈ S, ∑ σ, couplingCount p κ N ev σ (pr e σ) e - card Φ * N ^ 3 * (p.log B + 1))) := by",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Introduce N, B, m and the hypothesis hV (null-cone integrality up to degree B); L := the additive map F ↦ jet of Θ along F.",
+   "lines": [
+    72,
+    72
+   ],
+   "lean": "  intro N B m hV; let L := ((jet _).flip Θ).toAddMonoidHom",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "By `exists_val_coeff_le_val_eval`, choose integral values y of the variables such that the valuation of an integral combination is controlled by its value at y; with `sum_schur_smul_nablaBasis` the Schur jet is an integral combination of jets along products of minors evaluated at y, so it suffices to bound |L(product of minors at y)|.",
+   "lines": [
+    73,
+    75
+   ],
+   "lean": "  refine (exists_val_coeff_le_val_eval valuation ![AddMonoidAlgebra.map L _]).elim fun (y : _ →\n    valRingCp p) h ↦ .trans (coord_mem_of_coeff_mem ((valuation.leAddSubgroup _).comap L) _\n    (sum_schur_smul_nablaBasis hκ ..) (h 0) _) ?_",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "exists_val_coeff_le_val_eval"
+    },
+    {
+     "decl": "sum_schur_smul_nablaBasis"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "fact",
+   "claim": "p > 1.",
+   "lines": [
+    76,
+    76
+   ],
+   "lean": "  have : 1 < p := Fact.out",
+   "typed_fact": "1 < p",
+   "uses": []
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Frames M from `exists_null_coupling_frames` for the data y and θ.",
+   "lines": [
+    77,
+    77
+   ],
+   "lean": "  choose M hM hA using exists_null_coupling_frames pr S N κ ev (y ⟨⟨·, ·⟩, ·⟩) θ",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "exists_null_coupling_frames"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "setup",
+   "claim": "z(τ, b, a)(o) := p^{g(τ, h, b)}·(M_{τ,h} row · y_{τ,a}) if o matches (τ, b), else 0.",
+   "lines": [
+    78,
+    79
+   ],
+   "lean": "  let z := fun (τ, b, a) (o : (Σ h : Fin N, Fin h) × _) ↦\n    ite (o.2 = (τ, b)) (p ^ g τ o.1.1 b * M τ _ o.1.2 ⬝ᵥ (y ⟨⟨τ, a⟩, ·⟩)) 0",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The family linearSeries∘z is null (no constant term; its Frobenius couplings vanish modulo p and θ by (ii) of the frames, the exempted couplings being killed by the charge p^g ≡ 0); so hV applies to it.",
+   "lines": [
+    80,
+    85
+   ],
+   "lean": "  specialize hV (linearSeries ∘ z) (by simp) fun φ h0 j hj ↦ by\n    simp [sum_pow_char_pow, Finset.sum_mul_sum, MvPowerSeries.smul_eq_C_mul, mul_pow,\n      mul_mul_mul_comm _ (_ ^ _), @sum_comm _ _ (Φ × _), ← sum_mul]\n    exact sum_eq_zero fun o _ ↦ sum_eq_zero fun q _ ↦\n      flip id (hA (φ.comp _) h0 ⟨j, hj⟩ o.2.1 o.1.2 q.1.2) (by simp [apply_ite, CharP.cast_eq_zero,\n      z, NeZero.ne, zero_pow_eq, sum_prod_type, Prod.ext_iff, ↓mul_comm (_ ^ _)]; grind +splitImp)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "5"
+    }
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "hc: |θ|^{coupling}·(|ϖ|^B·p^{−m}) ≤ |∏ (det M_{τ,h})ᵀ·∏ ϖ·p^{g}|, from (i) of the frames.",
+   "lines": [
+    86,
+    88
+   ],
+   "lean": "  have hc : _ * (‖ϖ‖ ^ B * (↑p)⁻¹ ^ m) ≤ ‖∏ τ, ∏ h : Fin N, ∏ j, (valRingCp p).subtype\n    (M τ h)ᵀ.det * ∏ b, ϖ * p ^ g τ h ((i' τ).1 h j b)‖ := (mul_le_mul_of_nonneg_right hM\n    (by positivity)).trans (by simp [B, m, Fintype.prod_sigma, norm_p_eq_inv, ← pow_mul])",
+   "typed_fact": "_ * (‖ϖ‖ ^ B * (↑p)⁻¹ ^ m) ≤ ‖∏ τ, ∏ h : Fin N, ∏ j, (valRingCp p).subtype\n    (M τ h)ᵀ.det * ∏ b, ϖ * p ^ g τ h ((i' τ).1 h j b)‖",
+   "uses": [
+    {
+     "step": "5"
+    }
+   ]
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "Rewrite the evaluation of L at y as L applied to the evaluation, and multiply the goal by the positive factor of hc.",
+   "lines": [
+    89,
+    92
+   ],
+   "lean": "  erw [(by simp [eval, eval₂, Finsupp.sum_mapRange_index, L, map_finsuppSum, C_eq_smul_one,\n    mul_comm] : ∀ y f, eval y (AddMonoidAlgebra.map L f) = L (eval (C ∘ y) f)),\n    ← mul_le_mul_iff_right₀ (hc.trans_lt' (hϖ ▸ hπ ▸ by positivity)), ← norm_smul,\n      ← LinearMap.map_smul₂]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "The scaled product of minors equals the linear substitution (ϖ·z) of the product of determinants of variable matrices (shown at the end); by `jet_subst_linearSeries` the jet becomes a jet of Θ(ϖz).",
+   "lines": [
+    93,
+    94
+   ],
+   "lean": "  grw [← hc, (?_ : _ • _ = linSubst (of (ϖ * z · ·)) (∏ τ, ∏ h : Fin N, ∏ j, (of fun b i ↦\n    X (⟨h, i⟩, τ, (i' τ).1 h j b)).det)), ← jet_subst_linearSeries]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "jet_subst_linearSeries"
+    }
+   ]
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Expand the determinants (Leibniz formula) into a sum of monomials.",
+   "lines": [
+    95,
+    96
+   ],
+   "lean": "  simp only [det_apply, Fintype.prod_sum, X, ← monomial_sum_one, of_apply, prod_smul, map_sum,\n    LinearMap.sum_apply]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "Bound the sum by the maximum of its terms (ultrametric).",
+   "lines": [
+    97,
+    97
+   ],
+   "lean": "  apply norm_sum_le_of_forall_le_of_nonneg (by positivity)",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "setup",
+   "claim": "For one monomial, let d be its exponent.",
+   "lines": [
+    98,
+    98
+   ],
+   "lean": "  intros; set d : _ →₀ ℕ := Finset.sum ..",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "14",
+   "parent": null,
+   "kind": "fact",
+   "claim": "B = deg d.",
+   "lines": [
+    99,
+    99
+   ],
+   "lean": "  have e : B = d.degree := by simp [d, B, mul_comm]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "15",
+   "parent": null,
+   "kind": "estimate",
+   "claim": "For each variable x, Legendre's formula bounds v_p(d_x!) from below in terms of d_x/(p − 1) and ⌊log_p B⌋ + 1 (d_x ≤ B < p^{⌊log_p B⌋+1}; `padicValNat_factorial_mem_Icc`).",
+   "lines": [
+    100,
+    101
+   ],
+   "lean": "  apply flip id (d.support.sum_le_sum fun x _ ↦ (padicValNat_factorial_mem_Icc\n    ((d.le_degree x).trans_lt (p.lt_pow_succ_log_self this _))).1)",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "16",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Write the jet as d! times a coefficient of Θ(ϖz), norms via p-adic valuations.",
+   "lines": [
+    102,
+    102
+   ],
+   "lean": "  simp [norm_natCast_eq_inv_pow_padicValNat, smul_sum, smul_smul] at hV ⊢",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "17",
+   "parent": null,
+   "kind": "estimate",
+   "claim": "Use hV at d (degree ≤ B): the coefficient is integral; the number of variables is at most |Φ|·N³.",
+   "lines": [
+    103,
+    104
+   ],
+   "lean": "  grw +useKAbstract [hV e.ge, card_le_univ, card_prod, Fintype.card_sigma,\n    sum_le_card_nsmul _ _ N (by simp)]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "7"
+    }
+   ]
+  },
+  {
+   "id": "18",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Combine the exponents (linear arithmetic).",
+   "lines": [
+    105,
+    106
+   ],
+   "lean": "  simpa [*, m, d.degree_apply, ← sum_div, ← rpow_mul, ← rpow_add, this.pos, ← rpow_neg,\n    ← rpow_natCast p, ← rpow_mul_natCast] using (by linear_combination ·)",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "19",
+   "parent": null,
+   "kind": "computation",
+   "claim": "The identity of step 10: the product of minors scaled by the frames is the substitution of the product of determinants (multiplicativity of det, minors of products).",
+   "lines": [
+    107,
+    108
+   ],
+   "lean": "  simp only [nablaBasis, tableauPoly, minor, map_prod, AlgHom.map_det, RingHom.map_det, N,\n    smul_eq_C_mul, ← prod_mul_distrib, map_mul, mul_rotate (det _), ← det_mul_column, ← det_mul]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "20",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "Entrywise comparison.",
+   "lines": [
+    109,
+    109
+   ],
+   "lean": "  congr!; ext",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "21",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Each entry agrees after expanding the substitution.",
+   "lines": [
+    110,
+    111
+   ],
+   "lean": "  simp [z, linSubst, sum_prod_type, smul_eq_C_mul, mul_sum, rowSubst, sum_mul, entrywise,\n    @sum_comm n, apply_ite, mul_assoc, mul_comm (X _), mul_left_comm (C (M ..).1)]",
+   "typed_fact": null,
+   "uses": []
+  }
+ ]
+}

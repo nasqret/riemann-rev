@@ -1,0 +1,347 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.RealPlace.LocalTheorem:120:7",
+ "summary": "Decreasing induction on the floor l from ϱ + 1 to j: at each floor the weighted square integrates to at most c over the positions (lintegral_floorWeight_le), and the remaining kernel mass is pushed one floor down with the Plancherel bound parseval_heisenbergMeasure_of_box.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "fact",
+   "lines": [
+    124,
+    124
+   ],
+   "lean": "  obtain ⟨hB, I⟩ := Γ.measurableSet_positionsOfSize, fun {l n} ↦ by simpa using @hK.law l 1 n",
+   "claim": "positionsOfSize(Γ) is measurable (hB), and I: the law of the kernel with n = 1 changes upperPairing(F, l+1, k, g, ny) only by a phase of modulus one.",
+   "uses": [
+    {
+     "decl": "Gauge.measurableSet_positionsOfSize"
+    },
+    {
+     "decl": "Level.IsPairingKernel"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "fact",
+   "lines": [
+    125,
+    125
+   ],
+   "lean": "  let W l g y := ∫⁻ ν, Γ.positionsOfSize.indicator 1 (g⁻¹ * (ν * y)) ∂ascConv heisenbergMeasure l",
+   "claim": "W(l, g, y) = ∫ 1_{positionsOfSize(Γ)}(g⁻¹νy) d(η_0 ∗ ⋯ ∗ η_{l−1})(ν).",
+   "uses": [],
+   "typed_fact": null
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "fact",
+   "lines": [
+    126,
+    126
+   ],
+   "lean": "  let Φ l g y := ∞ * W l g y ⊓ ‖F.upperPairing (l + 1) k g y‖ₑ ^ 2",
+   "claim": "Φ(l, g, y) = min(∞·W(l, g, y), |upperPairing(F, l+1, k, g, y)|²).",
+   "uses": [],
+   "typed_fact": null
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "fact",
+   "lines": [
+    127,
+    128
+   ],
+   "lean": "  have V {l g y σ t} h : W l g y = W l (σ * g) (t * y) :=\n    (lintegral_eq_of_dirac_mconv_eq (s := σ) (t := t) h).trans (by simp [W])",
+   "claim": "V: W(l, g, y) = W(l, σg, ty) whenever δ_σ ∗ ascConv(η, l) = ascConv(η, l) ∗ δ_t.",
+   "uses": [
+    {
+     "decl": "lintegral_eq_of_dirac_mconv_eq"
+    }
+   ],
+   "typed_fact": "W l g y = W l (σ * g) (t * y)"
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "induction",
+   "lines": [
+    129,
+    135
+   ],
+   "lean": "  apply le_add_self.trans (Nat.decreasingInduction' (P := fun l ↦ ∃ ρ, SFinite ρ ∧ l * c + ∫⁻ x in\n    Γ.positionsOfSize, F.selfNorm l k x ∂F.groupMeasure ≤ 𝔰.n * c ∧ F.groupMeasure = ascConv\n    heisenbergMeasure l ∗ₘ ρ ∧ (∏ a ∈ range l, if a < 𝔰.ϱ then Γ.floorConst a else 1) * ∫⁻ g, ∫⁻ y,\n    Φ l g y ∂ρ ∂descConv F.floorMeasure 0 (l + 1) ≤ c) (fun l h _ ⟨ρ, _, z, e, i⟩ ↦ (fun a ↦ ⟨_,\n    inferInstance, .trans ?_ z, a⟩) ⟨e ▸ mconv_assoc .., .trans ?_ i⟩) hj.step ⟨F.upperMeasure 0,\n    inferInstance, by simp [selfNorm, weightedSquareSum], by simp [stackMeasure_zero_eq, ascConv],\n    e ▸ by gcongr ?_ * ∫⁻ g, ∫⁻ y, ?_ ∂_ ∂_ <;> simp [Φ, upperPairing, descConv]⟩).choose_spec.2.1",
+   "claim": "Decreasing induction on l, from ϱ + 1 down to j, of: there is an s-finite ρ with l·c + ∫_{positionsOfSize(Γ)} selfNorm(F, l, k, x) d𝖬^F ≤ (ϱ+1)c, 𝖬^F = ascConv(η, l) ∗ ρ, and (∏_{a<l} floorConst(Γ, a) for a < ϱ)·∫∫ Φ(l, g, y) dρ(y) d(θ^F_l ∗ ⋯ ∗ θ^F_0)(g) ≤ c. At l = ϱ + 1 take ρ = upperMeasure(F, 0) (selfNorm vanishes there, stackMeasure_zero_eq, and the definition of c); at l = j the first part gives the claim (drop j·c).",
+   "uses": [
+    {
+     "decl": "Level.stackMeasure_zero_eq"
+    },
+    {
+     "decl": "Level.selfNorm"
+    },
+    {
+     "decl": "Level.weightedSquareSum"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "computation",
+   "lines": [
+    136,
+    138
+   ],
+   "lean": "  · simp [hK.selfNorm_eq_add_succ h.le_pred, weightedSquare, add_one_mul, add_assoc]\n    grw [lintegral_add_left, ← add_le_add_left a.2, lintegral_lintegral_swap, ← lintegral_const_mul]\n    gcongr with g",
+   "claim": "Step l + 1 → l, first part: selfNorm(F, l, …) = ∫ weightedSquare(F, l, …) d(θ^F_l ∗ ⋯ ∗ θ^F_0) + selfNorm(F, l+1, …); it suffices that the weighted-square part integrates over the positions to at most c, compared pointwise in g.",
+   "uses": [
+    {
+     "decl": "Level.IsPairingKernel.selfNorm_eq_add_succ"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "computation",
+   "lines": [
+    139,
+    141
+   ],
+   "lean": "    grw [← lintegral_indicator hB, ← lintegral_mul_left_eq_self _ g⁻¹, a.1, lintegral_mconv_symm,\n      ← lintegral_const_mul]\n    any_goals fun_prop",
+   "claim": "Write the integral over positions with the indicator, translate by g⁻¹ (Haar), and use 𝖬^F = ascConv(η, l) ∗ ρ to integrate first over ν ∈ 𝒩_{<l}.",
+   "uses": [],
+   "ambient_uses": [
+    "MeasureTheory.lintegral_mul_left_eq_self"
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "deduction",
+   "lines": [
+    142,
+    148
+   ],
+   "lean": "    exact lintegral_mono fun y ↦ not_lt.1 fun n ↦ n.not_ge ((lintegral_le_of_ae_imp\n      ae_ascConv_mem_unipotentBelow fun ν h ↦ by simp [I h, Set.indicator, ← ofReal_norm]).trans\n      ((lintegral_mul_const _ (by fun_prop)).trans_le (mul_le_mul' ((Γ.lintegral_floorWeight_le\n      (by lia) g y ((exists_ne_zero_of_ae ae_ascConv_mem_unipotentBelow n.ne_bot).elim\n      (by simp; grind [→ IsPairingKernel.isNear_of_upperPairing_ne_zero, IsNear]))).trans\n      (by gcongr; grind)) (le_min ((top_mul fun z ↦ (exists_ne_zero_of_ae ((lintegral_eq_zero_iff\n      (by fun_prop)).1 z) n.ne_bot).elim (by simp_all)).ge.trans' le_top) le_rfl))))",
+   "claim": "For each y: the ν-integral of 1_{positions}·floorWeight·|k_{l+1}|² is at most (∏_{a<l} floorConst(Γ, a))·Φ(l, g, y) by lintegral_floorWeight_le (g near at l by the support of the kernel) and the law I; integrated against ρ and θ this is at most c.",
+   "uses": [
+    {
+     "decl": "Gauge.lintegral_floorWeight_le"
+    },
+    {
+     "decl": "lintegral_le_of_ae_imp"
+    },
+    {
+     "decl": "ae_ascConv_mem_unipotentBelow"
+    },
+    {
+     "decl": "exists_ne_zero_of_ae"
+    },
+    {
+     "decl": "Level.IsPairingKernel"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "computation",
+   "lines": [
+    149,
+    150
+   ],
+   "lean": "  grw [prod_range_succ, mul_assoc, descConv_succ (l + 1), lintegral_mconv_symm,\n    ← lintegral_const_mul (ite ..)]",
+   "claim": "Second part: split off the factor a = l of the product and θ^F_{l} from descConv; Fubini.",
+   "uses": [
+    {
+     "decl": "descConv_succ"
+    },
+    {
+     "decl": "lintegral_mconv_symm"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "computation",
+   "lines": [
+    151,
+    151
+   ],
+   "lean": "  gcongr with g",
+   "claim": "Compare the integrands for each g.",
+   "uses": [],
+   "typed_fact": null
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "computation",
+   "lines": [
+    152,
+    158
+   ],
+   "lean": "  grw [← lintegral_floorMeasure_congr rfl fun σ a ↦ lintegral_mul_left_eq_of_factor e\n    ae_ascConv_mem_unipotentBelow (by grind [ascConv_heisenbergMeasure_invariant])\n    (ascConv_heisenbergMeasure_dirac_comm _ a) _ fun s o y ↦ by simp [Φ,\n    @V (l + 1) _ y 1 s (by simp [ascConv_heisenbergMeasure_invariant o]), I o, ← ofReal_norm],\n    lintegral_lintegral_swap, ← lintegral_const_mul, lintegral_mconv_symm, lintegral_mono fun y ↦\n    if z : W (l + 1) g y = 0 then ((lintegral_mono fun n ↦ inf_le_left).trans_eq (by simpa (disch :=\n    with_unfolding_all fun_prop) [W, ascConv] using z)).trans zero_le else ?_]",
+   "claim": "Replace the integral over ρ by the integral over ascConv(η, l+1)-translates (lintegral_mul_left_eq_of_factor with S = 𝒩_{<l+1}, using V and I), exchange integrals, and discard the points where W(l+1, g, y) = 0.",
+   "uses": [
+    {
+     "decl": "Level.lintegral_floorMeasure_congr"
+    },
+    {
+     "decl": "Level.lintegral_mul_left_eq_of_factor"
+    },
+    {
+     "decl": "ae_ascConv_mem_unipotentBelow"
+    },
+    {
+     "decl": "ascConv_heisenbergMeasure_invariant"
+    },
+    {
+     "decl": "ascConv_heisenbergMeasure_dirac_comm"
+    },
+    {
+     "decl": "lintegral_mconv_symm"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "computation",
+   "lines": [
+    159,
+    159
+   ],
+   "lean": "  any_goals fun_prop",
+   "claim": "Measurability side goals.",
+   "uses": [],
+   "typed_fact": null
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "case",
+   "lines": [
+    160,
+    160
+   ],
+   "lean": "  simp +contextual only [Φ, ← V (ascConv_heisenbergMeasure_dirac_comm _ _), top_mul z]; split",
+   "claim": "Simplify Φ with V; split on l < ϱ (a lower floor with a Heisenberg measure) or l = ϱ.",
+   "uses": [],
+   "typed_fact": null
+  },
+  {
+   "id": "14",
+   "parent": null,
+   "kind": "deduction",
+   "lines": [
+    161,
+    164
+   ],
+   "lean": "  grw [Γ.parseval_heisenbergMeasure_of_box ⟨l, ‹_›⟩ F.g⁻¹ F.g 0 1 (hK.mono (by lia)) g y\n    (fun s c ↦ by simp [hK.3 _ (floorGroup_anti ‹_› c.1), simpleRootSum_eq_zero_of_mem_besselH])\n    (fun n a H ↦ ⟨And.intro a (by simp at H; simpa using And.imp (exists_ne_zero_of_ae\n    ae_ascConv_mem_unipotentBelow) hK.isNear_of_upperPairing_ne_zero H), by simp⟩) (by",
+   "claim": "l < ϱ: apply parseval_heisenbergMeasure_of_box on floor l with the unit g_F⁻¹, u = g_F, ε = 0, C = 1 and the kernel (mono to floor l+1); the twist identity holds because d commutes with H_j and σ vanishes on 𝖧, and the support condition comes from the law and isNear_of_upperPairing_ne_zero.",
+   "uses": [
+    {
+     "decl": "Gauge.parseval_heisenbergMeasure_of_box"
+    },
+    {
+     "decl": "Level.IsPairingKernel.mono"
+    },
+    {
+     "decl": "floorGroup_anti"
+    },
+    {
+     "decl": "exists_ne_zero_of_ae"
+    },
+    {
+     "decl": "ae_ascConv_mem_unipotentBelow"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "15",
+   "parent": null,
+   "kind": "fact",
+   "lines": [
+    165,
+    171
+   ],
+   "lean": "    rintro _ ⟨u, ⟨_, h₁, e₀⟩, _, o, k⟩\n    obtain ⟨t, ht, ν, hν, rfl⟩ :=\n      exists_floorGroup_mul_unipotentBelow (unitriGroup_anti l.le_succ o)\n    exact ⟨t, ⟨(mul_mem_cancel_right (unipotentBelow_le_unitriGroup hν)).1 o, ht⟩, _, by grind,\n      Γ.hasMatSize_box k, fun n ⟨hn, ⟨μ, hμ, e⟩, _⟩ ↦ ⟨_, conj_mem_unipotentBelow ht\n      (mul_mem (mul_mem hν h₁) (conj_mem_unipotentBelow (mul_mem u (inv_mem\n      hn)).1 (inv_mem (mul_mem hν hμ)))), (conj_mul_inv_close_to_one k e₀ e (by group) · _)⟩⟩)]",
+   "claim": "The centring hypothesis of the Plancherel bound: for a support point, write the element of Q_{l+1} that brings it to the box as tν (t ∈ H_{l+1}, ν ∈ 𝒩_{<l+1}); then the conjugated differences satisfy the column-size condition by conj_mul_inv_close_to_one (size 14).",
+   "uses": [
+    {
+     "decl": "exists_floorGroup_mul_unipotentBelow"
+    },
+    {
+     "decl": "unitriGroup_anti"
+    },
+    {
+     "decl": "unipotentBelow_le_unitriGroup"
+    },
+    {
+     "decl": "conj_mem_unipotentBelow"
+    },
+    {
+     "decl": "Gauge.conj_mul_inv_close_to_one"
+    },
+    {
+     "decl": "Gauge"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "16",
+   "parent": null,
+   "kind": "computation",
+   "lines": [
+    172,
+    172
+   ],
+   "lean": "  simp; ring_nf; rfl",
+   "claim": "The constants match (floorConst at l).",
+   "uses": [],
+   "typed_fact": null
+  },
+  {
+   "id": "17",
+   "parent": null,
+   "kind": "case",
+   "lines": [
+    173,
+    175
+   ],
+   "lean": "  grw [heisenbergMeasure_eq_dirac_one (by lia), ← hK.pivotModulus_sq_le (u := 1)\n    (by simp [FloorMassLe, IsNear, measureH_spec, (by lia : l = 𝔰.ϱ)]),\n    ← hK.enorm_upperPairing_le]; simp",
+   "claim": "l = ϱ: η_ϱ = δ_1; the bound is pivotModulus_sq_le with u = 1 (the floor mass of the near points is at most 1, measureH_spec) and enorm_upperPairing_le.",
+   "uses": [
+    {
+     "decl": "heisenbergMeasure_eq_dirac_one"
+    },
+    {
+     "decl": "Level.IsPairingKernel.pivotModulus_sq_le"
+    },
+    {
+     "decl": "Level.IsPairingKernel.enorm_upperPairing_le"
+    },
+    {
+     "decl": "Level"
+    }
+   ],
+   "typed_fact": null
+  }
+ ]
+}

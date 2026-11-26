@@ -1,0 +1,1365 @@
+% !TEX program = lualatex
+% ---------------------------------------------------------------------------------------------
+%  Readback note 30: The tower method at a place: floor measures, gauges and the bounds on each floor
+%
+%  Build:  python3 tools/rb.py note <slug>
+%
+%  One unit of a Lean artifact, rewritten as ordinary mathematics. The prose is hand-written. Lean names,
+%  line ranges and counts come from data.tex; quoted Lean statements are copied from the artifact by the build.
+%
+%  Rules of the text: standard terminology; every symbol is explained where it first appears and listed again
+%  in the notation at the end; no letter has two meanings; a proof is complete or says what it takes for granted;
+%  Lean names appear only in the LEAN lines and in the concordance.
+%
+%  The signature rule (the build enforces it): a function, relation or predicate that the artifact defines is
+%  written only through its notation macro, which the build makes from the spec (`notation`) with one slot for
+%  each explicit argument of the Lean definition. No argument is fixed and dropped, also not "for brevity" and
+%  not for one section. Every argument and every hypothesis of a stated declaration stands inside its
+%  statement, or in a Setting that the statement cites by number; only implicit and instance arguments (the
+%  ambient objects) may stand in the conventions.
+% ---------------------------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\ifdefined\pdfvariable\pdfvariable suppressoptionalinfo \numexpr 1+2+4+8\relax\fi
+\usepackage[a4paper,hmargin=35mm,top=22mm,bottom=27mm,footskip=12mm,nohead]{geometry}
+
+\usepackage{fontspec}
+\directlua{
+  luaotfload.add_fallback("gfallback", {"STIXTwoMath-Regular.otf:mode=node;", "DejaVuSans.ttf:mode=node;"})
+  luaotfload.add_fallback("gmonofallback", {"DejaVuSansMono.ttf:mode=node;", "STIXTwoMath-Regular.otf:mode=node;"})
+}
+\setmainfont{NewCM10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookItalic,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldItalic,SmallCapsFont=*-Book,SmallCapsFeatures={Letters=SmallCaps},
+  RawFeature={fallback=gfallback}]
+\setsansfont{NewCMSans10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookOblique,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldOblique,RawFeature={fallback=gfallback}]
+\setmonofont{JetBrainsMono}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,Scale=MatchLowercase,
+  RawFeature={-calt;-liga;fallback=gmonofallback}]
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage[math-style=TeX]{unicode-math}
+\setmathfont{NewCMMath-Book.otf}
+\emergencystretch=2.5em\relax
+
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows.meta,positioning,backgrounds}
+\usepackage[protrusion=true,expansion=true]{microtype}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{multicol}
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+
+\definecolor{ink}{HTML}{0F172A}
+\definecolor{inksoft}{HTML}{475569}
+\definecolor{inkfaint}{HTML}{94A3B8}
+\definecolor{rulegrey}{HTML}{CBD5E1}
+\definecolor{arith}{HTML}{C2410C}
+\definecolor{est}{HTML}{7C3AED}
+\definecolor{ana}{HTML}{0891B2}
+\definecolor{ok}{HTML}{047857}
+\definecolor{leancol}{HTML}{3730A3}
+
+\title{The tower method at a place: floor measures, gauges and the bounds on each floor}
+\author{grh-compact}
+\date{}
+
+% ------------------------------------------------------------------------------------- macros
+\newcommand{\leanfont}{\ttfamily\fontsize{8.6}{10.5}\selectfont\color{leancol}}
+\newcommand{\lean}[1]{\csname LN@#1\endcsname}
+\newcommand{\fillin}[1]{{\color{arith}\itshape[#1]}}  % a place of the template that is not written yet; the build reports every one that is left
+\newcommand{\leanquote}[1]{\csname LQ@#1\endcsname}
+\input{data.tex}
+
+\linespread{1.08}                       % 11 pt on 14.7 pt
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt plus 1.5pt minus 0.5pt}
+\setlength{\abovedisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\belowdisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\abovedisplayshortskip}{3pt plus 2pt}
+\setlength{\belowdisplayshortskip}{6pt plus 2pt minus 2pt}
+\emergencystretch=1.5em
+\clubpenalty=10000 \widowpenalty=10000 \displaywidowpenalty=10000
+\relpenalty=7000 \binoppenalty=9000
+\raggedbottom
+\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\sffamily\fontsize{7.6}{9}\selectfont\color{inkfaint}\thepage\,/\,\pageref*{LastPage}}
+\setlist{topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=4pt,leftmargin=2.1em,labelsep=0.55em}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\len}{\operatorname{len}}
+\newcommand{\cok}{\operatorname{cok}}
+\newcommand{\End}{\operatorname{End}}
+\newcommand{\Hom}{\operatorname{Hom}}
+\newcommand{\Gal}{\operatorname{Gal}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\kw}[1]{\emph{#1}}
+\newcommand{\m}[1]{\mbox{$#1$}}        % a short formula that must not be broken across lines
+\newcommand{\head}[1]{\par\addvspace{17pt plus 4pt minus 2pt}\Needspace{6\baselineskip}%
+  \noindent{\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\sect}[2]{\refstepcounter{section}\label{#2}\par\addvspace{19pt plus 4pt minus 2pt}\Needspace{7\baselineskip}%
+  \noindent\llap{{\fontsize{13.2}{16}\selectfont\bfseries\color{inkfaint}\thesection}\hspace{9pt}}%
+  {\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\subhead}[1]{\par\addvspace{9pt plus 2pt}\Needspace{4\baselineskip}\noindent\textbf{#1}\enspace\ignorespaces}
+% where a statement lives in the Lean archive
+\newcommand{\leantag}{{\sffamily\bfseries\fontsize{6.3}{8}\selectfont\color{leancol}\addfontfeatures{LetterSpace=7}LEAN}}
+\newcommand{\sep}{\unskip\nobreak\hspace{5pt}{\color{inkfaint}\textperiodcentered}\hspace{5pt plus 2pt}\ignorespaces}
+\newcommand{\leanline}[1]{\par\nopagebreak\vspace{-2.5pt}{\fontsize{8.9}{12.4}\selectfont\color{inksoft}\raggedright
+  \noindent\llap{\leantag\hspace{9pt}}#1\par}\vspace{1pt}}
+% a displayed statement in a tinted box: #1 colour, #2 text
+\newcommand{\statement}[2]{\par\addvspace{7pt}\begingroup\setlength{\fboxsep}{8.5pt}\setlength{\fboxrule}{0.6pt}%
+  \noindent\fcolorbox{#1!30!white}{#1!3!white}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{#2}}%
+  \endgroup\par\addvspace{7pt}}
+\newcommand{\nt}[2]{\par\noindent\hangindent=1.1em\hangafter=1 #1\enspace{\color{inksoft}#2}\par\vspace{1pt}}
+\newcommand{\legdot}[1]{\tikz[baseline=-0.62ex]\fill[#1] (0,0) circle (2.5pt);\hspace{3pt}}
+\newcommand{\crow}[4]{\csname CS@#1\endcsname & #2 & \textcolor{inksoft}{#3} & \textcolor{inksoft}{#4}\\}
+\newcommand{\leanquoteline}[2]{\par\noindent\hangindent=\dimexpr#1\fontdimen2\font+2.2em\relax\hangafter=1
+  \hspace*{#1\fontdimen2\font}#2}
+\newcommand{\quoted}[1]{\par\vspace{3pt}{\ttfamily\fontsize{7.5}{10.4}\selectfont\color{leancol}\raggedright
+  \setlength{\parskip}{0pt}\leanquote{#1}\par}\vspace{4pt}}
+\newcommand{\bx}[3]{{\sffamily\bfseries\fontsize{7.3}{9.2}\selectfont\color{#1!82!black}#2}\\[1.5pt]#3}
+\newcommand{\cs}[2]{\expandafter\newcommand\csname CS@#1\endcsname{#2}}
+
+% theorems
+\newtheoremstyle{plainx}{7pt plus 2pt}{7pt plus 2pt}{\itshape}{}{\bfseries}{.}{0.5em}{}
+\newtheoremstyle{uprightx}{7pt plus 2pt}{7pt plus 2pt}{}{}{\bfseries}{.}{0.5em}{}
+\theoremstyle{plainx}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{uprightx}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{setting}[theorem]{Setting}          % hypotheses shared by several statements; each of them cites it by number
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\renewcommand{\qedsymbol}{{\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.5pt}\fbox{\rule{0pt}{0.46em}\hspace{0.46em}}}}
+% what holds throughout the note: the ambient objects only (implicit and instance arguments), never a hypothesis
+\newenvironment{conventions}{\par\addvspace{5pt}\noindent\textbf{Conventions.}\enspace\ignorespaces}{\par\addvspace{3pt}}
+\makeatletter
+\renewenvironment{proof}[1][Proof]{\par\pushQED{\qed}\normalfont\topsep0pt\partopsep0pt
+  \trivlist\item[\hskip\labelsep\itshape #1.]\ignorespaces}{\popQED\endtrivlist\@endpefalse}
+\makeatother
+
+\input{othermacros.tex}
+% hand macros of the three notes of unit 132 (objects of the background library; letters of shared/PLAN-132.md)
+\newcommand{\cL}{\mathcal{L}}
+\newcommand{\CC}{\mathbb{C}}
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\NN}{\mathbb{N}}
+\newcommand{\dd}{\mathrm{d}}
+\newcommand{\GT}[1]{G(#1)}
+\newcommand{\JT}[1]{J(#1)}
+\newcommand{\Hl}[2]{\mathcal{H}_{#1}(#2)}
+\newcommand{\Ql}[2]{\mathcal{Q}_{#1}(#2)}
+\newcommand{\Nb}[2]{\mathcal{N}_{<#1}(#2)}
+\newcommand{\Nf}[2]{\mathcal{N}_{#1}(#2)}
+\newcommand{\UT}[1]{\mathcal{U}(#1)}
+\newcommand{\modA}{\operatorname{mod}_A}
+\newcommand{\ZT}[2]{Z_{#1}(#2)}
+\newcommand{\sd}{\operatorname{sd}}
+\newcommand{\wl}[2]{w_{#1}(#2)}
+\newcommand{\wo}[2]{w^{\circ}_{#1}(#2)}
+\newcommand{\ip}[2]{\langle #1,#2\rangle}
+\newcommand{\gL}[1]{g_{#1}}
+\newcommand{\BoxL}[1]{\operatorname{Box}(#1)}
+\newcommand{\Posn}[1]{\operatorname{Posn}(#1)}
+\newcommand{\Ball}[1]{\mathfrak{B}(#1)}
+\newcommand{\etab}[1]{\eta_{<#1}}
+\newcommand{\vol}{\operatorname{vol}}
+\newcommand{\cLC}[1]{\mathcal{L}_{\CC}(#1)}
+\newcommand{\Gone}[1]{G_1(#1)}
+\newcommand{\Jone}[1]{J_1(#1)}
+\newcommand{\volU}[1]{\vol\mathrm{U}(#1)}
+\newcommand{\hw}[3]{\operatorname{hw}_{#1,#2}(#3)}
+\newcommand{\damp}[2]{\ell_{#1}(#2)}
+\newcommand{\bandc}[1]{\Theta(#1)}
+\newcommand{\cellc}[1]{c_G(#1)}
+\newcommand{\corr}[3]{J^{#1}_{#2}(#3)}
+\newcommand{\boost}[2]{\chi_{#1}(#2)}
+\newcommand{\quadric}[2]{\delta^{(#2)}(#1)}
+\newcommand{\Inp}[1]{\textup{(#1)}}
+\newcommand{\emb}[1]{\underline{#1}}
+\newcommand{\uq}[1]{\mathrm{u}(#1)}
+\newcommand{\muz}{\mu^{0}}
+\newcommand{\bs}[1]{\operatorname{bs}(#1)}
+\newcommand{\frbox}[1]{\operatorname{FB}(#1)}
+\newcommand{\cay}[1]{\operatorname{cay}(#1)}
+\newcommand{\cayd}[1]{\mathsf{j}(#1)}
+\newcommand{\gd}[1]{\mathsf{g}(#1)}
+\newcommand{\Ocell}[1]{\mathcal{C}(#1)}
+\newcommand{\chart}{\operatorname{ch}}
+\newcommand{\chartc}{\operatorname{cc}}
+\newcommand{\btan}{\operatorname{bt}}
+% where each declaration of the concordance is treated
+\cs{invCorner}{Definition~\ref{d:cell}}
+\cs{cornerDefect}{Definition~\ref{d:cell}}
+\cs{openCell}{Definition~\ref{d:cell}}
+\cs{IsBoundedInCell}{Definition~\ref{d:cell}}
+\cs{gramDiscRealeq}{Definition~\ref{d:cell}}
+\cs{memopenCelliff}{Definition~\ref{d:cell}}
+\cs{continuousgramDiscReal}{Definition~\ref{d:cell}}
+\cs{isOpenopenCell}{Definition~\ref{d:cell}}
+\cs{cornerDefectpos}{Definition~\ref{d:cell}}
+\cs{diagLast}{Definition~\ref{d:section}}
+\cs{sectionCoeff}{Definition~\ref{d:section}}
+\cs{sectionFrame}{Definition~\ref{d:section}}
+\cs{sectionMatrix}{Definition~\ref{d:section}}
+\cs{sqrteqsqrtcornerDefect}{Definition~\ref{d:section}}
+\cs{diagLastsqrtmulinv}{Definition~\ref{d:section}}
+\cs{sectionMatrixmulframeCols}{Definition~\ref{d:section}}
+\cs{frameColsgramsectionMatrix}{Definition~\ref{d:section}}
+\cs{gramSection}{Definition~\ref{d:gsec}}
+\cs{coegramSection}{Definition~\ref{d:gsec}}
+\cs{gramSectioneventuallyEq}{Definition~\ref{d:gsec}}
+\cs{realFrameGramgramSection}{Definition~\ref{d:gsec}}
+\cs{openCellChart}{Definition~\ref{d:chart}}
+\cs{chartCoords}{Definition~\ref{d:chart}}
+\cs{besselTangent}{Definition~\ref{d:chart}}
+\cs{RealPlaceSizes}{Definition~\ref{d:rps}}
+\cs{tenle}{Definition~\ref{d:rps}}
+\cs{haarRatio}{Definition~\ref{d:ratio}}
+\cs{gauge}{Definition~\ref{d:cgauge}}
+\cs{frameVolume}{Definition~\ref{d:vol}}
+\cs{frameXPart}{Definition~\ref{d:vol}}
+\cs{continuousframeVolume}{Definition~\ref{d:vol}}
+\cs{frameXPartunipotentOfinvmul}{Definition~\ref{d:vol}}
+\cs{frameVectormul}{Lemma~\ref{l:fv}}
+\cs{frameVectoreqsum}{Lemma~\ref{l:fv}}
+\cs{normsumlemulnormsumframeVector}{Lemma~\ref{l:fv}}
+\cs{continuousframeVector}{Lemma~\ref{l:fv}}
+\cs{normframeVectorle}{Lemma~\ref{l:fv}}
+\cs{existsnormleofbesselSizele}{Lemma~\ref{l:bsnorm}}
+\cs{besselSizelenormmul}{Lemma~\ref{l:bsnorm}}
+\cs{continuousbesselSize}{Lemma~\ref{l:bsnorm}}
+\cs{besselSizele}{Lemma~\ref{l:bsnorm}}
+\cs{besselSizebesselSmul}{Lemma~\ref{l:bsnorm}}
+\cs{normleofmemframeBox}{Lemma~\ref{l:framebox}}
+\cs{norminclMatrixleone}{Lemma~\ref{l:framebox}}
+\cs{normJ}{Lemma~\ref{l:framebox}}
+\cs{norminnerJle}{Lemma~\ref{l:framebox}}
+\cs{realFrameGrameqinner}{Lemma~\ref{l:rfg}}
+\cs{normrealFrameGramlemul}{Lemma~\ref{l:rfg}}
+\cs{realFrameGrammulinvariant}{Lemma~\ref{l:rfg}}
+\cs{realFrameGrameqframeMatrixmul}{Lemma~\ref{l:rfg}}
+\cs{besselSizeleofdual}{Lemma~\ref{l:dual}}
+\cs{measurablegramSection}{Lemma~\ref{l:gsec}}
+\cs{differentiableAtsectionMatrixuncurry}{Lemma~\ref{l:secnorm}}
+\cs{differentiableAtsectionMatrix}{Lemma~\ref{l:secnorm}}
+\cs{normsectionMatrixle}{Lemma~\ref{l:secnorm}}
+\cs{existseqmulgramSectionmul}{Lemma~\ref{l:double}}
+\cs{memopenCellandboundsofnear}{Lemma~\ref{l:near}}
+\cs{logDerivUunipotentOfmulembedH}{Lemma~\ref{l:logd}}
+\cs{existssymmeqchartCoordsskewOfReal}{Lemma~\ref{l:coords}}
+\cs{orthonormal}{Lemma~\ref{l:orth}}
+\cs{euclideanenormsqeqsum}{Lemma~\ref{l:orth}}
+\cs{lintegralmulleofframeMatrixle}{Lemma~\ref{l:fmle}}
+\cs{lintegralgramSectionintegralle}{Lemma~\ref{l:sob}}
+\cs{existsorthonormalkerlintegralle}{Lemma~\ref{l:ker}}
+\cs{frameVolumepos}{Lemma~\ref{l:volpos}}
+\cs{frameVolumemulleft}{Lemma~\ref{l:volpos}}
+\cs{tsuminvindexpowleofcongr}{Lemma~\ref{l:count}}
+\cs{middlesharedvectorle}{Lemma~\ref{l:frames}}
+\cs{coleqzeroofnormltone}{Lemma~\ref{l:frames}}
+\cs{eqofframeImageeq}{Lemma~\ref{l:frames}}
+\cs{existsframeImagetoRowseqadd}{Lemma~\ref{l:translate}}
+\cs{openCellChartjacobian}{Theorem A (i)}
+\cs{openCellChartinjOn}{Theorem A (ii)}
+\cs{lelintegralofgramSection}{Theorem A (iii)}
+\cs{haarRatiospec}{Theorem B}
+\cs{opencell}{Theorem C}
+\cs{hasSchurBoundofconvolveeq}{Theorem D (i)}
+\cs{existscutisCutPair}{Theorem D (ii)}
+\cs{existskernelframeVolumele}{Theorem E}
+
+\begin{document}
+\color{ink}
+
+{\raggedright
+{\sffamily\bfseries\fontsize{7.2}{9}\selectfont\color{leancol}\addfontfeatures{LetterSpace=8}READBACK NOTE 30\par}
+\vspace{5pt}
+{\fontsize{21.5}{25.5}\selectfont\bfseries The tower method at a place: floor measures, gauges and the bounds on each floor\par}
+\vspace{5pt}
+{\fontsize{12.4}{16}\selectfont\itshape\color{inksoft} One unit of the Lean artifact \ArtifactName, read back into
+mathematics\par}}
+\vspace{8pt}
+{\color{rulegrey}\hrule height 0.6pt}
+\vspace{7pt}
+\thispagestyle{empty}
+
+\textbf{Summary.} At the complex place the unitary group $\Gone{\mathfrak{s}}$ has two descriptions that this note
+compares. The \emph{tower} of the companion Note~T writes an element by floors; the \emph{open-cell chart} writes
+it as $u\,\emb{k}\,\gramSection{Z}\,(v\,\emb{h})^{-1}$, with $Z$ the frame Gram matrix, $\gramSection{Z}$ an explicit section, $u,v$ in the
+unipotent group that fixes the frame and $k,h$ in the compact group $\mathrm{U}(\kappa)$. The Jacobian of the chart
+is $\gd{Z}^{k-1}$ times two Cayley weights, and the chart is injective; hence the tower measure is a multiple
+$\haarRatio{\mathfrak{h}}$ of Haar measure with $\haarRatio{\mathfrak{h}}\le\volU{r}/\volU{k}$. The same chart gives a mean-square bound for
+products of Bessel functions on the open cell. The note also normalises and cuts off a peaked Bessel function,
+with Schur bounds for its derivatives, and bounds the volume weight $\Delta$ by a kernel of Hua type.
+
+\statement{leancol}{\fontsize{9.6}{13.2}\selectfont\textbf{What this note is.} The artifact \ArtifactName{} is a
+body of Lean code whose final theorems are the Riemann hypothesis and the generalized Riemann hypothesis for Dirichlet
+$L$-functions. Its authors report that it compiles and that Lean's kernel accepts these theorems from the three
+standard axioms; nothing was built for this note. That is a statement about a formal text: no mathematician has read
+the argument through, and this note does not say that the Riemann hypothesis is proved. The note treats one part of
+one unit of the artifact (the folder of the analysis at the real places): \UnitInNote{} of the unit's \UnitMembers{}
+declarations, those of ten files; two companion notes treat the others (Note~T, \emph{The tower method at a place:
+floor measures, gauges and the bounds on each floor}; Note~L, \emph{The local theorem for floor forms and the band
+limits at the complex place}). Every result of the ten files is stated here and was compared, argument by argument,
+with its Lean text. The proofs are complete for the lemmas on norms, on the section and on the volume weight; for
+Theorems A to~E they follow the formal proofs, which were read line by line, and give every step that carries an
+idea, while long matrix identities and comparisons of exponents are named and left to the formal text. Classical
+results of the background library are quoted (Section~\ref{s:inputs}). The Lean text read is \PinText; Appendix~A is
+the concordance of \ConcDecls{} declarations.}
+
+\sect{The statements}{s:intro}
+Notation is fixed in Section~\ref{s:setting}: $\Gone{\mathfrak{s}}$ is the unitary group of the hermitian space
+$V=\CC^{r}$ with $\varrho$ hyperbolic planes, a positive part $\langle x_i\rangle_{i\in\kappa}$ and a negative
+vector~$z$; $Z(y)$ is the frame Gram matrix of $y$; $\gd{Z}=|\det Z|^2-|D_\varrho(Z)|^2$, with $D_\varrho$ the leading
+principal minor of order $\varrho$; $\Ocell{\mathfrak{s}}$ is the open cell $\{\gd{Z}>0\}$; $\mathcal{U}^0$ is the
+group of the unipotent elements $\uq{q}$ that fix the frame, with its Haar measure $\muz$; $\emb{h}$ is the image of
+$h\in\mathrm{U}(\kappa)$.
+
+\statement{arith}{\phantomsection\label{t:A}\textbf{Theorem A (the open-cell chart).}\enspace Let $\mathfrak{s}$ be
+a shape, and let $\chart$ be the map that sends a parameter $p=(Z,\theta,q,\eta,q')$ to
+$\uq{q}\,\emb{\cay{\tilde\theta}}\,\gramSection{Z}\,\bigl(\uq{q'}\,\emb{\cay{\eta}}\bigr)^{-1}\in\Gone{\mathfrak{s}}$
+(Definition~\ref{d:chart}).
+
+\textbf{(i)} There is a real-linear isomorphism $e$ from the space of the parameters onto the space of the real
+$r\times r$ matrices that preserves Lebesgue measure and such that, at every $p$ with $Z\in\Ocell{\mathfrak{s}}$,
+the chart is differentiable and its logarithmic derivative $\mathrm{D}^{\log}\chart(p)$ satisfies
+\[\bigl|\det\bigl(e^{-1}\circ\mathrm{sk}\circ\mathrm{D}^{\log}\chart(p)\bigr)\bigr|=\gd{Z}^{\,k-1}\cdot\cayd{\tilde\theta}\cdot\cayd{\eta}.\]
+
+\textbf{(ii)} The chart is injective on the set of the parameters with $Z\in\Ocell{\mathfrak{s}}$.
+
+\textbf{(iii)} Let $f\colon\Gone{\mathfrak{s}}\to[0,\infty]$ be measurable and $L\in[0,\infty]$. If for every
+$k\in\mathrm{U}(\kappa)$
+\[L\le\int_{\Ocell{\mathfrak{s}}}\cellc{\mathfrak{s}}\,\gd{Z}^{k-1}\int_{\mathrm{U}(\kappa)}\iint
+f\bigl(u\,\emb{k}\,\gramSection{Z}\,(v\,\emb{h})^{-1}\bigr)\,\dd\muz(u)\,\dd\muz(v)\,\dd h\,\dd Z,\]
+then $L\le\int_{\Gone{\mathfrak{s}}}f(y)\,\dd y$.}
+\leanline{\lean{openCellChartjacobian}\sep\lean{openCellChartinjOn}\sep\lean{lelintegralofgramSection}}
+
+\statement{arith}{\phantomsection\label{t:B}\textbf{Theorem B (the tower measure at the complex place).}\enspace Let
+$\mathfrak{s}$ be a shape, $\rho$ and $b$ real numbers, $s_0$ a natural number, and $\mathfrak{h}$ real-place sizes
+in $\RealPlaceSizes{\mathfrak{s}}{\rho}{s_0}{b}$ (Definition~\ref{d:rps}), with their level $\cLC{\mathfrak{h}}$
+(Definition~\ref{d:clevel}). Then the constant $\haarRatio{\mathfrak{h}}$ of Definition~\ref{d:ratio} satisfies:
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item $\haarRatio{\mathfrak{h}}\ne0$ and $\haarRatio{\mathfrak{h}}\ne\infty$;
+\item $\groupMeasure{\cLC{\mathfrak{h}}}=\haarRatio{\mathfrak{h}}\cdot\dd y$, the Haar measure of
+  $\Gone{\mathfrak{s}}$; in particular the tower measure is a Haar measure;
+\item for every measurable $f\colon\Gone{\mathfrak{s}}\to[0,\infty]$ that is invariant under left translations by
+  $\UT{T}$: $\int f\,\dd\upperMeasure{\cLC{\mathfrak{h}}}{0}=\haarRatio{\mathfrak{h}}\int f\,\dd\dot y$;
+\item $\dfrac{\volU{k}}{\volU{r}}\cdot\haarRatio{\mathfrak{h}}\le1$.
+\end{enumerate}}
+\leanline{\lean{haarRatiospec}}
+
+\statement{arith}{\phantomsection\label{t:C}\textbf{Theorem C (the open-cell bound).}\enspace Let $\mathfrak{s}$ be a
+shape, $B$ a real number, $f$ a natural number and $X$ a Bessel system for $(\mathfrak{s},B,f)$
+(Section~\ref{s:inputs}), with full function $\Phi_0\colon\Gone{\mathfrak{s}}\to\CC^I$ and formal degree $\deg$. Let
+$\gamma,y\in\Gone{\mathfrak{s}}$ and $\rho$ real with $\gd{Z(\gamma)}>0$, $y\in\frbox{\rho}$,
+$\gamma^{-1}y\in\frbox{\rho}$ and $B\le\rho$. Then there are a compact set $A\subseteq\Gone{\mathfrak{s}}$, a
+finite measure $\nu$ on $\Gone{\mathfrak{s}}$, a probability measure $m$ on $\mathrm{U}(\kappa)\times\mathcal{U}^0$
+and a measurable map $t\colon\mathrm{U}(\kappa)\times\mathcal{U}^0\to\Gone{\mathfrak{s}}$ such that:
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item for every measurable bounded $\varphi\colon\Gone{\mathfrak{s}}\to\CC$,
+\[\int\sum_{i,i'\in I}\Bigl|\int_A\varphi(y')\,\Phi_{0,i}(\gamma\,t(x)\,y')\,\overline{\Phi_{0,i'}(t(x)\,y')}\,\dd y'\Bigr|^{2}\dd m(x)\le\int|\varphi|^2\,\dd\nu;\]
+\item $\nu(\Gone{\mathfrak{s}})\le\Bigl(\dfrac{\rho^{9n}}{\gd{Z(\gamma)}}\Bigr)^{10^{5}n^{4}}\cdot
+  \dfrac{|I|^{2}}{\deg\cdot\cellc{\mathfrak{s}}\cdot(\gd{Z(\gamma)}/2)^{k-1}}$;
+\item for $m$-almost every $x$: $t(x)$ lies in the group generated by $\mathcal{U}^0$ and $\Hl{n}{T}$, and every
+  $y'\in\frbox{\rho}$ with $\bs{\gamma\,t(x)\,y'}\le\rho$ lies in $A$.
+\end{enumerate}}
+\leanline{\lean{opencell}}
+
+\statement{arith}{\phantomsection\label{t:D}\textbf{Theorem D (the Bessel cut).}\enspace Let $\mathfrak{s}$ be a
+shape, $I$ a finite set, $\varepsilon$ a family of signs with a frame $\mathsf{p}$ of $\Jone{\mathfrak{s}}$
+(Section~\ref{s:inputs}), $\mathrm{rep}$ a homomorphism from $\mathrm{U}(\kappa)$ to the unitary group of $\CC^I$,
+$A_0$ and $L$ natural numbers, and $l$ a parameter with a large gap $A_0$ and with $|l_a|\le L$ for all $a$; write
+$\deg_l$ for its formal degree and $\psi_l$ for its coefficient in the frame.
+
+\textbf{(i)} Let $\Phi_0\colon\Gone{\mathfrak{s}}\to\CC^I$ be a Bessel function for $\mathrm{rep}$ that is integrable
+for $\dd\dot y$, and $B$ a real number. If $\Phi_0*(\deg_l\psi_l)=\Phi_0$ and
+$(r+1)^{4}(L+r+1+2n^{2})\le B$, then $\Phi_0$ has the Schur bounds with respect to $\mathrm{rep}$, $B$ and the
+constant $\deg_l^{-1}\int|\Phi_0|^2\,\dd\dot y$.
+
+\textbf{(ii)} Let $f\ne0$ and $N$ be natural numbers, $b$ a real number, $x\in\Gone{\mathfrak{s}}$ and
+$Y\colon\Gone{\mathfrak{s}}\to\CC^I$ with a peak at $x$ of constant $b^{N}$ (for $l$ and $\mathrm{rep}$). Suppose
+$\bs{x}\le b^{5n}$, $2000\le b$, $N+99r^{2}\le r^{3}$, $r+L+1\le b^{4}$ and $3r^{3}f\le A_0$. Then there are
+continuous $\Phi_0,\Phi\colon\Gone{\mathfrak{s}}\to\CC^I$ with $\Phi_0*(\deg_l\psi_l)=\Phi_0$ such that
+$(\Phi_0,\Phi)$ is a cut pair with respect to $b$, $f$ and $\mathrm{rep}$.}
+\leanline{\lean{hasSchurBoundofconvolveeq}\sep\lean{existscutisCutPair}}
+
+\statement{arith}{\phantomsection\label{t:E}\textbf{Theorem E (a kernel for the volume weight).}\enspace Let
+$\mathfrak{s}$ be a shape, $y\in\Gone{\mathfrak{s}}$ and $\theta$ a real number with $\bs{y}\le\theta$. Let $j$ be a
+natural number with $j\le n$, $\sigma$ a finite set with an injection $e\colon\sigma\to\{0,\dots,j-1\}$, $R$ a
+complex $\sigma\times\sigma$ matrix with $\det R\ne0$, $Z$ a complex $n\times n$ matrix whose leading $j\times j$
+block $Z_j$ has $\det Z_j\ne0$, and $V$ a complex $\kappa\times j$ matrix. Then there is a measurable function
+$K$ on the complex $\kappa\times\sigma$ matrices, with values in $[0,\infty]$, such that
+\[\int K(a)\,\dd a\ \le\ \Bigl(\frac{(2\theta^{2})^{j}}{|\det Z_j|}\Bigr)^{k+n}\cdot
+\Bigl(\frac{\pi^{|\sigma|}}{|\sigma|!\,\bigl(\theta^{|\sigma|}\,|\det R|\bigr)^{2}}\Bigr)^{k},\]
+and such that for all $\gamma\in\Gone{\mathfrak{s}}$ and all complex $\kappa\times\sigma$ matrices $A$ with
+$Z(\gamma)=Z$, with $\gamma$ in normal form at $j$, and with
+$\frameXPart{\gamma}\,\mathsf{I}_j=V+A\,R\,\mathsf{E}^{*}Z_j$,
+\[\Bigl(\frac{\frameVolume{y}}{\frameVolume{\gamma^{-1}y}}\Bigr)^{k+n}\le K(A).\]
+Here $\mathsf{I}_j$ is the $n\times j$ matrix of the inclusion of the first $j$ frame positions and $\mathsf{E}$ the
+$j\times\sigma$ matrix of $e$.}
+\leanline{\lean{existskernelframeVolumele}}
+
+\sect{The setting}{s:setting}
+\begin{conventions}\phantomsection\label{c:conventions}
+$\mathfrak{s}=(\varrho,\kappa,k_0)$ is a shape; $n=\varrho+1$, $k=|\kappa|$, $r=2\varrho+k+1$. $I$ is a finite
+set~$I$ and $\CC^I$ has its standard inner product $\ip{v}{w}=\sum_i\overline{v_i}w_i$ and norm $|v|$. Matrices are
+complex unless said otherwise; $X^{*}$ is the conjugate transpose and $\|X\|$ the operator norm for the Euclidean
+norms. Finite index sets carry the counting structure, spaces of real or complex matrices their Lebesgue measure.
+In Section~\ref{s:vol} the letters $E$, $\mathsf{S}$ denote a CM field $E$ and a filling $\mathsf{S}$ of the unit on
+the second moment. Integrals of functions with values in $[0,\infty]$ are Lebesgue integrals; subtraction of
+natural numbers is truncated at~$0$.
+\end{conventions}
+
+\subhead{The group at the complex place (background library, units 112, 115, 118, 119).}\phantomsection\label{s:space}
+The space $V=\CC^{r}$ has the basis $e_0,\dots,e_{\varrho-1}$, $x_i$ ($i\in\kappa$), $z$,
+$e^*_{\varrho-1},\dots,e^*_0$, and the hermitian form $h(v,w)=v^{*}\Jone{\mathfrak{s}}w$ whose Gram matrix
+$\Jone{\mathfrak{s}}$ pairs $e_a$ with $e^*_a$, is the identity on the $x_i$ and $-1$ at $z$;
+$\Jone{\mathfrak{s}}^{2}=1$. $\Gone{\mathfrak{s}}$ is its unitary group, with a Haar measure $\dd y$. In the
+notation of Note~T this is $\GT{T}$ for the place $\CC$ and the form $T$ of $\Jone{\mathfrak{s}}$, and we use the
+subgroups $\Hl{l}{T}$, $\Ql{l}{T}$, $\UT{T}$ of that note; $\Hl{n}{T}$ is the image of $\mathrm{U}(\kappa)$, the
+unitary group of $\langle x_i\rangle$, and $\emb{h}$ denotes the image of $h$. The \emph{frame} is
+$f_0,\dots,f_\varrho$ with $f_a=e_a$, $f_\varrho=z$; $F_{\mathfrak{s}}$ is the $r\times n$ matrix with these
+columns, and $F'_{\mathfrak{s}}$ the one with the columns $e^*_0,\dots,e^*_{\varrho-1},x_{k_0}$. For
+$y\in\Gone{\mathfrak{s}}$, the \emph{frame vectors} are $y^{-1}f_a\in\CC^{r}$, the \emph{frame Gram matrix} is
+$Z(y)=(h(f_a,yf_b))_{a,b}=F_{\mathfrak{s}}^{*}\Jone{\mathfrak{s}}\,yF_{\mathfrak{s}}$, and the \emph{frame matrix}
+$\mathrm{fm}(y)$ is the block of $y$ on the frame. For a complex $n\times n$ matrix $Z$,
+$\gd{Z}=|\det Z|^{2}-|D_\varrho(Z)|^{2}$. The group $\mathcal{U}^0$ of the elements of $\UT{T}$ that fix every
+frame vector consists of the elements $\uq{q}$, $q=(q_1,q_2)$ a complex $\varrho\times\kappa$ matrix and a real
+$\varrho\times\varrho$ matrix, and $\muz$ is the image of Lebesgue measure under $q\mapsto\uq{q}$, a Haar measure
+of $\mathcal{U}^0$. The group generated by $\mathcal{U}^0$ and $\Hl{n}{T}$ is the stabiliser of the frame; it lies
+in $\Ql{n}{T}$, which normalises $\mathcal{U}^0$ and $\UT{T}$, and $\Ql{n}{T}=\UT{T}\cdot\Hl{n}{T}$. The measure
+$\dd\dot y$ on $\Gone{\mathfrak{s}}$ computes integrals over $\UT{T}\backslash\Gone{\mathfrak{s}}$:
+$\int\!\!\int_{\UT{T}}f(uy)\,\dd u\,\dd\dot y=\int f\,\dd y$ for a fixed Haar measure of $\UT{T}$. The \emph{Bessel
+size} of $y$ is $\bs{y}=\inf_{s\in\Ql{n}{T}}(\|sy\|+1)$, and $\frbox{\rho}$ is the set of the $y$ with
+$|y^{-1}f_a|\le\rho$ for all $a\le\varrho$. For a real $\kappa\times\kappa$ matrix $\eta$, $\cay{\eta}\in\mathrm{U}(\kappa)$
+is the \emph{Cayley chart} $(1+X)(1-X)^{-1}$, $X=\tfrac12\operatorname{skew}(\eta)$, where $\operatorname{skew}$
+identifies real matrices with skew-hermitian ones and $\mathrm{sk}$ is its left inverse on all complex matrices; and
+$\cayd{\eta}=|\det(1-X)|^{-2k}$ is its \emph{Cayley weight}. A map $\Phi$ into $\Gone{\mathfrak{s}}$ that is
+differentiable at $p$ has the \emph{logarithmic derivative}
+$\mathrm{D}^{\log}\Phi(p)\colon v\mapsto\Phi(p)^{*}\Jone{\mathfrak{s}}\,\mathrm{d}\Phi_p(v)$.
+
+\subhead{The section.}
+\begin{definition}[corner, defect, open cell]\label{d:cell}
+For a complex $n\times n$ matrix $Z$: $\invCorner{Z}$ is the last diagonal entry of $Z^{-1}$ (the inverse of a
+singular matrix being $0$), and $\cornerDefect{Z}=1-|\invCorner{Z}|^{2}$. The \emph{open cell}
+$\Ocell{\mathfrak{s}}$ is the set of the $Z$ with $\det Z\ne0$ and $|\invCorner{Z}|<1$. For a real $P$,
+\m{\IsBoundedInCell{Z}{P}} means: $Z\in\Ocell{\mathfrak{s}}$, $\|Z^{-1}\|\le P$, $\|Z\|\le P$ and
+$\cornerDefect{Z}^{-1/2}\le P$.
+\end{definition}
+\leanline{\lean{invCorner}\sep\lean{cornerDefect}\sep\lean{openCell}\sep\lean{IsBoundedInCell}\sep\lean{gramDiscRealeq}\sep\lean{memopenCelliff}\sep\lean{continuousgramDiscReal}\sep\lean{isOpenopenCell}\sep\lean{cornerDefectpos}}
+If $\det Z\ne0$ then $\gd{Z}=|\det Z|^{2}\cornerDefect{Z}$, by Cramer's rule; so
+$\Ocell{\mathfrak{s}}=\{Z:\gd{Z}>0\}$, an open set since $\gd{\cdot}$ is continuous, and
+$\cornerDefect{Z}>0$ on it.
+\begin{definition}[the matrices of the section]\label{d:section}
+For a complex number $x$, $\diagLast{x}$ is the diagonal $n\times n$ matrix $\operatorname{diag}(1,\dots,1,x)$. For
+complex $n\times n$ matrices $Z$, $W$ and a complex number $s$:
+\begin{gather*}
+\sectionCoeff{Z}{W}=\diagLast{0}-1-\diagLast{0}\,W^{-1}\bigl(1-\diagLast{\tfrac12}\bigr)Z^{-1}\diagLast{2},\\
+\sectionFrame{Z}{W}{s}=\bigl(F_{\mathfrak{s}}\,\sectionCoeff{Z}{W}+F'_{\mathfrak{s}}\,\diagLast{s}\bigr)Z,\\
+\sectionMatrix{Z}{W}{s}=1+\bigl(\sectionFrame{Z}{W}{s}-F_{\mathfrak{s}}\bigr)F_{\mathfrak{s}}^{*}
++\Bigl(\bigl(F_{\mathfrak{s}}W^{-1}-\sectionFrame{Z}{W}{s}\,\sectionCoeff{W}{Z}\bigr)\diagLast{s^{-1}}-F'_{\mathfrak{s}}\Bigr)F'^{*}_{\mathfrak{s}}.
+\end{gather*}
+In the Lean text the last two arguments have the default values $W=Z^{*}$ and
+$s=\sqrt{1-\invCorner{Z}\invCorner{W}}$ (the principal square root), which is $\sqrt{\cornerDefect{Z}}$ for
+$W=Z^{*}$ and $Z\in\Ocell{\mathfrak{s}}$.
+\end{definition}
+\leanline{\lean{diagLast}\sep\lean{sectionCoeff}\sep\lean{sectionFrame}\sep\lean{sectionMatrix}\sep\lean{sqrteqsqrtcornerDefect}\sep\lean{diagLastsqrtmulinv}\sep\lean{sectionMatrixmulframeCols}\sep\lean{frameColsgramsectionMatrix}}
+Two identities follow by multiplying out, for $\det Z\ne0$:
+$\sectionMatrix{Z}{W}{s}F_{\mathfrak{s}}=\sectionFrame{Z}{W}{s}$ and
+$F_{\mathfrak{s}}^{*}\Jone{\mathfrak{s}}\,\sectionFrame{Z}{W}{s}=Z$.
+\begin{definition}[the section]\label{d:gsec}
+For a complex $n\times n$ matrix $Z$, $\gramSection{Z}$ is the element of $\Gone{\mathfrak{s}}$ with the matrix
+$\sectionMatrix{Z}{Z^{*}}{\sqrt{\cornerDefect{Z}}}$ if $Z\in\Ocell{\mathfrak{s}}$, and the identity otherwise. That
+this matrix is unitary for $\Jone{\mathfrak{s}}$ is part of the definition in the Lean text
+(Lemma~\ref{l:gsec}).
+\end{definition}
+\leanline{\lean{gramSection}\sep\lean{coegramSection}\sep\lean{gramSectioneventuallyEq}\sep\lean{realFrameGramgramSection}}
+So for $Z\in\Ocell{\mathfrak{s}}$ the matrix of $\gramSection{Z}$ is the section matrix, also near $Z$, and
+$Z(\gramSection{Z})=Z$ by the two identities above.
+\begin{definition}[the chart and its coordinates]\label{d:chart}
+The \emph{parameters} are the tuples $p=(Z,\theta,q,\eta,q')$ of a complex $n\times n$ matrix $Z$, a pair $\theta$ of
+a real number and a vector of $\CC^{\kappa\smallsetminus\{k_0\}}$, two parameters $q,q'$ of $\mathcal{U}^0$ and a
+real $\kappa\times\kappa$ matrix $\eta$. Let $\tilde\theta$ be the real $\kappa\times\kappa$ matrix that has the
+entry and the column of $\theta$ at $k_0$ and is $0$ elsewhere (the volume-preserving identification of the
+background library). The \emph{open-cell chart} is
+\[\chart(p)=\uq{q}\cdot\emb{\cay{\tilde\theta}}\cdot\gramSection{Z}\cdot\bigl(\uq{q'}\cdot\emb{\cay{\eta}}\bigr)^{-1}.\]
+The \emph{chart coordinates} are the real-linear map $\chartc$ from complex $r\times r$ matrices $S$ to parameters
+whose $Z$-component is $F'^{*}_{\mathfrak{s}}SF_{\mathfrak{s}}$ and whose other components are read from the blocks of
+$\mathrm{sk}(S)$ and of $S$ at the indices of the $x_i$ and of the $e^*_a$. The \emph{Bessel tangent map} is the
+real-linear map $\btan$ from triples $(\eta,q_1,q_2)$ of complex $\kappa\times\kappa$, complex $\varrho\times\kappa$
+and real $\varrho\times\varrho$ matrices to complex $r\times r$ matrices,
+\[\btan(\eta,q_1,q_2)=(W_{\mathfrak{s}}\eta+D_{\mathfrak{s}}q_1)W_{\mathfrak{s}}^{*}+\bigl(D_{\mathfrak{s}}\operatorname{skew}(q_2)-W_{\mathfrak{s}}q_1^{*}\bigr)D_{\mathfrak{s}}^{*},\]
+with $W_{\mathfrak{s}}$, $D_{\mathfrak{s}}$ the matrices of the columns $x_i$ and $e^*_a$. None of the three takes
+an explicit argument in the Lean text; the shape is implicit.
+\end{definition}
+\leanline{\lean{openCellChart}\sep\lean{chartCoords}\sep\lean{besselTangent}}
+
+\subhead{Sizes, level and gauge at the complex place.}
+\begin{definition}[real-place sizes]\label{d:rps}
+For a shape $\mathfrak{s}$, real numbers $\rho$, $b$ and a natural number $s_0$, \emph{real-place sizes}
+$\mathfrak{h}$, elements of $\RealPlaceSizes{\mathfrak{s}}{\rho}{s_0}{b}$, are proofs of the seven conditions
+\[\rho=b^{6n+2},\quad 8r\le\rho,\quad k=s_0+3n+2,\quad 10^{9}n^{3}<s_0,\quad n^{7}\le k,\quad 10^{8}\le\varrho,\quad 2\le b.\]
+\end{definition}
+\leanline{\lean{RealPlaceSizes}\sep\lean{tenle}}
+They imply $\rho\ge4$.
+\begin{definition}[the level at the complex place]\label{d:clevel}
+For real-place sizes $\mathfrak{h}$ in $\RealPlaceSizes{\mathfrak{s}}{\rho}{s_0}{b}$, the level
+$\cLC{\mathfrak{h}}$ is the level in $\Levels{\kappa\smallsetminus\{k_0\}}{T}{0}$, for the place $\CC$ and the form
+$T$ of $\Jone{\mathfrak{s}}$, with: the hyperbolic basis of $V_\varrho$ made of the pair
+$\tfrac{1+\mathrm{i}}{2}(x_{k_0}\pm z)$ and the orthonormal vectors $x_i$, $i\ne k_0$; the measure on floor $n$ the
+Haar probability measure of $\mathrm{U}(\kappa)$, carried to $\Hl{n}{T}$; the measure on floor $\varrho$ the
+convolution of the image of $\frac{2\pi^{k}}{(k-1)!}\max(|c|^{2}-1,0)^{k-1}\dd c$ under
+$c\mapsto\boost{\varrho}{c}^{-1}$ with the measure on floor $n$; the unit $1$; the ball $\{v:|v|<\tfrac14\}$; the box
+$\{x:\|x\|\le\rho\}$; and all of $\Gone{\mathfrak{s}}$ as positions. Here $\boost{\varrho}{c}\in\Hl{\varrho}{T}$ is
+the boost of the background library in the plane of $x_{k_0}$ and $z$. This definition is in the Lean text but not
+in the census of the artifact (see Section~\ref{s:notes}); the axioms (L1)--(L3) of a level are verified in it from
+results of unit 119.
+\end{definition}
+\begin{definition}[the Haar ratio]\label{d:ratio}
+For real-place sizes $\mathfrak{h}$ in $\RealPlaceSizes{\mathfrak{s}}{\rho}{s_0}{b}$,
+$\haarRatio{\mathfrak{h}}\in[0,\infty]$ is a chosen constant with
+$\groupMeasure{\cLC{\mathfrak{h}}}=\haarRatio{\mathfrak{h}}\cdot\dd y$; one exists by Theorem~A(i) of Note~T and
+the uniqueness of Haar measure (Input~\Inp{J2}).
+\end{definition}
+\leanline{\lean{haarRatio}}
+\begin{definition}[the gauge at the complex place]\label{d:cgauge}
+For real-place sizes $\mathfrak{h}$ in $\RealPlaceSizes{\mathfrak{s}}{\rho}{s_0}{b}$ and a real number $R$ with a
+proof of $\rho\le R$, $\gauge{\mathfrak{h}}{\rho\le R}$ is the gauge in $\Gauges{\cLC{\mathfrak{h}}}$ with the sets
+$\Gamma_i=\{x\in\CC:|x|\le R^{i}\}$ and the constant $\Lambda=R^{2}$. That these data satisfy the axioms of a gauge
+is part of the definition in the Lean text (Proposition~\ref{p:gauge}).
+\end{definition}
+\leanline{\lean{gauge}}
+
+\subhead{The volume weight.}
+\begin{definition}[volume weight; the part of the frame in the positive space]\label{d:vol}
+For $\gamma\in\Gone{\mathfrak{s}}$,
+\[\frameVolume{\gamma}=\bigl|\det\bigl(((1-\Jone{\mathfrak{s}})F_{\mathfrak{s}})^{*}\,\gamma^{-1}F_{\mathfrak{s}}\bigr)\bigr|,
+\qquad\frameXPart{\gamma}=W_{\mathfrak{s}}^{*}\,\gamma\,F_{\mathfrak{s}}.\]
+The columns of $(1-\Jone{\mathfrak{s}})F_{\mathfrak{s}}$ are $e_a-e^*_a$ ($a<\varrho$) and $2z$, a basis of a
+maximal negative subspace; so $\frameVolume{\gamma}$ is the absolute value of the determinant of the Euclidean
+products of this basis with the frame vectors of $\gamma$, and $\frameXPart{\gamma}$ is the $\kappa\times n$ matrix
+of the components of $\gamma f_0,\dots,\gamma f_\varrho$ on the $x_i$.
+\end{definition}
+\leanline{\lean{frameVolume}\sep\lean{frameXPart}\sep\lean{continuousframeVolume}\sep\lean{frameXPartunipotentOfinvmul}}
+$\frameVolume{\cdot}$ is continuous; and $\frameXPart{\uq{q}^{-1}\gamma}=\frameXPart{\gamma}+q_1^{*}\cdot(\text{the
+first $\varrho$ rows of }Z(\gamma))$, by the formula for $\uq{q}$.
+
+\sect{What is taken for granted}{s:inputs}
+\subhead{From Note T and Note L (same unit).} The notions of level, gauge, floor measures, tower and upper measures,
+and Theorem~A of Note~T (the tower measure is right invariant and equals $\etab{j}$ convolved with floor measures).
+Note~L is not used; it uses Theorems B, D and Lemma~\ref{l:bsnorm}.
+
+\subhead{From the unit on the second moment (unit 148) and unit 133.} A \emph{cut pair} with respect to $b$, $f$,
+$\mathrm{rep}$ is a pair of continuous functions $\Phi_0$ (full), $\Phi$ (cut) from $\Gone{\mathfrak{s}}$ to $\CC^I$,
+both Bessel functions for $\mathrm{rep}$ (measurable, bounded, $F(uy)=\exp(\sd(u)-\overline{\sd(u)})F(y)$ for
+$u\in\UT{T}$, $F(\emb{h}y)=\mathrm{rep}(h)F(y)$), with: $\Phi_0$ integrable for $\dd\dot y$;
+$\int|\Phi_0|^2\dd\dot y=|I|$; $\int|\Phi|^2\dd\dot y\le|I|$; $\Phi(y)\ne0$ implies $\bs{y}\le b^{6n+2}$;
+$\int|\Phi-\Phi_0|^2\dd\dot y\le b^{-10r^{2}}|I|$; and there are a measurable $\UT{T}$-invariant
+$\mathsf{A}\ge0$ and a finite measure $\mu$ with $c(y)\,|F(y)|\le\mathsf{A}(y)$ for $F=\Phi_0,\Phi$, where $c(y)=1$
+if $\Phi_0(y)=\Phi(y)$ and $c(y)=b^{3r^{3}f}$ otherwise, with $\mathsf{A}(y)\le\mu\{g:\bs{yg}\le b^{6n+2}\}$, and
+with $\mu(\Gone{\mathfrak{s}})\int\mathsf{A}\,\dd\dot y\le b^{2r^{3}}|I|$. A function $\Phi_0$ \emph{has Schur's bound
+with constant $D$} if $\int|\int\varphi(y)\Phi_0(\gamma y)\dd y|^{2}\dd\dot\gamma\le D\int|\varphi|^2$ for integrable
+$\varphi$; it \emph{has the Schur bounds with respect to $\mathrm{rep}$, $B$, $D$} if there are continuous Bessel
+functions $V_w$ for $\mathrm{rep}$, indexed by the words $w$ in pairs of basis indices, with $V_\emptyset=\Phi_0$,
+with $V_{(\alpha,\beta)w}$ the right derivative of $V_w$ along the elementary matrix at $(\alpha,\beta)$, and with
+Schur's bound with constant $B^{2|w|}D$ for $V_w$ when $|w|\le2n^{2}$. A \emph{Bessel system} for
+$(\mathfrak{s},B,f)$ consists of a non-empty finite set $I$, a cut pair with respect to $B$, $f$ and an irreducible
+$\mathrm{rep}$ (every matrix commuting with all $\mathrm{rep}(h)$ is scalar), a real $\deg>0$, the Schur bounds of
+the full function with respect to every $P\ge B^{5}$ and $D=|I|/\deg$, the inequality $8r\le B$, and band limits.
+A function $Y$ \emph{has a peak at $x$ of constant $P$} (for $l$, $\mathrm{rep}$) if it is a Bessel function for
+$\mathrm{rep}$ with $Y*(\deg_l\psi_l)=Y$, $Y(x)\ne0$,
+$|Y(y)|\le\int|\psi_l(x^{-1}sy)|\dd\nu_S(s)$ and $\int(2/\|x^{-1}sy\|)^{8r^{2}+1}\dd\nu_S(s)\le P\,|Y(x)|$ for all
+$y$, where $\nu_S$ is the measure of unit 133 on a group of pairs over $\Ql{n}{T}$ with
+$\int f\,\dd y=\iint f(x\,s\,y)\,\dd\nu_S(s)\,\dd\dot y$. Here $(F*e)(y)=\int e(a^{-1})F(ya)\,\dd a$. The filling
+$\mathsf{S}$ of Section~\ref{s:vol}, its levels, labelled terms, positions and lattices are those of unit 148;
+that section recalls what it uses.
+
+\subhead{From the background library.} A \emph{frame} $\mathsf{p}$ for signs $\varepsilon$ is a basis with
+$\mathsf{p}^{*}\Jone{\mathfrak{s}}\mathsf{p}=\operatorname{diag}(\varepsilon)$ and $\mathsf{p}$ unitary; a
+\emph{parameter} $l$ is an integer vector, twice a Harish-Chandra parameter $\lambda$; it has a \emph{large gap
+$A_0$} if $\lambda$ is regular with $|\lambda_i-\lambda_{i'}|\ge500r^{3}+A_0$ when $\varepsilon_i\ne\varepsilon_{i'}$;
+$\psi_l(g)$ is the lowest $K$-type coefficient of the discrete series of $\mathrm{U}(\operatorname{diag}\varepsilon)$
+at $\mathsf{p}^{-1}g\mathsf{p}$, and $\deg_l=(\int|\psi_l|^2)^{-1}$.
+
+\Inp{J1} \emph{Witt's theorem} (unit 120): over a field with a non-trivial involution, if $X$, $Y$ have left
+inverses and equal Gram matrices for an invertible hermitian $J$, then $gX=Y$ for some $g\in\mathrm{U}(J)$. The
+second reader relates it to Witt's extension theorem (U.~First, \emph{Witt's extension theorem for quadratic spaces
+over semiperfect rings}, Corollary~4.9) as the theorem itself.
+
+\Inp{J2} \emph{Uniqueness of Haar measure} (unit 114): on a second countable locally compact group with a Haar
+measure that is also right invariant, every $s$-finite right invariant measure is a multiple, in $[0,\infty]$, of
+it. Reference: N.~Bourbaki, \emph{Int\'egration} VII; the second reader's comparison of the $s$-finite form with
+the literature is unresolved, reference to be confirmed.
+
+\Inp{J3} \emph{Unfolding} (unit 114): if $(u,g)\mapsto ug$ carries a Haar measure of $\UT{T}$ times a measure $\mu'$
+to $\mu$, then $\int f\,\dd\mu'=\int f\,\dd\dot\mu$ for $\UT{T}$-invariant $f\ge0$, with $\dot\mu$ the quotient
+measure of $\mu$. This is Weil's integration formula for a quotient; reference to be confirmed.
+
+\Inp{J4} \emph{Haar measure in a chart} (unit 115): if a map $\Phi$ from an open set of parameters to
+$\mathrm{U}(J)$, $J^2=1$, is injective and differentiable on a measurable set $A$ with
+$|\det(e^{-1}\circ\mathrm{sk}\circ\mathrm{D}^{\log}\Phi(p))|=w(p)$ for a measure-preserving $e$, then for almost
+every real $t$ and all measurable $f\ge0$:
+$\int_A\frac{w(p)}{\volU{N}}f(\mathrm{e}^{\mathrm{i}t}\Phi(p))\,\dd p\le\int f\,\dd y$ for the Haar probability measure
+(and correspondingly for $\dd y$). The Cayley chart of $\mathrm{U}(J)$ has
+$|\det(\mathrm{sk}\circ\mathrm{D}^{\log}\operatorname{cay}(\eta))|=\cayd{\eta}$. The catalogue of the write-up names
+L.~K.~Hua, \emph{Harmonic analysis of functions of several complex variables in the classical domains} (1963),
+ch.~III; place not confirmed.
+
+\Inp{J5} \emph{Bruhat coordinates} (unit 118):
+\[\int f(Z)\,\dd Z=\int\prod_{a\le\varrho}|c_a|^{4(\varrho-a)}\iint f(x_-^{*}\operatorname{diag}(c)\,x_+)\,\dd x_-\,\dd x_+\,\dd c\]
+over upper unitriangular $x_\pm$ and $c\in\CC^{n}$; the Jacobian of the triangular decomposition, reference to be
+confirmed. And (unit 119) the convolution of the laws of the floors $0,\dots,\varrho$ at $\CC$ is the image of
+$\prod_a\mathrm{dens}_a(c_a)\,\dd c$ under $c\mapsto(\wl{\varrho}{c}\boost{\varrho}{c_\varrho})^{-1}$, with
+\[\mathrm{dens}_a(c)=|c|^{2(k-1)+4(\varrho-a)}\ \ (a<\varrho),\qquad
+\mathrm{dens}_\varrho(c)=\frac{2\pi^{k}}{(k-1)!}\max(|c|^2-1,0)^{k-1};\]
+and the Heisenberg measures of the floors
+convolve to a Haar measure of $\UT{T}$, the image of $\dd x\,\dd\muz$ under $(x,u)\mapsto u\cdot\mathrm{lift}(x)$,
+$\mathrm{lift}(x)\in\UT{T}$ with frame matrix the unitriangular matrix of entries $x$.
+
+\Inp{J6} \emph{A Lipschitz bound for holomorphic maps} (unit 10): a holomorphic map bounded by $B$ on a ball of
+radius $r$ has derivative of norm at most $2B/r$ at the centre; the second reader relates it to the Schwarz lemma
+(W.~Rudin, \emph{Real and complex analysis}, \S12.2) as a weaker form.
+
+\Inp{J7} \emph{A Sobolev chain inequality} (unit 10): for functions $f_w(x,\omega)$ indexed by words $w$ in a finite
+alphabet $\mathcal{A}$, on a cube $[0,\epsilon]^{D}\times\Omega'$, $0<\epsilon\le1$, with
+$|\partial_df_w|\le\Lambda_0\sum_{l\in\mathcal{A}}|f_{lw}|$ and $\iint|f_w|^2\le K$ for $|w|\le|D|$:
+$\int|f_\emptyset(0,\omega)|^2\,\dd\omega\le(2(1+(|\mathcal{A}|\Lambda_0)^2)/\epsilon)^{|D|}K$. Classed as elementary
+by the catalogue.
+
+\Inp{J8} \emph{Hua's integral bound} (unit 112): for a positive definite $M$, an invertible $k'\times k'$ matrix
+$S$, a finite set $\mathsf{s}$ of rows and $r'\ge k'$,
+$\int\det(M+\sum_{i\in\mathsf{s}}y_i^{*}y_i)^{-(|\mathsf{s}|+r')}\dd x\le(\pi^{k'}/(k'!\,|\det S|^2))^{|\mathsf{s}|}\det M^{-r'}$,
+where $y_i=x_iS+a_i$ and the rows $x_i$ run over $\CC^{k'}$. The second reader relates it to L.~K.~Hua, \emph{loc.\
+cit.}, as a weaker form (an upper bound in place of the exact Gamma factors).
+
+\Inp{J9} \emph{The Ostrowski--Taussky inequality} (unit 10): $\det H\le2^{N}|\det\Theta|$ for a positive semidefinite
+$H\le\Theta+\Theta^{*}$; A.~Ostrowski, O.~Taussky, \emph{On the variation of the determinant of a positive definite
+matrix}, Indag.\ Math.\ 13 (1951); the second reader: matches. And the \emph{matrix Bessel inequality}:
+$X(1-EE^{*})X^{*}\ge0$ for $\|E\|\le1$.
+
+\Inp{J10} \emph{Discrete series} (units 112, 116, 117), for a parameter with large gap $A_0$:
+$\deg_l\psi_l$ is an idempotent kernel on $\Gone{\mathfrak{s}}$ (integrable, bounded by $\deg_l$, reproducing under
+convolution); $|\psi_l(g)|\le(2/\|g\|)^{c}$ for $c\le500r^{3}+A_0$; $\deg_l(2/\|g\|)^{c}$ has integral at most
+$8(2000(r+L+1)^{6})^{2r^{2}}2^{c}$ for $c>8r^{2}$; the module generated by $\psi_l$ under right derivatives is
+unitary for the $L^2$ norm, its generator is a smoothing of $\psi_l$, and a derivative along a word $w$ of a vector
+of the $|w|$-th step of its filtration has norm at most $((r+1)^{4}(L+r+1+|w|))^{|w|}$; and for a Bessel function
+$F$ with $F*e=F$, $e=\deg_l\psi_l$, and $X=e*X$ integrable:
+$\int|\int\varphi(y)(F*X)(\gamma y)\dd y|^2\dd\dot\gamma\le\deg_l^{-1}\|X\|_2^2\,\|F\|_2^2\int|\varphi|^2$.
+The second reader relates the idempotent kernel to Harish-Chandra, \emph{Discrete series for semisimple Lie
+groups II} (1966), pp.~87--88, as a special case whose explicit thresholds are unresolved.
+
+\Inp{J11} \emph{A tube} (unit 118): for $t_0\ge8r$ there are a compact $A\subseteq\{\|y\|\le t_0^{20n}\}$ and a
+measurable $\Omega_0\subseteq\mathcal{U}^0$ with $0<\muz(\Omega_0)<\infty$,
+$\Omega_0\cdot\{\|y\|\le t_0\}\subseteq A$ and $\int\mathbf{1}_A(uy)\,\dd\muz(u)\le t_0\,\muz(\Omega_0)$ for all $y$.
+Conjugation by $s\in\Ql{n}{T}$ preserves $\muz$.
+
+\sect{Frame vectors and the Bessel size}{s:frame}
+\begin{lemma}[frame vectors]\label{l:fv}
+Let $y,s\in\Gone{\mathfrak{s}}$ and $a\le\varrho$. \textup{(i)} If $s$ lies in the group generated by
+$\mathcal{U}^0$ and $\Hl{n}{T}$, then $(sy)^{-1}f_a=y^{-1}f_a$. \textup{(ii)} If $s\in\UT{T}$, then
+$y^{-1}f_a=\sum_{b}\mathrm{fm}(s)_{ba}\,(sy)^{-1}f_b$. \textup{(iii)} For a finite set $\iota$, a map $e$ from $\iota$
+to the frame positions, $c\colon\iota\to\CC$ and a basis index $i$:
+$\bigl|\sum_{\alpha\in\iota}c_\alpha\,s_{i,f_{e(\alpha)}}\bigr|\le\|sy\|\cdot\bigl|\sum_{\alpha\in\iota}c_\alpha\,y^{-1}f_{e(\alpha)}\bigr|$.
+\end{lemma}
+\begin{proof}
+(i) $s^{-1}$ fixes the frame. (ii) $y^{-1}f_a=(sy)^{-1}sf_a$, and $sf_a=\sum_b\mathrm{fm}(s)_{ba}f_b$ because
+$s\in\UT{T}$ maps $f_a$ into the span of $f_0,\dots,f_a$. (iii) $\sum c_\alpha sf_{e(\alpha)}=(sy)\sum c_\alpha
+y^{-1}f_{e(\alpha)}$, and a coordinate of a vector is at most its norm.
+\end{proof}
+\leanline{\lean{frameVectormul}\sep\lean{frameVectoreqsum}\sep\lean{normsumlemulnormsumframeVector}\sep\lean{continuousframeVector}\sep\lean{normframeVectorle}}
+The frame vectors depend continuously on $y$, and $|y^{-1}f_a|\le\|y^{-1}\|=\|y\|$.
+
+\begin{lemma}[the Bessel size]\label{l:bsnorm}
+Let $x,y,y'\in\Gone{\mathfrak{s}}$ and $t_0$ a real number. \textup{(i)} If $\bs{y}\le t_0$, there is $u\in\UT{T}$ with
+$\|uy\|\le t_0$. \textup{(ii)} $\bs{y'}\le\|x^{-1}y'\|\cdot\bs{x}$. \textup{(iii)} $y\mapsto\bs{y}$ is continuous.
+\end{lemma}
+\begin{proof}
+For $s\in\Ql{n}{T}$ we have $\bs{y}\le\|sy\|+1$ and $\bs{sy}=\bs{y}$, by definition. (i) Choose $s\in\Ql{n}{T}$
+with $\|sy\|+1<t_0+1$, and $h\in\mathrm{U}(\kappa)$ with $\emb{h}s\in\UT{T}$; $\emb{h}$ is unitary, so
+$\|\emb{h}sy\|=\|sy\|\le t_0$. (ii) For $s\in\Ql{n}{T}$,
+$\|sy'\|+1\le\|sx\|\|x^{-1}y'\|+1\le\|x^{-1}y'\|(\|sx\|+1)$, because every element of $\Gone{\mathfrak{s}}$ has norm
+at least $1$; take the infimum. (iii) By (ii) in both directions, $\bs{y'}/\bs{y}$ lies between
+$\|y'^{-1}y\|^{-1}$ and $\|y^{-1}y'\|$, which tend to $1$.
+\end{proof}
+\leanline{\lean{existsnormleofbesselSizele}\sep\lean{besselSizelenormmul}\sep\lean{continuousbesselSize}\sep\lean{besselSizele}\sep\lean{besselSizebesselSmul}}
+
+\begin{lemma}[bounded frame and dual frame]\label{l:framebox}
+Let $x\in\Gone{\mathfrak{s}}$ and $M$ a real number with $1\le M$, $x\in\frbox{M}$ and $|x^{-1}e^*_a|\le M$ for all
+$a<\varrho$. Then $\|x\|+1\le8(\varrho+1)M$.
+\end{lemma}
+\begin{proof}
+Let $B=x^{-1}$. As $B\Jone{\mathfrak{s}}B^{*}=\Jone{\mathfrak{s}}$,
+$BB^{*}=\Jone{\mathfrak{s}}+B(1-\Jone{\mathfrak{s}})B^{*}$ and $\|B\|^2\le1+\|B(1-\Jone{\mathfrak{s}})\|\,\|B\|$.
+The non-zero columns of $B(1-\Jone{\mathfrak{s}})$ are $\pm(Be_a-Be^*_a)$ and $2Bz$, of norm at most $2M$; there
+are $2\varrho+1$ of them, so $\|B(1-\Jone{\mathfrak{s}})\|\le2M\sqrt{2\varrho+1}$. The quadratic inequality gives
+$\|B\|\le8(\varrho+1)M-1$, and $\|x\|=\|B\|$.
+\end{proof}
+\leanline{\lean{normleofmemframeBox}\sep\lean{norminclMatrixleone}\sep\lean{normJ}\sep\lean{norminnerJle}}
+Here $\|\Jone{\mathfrak{s}}\|=1$, matrices of inclusions of coordinates have norm at most $1$, and
+$|\ip{v}{\Jone{\mathfrak{s}}w}|\le|v||w|$.
+
+\begin{lemma}[the frame Gram matrix]\label{l:rfg}
+Let $x,y'\in\Gone{\mathfrak{s}}$ and $a',b\le\varrho$. Then
+$Z(x)_{a'b}=\ip{y'^{-1}f_{a'}}{\Jone{\mathfrak{s}}(x^{-1}y')^{-1}f_b}$, hence
+$|Z(x)_{a'b}|\le|y'^{-1}f_{a'}|\cdot|(x^{-1}y')^{-1}f_b|$; $Z(sx)=Z(x)=Z(xs)$ for $s$ in the group generated by
+$\mathcal{U}^0$ and $\Hl{n}{T}$; and $Z(x)=\mathrm{fm}(s)^{*}Z(sx)$ for $s\in\UT{T}$.
+\end{lemma}
+\begin{proof}
+$h(f_{a'},xf_b)=h(y'^{-1}f_{a'},y'^{-1}xf_b)$; the rest follows from Lemma~\ref{l:fv}(i),(ii).
+\end{proof}
+\leanline{\lean{realFrameGrameqinner}\sep\lean{normrealFrameGramlemul}\sep\lean{realFrameGrammulinvariant}\sep\lean{realFrameGrameqframeMatrixmul}}
+
+\begin{lemma}[the Bessel size from a dual system]\label{l:dual}
+Let $x\in\Gone{\mathfrak{s}}$, $M$ a real number with $1\le M$, and $V_0,V_1,\dots$ vectors of $\CC^{r}$ such that
+$x^{-1}f_a=V_a$ for $a\le\varrho$, $|V_a|\le M$ for $a\le2\varrho$, and, for all $a,b$ with $a+b\le2\varrho$,
+$\ip{V_a}{\Jone{\mathfrak{s}}V_b}=-1$ if $a+b=2\varrho$ and $=0$ otherwise. Then $\bs{x}\le8(\varrho+1)M$.
+\end{lemma}
+\begin{proof}
+Let $f'_0,\dots,f'_\varrho$ be the Gram--Schmidt orthogonalisation of the frame vectors of $x$. There is
+$u\in\UT{T}$, with unitriangular frame matrix, such that $(ux)^{-1}f_a=f'_a$ (Lemma~\ref{l:fv}(ii)). The hypothesis
+gives $\ip{V_{2\varrho-a}}{\Jone{\mathfrak{s}}f'_a}=-1$, so $1\le M|f'_a|$; and $|f'_a|\le|V_a|\le M$. Put
+$v_a=|f'_a|^{-2}f'_a$, of norm at most $M$. The vectors $\Jone{\mathfrak{s}}v_b$, $b<\varrho$, are dual to the frame
+vectors of $ux$ and span an isotropic space (the frame Gram matrix of the identity vanishes at the isotropic
+positions); so by a lemma of unit 118 there is $q$ with $(ux)^{-1}\uq{q}e^*_b=\Jone{\mathfrak{s}}v_b$. The element
+$y=\uq{q}^{-1}ux$ has frame vectors $f'_a$ and dual columns $\Jone{\mathfrak{s}}v_b$, all of norm at most $M$, and
+$\bs{x}\le\|y\|+1\le8(\varrho+1)M$ by Lemma~\ref{l:framebox}.
+\end{proof}
+\leanline{\lean{besselSizeleofdual}}
+
+\sect{The section}{s:section}
+\begin{lemma}[the section is unitary; measurability]\label{l:gsec}
+Let $Z\in\Ocell{\mathfrak{s}}$. Then the matrix
+\[\sectionMatrix{Z}{Z^{*}}{\sqrt{\cornerDefect{Z}}}\]
+of Definition~\ref{d:section} is unitary for the form $\Jone{\mathfrak{s}}$. The map $Z\mapsto\gramSection{Z}$ is measurable.
+\end{lemma}
+\begin{proof}
+Let $C$ be the matrix of the $2n$ columns $(F_{\mathfrak{s}}\,|\,F'_{\mathfrak{s}})$; they are orthonormal, and
+$\Jone{\mathfrak{s}}=1-CC^{*}+CJC^{*}$ with $J=C^{*}\Jone{\mathfrak{s}}C$. With
+$\Delta=\diagLast{\cornerDefect{Z}^{-1/2}}$ and the block matrices
+$\mathsf{x}=\bigl(\begin{smallmatrix}Z^{-1}&\sectionCoeff{Z^{*}}{Z}\Delta\\0&1\end{smallmatrix}\bigr)$,
+$\mathsf{y}=\bigl(\begin{smallmatrix}\sectionCoeff{Z}{Z^{*}}&Z^{*-1}\Delta\\\diagLast{\sqrt{\cornerDefect{Z}}}&0\end{smallmatrix}\bigr)$,
+the section matrix is $1-CC^{*}+C\,\mathsf{y}\mathsf{x}^{-1}C^{*}$, and
+$\mathsf{y}^{*}J\mathsf{y}=\mathsf{x}^{*}J\mathsf{x}$; both are matrix identities that the formal text verifies by
+expansion. So $\mathsf{y}\mathsf{x}^{-1}$ is unitary for $J$ and the section matrix is unitary for
+$\Jone{\mathfrak{s}}$. Measurability: the map is continuous on the open set $\Ocell{\mathfrak{s}}$ and constant
+outside.
+\end{proof}
+\leanline{\lean{measurablegramSection}}
+
+\begin{lemma}[differentiability and size of the section matrix]\label{l:secnorm}
+\textup{(i)} Let $Z,W\in\Ocell{\mathfrak{s}}$. Then $(Z',W')\mapsto\sectionMatrix{Z'}{W'}{s(Z',W')}$, with
+$s(Z',W')=\sqrt{1-\invCorner{Z'}\invCorner{W'}}$, is complex differentiable at $(Z,W)$. \textup{(ii)} For
+$Z\in\Ocell{\mathfrak{s}}$ the map $Z'\mapsto\sectionMatrix{Z'}{Z'^{*}}{\sqrt{\cornerDefect{Z'}}}$ is real
+differentiable at $Z$. \textup{(iii)} Let $Z\in\Ocell{\mathfrak{s}}$, $P,t_0$ real numbers with $t_0>0$ and
+$8\le P$, and suppose \m{\IsBoundedInCell{Y}{P}} for every $Y$ with $\|Y-Z\|<t_0$. Then the matrix of (ii) at $Z$
+has norm at most $P^{12}$, and its real derivative at $Z$ has norm at most $2P^{12}/t_0$.
+\end{lemma}
+\begin{proof}
+(i) Every entry is a polynomial in the entries of $Z'$, $W'$, of their inverses, and in $s$, $s^{-1}$; and
+$1-\invCorner{Z'}\invCorner{W'}$ stays in the slit plane near $(Z,W)$, because $|\invCorner{Z}|,|\invCorner{W}|<1$.
+(ii) Compose with the real-linear map $Z'\mapsto(Z',Z'^{*})$. (iii) For $(X,Y)$ within $t_0$ of $(Z,Z^{*})$ both $X$
+and $Y^{*}$ are within $t_0$ of $Z$, so their norms, those of their inverses and
+$\cornerDefect{X}^{-1/2}$ are at most $P$; moreover
+$|1-\invCorner{X}\invCorner{Y}|\ge1-|\invCorner{X}|\ge\tfrac14\cornerDefect{X}$, which bounds $|s|^{-1}$ by $2P$.
+The triangle inequality in Definition~\ref{d:section} then bounds the section matrix by $P^{12}$ on this ball, for
+$P\ge8$. A holomorphic map bounded by $P^{12}$ on a ball of radius $t_0$ has derivative at most $2P^{12}/t_0$ at
+the centre \Inp{J6}; restrict to $Y=X^{*}$.
+\end{proof}
+\leanline{\lean{differentiableAtsectionMatrixuncurry}\sep\lean{differentiableAtsectionMatrix}\sep\lean{normsectionMatrixle}}
+
+\begin{lemma}[elements over the open cell]\label{l:double}
+Let $\gamma\in\Gone{\mathfrak{s}}$ and $Z\in\Ocell{\mathfrak{s}}$ with $Z(\gamma)=Z$. Then there are parameters
+$q,q'$ of $\mathcal{U}^0$ and $k,h\in\mathrm{U}(\kappa)$ with
+$\gamma=\uq{q}\,\emb{k}\,\gramSection{Z}\,\bigl(\uq{q'}\,\emb{h}\bigr)^{-1}$.
+\end{lemma}
+\begin{proof}
+For $s\in\Gone{\mathfrak{s}}$ with $Z(s)=Z$ the $2n$ columns $(F_{\mathfrak{s}}\,|\,sF_{\mathfrak{s}})$ have the Gram
+matrix $\bigl(\begin{smallmatrix}N_0&Z\\Z^{*}&N_0\end{smallmatrix}\bigr)$ with $N_0=\operatorname{diag}(0,\dots,0,-1)$;
+it depends on $Z$ only, and it is invertible because its determinant is a non-zero multiple of $\gd{Z}$. So the columns have a left inverse. This applies to $\gamma$ and to
+$\gramSection{Z}$, and Witt's theorem \Inp{J1} gives $g\in\Gone{\mathfrak{s}}$ with $gF_{\mathfrak{s}}=F_{\mathfrak{s}}$
+and $g\gamma F_{\mathfrak{s}}=\gramSection{Z}F_{\mathfrak{s}}$. An element that fixes the frame is
+$\emb{k}\uq{q}^{-1}$ for some $k$, $q$ (unit 118); apply this to $g$ and to $\gramSection{Z}^{-1}g\gamma$.
+\end{proof}
+\leanline{\lean{existseqmulgramSectionmul}}
+
+\begin{lemma}[staying in the open cell]\label{l:near}
+Let $M,P$ be real numbers and $Z,Z'$ complex $n\times n$ matrices with $M^{-1}\le\gd{Z}$, $8(\varrho+1)\le M$,
+$|Z_{ab}|\le M^{2}$ for all $a,b$, $M^{9n}\le P$ and $\|Z'-Z\|<P^{-6}$. Then $\gd{Z}/2\le\gd{Z'}$ and
+\m{\IsBoundedInCell{Z'}{P}}.
+\end{lemma}
+\begin{proof}
+On the unit ball about $Z$ the entries are at most $M^{3}$, so the squares of the leading minors are holomorphic and
+bounded by a power of $M$ that is at most $P$; by \Inp{J6} they move by at most $M^{-1}/4$ between $Z$ and $Z'$, and
+$\gd{\cdot}$, a difference of two of them, by at most $M^{-1}/2\le\gd{Z}/2$. So $\gd{Z'}>0$ and
+$Z'\in\Ocell{\mathfrak{s}}$. From $M^{-1}\le2|\det Z'|^{2}\cornerDefect{Z'}$ and $\cornerDefect{Z'}\le1$ one gets
+lower bounds for $|\det Z'|$ and for $\cornerDefect{Z'}$; Cramer's rule bounds $\|Z'^{-1}\|$ by minors over
+$|\det Z'|$; all bounds are powers of $M$ with exponent at most $9n$.
+\end{proof}
+\leanline{\lean{memopenCellandboundsofnear}}
+
+\sect{The chart}{s:chart}
+\begin{lemma}[the logarithmic derivative of the outer factors]\label{l:logd}
+Let $\mathcal{V}$ be a real normed space, $p\in\mathcal{V}$, and $\mathsf{z}=(\mathsf{z}_1,\mathsf{z}_2)$ a map from
+$\mathcal{V}$ to pairs of a real $\kappa\times\kappa$ matrix and a parameter of $\mathcal{U}^0$ that is
+differentiable at $p$ with derivative $\mathsf{z}'$. Then $\Phi(p')=\uq{\mathsf{z}_2(p')}\,\emb{\cay{\mathsf{z}_1(p')}}$ is
+differentiable at $p$, and for every $v$, with $\mathsf{z}'(v)=(\eta,(q_1,q_2))$,
+\[\mathrm{D}^{\log}\Phi(p)(v)=\btan\Bigl(\mathrm{D}^{\log}\operatorname{cay}(\mathsf{z}_1(p))(\eta),\ q_1\cay{\mathsf{z}_1(p)},\
+q_2+\mathrm{sk}\bigl(\text{the skew part of }\mathsf{z}_2(p)_1\,q_1^{*}\bigr)\Bigr).\]
+\end{lemma}
+\begin{proof}
+By the formulas of unit 118, $\uq{q}=1+\Jone{\mathfrak{s}}\beta+\tfrac12(\Jone{\mathfrak{s}}\beta)^{2}$ with
+$\beta=\btan(0,q)$, and $\emb{c}=1+\btan(c-1,0)$. Both are differentiable in the parameters, the Cayley chart by
+\Inp{J4}; differentiate the product by the product rule and multiply by $\Phi(p)^{*}\Jone{\mathfrak{s}}$. The matrix
+identity that remains is verified by the formal text by expansion.
+\end{proof}
+\leanline{\lean{logDerivUunipotentOfmulembedH}}
+
+\begin{lemma}[coordinates]\label{l:coords}
+There is a real-linear isomorphism $e$ from the space of the parameters onto the space of the real $r\times r$
+matrices that preserves Lebesgue measure and has $e^{-1}=\chartc\circ\operatorname{skew}$.
+\end{lemma}
+\begin{proof}
+$\chartc\circ\operatorname{skew}$ maps the sum of the squares of the entries of a real matrix to the sum of the
+squares of the real coordinates of the parameter (a regrouping of blocks), and the dimensions agree; a linear map
+with this property is a measure-preserving isomorphism (the Gaussian integral is preserved).
+\end{proof}
+\leanline{\lean{existssymmeqchartCoordsskewOfReal}}
+
+\begin{proof}[Proof of Theorem A\textup{(i)}]
+Take $e$ from Lemma~\ref{l:coords}, and let $p=(Z,\theta,q,\eta,q')$ with $Z\in\Ocell{\mathfrak{s}}$. The chart is
+a product $\Phi_1(p)\,\gramSection{Z}\,\Phi_2(p)^{-1}$ with $\Phi_1=\uq{q}\emb{\cay{\tilde\theta}}$,
+$\Phi_2=\uq{q'}\emb{\cay{\eta}}$; these are differentiable by Lemma~\ref{l:logd}, and the section by
+Lemma~\ref{l:secnorm}(ii) and because $\gramSection{\cdot}$ has the section matrix near $Z$. By the product rule, the logarithmic derivative of the chart is the sum of the logarithmic derivative of $\Phi_1$
+conjugated by $\gramSection{Z}\Phi_2^{-1}$, of that of the section conjugated by $\Phi_2^{-1}$, and of minus that of
+$\Phi_2$ conjugated by $\Phi_2^{-1}$. For $G$ invertible, the map $S\mapsto G^{*}SG$ on the skew-hermitian matrices,
+read through $e^{-1}\circ\mathrm{sk}$, has a determinant of absolute value $|\det G|^{2r}$ (a lemma of unit 115). The
+formal proof applies this with $G=\Phi_2(p)K$, where $\Delta=\diagLast{\cornerDefect{Z}^{-1/2}}$,
+\[\mathsf{M}(A,B)=F_{\mathfrak{s}}\bigl((A\Delta-1)F_{\mathfrak{s}}^{*}+B\Delta F'^{*}_{\mathfrak{s}}\bigr),\qquad
+K=1+\mathsf{M}\bigl(Z^{-1},\sectionCoeff{Z^{*}}{Z}\bigr).\]
+The matrix $K$ is chosen so that $\gramSection{Z}K=\mathsf{R}+\mathsf{M}(\sectionCoeff{Z}{Z^{*}},Z^{*-1})$ for a
+constant matrix $\mathsf{R}$, and $\btan(\cdot)\,\mathsf{M}(A,B)=0=\mathsf{M}(A,B)^{*}\btan(\cdot)$; and
+$|\det K|=|\det(Z^{-1}\Delta)|$, so $|\det G|^{2}=|\det Z|^{-2}\cornerDefect{Z}^{-1}=\gd{Z}^{-1}$. After the
+congruence by $G$ the endomorphism is block triangular in the variables $(Z;\theta,q;\eta,q')$, with these diagonal
+blocks:
+\begin{itemize}
+\item on $Z$: the map $S\mapsto(Z^{*-1}\Delta)^{*}S\,(Z^{-1}\Delta)$ of the complex $n\times n$ matrices, because the
+  $Z$-component of $\chartc$ reads $F'^{*}_{\mathfrak{s}}(\cdot)F_{\mathfrak{s}}$ and
+  $Z'\mapsto F_{\mathfrak{s}}^{*}\Jone{\mathfrak{s}}\gramSection{Z'}F_{\mathfrak{s}}=Z'$ has the identity as derivative;
+  its real determinant has absolute value $|\det(Z^{-1}\Delta)|^{4n}=\gd{Z}^{-2n}$;
+\item on $(\theta,q)$ and on $(\eta,q')$: by Lemma~\ref{l:logd}, maps that are triangular in themselves, with the
+  logarithmic derivative of a Cayley chart (for $\theta$: of its column at $k_0$) and right multiplications by
+  unitary matrices on the diagonal; their determinants have absolute values $\cayd{\tilde\theta}$ and $\cayd{\eta}$
+  \Inp{J4}.
+\end{itemize}
+So $|\det(e^{-1}\circ\mathrm{sk}\circ\mathrm{D}^{\log}\chart(p))|\cdot\gd{Z}^{-r}=\gd{Z}^{-2n}\cayd{\tilde\theta}\cayd{\eta}$,
+and $r-2n=k-1$. I read the formal computation line by line; that the blocks are as stated is verified there by
+expansion of the matrices and is not reproduced here.
+\end{proof}
+
+\begin{proof}[Proof of Theorem A\textup{(ii)}]
+Let two parameters with $Z\in\Ocell{\mathfrak{s}}$ have the same image $g$. By Lemma~\ref{l:rfg} and
+$Z(\gramSection{Z})=Z$, the frame Gram matrix of $g$ is $Z$, so the two $Z$ agree. Multiplying the equation
+$g\,\Phi_2=\Phi_1\gramSection{Z}$ by $F_{\mathfrak{s}}Z^{-1}\Delta$ on the right isolates the frame and dual frame
+columns of the left factor $\Phi_1=\uq{q}\emb{\cay{\tilde\theta}}$: the map $q\mapsto\uq{q}D_{\mathfrak{s}}$ is
+injective, and the column at $k_0$ of a Cayley chart determines $\theta$ (unit 115). So $q$ and $\theta$ agree, then
+the right factors agree, and $q'$ and $\eta$ agree because the Cayley chart is injective where it is regular.
+\end{proof}
+
+\begin{proof}[Proof of Theorem A\textup{(iii)}]
+By (i), (ii) and \Inp{J4} there is a real $t$ with
+\[\int_{Z\in\Ocell{\mathfrak{s}}}\frac{w(p)}{\volU{r}}f(\mathrm{e}^{\mathrm{i}t}\chart(p))\,\dd p\le\int f(\mathrm{e}^{\mathrm{i}t}y)\,\dd y=\int f\,\dd y,
+\qquad w(p)=\gd{Z}^{k-1}\cayd{\tilde\theta}\cayd{\eta},\]
+for Haar measures normalised as in the background library. In
+the chart integral, the integral over $\eta$ with the weight $\cayd{\eta}$ is the Haar integral over
+$h=\cay{\eta}\in\mathrm{U}(\kappa)$, the integrals over $q,q'$ are those over $\mathcal{U}^0$, and the integral over
+$\theta$ of the normalised weight $\cayd{\tilde\theta}$ is $1$; the constants combine to $\cellc{\mathfrak{s}}$.
+For each $\theta$ the hypothesis with $k=\cay{\tilde\theta}$ bounds $L$ by the inner integral; integrate over
+$\theta$.
+\end{proof}
+
+\begin{lemma}[orthonormality of the full function]\label{l:orth}
+Let $B$ be a real number, $f$ a natural number, and $X$ a Bessel system for $(\mathfrak{s},B,f)$ with full function
+$\Phi_0$. Then for all $i,i'\in I$: $\int\Phi_{0,i}\,\overline{\Phi_{0,i'}}\,\dd\dot y=1$ if $i=i'$, and $=0$ otherwise.
+\end{lemma}
+\begin{proof}
+The products are integrable. The matrix $\mathcal{G}$ of these integrals commutes with every $\mathrm{rep}(h)$:
+substitute $y\mapsto\emb{h}y$, which preserves $\dd\dot y$ because conjugation by $\emb{h}$ preserves the Haar
+measure of $\UT{T}$, and use $\Phi_0(\emb{h}y)=\mathrm{rep}(h)\Phi_0(y)$. As $\mathrm{rep}$ is irreducible,
+$\mathcal{G}$ is a scalar; its trace is $\int|\Phi_0|^2\dd\dot y=|I|$.
+\end{proof}
+\leanline{\lean{orthonormal}\sep\lean{euclideanenormsqeqsum}}
+
+\sect{Mean squares over the chart}{s:sobolev}
+\begin{lemma}[a weight supported near one frame matrix]\label{l:fmle}
+Let $w,\varphi\colon\Gone{\mathfrak{s}}\to[0,\infty]$ be measurable, $K\in[0,\infty]$ and $R$ real with $1\le R$.
+Suppose $w$ is invariant under left translations by $\Ql{n}{T}$; $\int\varphi(uy)\,\dd\muz(u)\le K$ for all $y$; and
+for all $y$ with $\varphi(y)\ne0$ and all $s\in\UT{T}$ with $\varphi(sy)\ne0$, all entries of $\mathrm{fm}(s)$ have
+absolute value at most $R$. Then $\int\varphi\,w\,\dd y\le K\,(2R)^{2n^{2}}\int w\,\dd\dot y$.
+\end{lemma}
+\begin{proof}
+Unfold: $\int\varphi w\,\dd y=\int w(y)\int_{\UT{T}}\varphi(uy)\,\dd u\,\dd\dot y$. Fix $y$; if the inner integral is
+not $0$ choose $u_0$ with $\varphi(u_0y)\ne0$ and translate by it. Write the Haar measure of $\UT{T}$ as the image
+of $\dd x\,\dd\muz(u')$ under $(x,u')\mapsto u'\,\mathrm{lift}(x)$ \Inp{J5}; the frame matrix of
+$u'\,\mathrm{lift}(x)$ is the unitriangular matrix of $x$, so the integrand vanishes unless all $|x_{ab}|\le R$.
+The inner integral over $u'$ is at most $K$, and the volume of the box of the $x$ is at most
+$(\pi R^{2})^{n^{2}}\le(2R)^{2n^{2}}$.
+\end{proof}
+\leanline{\lean{lintegralmulleofframeMatrixle}}
+
+\begin{lemma}[a mean square along the section]\label{l:sob}
+Let $P,c$ be real numbers, $D\in[0,\infty]$, $\mathrm{rep}$ as before, $\Phi_0\colon\Gone{\mathfrak{s}}\to\CC^I$ with
+the Schur bounds with respect to $\mathrm{rep}$, $P$ and $D$, and $Z$ a complex $n\times n$ matrix. Suppose
+$8r\le P$, $0<c$, and that every $Y$ with $\|Y-Z\|<P^{-6}$ has $c\le\gd{Y}$ and \m{\IsBoundedInCell{Y}{P}}. Let
+$\varphi\colon\Gone{\mathfrak{s}}\to\CC$ be measurable and integrable with $\varphi(y)=0$ whenever $\|y\|>P^{20}$.
+Then
+\[\begin{aligned}\cellc{\mathfrak{s}}\,c^{\,k-1}\int_{\mathrm{U}(\kappa)}\int_{\{u\in\mathcal{U}^0:\|u\|\le P^{20}\}}
+\Bigl|\int\varphi(y)\,\Phi_0\bigl(\gramSection{Z}(u\,\emb{h})^{-1}y\bigr)\,\dd y\Bigr|^{2}&\dd\muz(u)\,\dd h\\
+\le\ P^{2000n^{2}}\,D&\int|\varphi|^{2}\,\dd y.\end{aligned}\]
+\end{lemma}
+\begin{proof}
+Let $V_w$ be the derivative functions of the Schur bounds. For a word $w$ in pairs of pairs of indices put
+$\psi_w(y)=\varphi(y)\prod(y^{-1})_{\alpha\delta}y_{\gamma\beta}/P^{40}$ over the letters of $w$; then
+$|\psi_w|\le|\varphi|$, because $\|y\|,\|y^{-1}\|\le P^{20}$ where $\varphi\ne0$. Put
+$f_w(x,(h,u))=\int\psi_w(y)V_{w_1}(\gramSection{Z+\epsilon(x)}(u\emb{h})^{-1}y)\,\dd y$, for $x$ in the cube
+$[0,P^{-8}]^{2n^{2}}$ of the real coordinates $\epsilon$ of the matrices, which stays within $P^{-6}/2$ of $Z$.
+\emph{Derivatives.} By Lemma~\ref{l:secnorm}(iii) with $t_0=P^{-6}/2$, the curve $x_d\mapsto\gramSection{Z+\epsilon(x)}$
+has derivative $g\mathsf{A}$ with $\|P^{40}\mathsf{A}\|\le P^{112}$; differentiating under the integral and using the
+rule for right derivatives of $V_{w_1}$ gives $|\partial_df_w|\le P^{112}\sum_l|f_{lw}|$. \emph{The cube.} For
+$|w|\le2n^{2}$ the integral of $|f_w|^{2}$ over the cube and over $(h,u)$, times $\cellc{\mathfrak{s}}c^{k-1}$, is at
+most the Haar integral of $\chi(\gamma)|\int\psi_w(y)V_{w_1}(\gamma y)\dd y|^{2}$ over the $\gamma$ with $Z(\gamma)$
+in the cube, by Theorem~A(iii) and $\gd{\cdot}\ge c$; here $\chi$ is a cutoff in the $\mathcal{U}^0$-direction. By
+Lemma~\ref{l:fmle}, with $R=P^{2}$ from Lemma~\ref{l:rfg} and the bounds on $Z(\cdot)$ and its inverse, and by
+Schur's bound for $V_{w_1}$, this is at most $(2P^{2})^{2n^{2}}P^{2|w|}D\int|\varphi|^2$. \emph{Conclusion.} The
+Sobolev chain inequality \Inp{J7} bounds the value at $x=0$, $w=\emptyset$, which is the left side, by
+$(2(1+(|\mathcal{A}|P^{112})^{2})P^{8})^{2n^{2}}$ times the cube bound; with $8r\le P$ the product is at most
+$P^{2000n^{2}}D\int|\varphi|^{2}$. This last comparison is the formal text's arithmetic.
+\end{proof}
+\leanline{\lean{lintegralgramSectionintegralle}}
+
+\sect{The tower measure and the gauge at the complex place}{s:haar}
+\begin{proof}[Proof of Theorem B]
+Write $\cL=\cLC{\mathfrak{h}}$, $\lambda=\haarRatio{\mathfrak{h}}$. (ii) is the choice of $\lambda$
+(Definition~\ref{d:ratio}). By Theorem~A(ii) of Note~T and \Inp{J5},
+$\groupMeasure{\cL}=\etab{n}*\upperMeasure{\cL}{0}$ with $\etab{n}$ a Haar measure of $\UT{T}$; so
+$(u,g)\mapsto ug$ carries this Haar measure times $\upperMeasure{\cL}{0}$ to $\lambda\,\dd y$, and \Inp{J3} gives
+(iii). $\lambda\ne0$ because the tower measure is not zero (Note~T), and $\lambda\ne\infty$ follows from (iv).
+
+(iv) It suffices to test one function, the indicator $f$ of the compact set $\{\|g\|\le2\}$, of positive finite
+Haar measure: we show $\frac{\volU{k}}{\volU{r}}\int f\,\dd(\lambda\,\dd y)\le\int f\,\dd y$. By the lemma of Note~T on moving a Weyl law to the left, applied to all floors below $\varrho$, the left measure is
+\[\lambda\,\dd y=\etab{n}^{-1}*\floorMeasure{\cL}{n}*\bigl(\varpi_0*\dots*\varpi_{\varrho-1}*\varpi'_\varrho\bigr)*\floorMeasure{\cL}{n}*\etab{n},\]
+where $\varpi'_\varrho$ is the image of the density of the boost and $\etab{n}^{-1}$ is $\etab{n}$, which is
+invariant under inversion. By \Inp{J5} the middle factor is the image of $\prod_a\mathrm{dens}_a(c_a)\,\dd c$ under
+$c\mapsto g_c^{-1}$, $g_c=\wl{\varrho}{c}\boost{\varrho}{c_\varrho}$, and the two Haar measures of $\UT{T}$ are images
+of $\dd x\,\dd\muz$. Only the $c$ with $|c_\varrho|>1$ count. For such $c$, unitriangular $x,x'$ and
+$k_1,k_2\in\mathrm{U}(\kappa)$, the element $\gamma=\mathrm{lift}(x)^{-1}\emb{k_1}g_c\emb{k_2}\mathrm{lift}(x')$ has
+the frame Gram matrix $Z=x^{*}\operatorname{diag}(c)\,x'$ (unit 148), with
+$\gd{Z}=\prod_{a<\varrho}|c_a|^{2}\,(|c_\varrho|^{2}-1)>0$, so $Z\in\Ocell{\mathfrak{s}}$, and by
+Lemma~\ref{l:double} $\gamma=\uq{q}\emb{k}\gramSection{Z}(\uq{q'}\emb{h})^{-1}$. Since conjugation by elements of
+$\Ql{n}{T}$ and translation preserve $\muz$ \Inp{J11}, and $f$ is invariant under multiplication by unitary
+$\emb{h}$ on both sides, the integral of $f$ over the remaining $\mathcal{U}^0$-variables equals
+$\iint f(u\,\emb{k}\gramSection{Z}(v\emb{h})^{-1})\dd\muz(u)\dd\muz(v)$ for each $k,h$. The densities match: in
+Bruhat coordinates \Inp{J5} $\dd Z=\prod_a|c_a|^{4(\varrho-a)}\dd x\,\dd x'\,\dd c$, and
+\[\frac{\volU{k}}{\volU{r}}\prod_{a\le\varrho}\mathrm{dens}_a(c_a)=\cellc{\mathfrak{s}}\,\gd{Z}^{k-1}\prod_{a<\varrho}|c_a|^{4(\varrho-a)}.\]
+So $\frac{\volU{k}}{\volU{r}}\int f\,\dd(\lambda\,\dd y)$ is at most the right side of the hypothesis of
+Theorem~A(iii), for every $k$, and that theorem gives the claim.
+\end{proof}
+
+\begin{lemma}[an orthonormal system in a kernel]\label{l:ker}
+Let $s_0$ be a natural number, $L$ a real number, $\mathsf{m}$, $\iota$ finite sets and $C$ a complex
+$\mathsf{m}\times\iota$ matrix with $|\iota|=s_0+1+3n$, $4\le L$, $\operatorname{rank}C\le3n$ and $|\iota|\le L$.
+Then there are a subset $D\subseteq\iota$ and a complex $\iota\times D$ matrix $O$ with $CO=0$, $O^{*}O=1$ and, for
+every natural number $j$,
+\[\int_{\{u\in\CC^{\iota}:\,|u_i|\le L^{j}\text{ for all }i\}}\Bigl(\frac{|O^{*}u|^{2}}{36}\Bigr)^{-s_0}\dd u\le(L^{2})^{99n(j+1)}.\]
+\end{lemma}
+\begin{proof}
+Diagonalise $C^{*}C$ by a unitary $Q$; at least $|\iota|-3n=s_0+1$ eigenvalues vanish; let $D$ be $s_0+1$ of their
+indices and $O$ the corresponding columns of $Q$. Then $CO=0$ and $O^{*}O=1$. Substituting $u\mapsto Q^{*}u$, the
+domain goes into a box of side $L\cdot L^{j}$ (the entries of $Q$ have modulus at most $1$ and $|\iota|\le L$). On
+$\CC^{D}$ pass to $t=|w|^{2}$, which carries Lebesgue measure to $\pi^{s_0+1}t^{s_0}/s_0!\,\dd t$: the integrand
+$(t/36)^{-s_0}$ times this density is the constant $36^{s_0}\pi^{s_0+1}/s_0!$, bounded independently of $s_0$; the
+range of $t$ and the volume of the box in the other coordinates are bounded by powers of $L$.
+\end{proof}
+\leanline{\lean{existsorthonormalkerlintegralle}}
+
+\begin{proposition}[the gauge at the complex place]\label{p:gauge}
+Let $\mathfrak{h}$ be real-place sizes in $\RealPlaceSizes{\mathfrak{s}}{\rho}{s_0}{b}$ and $R$ a real number with
+$\rho\le R$. Then the sets $\{|x|\le R^{i}\}$ and the constant $R^{2}$ satisfy the axioms \textup{(G1)--(G6)} of a
+gauge on $\cLC{\mathfrak{h}}$ (Note~T); this is the content of Definition~\ref{d:cgauge}.
+\end{proposition}
+\begin{proof}
+The axioms of a size hold because $R\ge\rho\ge8r$: a sum of at most $r+1$ numbers of absolute value at most $R^{i}$
+is at most $R^{i+1}$, and the entries of $\Jone{\mathfrak{s}}=\Jone{\mathfrak{s}}^{-1}$ are $0,\pm1$. (G1)--(G4):
+closed discs are compact; $c_{\CC}=\pi^{2}\ge1$; $\modA(u)=|u|^{2}\le(R^{2})^{j}$; the volume $\pi R^{2j}$ is at most
+$(R^{2})^{j+1}$; the unit is $1$, the entries of the basis have modulus at most $1$, $\tau_{\CC}\delta_{\CC}^{-1}$
+has modulus $1$; entries of a matrix are at most its norm $\le\rho\le R$; the ball has radius $\tfrac14$. (G5):
+by the formula for the flat chart at $\CC$, the points of size $j$ of the cone have their two free groups of
+coordinates in discs of radii $2R^{j}/|\alpha+\mathrm{i}|$ and $R^{j}$, $\alpha$ the real coordinate of the skew
+parameter, whose measure is a multiple of the Cauchy density; integrating gives at most $(R^{2})^{99n(j+1)}$.
+(G6): let $x$ be in the box, $y$ a position and $v$ a matrix with $\varrho$ rows. Let $\mathsf{N}$ be the matrix of
+the $n$ rows of $1-\Jone{\mathfrak{s}}$ at the indices of the $e_a$ and of $z$; a vector $w'$ with $\mathsf{N}w'=0$
+has $\Jone{\mathfrak{s}}w'=w'$. Apply Lemma~\ref{l:ker} to the matrix $C$ with the rows of $v$, of
+$\mathsf{N}x^{-1}\orthonormalPart{\cLC{\mathfrak{h}}}$ and of $\mathsf{N}(xy)^{-1}\orthonormalPart{\cLC{\mathfrak{h}}}$:
+it has $\varrho+2n\le3n$ rows, and $|\iota|=k-1=s_0+1+3n\le R$. Take $O$ from the lemma and
+$\varphi(u)=36/|O^{*}u|^{2}$. For $w$ in the image of $O$ and $g\in\{x^{-1},(xy)^{-1}\}$ the vector
+$w'=g\,\orthonormalPart{\cLC{\mathfrak{h}}}w$ has $\mathsf{N}w'=0$, so $|w'|^{2}=h(w',w')=|w|^{2}$. Hence, for
+$t\in\CC$ with $|t|\le|O^{*}u|/9$, the vector $w=t\,|O^{*}u|^{-2}\,OO^{*}u$ has norm at most $\tfrac19$, lies in $W$
+and has $u^{*}w=t$: the set $\{u^{*}w:w\in W\}$ contains a disc of radius $|O^{*}u|/9$, which gives the first
+inequality of (G6). For the second, if $c\in\mathcal{C}_u$, take such a $w$ with $|t|=|O^{*}u|/9$; then
+$|c|\,|t|\le|h(z_1,z'_1)|+|h(z_2,z'_2)|\le\tfrac1{16}+\tfrac14$ for close pairs, so $\mathcal{C}_u$ lies in the disc
+of radius $3/|O^{*}u|$. The integral bound is that of Lemma~\ref{l:ker}.
+\end{proof}
+
+\sect{The open-cell bound}{s:oc}
+\begin{proof}[Proof of Theorem C]
+\emph{Set-up.} Write $Z=Z(\gamma)$ and $M=\rho^{9n}/\gd{Z}$. By Lemma~\ref{l:rfg} and the hypotheses on $y$,
+$|Z_{ab}|\le\rho^{2}$; hence $\gd{Z}\le|\det Z|^{2}\le\rho^{9n-1}$ (as $n\le\rho$), so $\rho\le M$, and
+$M^{-1}\le\gd{Z}$. Put $Q=M^{9n}$, $t_0=Q^{5}$ and $P=t_0^{\,n}$. Lemma~\ref{l:near} gives
+$Z\in\Ocell{\mathfrak{s}}$ and, for every $Z'$ within $P^{-6}$ of $Z$, $\gd{Z'}\ge\gd{Z}/2$ and
+\m{\IsBoundedInCell{Z'}{P}}. By Lemma~\ref{l:double}, $\gamma=\uq{q_1}\emb{k_1}\gramSection{Z}(\uq{q_2}\emb{k_2})^{-1}$.
+Take the tube $A$, $\Omega_0$ of \Inp{J11} for $t_0$; $A$ is compact and lies in $\{\|y\|\le P^{20}\}$. For
+$x=(h,u')\in\mathrm{U}(\kappa)\times\mathcal{U}^0$ put $t(x)=\uq{q_2}\,\emb{k_2h^{-1}}\,u'^{-1}$, an element of the
+group generated by $\mathcal{U}^0$ and $\Hl{n}{T}$, so that
+$\gamma\,t(x)=\uq{q_1}\emb{k_1}\,\gramSection{Z}\,(u'\emb{h})^{-1}$. Let $m$ be the product of the Haar probability
+measure of $\mathrm{U}(\kappa)$ and of $\muz$, restricted to $\mathrm{U}(\kappa)\times\Omega_0$ and normalised, and
+\[\nu=\frac{P^{2000n^{2}}\,|I|}{\deg\cdot\cellc{\mathfrak{s}}\,(\gd{Z}/2)^{k-1}\,\muz(\Omega_0)}\cdot\mathbf{1}_A\,|\Phi_0|^{2}\,\dd y.\]
+
+\emph{(i).} The norm of an integral $\int\beta(y')\Phi_0(sgy')\,\dd y'$ does not change when $s\in\Ql{n}{T}$ is
+removed (unit 118). Summing first over $i'$, the square is the squared norm of
+$\int\overline{\varphi(y')\Phi_{0,i}(\gamma t(x)y')}\,\mathbf{1}_A(y')\Phi_0(t(x)y')\,\dd y'$, in which $t(x)$ may be
+removed from the last factor; summing then over $i$, the sum is
+$\sum_{i'}|\int\varphi_{i'}(y')\Phi_0(\gamma t(x)y')\,\dd y'|^{2}$ with
+$\varphi_{i'}=\mathbf{1}_A\,\varphi\,\overline{\Phi_{0,i'}}$, which does not depend on $x$; and
+$\uq{q_1}\emb{k_1}$ may be removed from $\gamma t(x)$. For each $i'$, Lemma~\ref{l:sob} applies to $\varphi_{i'}$,
+with $c=\gd{Z}/2$, the bound $P$ (the Bessel system has the Schur bounds at $P\ge B^{5}$ with $D=|I|/\deg$) and the
+domain $\{\|u'\|\le P^{20}\}\supseteq\Omega_0$. Summing over $i'$, with
+$\sum_{i'}|\varphi_{i'}|^{2}=\mathbf{1}_A|\varphi|^{2}|\Phi_0|^{2}$, gives (i).
+
+\emph{(ii).} By Lemma~\ref{l:fmle} with $w=|\Phi_0|^{2}$, $\varphi=\mathbf{1}_A$, $K=t_0\,\muz(\Omega_0)$ from the
+tube, and $R=P^{40}$ (for $y,sy\in A$ the entries of $\mathrm{fm}(s)$ are at most $\|sy\|\|y^{-1}\|$),
+$\int_A|\Phi_0|^{2}\dd y\le t_0\,\muz(\Omega_0)(2R)^{2n^{2}}\int|\Phi_0|^{2}\dd\dot y$, and the last integral is $|I|$.
+So $\nu(\Gone{\mathfrak{s}})$ is at most a power of $M$ times $|I|^{2}/(\deg\,\cellc{\mathfrak{s}}(\gd{Z}/2)^{k-1})$;
+that the power is at most $M^{10^{5}n^{4}}$ is the formal text's arithmetic.
+
+\emph{(iii).} Let $x=(h,u')$ with $u'\in\Omega_0$, and $y'\in\frbox{\rho}$ with $\bs{\gamma t(x)y'}\le\rho$. Put
+$y''=(u'\emb{h})^{-1}y'$; its frame vectors are those of $y'$ (Lemma~\ref{l:fv}(i)), and
+$\bs{\gramSection{Z}y''}\le\rho$ by invariance of the Bessel size. By Lemma~\ref{l:bsnorm}(i) there is
+$w\in\UT{T}$ with $\|w\,\gramSection{Z}y''\|\le\rho$. The explicit section matrix expresses the columns
+$y''^{-1}e^*_a$ by the frame vectors of $y''$ and of $w\gramSection{Z}y''$, with coefficients among the entries of
+$Z^{-1}$, of $\cornerDefect{Z}^{-1/2}$ and of the inverse of $\mathrm{fm}(w)$, which is bounded through
+Lemma~\ref{l:rfg} and Lemma~\ref{l:near} for $Z(w\gramSection{Z})$; so these columns have norm at most $Q^{4}$-times
+a constant, and Lemma~\ref{l:framebox} gives $\|y''\|\le t_0$. Hence
+$y'=u'\emb{h}y''\in\Omega_0\cdot\{\|y\|\le t_0\}\subseteq A$.
+\end{proof}
+
+\sect{The Bessel cut}{s:cut}
+\begin{proof}[Proof of Theorem D\textup{(i)}]
+Write $e=\deg_l\psi_l$; by \Inp{J10} it is a bounded integrable idempotent kernel. Let $\beta$ be a smooth compactly
+supported function whose smoothing of $\psi_l$ is the generator of the module of \Inp{J10}; for a word $w$ let
+$\gamma_w$ be the corresponding iterated derivative of $\beta$ (twisted by the frame) and
+$X_w=\deg_l\cdot(\text{the smoothing of }\psi_l\text{ by }\gamma_w)$, a function on $\Gone{\mathfrak{s}}$. Then $X_w$
+is integrable, $e*X_w=X_w$, and $F*X_w$ is the smoothing of $F=F*e$ by $\gamma_w$. Put $V_w=F*X_w$. It is continuous,
+$V_\emptyset=F$ (the smoothing by $\beta$ reproduces, and $F*e=F$), it is a Bessel function for $\mathrm{rep}$
+because left translations pass through the convolution, and the right derivative of $V_w$ along the elementary
+matrix at $(\alpha,\beta)$ is $V_{(\alpha,\beta)w}$ by differentiation of the smoothing. For the Schur bound, the
+last inequality of \Inp{J10} gives the constant $\deg_l^{-1}\|X_w\|_2^{2}\,\|F\|_2^{2}$ with
+$\|X_w\|_2^{2}=\deg_l\cdot\|x_w\|^{2}$ for the vector $x_w$ of the module, and
+$\|x_w\|\le((r+1)^{4}(L+r+1+|w|))^{|w|}\le B^{|w|}$ for $|w|\le2n^{2}$, by the hypothesis on $B$.
+\end{proof}
+
+\begin{proof}[Proof of Theorem D\textup{(ii)}]
+Let $M=8r^{2}+1$, $R=b^{6n+2}$, $\phi(g)=(2/\|g\|)^{2M}$ and
+$\Phi^{\sharp}(y)=\int\phi(x^{-1}sy)\,\dd\nu_S(s)$. \emph{Normalisation.} $Y$ is integrable for $\dd\dot y$, by the
+peak bound and the integrability of $\psi_l$; let $\mathsf{q}=\int|Y|^{2}\dd\dot y$, finite and not $0$ as
+$Y(x)\ne0$, choose $c$ with $c^{2}\mathsf{q}=|I|$, and put $\Phi_0=cY$; then $\int|\Phi_0|^{2}\dd\dot y=|I|$ and
+$\Phi_0*(\deg_l\psi_l)=\Phi_0$; $\Phi_0$ is continuous because it is a convolution. \emph{Cut.} Let
+$\chi(t)=\max(0,\min(1,R-t))$ and $\Phi(y)=\chi(\bs{y})\Phi_0(y)$, continuous by Lemma~\ref{l:bsnorm}(iii), a Bessel
+function because the Bessel size is invariant under $\Ql{n}{T}$, with $|\Phi|\le|\Phi_0|$ and $\Phi(y)=0$ unless
+$\bs{y}\le R$. \emph{The peak against the $L^{2}$ norm.} From $Y=Y*e$, $|e(g)|\le\deg_l\phi(g)$, the Cauchy--Schwarz
+inequality with the weight $\phi$, the unfolding through $\nu_S$ and $\Phi^{\sharp}\le C^{2}b^{N}|Y(x)|$ (second
+peak bound, $C=16^{M}$),
+\[|Y(x)|^{2}\le\deg_l^{2}\int\phi\cdot\int|Y|^{2}\,\Phi^{\sharp}\,\dd\dot y\le\deg_l^{2}\int\phi\cdot C^{2}b^{N}|Y(x)|\cdot\mathsf{q},\]
+so $|Y(x)|\le\deg_l^{2}\,C^{2}b^{N}\,\mathsf{q}\int\phi$.
+\emph{The majorant.} Take $\mathsf{A}=|c|\,\Phi^{\sharp}$ and
+$\mu=|c|\cdot\frac{C}{\vol\{\|g-1\|\le1\}}\,b^{N}|Y(x)|\cdot(2/\|g\|)^{M}\dd g$, $C=16^{M}$. Then:
+$|\Phi_0|,|\Phi|\le\mathsf{A}$ by the first peak bound and the decay of $\psi_l$; where $\Phi_0(y)\ne\Phi(y)$,
+that is $\bs{y}>R-1$, every $s$ has $\|x^{-1}sy\|>2b$ (Lemma~\ref{l:bsnorm}(ii) and $\bs{x}\le b^{5n}$), and the
+decay with the larger exponent $2M+3r^{3}f\le2M+A_0$ gains the factor $b^{-3r^{3}f}$; $\mathsf{A}$ is
+$\UT{T}$-invariant by the invariance of $\nu_S$; $\mathsf{A}(y)\le\mu\{g:\bs{yg}\le R\}$ by the second peak bound
+and a comparison of $\phi$ on a unit ball; $\mu$ is finite, by the integral of the decay; and
+$\mu(\Gone{\mathfrak{s}})\int\mathsf{A}\,\dd\dot y\le|c|^{2}C^{2}b^{N}|Y(x)|\int\phi\le|I|\,(\deg_l C^{2}\int\phi)^{2}b^{2N}
+\le|I|\,b^{2r^{3}}$, by the bound for the peak, $\deg_l\int\phi\cdot C^{2}\le b^{99r^{2}}$ \Inp{J10} and
+$N+99r^{2}\le r^{3}$. \emph{Closeness.} Where $\Phi\ne\Phi_0$ we have $b^{3r^{3}f}|\Phi-\Phi_0|\le b^{3r^{3}f}|\Phi_0|\le
+\mathsf{A}$, and $\mathsf{A}\le\mu(\Gone{\mathfrak{s}})$; so
+$b^{6r^{3}f}\int|\Phi-\Phi_0|^{2}\dd\dot y\le\mu(\Gone{\mathfrak{s}})\int\mathsf{A}\,\dd\dot y\le b^{2r^{3}}|I|$, and
+$2r^{3}-6r^{3}f\le-10r^{2}$ because $f\ge1$ and $r\ge99$, which follows from $N+99r^{2}\le r^{3}$. The comparisons of exponents are those of the formal text.
+\end{proof}
+
+\sect{The volume weight}{s:vol}
+\begin{lemma}[the volume weight]\label{l:volpos}
+For $\gamma,y\in\Gone{\mathfrak{s}}$: \textup{(i)} $\frameVolume{\gamma}>0$; \textup{(ii)} if
+$\gamma\in\mathcal{U}^0$, then $\frameVolume{\gamma y}=\frameVolume{y}$.
+\end{lemma}
+\begin{proof}
+(i) If the matrix had a kernel vector $v\ne0$, the vector $w=\gamma^{-1}F_{\mathfrak{s}}v$ would be orthogonal, for
+the Euclidean product, to all $e_a-e^*_a$ and to $z$; so $w_{e_a}=w_{e^*_a}$, $w_z=0$ and
+$h(w,w)=2\sum|w_{e_a}|^{2}+\sum|w_{x_i}|^{2}\ge0$, while $h(w,w)=h(F_{\mathfrak{s}}v,F_{\mathfrak{s}}v)=-|v_\varrho|^{2}\le0$.
+Hence $w$ has only coordinates at the $e_a,e^*_a$, equal in pairs and with $h(w,w)=0$, so $w=0$ and $v=0$. (ii)
+$\gamma^{-1}=\uq{q}$, and the explicit matrix of $\uq{q}$ changes the matrix of the definition by a factor of
+determinant $1$.
+\end{proof}
+\leanline{\lean{frameVolumepos}\sep\lean{frameVolumemulleft}}
+
+\begin{proof}[Proof of Theorem E]
+By Lemma~\ref{l:bsnorm}(i) take $\omega\in\UT{T}$ with $\|\omega y\|\le\theta$. Let $\mathsf{T}$ be $\theta$ times the
+leading $j\times j$ block of $\mathrm{fm}(\omega)$, unitriangular up to the factor, so $\det\mathsf{T}=\theta^{j}$
+and its minor on $\sigma$ has determinant $\theta^{|\sigma|}$. Let $\mathsf{B}$ be the inverse of the matrix in
+Definition~\ref{d:vol} for $y$, times $((1-\Jone{\mathfrak{s}})F_{\mathfrak{s}})^{*}$; let
+$\mathsf{p}=Z\mathsf{I}_jZ_j^{-1}$, $\mathsf{C}=\mathsf{T}\mathsf{p}^{*}\mathsf{B}$,
+$\mathsf{c}=(VZ_j^{-1}\mathsf{T}^{*}-W_{\mathfrak{s}}^{*}\mathsf{C}^{*})\mathsf{E}$ and
+$\mathsf{S}=R\,(\mathsf{T}\mathsf{E})^{*}\mathsf{E}$, an invertible $\sigma\times\sigma$ matrix with
+$|\det\mathsf{S}|=\theta^{|\sigma|}|\det R|$. Define
+\[K(a)=\Bigl(\frac{(2\theta^{2})^{j}}{|\det Z_j|}\Bigr)^{k+n}\det\bigl(1+(a\mathsf{S}+\mathsf{c})^{*}(a\mathsf{S}+\mathsf{c})\bigr)^{-(k+n)}.\]
+The bound for $\int K$ is Hua's \Inp{J8}, with $M=1$, the $k$ rows of $a$ and $r'=n\ge|\sigma|$.
+
+Now let $\gamma$, $A$ be as in the statement, $\mathsf{t}=\gamma F_{\mathfrak{s}}\mathsf{I}_jZ_j^{-1}$ and
+$\mathsf{G}=A\mathsf{S}+\mathsf{c}$. \emph{The ratio as a determinant.} The normal form at $j$ gives, for each frame
+position $b\ge j$, vectors $X_b$, $Y_b$ of the flags of the frame and of $\gamma f$, triangular with unit leading
+coefficients up to a number of modulus $1$; with them and with
+$\mathsf{M}=\mathsf{B}\mathsf{t}Z_j-\mathsf{I}_j$ the formal text shows
+\[\frac{\frameVolume{y}}{\frameVolume{\gamma^{-1}y}}=\bigl|\det(1+\mathsf{M}\mathsf{p}^{*})\bigr|^{-1}=\bigl|\det(1+\mathsf{p}^{*}\mathsf{M})\bigr|^{-1}
+=\frac{|\det\mathsf{T}|^{2}}{|\det Z_j|\,|\det(\mathsf{C}\mathsf{t}\mathsf{T}^{*})|}.\]
+\emph{Two positivity facts.} Put $\mathsf{Y}=\Jone{\mathfrak{s}}\mathsf{t}\mathsf{T}^{*}-\mathsf{C}^{*}$,
+$\mathsf{W}=W_{\mathfrak{s}}^{*}\mathsf{Y}$ and $\Theta=-\mathsf{C}\mathsf{t}\mathsf{T}^{*}$. First,
+$1+\mathsf{W}^{*}\mathsf{W}\le\Theta+\Theta^{*}$: the difference is $\mathsf{D}(1-\mathsf{Q}\mathsf{Q}^{*})\mathsf{D}^{*}$
+plus a matrix of the form $N^{*}N$, where $\mathsf{D}=\mathsf{C}y$ and
+$\mathsf{Q}=\theta^{-1}(\omega y)^{-1}F_{\mathfrak{s}}\mathsf{I}_j$ has norm at most $1$ and
+$\mathsf{D}\mathsf{Q}=1$; it is positive by the matrix Bessel inequality \Inp{J9}. Second,
+$\mathsf{G}=\mathsf{W}\mathsf{E}$ by the hypothesis on $\frameXPart{\gamma}$, so
+$\mathsf{W}\mathsf{W}^{*}-\mathsf{G}\mathsf{G}^{*}=\mathsf{W}(1-\mathsf{E}\mathsf{E}^{*})\mathsf{W}^{*}\ge0$, again by
+\Inp{J9}. By $\det(1+XX^{*})=\det(1+X^{*}X)$, the monotonicity of the determinant on positive matrices and the
+Ostrowski--Taussky inequality \Inp{J9},
+\[\det(1+\mathsf{G}^{*}\mathsf{G})=\det(1+\mathsf{G}\mathsf{G}^{*})\le\det(1+\mathsf{W}\mathsf{W}^{*})=\det(1+\mathsf{W}^{*}\mathsf{W})
+\le2^{j}\,|\det(\mathsf{C}\mathsf{t}\mathsf{T}^{*})|.\]
+Combining, $\frameVolume{y}/\frameVolume{\gamma^{-1}y}\le(2\theta^{2})^{j}|\det Z_j|^{-1}\det(1+\mathsf{G}^{*}\mathsf{G})^{-1}$,
+and the power $k+n$ is $K(A)$. I read this proof line by line; the determinant identity of the first step is the
+formal text's computation with the vectors $X_b$, $Y_b$.
+\end{proof}
+
+\subhead{Four lemmas on lattice translates (for the unit on the second moment).} The remaining declarations of the
+file of the volume weight concern the adelic objects of unit 148 and are used there. Let $E$ be a CM field with ring
+of finite adeles $\mathbb{A}_{E,f}\supseteq\widehat{O}_E$, and $\mathsf{S}$ a \emph{filling} over $E$ and
+$\mathfrak{s}$ (unit 148), with its natural number $\mathsf{g}$, its classes $c$, the elements $h_c$, the frame
+Gram matrix $Z(\gamma)$ of an element $\gamma$ of the rational unitary group, the \emph{frame image}
+$\gamma F_{\mathfrak{s}}$, its rows at the $x_i$ and $z$ (the \emph{middle part}), the matrix
+$\mathrm{pl}_j(Z)$ whose rows $a<j$ are those of $Z$ and whose other rows are those of the identity, the first
+$\varrho$ rows $\xi(Z)$ of $Z$, and the coordinates $\mathsf{x}_c$ of the standard basis of $\langle x_i\rangle$ in
+the lattice of the class $c$. An element $\gamma$ \emph{has level $j$} if it is in normal form at $j$, the leading
+minor of order $j$ of $Z(\gamma)$ is not $0$, and $\gd{Z(\gamma)}\ne0$ exactly when $j=n$.
+
+\begin{lemma}[counting by congruence classes]\label{l:count}
+Let $E$ be a CM field that is stably unramified in the sense of unit 148, $\alpha$ a set, $\pi,\sigma,\tau$ finite
+sets, $x\in[0,\infty]$, $c$ a finite idele with $c\in\widehat{O}_E$, $B\subseteq\alpha$, and $Y$ a family of
+$\sigma\times\pi$ matrices over $\mathbb{A}_{E,f}$, integral for $a\in B$. Let $m$ be a primitive $\pi\times\tau$
+matrix over $\widehat{O}_E$, $s$ a natural number with a bijection between $\tau\sqcup\{1,\dots,s\}$ and $\pi$, $K$
+a lattice containing $c\,\widehat{O}_E^{\sigma}$, $\mathsf{n}\colon\alpha\to\NN$ with the index of
+$K\cap\Lambda_a$ in $\Lambda_a$ dividing $\mathsf{n}(a)$ for $a\in B$, where $\Lambda_a$ is the lattice spanned by the
+columns of $Y(a)m$, and $l$ a natural number with $|\tau|\le l$. Suppose every subset $D\subseteq B$ on which the
+columns of $Y(a)-Y(a')$ lie in $K$ for all $a,a'\in D$, and which is not empty, has at most $x$ elements. Then
+\[\sum_{a\in B}\mathsf{n}(a)^{-l}\le\bigl([\widehat{O}_E:c\widehat{O}_E]^{|\sigma|}\bigr)^{|\sigma|+s}\cdot x.\]
+\end{lemma}
+\begin{proof}
+Complete $m$ to an invertible matrix $U$ over $\widehat{O}_E$, and colour $a\in B$ by the columns of $Y(a)U$ modulo
+$c\widehat{O}_E^{\sigma}$: there are at most $[\widehat{O}_E^{\sigma}:c\widehat{O}_E^{\sigma}]^{|\pi|}$ colours, and
+it suffices to bound the sum over one colour class. In a class a Hermite form of $(Y(a)m)$ gives generators of
+$\Lambda_a$, and a second colouring by these generators modulo $K$ has at most $\mathsf{n}(a)^{|\tau|}\le
+\mathsf{n}(a)^{l}$ colours relevant for $a$; inside one sub-class the columns of $Y$ agree modulo $K$, so it has at
+most $x$ elements. Summing $\mathsf{n}(a)^{-l}$ over the sub-classes gives the bound. The count of the colours in
+terms of the index $[\widehat{O}_E:c\widehat{O}_E]^{|\sigma|}$ and of $s$ is the formal text's.
+\end{proof}
+\leanline{\lean{tsuminvindexpowleofcongr}}
+
+\begin{lemma}[three lemmas on frame images]\label{l:frames}
+Let $\mathsf{S}$ be a filling over $E$ and $\mathfrak{s}$, $c$ a class and $j$ a natural number.
+\textup{(i)} Let $\gamma$ have level $j$, and $b\le\varrho$ a frame position with $b=\varrho$ if $b<j$. Then the
+vector $\mathsf{y}=\gamma F_{\mathfrak{s}}\cdot(\text{column }b\text{ of }\mathrm{pl}_j(Z(\gamma))^{-1})$ has
+coordinates $0$ at all $e^*_a$, and $5\sum_{i\in\kappa}|\mathsf{y}_{x_i}|_v^{2}\le1$ at every infinite place $v$
+of~$E$.
+\textup{(ii)} Let $\mathsf{l}$ be a matrix over $E$ with rows indexed by $\kappa$ such that $\mathsf{x}_c\mathsf{l}$ is
+integral, and $i$ one of its columns with $\sum_{a\in\kappa}|\mathsf{l}_{ai}|_v^{2}<1$ at every infinite place $v$.
+Then $\mathsf{l}_{ai}=0$ for every $a\in\kappa$.
+\textup{(iii)} Let $\mathsf{S}$ be admissible, $t$ a label, $p,p'$ labelled terms of level $j$ over $c$ with the
+label $t$, and $u,u'$ elements of the group $\mathcal{U}^0_c$ of the class; if the frame images of $u\,p_2$ and
+$u'p'_2$ are equal, then $p=p'$.
+\end{lemma}
+\begin{proof}
+(i) If $b\ge j$, the definition of the level gives a vector common to the flags of the frame and of $\gamma f$,
+which is $\mathsf{y}$; its coordinates on $\langle x_i\rangle$ vanish. If $b<j$, then $b=\varrho$ and $j=n$, the
+column is that of $Z(\gamma)^{-1}$, and a lemma of unit 148 computes the norm of the middle part of $\mathsf{y}$ at
+each place and bounds it by the constant of the filling. (ii) The column is an integral vector of the definite
+lattice of the class with all archimedean norms less than $1$, so it is $0$ (a lemma of unit 148, from: an algebraic
+integer with all conjugates of absolute value less than $1$ is $0$, unit 121). (iii) $u\,p_2$ and $u'p'_2$ are
+again terms over $c$; equal frame images put the quotient of the corresponding compact elements into
+$\Ql{n}{T}$, and the uniqueness of the labelled term in its double coset (unit 148) gives $p=p'$.
+\end{proof}
+\leanline{\lean{middlesharedvectorle}\sep\lean{coleqzeroofnormltone}\sep\lean{eqofframeImageeq}}
+
+\begin{lemma}[equal Gram blocks and congruent middle parts]\label{l:translate}
+Let $E$ be stably unramified, $\mathsf{S}$ a filling over $E$ and $\mathfrak{s}$, $c,c',c''$ classes, $j$ a natural
+number, $\gamma,\gamma'$ of level $j$ with $Z(\gamma')=Z(\gamma)$, $\iota$ a finite set and $\mathsf{q}$ an
+injection of $\iota$ into $\{0,\dots,\varrho-1\}$ such that every $a$ outside its image has $j\le a$. Let
+$\xi$ be the rows $\mathsf{q}(\iota)$ of $\xi(Z(\gamma))$ and
+$\mathsf{t}=\mathsf{g}^{-1}\mathrm{pl}_j(Z(\gamma))^{-1}$. Suppose that every column of the conjugate transpose of
+the difference of the middle parts of the positions $h_c^{-1}\gamma'h_{c''}$ and $h_c^{-1}\gamma h_{c'}$ lies in the
+sum of $\mathsf{g}$ times the lattice spanned by the columns of $\xi^{*}$ and of the lattice of the vectors that
+$\mathsf{t}^{*}$ maps to integral vectors. Then there is a $\kappa\times\iota$ matrix $\mathsf{l}$ over $E$ with
+$\mathsf{x}_c\mathsf{l}$ integral such that the frame images of $\gamma'$ and $\gamma$ agree at the rows $e^*_a$ and
+$z$ and differ by $\mathsf{g}\,\mathsf{l}\,\xi$ at the rows $x_i$ (the rows other than the $e_a$).
+\end{lemma}
+\begin{proof}
+Let $\mathsf{x}$ be the difference of the middle parts of the frame images at the rows $x_i$. The hypothesis, read
+in the lattice of the class, gives an adelic matrix $\Lambda'$ with $\mathsf{x}_c\Lambda'$ integral and
+$\mathsf{x}_c(\mathsf{x}-\mathsf{g}\Lambda'\xi)\mathsf{t}$ integral; by density of $E$ in the finite adeles choose a
+matrix $\mu$ over $E$ with the same two properties. Let $\mathsf{L}=(\mathsf{x}-\mathsf{g}\mu\xi)\mathsf{t}$. For a
+column $b$ with $b\ge j$ or $b=\varrho$, Lemma~\ref{l:frames}(i) for $\gamma$ and for $\gamma'$ gives
+$5\sum_i|\cdot|_v^{2}\le1$ for the middle parts of the two columns $b$ of the frame images times
+$\mathrm{pl}_j(Z(\gamma))^{-1}$; so the column $b$ of $\mathsf{x}\mathsf{t}$ has $\sum_i|\cdot|_v^{2}\le\tfrac45\mathsf{g}^{-2}<1$
+at every infinite place. The column $b$ of $\xi\mathsf{t}$ vanishes, by the first assertion of that lemma, because
+the rows of a frame image at the $e^*_a$ are rows of $Z(\gamma)$. So the column $b$ of $\mathsf{L}$ has norms less
+than $1$ and is $0$ by Lemma~\ref{l:frames}(ii). Hence $\mathsf{L}$ lives on the columns $\mathsf{q}(\iota)$, and
+$\mathsf{l}=\mathsf{L}|_{\mathsf{q}(\iota)}+\mu$ satisfies
+$\mathsf{x}=\mathsf{g}\,\mathsf{l}\,\xi$, because $\mathsf{t}^{-1}$ restricted to these columns is
+$\mathsf{g}\,\xi$. The rows at $e^*_a$ and $z$ of the two frame images agree because $Z(\gamma')=Z(\gamma)$.
+\end{proof}
+\leanline{\lean{existsframeImagetoRowseqadd}}
+
+\sect{Where the results are used}{s:used}
+Theorem~B and Proposition~\ref{p:gauge} supply the level, the gauges and the Haar hypothesis for Note~L at the
+complex place. Theorem~C is the open-cell bound of a Bessel system, Theorem~D produces the cut pair and the Schur
+bounds of such a system from a peaked Bessel function of the unit on the discrete series (unit 133), and
+Theorem~E and Lemmas~\ref{l:count}--\ref{l:translate} are used in the unit on the second moment (unit 148), in the
+Schur test for the incoherent and degenerate pairs.
+
+\sect{Notes on the formal text}{s:notes}
+\textbf{A declaration outside the census.} The definition of the level at the complex place
+(Definition~\ref{d:clevel}; lines 31 to 41 of the file of the gauge at $\CC$) is not listed by the census of the
+artifact, because its attribute runs over two lines; so it is a member of no unit, and it is not in the
+concordance. It is stated here from the Lean text, which the second reader also recovered from the pinned source.
+
+\textbf{Proofs inside definitions.} Two definitions contain proofs: that the section matrix is unitary
+(Lemma~\ref{l:gsec}) and that the data of Definition~\ref{d:cgauge} form a gauge (Proposition~\ref{p:gauge}); the
+level at $\CC$ contains the verification of the axioms of a level. The dossier has no structured proofs for them;
+Lemma~\ref{l:gsec} and Proposition~\ref{p:gauge} are written from the Lean terms.
+
+\textbf{Argument lists not confirmed by Lean.} For the open cell, the section, and for the Lean theorems behind
+Lemma~\ref{l:near}, Lemma~\ref{l:sob}, Theorem~D(i), Theorem~E and Lemma~\ref{l:translate}, the reader's dossier
+derived the list of arguments by Lean's rules, because the census misreads names bound inside the declaration or
+stops at a \texttt{let} in the statement (missing the shape, the frame instance and the class). Nothing was compiled,
+so these lists are not confirmed by Lean. The statements of Lemma~\ref{l:logd}, Theorem~D(i),
+Lemma~\ref{l:frames}(i), Lemma~\ref{l:translate} and Theorem~E continue after a \texttt{let} and were read to their
+end in the Lean text.
+
+\textbf{Differences from the natural statements.} (1) The inverse of a singular matrix is $0$ in the formal text;
+this matters only in Definition~\ref{d:cell}. (2) The chart is defined on all parameters; where $Z$ is not in the
+open cell the section is the identity. (3) Theorem~A(i) is stated with the real determinant of an endomorphism of
+the parameter space, obtained from the logarithmic derivative through $\mathrm{sk}$ and $e^{-1}$. (4) In Theorem~B
+the constant is a choice; (ii) holds by this choice, and the content is (i), (iii), (iv). (5) Theorem~C asks
+$y\in\frbox{\rho}$ and $\gamma^{-1}y\in\frbox{\rho}$ only to bound the entries of $Z(\gamma)$. (6) In Theorem~D(ii)
+the number $N$ is the Lean variable \texttt{n} and $n=\varrho+1$ is \texttt{𝔰.n}. (7) In Theorem~E the set $\sigma$
+lies in the lowest universe, and the leading block is taken through the inclusion of $\{0,\dots,j-1\}$ given by
+$j\le n$, an implicit argument. (8) Lemma~\ref{l:ker} is stated for any finite sets and uses the shape only through
+$n$. (9) Lemma~\ref{l:count} allows $x=\infty$ and uses real powers of indices. (10) In Lemma~\ref{l:dual} the
+family $V$ is indexed by all natural numbers and constrained up to $2\varrho$.
+
+\textbf{Small results.} Twenty-seven declarations have no statement of their own; each is cited where it is used:
+continuity and norms of frame vectors (Lemma~\ref{l:fv}), the two rules for the Bessel size
+(Lemma~\ref{l:bsnorm}), norms of $\Jone{\mathfrak{s}}$ and of inclusions (Lemma~\ref{l:framebox}), the four formulas
+for the frame Gram matrix (Lemma~\ref{l:rfg}), the properties of $\gd{\cdot}$ and of the open cell
+(Definition~\ref{d:cell}), the identities for the section matrix (Definitions~\ref{d:section}, \ref{d:gsec}), the
+bound $\rho\ge4$ (Definition~\ref{d:rps}), a sum of squares (Lemma~\ref{l:orth}) and two properties of the volume
+weight (Definition~\ref{d:vol}).
+
+\subhead{How this note was written.} From the structured proofs of the reader's dossier and from the Lean text. I
+read all statements and definitions of the ten files in the Lean text, with their comments. I read line by line the
+formal proofs behind Theorem~A(i), Theorem~B, Theorem~C, both parts of Theorem~D and Theorem~E, which the reader
+marked as the least certain, and the proofs inside the definitions of the section, of the level and of the gauge.
+The proofs of Sections~\ref{s:frame} and \ref{s:section}, of Theorem~A(ii),(iii), Lemmas~\ref{l:orth},
+\ref{l:fmle}, \ref{l:sob}, \ref{l:ker}, \ref{l:volpos} and of the four lemmas on lattice translates are written
+from the structured proofs, whose steps a program compared with the source; I did not read those Lean proofs line
+by line. Not reproduced, and named where they occur: the matrix identities in Lemma~\ref{l:gsec} and
+Lemma~\ref{l:logd}; the evaluation of the block determinants in Theorem~A(i); the determinant identity in
+Theorem~E; the constants in the proofs of Theorems C and D and of Proposition~\ref{p:gauge}(G5); and the count of
+colours in Lemma~\ref{l:count}. In these places the text says what the formal proof establishes and by which
+inputs; it is an account of the formal proof, not an independent derivation. The references were taken from the
+second reader's verdicts and the catalogue of the write-up, as cited; none was opened for this note. The program
+check of the unit's dossier covered \UnitSteps{} leaf steps of \UnitProofs{} proofs.
+
+\head{Appendix A. Concordance with the Lean artifact}
+The letters of this note and the names of the formal text: $\Gone{\mathfrak{s}}$, $\Jone{\mathfrak{s}}$ are
+\texttt{G₁}, \texttt{J₁}; $F_{\mathfrak{s}}$, $F'_{\mathfrak{s}}$, $W_{\mathfrak{s}}$, $D_{\mathfrak{s}}$ are
+\texttt{frameCols}, \texttt{dualFrameCols}, \texttt{definiteCols}, \texttt{dualCols}; $Z(y)$ is
+\texttt{realFrameGram}; $\mathrm{fm}$ is \texttt{frameMatrix}; $\gd{\cdot}$ is \texttt{gramDiscReal};
+$\Ocell{\mathfrak{s}}$ is \texttt{Shape.openCell}; $\uq{q}$ is \texttt{unipotentOf}; $\emb{h}$ is \texttt{embedH};
+$\muz$ is \texttt{besselHaar₀}; $\dd\dot y$ is \texttt{besselQuotMeasure}; $\bs{\cdot}$ is \texttt{besselSize};
+$\frbox{\rho}$ is \texttt{frameBox}; $\operatorname{cay}$, $\mathsf{j}$ are \texttt{cayleyChart},
+\texttt{cayleyDensity}; $\chart$, $\chartc$, $\btan$ are \texttt{openCellChart}, \texttt{chartCoords},
+\texttt{besselTangent}; $\mathfrak{h}$ is \texttt{hF}; $\cLC{\mathfrak{h}}$ is \texttt{RealPlaceSizes.complexLevel}
+(not in the census); $s_0$ is \texttt{s}; $R$ is \texttt{L}; $\Phi_0$ is \texttt{F}, \texttt{W .full} or \texttt{Y};
+$N$ is \texttt{n}; $A_0$ is \texttt{A}; $\mathsf{S}$, $\mathsf{g}$ are \texttt{S}, \texttt{S.g}. Two statements as
+the artifact has them:
+\quoted{haarRatiospec}
+\quoted{opencell}
+{\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}\setlength{\tabcolsep}{0pt}
+\begin{longtable}{@{}p{30mm}p{56mm}p{43mm}r@{}}
+\textbf{In this note} & \textbf{Lean declaration} & \textbf{File} & \textbf{Lines}\\\midrule\endhead
+\ConcordanceRows
+\end{longtable}}
+
+\head{Notation}
+\begingroup\fontsize{8.6}{10.9}\selectfont\raggedright
+\setlength{\columnsep}{9mm}\setlength{\parskip}{0pt}
+\begin{multicols}{2}
+\nt{$\mathfrak{s}=(\varrho,\kappa,k_0)$, $n$, $k$, $r$}{the shape; $\varrho+1$; $|\kappa|$; $2\varrho+k+1$}
+\nt{$V$, $e_a$, $e^*_a$, $x_i$, $z$, $f_a$, $h$}{the space, its basis, the frame, the hermitian form}
+\nt{$\Jone{\mathfrak{s}}$, $\Gone{\mathfrak{s}}$, $\dd y$, $\dd\dot y$}{Gram matrix, unitary group, Haar measure, measure of $\UT{T}\backslash\Gone{\mathfrak{s}}$}
+\nt{$F_{\mathfrak{s}}$, $F'_{\mathfrak{s}}$, $W_{\mathfrak{s}}$, $D_{\mathfrak{s}}$}{matrices of the frame, the dual frame, the $x_i$, the $e^*_a$}
+\nt{$T$, $\Hl{l}{T}$, $\Ql{l}{T}$, $\UT{T}$, $\mathcal{U}^0$}{the form at $\CC$ and the subgroups of Note~T; the unipotent group fixing the frame}
+\nt{$\uq{q}$, $\emb{h}$, $\muz$, $\mathrm{lift}$}{elements of $\mathcal{U}^0$, of $\Hl{n}{T}$; Haar measure of $\mathcal{U}^0$; a lift of unitriangular matrices}
+\nt{$Z(y)$, $\mathrm{fm}(y)$, $\gd{Z}$, $D_\varrho$}{frame Gram matrix, frame matrix, discriminant, leading minor}
+\nt{$\bs{y}$, $\frbox{\rho}$, $\|X\|$, $X^{*}$}{Bessel size, frame box, operator norm, conjugate transpose}
+\nt{$\operatorname{ic}$, $\operatorname{cd}$, $\Ocell{\mathfrak{s}}$, $\operatorname{Cell}_{\le P}$}{corner, defect, open cell, bounded part}
+\nt{$\operatorname{d}_\varrho$, $\mathsf{c}$, $\mathsf{f}$, $\mathsf{m}$, $\gamma(Z)$, $\Delta$}{the matrices of the section; the section; a diagonal matrix (in Section~\ref{s:vol}: the volume weight)}
+\nt{$\chart$, $\chartc$, $\btan$, $\mathrm{D}^{\log}$, $\mathrm{sk}$, $\operatorname{skew}$}{chart, its coordinates, tangent map, logarithmic derivative, real coordinates of matrices}
+\nt{$\operatorname{cay}$, $\mathsf{j}$, $\theta$, $\tilde\theta$, $\eta$, $q$, $q'$, $p$, $e$}{Cayley chart, its weight, parameters of the chart, the isomorphism of coordinates}
+\nt{$\mathfrak{h}$, $\operatorname{RPS}$, $\rho$, $s_0$, $b$}{real-place sizes and their numbers}
+\nt{$\cLC{\mathfrak{h}}$, $\lambda$, $\Gamma(\mathfrak{h};\rho\le R)$, $R$}{level, Haar ratio, gauge, its radius}
+\nt{$\operatorname{Lev}$, $\operatorname{Gau}$, $\mathsf{M}$, $\mathsf{M}_{\ge l}$, $\theta_l$, $\etab{j}$, $\varpi_l$, $\mathsf{O}$}{notions of Note~T: levels, gauges, tower and upper measures, floor measures, Heisenberg measures, Weyl laws, orthonormal part}
+\nt{$\boost{\varrho}{c}$, $\wl{\varrho}{c}$, $g_c$, $\mathrm{dens}_a$}{boost, Weyl element, their product, densities of the floors}
+\nt{$\cellc{\mathfrak{s}}$, $\volU{N}$}{$\frac{\volU{k}}{\volU{r}}\frac{2\pi^k}{(k-1)!}$; $\prod_{i<N}2\pi^{i+1}/i!$}
+\nt{$I$, $\ip{v}{w}$, $\mathrm{rep}$, $\Phi_0$, $\Phi$, $Y$}{index set, inner product, representation, full and cut functions, a peaked function}
+\nt{$\deg$, $\deg_l$, $\psi_l$, $l$, $L$, $A_0$, $\varepsilon$, $\mathsf{p}$}{formal degrees, coefficient, parameter, its bound and gap, signs, frame}
+\nt{$\nu_S$, $\sd$, $*$, $V_w$, $X_w$, $\beta$, $\gamma_w$}{measure of unit 133, superdiagonal sum, convolution, derivative functions, smoothing data}
+\nt{$\Delta(\gamma)$, $\mathsf{x}_0(\gamma)$, $\mathsf{I}_j$, $\mathsf{E}$, $Z_j$, $K$}{volume weight, part in the positive space, inclusions, leading block, the kernel}
+\nt{$E$, $\mathbb{A}_{E,f}$, $\widehat{O}_E$, $\mathsf{S}$, $\mathsf{g}$, $h_c$, $\mathsf{x}_c$, $\mathrm{pl}_j$, $\xi$}{CM field, finite adeles, integral adeles, filling and its objects}
+\nt{$\sigma$, $\tau$, $\pi$, $\alpha$, $\iota$, $\mathsf{m}$}{finite index sets ($\pi$ also the number); $\alpha$, $\gamma$, $\delta$ also indices}
+\nt{$a$, $b$, $c$, $d$, $i$, $j$, $l$, $m$, $t$, $s$, $f$, $N$, $M$, $P$, $C$, $D$, $B$, $A$}{indices, numbers and constants of the statements; matrices and sets of the proofs}
+\nt{$g$, $u$, $v$, $w$, $x$, $y$, $\omega$, $\gamma$}{group elements and vectors}
+\nt{$\varphi$, $\chi$, $\phi$, $\mu$, $\nu$, $\Omega_0$, $\epsilon$, $\Lambda$, $\Lambda_a$, $\mathcal{G}$, $\mathcal{A}$, $\mathcal{V}$, $\mathcal{C}$}{functions, measures, sets, lattices and auxiliary objects of the proofs}
+\nt{$\mathsf{A}$, $\mathsf{B}$, $\mathsf{C}$, $\mathsf{G}$, $\mathsf{L}$, $\mathsf{N}$, $\mathsf{R}$, $\mathsf{T}$, $\mathsf{W}$, $\mathsf{Y}$, $\mathsf{l}$, $\mathsf{n}$, $\mathsf{q}$, $\mathsf{r}$, $\mathsf{t}$, $\mathsf{y}$, $\mathsf{z}$, $\Theta$}{matrices, numbers and maps of the proofs}
+\nt{$G$, $H$, $J$, $O$, $Q$, $S$, $U$, $X$, $Z$, $F$, $K$, $k$, $h$, $q$, $o$, $n$, $r$, $z$, $\mathbf{1}$, $\infty$, $\mathrm{e}$, $\mathrm{i}$}{further matrices and elements; letters inside names; the indicator; infinity; the numbers $\mathrm{e}$ and $\mathrm{i}$}
+\nt{$\varrho$, $\kappa$, $\delta$, $\zeta$, $\psi$}{letters of names of Note~T and of the place}
+\end{multicols}
+\endgroup
+
+\end{document}

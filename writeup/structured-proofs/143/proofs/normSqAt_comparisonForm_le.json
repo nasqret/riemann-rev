@@ -1,0 +1,216 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Rows.ComparisonForms:131:7",
+ "name": "normSqAt_comparisonForm_le",
+ "summary": "Bound the class-sum norm by the number of classes times pointwise bounds; each point form of a Cartan product is bounded by the line multiplier (lineScale) and the table vector; the numbers of classes, the residue ring and the hook number are absorbed in exp(r·B₀) by the scales.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Write exp(2rB₀) = exp(rB₀)·exp(rB₀) and let S = exp(rB₀)·Σ_a weylNormSq(σ ∘ ζ_a).",
+   "lines": [
+    133,
+    133
+   ],
+   "lean": "  rw [two_mul, exp_add, mul_assoc]; set S := exp _ * Finset.sum ..",
+   "uses": []
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "fact",
+   "claim": "S ≥ 0, the chosen group order M and g are positive, and the rank bounds hold.",
+   "lines": [
+    134,
+    135
+   ],
+   "lean": "  obtain ⟨_, M, g, this⟩ := (by simp [S, exp_pos, Finset.sum_nonneg] : 0 ≤ S),\n    NeZero.pos D.chosenGroupOrder, NeZero.pos D.gProd, rank_bounds_card_bigIndex j",
+   "uses": [
+    {
+     "decl": "Data.rank_bounds_card_bigIndex"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Every column count k⁻(τ, i) of the untwisted auxiliary pair is at most D.h.",
+   "lines": [
+    136,
+    137
+   ],
+   "lean": "  have hm τ i : (untwistedAuxPair j).colsMinus τ i ≤\n    D.h := by grind [add_mul, auxPair, rowParameter]",
+   "typed_fact": "(untwistedAuxPair j).colsMinus τ i ≤\n    D.h",
+   "uses": [
+    {
+     "decl": "Data.untwistedAuxPair"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "fact",
+   "claim": "For a level K containing the principal level K(ϖ̄²) in rank at most 2𝗇_m, the number of classes is at most exp(x^29(1 + log g²)) ≤ exp(b) (card_stdClasses_le_exp_mul_log, principalLevel_le_of_dvd, the scales).",
+   "lines": [
+    138,
+    140
+   ],
+   "lean": "  have c {n} [Fintype n] {K} (h : principalLevel n (D.piGBar ^ 2) ≤ K) hn :=\n    (D.card_stdClasses_le_exp_mul_log (D.gProd ^ 2) hn ((principalLevel_le_of_dvd\n    (by simp [← piGBar_mul_star])).trans h)).trans (exp_le_exp.2 (D.le_of_hasLogBound (G := D.b)))",
+   "uses": [
+    {
+     "decl": "Data.card_stdClasses_le_exp_mul_log"
+    },
+    {
+     "decl": "Data.le_of_hasLogBound"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Unfold comparisonForm and normSqAt as class sums.",
+   "lines": [
+    141,
+    141
+   ],
+   "lean": "  simp [comparisonForm_apply, LevelForm.normSqAt, ← mul_classSum, -classSum]",
+   "uses": [
+    {
+     "decl": "comparisonForm"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "Bound the class-sum norm by the number of classes times squares of pointwise bounds (classSum_le_card_mul_sq, sqrt_weylNormSq_sum_le, sqrt_weylNormSq_classSum_le with B = √(M²S)), the inner numbers of classes by step 4 (the level contains a principal level: principalLevel_le_levelOfSubgroup); the pointwise bound is left as a goal (step 13).",
+   "lines": [
+    142,
+    147
+   ],
+   "lean": "  grw [← exp_log (Int.cast_pos.2 hookNumber_pos), classSum_le_card_mul_sq fun _ ↦\n    (sqrt_weylNormSq_sum_le ..).trans (sum_le_card_nsmul _ _ _ fun _ _ ↦\n    (sqrt_weylNormSq_classSum_le σ (B := √(D.chosenGroupOrder ^ 2 * S)) fun _ ↦\n    sqrt_le_sqrt ?_).trans (by grw [c (by\n    with_unfolding_all use Modulus.principalLevel_le_levelOfSubgroup\n                         (D.ideal_untwistedModulus_eq_span.ge (by simp))) (by lia)]))]",
+   "uses": [
+    {
+     "step": "4"
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Collect the cardinalities and powers.",
+   "lines": [
+    148,
+    149
+   ],
+   "lean": "  simp (disch := positivity) only [card_univ, card_eq_nat_card,\n    Nat.card_prod, Matrix, Nat.card_fun, nsmul_eq_mul, Nat.cast_mul, mul_pow, sq_sqrt, ← mul_assoc]",
+   "uses": []
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Insert the class counts (step 4 three times), |O/M²Q| ≤ (N(Q)g²)^{2f} (card_resRing_le, norm_mul_gProd_pow_mem_modulus), the loss through card_detIndex and k⁻ ≤ h (step 3), and the hook number bound (hookNumber_le); pass to logarithms.",
+   "lines": [
+    150,
+    154
+   ],
+   "lean": "  grw [c (principalLevel_le_levelOf (Sum.rec (Ideal.pow_mem_of_mem _ ·.2.2.1 2 two_pos) nofun)),\n    c le_rfl,\n    c le_rfl, Modulus.card_resRing_le (levelModulus_ideal_le norm_mul_gProd_pow_mem_modulus),\n    DividedSplitting.loss, (card_detIndex j _).elim (·.ge.trans), hm, hookNumber_le (sum_le_sum\n    fun _ _ ↦ sum_le_sum fun _ e ↦ mul_le_mul' (mem_range_le e) (hm ..)), ← le_exp_of_log_le]",
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "step": "4"
+    },
+    {
+     "decl": "Modulus.card_resRing_le"
+    },
+    {
+     "decl": "Data.norm_mul_gProd_pow_mem_modulus"
+    },
+    {
+     "decl": "Data.card_detIndex"
+    }
+   ]
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Expand the logarithms of products (trivial twist: Q = ∅).",
+   "lines": [
+    155,
+    155
+   ],
+   "lean": "  simp (disch := positivity) [log_mul, this, twist_one_spec, add_assoc]",
+   "uses": []
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Bound log terms by the terms themselves and truncated differences.",
+   "lines": [
+    156,
+    157
+   ],
+   "lean": "  grw +useKAbstract [@log_le_self (_ + _), @log_le_self (_ * _), ← sq, Nat.sub_sub, Nat.sub_sub,\n    reducedHalfGap, Nat.sub_le, Nat.sub_le]",
+   "uses": []
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The remaining inequality holds on the scales (le_of_hasLogBound); the side goals by positivity, simp and lia.",
+   "lines": [
+    158,
+    158
+   ],
+   "lean": "  simpa using D.le_of_hasLogBound; any_goals first | positivity | simp [*, twist_one_spec] <;> lia",
+   "uses": [
+    {
+     "decl": "Data.le_of_hasLogBound"
+    }
+   ]
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "computation",
+   "claim": "The pointwise goal: unfold productForm.",
+   "lines": [
+    159,
+    159
+   ],
+   "lean": "  simp [DividedSplitting.productForm]",
+   "uses": []
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Pointwise: the squared norm of a delta form is at most that of its vector (weylNormSq_deltaForm_le), the Cartan product is multiplicative in norms (weylNormSq_cartanProduct, after σ: map_cartanProduct), the line multiplier has squared norm ≤ exp(rB₀) (lineScale, Q = ∅), one table vector is at most the sum, and the order of the stabiliser divides the chosen group order M (card_classAut_dvd_chosenGroupOrder).",
+   "lines": [
+    160,
+    163
+   ],
+   "lean": "  grw (transparency := default) [weylNormSq_deltaForm_le isOfFinOrder_level_char, map_cartanProduct\n    (f := σ.toRingHom), weylNormSq_cartanProduct, ((lineScale j).2.2 ..).2 rfl, single_le_sum (f :=\n    (weylNormSq <| σ ∘ ζ ·)) (by simp), Nat.le_of_dvd M (card_classAut_dvd_chosenGroupOrder ..)] <;>\n    simp [this, (splittingV j 1).low, HasColumnsBelow]; lia",
+   "uses": [
+    {
+     "decl": "map_cartanProduct"
+    },
+    {
+     "decl": "lineScale"
+    }
+   ]
+  }
+ ]
+}

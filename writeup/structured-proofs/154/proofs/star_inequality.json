@@ -1,0 +1,280 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Main:121:7",
+ "name": "star_inequality",
+ "file": "New/Main.lean",
+ "file_sha256": "b6b285737cc0c306f380442eae279fd3127693c1074e7978d80f8ffd14f4078e",
+ "commit": "72fead102f663d5c7a407964a13dc0cf9d977207",
+ "summary": "Theorems A and B give a large independent family of rows with small index and short untwisted lifts; Theorem C bounds its covolume from below by the main amount h_main; comparing the two bounds and dividing by dim rows, h_main cancels and m·rem is at most a small multiple of the budget.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Apply Theorems A and B in the form `Data.exists_family_covolumeSq_le` to D: there are a natural number n and rows y : Fin n → rows(D) such that (i) y is linearly independent over ℂ; (big) (1 − 4/b_D²)·dim rows(D) ≤ n; there is a real δ with (index) δ ≤ 5·dim rows(D)·log(1 + b_D²)·𝓑(D) and (I) IndexLe(D, y, δ); and (short) for every automorphism σ of ℂ, the squared covolume of the untwisted lifts Θ_D(1)∘y at σ is at most exp(n·(h_main(D) − m_D·rem(D) + log b_D·𝓑(D))). Fix them.",
+   "lines": [
+    122,
+    122
+   ],
+   "lean": "  D.exists_family_covolumeSq_le.elim fun n ⟨y, i, big, ⟨δ, index, I⟩, short⟩ ↦ by",
+   "uses": [
+    {
+     "decl": "Data.exists_family_covolumeSq_le"
+    },
+    {
+     "decl": "Data.IndexLe"
+    },
+    {
+     "decl": "LevelPlaces.LevelForm.covolumeSq"
+    },
+    {
+     "decl": "Data.Θ"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "fact",
+   "claim": "0 < dim rows(D) (as a real number), because the space of rows is non-zero (`Data.finrank_rows_ne_zero`).",
+   "lines": [
+    123,
+    123
+   ],
+   "lean": "  have d0 : (0 : ℝ) < D.rowDim := mod_cast D.finrank_rows_ne_zero.pos",
+   "typed_fact": "(0 : ℝ) < D.rowDim",
+   "uses": [
+    {
+     "decl": "Data.finrank_rows_ne_zero"
+    },
+    {
+     "decl": "Data.rowDim"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Notation: d := dim rows(D) as a real number; L := log b_D·𝓑(D) = f_D·a_D·(log b_D)⁴ (the unit of error); h := h_main(D) − m_D·rem(D) + L, so that (short) bounds every squared covolume by exp(n·h).",
+   "lines": [
+    125,
+    127
+   ],
+   "lean": "  set d := (D.rowDim : ℝ)\n  set L := D.logB * D.budget\n  set h := D.mainHeight - D.m * D.remainder + L with def_h",
+   "uses": [
+    {
+     "decl": "Data.mainHeight"
+    },
+    {
+     "decl": "Data.remainder"
+    },
+    {
+     "decl": "Data.budget"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "fact",
+   "claim": "−h ≤ b_D²·x_D⁹⁹. Indeed −h = −h_main(D) + m_D·rem(D) − L ≤ |h_main(D)| + m_D·|rem(D)| because L > 0 (L has a positive lower size bound) and m_D ≥ 0; and |h_main(D)| + m_D·|rem(D)| ≤ b_D²·x_D⁹⁹ is the crude bound `Data.abs_mainHeight_add_remainder_le`.",
+   "lines": [
+    128,
+    131
+   ],
+   "lean": "  have crude : -h ≤ D.b ^ 2 * D.x ^ 99 := by\n    grw [def_h, ← abs_mainHeight_add_remainder_le, ← neg_le_abs, ← le_abs_self,\n      ← (HasLogBound.pos D : 0 < L)]\n    simp",
+   "typed_fact": "-h ≤ D.b ^ 2 * D.x ^ 99",
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "decl": "Data.abs_mainHeight_add_remainder_le"
+    },
+    {
+     "decl": "Data.HasLogBound.pos"
+    }
+   ],
+   "ambient_uses": [
+    "neg_le_abs",
+    "le_abs_self"
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Both bounds together: d·(h_main(D) − 3L) ≤ d·(h_main(D) − m_D·rem(D) + L + 4·x_D⁹⁹ + 10·log(1 + b_D²)·𝓑(D)), by the following chain.",
+   "lines": [
+    132,
+    141
+   ],
+   "lean": "  have both : d * (D.mainHeight - 3 * L) ≤ d * (D.mainHeight - D.m * D.remainder + L + 4 *\n    D.x ^ 99 + 10 * log (1 + D.b ^ 2) * D.budget) := calc\n    _ ≤ d * h + (d - n) * -h + 2 * δ := (integral_forms_long i big I short).trans_eq (by ring)\n                    -- the missing dimensions are a share `4 / b²`, and the index is small\n    _ ≤ d * h + 4 / D.b ^ 2 * d * (D.b ^ 2 * D.x ^ 99) + 2 *\n      (5 * d * log (1 + D.b ^ 2) * D.budget) := by\n      grw [crude, index, show d - n ≤ 4 / D.b ^ 2 * d by linarith]\n      exact sub_nonneg.2 (mod_cast Fintype.card_fin n ▸ i.fintype_card_le_finrank : (n : ℝ) ≤\n        D.rowDim)\n    _ = _ := by rw [def_h]; field [exp_ne_zero]",
+   "head_lines": [
+    132,
+    133
+   ],
+   "typed_fact": "d * (D.mainHeight - 3 * L) ≤ d * (D.mainHeight - D.m * D.remainder + L + 4 *\n    D.x ^ 99 + 10 * log (1 + D.b ^ 2) * D.budget)",
+   "uses": []
+  },
+  {
+   "id": "5.1",
+   "parent": "5",
+   "kind": "deduction",
+   "claim": "d·(h_main(D) − 3L) ≤ d·h + (d − n)·(−h) + 2δ. Theorem C (`Data.integral_forms_long`), applied to the family y (independent by (i), n ≥ (1 − 4/b_D²)·d by (big), index at most δ by (I), squared covolumes at most exp(V) with V = n·h by (short)), gives d·(h_main(D) − 3L) ≤ V + 2δ; and n·h = d·h + (d − n)·(−h).",
+   "lines": [
+    134,
+    134
+   ],
+   "lean": "    _ ≤ d * h + (d - n) * -h + 2 * δ := (integral_forms_long i big I short).trans_eq (by ring)",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "step": "3"
+    },
+    {
+     "decl": "Data.integral_forms_long"
+    }
+   ]
+  },
+  {
+   "id": "5.2",
+   "parent": "5",
+   "kind": "deduction",
+   "claim": "… ≤ d·h + (4/b_D²)·d·(b_D²·x_D⁹⁹) + 2·(5·d·log(1 + b_D²)·𝓑(D)): in the middle term −h is replaced by the larger b_D²·x_D⁹⁹ (step 4; its factor d − n is ≥ 0, step 5.2.2) and then d − n by the larger (4/b_D²)·d (step 5.2.1); in the last term δ is replaced by its bound (index).",
+   "lines": [
+    136,
+    140
+   ],
+   "lean": "    _ ≤ d * h + 4 / D.b ^ 2 * d * (D.b ^ 2 * D.x ^ 99) + 2 *\n      (5 * d * log (1 + D.b ^ 2) * D.budget) := by\n      grw [crude, index, show d - n ≤ 4 / D.b ^ 2 * d by linarith]\n      exact sub_nonneg.2 (mod_cast Fintype.card_fin n ▸ i.fintype_card_le_finrank : (n : ℝ) ≤\n        D.rowDim)",
+   "head_lines": [
+    136,
+    138
+   ],
+   "head_span": [
+    136,
+    5,
+    138,
+    26
+   ],
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "step": "1"
+    }
+   ]
+  },
+  {
+   "id": "5.2.1",
+   "parent": "5.2",
+   "kind": "fact",
+   "claim": "d − n ≤ (4/b_D²)·d, by linear arithmetic from (big): (1 − 4/b_D²)·d ≤ n.",
+   "lines": [
+    138,
+    138
+   ],
+   "span": [
+    138,
+    26,
+    138,
+    67
+   ],
+   "lean": "show d - n ≤ 4 / D.b ^ 2 * d by linarith]",
+   "typed_fact": "d - n ≤ 4 / D.b ^ 2 * d",
+   "uses": [
+    {
+     "step": "1"
+    }
+   ]
+  },
+  {
+   "id": "5.2.2",
+   "parent": "5.2",
+   "kind": "fact",
+   "claim": "0 ≤ d − n: the n vectors y_1, …, y_n are linearly independent in rows(D), so n ≤ dim rows(D).",
+   "lines": [
+    139,
+    140
+   ],
+   "lean": "      exact sub_nonneg.2 (mod_cast Fintype.card_fin n ▸ i.fintype_card_le_finrank : (n : ℝ) ≤\n        D.rowDim)",
+   "uses": [
+    {
+     "step": "1"
+    }
+   ],
+   "ambient_uses": [
+    "LinearIndependent.fintype_card_le_finrank",
+    "Fintype.card_fin"
+   ]
+  },
+  {
+   "id": "5.3",
+   "parent": "5",
+   "kind": "identity",
+   "claim": "… = d·(h_main(D) − m_D·rem(D) + L + 4·x_D⁹⁹ + 10·log(1 + b_D²)·𝓑(D)), by expanding h and simplifying (b_D² = exp(log b_D)² ≠ 0).",
+   "lines": [
+    141,
+    141
+   ],
+   "lean": "    _ = _ := by rw [def_h]; field [exp_ne_zero]",
+   "uses": [
+    {
+     "step": "3"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Conclusion: m_D·rem(D) ≤ (log b_D)²·𝓑(D).",
+   "lines": [
+    143,
+    145
+   ],
+   "lean": "  calc D.m * D.remainder ≤ 4 * L + 4 * D.x ^ 99 + 10 * log (1 + D.b ^ 2) * D.budget := by\n        linarith [le_of_mul_le_mul_left both d0]\n    _ ≤ _ := D.le_of_hasLogBound",
+   "uses": []
+  },
+  {
+   "id": "6.1",
+   "parent": "6",
+   "kind": "deduction",
+   "claim": "m_D·rem(D) ≤ 4L + 4·x_D⁹⁹ + 10·log(1 + b_D²)·𝓑(D): divide the inequality of step 5 by d > 0 (step 2); h_main(D) cancels, and linear arithmetic gives the bound.",
+   "lines": [
+    143,
+    144
+   ],
+   "lean": "  calc D.m * D.remainder ≤ 4 * L + 4 * D.x ^ 99 + 10 * log (1 + D.b ^ 2) * D.budget := by\n        linarith [le_of_mul_le_mul_left both d0]",
+   "uses": [
+    {
+     "step": "5"
+    },
+    {
+     "step": "2"
+    }
+   ]
+  },
+  {
+   "id": "6.2",
+   "parent": "6",
+   "kind": "deduction",
+   "claim": "4L + 4·x_D⁹⁹ + 10·log(1 + b_D²)·𝓑(D) ≤ (log b_D)²·𝓑(D), by the size comparison of the data (`Data.le_of_hasLogBound`): an upper bound exp(l) for the left side and a lower bound exp(l′) for the right side are found from the sizes of the factors (L = f_D·a_D·(log b_D)⁴, x_D⁹⁹ ≤ b_D, log(1 + b_D²) ≈ 2 log b_D), and l < l′ follows from the scale conditions of D.",
+   "lines": [
+    145,
+    145
+   ],
+   "lean": "    _ ≤ _ := D.le_of_hasLogBound",
+   "uses": [
+    {
+     "decl": "Data.le_of_hasLogBound"
+    }
+   ]
+  }
+ ]
+}

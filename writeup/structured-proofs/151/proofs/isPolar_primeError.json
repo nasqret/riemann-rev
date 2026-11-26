@@ -1,0 +1,419 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Endgame.PrimeError:69:7",
+ "name": "isPolar_primeError",
+ "file": "New/Endgame/PrimeError.lean",
+ "file_sha256": "2c82bf09ecc6ab9810f456a8e6ab15c79460c19d31c33abec2612d8667240ec5",
+ "commit": "72fead102f663d5c7a407964a13dc0cf9d977207",
+ "summary": "Φ(s) = (G(s)/s − κ)/(s − 1): its Laplace identity comes from the integral representation of the Dirichlet series of λ and the explicit formula through LSeriesHasSum_mul_vonMangoldt; G(1) is real by analytic continuation of the imaginary part from (2, ∞), which makes (s − 1)Φ analytic at 1; the residues are the orders of the L̃ at ρ.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Put κ := Re G_{d,M}(1).",
+   "lines": [
+    72,
+    72
+   ],
+   "lean": "  let κ := (logDerivMean d M 1).re",
+   "uses": [
+    {
+     "decl": "logDerivMean"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "fact",
+   "claim": "s ↦ G_{d,M}(s)/s − κ is analytic near every point of {Re s ≥ 1}: every L̃(·, ξ) and L̃(·, ξ·χ_d) is entire and has no zero on Re s ≥ 1 (`entireL_ne_zero`), so their logarithmic derivatives are analytic there, and s ≠ 0 there.",
+   "lines": [
+    73,
+    74
+   ],
+   "lean": "  have A : AnalyticOnNhd ℂ (fun s ↦ logDerivMean d M s / s - κ) {s | 1 ≤ s.re} := fun _ _ ↦ by\n    fun_prop (disch := grind [entireL_ne_zero, zero_re]) [logDerivMean, logDeriv]",
+   "typed_fact": "AnalyticOnNhd ℂ (fun s ↦ logDerivMean d M s / s - κ) {s | 1 ≤ s.re}",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "decl": "logDerivMean"
+    },
+    {
+     "decl": "entireL"
+    },
+    {
+     "decl": "entireL_ne_zero"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "witness",
+   "claim": "IsPolar is shown by giving its components: E(v) = R_{d,M}(e^v) is measurable; C := |κ| + 5; Φ(s) := (G_{d,M}(s)/s − κ)/(s − 1); Φ is meromorphic; the bound |E(v)| ≤ C·e^v is reduced, by |a − b| ≤ |a| + |b| with b = κ, to a bound on |S(0, e^v) − S(1, e^v) − v/φ(M)| + |κ| (step 3.3); the Laplace identity is the hole ?q (step 3.4); the analyticity of (s − 1)Φ(s) is the hole ?B (step 3.5); the residues are step 3.2.",
+   "lines": [
+    75,
+    111
+   ],
+   "lean": "  refine ⟨by fun_prop [primeError, lambdaSum], |κ| + 5, fun s ↦ (logDerivMean d M s / s - κ) /\n    (s - 1), fun _ ↦ by fun_prop [logDerivMean], fun v a ↦ (abs_sub ..).trans ?_, ?q,\n  -- real on `(2, ∞)`, hence at `1`\n  have := @ext _ 0 (by simp [κ]) ((A.mono (by aesop)\n    ).im_ofReal.eqOn_zero_of_preconnected_of_eventuallyEq_zero isPreconnected_Ici (by simp) (.mono\n    (lt_mem_nhds (lt_add_one _)) fun x u ↦ congr(im $((div_eq_iff (by aesop)).1 (?q x u))).trans\n    (by norm_cast)) (le_refl (1 : ℝ)))\n  ⟨?B, fun ρ _ ↦ have I := (@continuousWithinAt_id _ _ {ρ}ᶜ ρ).sub_const\n    if e : 1 = ρ then e ▸ .trans_eq (tendsto_inf_left (?B 1 (by simp)).continuousAt) (by simp) else\n    by convert ((((((tendsto_finsetSum ⊤ fun ξ _ ↦ (tendsto_sub_mul_logDeriv_entireL (@quadTwist M ξ\n      d _)).2.sub (tendsto_sub_mul_logDeriv_entireL ξ).2).sub (I ρ)).div_const (φ M)).div\n      (I 0) ?_).sub ((I ρ).mul_const ↑κ)).div\n      (I 1) ?_) using 2 <;> simp [logDerivMean, ← mul_sum] <;> grind [zero_re]⟩⟩\n  grw [abs_sub, v.log_exp, ← @NeZero.one_le (φ _), add_mul,\n    ← le_mul_of_one_le_right] <;> grind [add_one_le_exp, abs_lambdaSum_exp_le]\n  intro s u\n  have L := @laplace_pow (s - 1) (by simp [u.trans'])\n  have e r : (s + r - 1) * ∫ v in _, lambdaSum d M r (rexp v) * (v - s * v).exp = _ := .trans (by\n    congr 1; convert integral_comp_exp_Ioi _ 0 <;> simp [lambdaSum, field, cpow_add, cpow_neg,\n      le_of_lt,\n    Complex.exp_sub, cpow_def _ s, Complex.log_exp, mul_comm s, pi_pos]) ((@LSeries_eq_mul_integral'\n    _ (1 + r) (by bound) _ (by simp; bound) (.of_bound 2 (.mono (Ioi_mem_atTop 0) fun n _ ↦ by\n    simpa [lambdaSum, *, div_le_iff₀, abs_div, rpow_add, field, lambdaClass_nonneg_and_abs_le,\n      Real.exp_log, abs_of_nonneg] using abs_lambdaSum_exp_le d M r (.log n)))).symm.trans\n    (((LSeriesHasSum.sum (S := ⊤) fun ξ _ ↦ (@LSeriesHasSum_mul_vonMangoldt M ξ _ s (by bound)).sub\n    (LSeriesHasSum_mul_vonMangoldt (quadTwist ξ d) (by bound))).div_const (φ M)).congr_fun\n    fun n ↦ by by_cases n = 0 <;> simp [*, cpow_sub, field, cpow_add, lambdaClass,\n    chiK_eq_legendreSym, residueClass_apply, mod_cast (quadTwist_apply · d n), ← sum_mul]).tsum_eq)\n  obtain := L 0, L 1, Integrable.of_integral_ne_zero ((L 0).trans_ne (by aesop)),\n    Integrable.of_integral_ne_zero ((L 1).trans_ne (by aesop)),\n    fun r ↦ integrableOn_laplace_of_abs_le\n    (by fun_prop [lambdaSum]) (fun v _ ↦ abs_lambdaSum_exp_le d M r _) u\n  simp [primeError, κ, IntegrableOn, sub_mul, div_eq_inv_mul, logDerivMean, mul_assoc,\n    quadTwist_ne_one _ d (by lia) h] at *\n  simp (disch := fun_prop) [integral_sub, *]\n  linear_combination (norm := field (disch := grind [zero_re, one_re])) e 1 / s - e 0 / (s - 1)\n  grind [ofReal_one]",
+   "head_lines": [
+    75,
+    76
+   ],
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "decl": "IsPolar"
+    },
+    {
+     "decl": "primeError"
+    },
+    {
+     "decl": "lambdaSum"
+    },
+    {
+     "decl": "logDerivMean"
+    }
+   ]
+  },
+  {
+   "id": "3.1",
+   "parent": "3",
+   "kind": "fact",
+   "claim": "G_{d,M}(1) is real, i.e. G_{d,M}(1)/1 − κ = 0: the function x ↦ Im(G(x)/x − κ) of a real x ≥ 1 is analytic (step 2) and vanishes for x > 2 near 3, because there (G(x)/x − κ)/(x − 1) = Φ(x) is the integral of a real function (the Laplace identity, hole ?q, proved in step 3.4); by the identity theorem on the connected half-line [1, ∞) it vanishes at x = 1; and Re(G(1) − κ) = 0 by the definition of κ.",
+   "lines": [
+    78,
+    81
+   ],
+   "lean": "  have := @ext _ 0 (by simp [κ]) ((A.mono (by aesop)\n    ).im_ofReal.eqOn_zero_of_preconnected_of_eventuallyEq_zero isPreconnected_Ici (by simp) (.mono\n    (lt_mem_nhds (lt_add_one _)) fun x u ↦ congr(im $((div_eq_iff (by aesop)).1 (?q x u))).trans\n    (by norm_cast)) (le_refl (1 : ℝ)))",
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "step": "1"
+    }
+   ],
+   "ambient_uses": [
+    "AnalyticOnNhd.eqOn_zero_of_preconnected_of_eventuallyEq_zero",
+    "Complex.ext"
+   ]
+  },
+  {
+   "id": "3.2",
+   "parent": "3",
+   "kind": "deduction",
+   "claim": "The analyticity of (s − 1)Φ(s) on Re s ≥ 1 is the hole ?B (proved in step 3.5), and the residues: for every ρ with Re ρ > 0, (z − ρ)Φ(z) → r(ρ) as z → ρ, z ≠ ρ. If ρ = 1: (z − 1)Φ(z) is continuous at 1 (by ?B) with value 0 at 1, and r(1) = 0 (division by 1·(1 − 1) = 0 gives 0). If ρ ≠ 1: by `tendsto_sub_mul_logDeriv_entireL`, (z − ρ)·L̃′/L̃(z, ψ) → ord_ρ L̃(·, ψ) for ψ = ξ and ψ = ξ·χ_d, so (z − ρ)·G(z) → (∑_ξ (ord_ρ L̃(·, ξ·χ_d) − ord_ρ L̃(·, ξ)))/φ(M); dividing by z → ρ ≠ 0 and by z − 1 → ρ − 1 ≠ 0, and with (z − ρ)κ → 0, the limit is r(ρ) = (∑_ξ (ord_ρ L̃(·, ξ) − ord_ρ L̃(·, ξ·χ_d)))/φ(M)/(ρ(1 − ρ)).",
+   "lines": [
+    82,
+    87
+   ],
+   "lean": "  ⟨?B, fun ρ _ ↦ have I := (@continuousWithinAt_id _ _ {ρ}ᶜ ρ).sub_const\n    if e : 1 = ρ then e ▸ .trans_eq (tendsto_inf_left (?B 1 (by simp)).continuousAt) (by simp) else\n    by convert ((((((tendsto_finsetSum ⊤ fun ξ _ ↦ (tendsto_sub_mul_logDeriv_entireL (@quadTwist M ξ\n      d _)).2.sub (tendsto_sub_mul_logDeriv_entireL ξ).2).sub (I ρ)).div_const (φ M)).div\n      (I 0) ?_).sub ((I ρ).mul_const ↑κ)).div\n      (I 1) ?_) using 2 <;> simp [logDerivMean, ← mul_sum] <;> grind [zero_re]⟩⟩",
+   "uses": [
+    {
+     "step": "3.1"
+    },
+    {
+     "decl": "tendsto_sub_mul_logDeriv_entireL"
+    },
+    {
+     "decl": "quadTwist"
+    },
+    {
+     "decl": "logDerivMean"
+    }
+   ],
+   "ambient_uses": [
+    "Filter.tendsto_finsetSum",
+    "ContinuousWithinAt.sub_const"
+   ]
+  },
+  {
+   "id": "3.3",
+   "parent": "3",
+   "kind": "deduction",
+   "claim": "The bound: for v ≥ 0, |S(0, e^v) − S(1, e^v) − log(e^v)/φ(M)| + |κ| ≤ (|κ| + 5)·e^v, because |S(0, e^v)|, |S(1, e^v)| ≤ 2e^v (`abs_lambdaSum_exp_le`), v/φ(M) ≤ v ≤ e^v (φ(M) ≥ 1, v + 1 ≤ e^v), and |κ| ≤ |κ|·e^v.",
+   "lines": [
+    88,
+    89
+   ],
+   "lean": "  grw [abs_sub, v.log_exp, ← @NeZero.one_le (φ _), add_mul,\n    ← le_mul_of_one_le_right] <;> grind [add_one_le_exp, abs_lambdaSum_exp_le]",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "decl": "abs_lambdaSum_exp_le"
+    }
+   ],
+   "ambient_uses": [
+    "Real.add_one_le_exp",
+    "abs_sub"
+   ]
+  },
+  {
+   "id": "3.4",
+   "parent": "3",
+   "kind": "deduction",
+   "claim": "The Laplace identity (hole ?q): for every s with Re s > 2, Φ(s) = ∫_0^∞ R_{d,M}(e^v)e^((1−s)v) dv.",
+   "lines": [
+    90,
+    110
+   ],
+   "lean": "  intro s u\n  have L := @laplace_pow (s - 1) (by simp [u.trans'])\n  have e r : (s + r - 1) * ∫ v in _, lambdaSum d M r (rexp v) * (v - s * v).exp = _ := .trans (by\n    congr 1; convert integral_comp_exp_Ioi _ 0 <;> simp [lambdaSum, field, cpow_add, cpow_neg,\n      le_of_lt,\n    Complex.exp_sub, cpow_def _ s, Complex.log_exp, mul_comm s, pi_pos]) ((@LSeries_eq_mul_integral'\n    _ (1 + r) (by bound) _ (by simp; bound) (.of_bound 2 (.mono (Ioi_mem_atTop 0) fun n _ ↦ by\n    simpa [lambdaSum, *, div_le_iff₀, abs_div, rpow_add, field, lambdaClass_nonneg_and_abs_le,\n      Real.exp_log, abs_of_nonneg] using abs_lambdaSum_exp_le d M r (.log n)))).symm.trans\n    (((LSeriesHasSum.sum (S := ⊤) fun ξ _ ↦ (@LSeriesHasSum_mul_vonMangoldt M ξ _ s (by bound)).sub\n    (LSeriesHasSum_mul_vonMangoldt (quadTwist ξ d) (by bound))).div_const (φ M)).congr_fun\n    fun n ↦ by by_cases n = 0 <;> simp [*, cpow_sub, field, cpow_add, lambdaClass,\n    chiK_eq_legendreSym, residueClass_apply, mod_cast (quadTwist_apply · d n), ← sum_mul]).tsum_eq)\n  obtain := L 0, L 1, Integrable.of_integral_ne_zero ((L 0).trans_ne (by aesop)),\n    Integrable.of_integral_ne_zero ((L 1).trans_ne (by aesop)),\n    fun r ↦ integrableOn_laplace_of_abs_le\n    (by fun_prop [lambdaSum]) (fun v _ ↦ abs_lambdaSum_exp_le d M r _) u\n  simp [primeError, κ, IntegrableOn, sub_mul, div_eq_inv_mul, logDerivMean, mul_assoc,\n    quadTwist_ne_one _ d (by lia) h] at *\n  simp (disch := fun_prop) [integral_sub, *]\n  linear_combination (norm := field (disch := grind [zero_re, one_re])) e 1 / s - e 0 / (s - 1)",
+   "uses": []
+  },
+  {
+   "id": "3.4.1",
+   "parent": "3.4",
+   "kind": "setup",
+   "claim": "Let s be a complex number with 2 < Re s (u).",
+   "lines": [
+    90,
+    90
+   ],
+   "lean": "  intro s u",
+   "uses": []
+  },
+  {
+   "id": "3.4.2",
+   "parent": "3.4",
+   "kind": "fact",
+   "claim": "L: for every natural k, ∫_0^∞ t^k e^(−(s−1)t) dt = k!/(s − 1)^(k+1) (`laplace_pow`, as Re(s − 1) > 0).",
+   "lines": [
+    91,
+    91
+   ],
+   "lean": "  have L := @laplace_pow (s - 1) (by simp [u.trans'])",
+   "uses": [
+    {
+     "step": "3.4.1"
+    },
+    {
+     "decl": "laplace_pow"
+    }
+   ]
+  },
+  {
+   "id": "3.4.3",
+   "parent": "3.4",
+   "kind": "fact",
+   "claim": "e: for every natural r, (s + r − 1)·∫_{v>0} S_{d,M}(r, e^v)·e^(v − sv) dv equals (1/φ(M))·∑_ξ (([ξ = 1]/(s − 1) − L̃′/L̃(s, ξ)) − ([ξ·χ_d = 1]/(s − 1) − L̃′/L̃(s, ξ·χ_d))), the Dirichlet series ∑_n λ_{d,M}(n)n^(−s); by the following three facts.",
+   "lines": [
+    92,
+    102
+   ],
+   "lean": "  have e r : (s + r - 1) * ∫ v in _, lambdaSum d M r (rexp v) * (v - s * v).exp = _ := .trans (by\n    congr 1; convert integral_comp_exp_Ioi _ 0 <;> simp [lambdaSum, field, cpow_add, cpow_neg,\n      le_of_lt,\n    Complex.exp_sub, cpow_def _ s, Complex.log_exp, mul_comm s, pi_pos]) ((@LSeries_eq_mul_integral'\n    _ (1 + r) (by bound) _ (by simp; bound) (.of_bound 2 (.mono (Ioi_mem_atTop 0) fun n _ ↦ by\n    simpa [lambdaSum, *, div_le_iff₀, abs_div, rpow_add, field, lambdaClass_nonneg_and_abs_le,\n      Real.exp_log, abs_of_nonneg] using abs_lambdaSum_exp_le d M r (.log n)))).symm.trans\n    (((LSeriesHasSum.sum (S := ⊤) fun ξ _ ↦ (@LSeriesHasSum_mul_vonMangoldt M ξ _ s (by bound)).sub\n    (LSeriesHasSum_mul_vonMangoldt (quadTwist ξ d) (by bound))).div_const (φ M)).congr_fun\n    fun n ↦ by by_cases n = 0 <;> simp [*, cpow_sub, field, cpow_add, lambdaClass,\n    chiK_eq_legendreSym, residueClass_apply, mod_cast (quadTwist_apply · d n), ← sum_mul]).tsum_eq)",
+   "head_lines": [
+    92,
+    92
+   ],
+   "head_span": [
+    92,
+    3,
+    92,
+    88
+   ],
+   "typed_fact": "(s + r - 1) * ∫ v in _, lambdaSum d M r (rexp v) * (v - s * v).exp = _",
+   "uses": []
+  },
+  {
+   "id": "3.4.3.1",
+   "parent": "3.4.3",
+   "kind": "identity",
+   "claim": "Change of variables t = e^v: (s + r − 1)·∫_{v>0} S_{d,M}(r, e^v)e^(v−sv) dv = (s + r − 1)·∫_{t>1} (∑_{k≤t} λ_{d,M}(k)k^(r−1))·t^(−(s+r−1)−1) dt.",
+   "lines": [
+    92,
+    95
+   ],
+   "span": [
+    92,
+    88,
+    95,
+    73
+   ],
+   "lean": ".trans (by\n    congr 1; convert integral_comp_exp_Ioi _ 0 <;> simp [lambdaSum, field, cpow_add, cpow_neg,\n      le_of_lt,\n    Complex.exp_sub, cpow_def _ s, Complex.log_exp, mul_comm s, pi_pos])",
+   "uses": [
+    {
+     "decl": "lambdaSum"
+    }
+   ],
+   "ambient_uses": [
+    "MeasureTheory.integral_comp_exp_Ioi"
+   ]
+  },
+  {
+   "id": "3.4.3.2",
+   "parent": "3.4.3",
+   "kind": "identity",
+   "claim": "By the integral representation of Dirichlet series (Mathlib's `LSeries_eq_mul_integral'`, with exponent 1 + r: the partial sums of |λ_{d,M}(k)k^(r−1)| are O(n^(1+r)), from |S_{d,M}(r, y)| ≤ 2y and λ ≥ 0; and Re(s + r − 1) > 1 + r as Re s > 2), this equals ∑_{k≥1} λ_{d,M}(k)k^(r−1)·k^(−(s+r−1)) = ∑_k λ_{d,M}(k)k^(−s).",
+   "lines": [
+    95,
+    98
+   ],
+   "span": [
+    95,
+    74,
+    98,
+    91
+   ],
+   "lean": "((@LSeries_eq_mul_integral'\n    _ (1 + r) (by bound) _ (by simp; bound) (.of_bound 2 (.mono (Ioi_mem_atTop 0) fun n _ ↦ by\n    simpa [lambdaSum, *, div_le_iff₀, abs_div, rpow_add, field, lambdaClass_nonneg_and_abs_le,\n      Real.exp_log, abs_of_nonneg] using abs_lambdaSum_exp_le d M r (.log n)))).symm.trans",
+   "uses": [
+    {
+     "decl": "abs_lambdaSum_exp_le"
+    },
+    {
+     "decl": "lambdaClass_nonneg_and_abs_le"
+    },
+    {
+     "decl": "lambdaSum"
+    }
+   ],
+   "ambient_uses": [
+    "LSeries_eq_mul_integral'"
+   ]
+  },
+  {
+   "id": "3.4.3.3",
+   "parent": "3.4.3",
+   "kind": "identity",
+   "claim": "∑_n λ_{d,M}(n)n^(−s) = (1/φ(M))·∑_ξ ((∑_n ξ(n)Λ(n)n^(−s)) − (∑_n (ξ·χ_d)(n)Λ(n)n^(−s))), because λ_{d,M}(n) = (1/φ(M))·∑_ξ ξ(n)Λ(n)·(1 − (n/d)) (orthogonality of characters, Mathlib's `residueClass_apply`; (ξ·χ_d)(n) = ξ(n)(n/d)); and each series is [ψ = 1]/(s − 1) − L̃′/L̃(s, ψ) (`LSeriesHasSum_mul_vonMangoldt`, Re s > 1).",
+   "lines": [
+    99,
+    102
+   ],
+   "lean": "    (((LSeriesHasSum.sum (S := ⊤) fun ξ _ ↦ (@LSeriesHasSum_mul_vonMangoldt M ξ _ s (by bound)).sub\n    (LSeriesHasSum_mul_vonMangoldt (quadTwist ξ d) (by bound))).div_const (φ M)).congr_fun\n    fun n ↦ by by_cases n = 0 <;> simp [*, cpow_sub, field, cpow_add, lambdaClass,\n    chiK_eq_legendreSym, residueClass_apply, mod_cast (quadTwist_apply · d n), ← sum_mul]).tsum_eq)",
+   "uses": [
+    {
+     "decl": "LSeriesHasSum_mul_vonMangoldt"
+    },
+    {
+     "decl": "quadTwist_apply"
+    },
+    {
+     "decl": "chiK_eq_legendreSym"
+    },
+    {
+     "decl": "lambdaClass"
+    }
+   ],
+   "ambient_uses": [
+    "ArithmeticFunction.vonMangoldt.residueClass_apply",
+    "LSeriesHasSum.sum"
+   ]
+  },
+  {
+   "id": "3.4.4",
+   "parent": "3.4",
+   "kind": "fact",
+   "claim": "Record: ∫_0^∞ e^(−(s−1)t) dt = 1/(s − 1) and ∫_0^∞ t·e^(−(s−1)t) dt = 1/(s − 1)² (L at k = 0, 1); both integrands are integrable (their integrals are not 0); and for every r, v ↦ S_{d,M}(r, e^v)e^((1−s)v) is integrable on (0, ∞) (`integrableOn_laplace_of_abs_le`, from |S(r, e^v)| ≤ 2e^v and Re s > 2).",
+   "lines": [
+    103,
+    106
+   ],
+   "lean": "  obtain := L 0, L 1, Integrable.of_integral_ne_zero ((L 0).trans_ne (by aesop)),\n    Integrable.of_integral_ne_zero ((L 1).trans_ne (by aesop)),\n    fun r ↦ integrableOn_laplace_of_abs_le\n    (by fun_prop [lambdaSum]) (fun v _ ↦ abs_lambdaSum_exp_le d M r _) u",
+   "uses": [
+    {
+     "step": "3.4.2"
+    },
+    {
+     "step": "3.4.1"
+    },
+    {
+     "decl": "integrableOn_laplace_of_abs_le"
+    },
+    {
+     "decl": "abs_lambdaSum_exp_le"
+    }
+   ]
+  },
+  {
+   "id": "3.4.5",
+   "parent": "3.4",
+   "kind": "identity",
+   "claim": "Unfold: R_{d,M}(e^v) = S(0, e^v) − S(1, e^v) − v/φ(M) − κ, and G_{d,M}; every twist ξ·χ_d is non-principal (`quadTwist_ne_one`: d ≠ 2 as d % 8 = 7, and M is coprime to d), so its polar term [ξ·χ_d = 1]/(s − 1) is 0.",
+   "lines": [
+    107,
+    108
+   ],
+   "lean": "  simp [primeError, κ, IntegrableOn, sub_mul, div_eq_inv_mul, logDerivMean, mul_assoc,\n    quadTwist_ne_one _ d (by lia) h] at *",
+   "uses": [
+    {
+     "decl": "primeError"
+    },
+    {
+     "decl": "logDerivMean"
+    },
+    {
+     "decl": "quadTwist_ne_one"
+    }
+   ]
+  },
+  {
+   "id": "3.4.6",
+   "parent": "3.4",
+   "kind": "identity",
+   "claim": "Split ∫ R_{d,M}(e^v)e^((1−s)v) dv into the integrals of its four terms (each integrable, step 3.4.4).",
+   "lines": [
+    109,
+    109
+   ],
+   "lean": "  simp (disch := fun_prop) [integral_sub, *]",
+   "uses": [
+    {
+     "step": "3.4.4"
+    },
+    {
+     "step": "3.4.5"
+    }
+   ]
+  },
+  {
+   "id": "3.4.7",
+   "parent": "3.4",
+   "kind": "deduction",
+   "claim": "Conclude: with e(0) and e(1) of step 3.4.3, ∫S(0)·e^((1−s)v) − ∫S(1)·e^((1−s)v) = Lλ(s)/(s − 1) − Lλ(s)/s; with ∫v·e^((1−s)v) = 1/(s − 1)² and ∫e^((1−s)v) = 1/(s − 1), the four integrals combine to (G(s)/s − κ)/(s − 1) = Φ(s). The identity is the linear combination e(1)/s − e(0)/(s − 1), checked by field arithmetic (s ≠ 0, s ≠ 1).",
+   "lines": [
+    110,
+    110
+   ],
+   "lean": "  linear_combination (norm := field (disch := grind [zero_re, one_re])) e 1 / s - e 0 / (s - 1)",
+   "uses": [
+    {
+     "step": "3.4.3"
+    },
+    {
+     "step": "3.4.4"
+    },
+    {
+     "step": "3.4.6"
+    }
+   ]
+  },
+  {
+   "id": "3.5",
+   "parent": "3",
+   "kind": "deduction",
+   "claim": "The hole ?B: (s − 1)Φ(s) is analytic near every point of Re s ≥ 1. It equals G(s)/s − κ (analytic there, step 2) for s ≠ 1, and at s = 1 both vanish, since G(1)/1 − κ = 0 (step 3.1).",
+   "lines": [
+    111,
+    111
+   ],
+   "lean": "  grind [ofReal_one]",
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "step": "3.1"
+    }
+   ]
+  }
+ ]
+}

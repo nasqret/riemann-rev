@@ -1,0 +1,440 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Filling.GlobalToLocal:302:7",
+ "summary": "Unfold the correlation as an integral over G_f(T) × G_∞ of the product of the finite Bessel vector and the archimedean kernel; write the finite phases through unipotent characters (val), the sums over 𝖴 of the cutoffs as 1 (ex), identify the integrand with the coset-amplitude summands, and exchange sum and integral (absolute convergence from amplitudeAbs).",
+ "intro_lines": [
+  [
+   305,
+   308
+  ]
+ ],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Introduce q, γ.",
+   "lines": [
+    309,
+    309
+   ],
+   "lean": "  intro q γ"
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "δ(u, u') = uγu'⁻¹.",
+   "lines": [
+    310,
+    310
+   ],
+   "lean": "  let δ (x : besselU × besselU) := x.1.1 * γ * x.2.1⁻¹"
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "B(c, x, u, y) = β_c(u_∞y) if h_c⁻¹uh_c·x ∈ K(g), else 0.",
+   "lines": [
+    311,
+    312
+   ],
+   "lean": "  let B c x u y :=\n    ite (S.termPosition c c u * x ∈ S.principalLevel) (S.classCutoff c (S.ratToInf u * y)) 0"
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "val: if x is integral outside T and h_c⁻¹uh_c·x ∈ K(g), then phase(g, x_T) = unipotentChar(ratToFin(u))⁻¹.",
+   "lines": [
+    313,
+    320
+   ],
+   "lean": "  have val {c} {u : besselU} {x} (t : S.IsIntegralOff T x) (h :\n    S.termPosition c c u * x ∈ S.principalLevel) : P.phase F.g (S.toPlaces T x) =\n    (S.unipotentChar (S.ratToFin u.1))⁻¹ := eq_inv_of_mul_eq_one_right (by\n    obtain ⟨⟨d, h⟩, j⟩ := hF.mem_principalLevel_iff.1 h, u.2.termPosition_mem_besselU c\n    rw [unipotentChar_eq_of_mem_principalLevel j (ratToFin_mem_besselU.2 u.2) c.out\n      (by simp [termPosition, mul_assoc]), ← hF.psi_simpleRootSum_eq_unipotentChar\n      ((mul_mem_cancel_right t).1 d), ← P.phase_besselU_mul (j.map_mem_unitriangularOn _),\n      P.phase_eq (one_mem _) (by simpa using h)]; simp [simpleRootSum_eq_zero_of_mem_besselH])",
+   "uses": [
+    {
+     "decl": "Filling.IsFillingLevel.mem_principalLevel_iff"
+    },
+    {
+     "decl": "Filling.unipotentChar_eq_of_mem_principalLevel"
+    },
+    {
+     "decl": "Filling.IsFillingLevel.psi_simpleRootSum_eq_unipotentChar"
+    },
+    {
+     "decl": "IntegralPlace.phase_besselU_mul"
+    },
+    {
+     "decl": "IntegralPlace.phase_eq"
+    }
+   ],
+   "typed_fact": "P.phase F.g (S.toPlaces T x) =\n    (S.unipotentChar (S.ratToFin u.1))⁻¹"
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "ex: if x is integral outside T and phase(g, x_T) ≠ 0, then Σ_{u∈𝖴(E)} B(c, x, u, y) = 1.",
+   "lines": [
+    321,
+    332
+   ],
+   "lean": "  have ex {c x} (t : S.IsIntegralOff T x) (h : P.phase F.g (S.toPlaces T x) ≠ 0) y : ∑' u : besselU,\n    B c x u.1 y = 1 := by\n    have ⟨u, hu, h⟩ := P.exists_besselU_of_phase_ne_zero h; obtain ⟨u, rfl, s, d⟩ :=\n      exists_toPlaces_eq u\n    obtain ⟨v, hv, d, -⟩ := exists_rat_approx_unipotentChar_eq c (d.1 hu)\n    erw [← tsum_classCutoff_eq_one c ((S.ratToInf v)⁻¹ * y), tsum_subtype _ (B c x · y),\n      tsum_subtype _ (S.classCutoff c <|\n      S.ratToInf · * _), ← (Equiv.mulRight v⁻¹).tsum_eq]; congr with w\n    simp [indicator, B, classUnip, mul_mem_cancel_right, hv, termPosition, mul_assoc, ite_and, by\n      simpa [termPosition, mul_assoc] using\n        mul_mem_cancel_right (y := S.termPosition c c w) (mul_mem (inv_mem d)\n      (by simp [hF.mem_principalLevel_iff, IsIntegralOff, mul_mem, *] : u⁻¹ * x ∈ _))]",
+   "head_lines": [
+    321,
+    322
+   ],
+   "typed_fact": "∑' u : besselU,\n    B c x u.1 y = 1"
+  },
+  {
+   "id": "5.1",
+   "parent": "5",
+   "kind": "deduction",
+   "claim": "u ∈ 𝖴 with u⁻¹x_T ∈ K(g), lifted to a global u,",
+   "lines": [
+    323,
+    324
+   ],
+   "lean": "    have ⟨u, hu, h⟩ := P.exists_besselU_of_phase_ne_zero h; obtain ⟨u, rfl, s, d⟩ :=\n      exists_toPlaces_eq u",
+   "uses": [
+    {
+     "decl": "IntegralPlace.exists_besselU_of_phase_ne_zero"
+    },
+    {
+     "decl": "Filling.exists_toPlaces_eq"
+    }
+   ]
+  },
+  {
+   "id": "5.2",
+   "parent": "5",
+   "kind": "deduction",
+   "claim": "a rational approximation v with the same character,",
+   "lines": [
+    325,
+    325
+   ],
+   "lean": "    obtain ⟨v, hv, d, -⟩ := exists_rat_approx_unipotentChar_eq c (d.1 hu)",
+   "uses": [
+    {
+     "decl": "Filling.exists_rat_approx_unipotentChar_eq"
+    }
+   ]
+  },
+  {
+   "id": "5.3",
+   "parent": "5",
+   "kind": "deduction",
+   "claim": "and Σ_w β_c(w_∞ v_∞⁻¹ y) = 1 reindexed by v.",
+   "lines": [
+    326,
+    328
+   ],
+   "lean": "    erw [← tsum_classCutoff_eq_one c ((S.ratToInf v)⁻¹ * y), tsum_subtype _ (B c x · y),\n      tsum_subtype _ (S.classCutoff c <|\n      S.ratToInf · * _), ← (Equiv.mulRight v⁻¹).tsum_eq]; congr with w",
+   "uses": [
+    {
+     "decl": "Filling.tsum_classCutoff_eq_one"
+    }
+   ]
+  },
+  {
+   "id": "5.4",
+   "parent": "5",
+   "kind": "deduction",
+   "claim": "The conditions match termwise: for w ∈ 𝖴, termPosition(c, c, w)·x ∈ K(g) iff w·v⁻¹ ∈ classUnip(c) (through the approximation v and mul_mem_cancel_right), so each term of ∑_w B(c, x, w, y) is the corresponding cutoff term.",
+   "lines": [
+    329,
+    332
+   ],
+   "lean": "    simp [indicator, B, classUnip, mul_mem_cancel_right, hv, termPosition, mul_assoc, ite_and, by\n      simpa [termPosition, mul_assoc] using\n        mul_mem_cancel_right (y := S.termPosition c c w) (mul_mem (inv_mem d)\n      (by simp [hF.mem_principalLevel_iff, IsIntegralOff, mul_mem, *] : u⁻¹ * x ∈ _))]"
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Q(x): the pair (u, u') is admissible (h_c⁻¹uh_c integral off T and δ ∈ termsOver(c, reduction(k), c')).",
+   "lines": [
+    333,
+    333
+   ],
+   "lean": "  let Q x := S.IsIntegralOff T (S.termPosition c c x.1) ∧ δ x ∈ S.termsOver c (S.reduction k) c'"
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "h(x, y) = [Q(x)]·β_cβ_c'·K(δ(x), y).",
+   "lines": [
+    334,
+    335
+   ],
+   "lean": "  let h x y := ite (Q x) ((S.classCutoff c y * S.classCutoff c' ((S.ratToInf (δ x))⁻¹ * y)).toReal •\n    S.besselKernel (δ x) y) 0"
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "g(x) = h(x, u_∞·) on the set where toPlaces(h_c⁻¹uh_c)·(·) ∈ congGroup(F).",
+   "lines": [
+    336,
+    337
+   ],
+   "lean": "  let g x := (((S.toPlaces T (S.termPosition c c x.1) * ·) ⁻¹' F.congGroup) ×ˢ univ).indicator\n    fun w ↦ h x (S.ratToInf x.1 * w.2)"
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Unfold the correlation; identify w_q·(…) with toPlaces(termPosition(γ)),",
+   "lines": [
+    338,
+    338
+   ],
+   "span": [
+    338,
+    3,
+    338,
+    25
+   ],
+   "lean": "rw [Level.correlation,"
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "by termPosition_floorGroup_spec;",
+   "lines": [
+    338,
+    340
+   ],
+   "span": [
+    338,
+    26,
+    340,
+    98
+   ],
+   "lean": "show weylElem 𝔰.ϱ q * _ = S.toPlaces T (S.termPosition c c'\n    γ) by simp [γ, termPosition_floorGroup_spec u c]; ext : 3; simp [toPlaces, U.map, weylElem,\n    weylOn, apply_ite (evalPlaces T), -star_algebraMap_finAdele, -Units.val_inv_eq_inv_val]; rfl,",
+   "uses": [
+    {
+     "decl": "Filling.termPosition_floorGroup_spec"
+    }
+   ],
+   "typed_fact": "weylElem 𝔰.ϱ q * _ = S.toPlaces T (S.termPosition c c'\n    γ"
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "write cosetAmplitude as a sum and each term as an integral of g(x) over K(g) × G_∞.",
+   "lines": [
+    341,
+    345
+   ],
+   "lean": "    PiLp.smul_apply, smul_assoc, cosetAmplitude, ← tsum_const_smul'',\n    tsum_congr (g := (∫ w, g · w ∂F.groupMeasure.prod volume)) fun x ↦ by\n    rw [integral_indicator ((measurable_const_mul _ P.measurableSet_unitaryLevel).prod .univ),\n      ← Measure.restrict_prod_eq_prod_univ, integral_fun_snd (h x <| _ * ·),\n      integral_mul_left_eq_self]; split <;> simp [h, Q, amplitude, δ, Measure.real, *]]",
+   "head_lines": [
+    341,
+    342
+   ]
+  },
+  {
+   "id": "11.1",
+   "parent": "11",
+   "kind": "deduction",
+   "claim": "Integral of an indicator of a product set; left invariance; the cases of Q.",
+   "lines": [
+    343,
+    345
+   ],
+   "lean": "    rw [integral_indicator ((measurable_const_mul _ P.measurableSet_unitaryLevel).prod .univ),\n      ← Measure.restrict_prod_eq_prod_univ, integral_fun_snd (h x <| _ * ·),\n      integral_mul_left_eq_self]; split <;> simp [h, Q, amplitude, δ, Measure.real, *]]"
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Exchange sum and integral coordinatewise (integrability of the indicators).",
+   "lines": [
+    346,
+    347
+   ],
+   "lean": "  congr 1 with i; rw [tsum_integral_apply fun x ↦ .indicator (by unfold h; split <;> fun_prop)\n    ((measurable_const_mul _ P.measurableSet_unitaryLevel).prod .univ)]",
+   "uses": [
+    {
+     "decl": "Filling.tsum_integral_apply"
+    }
+   ]
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Compare the integrands at (z, y): lift z to x integral off T;",
+   "lines": [
+    348,
+    369
+   ],
+   "lean": "  · simp [besselCorrelation]; rw [← integral_mul_right_eq_self _ a.out.1, ← integral_prod_mul]\n    congr with ⟨z, y⟩; obtain ⟨x, rfl, t, -⟩ := exists_toPlaces_eq z\n    let ξ := (S.termPosition c c' γ)⁻¹ * x * k\n    have s : ξ.1 ∈ _ := mul_mem (mul_mem (inv_mem o) t) (mem_latStabilizer_iff.1 k.2).1\n    have C w : S.toPlaces T (S.termPosition c c w.1) * S.toPlaces T x ∈ F.congGroup ∧ Q w ↔\n      S.termPosition c c w.1 * x ∈ S.principalLevel ∧ S.termPosition c' c' w.2 * ξ ∈\n      S.principalLevel := and_assoc.symm.trans (.trans (and_congr_left' (by\n      simp [hF.mem_principalLevel_iff, mul_mem_cancel_right t, IsIntegralOff, and_comm]))\n      (and_congr_right fun ⟨l, L⟩ ↦ by\n      clear * - L\n      use .imp' (·⁻¹ * l * k) ?_,\n        .imp' (l * k * ·⁻¹) ?_ <;> simp_all [δ, ξ, termPosition, mul_assoc]))\n    have j := P.phase_mul_of_mem_unitaryLevel (y := S.toPlaces T ξ) e\n    set r : ℂ := _ * _; conv_lhs at j => simp [ξ, mul_assoc]\n    rw [tsum_congr (g := fun w ↦\n      (B c x w.1 y * B c' ξ w.2 ((S.ratToInf γ)⁻¹ * y)).toReal • r) fun w ↦ by\n      simp [h, B, δ, indicator, ← ite_and, C, ↓ite_zero_mul_ite_zero]; split_ifs with q\n      simp [↓besselKernel_besselU_mul, val t q.1, val s q.2, r,\n        Level.IntermediateGroup.besselVector, j, besselKernel, mul_assoc, unipotentChar,\n        inv_eq_conj]; simp]\n    by_cases r = 0; simp [*]\n    simp_all [↓tsum_toReal_smul_of_tsum_eq_one, r, Level.IntermediateGroup.besselVector, mul_assoc]",
+   "head_lines": [
+    348,
+    349
+   ]
+  },
+  {
+   "id": "13.1",
+   "parent": "13",
+   "kind": "deduction",
+   "claim": "ξ = termPosition(γ)⁻¹·x·k;",
+   "lines": [
+    350,
+    350
+   ],
+   "lean": "    let ξ := (S.termPosition c c' γ)⁻¹ * x * k"
+  },
+  {
+   "id": "13.2",
+   "parent": "13",
+   "kind": "deduction",
+   "claim": "ξ is integral off T;",
+   "lines": [
+    351,
+    351
+   ],
+   "lean": "    have s : ξ.1 ∈ _ := mul_mem (mul_mem (inv_mem o) t) (mem_latStabilizer_iff.1 k.2).1",
+   "typed_fact": "ξ.1 ∈ _"
+  },
+  {
+   "id": "13.3",
+   "parent": "13",
+   "kind": "deduction",
+   "claim": "C: the admissibility condition for (u, u') is equivalent to the two level conditions for x and ξ;",
+   "lines": [
+    352,
+    359
+   ],
+   "lean": "    have C w : S.toPlaces T (S.termPosition c c w.1) * S.toPlaces T x ∈ F.congGroup ∧ Q w ↔\n      S.termPosition c c w.1 * x ∈ S.principalLevel ∧ S.termPosition c' c' w.2 * ξ ∈\n      S.principalLevel := and_assoc.symm.trans (.trans (and_congr_left' (by\n      simp [hF.mem_principalLevel_iff, mul_mem_cancel_right t, IsIntegralOff, and_comm]))\n      (and_congr_right fun ⟨l, L⟩ ↦ by\n      clear * - L\n      use .imp' (·⁻¹ * l * k) ?_,\n        .imp' (l * k * ·⁻¹) ?_ <;> simp_all [δ, ξ, termPosition, mul_assoc]))",
+   "uses": [
+    {
+     "decl": "Filling.IsFillingLevel.mem_principalLevel_iff"
+    }
+   ],
+   "typed_fact": "S.toPlaces T (S.termPosition c c w.1) * S.toPlaces T x ∈ F.congGroup ∧ Q w ↔\n      S.termPosition c c w.1 * x ∈ S.principalLevel ∧ S.termPosition c' c' w.2 * ξ ∈\n      S.principalLevel"
+  },
+  {
+   "id": "13.4",
+   "parent": "13",
+   "kind": "deduction",
+   "claim": "j: phase(g, ξ_T) is unchanged by the coset condition e;",
+   "lines": [
+    360,
+    360
+   ],
+   "lean": "    have j := P.phase_mul_of_mem_unitaryLevel (y := S.toPlaces T ξ) e",
+   "uses": [
+    {
+     "decl": "IntegralPlace.phase_mul_of_mem_unitaryLevel"
+    }
+   ]
+  },
+  {
+   "id": "13.5",
+   "parent": "13",
+   "kind": "deduction",
+   "claim": "Let r be the product of the two phase factors; simplify j (the phase of ξ at T).",
+   "lines": [
+    361,
+    361
+   ],
+   "lean": "    set r : ℂ := _ * _; conv_lhs at j => simp [ξ, mul_assoc]"
+  },
+  {
+   "id": "13.6",
+   "parent": "13",
+   "kind": "deduction",
+   "claim": "each term equals B(c, x, u, y)·B(c', ξ, u', γ⁻¹y)·r with r the product of phases (val, besselKernel_besselU_mul),",
+   "lines": [
+    362,
+    367
+   ],
+   "lean": "    rw [tsum_congr (g := fun w ↦\n      (B c x w.1 y * B c' ξ w.2 ((S.ratToInf γ)⁻¹ * y)).toReal • r) fun w ↦ by\n      simp [h, B, δ, indicator, ← ite_and, C, ↓ite_zero_mul_ite_zero]; split_ifs with q\n      simp [↓besselKernel_besselU_mul, val t q.1, val s q.2, r,\n        Level.IntermediateGroup.besselVector, j, besselKernel, mul_assoc, unipotentChar,\n        inv_eq_conj]; simp]",
+   "uses": [
+    {
+     "decl": "Filling.besselKernel_besselU_mul"
+    }
+   ]
+  },
+  {
+   "id": "13.7",
+   "parent": "13",
+   "kind": "deduction",
+   "claim": "and if r ≠ 0 the sums of B are 1 (ex).",
+   "lines": [
+    368,
+    369
+   ],
+   "lean": "    by_cases r = 0; simp [*]\n    simp_all [↓tsum_toReal_smul_of_tsum_eq_one, r, Level.IntermediateGroup.besselVector, mul_assoc]"
+  },
+  {
+   "id": "14",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Absolute convergence: bounded by the absolute amplitudes (finite) times 𝖬(K) < ∞ (injectivity of δ).",
+   "lines": [
+    370,
+    372
+   ],
+   "lean": "  grw [← mul_lt_top ((amplitudeAbs_lt_top_and_cut_le univ c _).1 c').2\n    (hF.groupMeasure_ne_top P.unitaryLevel_le_unitaryLevel_one).lt_top, tsum_subtype,\n    ← tsum_comp_le_tsum_of_injective fun _ _ e ↦ (big_cell_unique u e).2, ← ENNReal.tsum_mul_right]",
+   "uses": [
+    {
+     "decl": "Filling.amplitudeAbs_lt_top_and_cut_le"
+    },
+    {
+     "decl": "Filling.big_cell_unique"
+    }
+   ]
+  },
+  {
+   "id": "15",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Termwise, the norm of an indicator is the indicator of the norm.",
+   "lines": [
+    373,
+    373
+   ],
+   "lean": "  gcongr with x; simp [enorm_indicator_eq_indicator_enorm]"
+  },
+  {
+   "id": "16",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "integral of the indicator ≤ product of integrals;",
+   "lines": [
+    374,
+    374
+   ],
+   "lean": "  grw [lintegral_indicator_le, ← Measure.prod_restrict, lintegral_prod_le]"
+  },
+  {
+   "id": "17",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Left invariance of the Haar measure at infinity: ∫ ‖h(x, u_∞w)‖ dw = ∫ ‖h(x, w)‖ dw.",
+   "lines": [
+    375,
+    375
+   ],
+   "lean": "  simp [lintegral_mul_left_eq_self (‖h x ·‖ₑ)]"
+  },
+  {
+   "id": "18",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "and |β·K| bound by the absolute amplitude.",
+   "lines": [
+    376,
+    376
+   ],
+   "lean": "  unfold h; split_ifs with q; grw [enorm_toReal_smul_le, indicator_of_mem q.2, amplitudeAbs]; simp"
+  }
+ ]
+}

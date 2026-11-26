@@ -1,0 +1,1479 @@
+% !TEX program = lualatex
+% ---------------------------------------------------------------------------------------------
+%  Readback note 29: The tower method at a place: floor measures, gauges and the bounds on each floor
+%
+%  Build:  python3 tools/rb.py note <slug>
+%
+%  One unit of a Lean artifact, rewritten as ordinary mathematics. The prose is hand-written. Lean names,
+%  line ranges and counts come from data.tex; quoted Lean statements are copied from the artifact by the build.
+%
+%  Rules of the text: standard terminology; every symbol is explained where it first appears and listed again
+%  in the notation at the end; no letter has two meanings; a proof is complete or says what it takes for granted;
+%  Lean names appear only in the LEAN lines and in the concordance.
+%
+%  The signature rule (the build enforces it): a function, relation or predicate that the artifact defines is
+%  written only through its notation macro, which the build makes from the spec (`notation`) with one slot for
+%  each explicit argument of the Lean definition. No argument is fixed and dropped, also not "for brevity" and
+%  not for one section. Every argument and every hypothesis of a stated declaration stands inside its
+%  statement, or in a Setting that the statement cites by number; only implicit and instance arguments (the
+%  ambient objects) may stand in the conventions.
+% ---------------------------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\ifdefined\pdfvariable\pdfvariable suppressoptionalinfo \numexpr 1+2+4+8\relax\fi
+\usepackage[a4paper,hmargin=35mm,top=22mm,bottom=27mm,footskip=12mm,nohead]{geometry}
+
+\usepackage{fontspec}
+\directlua{
+  luaotfload.add_fallback("gfallback", {"STIXTwoMath-Regular.otf:mode=node;", "DejaVuSans.ttf:mode=node;"})
+  luaotfload.add_fallback("gmonofallback", {"DejaVuSansMono.ttf:mode=node;", "STIXTwoMath-Regular.otf:mode=node;"})
+}
+\setmainfont{NewCM10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookItalic,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldItalic,SmallCapsFont=*-Book,SmallCapsFeatures={Letters=SmallCaps},
+  RawFeature={fallback=gfallback}]
+\setsansfont{NewCMSans10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookOblique,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldOblique,RawFeature={fallback=gfallback}]
+\setmonofont{JetBrainsMono}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,Scale=MatchLowercase,
+  RawFeature={-calt;-liga;fallback=gmonofallback}]
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage[math-style=TeX]{unicode-math}
+\setmathfont{NewCMMath-Book.otf}
+\emergencystretch=2.5em\relax
+
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows.meta,positioning,backgrounds}
+\usepackage[protrusion=true,expansion=true]{microtype}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{multicol}
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+
+\definecolor{ink}{HTML}{0F172A}
+\definecolor{inksoft}{HTML}{475569}
+\definecolor{inkfaint}{HTML}{94A3B8}
+\definecolor{rulegrey}{HTML}{CBD5E1}
+\definecolor{arith}{HTML}{C2410C}
+\definecolor{est}{HTML}{7C3AED}
+\definecolor{ana}{HTML}{0891B2}
+\definecolor{ok}{HTML}{047857}
+\definecolor{leancol}{HTML}{3730A3}
+
+\title{The tower method at a place: floor measures, gauges and the bounds on each floor}
+\author{grh-compact}
+\date{}
+
+% ------------------------------------------------------------------------------------- macros
+\newcommand{\leanfont}{\ttfamily\fontsize{8.6}{10.5}\selectfont\color{leancol}}
+\newcommand{\lean}[1]{\csname LN@#1\endcsname}
+\newcommand{\fillin}[1]{{\color{arith}\itshape[#1]}}  % a place of the template that is not written yet; the build reports every one that is left
+\newcommand{\leanquote}[1]{\csname LQ@#1\endcsname}
+\input{data.tex}
+
+\linespread{1.08}                       % 11 pt on 14.7 pt
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt plus 1.5pt minus 0.5pt}
+\setlength{\abovedisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\belowdisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\abovedisplayshortskip}{3pt plus 2pt}
+\setlength{\belowdisplayshortskip}{6pt plus 2pt minus 2pt}
+\emergencystretch=1.5em
+\clubpenalty=10000 \widowpenalty=10000 \displaywidowpenalty=10000
+\relpenalty=7000 \binoppenalty=9000
+\raggedbottom
+\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\sffamily\fontsize{7.6}{9}\selectfont\color{inkfaint}\thepage\,/\,\pageref*{LastPage}}
+\setlist{topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=4pt,leftmargin=2.1em,labelsep=0.55em}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\len}{\operatorname{len}}
+\newcommand{\cok}{\operatorname{cok}}
+\newcommand{\End}{\operatorname{End}}
+\newcommand{\Hom}{\operatorname{Hom}}
+\newcommand{\Gal}{\operatorname{Gal}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\kw}[1]{\emph{#1}}
+\newcommand{\m}[1]{\mbox{$#1$}}        % a short formula that must not be broken across lines
+\newcommand{\head}[1]{\par\addvspace{17pt plus 4pt minus 2pt}\Needspace{6\baselineskip}%
+  \noindent{\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\sect}[2]{\refstepcounter{section}\label{#2}\par\addvspace{19pt plus 4pt minus 2pt}\Needspace{7\baselineskip}%
+  \noindent\llap{{\fontsize{13.2}{16}\selectfont\bfseries\color{inkfaint}\thesection}\hspace{9pt}}%
+  {\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\subhead}[1]{\par\addvspace{9pt plus 2pt}\Needspace{4\baselineskip}\noindent\textbf{#1}\enspace\ignorespaces}
+% where a statement lives in the Lean archive
+\newcommand{\leantag}{{\sffamily\bfseries\fontsize{6.3}{8}\selectfont\color{leancol}\addfontfeatures{LetterSpace=7}LEAN}}
+\newcommand{\sep}{\unskip\nobreak\hspace{5pt}{\color{inkfaint}\textperiodcentered}\hspace{5pt plus 2pt}\ignorespaces}
+\newcommand{\leanline}[1]{\par\nopagebreak\vspace{-2.5pt}{\fontsize{8.9}{12.4}\selectfont\color{inksoft}\raggedright
+  \noindent\llap{\leantag\hspace{9pt}}#1\par}\vspace{1pt}}
+% a displayed statement in a tinted box: #1 colour, #2 text
+\newcommand{\statement}[2]{\par\addvspace{7pt}\begingroup\setlength{\fboxsep}{8.5pt}\setlength{\fboxrule}{0.6pt}%
+  \noindent\fcolorbox{#1!30!white}{#1!3!white}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{#2}}%
+  \endgroup\par\addvspace{7pt}}
+\newcommand{\nt}[2]{\par\noindent\hangindent=1.1em\hangafter=1 #1\enspace{\color{inksoft}#2}\par\vspace{1pt}}
+\newcommand{\legdot}[1]{\tikz[baseline=-0.62ex]\fill[#1] (0,0) circle (2.5pt);\hspace{3pt}}
+\newcommand{\crow}[4]{\csname CS@#1\endcsname & #2 & \textcolor{inksoft}{#3} & \textcolor{inksoft}{#4}\\}
+\newcommand{\leanquoteline}[2]{\par\noindent\hangindent=\dimexpr#1\fontdimen2\font+2.2em\relax\hangafter=1
+  \hspace*{#1\fontdimen2\font}#2}
+\newcommand{\quoted}[1]{\par\vspace{3pt}{\ttfamily\fontsize{7.5}{10.4}\selectfont\color{leancol}\raggedright
+  \setlength{\parskip}{0pt}\leanquote{#1}\par}\vspace{4pt}}
+\newcommand{\bx}[3]{{\sffamily\bfseries\fontsize{7.3}{9.2}\selectfont\color{#1!82!black}#2}\\[1.5pt]#3}
+\newcommand{\cs}[2]{\expandafter\newcommand\csname CS@#1\endcsname{#2}}
+
+% theorems
+\newtheoremstyle{plainx}{7pt plus 2pt}{7pt plus 2pt}{\itshape}{}{\bfseries}{.}{0.5em}{}
+\newtheoremstyle{uprightx}{7pt plus 2pt}{7pt plus 2pt}{}{}{\bfseries}{.}{0.5em}{}
+\theoremstyle{plainx}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{uprightx}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{setting}[theorem]{Setting}          % hypotheses shared by several statements; each of them cites it by number
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\renewcommand{\qedsymbol}{{\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.5pt}\fbox{\rule{0pt}{0.46em}\hspace{0.46em}}}}
+% what holds throughout the note: the ambient objects only (implicit and instance arguments), never a hypothesis
+\newenvironment{conventions}{\par\addvspace{5pt}\noindent\textbf{Conventions.}\enspace\ignorespaces}{\par\addvspace{3pt}}
+\makeatletter
+\renewenvironment{proof}[1][Proof]{\par\pushQED{\qed}\normalfont\topsep0pt\partopsep0pt
+  \trivlist\item[\hskip\labelsep\itshape #1.]\ignorespaces}{\popQED\endtrivlist\@endpefalse}
+\makeatother
+
+\input{othermacros.tex}
+% hand macros of the three notes of unit 132 (objects of the background library; letters of shared/PLAN-132.md)
+\newcommand{\cL}{\mathcal{L}}
+\newcommand{\CC}{\mathbb{C}}
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\NN}{\mathbb{N}}
+\newcommand{\dd}{\mathrm{d}}
+\newcommand{\GT}[1]{G(#1)}
+\newcommand{\JT}[1]{J(#1)}
+\newcommand{\Hl}[2]{\mathcal{H}_{#1}(#2)}
+\newcommand{\Ql}[2]{\mathcal{Q}_{#1}(#2)}
+\newcommand{\Nb}[2]{\mathcal{N}_{<#1}(#2)}
+\newcommand{\Nf}[2]{\mathcal{N}_{#1}(#2)}
+\newcommand{\UT}[1]{\mathcal{U}(#1)}
+\newcommand{\modA}{\operatorname{mod}_A}
+\newcommand{\ZT}[2]{Z_{#1}(#2)}
+\newcommand{\sd}{\operatorname{sd}}
+\newcommand{\wl}[2]{w_{#1}(#2)}
+\newcommand{\wo}[2]{w^{\circ}_{#1}(#2)}
+\newcommand{\ip}[2]{\langle #1,#2\rangle}
+\newcommand{\gL}[1]{g_{#1}}
+\newcommand{\BoxL}[1]{\operatorname{Box}(#1)}
+\newcommand{\Posn}[1]{\operatorname{Posn}(#1)}
+\newcommand{\Ball}[1]{\mathfrak{B}(#1)}
+\newcommand{\etab}[1]{\eta_{<#1}}
+\newcommand{\vol}{\operatorname{vol}}
+\newcommand{\cLC}[1]{\mathcal{L}_{\CC}(#1)}
+\newcommand{\Gone}[1]{G_1(#1)}
+\newcommand{\Jone}[1]{J_1(#1)}
+\newcommand{\volU}[1]{\vol\mathrm{U}(#1)}
+\newcommand{\hw}[3]{\operatorname{hw}_{#1,#2}(#3)}
+\newcommand{\damp}[2]{\ell_{#1}(#2)}
+\newcommand{\bandc}[1]{\Theta(#1)}
+\newcommand{\cellc}[1]{c_G(#1)}
+\newcommand{\corr}[3]{J^{#1}_{#2}(#3)}
+\newcommand{\boost}[2]{\chi_{#1}(#2)}
+\newcommand{\quadric}[2]{\delta^{(#2)}(#1)}
+\newcommand{\Inp}[1]{\textup{(#1)}}
+% where each declaration of the concordance is treated
+\cs{IsBessel}{Definition~\ref{d:bessel}}
+\cs{IsCut}{Definition~\ref{d:cut}}
+\cs{isNearofnezero}{Definition~\ref{d:cut}}
+\cs{translatePairing}{Definition~\ref{d:kernel}}
+\cs{pairingNorm}{Definition~\ref{d:pn}}
+\cs{headDensity}{Definition~\ref{d:hd}}
+\cs{formIntegrandOne}{Definition~\ref{d:integrand}}
+\cs{formIntegrand}{Definition~\ref{d:integrand}}
+\cs{floorForm}{Definition~\ref{d:form}}
+\cs{formModulus}{Definition~\ref{d:form}}
+\cs{formMajorant}{Definition~\ref{d:form}}
+\cs{selfNormProduct}{Definition~\ref{d:snp}}
+\cs{IsCutBessel}{Definition~\ref{d:cutbessel}}
+\cs{volumeExponenteq}{Definition~\ref{d:cutbessel}}
+\cs{formConst}{Definition~\ref{d:formconst}}
+\cs{sieveVector}{Definition~\ref{d:sieve}}
+\cs{formMajorantsqle}{Theorem A (a)}
+\cs{formModulussqleofchar}{Theorem A (b)}
+\cs{formModulussqleofheads}{Theorem A (c)}
+\cs{integralfloorFormsucc}{Theorem B}
+\cs{lintegralselfNormle}{Theorem C}
+\cs{lintegralpositionsle}{Theorem D}
+\cs{hasBandLimitsofisCutBessel}{Theorem E}
+\cs{stackMeasuretop}{Theorem E}
+\cs{isPairingKerneltranslatePairing}{Lemma~\ref{l:pk}}
+\cs{isPairingKernelself}{Lemma~\ref{l:pk}}
+\cs{formIntegrandOneeq}{Lemma~\ref{l:one}}
+\cs{enormfloorFormle}{Lemma~\ref{l:fmm}}
+\cs{formModulusleformMajorant}{Lemma~\ref{l:fmm}}
+\cs{pivotModulussqleofcapped}{Lemma~\ref{l:cap}}
+\cs{sqlintegralleselfNormProduct}{Lemma~\ref{l:snp}}
+\cs{frameGramdiagmul}{Lemma~\ref{l:diag}}
+\cs{integralsuccflooreq}{Lemma~\ref{l:succ}}
+\cs{isCutcomplexLevel}{Lemma~\ref{l:iscut}}
+\cs{existsgaugeisHead}{Lemma~\ref{l:heads}}
+\cs{formConstmullintegralle}{Lemma~\ref{l:shells}}
+\cs{lintegralformMajorantnetop}{Lemma~\ref{l:fin}}
+\cs{normfloorFormle}{Lemma~\ref{l:norm}}
+\cs{hasMatSizeofnezero}{Lemma~\ref{l:supp}}
+\cs{isCompacthasMatSize}{Lemma~\ref{l:supp}}
+\cs{innerbesselCorrelation}{Lemma~\ref{l:corr}}
+\cs{continuoussieveVector}{Lemma~\ref{l:cont}}
+
+\begin{document}
+\color{ink}
+
+{\raggedright
+{\sffamily\bfseries\fontsize{7.2}{9}\selectfont\color{leancol}\addfontfeatures{LetterSpace=8}READBACK NOTE 29\par}
+\vspace{5pt}
+{\fontsize{21.5}{25.5}\selectfont\bfseries The tower method at a place: floor measures, gauges and the bounds on each floor\par}
+\vspace{5pt}
+{\fontsize{12.4}{16}\selectfont\itshape\color{inksoft} One unit of the Lean artifact \ArtifactName, read back into
+mathematics\par}}
+\vspace{8pt}
+{\color{rulegrey}\hrule height 0.6pt}
+\vspace{7pt}
+\thispagestyle{empty}
+
+\textbf{Summary.} A unitary group $\GT{T}$ over a local ring $A$ is cut into \emph{floors}: a tower of subgroups, each with
+a measure, whose convolution is a Haar measure. A \emph{cut Bessel function} $W$ on $\GT{T}$ is paired with its
+translates by Weyl elements, and the pairing is averaged floor by floor; this gives \emph{floor forms}
+$\floorForm{j}{p}{q}{W}{\omega}$, one family for each floor~$j$. The \emph{local theorem} bounds them by one quantity,
+the self-norm product, in three situations: by a volume, by Plancherel's inequality against a character of the floor,
+and by Plancherel's inequality on a Heisenberg group when the two Weyl elements differ. A descent identity writes
+each form as an integral of the forms of the next floor. At the complex place the bounds are summed over shells of
+gauges and give the \emph{band limits} that the second moment of Poincar\'e series (Theorem~B of the write-up) needs.
+
+\statement{leancol}{\fontsize{9.6}{13.2}\selectfont\textbf{What this note is.} The artifact \ArtifactName{} is a
+body of Lean code whose final theorems are the Riemann hypothesis and the generalized Riemann hypothesis for Dirichlet
+$L$-functions. Its authors report that it compiles and that Lean's kernel accepts these theorems from the three
+standard axioms; nothing was built for this note. That is a statement about a formal text: no mathematician has read
+the argument through, and this note does not say that the Riemann hypothesis is proved. The note treats one part of
+one unit of the artifact (the folder of the analysis at the real places): \UnitInNote{} of the unit's \UnitMembers{}
+declarations, those of three files; two companion notes treat the others. Proved here in full, from stated inputs:
+Theorems A to~D. Theorem~E is proved up to two comparisons of explicit exponents, which are named where they occur.
+Taken for granted, with precise statements: the results of the two companion notes (Inputs \Inp{T1}--\Inp{T14} and
+\Inp{C1}--\Inp{C4}), definitions of the unit on the second moment, and classical results of the background library
+(Section~\ref{s:inputs}). Every statement of a result of this note was compared, argument by argument, with its Lean
+text. The Lean text read is \PinText; Appendix~A is the concordance of \ConcDecls{} declarations.}
+
+\sect{The statements}{s:intro}
+The objects are defined in Section~\ref{s:setting}; here is what the letters stand for. $A$ is a \emph{place}: a
+locally compact ring with involution, with a module $\modA$, an additive character $\psi_A$ and a Plancherel constant
+$c_A$; the model cases are $\CC$ and products of non-archimedean local fields. $V$ is a hermitian space over $A$ with
+$\varrho$ hyperbolic planes and an anisotropic part, $\GT{T}$ its unitary group, and $\Hl{0}{T}=\GT{T}\supset
+\Hl{1}{T}\supset\dots$ the tower of the stabilisers of the first hyperbolic planes. A \emph{level} $\cL$ gives a measure
+$\floorMeasure{\cL}{l}$ on each floor $\Hl{l}{T}$ and a measure $\groupMeasure{\cL}$ on $\GT{T}$, their convolution;
+a \emph{gauge} $\Gamma$ on $\cL$ measures the size of matrix entries by a filtration $\Gamma_0\subseteq\Gamma_1\subseteq
+\dots$ of~$A$ and has a constant $\Lambda(\Gamma)\ge2$. A \emph{head} is a sequence $p\colon\NN\to A^{\times}$ whose
+partial products have inverses of size~$1$; $\wl{j}{p}$ is the Weyl element that exchanges the first $j$ hyperbolic
+pairs with the entries of~$p$.
+
+\begin{setting}[the local theorem]\label{set:local}
+Let $A$, $\mathfrak{s}$, $T$, $\Omega$, $\mathfrak{m}$, $I$ be as in the conventions (Section~\ref{s:setting}), let
+$\cL$ be a level in $\Levels{\Omega}{T}{\mathfrak{m}}$ whose measure $\groupMeasure{\cL}$ is a Haar measure of
+$\GT{T}$, and let $\Gamma$ be a gauge in $\Gauges{\cL}$. Let $W\colon\GT{T}\to\CC^I$ be a cut Bessel function for
+$\cL$: \m{\IsCut{W}}. Let $j$ be a natural number with $j\le\varrho$, let $p,q\colon\NN\to A^{\times}$ be
+sequences of units such that $p$ is a head of length $j$ for $\Gamma$, that is \m{\IsHead{j}{p}} for $\Gamma$, and let
+$x\in\Posn{\cL}$ be a position.
+\end{setting}
+
+\statement{arith}{\phantomsection\label{t:A}\textbf{Theorem A (the local theorem).}\enspace In
+Setting~\ref{set:local}, the three quantities on the left are bounded by the self-norm product
+\[\begin{aligned}
+\selfNormProduct{j}{p}{q}{W}{W'}{x}{\Gamma}={}&\Bigl(\prod_{a<j}\floorModulus{\cL}{a}{p_a^{-1}}\Bigr)^{2}\,
+\globalConst{\Gamma}^{3}\;\selfNorm{\cL}{0}{\translatePairing{W}{W}{1}{\cdot}{\cdot}}{x}\\
+&\cdot\selfNorm{\cL}{j}{\translatePairing{W}{W'}{d}{\cdot}{\cdot}}{x},\qquad d=\weylRatio{j}{p}{q}.
+\end{aligned}\]
+\textbf{(a) Volume.} Let $W'\colon\GT{T}\to\CC^I$ satisfy \m{\IsBessel{W'}{\gL{\cL}^{-1}}} and vanish at every $y$
+that is not near at~$j$ (if $W'(y)\ne0$ then \m{\IsNear{\cL}{j}{y}}). Let $V\in[0,\infty]$ with $V\ge1$ and
+\m{\FloorMassLe{\cL}{j}{V}{1}}, and let $\sigma\in[0,\infty]$. Suppose that, if $\sigma<1$, then for every
+$y\in\GT{T}$ with $\ip{W(y)}{W(yx)}\ne0$, \m{\IsNear{\cL}{j}{\wl{j}{p}^{-1}y}} and
+\m{\IsNear{\cL}{j}{\wl{j}{q}^{-1}yx}} there is $a$ with $j\le a<\varrho$ and
+$\vol\bigl(\floorValues{\cL}{a}{y}{x}\bigr)\le\sigma$. Then
+\[\formMajorant{j}{p}{q}{W}{W'}{x}^{2}\ \le\ \sigma^{\volumeExponent{\cL}}\;V^{2}\;\selfNormProduct{j}{p}{q}{W}{W'}{x}{\Gamma}.\]
+\textbf{(b) A character on the floor.} Let $\xi\in A^{\times}$ and $\eta\in A$ be such that
+$\psi_A(\eta z)=\psi_A(\xi z)$ for all $z\in\Gamma_{200n^2}$, and let $\omega_\eta(y)=\psi_A\bigl(\eta\,\ZT{T}{y}_{jj}\bigr)$
+for $y\in\GT{T}$. Then
+\[\formModulus{j}{p}{q}{W}{x}{\omega_\eta}^{2}\ \le\ \Bigl(\frac{c_A}{\modA(\xi)}\Bigr)^{|\Omega|}\;\selfNormProduct{j}{p}{q}{W}{W}{x}{\Gamma}.\]
+\textbf{(c) Unequal heads.} Let $i$ be a natural number with $j=i+1$, and let $\xi\in A^{\times}$ with
+$\xi=\gL{\cL}^{-1}\bigl(p_i^{-1}-q_i^{-1}\bigr)$. Then
+\[\formModulus{j}{p}{q}{W}{x}{1}^{2}\ \le\ \Bigl(\frac{c_A}{\modA(\xi)}\Bigr)^{|\Omega|}\;\selfNormProduct{j}{p}{q}{W}{W}{x}{\Gamma}.\]}
+\leanline{\lean{formMajorantsqle}\sep\lean{formModulussqleofchar}\sep\lean{formModulussqleofheads}}
+
+So a form is small when the pair of positions is spread out (a), when it is tested against a character of large
+frequency~$\xi$ in the diagonal entry of floor~$j$ (b), and when the last entries of the two heads differ by a large
+amount (c); in (b) and (c) the gain is the factor $\modA(\xi)^{-|\Omega|}$, where $|\Omega|$ is the number of
+anisotropic directions that the floor leaves free.
+
+\begin{setting}[a cut function and a gauge]\label{set:cut}
+Let $A$, $\mathfrak{s}$, $T$, $\Omega$, $\mathfrak{m}$, $I$ be as in the conventions, let $\cL$ be a level in
+$\Levels{\Omega}{T}{\mathfrak{m}}$, let $\Gamma$ be a gauge in $\Gauges{\cL}$, and let $W\colon\GT{T}\to\CC^I$ be a cut
+Bessel function for $\cL$: \m{\IsCut{W}}.
+\end{setting}
+
+\statement{arith}{\phantomsection\label{t:B}\textbf{Theorem B (descent).}\enspace In Setting~\ref{set:cut}, let
+$p,q\colon\NN\to A^{\times}$, let $a$ be a natural number with $a<\varrho$, let $t\in\CC$ and $\eta\in A$, and suppose
+that $\int\formMajorant{a}{p}{q}{W}{W}{x}\,\dd\groupMeasure{\cL}(x)<\infty$. For $c\in A$ let $u(c)=c$ if $c$ is a
+unit and $u(c)=1$ otherwise, and let $p[a\mapsto u(c)]$ be the sequence $p$ with its entry $a$ replaced by $u(c)$.
+Then the function
+\[f(c)=\psi_A(\eta c)\cdot\Bigl(t\cdot\floorForm{a+1}{p[a\mapsto u(c)]}{q[a\mapsto u(c)]}{W}{1}\Bigr)\]
+is integrable on $A$, and
+\[\int_A f(c)\,\dd c\;=\;t\cdot\floorForm{a}{p}{q}{W}{\omega_\eta},\qquad \omega_\eta(y)=\psi_A\bigl(\eta\,\ZT{T}{y}_{aa}\bigr).\]}
+\leanline{\lean{integralfloorFormsucc}}
+
+For $\eta=0$ this says that the form of floor $a$ is the integral of the forms of floor $a+1$ over a common entry at
+the place~$a$; for $\eta\ne0$ it identifies the Fourier transform in that entry, which Theorem~A(b) bounds.
+
+\statement{arith}{\phantomsection\label{t:C}\textbf{Theorem C (the self-norm, integrated over positions).}\enspace
+Let $A$, $\mathfrak{s}$, $T$, $\Omega$, $\mathfrak{m}$ be as in the conventions, let $\cL$ be a level in
+$\Levels{\Omega}{T}{\mathfrak{m}}$ whose measure $\groupMeasure{\cL}$ is a Haar measure, and $\Gamma$ a gauge in
+$\Gauges{\cL}$. Let $j$ be a natural number with $j\le\varrho$, let $k\colon\GT{T}\times\GT{T}\to\CC$ and
+$d\in\GT{T}$ form a pairing kernel, \m{\IsPairingKernel{\cL}{j}{k}{d}}, and let
+\[c=\Bigl(\prod_{l<\varrho}\floorConst{\Gamma}{l}\Bigr)\cdot\iint|k(g,y)|^{2}\,\dd\upperMeasure{\cL}{0}(y)\,\dd\upperMeasure{\cL}{0}(g).\]
+Then
+\[\int_{\positionsOfSize{\cL}{\Gamma}}\selfNorm{\cL}{j}{k}{x}\;\dd\groupMeasure{\cL}(x)\ \le\ n\cdot c.\]}
+\leanline{\lean{lintegralselfNormle}}
+
+\statement{arith}{\phantomsection\label{t:D}\textbf{Theorem D (a bound on a set of positions).}\enspace In
+Setting~\ref{set:cut}, suppose that $\groupMeasure{\cL}$ is a Haar measure. Let $\Gamma'$ be a second gauge in
+$\Gauges{\cL}$, let $W'\colon\GT{T}\to\CC^I$ satisfy \m{\IsBessel{W'}{\gL{\cL}^{-1}}}, let $j\le\varrho$ and let
+$p,q\colon\NN\to A^{\times}$ with $q$ a head of length $j$ for $\Gamma$: \m{\IsHead{j}{q}} for $\Gamma$. Let
+$\Theta,e\in[0,\infty]$, let $S\subseteq\GT{T}$ and $f\colon\GT{T}\to[0,\infty]$, and suppose that
+\[\begin{gathered}\pairingNorm{W}{W}\cdot\pairingNorm{W}{W'}\le\Theta^2,\qquad S\subseteq\positionsOfSize{\cL}{\Gamma'},\\
+f(x)^{2}\le e^{2}\cdot\selfNormProduct{j}{p}{q}{W}{W'}{x}{\Gamma}\ \text{ for all $x\in S$}.\end{gathered}\]
+Then
+\[\begin{aligned}\headDensity{j}{p}{q}{\cL}\int_{S}f\,\dd\groupMeasure{\cL}\ \le\ {}&\Bigl(e\prod_{l<\varrho}\floorModulus{\cL}{l}{\gL{\cL}}\Bigr)\,
+c_A^{\,|\Omega|\varrho}\\ &\cdot\Lambda(\Gamma)^{1500000\,n^{3}}\;\Lambda(\Gamma')^{50000\,n^{2}}\;\Theta\;\Lambda(\Gamma).\end{aligned}\]}
+\leanline{\lean{lintegralpositionsle}}
+
+The last theorem is at the complex place. There $\psi_{\CC}(c)=\exp(c-\bar c)$, the level $\cLC{\mathfrak{h}}$ and its
+gauges are those of the companion note on the complex place (Inputs \Inp{C1}--\Inp{C3}), and a pair of a Bessel function
+and its cut is given by the unit on the second moment (Definition~\ref{d:cutbessel}). The notion of band limits is
+recalled in Section~\ref{s:inputs}: it is a system of forms $J_0,\dots,J_{\varrho+1}$ on sequences of non-zero complex
+numbers, each the integral of the next over a common entry, with decay in the frequency and off the diagonal.
+
+\statement{arith}{\phantomsection\label{t:E}\textbf{Theorem E (band limits at the complex place).}\enspace Let
+$\mathfrak{s}$ be a shape, $I$ a non-empty finite set, $\Phi,\Phi_0\colon\Gone{\mathfrak{s}}\to\CC^I$ continuous
+functions, $\mathrm{rep}$ a unitary representation of $\mathrm{U}(\kappa)$ on $\CC^I$, $\rho$ and $b$ real numbers,
+$s_0$ and $\mathsf{n}$ natural numbers, and let $\mathfrak{c}$ be cut Bessel data:
+\m{\IsCutBessel{\Phi}{\mathrm{rep}}{\rho}{s_0}{b}{\Phi_0}{\mathsf{n}}} (Definition~\ref{d:cutbessel}; $\Phi$ is the
+cut, $\Phi_0$ the full function). Let $\deg$ be a real number with $\deg>0$ such that $\Phi_0$ has Schur's bound with
+constant $\deg^{-1}|I|$ (Section~\ref{s:inputs}), and suppose that $\deg\cdot\bandc{\mathfrak{s}}\le b^{4r^2}$. Then
+there is a family $J=(J_i)_{i\in\NN}$ of functions of two sequences $p,q\colon\NN\to\CC^{\times}$ such that $\Phi$
+has the band limits with respect to $b$, $\deg$ and $J$. One such family is
+\[J_i(p,q)=\formConst{\mathfrak{c}}\cdot\floorForm{i}{p}{q}{\Phi}{1}\ \ (i\le\varrho),\qquad
+J_i(p,q)=\ip{\sieveVector{\Phi}{p}}{\sieveVector{\Phi}{q}}\ \ (i>\varrho),\]
+with the floor forms of the level $\cLC{\mathfrak{h}}$ of the sizes $\mathfrak{h}$ that underlie $\mathfrak{c}$.}
+\leanline{\lean{hasBandLimitsofisCutBessel}}
+
+\sect{The setting}{s:setting}
+\begin{conventions}\phantomsection\label{c:conventions}
+$A$ is a commutative ring with an involution $x\mapsto\bar x$, a topology and a Haar measure $\dd x$, and it is a
+\emph{place} in the sense of Section~\ref{s:space}. $\mathfrak{s}=(\varrho,\kappa,k_0)$ is a shape, with
+$n=\varrho+1$, $k=|\kappa|$ and $r=2\varrho+k+1$. $T$ is an $\mathfrak{s}$-form over~$A$ whose split Gram matrix
+$\JT{T}$ is a hermitian unit. $\Omega$ is a finite set~$\Omega$ and $\mathfrak{m}$ a natural number; $\cL$ denotes a level in
+$\Levels{\Omega}{T}{\mathfrak{m}}$. $I$ is a finite set~$I$, and $\CC^I$ has the inner product
+$\ip{v}{w}=\sum_{i\in I}\overline{v_i}\,w_i$ and the norm $|v|$. In statements at the complex place, $A=\CC$ with complex
+conjugation, $T$ is the form of $\Gone{\mathfrak{s}}$, and $\Phi$ denotes a continuous function
+$\Gone{\mathfrak{s}}\to\CC^I$. Integrals of functions with values in $[0,\infty]$ are Lebesgue integrals and need no
+integrability; a product $0\cdot\infty$ is $0$. Subtraction of natural numbers in exponents is truncated at~$0$.
+\end{conventions}
+
+\subhead{The space, its groups, and a place.}\phantomsection\label{s:space} These objects belong to the background
+library (units 112, 113 and 119 of the artifact); the companion Note~T (\emph{The tower method at a place: floor
+measures, gauges and the bounds on each floor}) defines them in full. A \emph{shape} is a triple
+$\mathfrak{s}=(\varrho,\kappa,k_0)$ of a natural number, a finite set and an element $k_0\in\kappa$. The free module
+$V=A^{r}$ has the basis $e_0,\dots,e_{\varrho-1}$, $x_i$ ($i\in\kappa$), $z$, $e^*_{\varrho-1},\dots,e^*_0$. An
+\emph{$\mathfrak{s}$-form} $T$ is a square matrix on the indices of the $x_i$ and of~$z$; its \emph{split Gram matrix}
+$\JT{T}$ pairs $e_a$ with $e^*_a$ (entries~$1$), restricts to $T$ on $V_\varrho=\langle x_i,z\rangle$, and is zero
+elsewhere. It is a \emph{hermitian unit} if it is hermitian with invertible determinant. We write
+$h_T(v,w)=v^{*}\JT{T}w$, with $v^{*}$ the conjugate transpose, and $\GT{T}$ for the group of the invertible matrices
+$g$ with $g^{*}\JT{T}g=\JT{T}$. The \emph{floor} of $e_a$ and of $e^*_a$ is $a$, that of $z$ is $\varrho$, that of
+the $x_i$ is $n$; $V_l$ is the span of the basis vectors of floor at least~$l$. The \emph{frame} is
+$f_0,\dots,f_\varrho$ with $f_a=e_a$ for $a<\varrho$ and $f_\varrho=z$, and
+$\ZT{T}{g}=\bigl(h_T(f_a,gf_b)\bigr)_{0\le a,b\le\varrho}$ is the frame Gram matrix of $g\in\GT{T}$. The subgroups are:
+\begin{itemize}
+\item $\Hl{l}{T}$, the elements that fix every basis vector of floor less than $l$; so $\Hl{0}{T}=\GT{T}$,
+  $\Hl{\varrho}{T}$ is the unitary group of $V_\varrho$, $\Hl{n}{T}$ that of $\langle x_i\rangle$, and
+  $\Hl{l}{T}=1$ for $l\ge n+1$;
+\item $\Ql{l}{T}$, the elements $g$ with $gf_a-f_a\in\langle e_0,\dots,e_{a-1}\rangle$ for every $a<l$, $a\le\varrho$
+  (and, for $l\ge n+1$, also $gx_i-x_i\in\langle e_0,\dots,e_{\varrho-1}\rangle$);
+\item $\UT{T}=\Ql{n+1}{T}$, the unipotent radical of the stabiliser of the flag
+  $\langle e_0\rangle\subset\langle e_0,e_1\rangle\subset\dots$, and $\Nb{l}{T}$, the unipotent radical of the
+  stabiliser of the first $l$ steps of this flag, so that $\Nb{l}{T}=\UT{T}$ for $l\ge\varrho$;
+\item $\Nf{l}{T}=\Hl{l}{T}\cap\Nb{l+1}{T}$, a Heisenberg group.
+\end{itemize}
+They satisfy $\Hl{l}{T}\subseteq\Ql{l}{T}$, $\Nb{l}{T}\subseteq\UT{T}\subseteq\Ql{l'}{T}$ for all $l$, $l'$, the
+families $\Hl{l}{T}$ and $\Ql{l}{T}$ decrease with~$l$, $\Hl{l}{T}$ normalises $\Nb{l}{T}$, every element of
+$\Ql{l}{T}$ is a product $\gamma\nu$ with $\gamma\in\Hl{l}{T}$ and $\nu\in\Nb{l}{T}$, and for $b\le\varrho$ the
+group $\Ql{b+1}{T}\cap\Hl{b}{T}$ is the stabiliser of $f_b$ in $\Hl{b}{T}$. For $u\in\GT{T}$, $\sd(u)$ is the sum of
+the entries of $u$ at the places $(f_a,f_{a+1})$, $a<\varrho$. For $p\colon\NN\to A^{\times}$ the \emph{Weyl
+element} $\wl{l}{p}\in\GT{T}$ maps $e_a\mapsto p_ae^*_a$ and $e^*_a\mapsto\bar p_a^{-1}e_a$ for $a<\min(l,\varrho)$
+and fixes the other basis vectors; it commutes with $\Hl{l}{T}$, and $\wl{l}{\bar p}=\wl{l}{p}^{-1}$. The \emph{floor
+Weyl element} $\wo{a}{c}$, for $a<\varrho$ and $c\in A^{\times}$, does the same with the one pair $(e_a,e^*_a)$,
+so that $\wl{a+1}{p}=\wo{a}{p_a}\wl{a}{p}$ and $\ZT{T}{\wo{a}{c}}_{aa}=c$.
+
+A \emph{place} is a commutative ring $A$ with involution that is a locally compact Polish topological ring with a Haar
+measure, together with: an element $\tau_A$ with $\tau_A+\bar\tau_A=1$; a unit $\delta_A$ with
+$\bar\delta_A=-\delta_A$; a Haar measure on the skew elements; a measurable multiplicative \emph{module}
+$\modA\colon A\to[0,\infty]$, invariant under $x\mapsto\bar x$ and $x\mapsto-x$, such that multiplication by a matrix
+$M$ with invertible determinant multiplies Haar measure on $A^{N}$ by $\modA(\det M)^{-1}$; a continuous additive
+character $\psi_A\colon A\to\CC$ of absolute value~$1$; a constant $c_A\in[0,\infty]$; and further axioms (almost
+every element is a unit; a compatibility of the measure on skew elements; a local bound for $\modA^{-1}$; a
+Plancherel kernel) that enter this note only through the inputs. For $A=\CC$: $\modA(x)=|x|^2$,
+$\psi_{\CC}(c)=\exp(c-\bar c)$, $c_{\CC}=\pi^{2}$.
+
+\subhead{The tower (recalled from Note~T).}\phantomsection\label{s:tower} A \emph{level}
+$\cL\in\Levels{\Omega}{T}{\mathfrak{m}}$ consists of: a \emph{hyperbolic basis} of $V_\varrho$, that is a basis matrix
+$E(\cL)$ made of $\mathfrak{m}+1$ hyperbolic pairs and of orthonormal vectors indexed by $\Omega$ (so
+$k+1=|\Omega|+2\mathfrak{m}+2$); two $s$-finite measures on $\GT{T}$, written $\floorMeasure{\cL}{\varrho}$ and
+$\floorMeasure{\cL}{n}$, the second non-zero; a unit $\gL{\cL}=\overline{\gL{\cL}}$ of $A$; an open set
+$\Ball{\cL}\subseteq V$ that contains $0$ and has compact closure; a compact set $\BoxL{\cL}\subseteq\GT{T}$, the
+\emph{box}; and a measurable set $\Posn{\cL}\subseteq\GT{T}$ of \emph{positions}. It is required that
+$\floorMeasure{\cL}{\varrho}$ is carried by $\Hl{\varrho}{T}$ and that its image under $\sigma\mapsto\sigma^{-1}z$ is
+the quadric measure $\quadric{\cL}{\varrho}$ of Note~T on $\{v\in V_\varrho:h_T(v,v)=h_T(z,z)\}$; and that
+$\floorMeasure{\cL}{n}$ is carried by $\Hl{n}{T}$, is invariant under right translations by $\Hl{n}{T}$, and gives
+mass at most $1$ to $\{h:u\,h\,g\in\BoxL{\cL}\text{ for some }u\in\UT{T}\}$, for every $g$. For $l<\varrho$ the
+\emph{floor measure} is $\floorMeasure{\cL}{l}=\varpi_l*\eta_l$, where $*$ is convolution of measures on $\GT{T}$,
+$\varpi_l$ is the image of the measure $\modA(c)^{k+1+2(\varrho-l-1)}\dd c$ on $A$ under $c\mapsto\wo{l}{c}^{-1}$,
+and $\eta_l$ is the \emph{Heisenberg measure}, a Haar measure of $\Nf{l}{T}$ in the coordinates of Note~T; and
+$\floorMeasure{\cL}{l}=\delta_1$, the unit mass at~$1$, for $l>n$. We put $\eta_l=\delta_1$ for $l\ge\varrho$ and
+$\etab{j}=\eta_0*\dots*\eta_{j-1}$. Then
+\[\begin{gathered}
+\stackMeasure{\cL}_{a,i}=(\eta_{a+i-1}*\floorMeasure{\cL}{a+i-1})*\dots*(\eta_a*\floorMeasure{\cL}{a}),\\
+\groupMeasure{\cL}=\stackMeasure{\cL}_{0,\varrho+2},\qquad
+\upperMeasure{\cL}{l}=\floorMeasure{\cL}{n}*\dots*\floorMeasure{\cL}{l},
+\end{gathered}\]
+with $\upperMeasure{\cL}{l}=\delta_1$ for $l>n$. The measure $\floorMeasure{\cL}{l}$ is carried by $\Hl{l}{T}$, and
+$\groupMeasure{\cL}$ is right invariant.
+
+A point $g\in\GT{T}$ is \emph{near at $j$}, \m{\IsNear{\cL}{j}{g}}, if $\xi g\in\BoxL{\cL}$ for some
+$\xi\in\Ql{j}{T}$. For $a<\varrho$ and $x,y\in\GT{T}$, the set $\floorValues{\cL}{a}{x}{y}\subseteq A$ consists of the
+coordinates at $e^*_a$ of the vectors $w\in V$ whose coordinates at $e^*_b$, $b<a$, vanish and for which
+$u_1=x^{-1}w$ and $u_2=(xy)^{-1}w$ satisfy $u_1\in\Ball{\cL}$ and $\gL{\cL}^{-1}(u_1-u_2)\in\Ball{\cL}$. With the
+\emph{volume exponent} $\volumeExponent{\cL}=|\Omega|-(3n+1+\mathfrak{m})$, the \emph{weight} and the \emph{floor
+module} are
+\[\begin{gathered}
+\floorWeight{\cL}{j}{x}{y}=\prod_{a<\min(j,\varrho)}\vol\bigl(\floorValues{\cL}{a}{x}{y}\bigr)^{\volumeExponent{\cL}},\\
+\floorModulus{\cL}{l}{g}=\modA(g)^{k+1+2(\varrho-(l+1))}\,\modA(g)^{1/2}\quad(g\in A^{\times}),
+\end{gathered}\]
+and $\invWeight{\cL}{j}{x}$ is the function $z\mapsto\floorWeight{\cL}{j}{z}{x}^{-1}$ on the points near at $j$,
+extended by~$0$. For a function $c\colon\GT{T}\to[0,\infty]$ and $K\in[0,\infty]$, \m{\FloorMassLe{\cL}{j}{K}{c}}
+means that $\int c(\sigma g)\,\dd\floorMeasure{\cL}{j}(\sigma)\le K$ for every $g$, the integral taken over the
+$\sigma$ with $\sigma g$ near at $j+1$.
+
+\subhead{Kernels averaged over floors (recalled from Note~T).} For a measurable
+$k\colon\GT{T}\times\GT{T}\to\CC$ the \emph{averaged kernel}, its \emph{pivot}, the \emph{weighted square} and the
+\emph{weighted square sum} at a point $x\in\GT{T}$ are
+\begin{gather*}
+\upperPairing{\cL}{j}{k}{g}{y}=\int k(\sigma g,\sigma y)\,\dd\upperMeasure{\cL}{j}(\sigma),\\
+\pivotModulus{\cL}{j}{k}{g}{y}=\int\bigl|\upperPairing{\cL}{j+1}{k}{\sigma g}{\sigma y}\bigr|\,\dd\floorMeasure{\cL}{j}(\sigma),\\
+\weightedSquare{\cL}{j}{k}{x}{g}=\floorWeight{\cL}{j}{g}{x}\cdot\bigl|\upperPairing{\cL}{j+1}{k}{g}{gx}\bigr|^{2},\\
+\weightedSquareSum{\cL}{k}{x}{j}{g}=\int\Bigl(\weightedSquare{\cL}{j}{k}{x}{\sigma g}+\weightedSquareSum{\cL}{k}{x}{j+1}{\sigma g}\Bigr)\dd\floorMeasure{\cL}{j}(\sigma)
+\end{gather*}
+for $j\le\varrho$, with $\weightedSquareSum{\cL}{k}{x}{j}{g}=0$ for $j>\varrho$,
+and the \emph{self-norm} is
+$\selfNorm{\cL}{j}{k}{x}=\int\weightedSquareSum{\cL}{k}{x}{j}{g}\,\dd(\floorMeasure{\cL}{j-1}*\dots*\floorMeasure{\cL}{0})(g)$.
+A pair of such a $k$ and an element $w\in\GT{T}$ is a \emph{pairing kernel at $j$}, \m{\IsPairingKernel{\cL}{j}{k}{w}},
+if: $k$ is measurable; for all $l$, all $\nu,\nu'\in\Nb{l}{T}$ and all $g,y$,
+\[\upperPairing{\cL}{l+1}{k}{\nu g}{\nu'y}=\psi_A\Bigl(\gL{\cL}^{-1}\bigl(\sd(w\nu'w^{-1})-\sd(\nu)\bigr)\Bigr)\,\upperPairing{\cL}{l+1}{k}{g}{y};\]
+$w$ commutes with $\Hl{j}{T}$; for every $l$ the integrals $\int|k(\sigma g,\sigma y)|\,\dd\upperMeasure{\cL}{l}(\sigma)$
+are bounded by a finite constant independent of $g$, $y$; and $\upperPairing{\cL}{l}{k}{g}{y}\ne0$ implies
+\m{\IsNear{\cL}{l}{g}}.
+
+\subhead{Sizes and gauges (recalled from Note~T).} A \emph{gauge} $\Gamma\in\Gauges{\cL}$ consists of sets
+$\Gamma_0,\Gamma_1,\dots\subseteq A$, compact, containing $0$ and $1$, stable under $x\mapsto-x$ and $x\mapsto\bar x$,
+with $\Gamma_i\Gamma_{i'}\subseteq\Gamma_{i+i'}$ and with sums of at most $r+1$ elements of $\Gamma_i$ in
+$\Gamma_{i+1}$, and of a constant $\Lambda(\Gamma)\in[2,\infty)$, subject to the axioms listed in Note~T. Those used
+here by name: the entries of $\JT{T}$ and $\JT{T}^{-1}$ lie in $\Gamma_1$; $\mathfrak{m}\le9n$ and $c_A\ge1$;
+$\gL{\cL}\in\Gamma_1$; the entries of the elements of $\BoxL{\cL}$ lie in $\Gamma_1$; the coordinates of the vectors
+of $\Ball{\cL}$ lie in $\Gamma_1$; $\modA(u)\le\Lambda(\Gamma)^{i}$ for units $u\in\Gamma_i$; and
+$\vol(\Gamma_i)\le\Lambda(\Gamma)^{i+1}$. A matrix $X$ over $A$ \emph{has size at most $i$ for $\Gamma$},
+\m{\HasMatSize{i}{X}}, if all its entries lie in $\Gamma_i$; for $g\in\GT{T}$ this refers to the matrix of~$g$;
+$\vecsOfSize{i}$ is the set of the vectors with all coordinates in $\Gamma_i$. A sequence $p\colon\NN\to A^{\times}$
+is a \emph{head of length $j$ for $\Gamma$}, \m{\IsHead{j}{p}}, if $(p_0\cdots p_{l-1})^{-1}\in\Gamma_1$ for all
+$l\le j$; then $\bar p$ is one too. The predicates $\operatorname{sz}$, $\operatorname{Hd}$ and the sets
+$\mathrm{Vec}$ refer to a gauge that the Lean text takes as an implicit argument; every statement below names it.
+Further,
+\[\begin{gathered}
+\positionsOfSize{\cL}{\Gamma}=\bigl\{x\in\Posn{\cL}:\HasMatSize{1}{\gL{\cL}^{-1}(x-1)}\ \text{for }\Gamma\bigr\},\\
+\floorConst{\Gamma}{l}=\floorModulus{\cL}{l}{\gL{\cL}}\,c_A^{|\Omega|}\,\Lambda(\Gamma)^{4600n},\qquad
+\globalConst{\Gamma}=\Lambda(\Gamma)^{10^{6}n^{3}}.
+\end{gathered}\]
+
+\subhead{Bessel functions and the kernels of two functions.}
+\begin{definition}[Bessel functions]\label{d:bessel}
+Let $W\colon\GT{T}\to\CC^I$ and $\eta\in A^{\times}$. Then $W$ is a \emph{Bessel function of frequency $\eta$},
+\m{\IsBessel{W}{\eta}}, if $W$ is measurable and bounded and
+\[W(ux)=\psi_A\bigl(\eta\,\sd(u)\bigr)\,W(x)\qquad\text{for all }u\in\UT{T},\ x\in\GT{T}.\]
+\end{definition}
+\leanline{\lean{IsBessel}}
+\begin{definition}[cut functions]\label{d:cut}
+Let $\cL$ be a level in $\Levels{\Omega}{T}{\mathfrak{m}}$ and $W\colon\GT{T}\to\CC^I$. Then $W$ is \emph{cut for
+$\cL$}, \m{\IsCut{W}}, if \m{\IsBessel{W}{\gL{\cL}^{-1}}} and, for every $x$ with $W(x)\ne0$, there is
+$u\in\UT{T}$ with $ux\in\BoxL{\cL}$. The level is an implicit argument of this predicate in the Lean text.
+\end{definition}
+\leanline{\lean{IsCut}\sep\lean{isNearofnezero}}
+Since $\UT{T}\subseteq\Ql{j}{T}$ for every $j$, a cut function vanishes at every point that is not near at~$j$: if
+$W(x)\ne0$ then \m{\IsNear{\cL}{j}{x}}, for every~$j$.
+\begin{definition}[the kernel of two functions]\label{d:kernel}
+For $W,W'\colon\GT{T}\to\CC^I$ and $d,x,y\in\GT{T}$, $\translatePairing{W}{W'}{d}{x}{y}$ is the inner product of
+$W(x)$ and $W'(dy)$ in $\CC^I$. As a function of $(x,y)$ it is written $\translatePairing{W}{W'}{d}{\cdot}{\cdot}$.
+\end{definition}
+\leanline{\lean{translatePairing}}
+\begin{definition}[pairing norm]\label{d:pn}
+For a level $\cL$ in $\Levels{\Omega}{T}{\mathfrak{m}}$ (an implicit argument) and $W,W'\colon\GT{T}\to\CC^I$,
+\[\pairingNorm{W}{W'}=\iint\bigl|\ip{W(x)}{W'(y)}\bigr|^{2}\,\dd\upperMeasure{\cL}{0}(y)\,\dd\upperMeasure{\cL}{0}(x)\ \in[0,\infty].\]
+\end{definition}
+\leanline{\lean{pairingNorm}}
+
+\subhead{The floor forms.}
+\begin{definition}[head density]\label{d:hd}
+For a natural number $j$, sequences $p,q\colon\NN\to A^{\times}$ and a level $\cL$ in
+$\Levels{\Omega}{T}{\mathfrak{m}}$,
+\[\headDensity{j}{p}{q}{\cL}=\prod_{a<j}\Bigl(\modA(p_aq_a)^{1/2}\Bigr)^{k+1+2(\varrho-(a+1))}\ \in[0,\infty].\]
+It depends on $\cL$ only through $A$ and $\mathfrak{s}$.
+\end{definition}
+\leanline{\lean{headDensity}}
+\begin{definition}[the integrands]\label{d:integrand}
+Let $\cL$ be a level in $\Levels{\Omega}{T}{\mathfrak{m}}$ (an implicit argument of the three notions), $j$ a natural
+number, $W\colon\GT{T}\to\CC^I$ and $x,d,w,g\in\GT{T}$. Put
+\[
+\formIntegrandOne{j}{W}{x}{d}{w}{g}=\upperPairing{\cL}{j}{\translatePairing{W}{W}{1}{\cdot}{\cdot}}{g}{gx}\cdot
+\overline{\upperPairing{\cL}{j}{\translatePairing{W}{W}{d}{\cdot}{\cdot}}{w^{-1}g}{w^{-1}gx}}.
+\]
+For $p,q\colon\NN\to A^{\times}$ and $\omega\colon\GT{T}\to\CC$ put, with $d=\weylRatio{j}{p}{q}$,
+\[
+\formIntegrand{j}{p}{q}{W}{x}{\omega}{g}=\iint\omega(\sigma\tau^{-1})\;
+\formIntegrandOne{j+1}{W}{x}{d}{\sigma\wl{j}{p}\tau^{-1}}{\sigma g}\;\dd\floorMeasure{\cL}{j}(\tau)\,\dd\floorMeasure{\cL}{j}(\sigma).
+\]
+(Integrals of complex functions are Bochner integrals, equal to $0$ when the function is not integrable.)
+\end{definition}
+\leanline{\lean{formIntegrandOne}\sep\lean{formIntegrand}}
+\begin{definition}[floor form, modulus, majorant]\label{d:form}
+In the situation of Definition~\ref{d:integrand}, the \emph{floor form} of floor $j$ is the complex number
+\[
+\floorForm{j}{p}{q}{W}{\omega}=\headDensity{j}{p}{q}{\cL}\cdot\iint\formIntegrand{j}{p}{q}{W}{x}{\omega}{g}\;
+\dd\stackMeasure{\cL}_{0,j}(g)\,\dd\groupMeasure{\cL}(x)
+\]
+(the head density is read as $0$ if it is infinite). Its \emph{modulus} at a point $x\in\GT{T}$ is
+\[\formModulus{j}{p}{q}{W}{x}{\omega}=\int\bigl|\formIntegrand{j}{p}{q}{W}{x}{\omega}{g}\bigr|\,\dd\stackMeasure{\cL}_{0,j}(g)\ \in[0,\infty],\]
+and for a second function $W'\colon\GT{T}\to\CC^I$ the \emph{majorant} at $x$ is, with $d=\weylRatio{j}{p}{q}$,
+\[\begin{aligned}
+\formMajorant{j}{p}{q}{W}{W'}{x}=\int{}&\pivotModulus{\cL}{j}{\translatePairing{W}{W}{1}{\cdot}{\cdot}}{g}{gx}\\
+&\cdot\pivotModulus{\cL}{j}{\translatePairing{W}{W'}{d}{\cdot}{\cdot}}{\wl{j}{p}^{-1}g}{\wl{j}{p}^{-1}gx}\;\dd\stackMeasure{\cL}_{0,j}(g).
+\end{aligned}\]
+\end{definition}
+\leanline{\lean{floorForm}\sep\lean{formModulus}\sep\lean{formMajorant}}
+\begin{definition}[self-norm product]\label{d:snp}
+For a level $\cL$ in $\Levels{\Omega}{T}{\mathfrak{m}}$ (an implicit argument), a gauge $\Gamma$ in $\Gauges{\cL}$, a
+natural number $j$, sequences $p,q\colon\NN\to A^{\times}$, functions $W,W'\colon\GT{T}\to\CC^I$ and $x\in\GT{T}$,
+with $d=\weylRatio{j}{p}{q}$,
+\[\begin{aligned}
+\selfNormProduct{j}{p}{q}{W}{W'}{x}{\Gamma}={}&\Bigl(\prod_{a<j}\floorModulus{\cL}{a}{p_a^{-1}}\Bigr)^{2}\,
+\globalConst{\Gamma}^{3}\;\selfNorm{\cL}{0}{\translatePairing{W}{W}{1}{\cdot}{\cdot}}{x}\\
+&\cdot\selfNorm{\cL}{j}{\translatePairing{W}{W'}{d}{\cdot}{\cdot}}{x}\ \in[0,\infty].
+\end{aligned}\]
+\end{definition}
+\leanline{\lean{selfNormProduct}}
+
+\subhead{The complex place.} $\Gone{\mathfrak{s}}$ is $\GT{T}$ for $A=\CC$ and the form $T$ that is the identity on
+the $x_i$ and $-1$ at $z$; its Haar measure is written $\dd y$. \emph{Real-place sizes} $\mathfrak{h}$ in
+$\RealPlaceSizes{\mathfrak{s}}{\rho}{s_0}{b}$ are the numerical hypotheses of Input~\Inp{C1}; they give the level
+$\cLC{\mathfrak{h}}$ and, for every real $R$ with $\rho\le R$, the gauge $\gauge{\mathfrak{h}}{\rho\le R}$ of
+Input~\Inp{C3}, and the constant $\haarRatio{\mathfrak{h}}$ of Input~\Inp{C2}.
+\begin{definition}[cut Bessel data]\label{d:cutbessel}
+Let $\Phi,\Phi_0\colon\Gone{\mathfrak{s}}\to\CC^I$ be continuous, $\mathrm{rep}$ a homomorphism from
+$\mathrm{U}(\kappa)$ to the unitary group of $\CC^I$, $\rho$ and $b$ real numbers, $s_0$ and $\mathsf{n}$ natural
+numbers. \emph{Cut Bessel data} $\mathfrak{c}$, \m{\IsCutBessel{\Phi}{\mathrm{rep}}{\rho}{s_0}{b}{\Phi_0}{\mathsf{n}}},
+are: a proof that $(\Phi_0,\Phi)$ is a cut pair with respect to $b$, $\mathsf{n}$ and $\mathrm{rep}$, with full
+function $\Phi_0$ and cut $\Phi$ (Section~\ref{s:inputs}); and real-place sizes $\mathfrak{h}$ in
+$\RealPlaceSizes{\mathfrak{s}}{\rho}{s_0}{b}$, the sizes that \emph{underlie} $\mathfrak{c}$.
+\end{definition}
+\leanline{\lean{IsCutBessel}\sep\lean{volumeExponenteq}}
+For such data, $\volumeExponent{\cLC{\mathfrak{h}}}=s_0$: the level has $\mathfrak{m}=0$ and $|\Omega|=k-1$, and
+$k=s_0+3n+2$.
+\begin{definition}[the constant of the forms]\label{d:formconst}
+Let $\Phi,\Phi_0\colon\Gone{\mathfrak{s}}\to\CC^I$, $\mathrm{rep}$, $\rho$, $b$, $s_0$ and $\mathsf{n}$ be as in
+Definition~\ref{d:cutbessel}, and $\mathfrak{c}$ cut Bessel data,
+\m{\IsCutBessel{\Phi}{\mathrm{rep}}{\rho}{s_0}{b}{\Phi_0}{\mathsf{n}}}, with underlying sizes $\mathfrak{h}$. Then
+\[\formConst{\mathfrak{c}}=\frac{\volU{k}}{\volU{r}}\cdot\frac{1}{\bigl(\haarRatio{\mathfrak{h}}\,|I|\bigr)^{2}},
+\qquad \volU{N}=\prod_{i<N}\frac{2\pi^{i+1}}{i!}.\]
+\end{definition}
+\leanline{\lean{formConst}}
+\begin{definition}[the vector of the top floor]\label{d:sieve}
+For a continuous $\Phi\colon\Gone{\mathfrak{s}}\to\CC^I$ and $p\colon\NN\to\CC^{\times}$,
+\[
+\sieveVector{\Phi}{p}=\frac{\sqrt{\cellc{\mathfrak{s}}}\,\sqrt{|p_\varrho|^{2}-1}^{\,k-1}}{|I|}
+\prod_{a<\varrho}|p_a|^{k+1+2(\varrho-(a+1))}\cdot\corr{\dd y}{\Phi}{\wl{\varrho}{p}\,\boost{\varrho}{p_\varrho}}\ \in\CC^{I\times I},
+\]
+where the square root of a negative number is $0$, $\cellc{\mathfrak{s}}$, $\corr{\dd y}{\Phi}{\gamma}$ and the boost
+$\boost{\varrho}{c}$ are those of Section~\ref{s:inputs}.
+\end{definition}
+\leanline{\lean{sieveVector}}
+\sect{What is taken for granted}{s:inputs}
+\subhead{Inputs from Note T}\phantomsection\label{s:inpT}(same unit; \emph{The tower method at a
+place: floor measures, gauges and the bounds on each floor}). $\cL$ is a level in $\Levels{\Omega}{T}{\mathfrak{m}}$,
+$\Gamma$ a gauge in $\Gauges{\cL}$; functions called $\Phi$, $f$ take values in $[0,\infty]$ and are measurable;
+``invariant'' means invariant under left translations.
+
+\Inp{T1} $\stackMeasure{\cL}_{0,j}=\etab{j}*(\floorMeasure{\cL}{j-1}*\dots*\floorMeasure{\cL}{0})$; $\etab{j}$ is
+carried by $\Nb{j}{T}$, is invariant under translations by $\Nb{j}{T}$ on both sides, and
+$\delta_s*\etab{j}=\etab{j}*\delta_s$ for $s\in\Hl{j}{T}$.
+
+\Inp{T2} If $\groupMeasure{\cL}$ is a Haar measure, $j\le\varrho+2$ and $\Phi$ is $\Hl{j}{T}$-invariant, then
+\[\int\Phi(\wl{j}{p}^{-1}g)\,\dd\stackMeasure{\cL}_{0,j}(g)=\int\Phi\,\dd\stackMeasure{\cL}_{0,j}.\]
+
+\Inp{T3} If $\groupMeasure{\cL}=\rho_1*\nu$ is a Haar measure, with $\rho_1,\nu$ $s$-finite, $\rho_1$ carried by a
+subgroup $S$ and invariant under right translations by $S$, and $\delta_s*\rho_1=\rho_1*\delta_s$, then
+$\int\Phi(sg)\,\dd\nu(g)=\int\Phi\,\dd\nu$ for every $S$-invariant $\Phi$.
+
+\Inp{T4} If a subgroup $S$ contains $\Hl{l}{T}$, $f$ is $(\Ql{l+1}{T}\cap S)$-invariant and $s\in\Ql{l}{T}\cap S$,
+then $\int f(\sigma s)\,\dd\floorMeasure{\cL}{l}(\sigma)=\int f\,\dd\floorMeasure{\cL}{l}$.
+
+\Inp{T5} For $j\le\varrho$:
+\[\int\Phi(\weylRatio{j}{p}{q}\,x)\,\dd\upperMeasure{\cL}{0}(x)=\prod_{a<j}\modA(p_a/q_a)^{k+2(\varrho-a)}\int\Phi\,\dd\upperMeasure{\cL}{0}.\]
+
+\Inp{T6} For $b\le\varrho$ and $s\in\Hl{b}{T}$, the map $\sigma\mapsto s\sigma^{-1}f_b$ carries
+$\floorMeasure{\cL}{b}$ to the quadric measure $\quadric{\cL}{b}$ on $V_b$.
+
+\Inp{T7} Let \m{\IsPairingKernel{\cL}{j}{k}{d}}. (a) $\sigma\mapsto\upperPairing{\cL}{l+1}{k}{\sigma g}{\sigma y}$ is
+$\floorMeasure{\cL}{l}$-integrable with integral $\upperPairing{\cL}{l}{k}{g}{y}$; hence
+$|\upperPairing{\cL}{l}{k}{g}{y}|\le\pivotModulus{\cL}{l}{k}{g}{y}$. (b) If $j\le l$ and
+$s\in\Ql{l}{T}\cap\Hl{j}{T}$, then $\upperPairing{\cL}{l}{k}{sg}{sy}=\upperPairing{\cL}{l}{k}{g}{y}$. (c)
+$\weightedSquare{\cL}{j}{k}{x}{\cdot}$ is $\Ql{j+1}{T}$-invariant and vanishes off the points near at $j+1$;
+$\weightedSquareSum{\cL}{k}{x}{j}{\cdot}$ is $\Ql{j}{T}$-invariant and vanishes off the points near at $j$. (d) The
+pair is a pairing kernel at every $l\ge j$. (e) \emph{Cauchy--Schwarz on a floor}: if \m{\FloorMassLe{\cL}{l}{K}{u}}
+and $|\upperPairing{\cL}{l+1}{k}{\sigma g}{\sigma y}|^{2}\le u(\sigma g)\,v(\sigma)$ for $\sigma\in\Hl{l}{T}$, then
+$\pivotModulus{\cL}{l}{k}{g}{y}^{2}\le K\int v\,\dd\floorMeasure{\cL}{l}$. (f) For $l\le\varrho$,
+$\selfNorm{\cL}{l}{k}{x}=\int\weightedSquare{\cL}{l}{k}{x}{g}\,\dd(\floorMeasure{\cL}{l}*\dots*\floorMeasure{\cL}{0})(g)+\selfNorm{\cL}{l+1}{k}{x}$,
+and $\selfNorm{\cL}{l}{k}{x}\le\selfNorm{\cL}{0}{k}{x}$ for $l\le n$. For every measurable $k$: (g) if
+$\pivotModulus{\cL}{l}{k}{g}{y}\ne0$ then $k(\sigma g,\sigma y)\ne0$ for some $\sigma\in\Hl{l}{T}$; (h) for
+$l\le\varrho$, $\int|\upperPairing{\cL}{l+1}{k}{\sigma g}{\sigma gx}|^{2}\,\dd\floorMeasure{\cL}{l}(\sigma)\le
+\weightedSquareSum{\cL}{k}{x}{l}{g}/\floorWeight{\cL}{l}{g}{x}$.
+
+\Inp{T8} Nearness at $j$ is $\Ql{j}{T}$-invariant; if $xg$ is near at $i$, $x\in\Hl{j}{T}$ and $j\le i$, then $g$ is
+near at~$j$. For $\xi\in\Ql{a+1}{T}$, $\floorValues{\cL}{a}{\xi x}{y}=\floorValues{\cL}{a}{x}{y}$; for
+$\xi\in\Ql{j}{T}$, $\floorWeight{\cL}{j}{\xi x}{y}=\floorWeight{\cL}{j}{x}{y}$ and
+$\invWeight{\cL}{j}{x}(\xi g)=\invWeight{\cL}{j}{x}(g)$; $\floorWeight{\cL}{a+1}{x}{y}=\floorWeight{\cL}{a}{x}{y}\,
+\vol(\floorValues{\cL}{a}{x}{y})^{\volumeExponent{\cL}}$ for $a<\varrho$; weights are neither $0$ nor $\infty$.
+
+\Inp{T9} (a) For $b\le\varrho$: \m{\FloorMassLe{\cL}{b}{\Lambda(\Gamma)^{1287n}\vol(\Gamma_{11})^{|\Omega|}}{1}}. (b)
+If \m{\FloorMassLe{\cL}{a}{V}{1}} for all $a\le\varrho$, then
+$\upperMeasure{\cL}{l}\{g:gc\text{ is near at }\varrho+2\}\le V^{n-l}$ for all $l$, $c$. (c) For $x\in\Posn{\cL}$ and
+$a<\varrho$: \m{\FloorMassLe{\cL}{a}{\Lambda(\Gamma)^{10^{4}n}}{u}} with
+$u(g)=\floorWeight{\cL}{a}{g}{x}/\floorWeight{\cL}{a+1}{g}{x}$.
+
+\Inp{T10} For $j\le\varrho$, $g$ near at $j$ and every $y$:
+$\int\mathbf{1}_{\positionsOfSize{\cL}{\Gamma}}(g^{-1}\nu y)\,\floorWeight{\cL}{j}{g}{g^{-1}\nu y}\,\dd\etab{j}(\nu)\le\prod_{l<j}\floorConst{\Gamma}{l}$.
+
+\Inp{T11} Let $j\le\varrho$, \m{\IsHead{j}{p}} for $\Gamma$, $x\in\Posn{\cL}$, $j\le b$, $\rho_1$ an $s$-finite
+measure, and $\Phi$ $\Ql{b}{T}$-invariant and zero off the points near at $b$. Then
+$\int\Phi(g)\,\invWeight{\cL}{j}{x}(\wl{j}{p}g)\,\dd(\etab{j}*\rho_1)(g)\le\prod_{a<j}\floorModulus{\cL}{a}{p_a^{-1}}\cdot\globalConst{\Gamma}\int\Phi\,\dd\rho_1$.
+
+\Inp{T12} \emph{Plancherel on a floor.} Let $b\le\varrho$, $t\in\Hl{b}{T}$, $x_1,y_1\in\GT{T}$ with
+\m{\HasMatSize{i_1}{tx_1}} for $\Gamma$, \m{\IsPairingKernel{\cL}{b}{k}{d}}, and
+$F(\sigma)=\upperPairing{\cL}{b+1}{k}{\sigma x_1}{\sigma y_1}$. Then (i) for $\floorMeasure{\cL}{b}$-almost every
+$\sigma$ with $F(\sigma)\ne0$, $t\sigma^{-1}f_b\in\vecsOfSize{i_1+6}$; (ii) for every $\xi\in A^{\times}$,
+$y'\in V$ and every measure $\mu$ on $V$ with \m{\HasFibreBound{\Gamma}{b}{\mu}{i}{M}},
+\[\begin{aligned}\int_{\vecsOfSize{i}}\Bigl|\int\psi_A\bigl(\xi\,h_T(v+y',t\sigma^{-1}f_b)\bigr)F(\sigma)\,\dd\floorMeasure{\cL}{b}(\sigma)\Bigr|^{2}&\dd\mu(v)\\
+\le M\,\Lambda(\Gamma)^{99n(i_1+12)}\Bigl(\frac{c_A}{\modA(\xi)}\Bigr)^{|\Omega|}&\int|F|^{2}\,\dd\floorMeasure{\cL}{b};\end{aligned}\]
+and \m{\HasFibreBound{\Gamma}{b}{\quadric{\cL}{b}}{i}{\Lambda(\Gamma)^{99n(i+6)}}} for all $b\le\varrho$ and $i$.
+
+\Inp{T13} \emph{Plancherel on a Heisenberg group.} Let $a<\varrho$, $\xi,u\in A^{\times}$, $\varepsilon\in\NN$,
+$C\in[0,\infty]$, \m{\IsPairingKernel{\cL}{a+1}{k}{d}}, $x_1,y_1\in\GT{T}$, $S\subseteq\GT{T}$,
+$\Phi\colon\GT{T}\to[0,\infty]$, and natural numbers $i_1$, $i_2$. Suppose: for $s\in\Nf{a}{T}$,
+$\gL{\cL}^{-1}(\sd(dsd^{-1})-\sd(s^{\varepsilon}))=\xi\,\sd(s)$; for $\nu\in\Nf{a}{T}$ with $\Phi(\nu)\ne0$,
+$\nu\in S$ and $\Phi(\nu)\le C\,|\upperPairing{\cL}{a+1}{k}{\nu^{\varepsilon}x_1}{\nu y_1}|^{2}$; for every $m\in S$
+there are $t\in\Ql{a+1}{T}\cap\Hl{a}{T}$ and $q\in\Nb{a+1}{T}$ with \m{\HasMatSize{i_1}{tqx_1}} such that for
+every $\nu\in S$ some $\nu'\in\Nb{a}{T}$ makes the column at $e^*_a$ of $u^{-1}(\nu'tm(t\nu)^{-1}-1)$ lie in
+$\vecsOfSize{i_2}$ (sizes for $\Gamma$). Then
+\[\begin{aligned}\int\Phi\,\dd\eta_a\le{}& C\Bigl(\frac{c_A}{\modA(\xi u)}\Bigr)^{|\Omega|}\floorModulus{\cL}{a}{u}\,\Lambda(\Gamma)^{100n(i_1+i_2+31)}\\
+&\cdot\int\bigl|\upperPairing{\cL}{a+2}{k}{\sigma x_1}{\sigma y_1}\bigr|^{2}\,\dd\floorMeasure{\cL}{a+1}(\sigma).\end{aligned}\]
+
+\Inp{T14} \emph{Sizes.} Sizes are for $\Gamma$; $j\le\varrho$. (a) If \m{\IsHead{j}{p}}, $s\in\Nb{j}{T}$,
+$sg\in\BoxL{\cL}$ and $\wl{j}{p}^{-1}g$ is near at $j$, then \m{\HasMatSize{60n^2}{g}}. (b) If \m{\IsHead{j}{p}}
+and $g$, $\wl{j}{p}^{-1}g$ are near at $j$, there is $\sigma\in\Hl{j}{T}$ with \m{\HasMatSize{60n^2}{\sigma g}} and
+\m{\HasMatSize{99n^2}{\sigma\wl{j}{p}^{-1}g}}. (c) If $s\in\Ql{j}{T}$, $sg\in\BoxL{\cL}$ and $\wl{j}{p}^{-1}g$ is
+near at $j$, then $p_0\cdots p_{l-1}\in\Gamma_{9n}$ for $l\le j$; if moreover \m{\IsHead{j}{p}} and $a<j$, then
+$p_a\in\Gamma_{10n}$. (d) If $g\in\BoxL{\cL}$ and $x,y\in\positionsOfSize{\cL}{\Gamma}$, then
+\m{\HasMatSize{14}{\gL{\cL}^{-1}(gx(gy)^{-1}-1)}}. (e) Let $\Gamma_S$ be a gauge in $\Gauges{\cL}$ for which $p,q$
+are heads of length $j$, with $\gL{\cL}^{-1}c\in\Gamma_1$ for all $c\in(\Gamma_S)_{10n}$ if $j\ne0$. If
+$ux,v(xy)\in\BoxL{\cL}$ for some $u,v\in\UT{T}$ with \m{\HasMatSize{2}{\gL{\cL}^{-1}(v(xy)-ux)}}, if
+$\wl{j}{p}^{-1}x$ and $\wl{j}{q}^{-1}xy$ are near at~$j$, and if for every $a$ with $j\le a<\varrho$ the set
+$\floorValues{\cL}{a}{x}{y}$ contains a unit $c$ with $c^{-1}\in\Gamma_1$, then
+\m{\HasMatSize{99n}{\gL{\cL}^{-1}(y-1)}}.
+
+\subhead{Inputs from Note C}\phantomsection\label{s:inpC}(same unit; \emph{The complex place: the
+open-cell chart, the Haar measure of the tower, the Bessel cut and the volume weight}).
+
+\Inp{C1} \emph{Real-place sizes} $\mathfrak{h}$ in $\RealPlaceSizes{\mathfrak{s}}{\rho}{s_0}{b}$ are proofs of
+$\rho=b^{6n+2}$, $8r\le\rho$, $k=s_0+3n+2$, $10^{9}n^{3}<s_0$, $n^{7}\le k$, $10^{8}\le\varrho$ and $2\le b$; then
+$\rho\ge4$. The level $\cLC{\mathfrak{h}}$ at $\CC$ has $\Omega=\kappa\smallsetminus\{k_0\}$, $\mathfrak{m}=0$,
+$\gL{\cLC{\mathfrak{h}}}=1$, the ball $\{v:|v|<\tfrac14\}$, the box $\{x:\|x\|\le\rho\}$ (operator norm), all of
+$\Gone{\mathfrak{s}}$ as positions, $\floorMeasure{\cLC{\mathfrak{h}}}{n}$ the Haar probability measure of
+$\mathrm{U}(\kappa)=\Hl{n}{T}$, and $\floorMeasure{\cLC{\mathfrak{h}}}{\varrho}$ the convolution of the image of
+$\frac{2\pi^{k}}{(k-1)!}\max(|c|^{2}-1,0)^{k-1}\dd c$ under $c\mapsto\boost{\varrho}{c}^{-1}$ with
+$\floorMeasure{\cLC{\mathfrak{h}}}{n}$.
+
+\Inp{C2} $0<\haarRatio{\mathfrak{h}}<\infty$; $\groupMeasure{\cLC{\mathfrak{h}}}=\haarRatio{\mathfrak{h}}\cdot\dd y$,
+so it is a Haar measure; $\int f\,\dd\upperMeasure{\cLC{\mathfrak{h}}}{0}=\haarRatio{\mathfrak{h}}\int f\,\dd\dot y$ for
+measurable $\UT{T}$-invariant $f\ge0$, where $\dd\dot y$ is the measure of $\UT{T}\backslash\Gone{\mathfrak{s}}$ of the
+background library; and $\frac{\volU{k}}{\volU{r}}\haarRatio{\mathfrak{h}}\le1$.
+
+\Inp{C3} For real $R\ge\rho$, $\gauge{\mathfrak{h}}{\rho\le R}$ is a gauge in $\Gauges{\cLC{\mathfrak{h}}}$ with sets
+$\{x\in\CC:|x|\le R^{i}\}$ and constant $\Lambda=R^{2}$.
+
+\Inp{C4} If the Bessel size of $y\in\Gone{\mathfrak{s}}$ is at most $t$, then $\|uy\|\le t$ for some $u\in\UT{T}$.
+
+\subhead{From the unit on the second moment (unit 148) and the background library.} We recall definitions; none of
+their properties is used beyond what is said. For $y\in\Gone{\mathfrak{s}}$ the \emph{Bessel size} is
+$\inf_s(\|sy\|+1)$ over $s\in\Ql{n}{T}$. A \emph{cut pair} with respect to $b$, $\mathsf{n}$, $\mathrm{rep}$ is a pair
+of continuous functions $\Phi_0$ (full) and $\Phi$ (cut) such that: both are measurable, bounded, satisfy
+$F(uy)=\psi_{\CC}(\sd(u))F(y)$ for $u\in\UT{T}$ and $F(hy)=\mathrm{rep}(h)F(y)$ for $h\in\mathrm{U}(\kappa)=\Hl{n}{T}$;
+$\Phi_0$ is integrable for $\dd\dot y$; $\int|\Phi_0|^2\dd\dot y=|I|$ and $\int|\Phi|^2\dd\dot y\le|I|$; $\Phi(y)\ne0$
+implies that the Bessel size of $y$ is at most $b^{6n+2}$; $\int|\Phi-\Phi_0|^2\dd\dot y\le b^{-10r^2}|I|$; and a
+majorant exists, which is not used here and involves~$\mathsf{n}$. For $\mu$ a measure on a group and $W$ a
+$\CC^I$-valued function, $\corr{\mu}{W}{\gamma}\in\CC^{I\times I}$ has the coordinates
+$\int W_i(y)\overline{W_{i'}(\gamma^{-1}y)}\,\dd\mu(y)$. The constants are
+$\cellc{\mathfrak{s}}=\frac{\volU{k}}{\volU{r}}\cdot\frac{2\pi^{k}}{(k-1)!}$ and
+$\bandc{\mathfrak{s}}=\frac{\volU{k}}{\volU{r}}\,\pi^{(2\varrho+1)k}$. The \emph{boost} $\boost{\varrho}{c}\in\Hl{\varrho}{T}$,
+for $c\in\CC^{\times}$, acts in the plane of $x_{k_0}$ and $z$ and has $\ZT{T}{\boost{\varrho}{c}}_{\varrho\varrho}=c$
+when $|c|>1$. For a real $t$ and natural numbers $K$, $i$: $\damp{K}{t}=t^{K}\min(1,t)^{6}$ and
+$\hw{K}{i}{p}=\prod_{l<i}\damp{K}{|p_0\cdots p_l|^{-1}}$. A function $\Phi_0$ \emph{has Schur's bound with constant
+$D$} if $\int|\int\varphi(y)\Phi_0(\gamma y)\,\dd y|^{2}\dd\dot\gamma\le D\int|\varphi|^2\dd y$ for every integrable
+$\varphi\colon\Gone{\mathfrak{s}}\to\CC$. Finally, $\Phi$ \emph{has the band limits with respect to $b$, $\deg$, $J$}
+if, with $\beta(\xi)=\bandc{\mathfrak{s}}\,b^{2000n^{9}}\,\damp{k-n^{7}}{|\xi|^{-1}}$ and $u(c)$ as in Theorem~B:
+\begin{itemize}
+\item[(S1)] for $i\le\varrho$, all $p,q$ and $\xi\in\CC$, $f(c)=\psi_{\CC}(\xi c)\,J_{i+1}(p[i\mapsto u(c)],q[i\mapsto u(c)])$
+  is integrable on $\CC$; $\int f=J_i(p,q)$ if $\xi=0$; and
+  $|\int f|\le\beta(\xi)\,\hw{n^6}{i}{p}\,\hw{n^6}{i}{q}$ if $\xi\ne0$;
+\item[(S2)] for finitely many sequences with a common entry at $\varrho$, the matrix of the values of $J_{\varrho+1}$
+  is positive semidefinite; $J_{\varrho+1}$ is continuous;
+\item[(S3)] $|J_0(p,q)|\le(1+b^{-10})/\deg$;
+\item[(S4)] for $i<\varrho$ and $\xi=p_i^{-1}-q_i^{-1}\ne0$:
+  $|J_{i+1}(p,q)|\le\beta(\xi)\,\hw{n^6}{i+1}{p}\,\hw{n^6}{i+1}{q}$;
+\item[(S5)] for $\sigma\in\Hl{\varrho}{T}$ and $p,q$ with $\ZT{T}{\sigma}_{\varrho\varrho}=p_\varrho=q_\varrho$:
+  \[J_{n}(p,q)=N(p)N(q)\ip{\corr{\dd y}{\Phi}{\wl{\varrho}{p}\sigma}}{\corr{\dd y}{\Phi}{\wl{\varrho}{q}\sigma}},\]
+  with $N(p)$ the scalar factor of Definition~\ref{d:sieve}.
+\end{itemize}
+Three classical results enter through these inputs and directly: the \emph{Cauchy--Schwarz inequality} in the form
+$(\int h)^2\le\int f_1\int f_2$ for $h^2\le f_1f_2$ (used freely); \emph{Plancherel's inequality at a place} (inside
+\Inp{T12}), which the second reader of the artifact relates to J.~Tate, \emph{Fourier analysis in number fields and
+Hecke's zeta-functions} (1950), \S2.2, as a weaker form; and the \emph{Cartan decomposition} of
+$\Hl{\varrho}{T}$ at $\CC$: if $\sigma\in\Hl{\varrho}{T}$ has $\ZT{T}{\sigma}_{\varrho\varrho}=c$ with $|c|>1$, then
+$\sigma=h\,\boost{\varrho}{c}\,h'$ with $h,h'\in\Hl{n}{T}$, which the second reader relates to the $KAK$ theorem
+(A.~Knapp, \emph{Structure theory of semisimple Lie groups}, Theorem~4.10) as a special case with the phase fixed. The
+places of these references were given by the second reader and not opened for this note.
+
+\sect{The kernels of a cut function}{s:kernels}
+\begin{lemma}[the kernels are pairing kernels]\label{l:pk}
+In Setting~\ref{set:cut}, let $W'\colon\GT{T}\to\CC^I$ satisfy \m{\IsBessel{W'}{\gL{\cL}^{-1}}}, let $j$ be a natural
+number and $p,q\colon\NN\to A^{\times}$. Then, with $d=\weylRatio{j}{p}{q}$,
+\[\IsPairingKernel{\cL}{j}{\translatePairing{W}{W'}{d}{\cdot}{\cdot}}{d}.\]
+In particular, for $W'=W$ and $p=q$ constant equal to $1$: \m{\IsPairingKernel{\cL}{j}{\translatePairing{W}{W}{1}{\cdot}{\cdot}}{1}}.
+\end{lemma}
+\begin{proof}
+Write $k(y,y')=\ip{W(y)}{W'(dy')}$; it is measurable. \emph{The law.} Let $\nu,\nu'\in\Nb{l}{T}$ and
+$\sigma\in\Hl{l+1}{T}$, which is where $\upperMeasure{\cL}{l+1}$ is carried. Then $\sigma\nu\sigma^{-1}\in\Nb{l}{T}
+\subseteq\UT{T}$ has the same entries at the places $(f_a,f_{a+1})$ as $\nu$ (a property of the background library),
+so $W(\sigma\nu g)=\psi_A(\gL{\cL}^{-1}\sd(\nu))\,W(\sigma g)$. The matrix of $d$ is diagonal, so
+$d(\sigma\nu'\sigma^{-1})d^{-1}\in\UT{T}$, its entries at the places $(f_a,f_{a+1})$ are those of $d\nu'd^{-1}$, and
+$W'(d\sigma\nu'y)=\psi_A(\gL{\cL}^{-1}\sd(d\nu'd^{-1}))\,W'(d\sigma y)$. As $\ip{\cdot}{\cdot}$ is conjugate linear in
+the first variable and $\overline{\psi_A(c)}=\psi_A(-c)$, the integrand of $\upperPairing{\cL}{l+1}{k}{\nu g}{\nu'y}$
+is $\psi_A(\gL{\cL}^{-1}(\sd(d\nu'd^{-1})-\sd(\nu)))$ times that of $\upperPairing{\cL}{l+1}{k}{g}{y}$. \emph{The
+element $d$ commutes with $\Hl{j}{T}$}, since $\wl{j}{p}$ and $\wl{j}{q}$ do. \emph{Boundedness.} Let $C,C'$ bound
+$|W|,|W'|$. The integrand of $\int|k(\sigma g,\sigma y)|\dd\upperMeasure{\cL}{l}(\sigma)$ is at most $CC'$ and
+vanishes unless $W(\sigma g)\ne0$, hence unless $\sigma g$ is near at $\varrho+2$. By \Inp{T9}(a),(b) the measure of
+these $\sigma$ is at most $V^{n-l}$ with $V=\Lambda(\Gamma)^{1287n}\vol(\Gamma_{11})^{|\Omega|}
+\le\Lambda(\Gamma)^{1287n+12|\Omega|}<\infty$. \emph{Support.} If $g$ is not near at $l$, then for
+$\sigma\in\Hl{l}{T}$ the point $\sigma g$ is not near at $l$ either (\Inp{T8}), so $W(\sigma g)=0$ and
+$\upperPairing{\cL}{l}{k}{g}{y}=0$. The last assertion is the case in which $\wl{j}{p}=\wl{j}{q}$.
+\end{proof}
+\leanline{\lean{isPairingKerneltranslatePairing}\sep\lean{isPairingKernelself}}
+
+\begin{lemma}[the integrand at weight $1$]\label{l:one}
+In Setting~\ref{set:cut}, let $j$ be a natural number, $p,q\colon\NN\to A^{\times}$ and $x\in\GT{T}$. Then, as
+functions of $g$,
+\[\formIntegrandOne{j}{W}{x}{\weylRatio{j}{p}{q}}{\wl{j}{p}}{\cdot}=\formIntegrand{j}{p}{q}{W}{x}{1}{\cdot}.\]
+\end{lemma}
+\begin{proof}
+Write $k_1$, $k_d$ for the two kernels of Definition~\ref{d:integrand}; both are pairing kernels at $j$
+(Lemma~\ref{l:pk}). By \Inp{T7}(a), $\upperPairing{\cL}{j}{k_1}{g}{gx}$ is the integral over $\sigma$ of
+$\upperPairing{\cL}{j+1}{k_1}{\sigma g}{\sigma gx}$, and $\upperPairing{\cL}{j}{k_d}{\wl{j}{p}^{-1}g}{\wl{j}{p}^{-1}gx}$
+the integral over $\tau$ of the same expression with $k_d$ and $\tau\wl{j}{p}^{-1}g$. Since
+$(\sigma\wl{j}{p}\tau^{-1})^{-1}\sigma g=\tau\wl{j}{p}^{-1}g$, the product of the first integral with the conjugate of
+the second is the double integral that defines the right-hand side with $\omega=1$.
+\end{proof}
+\leanline{\lean{formIntegrandOneeq}}
+
+\begin{lemma}[form, modulus, majorant]\label{l:fmm}
+\textup{(i)} Let $\cL$ be a level in $\Levels{\Omega}{T}{\mathfrak{m}}$, $j$ a natural number,
+$p,q\colon\NN\to A^{\times}$, $W\colon\GT{T}\to\CC^I$ and $\omega\colon\GT{T}\to\CC$. Then
+\[\bigl|\floorForm{j}{p}{q}{W}{\omega}\bigr|\le\headDensity{j}{p}{q}{\cL}\int\formModulus{j}{p}{q}{W}{x}{\omega}\,\dd\groupMeasure{\cL}(x).\]
+\textup{(ii)} If moreover $W$ is cut for $\cL$, \m{\IsCut{W}}, and $|\omega(y)|\le1$ for all $y$, then for every
+$x\in\GT{T}$
+\[\formModulus{j}{p}{q}{W}{x}{\omega}\le\formMajorant{j}{p}{q}{W}{W}{x}.\]
+\end{lemma}
+\begin{proof}
+(i) The absolute value of an integral is at most the integral of the absolute value, and the iterated integral
+bounds the integral over the product. (ii) Inside the integral over $g$, the same inequality bounds
+$|\formIntegrand{j}{p}{q}{W}{x}{\omega}{g}|$ by the double integral of the product of
+$|\upperPairing{\cL}{j+1}{k_1}{\sigma g}{\sigma gx}|$ and
+$|\upperPairing{\cL}{j+1}{k_d}{\tau\wl{j}{p}^{-1}g}{\tau\wl{j}{p}^{-1}gx}|$, as in the proof of Lemma~\ref{l:one};
+it is the product of the two pivots in the majorant. The measurability needed to split the double integral comes
+from that of~$W$.
+\end{proof}
+\leanline{\lean{enormfloorFormle}\sep\lean{formModulusleformMajorant}}
+
+\begin{lemma}[a pivot under a volume cap]\label{l:cap}
+Let $\cL$ be a level in $\Levels{\Omega}{T}{\mathfrak{m}}$, $\Gamma$ a gauge in $\Gauges{\cL}$, $j$ a natural number,
+and \m{\IsPairingKernel{\cL}{j}{k}{d}}. Let $x\in\Posn{\cL}$, let $l$ be a natural number, $g\in\GT{T}$ and
+$\varepsilon\in[0,\infty]$. Suppose that for every $\sigma\in\Hl{l}{T}$ with $k(\sigma g,\sigma gx)\ne0$ there is $a$
+with $l\le a<\varrho$ and $\vol(\floorValues{\cL}{a}{\sigma g}{x})\le\varepsilon$. Then
+\[\pivotModulus{\cL}{l}{k}{g}{gx}^{2}\ \le\ \varepsilon^{\volumeExponent{\cL}}\,\bigl(\Lambda(\Gamma)^{10^{4}n}\bigr)^{\varrho-l}\;
+\frac{\weightedSquareSum{\cL}{k}{x}{l}{g}}{\floorWeight{\cL}{l}{g}{x}}.\]
+\end{lemma}
+\begin{proof}
+Induction on $\varrho-l$, for all $g$. If $l\ge\varrho$ the pivot is $0$: otherwise \Inp{T7}(g) gives $\sigma\in
+\Hl{l}{T}$ with $k(\sigma g,\sigma gx)\ne0$, and the hypothesis an $a$ with $l\le a<\varrho$. Let $l<\varrho$, and write
+$s=\volumeExponent{\cL}$, $\Lambda=\Lambda(\Gamma)$, $\mathsf{A}=\upperPairing{\cL}{l+1}{k}{\cdot}{\cdot}$. We apply
+Cauchy--Schwarz on floor $l$, \Inp{T7}(e), with $u(g')=\floorWeight{\cL}{l}{g'}{x}/\floorWeight{\cL}{l+1}{g'}{x}$,
+whose mass is at most $\Lambda^{10^{4}n}$ by \Inp{T9}(c), and with
+\[v(\sigma)=\varepsilon^{s}\bigl(\Lambda^{10^{4}n}\bigr)^{\varrho-l-1}\;
+\frac{\weightedSquare{\cL}{l}{k}{x}{\sigma g}+\weightedSquareSum{\cL}{k}{x}{l+1}{\sigma g}}{\floorWeight{\cL}{l}{g}{x}}.\]
+Then $\Lambda^{10^4n}\int v\,\dd\floorMeasure{\cL}{l}$ is the right-hand side of the lemma, by the definition of the
+weighted square sum. It remains to see $|\mathsf{A}(\sigma g,\sigma gx)|^2\le u(\sigma g)v(\sigma)$ for
+$\sigma\in\Hl{l}{T}$. By \Inp{T8},
+\[\floorWeight{\cL}{l}{\sigma g}{x}=\floorWeight{\cL}{l}{g}{x},\qquad
+\floorWeight{\cL}{l+1}{\sigma g}{x}=\floorWeight{\cL}{l}{g}{x}\vol(\floorValues{\cL}{l}{\sigma g}{x})^{s}.\] If $\vol(\floorValues{\cL}{l}{\sigma g}{x})\le\varepsilon$, then $u(\sigma g)\ge\varepsilon^{-s}$, and
+$|\mathsf{A}(\sigma g,\sigma gx)|^2$ is $\weightedSquare{\cL}{l}{k}{x}{\sigma g}$ divided by
+$\floorWeight{\cL}{l}{g}{x}$, by definition; the inequality follows since $\Lambda\ge1$. Otherwise the hypothesis of the lemma holds for
+$(l+1,\sigma g)$: for $\tau\in\Hl{l+1}{T}$ with $k(\tau\sigma g,\tau\sigma gx)\ne0$ the hypothesis at $(l,g)$ gives
+some $a\ge l$, and $a=l$ is excluded because the sets $\floorValues{\cL}{l}{\tau\sigma g}{x}$ and
+$\floorValues{\cL}{l}{\sigma g}{x}$ are equal (\Inp{T8}). By \Inp{T7}(a), by induction, and since
+$\floorWeight{\cL}{l+1}{\sigma g}{x}^{-1}=u(\sigma g)/\floorWeight{\cL}{l}{g}{x}$,
+\[|\mathsf{A}(\sigma g,\sigma gx)|^{2}\le\pivotModulus{\cL}{l+1}{k}{\sigma g}{\sigma gx}^{2}\le
+\varepsilon^{s}\Lambda^{10^4n(\varrho-l-1)}\frac{\weightedSquareSum{\cL}{k}{x}{l+1}{\sigma g}}{\floorWeight{\cL}{l+1}{\sigma g}{x}}
+\le u(\sigma g)v(\sigma).\qedhere\]
+\end{proof}
+\leanline{\lean{pivotModulussqleofcapped}}
+
+\sect{The local theorem}{s:local}
+\begin{lemma}[from a pointwise bound to the self-norm product]\label{l:snp}
+In Setting~\ref{set:local}, let $W'\colon\GT{T}\to\CC^I$ satisfy \m{\IsBessel{W'}{\gL{\cL}^{-1}}}, let
+$f\colon\GT{T}\to[0,\infty]$ and $K\in[0,\infty]$, and write $k_1=\translatePairing{W}{W}{1}{\cdot}{\cdot}$,
+$k_d=\translatePairing{W}{W'}{d}{\cdot}{\cdot}$ with $d=\weylRatio{j}{p}{q}$. Suppose that for every $g$ with
+$f(g)\ne0$
+\[f(g)^{2}\le K\,\globalConst{\Gamma}\;\frac{\weightedSquareSum{\cL}{k_1}{x}{j}{g}}{\floorWeight{\cL}{j}{g}{x}}\cdot
+\frac{\weightedSquareSum{\cL}{k_d}{x}{j}{\wl{j}{p}^{-1}g}}{\floorWeight{\cL}{j}{\wl{j}{p}^{-1}g}{x}}.\]
+Then $\bigl(\int f\,\dd\stackMeasure{\cL}_{0,j}\bigr)^{2}\le K\cdot\selfNormProduct{j}{p}{q}{W}{W'}{x}{\Gamma}$.
+\end{lemma}
+\begin{proof}
+Write $B=\weightedSquareSum{\cL}{k_1}{x}{j}{\cdot}$, $B'=\weightedSquareSum{\cL}{k_d}{x}{j}{\cdot}$,
+$\mathsf{v}=\invWeight{\cL}{j}{x}$ and $w=\wl{j}{p}$. Both kernels are pairing kernels at $j$ (Lemma~\ref{l:pk}), so
+$B,B'$ are $\Ql{j}{T}$-invariant and vanish off the points near at $j$ (\Inp{T7}(c)). If $f(g)\ne0$ the hypothesis
+forces $B(g)\ne0\ne B'(w^{-1}g)$, so $g$ and $w^{-1}g$ are near at $j$ and the two weights are
+$\mathsf{v}(g)^{-1}$, $\mathsf{v}(w^{-1}g)^{-1}$. Pairing each sum with the weight of the other point,
+\[f(g)^2\le K\,\globalConst{\Gamma}\cdot\bigl[B(g)\,\mathsf{v}(w^{-1}g)\bigr]\cdot\bigl[B'(w^{-1}g)\,\mathsf{v}(g)\bigr]\qquad\text{for all }g.\]
+By Cauchy--Schwarz, $(\int f\,\dd\stackMeasure{\cL}_{0,j})^2$ is at most $K\globalConst{\Gamma}$ times the product of
+the integrals of the two brackets. The second bracket is $\Phi(w^{-1}g)$ for $\Phi(g)=B'(g)\mathsf{v}(wg)$, which is
+$\Hl{j}{T}$-invariant because $w$ commutes with $\Hl{j}{T}$; by \Inp{T2}, \Inp{T1} and \Inp{T11} (with $b=j$)
+\[\int B'(w^{-1}g)\,\mathsf{v}(g)\,\dd\stackMeasure{\cL}_{0,j}(g)=\int B'(g)\,\mathsf{v}(wg)\,\dd\stackMeasure{\cL}_{0,j}(g)
+\le\prod_{a<j}\floorModulus{\cL}{a}{p_a^{-1}}\cdot\globalConst{\Gamma}\cdot\selfNorm{\cL}{j}{k_d}{x}.\]
+For the first bracket, $w^{-1}=\wl{j}{\bar p}$ and $\bar p$ is a head of length~$j$, so \Inp{T11} applies with
+$\bar p$ and gives the bound $\prod_{a<j}\floorModulus{\cL}{a}{\bar p_a^{-1}}\cdot\globalConst{\Gamma}\cdot
+\selfNorm{\cL}{j}{k_1}{x}$; here $\floorModulus{\cL}{a}{\bar p_a^{-1}}=\floorModulus{\cL}{a}{p_a^{-1}}$, and
+$\selfNorm{\cL}{j}{k_1}{x}\le\selfNorm{\cL}{0}{k_1}{x}$ by \Inp{T7}(f). The product of the three bounds is $K$ times
+the self-norm product.
+\end{proof}
+\leanline{\lean{sqlintegralleselfNormProduct}}
+
+\begin{proof}[Proof of Theorem A\textup{(a)}]
+Apply Lemma~\ref{l:snp} to the function
+\[f(y)=\pivotModulus{\cL}{j}{k_1}{y}{yx}\cdot\pivotModulus{\cL}{j}{k_d}{w^{-1}y}{w^{-1}yx},\qquad w=\wl{j}{p},\]
+whose integral is the majorant, and to $K=\sigma^{s}V^{2}$, $s=\volumeExponent{\cL}$. Let
+$f(y)\ne0$. For the second pivot, Cauchy--Schwarz on floor $j$ (\Inp{T7}(e) with $u=1$, $K=V$) and \Inp{T7}(h) give,
+at $g'=w^{-1}y$,
+\[\pivotModulus{\cL}{j}{k_d}{g'}{g'x}^2\le V\,\weightedSquareSum{\cL}{k_d}{x}{j}{g'}/\floorWeight{\cL}{j}{g'}{x}.\] If $\sigma\ge1$ the same bound holds for the first pivot, and $\sigma^{s}\ge1$,
+$\globalConst{\Gamma}\ge1$, $V\le V^{2}$. If $\sigma<1$ we use Lemma~\ref{l:cap} with $l=j$ and $\varepsilon=\sigma$;
+its hypothesis is checked as follows. Since the second pivot is not $0$ there is $\tau\in\Hl{j}{T}$ with
+$k_d(\tau w^{-1}y,\tau w^{-1}yx)\ne0$ (\Inp{T7}(g)); thus $W(\tau w^{-1}y)\ne0$ and $W'(d\tau w^{-1}yx)\ne0$, where
+$d\tau w^{-1}=\tau\wl{j}{q}^{-1}$. So $\tau w^{-1}y$ and $\tau\wl{j}{q}^{-1}yx$ are near at $j$. For
+$\rho_1\in\Hl{j}{T}$ with $k_1(\rho_1y,\rho_1yx)\ne0$ we get $\ip{W(\rho_1y)}{W(\rho_1yx)}\ne0$, and
+$w^{-1}\rho_1y=(\rho_1\tau^{-1})\tau w^{-1}y$ and $\wl{j}{q}^{-1}\rho_1yx$ are near at $j$ (\Inp{T8}); the
+hypothesis of the theorem at the point $\rho_1y$ gives the $a$ that Lemma~\ref{l:cap} asks for. Its conclusion
+has the factor $(\Lambda(\Gamma)^{10^4n})^{\varrho-j}\le\globalConst{\Gamma}$.
+\end{proof}
+
+\begin{proof}[Proof of Theorem A\textup{(b)}]
+Apply Lemma~\ref{l:snp} with $W'=W$, $f(g)=|\formIntegrand{j}{p}{q}{W}{x}{\omega_\eta}{g}|$ and
+$K=(c_A/\modA(\xi))^{|\Omega|}$. Fix $g$ with $f(g)\ne0$ and put $w=\wl{j}{p}$,
+$F_1(\sigma)=\upperPairing{\cL}{j+1}{k_1}{\sigma g}{\sigma gx}$,
+$F_2(\tau)=\upperPairing{\cL}{j+1}{k_d}{\tau w^{-1}g}{\tau w^{-1}gx}$. By \Inp{T7}(h) it suffices to show
+\begin{equation}\label{e:char}
+f(g)^{2}\le K\,\globalConst{\Gamma}\int|F_1|^{2}\,\dd\floorMeasure{\cL}{j}\cdot\int|F_2|^{2}\,\dd\floorMeasure{\cL}{j}.
+\end{equation}
+By definition and since $\ZT{T}{\sigma\tau^{-1}}_{jj}=h_T(\sigma^{-1}f_j,\tau^{-1}f_j)$,
+\[\formIntegrand{j}{p}{q}{W}{x}{\omega_\eta}{g}=\iint\psi_A\bigl(\eta\,h_T(\sigma^{-1}f_j,\tau^{-1}f_j)\bigr)F_1(\sigma)\overline{F_2(\tau)}\,
+\dd\floorMeasure{\cL}{j}(\tau)\,\dd\floorMeasure{\cL}{j}(\sigma).\]
+As this is not $0$, $F_1$ and $F_2$ are not almost everywhere $0$ on $\Hl{j}{T}$, so $g$ and $w^{-1}g$ are near
+at~$j$ (the last clause of the definition of a pairing kernel, and \Inp{T8}). By \Inp{T14}(b) there is
+$t\in\Hl{j}{T}$ with \m{\HasMatSize{60n^2}{tg}} and \m{\HasMatSize{99n^2}{tw^{-1}g}} for $\Gamma$. By \Inp{T12}(i),
+applied to both kernels with this $t$, for almost all $\sigma,\tau$ with $F_1(\sigma)F_2(\tau)\ne0$ the vectors
+$t\sigma^{-1}f_j$ and $t\tau^{-1}f_j$ have sizes at most $60n^2+6$ and $99n^2+6$; hence
+$h_T(\sigma^{-1}f_j,\tau^{-1}f_j)=h_T(t\sigma^{-1}f_j,t\tau^{-1}f_j)$ lies in $\Gamma_{200n^2}$, by the rules for
+sizes of products and sums, and there $\psi_A(\eta\,\cdot)=\psi_A(\xi\,\cdot)$. So, with
+$G(v)=\int\psi_A(-\xi\,h_T(v,t\tau^{-1}f_j))F_2(\tau)\,\dd\floorMeasure{\cL}{j}(\tau)$,
+\[\formIntegrand{j}{p}{q}{W}{x}{\omega_\eta}{g}=\int_{\{\sigma:\,t\sigma^{-1}f_j\in\vecsOfSize{60n^2+6}\}}F_1(\sigma)\,\overline{G(t\sigma^{-1}f_j)}\;\dd\floorMeasure{\cL}{j}(\sigma).\]
+By Cauchy--Schwarz, $f(g)^2\le\int|F_1|^2\dd\floorMeasure{\cL}{j}$ times the integral of
+$|G(t\sigma^{-1}f_j)|^2$ over the same set, which by \Inp{T6} is $\int_{\vecsOfSize{60n^2+6}}|G|^2\dd\quadric{\cL}{j}$.
+By \Inp{T12}(ii) for the kernel $k_d$, the points $w^{-1}g$, $w^{-1}gx$, the unit $-\xi$, $y'=0$ and the quadric
+measure, this is at most $\Lambda(\Gamma)^{99n(60n^2+12)}\Lambda(\Gamma)^{99n(99n^2+12)}K\int|F_2|^2\dd\floorMeasure{\cL}{j}$,
+and $99n(159n^2+24)\le10^6n^3$. This is \eqref{e:char}.
+\end{proof}
+
+\begin{proof}[Proof of Theorem A\textup{(c)}]
+Here $j=i+1$. Write $w=\wl{j}{p}$, $\mathsf{A}_1=\upperPairing{\cL}{j}{k_1}{\cdot}{\cdot}$,
+$\mathsf{A}_d=\upperPairing{\cL}{j}{k_d}{\cdot}{\cdot}$ and $K=(c_A/\modA(\xi))^{|\Omega|}$. By
+Lemma~\ref{l:one} the modulus is $\int h\,\dd\stackMeasure{\cL}_{0,j}$ with
+$h(g)=|\mathsf{A}_1(g,gx)|\cdot|\mathsf{A}_d(w^{-1}g,w^{-1}gx)|$. Define, for $g\in\GT{T}$,
+\[\begin{gathered}\mathsf{r}(g)=\floorWeight{\cL}{j}{g}{x}\cdot\invWeight{\cL}{i}{x}(\wl{i}{p}g),\\
+\mathsf{u}(g)=\mathsf{r}(g)\,|\mathsf{A}_d(g,gx)|^{2}\ \text{ if $wg$ is near at $j$},\qquad\mathsf{u}(g)=0\ \text{ otherwise.}\end{gathered}\]
+\emph{Step 1.} For all $g$: $h(g)^{2}\le\mathsf{u}(w^{-1}g)\cdot\weightedSquare{\cL}{i}{k_1}{x}{g}\cdot\invWeight{\cL}{j}{x}(w^{-1}g)$.
+Indeed, if $h(g)\ne0$ then $g$ and $w^{-1}g$ are near at $j$; $\wl{i}{p}w^{-1}=\wo{i}{p_i}^{-1}\in\Hl{i}{T}$, so
+$\invWeight{\cL}{i}{x}(\wl{i}{p}w^{-1}g)=\floorWeight{\cL}{i}{g}{x}^{-1}$ (\Inp{T8}); and
+$\weightedSquare{\cL}{i}{k_1}{x}{g}=\floorWeight{\cL}{i}{g}{x}|\mathsf{A}_1(g,gx)|^2$. The weights cancel and
+equality holds.
+
+\emph{Step 2.} By Cauchy--Schwarz,
+\[\Bigl(\int h\Bigr)^2\le\int\mathsf{u}(w^{-1}g)\,\dd\stackMeasure{\cL}_{0,j}(g)\cdot
+\int\weightedSquare{\cL}{i}{k_1}{x}{g}\,\invWeight{\cL}{j}{x}(\wl{j}{\bar p}g)\,\dd\stackMeasure{\cL}_{0,j}(g).\]
+The
+weighted square of floor $i$ is $\Ql{j}{T}$-invariant and zero off the points near at $j$ (\Inp{T7}(c) for the kernel
+at $i$); so by \Inp{T1}, \Inp{T11} (head $\bar p$, $b=j$) and \Inp{T7}(f) the second factor is at most
+\[\begin{aligned}\prod_{a<j}\floorModulus{\cL}{a}{p_a^{-1}}\cdot\globalConst{\Gamma}\cdot{}&
+\int\weightedSquare{\cL}{i}{k_1}{x}{g}\,\dd(\floorMeasure{\cL}{i}*\dots*\floorMeasure{\cL}{0})(g)\\ \le{}&
+\prod_{a<j}\floorModulus{\cL}{a}{p_a^{-1}}\cdot\globalConst{\Gamma}\cdot\selfNorm{\cL}{0}{k_1}{x}.\end{aligned}\]
+
+\emph{Step 3.} The function $\mathsf{u}$ is $\Hl{j}{T}$-invariant (\Inp{T7}(b), \Inp{T8}), so by \Inp{T2} and
+\Inp{T1}, with $\rho_0=\floorMeasure{\cL}{i}*\dots*\floorMeasure{\cL}{0}$ and $\etab{j}=\eta_i*\etab{i}$,
+\[\int\mathsf{u}(w^{-1}g)\,\dd\stackMeasure{\cL}_{0,j}(g)=\int\!\!\int\mathsf{u}(\nu g)\,\dd\eta_i(\nu)\,\dd(\etab{i}*\rho_0)(g).\]
+\emph{Step 4: Plancherel on $\Nf{i}{T}$.} Fix $g$. We apply \Inp{T13} with $a=i$, the kernel $k_d$ (a pairing
+kernel at $i+1$), $x_1=g$, $y_1=gx$, $\varepsilon=1$, $C=\mathsf{r}(g)$, $\Phi(\nu)=\mathsf{u}(\nu g)$, the unit
+$-\xi p_i$ in the place of $\xi$ and $u=p_i^{-1}$, so that $\modA(\xi u)$ there is $\modA(\xi)$. Its three hypotheses
+hold. First, an element $s\in\Nf{i}{T}$ has only one non-zero entry at the places $(f_a,f_{a+1})$, the one with
+$a=i$; the diagonal matrix $d$ has the entry $p_i/q_i$ at $e_i$ and $1$ at $f_{i+1}$; hence
+$\gL{\cL}^{-1}(\sd(dsd^{-1})-\sd(s))=\gL{\cL}^{-1}(p_i/q_i-1)\sd(s)=-\xi p_i\,\sd(s)$. Second, $\mathsf{r}(\nu g)=
+\mathsf{r}(g)$ for $\nu\in\Nf{i}{T}$, because $\nu\in\Ql{j}{T}$ and $\nu$ commutes with $\wl{i}{p}$ and lies in
+$\Ql{i}{T}$ (\Inp{T8}); so $\mathsf{u}(\nu g)\le\mathsf{r}(g)|\mathsf{A}_d(\nu g,\nu gx)|^2$. Let $S$ be the set of the
+$\nu\in\Nf{i}{T}$ with $\mathsf{u}(\nu g)\ne0$. For $\nu\in S$ the points $w\nu g$ and $\nu g$ are near at $j$, so by
+\Inp{T14}(b) there is $\tau_\nu\in\Hl{j}{T}$ with \m{\HasMatSize{99n^2}{\tau_\nu\nu g}}, and by \Inp{T14}(c)
+$p_i\in\Gamma_{10n}$. Third, for $m\in S$ take $t=\tau_m$ and $q=m$; for $\nu\in S$ take $\nu'=1$: since
+$\tau_\nu$ fixes $e^*_i$, the column at $e^*_i$ of $tm(t\nu)^{-1}-1$ is that of
+$(\tau_mmg)(\tau_\nu\nu g)^{-1}-1$, of size at most $198n^2+6$, and multiplied by $u^{-1}=p_i$ it has size at
+most $198n^2+10n+6$. The conclusion of \Inp{T13}, with \Inp{T7}(h) at the point $g$, reads
+\[\begin{aligned}\int\mathsf{u}(\nu g)\,\dd\eta_i(\nu)&\le\mathsf{r}(g)\,K\,\floorModulus{\cL}{i}{p_i^{-1}}\,\Lambda(\Gamma)^{N}
+\frac{\weightedSquareSum{\cL}{k_d}{x}{j}{g}}{\floorWeight{\cL}{j}{g}{x}}\\
+&=K\,\floorModulus{\cL}{i}{p_i^{-1}}\,\Lambda(\Gamma)^{N}\,\weightedSquareSum{\cL}{k_d}{x}{j}{g}\,\invWeight{\cL}{i}{x}(\wl{i}{p}g),\end{aligned}\]
+with $N=100n(297n^2+10n+37)\le10^6n^3$.
+
+\emph{Step 5.} Integrate over $g$ against $\etab{i}*\rho_0$ and use \Inp{T11} with the head $p$ of length $i$, $b=j$
+and $\Phi=\weightedSquareSum{\cL}{k_d}{x}{j}{\cdot}$:
+\[\int\mathsf{u}(w^{-1}g)\,\dd\stackMeasure{\cL}_{0,j}(g)\le K\,\globalConst{\Gamma}\prod_{a<j}\floorModulus{\cL}{a}{p_a^{-1}}\cdot
+\globalConst{\Gamma}\cdot\selfNorm{\cL}{j}{k_d}{x}.\]
+With Step 2 this is the claim.
+\end{proof}
+
+\sect{Descent}{s:descent}
+\begin{lemma}[a diagonal entry of the frame Gram matrix]\label{l:diag}
+Let $A$ be a commutative ring with involution, $\mathfrak{s}$ a shape, $T$ an $\mathfrak{s}$-form over $A$, $b$ a
+natural number with $b\le\varrho$, and $x\in\Ql{b+1}{T}\cap\Hl{b}{T}$. Then for every $y\in\GT{T}$
+\[\ZT{T}{xy}_{bb}=\ZT{T}{y}_{bb}\qquad\text{and}\qquad\ZT{T}{yx}_{bb}=\ZT{T}{y}_{bb}.\]
+\end{lemma}
+\begin{proof}
+The group $\Ql{b+1}{T}\cap\Hl{b}{T}$ is the stabiliser of $f_b$ in $\Hl{b}{T}$, so $xf_b=f_b=x^{-1}f_b$. Hence
+$h_T(f_b,yxf_b)=h_T(f_b,yf_b)$ and $h_T(f_b,xyf_b)=h_T(x^{-1}f_b,yf_b)=h_T(f_b,yf_b)$.
+\end{proof}
+\leanline{\lean{frameGramdiagmul}}
+
+\begin{lemma}[descent on one floor]\label{l:succ}
+In Setting~\ref{set:cut}, let $p,q\colon\NN\to A^{\times}$, let $b$ be a natural number with $b\le\varrho$, $\zeta$
+an $s$-finite measure on $\GT{T}$, $v\colon A\to\GT{T}$ and $\rho\colon A\to[0,\infty]$ measurable maps,
+$\Psi\colon A\to\CC$, $t\in\CC$ and $\eta\in A$. Suppose that
+$\int\formMajorant{b}{p}{q}{W}{W}{x}\,\dd\groupMeasure{\cL}(x)<\infty$; that $\zeta$ is carried by
+$\Ql{b+1}{T}\cap\Hl{b}{T}$; that $\rho(c)<\infty$ for almost every $c$; that $\floorMeasure{\cL}{b}=\varpi*\zeta$,
+where $\varpi$ is the image of $\rho(c)\,\dd c$ under $c\mapsto v(c)^{-1}$; and that for almost every $c\in A$
+\[\begin{aligned}\Psi(c)={}&t\cdot\headDensity{b}{p}{q}{\cL}\,\rho(c)\cdot\psi_A\bigl(\eta\,\ZT{T}{v(c)}_{bb}\bigr)\\
+&\cdot\iint\formIntegrandOne{b+1}{W}{x}{\weylRatio{b}{p}{q}}{\wl{b}{p}v(c)}{g}\;\dd\mu_b(g)\,\dd\groupMeasure{\cL}(x),\end{aligned}\]
+with $\mu_b=(\zeta*\floorMeasure{\cL}{b})*\stackMeasure{\cL}_{0,b}$. Then $\Psi$ is integrable and
+\[\int_A\Psi(c)\,\dd c=t\cdot\floorForm{b}{p}{q}{W}{\omega_\eta},\qquad\omega_\eta(y)=\psi_A\bigl(\eta\,\ZT{T}{y}_{bb}\bigr).\]
+\end{lemma}
+\begin{proof}
+Write $d=\weylRatio{b}{p}{q}$, $w=\wl{b}{p}$, and $\mathsf{I}(x,w',g)=\formIntegrandOne{b+1}{W}{x}{d}{w'}{g}$, which
+by definition is $\upperPairing{\cL}{b+1}{k_1}{g}{gx}\,\overline{\upperPairing{\cL}{b+1}{k_d}{w'^{-1}g}{w'^{-1}gx}}$.
+Both kernels are pairing kernels at $b$ (Lemma~\ref{l:pk}). \emph{Claim:} the function
+$(x,g,\sigma,\tau)\mapsto\omega_\eta(\sigma\tau^{-1})\mathsf{I}(x,\sigma w\tau^{-1},\sigma g)$ under
+$\groupMeasure{\cL}\times\stackMeasure{\cL}_{0,b}\times\floorMeasure{\cL}{b}\times\floorMeasure{\cL}{b}$ and the
+function $(x,g,c)\mapsto\omega_\eta(v(c))\mathsf{I}(x,wv(c),g)$ under $\groupMeasure{\cL}\times\mu_b\times\rho(c)\dd c$
+have the same distribution. To see it, fix $x$, $g$, $\sigma\in\Hl{b}{T}$ and a test function. In the integral
+over $\tau$ replace $\tau$ by $\tau\sigma$, by \Inp{T4} with $S=\Hl{b}{T}$: this is allowed because
+$\tau\mapsto\omega_\eta(\tau^{-1})\mathsf{I}(x,w\tau^{-1},\sigma g)$ is invariant under
+$\Ql{b+1}{T}\cap\Hl{b}{T}$, by Lemma~\ref{l:diag} and \Inp{T7}(b), and because $\sigma$ commutes with $w$. Now write
+$\tau=v(c)^{-1}\nu$ with $c$ distributed by $\rho(c)\dd c$ and $\nu$ by $\zeta$. Then
+$\omega_\eta(\tau^{-1})=\omega_\eta(\nu^{-1}v(c))=\omega_\eta(v(c))$ by Lemma~\ref{l:diag}, and
+$\mathsf{I}(x,w\nu^{-1}v(c),\sigma g)=\mathsf{I}(x,wv(c),\nu\sigma g)$, since $\nu$ commutes with $w$ and
+$\upperPairing{\cL}{b+1}{k_1}{\nu\sigma g}{\nu\sigma gx}=\upperPairing{\cL}{b+1}{k_1}{\sigma g}{\sigma gx}$
+(\Inp{T7}(b)). The law of $\nu\sigma g$ is $\mu_b$. This proves the claim.
+
+The first function is integrable: as in Lemma~\ref{l:fmm}(ii), and because $|\omega_\eta|=1$, its absolute value
+integrates to at most the integral of the majorant $\formMajorant{b}{p}{q}{W}{W}{x}$ over $x$, which is finite.
+So the second is integrable, and Fubini's theorem gives that $\Psi$ is integrable with integral
+$t\,\headDensity{b}{p}{q}{\cL}$ times the integral of the first function, which is the floor form.
+\end{proof}
+\leanline{\lean{integralsuccflooreq}}
+
+\begin{proof}[Proof of Theorem B]
+Apply Lemma~\ref{l:succ} with $b=a<\varrho$, $\zeta=\eta_a$, which is carried by $\Nf{a}{T}\subseteq
+\Ql{a+1}{T}\cap\Hl{a}{T}$, with $v(c)=\wo{a}{c}$ (for units $c$; almost every $c$ is a unit) and
+$\rho(c)=\modA(c)^{k+1+2(\varrho-a-1)}$; then $\floorMeasure{\cL}{a}=\varpi_a*\eta_a$ is the required
+decomposition. It remains to identify $f(c)$ with $\Psi(c)$ for a unit $c$. Put $p'=p[a\mapsto c]$,
+$q'=q[a\mapsto c]$. By Lemma~\ref{l:one},
+\[\begin{aligned}\floorForm{a+1}{p'}{q'}{W}{1}={}&\headDensity{a+1}{p'}{q'}{\cL}\\
+&\cdot\iint\formIntegrandOne{a+1}{W}{x}{d'}{\wl{a+1}{p'}}{g}\,\dd\stackMeasure{\cL}_{0,a+1}(g)\,\dd\groupMeasure{\cL}(x),\end{aligned}\]
+with $d'=\weylRatio{a+1}{p'}{q'}$.
+Here $\wl{a+1}{p'}=\wo{a}{c}\wl{a}{p}=\wl{a}{p}\wo{a}{c}$, so $d'=\weylRatio{a}{p}{q}$;
+$\stackMeasure{\cL}_{0,a+1}=(\eta_a*\floorMeasure{\cL}{a})*\stackMeasure{\cL}_{0,a}$;
+$\headDensity{a+1}{p'}{q'}{\cL}=\headDensity{a}{p}{q}{\cL}\,\rho(c)$; and $\ZT{T}{\wo{a}{c}}_{aa}=c$.
+\end{proof}
+
+\sect{Integration over positions}{s:positions}
+\begin{proof}[Proof of Theorem C]
+Write $\mathsf{A}_l=\upperPairing{\cL}{l}{k}{\cdot}{\cdot}$, $P=\positionsOfSize{\cL}{\Gamma}$,
+$\rho^{(l)}=\floorMeasure{\cL}{l}*\dots*\floorMeasure{\cL}{0}$, and for $l\le n$
+\[\begin{gathered}\mathsf{W}_l(g,y)=\etab{l}\{\nu:g^{-1}\nu y\in P\},\\
+\Phi_l(g,y)=|\mathsf{A}_{l+1}(g,y)|^{2}\ \text{ if }\mathsf{W}_l(g,y)>0,\qquad\Phi_l(g,y)=0\ \text{ otherwise}.\end{gathered}\]
+We prove, by decreasing induction on $l$ from $n$ to $j$, that there is an $s$-finite measure $\nu_l$ with
+\begin{equation}\label{e:ind}\begin{gathered}
+l\,c+\int_P\selfNorm{\cL}{l}{k}{x}\,\dd\groupMeasure{\cL}(x)\le n\,c,\qquad\groupMeasure{\cL}=\etab{l}*\nu_l,\\
+\prod_{a<\min(l,\varrho)}\floorConst{\Gamma}{a}\cdot\iint\Phi_l(g,y)\,\dd\nu_l(y)\,\dd\rho^{(l)}(g)\le c.
+\end{gathered}\end{equation}
+The first inequality at $l=j$ is the theorem. For $l=n$ take $\nu_n=\upperMeasure{\cL}{0}=\rho^{(n)}$: the self-norm
+at $n$ is $0$; $\groupMeasure{\cL}=\etab{n}*\upperMeasure{\cL}{0}$ by \Inp{T1}; and $\Phi_n\le|k|^2$ because
+$\upperMeasure{\cL}{n+1}=\delta_1$. Let $j\le l\le\varrho$ and suppose \eqref{e:ind} for $l+1$. Put
+$\nu_l=\eta_l*\nu_{l+1}$; then $\groupMeasure{\cL}=\etab{l}*\nu_l$.
+
+\emph{The third part of \eqref{e:ind} at $l$.} As $\rho^{(l+1)}=\floorMeasure{\cL}{l+1}*\rho^{(l)}$, the induction
+hypothesis bounds $\prod_{a\le l,\,a<\varrho}\floorConst{\Gamma}{a}$ times the integral of
+$\int\Phi_{l+1}(\sigma g,y)\,\dd\nu_{l+1}(y)$ over $g$ and $\sigma\in\Hl{l+1}{T}$. For such $\sigma$, \Inp{T3}
+applies to $\groupMeasure{\cL}=\etab{l+1}*\nu_{l+1}$ and $S=\Nb{l+1}{T}$ (by \Inp{T1}), the function
+$y\mapsto\Phi_{l+1}(\sigma g,y)$ being $\Nb{l+1}{T}$-invariant by the law of the kernel and the invariance of
+$\etab{l+1}$; so the inner integral equals $\int\Phi_{l+1}(\sigma g,\sigma y)\,\dd\nu_{l+1}(y)$. It therefore
+suffices to show, for all $g$, $y$,
+\begin{equation}\label{e:step}
+\int\Phi_l(g,\nu y)\,\dd\eta_l(\nu)\le C\int\Phi_{l+1}(\sigma g,\sigma y)\,\dd\floorMeasure{\cL}{l+1}(\sigma),\qquad
+C=\floorConst{\Gamma}{l}\ (l<\varrho),\quad C=1\ (l=\varrho).
+\end{equation}
+If $\mathsf{W}_{l+1}(g,y)=0$ the left side is $0$, because $\int\mathsf{W}_l(g,\nu y)\dd\eta_l(\nu)=\mathsf{W}_{l+1}(g,y)$.
+Otherwise $\mathsf{W}_{l+1}(\sigma g,\sigma y)=\mathsf{W}_{l+1}(g,y)>0$ for $\sigma\in\Hl{l+1}{T}$ (\Inp{T1}), so
+the right side is $C\int|\mathsf{A}_{l+2}(\sigma g,\sigma y)|^2\dd\floorMeasure{\cL}{l+1}(\sigma)$. For $l=\varrho$,
+$\eta_\varrho=\delta_1$, and \eqref{e:step} follows from $|\mathsf{A}_{n}|\le\pivotModulus{\cL}{n}{k}{\cdot}{\cdot}$
+and Cauchy--Schwarz on floor $n$ (\Inp{T7}(a),(e) with $u=1$, $K=1$; the mass bound is the third requirement on
+$\floorMeasure{\cL}{n}$ in the definition of a level). For $l<\varrho$ we apply \Inp{T13} with $a=l$, the unit
+$\gL{\cL}^{-1}$ in the place of $\xi$, $u=\gL{\cL}$, $\varepsilon=0$, $C=1$, $x_1=g$, $y_1=y$,
+$\Phi(\nu)=\Phi_l(g,\nu y)$ and $S$ the set of the $\nu\in\Nf{l}{T}$ with $\mathsf{W}_l(g,\nu y)>0$ and $g$ near at
+$l+1$. Its hypotheses: $d$ commutes with $\Nf{l}{T}\subseteq\Hl{j}{T}$ and $\sd(1)=0$; if $\Phi_l(g,\nu y)\ne0$
+then $\nu\in S$, by the last clause of the definition of a pairing kernel; and for $m\in S$ choose
+$\xi'\in\Ql{l+1}{T}$ with $\xi'g\in\BoxL{\cL}$ and write $\xi'=t\nu_0$ with $t\in\Hl{l}{T}$,
+$\nu_0\in\Nb{l}{T}$; then $t\in\Ql{l+1}{T}\cap\Hl{l}{T}$, $q=\nu_0$ and \m{\HasMatSize{1}{tqg}} for $\Gamma$. For
+$\nu\in S$ choose $\nu_1,\nu_2\in\Nb{l}{T}$ with $g^{-1}\nu_1my$ and $g^{-1}\nu_2\nu y$ in $P$; by \Inp{T14}(d) the
+element $(\xi'g)(g^{-1}\nu_1my)\bigl((\xi'g)(g^{-1}\nu_2\nu y)\bigr)^{-1}=\xi'\nu_1m\nu^{-1}\nu_2^{-1}\xi'^{-1}$ has
+$\gL{\cL}^{-1}(\,\cdot-1)$ of size at most $14$, and it equals $\nu'\,tm(t\nu)^{-1}$ with
+$\nu'\in\Nb{l}{T}$, because $\Hl{l}{T}$ normalises $\Nb{l}{T}$. So $i_1=1$, $i_2=14$, and the constant of \Inp{T13} is
+$c_A^{|\Omega|}\floorModulus{\cL}{l}{\gL{\cL}}\Lambda(\Gamma)^{4600n}=\floorConst{\Gamma}{l}$.
+
+\emph{The first part of \eqref{e:ind} at $l$.} By \Inp{T7}(f) and by the third part at $l$, just proved, it
+suffices to show
+\[\int_P\int\weightedSquare{\cL}{l}{k}{x}{g}\,\dd\rho^{(l)}(g)\,\dd\groupMeasure{\cL}(x)\le
+\prod_{a<l}\floorConst{\Gamma}{a}\iint\Phi_l(g,y)\,\dd\nu_l(y)\,\dd\rho^{(l)}(g).\]
+Fix $g$. Since
+$\groupMeasure{\cL}$ is invariant under left translation,
+\[\begin{aligned}\int_P{}&\floorWeight{\cL}{l}{g}{x}|\mathsf{A}_{l+1}(g,gx)|^2\dd\groupMeasure{\cL}(x)\\
+&=\iint\mathbf{1}_P(g^{-1}\nu y)\,\floorWeight{\cL}{l}{g}{g^{-1}\nu y}\,|\mathsf{A}_{l+1}(g,\nu y)|^2\,\dd\etab{l}(\nu)\,\dd\nu_l(y).\end{aligned}\]
+By the law of the kernel, $|\mathsf{A}_{l+1}(g,\nu y)|=|\mathsf{A}_{l+1}(g,y)|$ for $\nu\in\Nb{l}{T}$. If this is not
+$0$, then $g$ is near at $l+1$, hence at $l$, and \Inp{T10} bounds the integral over $\nu$ by
+$\prod_{a<l}\floorConst{\Gamma}{a}$; and the integral over $\nu$ vanishes unless $\mathsf{W}_l(g,y)>0$. So the inner
+integral is at most $\prod_{a<l}\floorConst{\Gamma}{a}\cdot\Phi_l(g,y)$.
+\end{proof}
+
+\begin{proof}[Proof of Theorem D]
+Both kernels $k_1$, $k_d$ ($d=\weylRatio{j}{p}{q}$) are pairing kernels (Lemma~\ref{l:pk}), at $0$ and at $j$. On $S$,
+$f\le e\cdot\selfNormProduct{j}{p}{q}{W}{W'}{x}{\Gamma}^{1/2}$. By Cauchy--Schwarz and Theorem~C for the gauge
+$\Gamma'$, with $D=\prod_{l<\varrho}\floorConst{\Gamma'}{l}$,
+\[\begin{aligned}\Bigl(\int_{\positionsOfSize{\cL}{\Gamma'}}\bigl(\selfNorm{\cL}{0}{k_1}{x}\,\selfNorm{\cL}{j}{k_d}{x}\bigr)^{1/2}&\dd\groupMeasure{\cL}(x)\Bigr)^{2}\\
+\le n^2D^{2}\;\pairingNorm{W}{W}\cdot{}&\iint|k_d|^2\,\dd\upperMeasure{\cL}{0}\,\dd\upperMeasure{\cL}{0},\end{aligned}\]
+and by \Inp{T5} the last double integral is $\prod_{a<j}\modA(p_a/q_a)^{k+2(\varrho-a)}\cdot\pairingNorm{W}{W'}$.
+Collect the powers of the modules: the square of the head density is
+$\prod_{a<j}\modA(p_aq_a)^{k-1+2(\varrho-a)}$, the square of $\prod_{a<j}\floorModulus{\cL}{a}{p_a^{-1}}$ is
+$\prod_{a<j}\modA(p_a)^{-2(k-1+2(\varrho-a))-1}$, and with the factor from \Inp{T5} the exponent of $\modA(p_a)$ is $0$
+and that of $\modA(q_a)$ is $-1$. As $q$ is a head, $(q_0\cdots q_{j-1})^{-1}\in\Gamma_1\subseteq\Gamma_2$ and its
+module is at most $\Lambda(\Gamma)^2$. Altogether the square of the left side of the theorem is at most
+\[e^2\,\Lambda(\Gamma)^{2}\,\globalConst{\Gamma}^{3}\,n^2D^2\,\Theta^2,\qquad
+D^2=\Bigl(\prod_{l<\varrho}\floorModulus{\cL}{l}{\gL{\cL}}\Bigr)^{2}c_A^{2|\Omega|\varrho}\Lambda(\Gamma')^{9200n\varrho},\]
+and $n^2\le4^{n}\le\Lambda(\Gamma')^{2n}$, $9200n\varrho+2n\le10^5n^2$. This is the square of the right side.
+\end{proof}
+
+\sect{The complex place}{s:complex}
+\begin{setting}[cut Bessel data]\label{set:cb}
+Let $\mathfrak{s}$ be a shape, $I$ a finite set~$I$, $\Phi,\Phi_0\colon\Gone{\mathfrak{s}}\to\CC^I$ continuous,
+$\mathrm{rep}$ a homomorphism from $\mathrm{U}(\kappa)$ to the unitary group of $\CC^I$, $\rho,b$ real numbers,
+$s_0,\mathsf{n}$ natural numbers, and $\mathfrak{c}$ cut Bessel data,
+\m{\IsCutBessel{\Phi}{\mathrm{rep}}{\rho}{s_0}{b}{\Phi_0}{\mathsf{n}}}, with underlying sizes $\mathfrak{h}$. Floor
+forms, moduli, majorants, nearness and the predicate $\operatorname{Cut}$ refer to the level $\cLC{\mathfrak{h}}$.
+\end{setting}
+
+\begin{lemma}[the cut is cut]\label{l:iscut}
+In Setting~\ref{set:cb}, $\Phi$ is a cut Bessel function for the level $\cLC{\mathfrak{h}}$: \m{\IsCut{\Phi}}.
+\end{lemma}
+\begin{proof}
+$\Phi$ is measurable, bounded and satisfies the law of frequency $1=\gL{\cLC{\mathfrak{h}}}^{-1}$, as a member of a cut
+pair. If $\Phi(y)\ne0$ the Bessel size of $y$ is at most $b^{6n+2}=\rho$, so $\|uy\|\le\rho$ for some $u\in\UT{T}$
+by \Inp{C4}, and $uy$ lies in the box.
+\end{proof}
+\leanline{\lean{isCutcomplexLevel}}
+
+\begin{lemma}[a gauge that makes two sequences heads]\label{l:heads}
+In Setting~\ref{set:cb}, let $j$ and $K$ be natural numbers and $p,q\colon\NN\to\CC^{\times}$. Then there is a real
+$R_0$ with $\rho\le R_0$ such that $p$ and $q$ are heads of length $j$ for the gauge
+$\gauge{\mathfrak{h}}{\rho\le R_0}$, \m{\IsHead{j}{p}} and \m{\IsHead{j}{q}}, and such that for every real
+$R\ge\rho$ with $|p_0\cdots p_{l-1}|\le R$ and $|q_0\cdots q_{l-1}|\le R$ for all $l\le j$,
+\[R_0^{K}\le R^{(K+6)(2j+1)}\cdot\hw{K}{j}{p}\,\hw{K}{j}{q}.\]
+\end{lemma}
+\begin{proof}
+For this gauge, being a head of length $j$ means $|p_0\cdots p_{l-1}|^{-1}\le R_0$ for $l\le j$. Induction on $j$.
+For $j=0$ take $R_0=\rho$; then $\rho^{K}\le R^{K+6}$ as $R\ge\rho\ge1$. Given $R_0$ for $j$, take
+$R_0'=\max(R_0,|p_0\cdots p_j|^{-1},|q_0\cdots q_j|^{-1})$ for $j+1$. The inequality follows by two uses of the
+elementary fact: if $L^{K}\le B$, $L,R\ge1$ and $0<|y|\le R$, then
+$\max(L,|y|^{-1})^{K}\le B\,R^{K+6}\,\damp{K}{|y|^{-1}}$; indeed $R^{K+6}\damp{K}{|y|^{-1}}\ge1$, and if
+$|y|^{-1}>L\ge1$ then $\damp{K}{|y|^{-1}}=|y|^{-K}$.
+\end{proof}
+\leanline{\lean{existsgaugeisHead}}
+
+\begin{lemma}[summing over shells]\label{l:shells}
+In Setting~\ref{set:cb}, let $I$ be non-empty, let $j$ be a natural number with $j\le\varrho$, let
+$W\colon\Gone{\mathfrak{s}}\to\CC^I$ satisfy \m{\IsBessel{W}{1}}, and let $\varepsilon$ be a real number with
+$\varepsilon\ge0$ and $\int|W|^2\dd\dot y\le\varepsilon^2|I|$. Let $R$ be real with $R\ge\rho$, let
+$p,q\colon\NN\to\CC^{\times}$ be heads of length $j$ for the gauge $\gauge{\mathfrak{h}}{\rho\le R}$,
+\m{\IsHead{j}{p}} and \m{\IsHead{j}{q}}, and suppose that $W(y)\ne0$ implies
+\m{\IsNear{\cLC{\mathfrak{h}}}{j}{y}}. Let $t$ be real with $t\ge1$ and $f\colon\Gone{\mathfrak{s}}\to[0,\infty]$
+with $f\le\formMajorant{j}{p}{q}{\Phi}{W}{\cdot}$, and suppose that, if $t>1$, then for all $x$
+\[f(x)^2\le\Bigl(\frac{(\pi\rho^{24})^{k}}{t^{s_0}}\Bigr)^{2}\,\selfNormProduct{j}{p}{q}{\Phi}{W}{x}{\gauge{\mathfrak{h}}{\rho\le R}}.\]
+Then
+\[\bigl|\formConst{\mathfrak{c}}\bigr|\cdot\headDensity{j}{p}{q}{\cLC{\mathfrak{h}}}\int f\,\dd\groupMeasure{\cLC{\mathfrak{h}}}
+\ \le\ \bandc{\mathfrak{s}}\;R^{10^{9}n^{4}}\,\rho^{24k}\,\frac{t^{9900000n^{3}}}{t^{s_0}}\,\varepsilon.\]
+\end{lemma}
+\begin{proof}
+Write $\cL=\cLC{\mathfrak{h}}$, $\Gamma=\gauge{\mathfrak{h}}{\rho\le R}$, $\lambda=\haarRatio{\mathfrak{h}}$. For
+$i\in\NN$ put $T_i=t\,R^{11ni}$, let $\Gamma^{(i)}$ be the gauge of radius $T_{i+1}^{99n}$ (\Inp{C3}) and
+$P_i=\positionsOfSize{\cL}{\Gamma^{(i)}}$, the set of the $x$ with all entries of $x-1$ of absolute value at most
+$T_{i+1}^{99n}$. The $P_i$ increase and cover $\Gone{\mathfrak{s}}$; let $D_i=P_i\smallsetminus\bigcup_{i'<i}P_{i'}$.
+We apply Theorem~D on each $D_i$, with $\Gamma'=\Gamma^{(i)}$, $\Theta=\varepsilon(\lambda|I|)^2$ and
+$e_i=(\pi\rho^{24})^{k}\rho^{9999n}T_i^{-s_0}$; its setting holds by Lemma~\ref{l:iscut} and \Inp{C2}.
+
+\emph{The pairing norms.} By the Cauchy--Schwarz inequality in $\CC^I$ and by \Inp{C2}, as $|\Phi|^2$, $|W|^2$ are
+$\UT{T}$-invariant, $\pairingNorm{\Phi}{W}\le\lambda\int|\Phi|^2\dd\dot y\cdot\lambda\int|W|^2\dd\dot y\le\lambda^2|I|^2\varepsilon^2$,
+and likewise $\pairingNorm{\Phi}{\Phi}\le\lambda^2|I|^2$. So their product is at most $\Theta^2$.
+
+\emph{The pointwise bound on $D_i$.} If $i=0$ and $t>1$ it is the hypothesis, as $T_0=t$. Otherwise we use
+Theorem~A(a) with $\sigma=\vol\{c\in\CC:|c|<T_i^{-1}\}$ and $V=\Lambda(\Gamma)^{1287n}\vol(\Gamma_{11})^{k-1}$
+(\Inp{T9}(a)). For $i=0$, $t=1$ we have $\sigma=\pi\ge1$ and nothing to check. For $i\ge1$ let $x\in D_i$, so
+$x\notin P_{i-1}$, and let $y$ be as in the hypothesis of Theorem~A(a). If no $a$ with $j\le a<\varrho$ had
+$\vol(\floorValues{\cL}{a}{y}{x})\le\sigma$, each of these open sets would contain a $c$ with $|c|\ge T_i^{-1}$, a
+unit whose inverse has size~$1$ for the gauge of radius $T_i$; then \Inp{T14}(e), with that gauge in the place of
+$\Gamma$ and $\Gamma_S=\Gamma$, would give $|(x-1)_{\alpha\beta}|\le T_i^{99n}$ for all entries, that is $x\in P_{i-1}$.
+(Its other hypotheses: $R^{10n}\le T_i$; and $\Phi(y)\ne0\ne\Phi(yx)$ puts $uy$, $v(yx)$ in the box for some
+$u,v\in\UT{T}$, with entries of absolute value at most $\rho\le T_i$.) Hence
+$f(x)^2\le\sigma^{s_0}V^2\,\selfNormProduct{j}{p}{q}{\Phi}{W}{x}{\Gamma}$, and $\sigma^{s_0}V^2\le e_i^2$ is a
+comparison of explicit powers.
+
+\emph{The sum.} Theorem~D bounds $\headDensity{j}{p}{q}{\cL}\int_{D_i}f\,\dd\groupMeasure{\cL}$ by
+$e_i\,\pi^{2(k-1)\varrho}\,R^{3000000n^3+2}\,T_{i+1}^{9900000n^3}\,\Theta$ (the floor modules at $\gL{\cL}=1$ are $1$,
+$c_{\CC}=\pi^2$, $|\Omega|=k-1$). Since $s_0>10^{9}n^{3}$, the factor $T_i^{-s_0}$ in $e_i$ beats
+$T_{i+1}^{9900000n^3}$, and the sum over $i$ is at most the stated bound times $\sum_i2^{-(i+1)}=1$ divided by
+$|\formConst{\mathfrak{c}}|(\lambda|I|)^2=\volU{k}/\volU{r}$. This last comparison of exponents is carried out by the
+formal text and was not redone by hand.
+\end{proof}
+\leanline{\lean{formConstmullintegralle}}
+
+\begin{lemma}[the majorant is integrable]\label{l:fin}
+In Setting~\ref{set:cb}, let $I$ be non-empty, $j\le\varrho$ and $p,q\colon\NN\to\CC^{\times}$. Then
+$\int\formMajorant{j}{p}{q}{\Phi}{\Phi}{x}\,\dd\groupMeasure{\cLC{\mathfrak{h}}}(x)<\infty$.
+\end{lemma}
+\begin{proof}
+Take $R_0$ from Lemma~\ref{l:heads} (with $K=0$) and apply Lemma~\ref{l:shells} with $W=\Phi$, $\varepsilon=1$,
+$t=1$ and $f$ the majorant; $\formConst{\mathfrak{c}}$ and the head density are not $0$.
+\end{proof}
+\leanline{\lean{lintegralformMajorantnetop}}
+
+\begin{lemma}[the explicit bound for a form]\label{l:norm}
+In Setting~\ref{set:cb}, let $I$ be non-empty, $j\le\varrho$, $p,q\colon\NN\to\CC^{\times}$, $y\in\CC^{\times}$,
+and $\omega\colon\Gone{\mathfrak{s}}\to\CC$ with $|\omega(x)|\le1$ for all $x$. Suppose that for every gauge
+$\Gamma$ in $\Gauges{\cLC{\mathfrak{h}}}$ for which $p$ is a head of length $j$, and every $x$,
+\[\formModulus{j}{p}{q}{\Phi}{x}{\omega}^{2}\le\Bigl(\frac{\pi^{2}}{|y|^{2}}\Bigr)^{k-1}\selfNormProduct{j}{p}{q}{\Phi}{\Phi}{x}{\Gamma}.\]
+Then
+\[\bigl|\formConst{\mathfrak{c}}\cdot\floorForm{j}{p}{q}{\Phi}{\omega}\bigr|\le\bandc{\mathfrak{s}}\,b^{2000n^{9}}\,
+\damp{k-n^{7}}{|y|^{-1}}\cdot\hw{n^6}{j}{p}\,\hw{n^6}{j}{q}.\]
+\end{lemma}
+\begin{proof}
+By Lemma~\ref{l:fmm}(i) the left side is at most $|\formConst{\mathfrak{c}}|$ times the head density times
+$\int\formModulus{j}{p}{q}{\Phi}{x}{\omega}\dd\groupMeasure{\cL}(x)$. Take $R_0$ from Lemma~\ref{l:heads} with
+$K=n^6$. \emph{Case 1:} some partial product of $p$ or $q$ of length at most $j$ exceeds $\rho^{9n}$ in absolute
+value. Then the form is $0$: by Theorem~A(a) with $W'=\Phi$, $\sigma=0$ and $V=\infty$ the majorant vanishes, since
+no $y'$ satisfies the conditions of that hypothesis (they would put all partial products into the set of size
+$9n$ of the gauge of radius $\rho$, by \Inp{T14}(c)); and $s_0\ne0$. \emph{Case 2:} otherwise
+$R_0^{n^6}\le\rho^{9n(n^6+6)(2j+1)}\hw{n^6}{j}{p}\hw{n^6}{j}{q}$. Apply Lemma~\ref{l:shells} with $W=\Phi$,
+$\varepsilon=1$, $R=R_0$, $t=\max(1,\rho^{24}|y|)$ and $f$ the modulus, which is at most the majorant
+(Lemma~\ref{l:fmm}(ii)); if $t>1$ the hypothesis gives $f^2\le(\pi\rho^{24}/t)^{2(k-1)}$ times the self-norm product,
+and $(\pi\rho^{24}/t)^{k-1}\le(\pi\rho^{24})^{k}/t^{s_0}$ because $s_0\le k-1$. The resulting bound
+$\bandc{\mathfrak{s}}R_0^{10^9n^4}\rho^{24k}t^{9900000n^3-s_0}$ is at most the right side: $10^9n^4\le n^6$,
+$\rho=b^{6n+2}$, $1/t\le\min(1,\rho^{-24}|y|^{-1})$ and $s_0-9900000n^3\ge k-n^7+6$. This comparison of exponents is
+that of the formal text.
+\end{proof}
+\leanline{\lean{normfloorFormle}}
+
+\begin{lemma}[size of the support]\label{l:supp}
+In Setting~\ref{set:cut}, let $p\colon\NN\to A^{\times}$ be a head of length $\varrho$ for $\Gamma$,
+\m{\IsHead{\varrho}{p}}, let $x\in\Hl{\varrho}{T}$, and let $y\in\GT{T}$ with $W(y)\ne0$ and
+$W((\wl{\varrho}{p}x)^{-1}y)\ne0$. Then \m{\HasMatSize{60n^2}{y}} for $\Gamma$.
+\end{lemma}
+\begin{proof}
+There is $u\in\UT{T}=\Nb{\varrho}{T}$ with $uy$ in the box; and $x^{-1}\wl{\varrho}{p}^{-1}y$ is near at $\varrho$,
+hence so is $\wl{\varrho}{p}^{-1}y$ (\Inp{T8}). Now use \Inp{T14}(a).
+\end{proof}
+\leanline{\lean{hasMatSizeofnezero}\sep\lean{isCompacthasMatSize}}
+
+\begin{lemma}[the inner product of two correlations]\label{l:corr}
+In Setting~\ref{set:cut}, let $\mu$ be a Haar measure~$\mu$ of $\GT{T}$, suppose that $W$ is continuous, let
+$p,q\colon\NN\to A^{\times}$ be heads of length $\varrho$ for $\Gamma$, \m{\IsHead{\varrho}{p}} and
+\m{\IsHead{\varrho}{q}}, and let $x\in\Hl{\varrho}{T}$. Then, with $\gamma_p=\wl{\varrho}{p}x$ and
+$\gamma_q=\wl{\varrho}{q}x$,
+\[\ip{\corr{\mu}{W}{\gamma_p}}{\corr{\mu}{W}{\gamma_q}}=\iint\ip{W(y)}{W(y')}\;
+\overline{\ip{W(\gamma_p^{-1}y)}{W(\gamma_q^{-1}y')}}\;\dd\mu(y)\,\dd\mu(y').\]
+\end{lemma}
+\begin{proof}
+In coordinates the left side is $\sum_{i,i'}\overline{\int W_i(y)\overline{W_{i'}(\gamma_p^{-1}y)}\dd\mu(y)}\cdot
+\int W_i(y')\overline{W_{i'}(\gamma_q^{-1}y')}\dd\mu(y')$. Each product of two integrals is a double integral,
+because the integrands are continuous and vanish outside the set of the $y$ of size at most $60n^2$
+(Lemma~\ref{l:supp}), which is compact: it is closed, and the $\Gamma_i$ are compact. Summing over $i,i'$ gives the
+integrand on the right.
+\end{proof}
+\leanline{\lean{innerbesselCorrelation}}
+
+\begin{lemma}[continuity of the top vector]\label{l:cont}
+In Setting~\ref{set:cb}, the map $p\mapsto\sieveVector{\Phi}{p}$ is continuous on the space of the sequences
+$p\colon\NN\to\CC^{\times}$ with the product topology.
+\end{lemma}
+\begin{proof}
+The scalar factor is continuous. Fix $p$ and a gauge radius $R_0$ for which $p$ is a head of length $\varrho$
+(Lemma~\ref{l:heads}); the sequences that are heads for the radius $R_0+1$ form a neighbourhood of $p$. For them the
+integrand of each coordinate of $\corr{\dd y}{\Phi}{\wl{\varrho}{p}\boost{\varrho}{p_\varrho}}$ vanishes outside one
+compact set (Lemma~\ref{l:supp}, with $x=\boost{\varrho}{p_\varrho}\in\Hl{\varrho}{T}$), and it is continuous in
+$(p,y)$ because the boost depends continuously on $p_\varrho$. An integral of a jointly continuous function over a
+fixed compact set is continuous in the parameter.
+\end{proof}
+\leanline{\lean{continuoussieveVector}}
+
+\begin{proof}[Proof of Theorem E]
+Write $\cL=\cLC{\mathfrak{h}}$, $\lambda=\haarRatio{\mathfrak{h}}$, and let $J$ be the family of the statement.
+$\Phi$ is cut for $\cL$ (Lemma~\ref{l:iscut}), $\groupMeasure{\cL}$ is a Haar measure (\Inp{C2}), every point is a
+position, and $|\Omega|=k-1$, $\gL{\cL}=1$, $c_{\CC}/\modA(y)=\pi^2/|y|^2$.
+
+\emph{\textup{(S1)} for $i<\varrho$.} Theorem~B with $t=\formConst{\mathfrak{c}}$ and $\eta=\xi$, whose hypothesis is
+Lemma~\ref{l:fin}, shows that $f$ is integrable with integral
+$\formConst{\mathfrak{c}}\floorForm{i}{p}{q}{\Phi}{\omega_\xi}$. For $\xi=0$ this is $J_i(p,q)$. For $\xi\ne0$,
+Lemma~\ref{l:norm} with $y=\xi$ gives the bound; its hypothesis is Theorem~A(b) with $\eta=\xi$, in every gauge for
+which $p$ is a head.
+
+\emph{\textup{(S1)} for $i=\varrho$.} We apply Lemma~\ref{l:succ} with $b=\varrho$,
+$\zeta=\floorMeasure{\cL}{n}$, carried by $\Hl{n}{T}=\Ql{n}{T}\cap\Hl{\varrho}{T}$, $v(c)=\boost{\varrho}{c}$ and
+$\rho(c)=\frac{2\pi^k}{(k-1)!}\max(|c|^2-1,0)^{k-1}$ (\Inp{C1}), and check the formula for
+$\Psi(c)=\psi_{\CC}(\xi c)J_n(p',q')$, $p'=p[\varrho\mapsto c]$, $q'=q[\varrho\mapsto c]$. For $|c|\le1$ both sides
+are $0$. Let $|c|>1$; then $\ZT{T}{\boost{\varrho}{c}}_{\varrho\varrho}=c$. On the two top floors
+$\eta_\varrho=\eta_n=\delta_1$, so $(\floorMeasure{\cL}{n}*\floorMeasure{\cL}{\varrho})*\stackMeasure{\cL}_{0,\varrho}
+=\groupMeasure{\cL}=\lambda\,\dd y$. The averaged kernels at $n$ are averages over $\Hl{n}{T}$ of
+$\ip{\Phi(hg)}{\Phi(hg')}=\ip{\Phi(g)}{\Phi(g')}$, as $\mathrm{rep}(h)$ is unitary; so, with
+$\gamma_{p'}=\wl{\varrho}{p}\boost{\varrho}{c}$ and $d\gamma_{p'}^{-1}=\gamma_{q'}^{-1}$,
+\[\formIntegrandOne{n}{\Phi}{x}{d}{\gamma_{p'}}{g}=\ip{\Phi(g)}{\Phi(gx)}\,\overline{\ip{\Phi(\gamma_{p'}^{-1}g)}{\Phi(\gamma_{q'}^{-1}gx)}}.\]
+Integrating over $g$ and $x$ and substituting $y'=gx$ gives $\lambda^2\ip{\corr{\dd y}{\Phi}{\gamma_{p'}}}{\corr{\dd y}{\Phi}{\gamma_{q'}}}$
+by Lemma~\ref{l:corr} (with a gauge from Lemma~\ref{l:heads}). The constants agree:
+$\formConst{\mathfrak{c}}\lambda^2\cdot\headDensity{\varrho}{p}{q}{\cL}\cdot\rho(c)$ equals the product $N(p')N(q')$ of
+the scalar factors of Definition~\ref{d:sieve}, because
+$\cellc{\mathfrak{s}}=\frac{\volU{k}}{\volU{r}}\frac{2\pi^k}{(k-1)!}$. The bound for $\xi\ne0$ follows as before.
+
+\emph{\textup{(S2)}.} The matrix is a Gram matrix; continuity is Lemma~\ref{l:cont}.
+\emph{\textup{(S4)}.} Lemma~\ref{l:norm} at $j=i+1$ with $\omega=1$, $y=\xi$, and Theorem~A(c).
+\emph{\textup{(S5)}.} If $|p_\varrho|\le1$ both sides are $0$. Otherwise the Cartan decomposition gives
+$\sigma=h\,\boost{\varrho}{p_\varrho}h'$; write both sides by Lemma~\ref{l:corr}, substitute $(y,y')\mapsto(hy,hy')$ and
+use $\Phi(hy)=\mathrm{rep}(h)\Phi(y)$ with $\mathrm{rep}(h)$ unitary to remove $h$ and $h'$.
+
+\emph{\textup{(S3)}, the energy.} For $j=0$ the head density is $1$, $\stackMeasure{\cL}_{0,0}=\delta_1$ and
+$\weylRatio{0}{p}{q}=1$, so $J_0(p,q)=\formConst{\mathfrak{c}}\int|\delta_\Phi|^2\dd\groupMeasure{\cL}$ with
+$\delta_\Phi(x)=\upperPairing{\cL}{0}{\translatePairing{\Phi}{\Phi}{1}{\cdot}{\cdot}}{1}{x}$. Let
+$\delta(x)=\upperPairing{\cL}{0}{\translatePairing{\Phi}{\Phi_0}{1}{\cdot}{\cdot}}{1}{x}$. Then
+$\delta_\Phi-\delta$ is the averaged kernel of $\Phi$ and $\Phi-\Phi_0$, and from $|\delta|\ge\bigl||\delta_\Phi|-|\delta_\Phi-\delta|\bigr|$
+and \Inp{T7}(a),
+\[|\delta_\Phi(x)|^2\le|\delta(x)|^2+2\,\formMajorant{0}{p}{q}{\Phi}{\Phi-\Phi_0}{x}.\]
+The second term: $\Phi-\Phi_0$ is a Bessel function of frequency $1$ with
+$\int|\Phi-\Phi_0|^2\dd\dot y\le b^{-10r^2}|I|$, and Lemma~\ref{l:shells} with $j=0$, $R=\rho$, $t=1$,
+$\varepsilon=b^{-5r^2}$ bounds $|\formConst{\mathfrak{c}}|$ times its integral by
+$\bandc{\mathfrak{s}}\rho^{10^9n^4+24k}b^{-5r^2}$; with $\deg\bandc{\mathfrak{s}}\le b^{4r^2}$ and the sizes this is
+at most $b^{-10}/(2\deg)$, a comparison of exponents done by the formal text. The first term: we claim
+$\int|\delta|^2\dd y\le\lambda^2|I|^2/\deg$; then, by \Inp{C2},
+$|\formConst{\mathfrak{c}}|\int|\delta|^2\dd\groupMeasure{\cL}\le\frac{\volU{k}}{\volU{r}}\lambda\cdot\frac1{\deg}\le\frac1{\deg}$.
+It suffices to bound $E=\int_{s}|\delta|^2\dd y$ for a set $s$ of finite measure. The function $\delta$ is bounded
+(a pairing kernel, Lemma~\ref{l:pk}); let $\beta=\mathbf{1}_s\overline{\delta}$, bounded and integrable, with
+$\int|\beta|^2=E<\infty$. By Fubini's theorem and \Inp{C2},
+\[E=\int\beta\,\delta\,\dd y=\int\Bigl\langle\Phi(\sigma),\int\beta(x)\Phi_0(\sigma x)\,\dd x\Bigr\rangle\dd\upperMeasure{\cL}{0}(\sigma)
+\le\lambda\int|\Phi(\gamma)|\,\Bigl|\int\beta(x)\Phi_0(\gamma x)\,\dd x\Bigr|\,\dd\dot\gamma,\]
+the integrand being $\UT{T}$-invariant. By Cauchy--Schwarz, $\int|\Phi|^2\dd\dot y\le|I|$ and Schur's bound for
+$\Phi_0$, $E^2\le\lambda^2\,|I|\cdot\frac{|I|}{\deg}\,E$, hence $E\le\lambda^2|I|^2/\deg$.
+\end{proof}
+
+\sect{Where the results are used}{s:used}
+Theorem~E is the last hypothesis in the construction of a \emph{Bessel system} at a real place, the local datum of
+the second moment of Poincar\'e series in the unit on the second moment (unit 148, Chapter~VI of the write-up): there
+the band limits (S1)--(S5) at all infinite places and their analogues at the chosen finite places are multiplied
+into one sieve system. Theorems A to~D are stated for a general place; the artifact applies them at $\CC$ in this
+note, and their statements cover the products of finite places for which the authors' comment announces the same
+proof.
+
+\sect{Notes on the formal text}{s:notes}
+\textbf{Implicit arguments.} The level is an implicit argument of the forms, of the moduli, of the majorant, of the
+pairing norm, of the predicate $\operatorname{Cut}$ and of the self-norm product; the gauge is an implicit argument of
+the predicates for sizes and heads. The notation shows the explicit arguments of the Lean definitions, and each
+statement names the level and the gauge in words.
+
+\textbf{Argument lists not confirmed by Lean.} For the Bessel predicate, the cut predicate, the pairing norm, the
+top vector, and for the Lean theorems behind Theorems B, C, Lemma~\ref{l:fmm}(i), Lemma~\ref{l:succ} and
+Lemma~\ref{l:heads}, the reader's dossier derived the list of arguments by Lean's rules for section variables,
+because the census misreads a name bound inside the declaration ($x$, $L$) or a line \texttt{variable (F) in}. Nothing
+was compiled, so these lists are not confirmed by Lean. The statements above follow the Lean text of each
+declaration, read in full; the statement of Theorem~B continues after a \texttt{let} and was read to its end.
+
+\textbf{Differences from the natural statements.} (1) The integrals of complex functions are Bochner integrals that
+are $0$ when the function is not integrable; so the forms are defined without an integrability hypothesis, and
+Theorem~B carries one. (2) The head density enters the forms through its real value, which is $0$ when it is
+infinite. (3) Exponents $\varrho-(a+1)$ are truncated at $0$; in every use $a<\varrho$. (4) Theorem~A(a) allows
+$V=\infty$ and $\sigma=0$; this is used in Lemma~\ref{l:norm}. (5) In Theorem~A(b) the weight is written with the
+entry $(j,j)$ of the frame Gram matrix, which needs $j\le\varrho$. (6) Theorem~D and Lemma~\ref{l:shells} ask no
+measurability of $f$ and $S$: the integrals are upper integrals in the sense of Lebesgue. (7) In
+Lemma~\ref{l:shells} the hypothesis on $f^2$ is asked only if $t>1$. (8) Theorem~E is an existence statement in
+the Lean text; the family $J$ is the witness of its proof. (9) Lemma~\ref{l:corr} takes any Haar measure~$\mu$ and
+does not ask that $\groupMeasure{\cL}$ be one. (10) The functional $\mathrm{rep}$ and the number $\mathsf{n}$ of cut
+Bessel data enter only through the cut pair.
+
+\textbf{A declaration outside the census.} The definition of the level $\cLC{\mathfrak{h}}$ at the complex place
+is in the Lean text (the file of the gauge at $\CC$, lines 31 to 41), but the census of the artifact does not list
+it, because its attribute runs over two lines; so it is in no unit and is not a member of this one. Input~\Inp{C1}
+states it from the Lean text, and the second reader recovered the same declaration from the pinned source. Its Lean
+name is in Appendix~A.
+
+\textbf{Small results.} Five declarations have no statement of their own: the two top floors of the stack measure
+(used in the proof of Theorem~E), compactness of the set of the elements of bounded size (Lemma~\ref{l:corr}), nearness
+of the points where a cut function does not vanish (after Definition~\ref{d:cut}), the kernel with $p=q=1$
+(Lemma~\ref{l:pk}), and the volume exponent at $\CC$ (after Definition~\ref{d:cutbessel}).
+\leanline{\lean{stackMeasuretop}}
+
+\subhead{How this note was written.} From the structured proofs of the reader's dossier for the three files, and from
+the Lean text. I read the three Lean files completely, statements and proofs, together with the definitions of the
+files of Note~T on which they rest; the proofs behind Theorem~C and Theorem~E, which the reader marked as the least
+certain, were read line by line, and the induction of Theorem~C and the energy bound (S3) are written from that
+reading. The proofs of Theorem~A, Lemma~\ref{l:snp} and Lemma~\ref{l:succ} were also rebuilt from the Lean terms
+(which lemma is applied to which arguments). Not redone by hand: the three final comparisons of explicit exponents
+in Lemmas~\ref{l:shells}, \ref{l:norm} and in (S3), which the formal text settles by its arithmetic tactics; they
+are named in the proofs. The inputs \Inp{T1}--\Inp{T14} and \Inp{C1}--\Inp{C4} were compared with their Lean
+statements; in \Inp{T9}(a) and \Inp{T12} two Lean lemmas are combined and the exponent $1287n=99n\cdot13$ is computed
+from them. The program check of the unit's dossier covered \UnitSteps{} leaf steps of \UnitProofs{} proofs.
+
+\head{Appendix A. Concordance with the Lean artifact}
+The letters of this note and the names of the formal text: $\cL$ is \texttt{F} (a level) or the complex level of
+\texttt{hF}; $\Omega$ is \texttt{ι}; $\mathfrak{m}$ is \texttt{m}; $\Phi$, $\Phi_0$ are \texttt{F}, \texttt{F₀} (or
+\texttt{W}) at the complex place; $s_0$ is \texttt{s}; $\mathsf{n}$ is \texttt{n}; $R$ is \texttt{L}; $\modA$,
+$\psi_A$, $c_A$ are the fields \texttt{md}, \texttt{ψ}, \texttt{c} of the place; $\Hl{l}{T}$, $\Ql{l}{T}$,
+$\Nb{l}{T}$, $\Nf{l}{T}$, $\UT{T}$ are \texttt{GT}, \texttt{unitriGroup}, \texttt{unipotentBelow},
+\texttt{floorUnipotent}, \texttt{besselU}; $\sd$ is \texttt{simpleRootSum}; $\ZT{T}{\cdot}$ is \texttt{frameGram}; $\cLC{\mathfrak{h}}$ is
+\texttt{RealPlaceSizes.complexLevel}, which the census does not list.
+Two statements as the artifact has them:
+\quoted{formModulussqleofheads}
+\quoted{hasBandLimitsofisCutBessel}
+{\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}\setlength{\tabcolsep}{0pt}
+\begin{longtable}{@{}p{30mm}p{56mm}p{43mm}r@{}}
+\textbf{In this note} & \textbf{Lean declaration} & \textbf{File} & \textbf{Lines}\\\midrule\endhead
+\ConcordanceRows
+\end{longtable}}
+
+\head{Notation}
+\begingroup\fontsize{8.6}{10.9}\selectfont\raggedright
+\setlength{\columnsep}{9mm}\setlength{\parskip}{0pt}
+\begin{multicols}{2}
+\nt{$A$, $\bar x$, $\dd x$}{the place: a ring with involution and Haar measure}
+\nt{$\modA$, $\psi_A$, $c_A$}{its module, character and Plancherel constant}
+\nt{$\tau_A$, $\delta_A$}{its trace-one element and skew unit}
+\nt{$\mathfrak{s}=(\varrho,\kappa,k_0)$}{the shape}
+\nt{$n$, $k$, $r$}{$\varrho+1$; $|\kappa|$; $2\varrho+k+1$, the rank of $V$}
+\nt{$V$, $V_l$, $e_a$, $e^*_a$, $x_i$, $z$}{the space, its floors, its basis}
+\nt{$f_a$, $\ZT{T}{g}$}{the frame; the frame Gram matrix of $g$}
+\nt{$T$, $\JT{T}$, $h_T$, $\GT{T}$}{the form, its split Gram matrix, the hermitian form, the unitary group}
+\nt{$\Hl{l}{T}$, $\Ql{l}{T}$}{stabiliser of the floors below $l$; unitriangular on the first $l$ frame vectors}
+\nt{$\Nb{l}{T}$, $\Nf{l}{T}$, $\UT{T}$}{unipotent groups of Section~\ref{s:space}}
+\nt{$\sd(u)$}{sum of the entries of $u$ at $(f_a,f_{a+1})$}
+\nt{$\wl{l}{p}$, $\wo{a}{c}$}{Weyl element; floor Weyl element}
+\nt{$\Omega$, $\mathfrak{m}$}{index set of the orthonormal part and number of extra pairs of a hyperbolic basis}
+\nt{$\cL$, $E(\cL)$, $\gL{\cL}$}{a level, its basis matrix, its unit}
+\nt{$\Ball{\cL}$, $\BoxL{\cL}$, $\Posn{\cL}$}{its ball, box, positions}
+\nt{$\floorMeasure{\cL}{l}$, $\eta_l$, $\etab{j}$, $\varpi_l$}{floor measure, Heisenberg measures, Weyl law}
+\nt{$\stackMeasure{\cL}_{a,i}$, $\groupMeasure{\cL}$, $\upperMeasure{\cL}{l}$}{convolutions of floor measures}
+\nt{$\quadric{\cL}{b}$, $\delta_s$, $*$}{quadric measure on $V_b$; unit mass; convolution}
+\nt{$\Gamma$, $\Gamma_i$, $\Lambda(\Gamma)$}{a gauge, its sets, its constant}
+\nt{$\operatorname{sz}$, $\mathrm{Vec}_i$, $\operatorname{Hd}_j$}{size of a matrix, vectors of size $i$, heads}
+\nt{$\operatorname{Near}_j$, $\operatorname{Val}_a$, $\mathsf{s}$, $\mathsf{w}_j$, $\mathsf{d}_l$}{nearness, floor values, volume exponent, weight, floor module}
+\nt{$\operatorname{Mass}_j$, $\operatorname{Fib}$}{mass of a floor; fibre bound of Note~T}
+\nt{$\mathsf{Av}_j$, $\mathsf{Pv}_j$, $\mathsf{Sq}_j$, $\mathsf{Sm}_j$, $\operatorname{SN}_j$}{averaged kernel, pivot, weighted square, its sum, self-norm}
+\nt{$\operatorname{PK}_j$, $\operatorname{Pos}$, $C_l$, $C_{\mathrm{gl}}$}{pairing kernels, positions of size $1$, constants of a gauge}
+\nt{$I$, $\ip{v}{w}$, $|v|$}{finite set; inner product and norm of $\CC^I$}
+\nt{$W$, $W'$, $\operatorname{Bes}$, $\operatorname{Cut}$}{functions; Bessel and cut functions}
+\nt{$\operatorname{PN}$, $\mathsf{h}_j$, $\mathsf{I}^1_j$, $\mathsf{I}_j$}{pairing norm, head density, integrands}
+\nt{$\mathcal{I}_j$, $\mathcal{I}^{\mathrm{mod}}_j$, $\mathcal{I}^{\mathrm{maj}}_j$, $\operatorname{SNP}_j$}{floor form, modulus, majorant, self-norm product}
+\nt{$p$, $q$, $d$, $w$}{sequences of units; Weyl ratio; a Weyl element}
+\nt{$\omega$, $\omega_\eta$, $\eta$, $\xi$}{weights; frequencies}
+\nt{$j$, $l$, $a$, $b$, $i$, $i_1$, $i_2$}{floors and sizes (at $\CC$, $b$ is also the third scale)}
+\nt{$g$, $x$, $y$, $s$, $u$, $v$, $h$, $m$, $t$}{group elements, vectors, units; $t$ also a real or complex number}
+\nt{$\sigma$, $\tau$, $\nu$, $\gamma$}{variables of integration; also $\sigma$ a volume, $\gamma$ a group element}
+\nt{$k$, $K$, $V$, $C$, $M$, $D$, $E$, $N$}{a kernel (also $k=|\kappa|$); constants}
+\nt{$\Phi$, $\Phi_0$, $\mathrm{rep}$}{cut and full function at $\CC$; representation of $\mathrm{U}(\kappa)$}
+\nt{$\mathfrak{h}$, $\mathfrak{c}$, $\rho$, $s_0$, $\mathsf{n}$}{sizes, cut Bessel data, their numbers}
+\nt{$\cLC{\mathfrak{h}}$, $\lambda$, $\Gamma(\mathfrak{h};\rho\le R)$, $R$, $R_0$}{level, Haar ratio, gauge at $\CC$, radii}
+\nt{$\operatorname{RPS}$, $\operatorname{CB}$, $c_{\mathrm{f}}$, $\Xi$}{sizes, cut Bessel data, constant of the forms, top vector}
+\nt{$\Gone{\mathfrak{s}}$, $\dd y$, $\dd\dot y$}{the group at $\CC$, its Haar measure, the measure of $\UT{T}\backslash\Gone{\mathfrak{s}}$}
+\nt{$\corr{\mu}{W}{\gamma}$, $\boost{\varrho}{c}$}{correlation tensor; boost}
+\nt{$\cellc{\mathfrak{s}}$, $\bandc{\mathfrak{s}}$, $\volU{N}$}{constants; volume of a unitary group}
+\nt{$\damp{K}{t}$, $\hw{K}{i}{p}$, $\beta$, $\deg$}{damped power, head weight, band function, formal degree}
+\nt{$J$, $J_i$, $f$, $F$, $F_1$, $F_2$, $G$, $B$, $P$, $S$, $T_i$, $e$, $c$}{forms and auxiliary functions, sets and numbers of the proofs}
+\nt{$\mathsf{r}$, $\mathsf{u}$, $\mathsf{v}$, $\mathsf{A}$, $\mathsf{W}_l$, $\Phi_l$, $\varepsilon$, $\Theta$, $\zeta$, $\Psi$, $\varphi$, $\mu$, $\alpha$}{auxiliary objects of the proofs}
+\nt{$\pi$, $\infty$, $\mathbf{1}$, $L$, $H$, $O$, $Q$, $U$, $X$, $Y$, $Z$, $o$, $z$}{the number; infinity; indicator; letters inside names}
+\end{multicols}
+\endgroup
+
+\end{document}

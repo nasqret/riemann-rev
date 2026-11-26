@@ -1,0 +1,164 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Filling.DegreeBounds:61:7",
+ "summary": "Weyl's dimension formula writes deg as exp of Σ_v Σ_{k−1 ≤ l < r} (Σ_{i<l} log(ρ_v(i) − ρ_v(l)) − log l!); each difference ρ_v(i) − ρ_v(l) lies in [1, w(l+2−k, v)] and is ≥ w(v) for the relevant i, which gives the two bounds after summing (r − (k−1) = m).",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Write deg = exp(Σ_v Σ_{l∈[k−1, r)} (Σ_{i<l} log(ρ_v(i) − ρ_v(l)) − log l!)) (proved in steps 3–7).",
+   "lines": [
+    64,
+    65
+   ],
+   "lean": "  rw [(?_ : D.filling.besselDegree = exp (∑ v, ∑ l ∈ Ico (D.k - 1) D.r,\n    (∑ i ∈ range l, log (D.rowParameter v i - D.rowParameter v l) - .log l !)))]"
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "With this, the quantity is Σ_v Σ_l Σ_{i<l} log(ρ_v(i) − ρ_v(l)); compare termwise:",
+   "lines": [
+    66,
+    71
+   ],
+   "lean": "  · simp; constructor <;> gcongr\n    grw [← @range_mono (D.k - 1),\n      ← (D.nominalWeight_le_w_sub 0 ‹_›).trans (c := _ - _)] <;> norm_cast\n    any_goals grw [(rowParameter_sub_mem ..).2, @range_mono _ D.r, log_w_le]\n    any_goals simp [(by grind : D.r - (D.k - 1) = D.m), HasLogBound.pos D]\n    all_goals grind [log_nonneg, rowParameter]"
+  },
+  {
+   "id": "2.1",
+   "parent": "2",
+   "kind": "deduction",
+   "claim": "split into the lower and the upper bound;",
+   "lines": [
+    66,
+    66
+   ],
+   "lean": "  · simp; constructor <;> gcongr"
+  },
+  {
+   "id": "2.2",
+   "parent": "2",
+   "kind": "deduction",
+   "claim": "lower bound: restrict to i < k − 1 and use w(v) ≤ ρ_v(i) − ρ_v(l) (nominalWeight_le_w_sub);",
+   "lines": [
+    67,
+    68
+   ],
+   "lean": "    grw [← @range_mono (D.k - 1),\n      ← (D.nominalWeight_le_w_sub 0 ‹_›).trans (c := _ - _)] <;> norm_cast",
+   "uses": [
+    {
+     "decl": "Data.nominalWeight_le_w_sub"
+    }
+   ]
+  },
+  {
+   "id": "2.3",
+   "parent": "2",
+   "kind": "deduction",
+   "claim": "upper bound: ρ_v(i) − ρ_v(l) ≤ w(l+2−k, v) (rowParameter_sub_mem), extend to i < r, and log w ≤ log w(v) + 1/x;",
+   "lines": [
+    69,
+    69
+   ],
+   "lean": "    any_goals grw [(rowParameter_sub_mem ..).2, @range_mono _ D.r, log_w_le]",
+   "uses": [
+    {
+     "decl": "Data.rowParameter_sub_mem"
+    },
+    {
+     "decl": "Data.log_w_le"
+    }
+   ]
+  },
+  {
+   "id": "2.4",
+   "parent": "2",
+   "kind": "deduction",
+   "claim": "the number of l is r − (k−1) = m; positivity of the weights;",
+   "lines": [
+    70,
+    70
+   ],
+   "lean": "    any_goals simp [(by grind : D.r - (D.k - 1) = D.m), HasLogBound.pos D]"
+  },
+  {
+   "id": "2.5",
+   "parent": "2",
+   "kind": "deduction",
+   "claim": "the logarithms are nonnegative (differences ≥ 1).",
+   "lines": [
+    71,
+    71
+   ],
+   "lean": "    all_goals grind [log_nonneg, rowParameter]"
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Proof of the formula: deg = ∏_v Weyl dimension of l_v (filling_fits), written with exp of sums.",
+   "lines": [
+    72,
+    73
+   ],
+   "lean": "  push_cast [Filling.besselDegree, (D.filling_fits.1 _).1, ↓card_rowIndex, exp_sum, exp_sub,\n    weylDimensionPoly, ↓paramW_lt_iff, paramW]; congr!",
+   "uses": [
+    {
+     "decl": "Data.filling_fits"
+    },
+    {
+     "decl": "weylDimensionPoly"
+    }
+   ],
+   "ambient_uses": [
+    "Real.exp_sum"
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Reindex the products of the Weyl formula over the row indices (basisNumber) and ranges.",
+   "lines": [
+    74,
+    75
+   ],
+   "lean": "  simp [prod_comm, prod_filter, reindex_equiv D.basisNumber.symm, prod_fin_eq_prod_range,\n    ← mem_range, ← prod_div_distrib]"
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Compare the two products on the common index set,",
+   "lines": [
+    76,
+    76
+   ],
+   "lean": "  apply prod_congr_of_eq_on_inter"
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "clearing denominators: ∏_{i<l}(l − i) = l!,",
+   "lines": [
+    77,
+    77
+   ],
+   "lean": "  field_simp; norm_cast; simp [← prod_range_add_one_eq_factorial]"
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "and the remaining identities (reflection of ranges, exp ∘ log on positive numbers).",
+   "lines": [
+    78,
+    78
+   ],
+   "lean": "  all_goals grind [rowParameter, prod_range_reflect, Finset.prod_congr, exp_log, cast_pos]"
+  }
+ ]
+}

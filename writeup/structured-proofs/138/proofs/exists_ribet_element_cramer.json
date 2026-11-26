@@ -1,0 +1,248 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Selmer.RibetCramer:40:7",
+ "summary": "Represent S[G] on matrices over Y → L; Amitsur puts all characteristic polynomial coefficients in S. The adjugate of ρ(V w) gives β ∈ S; the adjugate W of the block matrix of M gives a = det·1 − wᵀ W m with V(M)·W = det; f = tr ρ(a·h); f·β is a sum of traces of elements of the trace span, hence in 𝒥.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let ρ be the S-algebra map S[G] → M_σ(Y → L) given on g by x ↦ u_x(g) read in L.",
+   "lines": [
+    47,
+    48
+   ],
+   "lean": "  let ρ := lift S _ G (piRingEquiv.symm.toMonoidHom.comp (.pi ((lift ..).symm ∘\n    (ofId O L).mapMatrix.comp ∘ u)))"
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Every coefficient of the characteristic polynomial of every ρ(r) lies in S: true for the basis elements g (h₂, charpoly_map), hence for all r (amitsur_charpoly_mem_of_span).",
+   "lines": [
+    49,
+    51
+   ],
+   "lean": "  have c := amitsur_charpoly_mem_of_span ρ (eq_top_mono (span_mono (Set.range_subset_iff.2 fun g k ↦\n    ⟨⟨_, h₂ g k⟩, by ext x; simpa [ρ] using! ext_iff.1 (charpoly_map (ρ (.single g 1))\n    (Pi.evalRingHom _ x)) k⟩)) (basis ..).span_eq)",
+   "uses": [
+    {
+     "decl": "amitsur_charpoly_mem_of_span"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "setup",
+   "claim": "ι = O[G] → S[G], induced by κ.",
+   "lines": [
+    52,
+    52
+   ],
+   "lean": "  let ι := mapRingHom G κ"
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "fact",
+   "claim": "ρ(ι r)_{ij}(x) = u_x(r)_{ij} read in L (lift_unique', induction on r).",
+   "lines": [
+    53,
+    55
+   ],
+   "lean": "  have he x r i j : ρ (ι r) i j x = algebraMap O L (u x r i j) := by\n    rw [lift_unique' (u x)]\n    induction r using induction_linear <;> simp_all +zetaDelta [S.smul_def, RingHom.ext_iff]",
+   "typed_fact": "ρ (ι r) i j x = algebraMap O L (u x r i j)"
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "fact",
+   "claim": "There are η and F ∈ S with det ρ(ι V(w)) = F and ρ(η)·ρ(ι V w) = F·1 (exists_adjugate_of_charpoly_mem).",
+   "lines": [
+    56,
+    56
+   ],
+   "lean": "  obtain ⟨η, ⟨_, H⟩, ⟨rfl⟩⟩ := exists_adjugate_of_charpoly_mem ρ c (ι (V w))",
+   "uses": [
+    {
+     "decl": "exists_adjugate_of_charpoly_mem"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "β = F ∈ S (hβ and step 4); fix h, M, 𝔞 with the span condition.",
+   "lines": [
+    57,
+    57
+   ],
+   "lean": "  use by convert H; simp [*, funext_iff], fun h M _ hM ↦ ?_"
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Write V(M_p) = s_p + m_p·V(w) with s_p in the trace span and m_p ∈ 𝔞.",
+   "lines": [
+    58,
+    58
+   ],
+   "lean": "  choose m hm _ using by simpa [Submodule.mem_sup, ← eq_sub_iff_add_eq] using hM"
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "fact",
+   "claim": "For the flattened block matrix of M: an adjugate W with W·(block of M) = F'·1, F' ∈ S its determinant (exists_adjugate_of_charpoly_mem with amitsur_charpoly_mem_matrix).",
+   "lines": [
+    59,
+    60
+   ],
+   "lean": "  obtain ⟨W, ⟨_, F⟩, rfl, ⟨e⟩⟩ := exists_adjugate_of_charpoly_mem ((blockFlattenAlgEquiv\n    N).toAlgHom.comp ρ.mapMatrix) (amitsur_charpoly_mem_matrix ρ c) (M.map ι)",
+   "uses": [
+    {
+     "decl": "exists_adjugate_of_charpoly_mem"
+    },
+    {
+     "decl": "amitsur_charpoly_mem_matrix"
+    }
+   ]
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "fact",
+   "claim": "The adjugate identity entrywise.",
+   "lines": [
+    61,
+    61
+   ],
+   "lean": "  have e i j : ρ _ = ρ _ := ext (congrFun₂ e ⟨i, ·⟩ ⟨j, ·⟩)",
+   "typed_fact": "ρ _ = ρ _"
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "setup",
+   "claim": "a = F'·1 − (ι∘w)ᵀ·W·(ι∘m) in S[G].",
+   "lines": [
+    62,
+    62
+   ],
+   "lean": "  let a := (⟨_, F⟩ : S) • 1 - ι ∘ w ᵥ* W ⬝ᵥ ι ∘ m"
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "fact",
+   "claim": "tr ρ(a·ι h) ∈ S (minus a coefficient of a characteristic polynomial, step 2).",
+   "lines": [
+    63,
+    63
+   ],
+   "lean": "  obtain ⟨⟨⟩, rfl⟩ := trace_eq_neg_charpoly_coeff (ρ _) ▸ neg_mem (c (a * ι h) _)",
+   "uses": [
+    {
+     "step": "2"
+    }
+   ],
+   "ambient_uses": [
+    "Matrix.trace_eq_neg_charpoly_coeff"
+   ]
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "witness",
+   "claim": "f = tr ρ(a·ι h): where u_x(m h) = 0 for m ∈ 𝔞, the W-term vanishes and f(x) = det(u_x(M))·tr u_x(h).",
+   "lines": [
+    64,
+    65
+   ],
+   "lean": "  use ⟨_, ‹_›⟩, by simp! +contextual [a, Matrix.trace, sum_mul, *, map_mul ρ, ← ι.map_mul, -map_mul,\n    (algebraMap ..).map_mul, S.smul_def]"
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "f·β ∈ 𝒥: f·β = Σ_p tr ρ(η·ι h·(ι∘w ᵥ* W)_p·ι(s_p)), each in 𝒥 by induction over the span of s_p (span_induction).",
+   "lines": [
+    66,
+    67
+   ],
+   "lean": "  convert sum_mem fun p _ ↦ span_induction (p := fun r _ ↦ ∀ b, (ρ (b * ι r)).trace ∈ 𝒥)\n    (fun r g b ↦ ?_) ?_ ?_ ?_ (hm p) (η * ι h * (ι ∘ w ᵥ* W) p)",
+   "ambient_uses": [
+    "Submodule.span_induction"
+   ]
+  },
+  {
+   "id": "14",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Rearrange the sum of traces (trace_mul_comm).",
+   "lines": [
+    68,
+    68
+   ],
+   "lean": "  simp [← trace_sum, ← mul_sum]; rw [trace_mul_comm, (_ : ∑ _, _ = ρ (a * ι (V w)))]"
+  },
+  {
+   "id": "15",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Entrywise check of the rearrangement.",
+   "lines": [
+    69,
+    69
+   ],
+   "lean": "  ext; simp [(ρ η).trace_mul_comm, S.smul_def, *]; ring"
+  },
+  {
+   "id": "16",
+   "parent": null,
+   "kind": "computation",
+   "claim": "The identity follows from V(M) = Σ … (dotProduct_mulVec) and the adjugate identities.",
+   "lines": [
+    70,
+    72
+   ],
+   "lean": "  simpa! [mulVec, vecMul, *, V.pi_apply_eq_sum_univ w, V.pi_apply_eq_sum_univ (M _),\n    one_apply, smul_sum, apply_ite, sum_mul, a, mul_sub, -Matrix.mul_apply]\n    using congr(ρ $((M.map ι).dotProduct_mulVec (_ ᵥ* W) _))"
+  },
+  {
+   "id": "17",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "For the generators r of the span: induction on b ∈ S[G].",
+   "lines": [
+    73,
+    73
+   ],
+   "lean": "  induction b using induction_on"
+  },
+  {
+   "id": "18",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Basis case: tr(u(b r)…) ∈ 𝒥 by the defining property of r.",
+   "lines": [
+    74,
+    74
+   ],
+   "lean": "  convert g ‹_›; simp [↓(u _ r).trace_mul_comm, ← he, ι, Matrix.trace]"
+  },
+  {
+   "id": "19",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Additivity and scalar multiplication.",
+   "lines": [
+    75,
+    75
+   ],
+   "lean": "  all_goals simp +contextual [mul_add, add_mul, smul_mem, ← mul_assoc, ι.map_mul, -map_mul, *]"
+  }
+ ]
+}

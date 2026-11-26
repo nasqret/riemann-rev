@@ -1,0 +1,150 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Exchange.DeterminantVectors:59:7",
+ "name": "PositivePart.exists_slice_eq",
+ "summary": "U = J(−a, u, −a) for J(a, z, b) = L a + I z + K b; the projection to positive coordinates and the inner products of J are computed with the unitary frame; the value identity is checked on vacuum translates.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "statement",
+   "claim": "Not a step of the proof: lines 61–62 are the rest of the statement, which ends before the `:=` on line 62 (a second-reader message). The line census takes the `:=` of `let v :=` on line 61 for the start of the value, so the check requires these lines to be owned here. They state: for every polynomial P in the positive coordinates, with v = polyVector(rename(P)) (P renamed into all coordinates), slice(mixedModel(h), a, v, u) = v(U).",
+   "lines": [
+    61,
+    62
+   ],
+   "lean": "  (realSigns E s') *ᵥ u + h.mixedModel.K *ᵥ -a ∧ ∀ P, let v := polyVector _ (rename\n    (@Subtype.val _ (realSigns E s · = 1)) P); h.mixedModel.slice a v u = v U := by"
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "step",
+   "claim": "Let J(a, z, b) = L·a + I·z + K·b (the coordinates of the mixed model of h).",
+   "lines": [
+    63,
+    63
+   ],
+   "lean": "  let J a z b := h.mixedModel.L *ᵥ a + h.mixedModel.I *ᵥ z + h.mixedModel.K *ᵥ b"
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "step",
+   "claim": "P₊(s)·J(a, z, b) = J((a + b)/2, P₊(s′)·z, (a + b)/2): computed at each place with the frame relation of `frameAt_real_unitary` (diag(s)P = P·B) and P₊ = ½(1 + diag(s)) (`posProj_eq`).",
+   "lines": [
+    64,
+    70
+   ],
+   "lean": "  have q a z b : posProj (realSigns E s) *ᵥ J a z b =\n      J (midpoint ℂ a b) (posProj (realSigns E s') *ᵥ z) (midpoint ℂ a b) := by\n    ext ⟨w, l⟩; have := congr(($((frameAt_real_unitary h w).2) *ᵥ\n      (vecToMat a w ⊕ᵥ vecToMat b w ⊕ᵥ vecToMat z w)) l)\n    simp [J, posProj_eq, midpoint_eq_smul_add, signMatrix, ↓mulVec_add, IsAdapted.mixedModel,\n      mulVec, dotProduct, vecToMat] at *\n    grind",
+   "typed_fact": "posProj (realSigns E s) *ᵥ J a z b =\n      J (midpoint ℂ a b) (posProj (realSigns E s') *ᵥ z) (midpoint ℂ a b)",
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "decl": "frameAt_real_unitary"
+    },
+    {
+     "decl": "posProj_eq"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "step",
+   "claim": "⟨J(a, u, a), J(c, z, c)⟩ = 2⟨a, c⟩ + ⟨u, z⟩: J is the real frame matrix applied to the stacked coordinates (a, b, z), and that matrix is orthonormal (`realMatrix_orthonormal`).",
+   "lines": [
+    71,
+    74
+   ],
+   "lean": "  have n a u c z : star (J a u a) ⬝ᵥ J c z c = 2 * star a ⬝ᵥ c + star u ⬝ᵥ z := by rw [(?_ : J =\n    fun a z b ↦ realMatrix (D.frameAt 1 t) *ᵥ fun (w, i) ↦ (vecToMat a w ⊕ᵥ vecToMat b w ⊕ᵥ vecToMat\n    z w) i), star_mulVec_dotProduct, mulVec_mulVec, realMatrix_orthonormal _ h] <;> simp [entrywise,\n    vecToMat, J, IsAdapted.mixedModel, funext_iff] <;> grind",
+   "typed_fact": "star (J a u a) ⬝ᵥ J c z c = 2 * star a ⬝ᵥ c + star u ⬝ᵥ z",
+   "uses": [
+    {
+     "step": "2"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "step",
+   "claim": "The decomposition property of the mixed model of h (e).",
+   "lines": [
+    75,
+    75
+   ],
+   "lean": "  have ⟨_, _, _, e⟩ := h.mixedModel.exists_decomp"
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "step",
+   "claim": "The signs, ordered by positive and non-positive coordinates, form a sum (he).",
+   "lines": [
+    76,
+    76
+   ],
+   "lean": "  have' he : _ ∘ Equiv.sumCompl (realSigns E s · = 1) = _ := Sum.comp_elim .."
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "step",
+   "claim": "Take U = J(−a, u, −a); then P₊(s)·U = L(−a) + I·P₊(s′)u + K(−a) by step 3. For the value identity it suffices, the two sides being continuous linear in the polynomial vector, to compare them on the box products of Heisenberg translates of the vacuum (`Heisenberg.IsVacuum.hom_ext`).",
+   "lines": [
+    77,
+    79
+   ],
+   "lean": "  use J (-a) u (-a), by simp [q, J], fun P ↦ sub_eq_zero.1 (.trans\n    (by simp [← polyVector_one, realBoxProd_polyVector]; rfl) congr($((hom_ext fun y ↦ ?_ :\n    (modelEval u ∘L h.mixedModel.slice a - modelEval _) ∘L (realBoxProd he).flip vacVector = 0)) P))",
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "decl": "Heisenberg.IsVacuum.hom_ext"
+    }
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "step",
+   "claim": "On such vectors: the box product with the vacuum, the decomposition e, step 3, and the slice of a Heisenberg translate (`slice_realHeisOp`).",
+   "lines": [
+    80,
+    82
+   ],
+   "lean": "  simp [realBoxProd, OrthogonalSum.tmul, Rep.left]; erw [(realCoordSum he).tmul_vacElem,\n    (by ext; simp_all [realCoordSum, posProj] : (realCoordSum he).equiv (y, 0) = posProj (realSigns\n    E s) *ᵥ (realCoordSum he).equiv (y, 0)), ← e ((realCoordSum _).equiv _), q, slice_realHeisOp]",
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "step": "5"
+    },
+    {
+     "step": "6"
+    }
+   ]
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "step",
+   "claim": "Both sides are the same Gaussian exponential, by step 4 and P₊ = ½(1 + diag(s)).",
+   "lines": [
+    83,
+    83
+   ],
+   "lean": "  simp [*, realHeis.eq_1, realVac, ← exp_add, signMatrix_eq_posProj_sub, ↓signMatrix_one]; grind",
+   "uses": [
+    {
+     "step": "4"
+    }
+   ]
+  }
+ ]
+}

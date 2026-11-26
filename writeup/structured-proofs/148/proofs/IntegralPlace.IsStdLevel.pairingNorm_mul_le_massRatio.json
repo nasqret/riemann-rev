@@ -1,0 +1,130 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Filling.TopFloor:175:7",
+ "summary": "Bound |⟨W(x), W(y)⟩|·v by the 𝖴-measure of {u : ux ∈ Z} (step β); integrate over the pairing's domain, unfold the group measure along 𝖴 and use 𝖬-invariance to reduce to 𝖬(Z)·𝖬(K(g))/v.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "β: v·|⟨W_Z(x), W_Z(x·x⁻¹y)⟩| ≤ (η₀∗⋯)({u : ux ∈ Z}) (from the integral formula and |phase| ≤ 1).",
+   "lines": [
+    177,
+    179
+   ],
+   "lean": "  have β x y := congr(‖$(unipotentMass_mul_inner_besselVector Z x (x⁻¹ * y))‖ₑ).trans_le\n    ((enorm_integral_le_lintegral_enorm _).trans ((lintegral_indicator_one_le {u | u * x ∈\n    Z.1}).trans' (lintegral_mono_ae (by simp_all [apply_ite, ← ofReal_norm, norm_phase_le_one]))))",
+   "uses": [
+    {
+     "decl": "IntegralPlace.IsStdLevel.unipotentMass_mul_inner_besselVector"
+    },
+    {
+     "decl": "IntegralPlace.norm_phase_le_one"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Simplify β.",
+   "lines": [
+    180,
+    180
+   ],
+   "lean": "  simp [← ofReal_norm, mul_comm F.unipotentMass, -toReal_prod] at β"
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Unfold massRatio and pairingNorm (an upper measure of the pairing), write 𝖬(Z) through the stack measure decomposition, and reduce to a pointwise comparison of integrands in x.",
+   "lines": [
+    181,
+    185
+   ],
+   "lean": "  grw [IntermediateGroup.massRatio, ENNReal.le_div_iff_mul_le (by simp) (by simp), groupMeasure,\n    stackMeasure_zero_eq, mconv_apply_eq_lintegral Z.isOpen.measurableSet, ← stackMeasure_zero_eq,\n    Level.pairingNorm, upperMeasure, tsub_zero, mul_right_comm, mul_assoc,\n    lintegral_mul_const_le, ← lintegral_mul_const' _ _\n    (groupMeasure_ne_top unitaryLevel_le_unitaryLevel_one), lintegral_mono fun x ↦ ?_]",
+   "uses": [
+    {
+     "decl": "Level.pairingNorm"
+    },
+    {
+     "decl": "IntegralPlace.IsStdLevel.groupMeasure_ne_top"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "If W_Z(x) = 0 the integrand vanishes; otherwise take u ∈ 𝖴 with ux in the box.",
+   "lines": [
+    186,
+    187
+   ],
+   "lean": "  refine if a : Z.besselVector x = 0 then by simp [a] else\n    ((isCut_besselVector Z).exists_mul_mem_box a).elim fun u b ↦ ?_",
+   "uses": [
+    {
+     "decl": "IntegralPlace.IsStdLevel.isCut_besselVector"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Translate by (ux)⁻¹ (right invariance of 𝖬) and unfold along 𝖴.",
+   "lines": [
+    188,
+    189
+   ],
+   "lean": "  erw [← measure_preimage_mul_right F.groupMeasure (u * x)⁻¹, groupMeasure, stackMeasure_zero_eq,\n    h.unfold_besselU h.integral_data.2.2]",
+   "uses": [
+    {
+     "decl": "IntegralPlace.IsStdLevel.unfold_besselU"
+    }
+   ],
+   "ambient_uses": [
+    "MeasureTheory.Measure.measure_preimage_mul_right"
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Bound the integrand by the indicator of the set where the inner product is nonzero:",
+   "lines": [
+    190,
+    191
+   ],
+   "lean": "  grw [lintegral_mul_const_le, ← mul_assoc, ← lintegral_indicator_const_le,\n    lintegral_mono fun y ↦ le_indicator_apply (fun _ ↦ ?_) fun n ↦ ?_]"
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "there β and |·|² ≤ |·| for |·| ≤ 1 give the bound, and the probability-type bound of the unfolded measure of K;",
+   "lines": [
+    192,
+    194
+   ],
+   "lean": "  · grw [← mul_assoc, ← mul_pow, ← ofReal_norm, β, pow_le_of_le_one bot_le _ two_ne_zero]; rfl\n    grw [Z.2.2, ← mconv_dirac_one (ascConv ..), h.unfold_besselU (by simp),\n      prob_le_one]; simp [floorModulus]"
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "off that set the term is 0 (a nonzero inner product would place y in the set).",
+   "lines": [
+    195,
+    197
+   ],
+   "lean": "  rw [by_contra fun e ↦ (exists_of_inner_besselVector_ne_zero Z e).elim fun v ⟨c, w, d, _, e⟩ ↦\n    n ⟨_, mul_mem (div_mem b.1 c) d, by simpa [div_eq_mul_inv]\n    using unitaryLevel_one_le_normalizer (h.box_eq.2.1.le b.2) e⟩]; simp",
+   "uses": [
+    {
+     "decl": "Level.exists_of_inner_besselVector_ne_zero"
+    }
+   ]
+  }
+ ]
+}

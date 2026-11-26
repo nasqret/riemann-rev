@@ -1,0 +1,191 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Filling.Moments:226:7",
+ "summary": "Strong downward induction on A. If the bound failed for A, the energy over fixingSet(A, D) (≤ (1 − b⁻⁴)(1 + 9b⁻⁴)𝖽y_A) would be less than (1 − b⁻⁴)∑Θ, so the Θ-mass off the fixing set would exceed b⁻⁴∑Θ. Off the fixing set (and with Θ ≠ 0, so the vectors of A are fixed) some leading minor of frameGram(s_{0,w}) vanishes at a chosen w ∉ A; for each order l, card_mul_sum_det_le bounds the Θ-mass of {det = 0} by (2∑Θ + q₀^{l+1}√(q₀^{2ϱ+k+1})·Y)/q₀, where Y bounds the Θ-mass of the fixers of a vector at w — by the induction hypothesis for A ∪ {w}, Y ≤ b^{−6k}∑Θ. Summing over the ϱ + 1 orders gives ≤ 3(ϱ+1)∑Θ/b¹⁰ < b⁻⁴∑Θ, a contradiction.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Induction on A, downward along inclusion (WellFoundedGT), for all V, Θ, u, D: assume (ih) the claim for every A' ⊋ A.",
+   "lines": [
+    230,
+    230
+   ],
+   "lean": "  induction' A using WellFoundedGT.induction with A ih generalizing V Θ D",
+   "ambient_uses": [
+    "WellFoundedGT.induction"
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Size facts: q₀ ≤ b¹¹, b¹⁰ ≤ q₀, 1000 ≤ b, ∑Θ ≥ 0, 1000(2ϱ+2) ≤ k. Suppose (hK) ∑Θ > (1 + 9b⁻⁴)𝖽y_A (y_A = b^{−6k#A}); derive a contradiction.",
+   "lines": [
+    231,
+    232
+   ],
+   "lean": "  obtain ⟨hq, q, _⟩ := S.levelPrime_le 0, S.le_levelPrime 0, S.thousand_le_b, univ.sum_nonneg' h0,\n    S.ϱ_le_k; by_contra! hK"
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "It suffices that (1 − b⁻⁴)∑Θ ≤ energy(fixingSet(A, D)): with energy_fixingSet_le, cancelling 1 − b⁻⁴ > 0 gives ∑Θ ≤ (1 + 9b⁻⁴)𝖽y_A, against hK.",
+   "lines": [
+    233,
+    234
+   ],
+   "lean": "  apply hK.not_ge\n    (le_of_mul_le_mul_left (.trans _ (energy_fixingSet_le A D)) (by bound [@one_lt_pow₀ ℝ]))",
+   "uses": [
+    {
+     "decl": "Filling.energy_fixingSet_le"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "By hB, energy(fixingSet) ≥ ∑_{s ∈ fixingSet} Θ(s); so it suffices that ∑_{s ∉ fixingSet, Θ(s) ≠ 0} Θ(s) ≤ b⁻⁴∑Θ.",
+   "lines": [
+    235,
+    235
+   ],
+   "lean": "  grw [← hB, one_sub_mul, sub_le_comm, ← sum_sdiff_eq_sub (by simp), ← sum_filter_ne_zero]"
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Either every chosen place above q₀ is in A, or some w is not.",
+   "lines": [
+    236,
+    236
+   ],
+   "lean": "  obtain hw | ⟨w, hw⟩ := em' (Exists (· ∉ A))"
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "If A contains all of them, every s with Θ(s) ≠ 0 fixes the vectors of D (hA) and satisfies the second clause of fixingSet (A = all), so the sum is empty: 0 ≤ b⁻⁴∑Θ.",
+   "lines": [
+    237,
+    237
+   ],
+   "lean": "  · rw [Finset.sum_eq_zero (by simp; grind [fixingSet])]; bound"
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Otherwise fix w ∉ A. For s ∉ fixingSet with Θ(s) ≠ 0 the first clause holds (hA), so the second fails: at w some leading minor of frameGram(s_{0,w}) vanishes; choose such an order L(s) ≤ ϱ.",
+   "lines": [
+    238,
+    238
+   ],
+   "lean": "  choose! L hL using fun s (e : s ∉ S.fixingSet A D) h ↦ by simpa using (e ⟨hA s h, .inr ⟨w, ·⟩⟩)"
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Split the sum by L(s) = l (sum_fiberwise) and bound each fibre by 3∑Θ/b¹⁰: the leading minor of order l + 1 is det(F(true)ᵀ·s_{0,w}·F(false)), F(b) = (J_w if b else 1)·(the first l + 1 frame vectors); by card_mul_sum_det_le with π = (s ↦ s_{0,w}), A = F, Θ, u and Y = ∑Θ/b^{6k}: q₀·(Θ-mass of {det = 0}) ≤ 2∑Θ + q₀^{l+1}√(q₀^{2ϱ+k+1})·Y, provided every fixer set has Θ-mass ≤ Y:",
+   "lines": [
+    239,
+    243
+   ],
+   "lean": "  grw [← Finset.sum_fiberwise _ L, sum_le_card_nsmul _ _ (3 * univ.sum Θ / S.b ^ 10)\n    fun l _ ↦ let F b := frameImage (cond b (S.latMiddle (ResField w.1)).splitGram 1) *\n      inclMatrix (ResField w.1) (Fin.castLE l.is_le)\n    (le_div_iff₀' (by bound)).2 (.trans ?_ ((card_mul_sum_det_le (.mk' (· 0 w) (by simp)) F h0 hu\n    (univ.sum Θ / S.b ^ (6 * 𝔰.k)) (by bound) fun b v hv ↦ by",
+   "uses": [
+    {
+     "decl": "card_mul_sum_det_le"
+    }
+   ]
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "for b and v ≠ 0, the Θ-mass of {s : F(b)v is fixed by s (or its inverse adjoint)} is ∑_s Θ'(s) for Θ'(s) = Θ(s)·1[fixed], a function of positive type (vectors basisFun(…)⊗u(s) in ℂ^n ⊗ V) satisfying hB (Θ' ≤ Θ) and hA for A ∪ {w} with D updated at w to (b, F(b)v); the induction hypothesis (A ∪ {w} ⊋ A) gives ∑Θ' ≤ (1 + 9b⁻⁴)𝖽y_A·b^{−6k} < ∑Θ·b^{−6k} (hK).",
+   "lines": [
+    244,
+    248
+   ],
+   "lean": "    grw [sum_filter, ih _ (ssubset_insert hw) _ (fun a ↦\n      basisFun _ ℂ (cond b invTransposeGL 1 (a 0 w) • F b *ᵥ v) ⊗ₜ[ℂ] u a) _\n      (Function.update D w ⟨b, _, (map_ne_zero_iff _ (inclMatrix_mulVecLin_injective (Fin.castLEEmb\n      l.is_le) _)).2 hv⟩) (.trans (by gcongr; bound) <| hB ·), ← hK] <;> simp\n      [*, apply_ite ofReal, ite_nonneg, pow_succ, field, inner, smul_smul, ← eq_inv_smul_iff]"
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "(the fixing conditions: s ∈ vectorFixer(w, (b, F(b)v)) ⟺ F(b)v is fixed, after unfolding the inverse adjoint).",
+   "lines": [
+    249,
+    251
+   ],
+   "lean": "    · exact fun s h _ ↦ ⟨by cases b <;> simp [vectorFixer] <;> (repeat erw [mul_smul]) <;>\n        simpa [F, ← mul_inclMatrix, ← mulVec_mulVec, inv_smul_eq_iff] using! h.symm, by grind⟩\n    tauto).trans ?_))]"
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The number of orders is ≤ ϱ + 1 ≤ k ≤ b; (ϱ+1)·3∑Θ/b¹⁰ ≤ b⁻⁴∑Θ (field; nlinarith with b ≥ 1000).",
+   "lines": [
+    252,
+    252
+   ],
+   "lean": "  · simp [field]; grw [← le_self_pow₀, ← k_le_b, ← S.ϱ_le_k] <;> push_cast <;> nlinarith"
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Monotonicity: the fibre {L = l} is contained in {det(F(true)ᵀs_{0,w}F(false)) = 0} (that determinant is the vanishing leading minor: transpose_splitGram, mul_inclMatrix); #𝔽_w = q₀.",
+   "lines": [
+    253,
+    254
+   ],
+   "lean": "  · gcongr <;> simp [*, sum_nonneg', subset_iff, F, transpose_splitGram, mul_inclMatrix,\n      ← inclMatrix.eq_1, card_eq_nat_card, ↓card_resField_eq_levelPrime]; bound",
+   "uses": [
+    {
+     "decl": "Filling.card_resField_eq_levelPrime"
+    }
+   ]
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "2∑Θ/q₀ ≤ 2∑Θ/b¹⁰ (q₀ ≥ b¹⁰), linarith.",
+   "lines": [
+    255,
+    255
+   ],
+   "lean": "  grw [mul_div_left_comm, div_le_one_of_le₀]; linarith"
+  },
+  {
+   "id": "14",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "q₀^{l+1}·√(q₀^{2ϱ+k+1})/b^{6k} ≤ 1/b¹⁰: square both sides, q₀ ≤ b¹¹, and compare exponents,",
+   "lines": [
+    256,
+    256
+   ],
+   "lean": "  grw [← sq_le_sq₀, mul_pow, sq_sqrt, card_eq_nat_card, card_resField_eq_levelPrime, hq, hq]"
+  },
+  {
+   "id": "15",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "(11(l + 1) + 11(2ϱ+k+1)/2 + 10 ≤ 6k, using l ≤ ϱ and k ≥ 1000(2ϱ+2); bound).",
+   "lines": [
+    257,
+    257
+   ],
+   "lean": "  simp [← pow_mul, ← pow_add]; repeat bound [l.2]"
+  }
+ ]
+}

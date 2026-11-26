@@ -1,0 +1,212 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Exchange.BlockPartners:70:7",
+ "name": "matchingPairs.exists_linear_factor",
+ "summary": "Define T(Ψ) as Λ of the function x ↦ χ(det k_x)·localSection(χ, firstCols(e, k_x))(Ψ) on primitive x (k_x ∈ GL_n(O) with x = invLastRows(e, k_x)); for a matched pair, cover the support of Φ by finitely many translates of the primitive set and use the invariance of Λ.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "step",
+   "claim": "For every x whose transpose is primitive choose k(x) ∈ GL_n(O) with x = invLastRows(e, k(x)) (`exists_invLastRows_iff_transpose`, `IsValuationPair.exists_firstCols_iff`; K).",
+   "lines": [
+    73,
+    74
+   ],
+   "lean": "  choose! k _ K using\n    (exists_invLastRows_iff_transpose e (x := ·).2 ∘ ((@valPair F _).exists_firstCols_iff _).2)",
+   "uses": [
+    {
+     "decl": "exists_invLastRows_iff_transpose"
+    },
+    {
+     "decl": "IsValuationPair.exists_firstCols_iff"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "step",
+   "claim": "Take T = Λ ∘ (Ψ ↦ (x ↦ [xᵀ primitive]·χ(det k(x))·localSection(χ, firstCols(e, k(x)))(Ψ))).",
+   "lines": [
+    75,
+    76
+   ],
+   "lean": "  use Λ ∘ₗ .pi fun x ↦\n    ite (IsPrimitiveMatrix O xᵀ) (χ (k x).det) 0 • localSection χ (firstCols e (k x))",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "decl": "localSection"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "step",
+   "claim": "Let (Φ, Ψ) be a matched pair: Φ is Schwartz–Bruhat with support in the surjective matrices (m) and h is the matching identity.",
+   "lines": [
+    77,
+    77
+   ],
+   "lean": "  rintro _ ⟨⟨m⟩, h⟩"
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "step",
+   "claim": "Choose representatives r_q of GL_a(F)/GL_a(O) with the properties of `exists_common_coset_reps` (S: finite sums; R: for every left-invertible y, exactly one q with y·r_q primitive and exactly one q with y·r_q⁻¹ primitive, the representatives serving both directions).",
+   "lines": [
+    78,
+    78
+   ],
+   "lean": "  choose r S R using (@exists_common_coset_reps F _ a n).choose_spec",
+   "uses": [
+    {
+     "decl": "exists_common_coset_reps"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "step",
+   "claim": "For every coset q, the function x ↦ Φ(x)·[xᵀ·r_q⁻¹ primitive] (Φ cut down to the preimage of the primitive set under x ↦ xᵀ·r_q⁻¹; Lean's `(r q).2` is the inverse of r_q) is Schwartz–Bruhat: an indicator of a clopen set (`TameLocalChar.isClopen_primitive`) times Φ.",
+   "lines": [
+    79,
+    81
+   ],
+   "lean": "  have o q : _ ∈ schwartzBruhat _ :=\n    ⟨(LocallyConstant.indicator ⟨_, m.1⟩ ((hχ.isClopen_primitive _ e).preimage\n    (f := (·ᵀ * (r q).2)) (by fun_prop))).2, m.2.imp (·.mono (by simp)) (.trans (by simp))⟩",
+   "typed_fact": "_ ∈ schwartzBruhat _",
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "step": "4"
+    },
+    {
+     "decl": "TameLocalChar.isClopen_primitive"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "step",
+   "claim": "For every x in the support of Φ choose its coset p(x), the unique q with xᵀ·r_q⁻¹ primitive (U: the uniqueness in that direction).",
+   "lines": [
+    82,
+    82
+   ],
+   "lean": "  choose! _ p _ U using (R _ ∘ @m.2.2 ·)",
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "step": "4"
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "step",
+   "claim": "The support of Φ is compact (its closure is), so finitely many of these open translates cover it: a finite set t of cosets.",
+   "lines": [
+    83,
+    84
+   ],
+   "lean": "  let ⟨t, ht⟩ := ((m.1 {0}).isClosed_compl.closure_eq.subst m.2.1).elim_finite_subcover _\n    (o · |>.1 {0}ᶜ) fun _ ↦ by simp; tauto",
+   "uses": [
+    {
+     "step": "5"
+    },
+    {
+     "step": "6"
+    }
+   ],
+   "ambient_uses": [
+    "IsCompact.elim_finite_subcover"
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "step",
+   "claim": "Λ(Φ) = ∑_{q∈t} Λ(cut-down of Φ at q), and by the invariance hΛ applied to transposeGL(r_q) each term is Λ of the function x ↦ χ(det r_q)·(cut-down at q)(r_qᵀ·x), whose indicator [(r_qᵀx)ᵀ·r_q⁻¹ primitive] = [xᵀ primitive] (the weighted change of variables is by r_qᵀ); it remains to compare the summed functions pointwise in x.",
+   "lines": [
+    85,
+    86
+   ],
+   "lean": "  convert congr(∑ q ∈ t, $(hΛ (transposeGL (r q)) _ (o q))) <;> simp only [← map_smul, ← map_sum,\n    Λ.comp_apply] <;> congr with x <;> simp [-ite_smul, Set.indicator, Set.subset_def] at ht U ⊢",
+   "uses": [
+    {
+     "step": "5"
+    },
+    {
+     "step": "7"
+    }
+   ]
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "step",
+   "claim": "Split on whether xᵀ is primitive.",
+   "lines": [
+    87,
+    87
+   ],
+   "lean": "  split"
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "step",
+   "claim": "If xᵀ is primitive: by the matching identity h at k(x) and the finite-sum property S, the value is χ(det k(x))·localSection(χ, firstCols(e, k(x)))(Ψ) (K).",
+   "lines": [
+    88,
+    88
+   ],
+   "lean": "  apply (sub_eq_zero.1 congr($h _) ▸ S t ..).trans <;> simp [← K _ ‹_›]",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "step": "3"
+    },
+    {
+     "step": "4"
+    }
+   ]
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "step",
+   "claim": "The remaining pointwise identities: only the term q = p(x) of the sum over t survives (`Finset.sum_eq_single`, by the uniqueness U), and outside the primitive set both sides vanish.",
+   "lines": [
+    89,
+    89
+   ],
+   "lean": "  repeat grind [t.sum_eq_single (p x), fun q _ ↦ (U ((r q).1ᵀ * x) · q (by simpa))]",
+   "uses": [
+    {
+     "step": "6"
+    },
+    {
+     "step": "7"
+    }
+   ],
+   "ambient_uses": [
+    "Finset.sum_eq_single"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,381 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Selmer.RootsOfUnityPoints:21:7",
+ "summary": "By contradiction. If at every ℓ^N-th root of unity ζ some |F_k(ζ − 1)| < r y_k, the Gauss norms g_j of P = ∏_k F_k at the radii ρ_j = r^{1/ℓ^j} increase by a fixed factor per step relative to 1/(j+1): an identity through the roots η^i − 1 of (1 + X)^{ℓ^{j+1}} − 1 and the ultrametric inequality show it. Summing over j < N, the harmonic series exceeds the bounded total change.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Choose a with r^a < ‖ℓ‖. The harmonic sums Σ_{j<N} 1/(j+1) tend to infinity, so for all large N their product with log r (< 0) is below any given bound (J); for such N, take O containing a primitive ℓ^{j+1}-th root of unity for every j < N (eventually_primitiveRoot), and F with the hypothesis h.",
+   "lines": [
+    25,
+    64
+   ],
+   "span": [
+    25,
+    30,
+    64,
+    72
+   ],
+   "lean": " (exists_pow_lt_of_lt_one (by simp [ne] : 0 < ‖(ℓ : PadicAlgCl ℓ)‖)\n  h1).rec fun a ha ↦ ((tendsto_sum_range_one_div_nat_succ_atTop.atTop_mul_const_of_neg (log_neg\n  h0 h1)).eventually_lt_atBot _).mono fun N J ↦ .mono (.all fun j : range N ↦\n  eventually_primitiveRoot (ℓ ^ j.1.succ)) fun O η F h ↦ by\n  contrapose! J\n  let ρ j := r ^ (↑(ℓ ^ j) : ℝ)⁻¹\n  let ⟨m, ρ1⟩ : Monotone ρ ∧ ∀ j, ρ j ≤ 1 := by\n    simp [ρ, Monotone, rpow_le_one_iff_of_pos, *]; bound [pos ℓ]\n  let g j := (@gaussNorm_isAbsoluteValue (ρ j) O _ (.comp (NormedField.toAbsoluteValue _)\n    O.1.subtype_injective) isNonarchimedean_norm (by bound)).toAbsoluteValue\n  have U {j F x} : g j F ≤ x ↔ ∀ i, ‖(F.coeff i).1‖ * _ ≤ x := ⟨swap (F.le_gaussNorm _\n    (by bound) · |>.trans), (exists_eq_gaussNorm ..).choose_spec.trans_le ∘ (· _)⟩\n  have G k t : y k ≤ g t (F k) := (h k).rec (by grw [← U.1 le_rfl ·, ← m bot_le]; simp [ρ])\n  choose Q hQ using (dvd_prod_of_mem F <| mem_univ ·)\n  have Z t : 0 < ∏ k, g t (F k) := prod_pos (by grind)\n  grw [sum_mul, ← sum_le_sum fun j _ ↦ ?_, sum_range_sub' fun j ↦ a * (∏ k, g j (F k)).log, ← G,\n    U.2 (by bound)] <;> simp [prod_pos, le_of_lt, *]\n  choose η hη using η ⟨j, ‹_›⟩\n  choose k u using fun i ↦ J (η ^ i) (by grind [hη.pow_eq_one_iff_dvd, pow_dvd_pow, =_ pow_mul])\n  have W := congr(($(X_pow_sub_C_eq_prod hη one_le (one_pow _)).comp (X - C (-1))).derivative).symm\n  choose S s using (range (ℓ ^ j.succ)).dvd_sum fun i hi ↦ prod_erase_mul _ (fun i ↦ X - C (η ^ i -\n    1)) hi ▸ mul_dvd_mul_left _ ((sub_mul _ (F (k i)) _ ▸ (dvd_modByMonic_sub ..).mul_right\n    (Q (k i))).trans (sub_dvd_pow_sub_pow _ _ (a * j.succ)))\n  simp [-map_neg, -map_sub, -map_pow, Polynomial.prod_comp, sub_sub, ← map_add, ← hQ, mul_sub,\n    derivative_prod_finset, derivative_pow, neg_add_eq_sub, ← sum_mul] at W s\n  have K t (ht : j ≤ t) := (by\n    have n : IsNonarchimedean (g t) := isNonarchimedean_gaussNorm _ isNonarchimedean_norm (by bound)\n    have l b : g t (X - C b) = ‖b.1‖ ⊔ ρ t ∧ g t (C b) = ‖b.1‖ := ⟨eq_of_forall_ge_iff (by\n      simp [U, ← Nat.and_forall_add_one, coeff_X]; bound [norm_nonneg b.1]), gaussNorm_C ..⟩\n    have z i := (norm_pow_sub_one_le_norm_sub_one (norm_le_one η) i).trans\n      ((lt_of_pow_lt_pow_left₀ _ (by bound) (by rwa [norm_zeta_sub_one_pow (by simpa),\n      Nat.totient_prime_pow_succ p.out, pow_mul, rpow_inv_natCast_pow h0.le out])).le.trans (m ht))\n    have V a b := congr(g t $s) ▸ n.add_eq_right_of_lt (map_neg_eq_map _)\n      ((n.apply_sum_le_sup a).trans_lt b)\n    simp [map_neg_eq_map, -map_neg, -map_sub, -map_natCast, ne, *] at V\n    use (eq_inv_mul_iff_mul_eq₀ (by positivity)).2 (V fun _ _ ↦ by\n      grw [ρ1, (u _).le, G, mul_assoc, ← map_mul, ← hQ, mul_pow, pow_mul, ha] <;> simp [*]))\n  have V := log_le_log (by simp [ne, field, *]) ((@U j S _).2 (by grw [m j.le_succ, ← U]))\n  simp [log_mul, rpow_def_of_pos, ρ, pow_add, field, ne_of_gt, ne, *] at V ⊢\n  grind [nsmul_le_nsmul_left_of_nonpos (log_neg h0 h1).le p.out.two_le]",
+   "head_span": [
+    25,
+    30,
+    28,
+    60
+   ],
+   "head_lines": [
+    25,
+    28
+   ],
+   "uses": [
+    {
+     "decl": "CoeffRing.eventually_primitiveRoot"
+    }
+   ],
+   "ambient_uses": [
+    "exists_pow_lt_of_lt_one",
+    "Real.tendsto_sum_range_one_div_nat_succ_atTop"
+   ]
+  },
+  {
+   "id": "1.1",
+   "parent": "1",
+   "kind": "reduction",
+   "claim": "Contrapositive: assume that for every ζ with ζ^{ℓ^N} = 1 some k has ‖F_k(ζ − 1)‖ < r·y_k; it is shown that the bound J fails.",
+   "lines": [
+    29,
+    29
+   ],
+   "lean": "  contrapose! J"
+  },
+  {
+   "id": "1.2",
+   "parent": "1",
+   "kind": "setup",
+   "claim": "Let ρ_j = r^{1/ℓ^j}.",
+   "lines": [
+    30,
+    30
+   ],
+   "lean": "  let ρ j := r ^ (↑(ℓ ^ j) : ℝ)⁻¹"
+  },
+  {
+   "id": "1.3",
+   "parent": "1",
+   "kind": "fact",
+   "claim": "ρ is increasing in j and ρ_j ≤ 1.",
+   "lines": [
+    31,
+    32
+   ],
+   "lean": "  let ⟨m, ρ1⟩ : Monotone ρ ∧ ∀ j, ρ j ≤ 1 := by\n    simp [ρ, Monotone, rpow_le_one_iff_of_pos, *]; bound [pos ℓ]"
+  },
+  {
+   "id": "1.4",
+   "parent": "1",
+   "kind": "setup",
+   "claim": "Let g_j be the Gauss norm of radius ρ_j on O[X] (an absolute value: gaussNorm_isAbsoluteValue).",
+   "lines": [
+    33,
+    34
+   ],
+   "lean": "  let g j := (@gaussNorm_isAbsoluteValue (ρ j) O _ (.comp (NormedField.toAbsoluteValue _)\n    O.1.subtype_injective) isNonarchimedean_norm (by bound)).toAbsoluteValue",
+   "ambient_uses": [
+    "Polynomial.gaussNorm"
+   ]
+  },
+  {
+   "id": "1.5",
+   "parent": "1",
+   "kind": "fact",
+   "claim": "g_j(F) ≤ x if and only if ‖coeff_i(F)‖·ρ_j^i ≤ x for every i.",
+   "lines": [
+    35,
+    36
+   ],
+   "lean": "  have U {j F x} : g j F ≤ x ↔ ∀ i, ‖(F.coeff i).1‖ * _ ≤ x := ⟨swap (F.le_gaussNorm _\n    (by bound) · |>.trans), (exists_eq_gaussNorm ..).choose_spec.trans_le ∘ (· _)⟩",
+   "typed_fact": "g j F ≤ x ↔ ∀ i, ‖(F.coeff i).1‖ * _ ≤ x"
+  },
+  {
+   "id": "1.6",
+   "parent": "1",
+   "kind": "fact",
+   "claim": "y_k ≤ g_t(F_k) for every t (the hypothesis h at radius r = ρ_0 ≤ ρ_t).",
+   "lines": [
+    37,
+    37
+   ],
+   "lean": "  have G k t : y k ≤ g t (F k) := (h k).rec (by grw [← U.1 le_rfl ·, ← m bot_le]; simp [ρ])",
+   "uses": [
+    {
+     "step": "1.5"
+    }
+   ],
+   "typed_fact": "y k ≤ g t (F k)"
+  },
+  {
+   "id": "1.7",
+   "parent": "1",
+   "kind": "setup",
+   "claim": "Each F_k divides P = ∏_k F_k: P = F_k·Q_k.",
+   "lines": [
+    38,
+    38
+   ],
+   "lean": "  choose Q hQ using (dvd_prod_of_mem F <| mem_univ ·)"
+  },
+  {
+   "id": "1.8",
+   "parent": "1",
+   "kind": "fact",
+   "claim": "∏_k g_t(F_k) > 0 for every t (step 1.6, y_k > 0).",
+   "lines": [
+    39,
+    39
+   ],
+   "lean": "  have Z t : 0 < ∏ k, g t (F k) := prod_pos (by grind)",
+   "typed_fact": "0 < ∏ k, g t (F k)"
+  },
+  {
+   "id": "1.9",
+   "parent": "1",
+   "kind": "reduction",
+   "claim": "Telescoping over j < N (sum_range_sub'), with the ends bounded by steps 1.6 and 1.5 (g ≤ 1 at radius ≤ 1 for integral coefficients), it suffices to show for each j < N a lower bound of the increment a·(log ∏_k g_{j+1}(F_k) − log ∏_k g_j(F_k)) in terms of log r/(j + 1).",
+   "lines": [
+    40,
+    41
+   ],
+   "lean": "  grw [sum_mul, ← sum_le_sum fun j _ ↦ ?_, sum_range_sub' fun j ↦ a * (∏ k, g j (F k)).log, ← G,\n    U.2 (by bound)] <;> simp [prod_pos, le_of_lt, *]",
+   "uses": [
+    {
+     "step": "1.5"
+    },
+    {
+     "step": "1.6"
+    }
+   ]
+  },
+  {
+   "id": "1.10",
+   "parent": "1",
+   "kind": "setup",
+   "claim": "Let η be a primitive ℓ^{j+1}-th root of unity in O.",
+   "lines": [
+    42,
+    42
+   ],
+   "lean": "  choose η hη using η ⟨j, ‹_›⟩"
+  },
+  {
+   "id": "1.11",
+   "parent": "1",
+   "kind": "setup",
+   "claim": "For each i < ℓ^{j+1}, by the assumption at ζ = η^i (an ℓ^N-th root of unity), choose k_i with ‖F_{k_i}(η^i − 1)‖ < r·y_{k_i}.",
+   "lines": [
+    43,
+    43
+   ],
+   "lean": "  choose k u using fun i ↦ J (η ^ i) (by grind [hη.pow_eq_one_iff_dvd, pow_dvd_pow, =_ pow_mul])",
+   "uses": [
+    {
+     "step": "1.1"
+    }
+   ]
+  },
+  {
+   "id": "1.12",
+   "parent": "1",
+   "kind": "fact",
+   "claim": "The polynomial ∏_i (X − (η^i − 1)) is (1 + X)^{ℓ^{j+1}} − 1, and its derivative is the sum over i of the products with the i-th factor omitted (X_pow_sub_C_eq_prod composed with X + 1).",
+   "lines": [
+    44,
+    44
+   ],
+   "lean": "  have W := congr(($(X_pow_sub_C_eq_prod hη one_le (one_pow _)).comp (X - C (-1))).derivative).symm",
+   "ambient_uses": [
+    "X_pow_sub_C_eq_prod"
+   ]
+  },
+  {
+   "id": "1.13",
+   "parent": "1",
+   "kind": "fact",
+   "claim": "There is S giving a Lagrange-type identity: each F_{k_i} minus its value at η^i − 1 is divisible by X − (η^i − 1), so the derivative of step 1.12 times P^{a(j+1)} equals a combination of the small values F_{k_i}(η^i − 1) (times the products with the i-th factor omitted and Q_{k_i}) plus S times (1 + X)^{ℓ^{j+1}} − 1 (dvd_sum, dvd_modByMonic_sub, sub_dvd_pow_sub_pow).",
+   "lines": [
+    45,
+    47
+   ],
+   "lean": "  choose S s using (range (ℓ ^ j.succ)).dvd_sum fun i hi ↦ prod_erase_mul _ (fun i ↦ X - C (η ^ i -\n    1)) hi ▸ mul_dvd_mul_left _ ((sub_mul _ (F (k i)) _ ▸ (dvd_modByMonic_sub ..).mul_right\n    (Q (k i))).trans (sub_dvd_pow_sub_pow _ _ (a * j.succ)))",
+   "uses": [
+    {
+     "step": "1.7"
+    },
+    {
+     "step": "1.11"
+    }
+   ],
+   "ambient_uses": [
+    "Polynomial.dvd_modByMonic_sub",
+    "sub_dvd_pow_sub_pow"
+   ]
+  },
+  {
+   "id": "1.14",
+   "parent": "1",
+   "kind": "computation",
+   "claim": "Expand the products, derivatives and compositions in W and s.",
+   "lines": [
+    48,
+    49
+   ],
+   "lean": "  simp [-map_neg, -map_sub, -map_pow, Polynomial.prod_comp, sub_sub, ← map_add, ← hQ, mul_sub,\n    derivative_prod_finset, derivative_pow, neg_add_eq_sub, ← sum_mul] at W s"
+  },
+  {
+   "id": "1.15",
+   "parent": "1",
+   "kind": "fact",
+   "claim": "For t ≥ j: the Gauss norm g_t of the derivative identity is read off by the ultrametric inequality, the term with S dominating (all other terms are smaller).",
+   "lines": [
+    50,
+    61
+   ],
+   "lean": "  have K t (ht : j ≤ t) := (by\n    have n : IsNonarchimedean (g t) := isNonarchimedean_gaussNorm _ isNonarchimedean_norm (by bound)\n    have l b : g t (X - C b) = ‖b.1‖ ⊔ ρ t ∧ g t (C b) = ‖b.1‖ := ⟨eq_of_forall_ge_iff (by\n      simp [U, ← Nat.and_forall_add_one, coeff_X]; bound [norm_nonneg b.1]), gaussNorm_C ..⟩\n    have z i := (norm_pow_sub_one_le_norm_sub_one (norm_le_one η) i).trans\n      ((lt_of_pow_lt_pow_left₀ _ (by bound) (by rwa [norm_zeta_sub_one_pow (by simpa),\n      Nat.totient_prime_pow_succ p.out, pow_mul, rpow_inv_natCast_pow h0.le out])).le.trans (m ht))\n    have V a b := congr(g t $s) ▸ n.add_eq_right_of_lt (map_neg_eq_map _)\n      ((n.apply_sum_le_sup a).trans_lt b)\n    simp [map_neg_eq_map, -map_neg, -map_sub, -map_natCast, ne, *] at V\n    use (eq_inv_mul_iff_mul_eq₀ (by positivity)).2 (V fun _ _ ↦ by\n      grw [ρ1, (u _).le, G, mul_assoc, ← map_mul, ← hQ, mul_pow, pow_mul, ha] <;> simp [*]))",
+   "head_lines": [
+    50,
+    50
+   ]
+  },
+  {
+   "id": "1.15.1",
+   "parent": "1.15",
+   "kind": "fact",
+   "claim": "g_t is nonarchimedean (isNonarchimedean_gaussNorm).",
+   "lines": [
+    51,
+    51
+   ],
+   "lean": "    have n : IsNonarchimedean (g t) := isNonarchimedean_gaussNorm _ isNonarchimedean_norm (by bound)",
+   "typed_fact": "IsNonarchimedean (g t)"
+  },
+  {
+   "id": "1.15.2",
+   "parent": "1.15",
+   "kind": "fact",
+   "claim": "g_t(X − b) = max(‖b‖, ρ_t) and g_t(b) = ‖b‖ for constants b.",
+   "lines": [
+    52,
+    53
+   ],
+   "lean": "    have l b : g t (X - C b) = ‖b.1‖ ⊔ ρ t ∧ g t (C b) = ‖b.1‖ := ⟨eq_of_forall_ge_iff (by\n      simp [U, ← Nat.and_forall_add_one, coeff_X]; bound [norm_nonneg b.1]), gaussNorm_C ..⟩",
+   "typed_fact": "g t (X - C b) = ‖b.1‖ ⊔ ρ t ∧ g t (C b) = ‖b.1‖"
+  },
+  {
+   "id": "1.15.3",
+   "parent": "1.15",
+   "kind": "fact",
+   "claim": "‖η^i − 1‖ ≤ ρ_t for t ≥ j: ‖η − 1‖^{φ(ℓ^{j+1})} = ‖ℓ‖ (norm_zeta_sub_one_pow), ‖ℓ‖ < r^{ℓ−1} and φ(ℓ^{j+1}) = ℓ^j(ℓ − 1), so ‖η − 1‖ < r^{1/ℓ^j} = ρ_j ≤ ρ_t; and ‖η^i − 1‖ ≤ ‖η − 1‖.",
+   "lines": [
+    54,
+    56
+   ],
+   "lean": "    have z i := (norm_pow_sub_one_le_norm_sub_one (norm_le_one η) i).trans\n      ((lt_of_pow_lt_pow_left₀ _ (by bound) (by rwa [norm_zeta_sub_one_pow (by simpa),\n      Nat.totient_prime_pow_succ p.out, pow_mul, rpow_inv_natCast_pow h0.le out])).le.trans (m ht))",
+   "ambient_uses": [
+    "norm_zeta_sub_one_pow",
+    "Nat.totient_prime_pow_succ"
+   ]
+  },
+  {
+   "id": "1.15.4",
+   "parent": "1.15",
+   "kind": "fact",
+   "claim": "Ultrametric: if all other terms of a sum have smaller g_t than one term, the sum has the g_t of that term (add_eq_right_of_lt, apply_sum_le_sup).",
+   "lines": [
+    57,
+    58
+   ],
+   "lean": "    have V a b := congr(g t $s) ▸ n.add_eq_right_of_lt (map_neg_eq_map _)\n      ((n.apply_sum_le_sup a).trans_lt b)",
+   "uses": [
+    {
+     "step": "1.15.1"
+    }
+   ]
+  },
+  {
+   "id": "1.15.5",
+   "parent": "1.15",
+   "kind": "computation",
+   "claim": "Simplify V (norms of negatives, products).",
+   "lines": [
+    59,
+    59
+   ],
+   "lean": "    simp [map_neg_eq_map, -map_neg, -map_sub, -map_natCast, ne, *] at V"
+  },
+  {
+   "id": "1.15.6",
+   "parent": "1.15",
+   "kind": "deduction",
+   "claim": "The small values (step 1.11, ρ_t ≤ 1, step 1.6 and r^a < ‖ℓ‖) make the other terms smaller, giving the identity for g_t.",
+   "lines": [
+    60,
+    61
+   ],
+   "lean": "    use (eq_inv_mul_iff_mul_eq₀ (by positivity)).2 (V fun _ _ ↦ by\n      grw [ρ1, (u _).le, G, mul_assoc, ← map_mul, ← hQ, mul_pow, pow_mul, ha] <;> simp [*]))",
+   "uses": [
+    {
+     "step": "1.3"
+    },
+    {
+     "step": "1.6"
+    },
+    {
+     "step": "1.11"
+    }
+   ]
+  },
+  {
+   "id": "1.16",
+   "parent": "1",
+   "kind": "fact",
+   "claim": "Taking logarithms and comparing at t = j and t = j + 1 (monotonicity of ρ, step 1.5).",
+   "lines": [
+    62,
+    62
+   ],
+   "lean": "  have V := log_le_log (by simp [ne, field, *]) ((@U j S _).2 (by grw [m j.le_succ, ← U]))",
+   "uses": [
+    {
+     "step": "1.5"
+    },
+    {
+     "step": "1.15"
+    }
+   ]
+  },
+  {
+   "id": "1.17",
+   "parent": "1",
+   "kind": "computation",
+   "claim": "Unfold logarithms of products and powers of r.",
+   "lines": [
+    63,
+    63
+   ],
+   "lean": "  simp [log_mul, rpow_def_of_pos, ρ, pow_add, field, ne_of_gt, ne, *] at V ⊢"
+  },
+  {
+   "id": "1.18",
+   "parent": "1",
+   "kind": "computation",
+   "claim": "The increment bound follows (log r < 0, ℓ ≥ 2): this closes step 1.9.",
+   "lines": [
+    64,
+    64
+   ],
+   "lean": "  grind [nsmul_le_nsmul_left_of_nonpos (log_neg h0 h1).le p.out.two_le]"
+  }
+ ]
+}

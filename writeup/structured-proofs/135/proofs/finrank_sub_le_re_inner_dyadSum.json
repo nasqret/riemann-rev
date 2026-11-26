@@ -1,0 +1,158 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Heights.OneDeterminant:67:7",
+ "name": "finrank_sub_le_re_inner_dyadSum",
+ "summary": "Take an orthonormal basis u of U. Computing the trace of p_U(1 − P*P) in u and in the standard basis gives dim U − Σ_j ‖Pu_j‖² ≤ ε. For u_j ∈ U, Pu_j − RPu_j ∈ A, so ‖Pu_j‖² = ‖p_A Pu_j‖² + ‖p_{A⊥}RPu_j‖² ≤ ‖p_A Pu_j‖² + ‖RPu_j‖²; summing, and bounding sums over u by the Hilbert–Schmidt sums over the standard basis (Bessel), gives the inequality.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let u be the standard orthonormal basis of U; record that Re tr(ι_U∘p_U(1 − P*P)) = Re tr(p_U(1 − P*P)∘ι_U) (ι_U the inclusion, p_U the orthogonal projection) and, for every z ∈ H, Σ_j |⟨a_j, p_A z⟩|² = ‖p_A z‖² (Parseval in the basis (a_j) of A).",
+   "lines": [
+    71,
+    73
+   ],
+   "lean": "  obtain u := stdOrthonormalBasis ℂ U, congrArg re (trace_comp_comm' U.subtype\n    (U.orthogonalProjectionOnto ∘ₗ (1 - P.adjoint ∘ₗ P))),\n    ((stdOrthonormalBasis ℂ A).sum_sq_norm_inner_right <| orthogonalProjectionOnto _ ·)",
+   "typed_fact": null,
+   "uses": [],
+   "ambient_uses": [
+    "LinearMap.trace_comp_comm'",
+    "OrthonormalBasis.sum_sq_norm_inner_right"
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Claim B: for every linear T : H → H, Σ_{i∈n} ‖T P e_i‖² ≥ Σ_j ‖T P u_j‖².",
+   "lines": [
+    74,
+    76
+   ],
+   "lean": "  have B (T : End ℂ H) : ∑ i, ‖T (P (basisFun n ℂ i))‖ ^ 2 ≥ ∑ j, ‖T (P (u j))‖ ^ 2\n  simp_rw [← b.sum_sq_norm_inner_left, ← adjoint_inner_right, @sum_comm m, sum_sq_norm_inner_right]\n  grw [Orthonormal.sum_inner_products_le]; exact u.orthonormal",
+   "head_lines": [
+    74,
+    74
+   ],
+   "typed_fact": "∑ i, ‖T (P (basisFun n ℂ i))‖ ^ 2 ≥ ∑ j, ‖T (P (u j))‖ ^ 2",
+   "uses": []
+  },
+  {
+   "id": "2.1",
+   "parent": "2",
+   "kind": "deduction",
+   "claim": "Expand both sides in the orthonormal basis b of H and move T P to the other side of the inner product: each side becomes Σ_{j'} of Σ_i |⟨(TP)*b_{j'}, e_i⟩|² resp. Σ_j |⟨(TP)*b_{j'}, u_j⟩|², and the left one is Σ_{j'} ‖(TP)*b_{j'}‖² (Parseval in the standard basis).",
+   "lines": [
+    75,
+    75
+   ],
+   "lean": "  simp_rw [← b.sum_sq_norm_inner_left, ← adjoint_inner_right, @sum_comm m, sum_sq_norm_inner_right]",
+   "typed_fact": null,
+   "uses": [],
+   "ambient_uses": [
+    "OrthonormalBasis.sum_sq_norm_inner_left",
+    "LinearMap.adjoint_inner_right",
+    "Finset.sum_comm"
+   ]
+  },
+  {
+   "id": "2.2",
+   "parent": "2",
+   "kind": "deduction",
+   "claim": "Bessel's inequality for the orthonormal family u: Σ_j |⟨w, u_j⟩|² ≤ ‖w‖² for each w = (TP)*b_{j'}.",
+   "lines": [
+    76,
+    76
+   ],
+   "lean": "  grw [Orthonormal.sum_inner_products_le]; exact u.orthonormal",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1"
+    }
+   ],
+   "ambient_uses": [
+    "Orthonormal.sum_inner_products_le"
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Evaluate the two traces of step 1: in the basis u, tr = Σ_j ⟨u_j, (1 − P*P)u_j⟩ = dim U − Σ_j ‖Pu_j‖²; in the standard basis, its real part is Σ_x Re⟨p_U e_x, (1 − P*P)e_x⟩, which is at most Σ_x ‖(1 − P*P)e_x‖ ≤ ε (k). Hence dim U − ε ≤ Σ_j ‖P u_j‖², and the goal becomes a comparison of sums of squared norms.",
+   "lines": [
+    77,
+    78
+   ],
+   "lean": "  simp_all [trace_eq_sum_inner _ (basisFun ..), trace_eq_sum_inner _ u, ← ofReal_pow, norm_sub_rev,\n    norm_coe, inner_sub_right, inner_single_left, adjoint_inner_right, -map_sub, sub_eq_iff_eq_add']",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1"
+    }
+   ],
+   "ambient_uses": [
+    "LinearMap.trace_eq_sum_inner",
+    "inner_single_left"
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "Bound the sums: Re of the inner product of the dyad sums is Σ_x ‖p_A P e_x‖² ≥ Σ_j ‖p_A P u_j‖² (B with T = p_A), and Σ_x ‖RPe_x‖² ≥ Σ_j ‖RPu_j‖² ≥ Σ_j ‖p_{A⊥}RPu_j‖² (B with T = R; projections do not increase norms). It remains to show Σ_j ‖Pu_j‖² ≤ Σ_j (‖p_A Pu_j‖² + ‖p_{A⊥}RPu_j‖²).",
+   "lines": [
+    79,
+    80
+   ],
+   "lean": "  grw (transparency := .all) [re_le_norm, PiLp.norm_apply_le, norm_starProjection_apply_le, ← B,\n    ← B A.starProjection, ← sum_add_distrib, ← Aᗮ.norm_starProjection_apply_le (R _)]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "step": "3"
+    }
+   ],
+   "ambient_uses": [
+    "re_le_norm",
+    "PiLp.norm_apply_le",
+    "Submodule.norm_starProjection_apply_le",
+    "Finset.sum_add_distrib"
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "Compare the sums termwise: for each j, ‖Pu_j‖² ≤ ‖p_A Pu_j‖² + ‖p_{A⊥}RPu_j‖².",
+   "lines": [
+    81,
+    81
+   ],
+   "lean": "  gcongr",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "As u_j ∈ U, Pu_j − R(Pu_j) ∈ A (h) lies in the kernel of p_{A⊥}, so p_{A⊥}(RPu_j) = p_{A⊥}(Pu_j); and ‖Pu_j‖² = ‖p_A Pu_j‖² + ‖p_{A⊥}Pu_j‖² (Pythagoras).",
+   "lines": [
+    82,
+    82
+   ],
+   "lean": "  erw [← Aᗮ.starProjection.sub_mem_ker_iff.1 (by aesop), ← norm_sq_eq_add_norm_sq_projection]",
+   "typed_fact": null,
+   "uses": [],
+   "ambient_uses": [
+    "Submodule.norm_sq_eq_add_norm_sq_projection",
+    "LinearMap.sub_mem_ker_iff"
+   ]
+  }
+ ]
+}

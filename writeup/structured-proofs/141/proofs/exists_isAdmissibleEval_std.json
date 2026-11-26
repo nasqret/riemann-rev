@@ -1,0 +1,503 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Seesaw.AdmissibleEvaluation:81:7",
+ "summary": "Take k = h(γ·diag κ) with an explicit unitary γ built from the idempotent j of P, π and ε; on the projection to S = P̄ the Weil action of γ is C times a sum of Heisenberg translates by N-torsion vectors, which become τ_N after the arrow product; the translate by diag κ is controlled by isAdmissibleComb_weil_vacElem.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let k = diag(κ), unitary because each κ_b is 1 or δ and δδ̄ = 1.",
+   "lines": [
+    85,
+    85
+   ],
+   "lean": "  let k := U.of isUnit_one (diagonal κ) (by simp [funext_iff]; grind [star_one])"
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let j = idem(P) ∈ Ô, S = P̄ (the conjugates of the places of P), and K the fact that S is disjoint from its conjugate.",
+   "lines": [
+    86,
+    87
+   ],
+   "lean": "  let j : Ô E := ⟨_, idem_mem_Ô P⟩; let S := star ⁻¹' SetLike.coe P; have K :=\n    hP.disjoint_star.preimage star"
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "fact",
+   "claim": "j·j = j, j·δ = j (δ = 1 at the places above N, by hN) and π·π⁻¹ = 1.",
+   "lines": [
+    88,
+    89
+   ],
+   "lean": "  have b : (j.1 * j, j * δ, π.1 * π⁻¹) = (j.1, j.1, 1) := by\n    simp_all [j, DFunLike.ext_iff (F := 𝔸f E), idem_apply, hP.natCast_mem_iff]",
+   "typed_fact": "(j.1 * j, j * δ, π.1 * π⁻¹) = (j.1, j.1, 1)"
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let ϖ = j + (1 − j)π⁻¹ ∈ Ô (π is a unit off P), p = π̄ ∈ Ô, c = ε = normNegOne ∈ Ô, l = c·j and d = p·(j·p̄ − j − j̄) + j̄.",
+   "lines": [
+    90,
+    92
+   ],
+   "lean": "  let ϖ := j + ⟨(1 - j) * π⁻¹, by simp +contextual [j, ← idem_compl, idem_mul_mem_Ô, v_inv, hq.2]⟩\n  let p : Ô E := ⟨star π, by simp [mem_Ô, hq.2]; intro; split <;> tauto⟩\n  let c : Ô E := normNegOne.1; let l := c * j; let d := p * (j * star p - j - star j) + star j"
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Collect the identities: step 3 and its conjugate, j·j̄ = 0 (P ∩ P̄ = ∅), δδ̄ = 1, N = ππ̄ (hq) and ε̄ε = −1.",
+   "lines": [
+    93,
+    95
+   ],
+   "lean": "  have a := congr(($b, $(idem_mul_star hP.disjoint_star), $h1, $(hq.1), $(star_normNegOne_mul_self\n    (E := E)), star $b))\n  push_cast [Prod.star_def] at a"
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let T = (X ⊔ pt) ⊔ (X″ ⊔ pt) with the two points e, e′; A = π̄⁻¹·d; θ the Kronecker delta on T; ρ_i = θ(i, e) + l̄·θ(i, e′); and for y ∈ ((ℤ/N)^P)^{X′}, n(y)(i, x′) = c·ρ_i·conj(y_{x′}/N).",
+   "lines": [
+    96,
+    101
+   ],
+   "lean": "  let T := (X ⊕ Unit) ⊕ X'' ⊕ Unit\n  let e : T := .inl (.inr ()); let e' : T := .inr (.inr ())\n  let A := star π⁻¹.1 * d\n  let θ (i m : T) : Ô E := ⟨ite (i = m) 1 0, by simp [ite_mem]⟩\n  let ρ i := θ i e + star l * θ i e'\n  let n (y : X' → P → ZMod N) (i : _ × _) := c * ρ i.1 * star (residueOverN (y i.2))"
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "fact",
+   "claim": "To show x ∈ Ô it suffices to give an element of Ô equal to x; the equality is proved by default from the identities of step 5.",
+   "lines": [
+    102,
+    104
+   ],
+   "lean": "  have O {x} (y : Ô E) (e : x = y.1 := by\n    push_cast +zetaDelta [q, of_apply, kv, ↓hv, ← star_idem]\n    clear * - a; grind [star_zero, star_one]) : x ∈ Ô E := e ▸ y.2",
+   "typed_fact": "x ∈ Ô E"
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "witness",
+   "claim": "There is γ in the finite adelic unitary group of T with matrix γ_{im} = θ(i, m) + A·(θ(e, m) + l·θ(e′, m))·ρ_i (unitarity checked entrywise from step 5).",
+   "lines": [
+    105,
+    107
+   ],
+   "lean": "  obtain ⟨γ, q⟩ : ∃ γ : Gf E T, γ.1.1 = of fun i m ↦ θ i m + A * (θ e m + l * θ e' m) * ρ i :=\n    ⟨U.of isUnit_one _ (by\n      simp +zetaDelta [entrywise, mul_add, add_mul, apply_ite star]; clear * - a; grind), rfl⟩",
+   "typed_fact": "∃ γ : Gf E T, γ.1.1 = of fun i m ↦ θ i m + A * (θ e m + l * θ e' m) * ρ i",
+   "uses": [
+    {
+     "step": "5"
+    }
+   ]
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "fact",
+   "claim": "(γx)_i = x_i + A·(x_e + l·x_{e′})·ρ_i for every vector x.",
+   "lines": [
+    108,
+    109
+   ],
+   "lean": "  have hv x i : (γ *ᵥ x) i = x i + A * (x e + l * x e') * ρ i := by\n    simp [entrywise, q, θ, T, add_mul, mul_add]; ring",
+   "typed_fact": "(γ *ᵥ x) i = x i + A * (x e + l * x e') * ρ i"
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let h : G_f(T) → G_f(T × X′) be g ↦ g ⊗ 1 (Kronecker product with the identity of X′).",
+   "lines": [
+    110,
+    110
+   ],
+   "lean": "  let h : Gf E T →* Gf E (_ × X') := (U.kron (one_mul 1) (by simp)).comp (.inr ..)"
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "fact",
+   "claim": "((h γ)x)(t, x′) = (γ·x(·, x′))_t: h acts column by column.",
+   "lines": [
+    111,
+    112
+   ],
+   "lean": "  have kv γ x q : ((h γ).1.1 *ᵥ x) q = (γ.1.1 *ᵥ (x ⟨·, q.2⟩)) q.1 := by\n    simp [h, entrywise, Fintype.sum_prod_type]",
+   "typed_fact": "((h γ).1.1 *ᵥ x) q = (γ.1.1 *ᵥ (x ⟨·, q.2⟩)) q.1"
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let Z = Hom(I_{X′}, I_{X⊔pt}⁻ ⊕ I_{X″⊔pt}), the standard space of the evaluation.",
+   "lines": [
+    113,
+    113
+   ],
+   "lean": "  let Z := (stdSpace E X').hom (flipSum (stdSpace E (X ⊕ Unit)) (stdSpace E (X'' ⊕ Unit)))"
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "fact",
+   "claim": "The Heisenberg semicharacter of j̄·v is 1 for every vector v (j̄·j = 0).",
+   "lines": [
+    114,
+    115
+   ],
+   "lean": "  have s {ι : Type} [Fintype ι] (v : ι → _) : semichar (star j.1 * v ·) = 1 := by\n    simp [semichar, entrywise, j, mul_mul_mul_comm _ (star _), idem_mul_star hP.disjoint_star]",
+   "typed_fact": "semichar (star j.1 * v ·) = 1"
+  },
+  {
+   "id": "14",
+   "parent": null,
+   "kind": "witness",
+   "claim": "Take the unitary element h(γ·k), the matrix γ and b_m = A·π⁻¹·(l·θ(e′, m) + j̄·θ(e, m)). Then the matrix of h(γk) is (diag(κ)·γ) ⊗ 1 (entrywise, with hκ and the identities); off P ∪ P̄, b_m = 0 and γ = 1 (j vanishes there); and (b_m, column m of γ) is a neighbour vector: δb_m = b_m, the entries off e, e′ are integral, π̄·γ_{im} = p·θ(i, m) + d·ρ̄_m·ρ_i ∈ Ô, b_m − π⁻¹γ_{em} = −ϖ·θ(e, m) ∈ Ô and ε̄b_m − π⁻¹γ_{e′m} = −ϖ·θ(e′, m) ∈ Ô (step 7). The admissible evaluation is left.",
+   "lines": [
+    116,
+    120
+   ],
+   "lean": "  refine ⟨h (γ * k), γ, fun m ↦ A * π⁻¹ * (l * θ e' m + star j * θ e m), by\n    simp [h]; ext1; simp +zetaDelta [q]; clear * - a hκ; grind, have u w h i := (by\n    simp +zetaDelta [*, not_or.1 h, star_idem, apply_ite (· w : 𝔸f E → _)]); ⟨u, fun m ↦ ⟨by\n    simp +zetaDelta; grind, by simp +zetaDelta [q, ite_mem], fun i ↦ O (p * θ i m + d * star (ρ m) *\n    ρ i), O (-ϖ * θ e m), O (-ϖ * θ e' m)⟩, ?_⟩⟩",
+   "uses": [
+    {
+     "step": "7"
+    },
+    {
+     "step": "8"
+    },
+    {
+     "step": "9"
+    }
+   ]
+  },
+  {
+   "id": "15",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Key identity: there is C ∈ ℂ with ω(hγ)(P^S f) = C·∑_y ϱ_f(j̄·n(y))(P^S f) for every f ∈ 𝒮(Z), the sum over y ∈ ((ℤ/N)^P)^{X′}.",
+   "lines": [
+    121,
+    139
+   ],
+   "span": [
+    121,
+    1,
+    139,
+    28
+   ],
+   "lean": "  obtain ⟨C, H⟩ : ∃ C : ℂ, ∀ f, Z.ω (h γ) (Z.projOn S f) = C • ∑ y, Z.finHeisOp (star j.1 * n y ·)\n      (Z.projOn S f) := ⟨_, fun f ↦ by\n    nth_rw 1 [← name_boxIndicator K, ω_name_on K _ (Gf.mem_supportedOn.2 fun w a b ↦ by\n      ext; simp [Gf.atPlace, h, u w (not_or.2 ⟨star_star w ▸ b, a⟩), ← ite_and, and_comm,\n      Prod.ext_iff, apply_ite (evalAt w)]),\n      (?_ : (boxIndicator _ _ <| _ *ᵥ ·) = ∑ y, (boxIndicator _ S <| · + n y))]\n    · simp +zetaDelta only [finHeisOp, s, one_smul, map_sum, _root_.sum_apply,\n        ← IsSchwartzBruhat.schrodingerAct_idem K,\n        name_schrodingerAct_boxIndicator K, smul_smul, show idem S.conjClosure * idem S = idem S by\n        ext; simp +contextual [idem_apply]]; rw [← star_idem]; rfl\n    ext x; obtain ⟨x, rfl⟩ := mulVec_surjective_iff_isUnit.2 (h γ).1.isUnit x\n    choose b B using fun i ↦ hP.exists_sub_residueOverN_mem_iff (l * π⁻¹.1 * star (x (e, i)))\n    have z y : h γ *ᵥ x + n y ∈ integralBox _ S ↔ x ∈ integralBox _ S ∧ b = y := by\n      simp_rw [mem_integralBox]; exact\n        ⟨fun r ↦ have H i := (B i (y i)).1 (O (c * star ⟨_, r (e, i)⟩))\n        ⟨fun i ↦ O (⟨_, r i⟩ - ρ i.1 * (⟨_, r (e, i.2)⟩ + c * ϖ * star ⟨_, (H i.2).1⟩)), funext\n          (H · |>.2)⟩, fun r i ↦ O (⟨_, r.1 i⟩ - ρ i.1 * (⟨_, r.1 (e, i.2)⟩ + c * star ⟨_, (B i.2\n        (y i.2)).2 ⟨O (p * c * star ⟨_, r.1 (e, i.2)⟩), congrFun r.2 _⟩⟩))⟩\n    simp [z, ite_and]; rfl⟩",
+   "head_lines": [
+    121,
+    122
+   ],
+   "typed_fact": "∃ C : ℂ, ∀ f, Z.ω (h γ) (Z.projOn S f) = C • ∑ y, Z.finHeisOp (star j.1 * n y ·)\n      (Z.projOn S f)"
+  },
+  {
+   "id": "15.1",
+   "parent": "15",
+   "kind": "reduction",
+   "claim": "P^S f is the name of the box indicator of S (name_boxIndicator). The element hγ is supported on S ∪ S̄ (γ = 1 elsewhere), so ω(hγ) acts on names by transforming the function, up to a constant C (ω_name_on); it remains that the transformed indicator x ↦ box_S((hγ)⁻¹-image) equals ∑_y box_S(· + n(y)).",
+   "lines": [
+    123,
+    126
+   ],
+   "lean": "    nth_rw 1 [← name_boxIndicator K, ω_name_on K _ (Gf.mem_supportedOn.2 fun w a b ↦ by\n      ext; simp [Gf.atPlace, h, u w (not_or.2 ⟨star_star w ▸ b, a⟩), ← ite_and, and_comm,\n      Prod.ext_iff, apply_ite (evalAt w)]),\n      (?_ : (boxIndicator _ _ <| _ *ᵥ ·) = ∑ y, (boxIndicator _ S <| · + n y))]",
+   "uses": [
+    {
+     "decl": "Space.name_boxIndicator"
+    },
+    {
+     "decl": "Space.ω_name_on"
+    }
+   ]
+  },
+  {
+   "id": "15.2",
+   "parent": "15",
+   "kind": "identity",
+   "claim": "Converting back: the name of a translated box indicator is the Heisenberg translate of the projection (name_schrodingerAct_boxIndicator), and the semicharacters are 1 (step 13).",
+   "lines": [
+    127,
+    130
+   ],
+   "span": [
+    127,
+    5,
+    130,
+    67
+   ],
+   "lean": "· simp +zetaDelta only [finHeisOp, s, one_smul, map_sum, _root_.sum_apply,\n        ← IsSchwartzBruhat.schrodingerAct_idem K,\n        name_schrodingerAct_boxIndicator K, smul_smul, show idem S.conjClosure * idem S = idem S by\n        ext; simp +contextual [idem_apply]]; rw [← star_idem]; rfl",
+   "head_lines": [
+    127,
+    129
+   ],
+   "head_span": [
+    127,
+    5,
+    129,
+    56
+   ],
+   "uses": [
+    {
+     "decl": "Space.name_schrodingerAct_boxIndicator"
+    },
+    {
+     "step": "13"
+    }
+   ]
+  },
+  {
+   "id": "15.2.1",
+   "parent": "15.2",
+   "kind": "fact",
+   "claim": "idem(S ∪ S̄)·idem(S) = idem(S).",
+   "lines": [
+    129,
+    130
+   ],
+   "span": [
+    129,
+    56,
+    130,
+    43
+   ],
+   "lean": "show idem S.conjClosure * idem S = idem S by\n        ext; simp +contextual [idem_apply]",
+   "typed_fact": "idem S.conjClosure * idem S = idem S"
+  },
+  {
+   "id": "15.2.2",
+   "parent": "15.2",
+   "kind": "computation",
+   "claim": "Rewrite idem(S) as the conjugate of idem(P); the two sides agree.",
+   "lines": [
+    130,
+    130
+   ],
+   "span": [
+    130,
+    43,
+    130,
+    67
+   ],
+   "lean": "]; rw [← star_idem]; rfl"
+  },
+  {
+   "id": "15.3",
+   "parent": "15",
+   "kind": "setup",
+   "claim": "Compare the two functions at a point, written as (hγ)x (hγ is invertible).",
+   "lines": [
+    131,
+    131
+   ],
+   "lean": "    ext x; obtain ⟨x, rfl⟩ := mulVec_surjective_iff_isUnit.2 (h γ).1.isUnit x"
+  },
+  {
+   "id": "15.4",
+   "parent": "15",
+   "kind": "fact",
+   "claim": "For each i ∈ X′ choose b_i with: l·π⁻¹·conj(x(e, i)) − y/N is integral at P iff N times it is and y = b_i (exists_sub_residueOverN_mem_iff).",
+   "lines": [
+    132,
+    132
+   ],
+   "lean": "    choose b B using fun i ↦ hP.exists_sub_residueOverN_mem_iff (l * π⁻¹.1 * star (x (e, i)))",
+   "uses": [
+    {
+     "decl": "IsSplitLevel.exists_sub_residueOverN_mem_iff"
+    }
+   ]
+  },
+  {
+   "id": "15.5",
+   "parent": "15",
+   "kind": "fact",
+   "claim": "For every y: (hγ)x + n(y) is integral at S iff x is integral at S and y = b (entrywise, using the formula of step 9 and step 7).",
+   "lines": [
+    133,
+    138
+   ],
+   "lean": "    have z y : h γ *ᵥ x + n y ∈ integralBox _ S ↔ x ∈ integralBox _ S ∧ b = y := by\n      simp_rw [mem_integralBox]; exact\n        ⟨fun r ↦ have H i := (B i (y i)).1 (O (c * star ⟨_, r (e, i)⟩))\n        ⟨fun i ↦ O (⟨_, r i⟩ - ρ i.1 * (⟨_, r (e, i.2)⟩ + c * ϖ * star ⟨_, (H i.2).1⟩)), funext\n          (H · |>.2)⟩, fun r i ↦ O (⟨_, r.1 i⟩ - ρ i.1 * (⟨_, r.1 (e, i.2)⟩ + c * star ⟨_, (B i.2\n        (y i.2)).2 ⟨O (p * c * star ⟨_, r.1 (e, i.2)⟩), congrFun r.2 _⟩⟩))⟩",
+   "typed_fact": "h γ *ᵥ x + n y ∈ integralBox _ S ↔ x ∈ integralBox _ S ∧ b = y",
+   "uses": [
+    {
+     "step": "7"
+    },
+    {
+     "step": "9"
+    },
+    {
+     "step": "11"
+    }
+   ]
+  },
+  {
+   "id": "15.6",
+   "parent": "15",
+   "kind": "deduction",
+   "claim": "Hence the transformed indicator at (hγ)x equals ∑_y box_S((hγ)x + n(y)): every term with y ≠ b is zero, the term y = b is box_S(x), so all terms vanish when x is off the box; the sum has at most the one non-zero term y = b.",
+   "lines": [
+    139,
+    139
+   ],
+   "lean": "    simp [z, ite_and]; rfl⟩"
+  },
+  {
+   "id": "16",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Split ω(1, h(γk)) = ω(1, hγ)·ω(1, hk).",
+   "lines": [
+    140,
+    140
+   ],
+   "lean": "  simp only [← Prod.one_mk_mul_one_mk, map_mul]"
+  },
+  {
+   "id": "17",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "The admissible evaluation, with constant Δ_f(hk)·C: for Q coprime to N (o), a size flag and x ∈ weightedTranslations(Q, selfOrConj(β)κ) (hx), ω(1, hk)ϱ_f(x)vac is an admissible combination of the vectors Δ_f(hk)ϱ_f(z)vac, z ∈ weightedTranslations(Q, selfOrConj β), with denominator the index bound and size 1 (isAdmissibleComb_weil_vacElem with c = 1); apply leftInverse ∘ ω(hγ) (map) and re-index (of_eq_isOfFinOrder_smul): each image is a root of unity times C·τ_N(ϱ_f(t₁)vac ⊗ ϱ_f(t₂)vac) with t₁, t₂ ∈ translations(Q, β̄) (star_mem_weightedTranslations). Three goals remain.",
+   "lines": [
+    141,
+    145
+   ],
+   "lean": "  refine ⟨finMultiplier (h k) * C, fun Q _ o x hx ↦ ((isAdmissibleComb_weil_vacElem Z (A :=\n    (weightedTranslations Q (selfOrConj β ·.1)).carrier) (one_mul _) (fun y hy i w e ↦ ?_) ?_\n    (by simp)).map (arrowTensor.leftInverse ∘ₗ (Z.ω (h γ)).1)).of_eq_isOfFinOrder_smul fun p hp\n    ↦ ⟨semichar (fun (a, b) ↦ p (.inl b, a)) ^ 2, (isOfFinOrder_ψf _).pow, ⟨_, _⟩,\n    ⟨star_mem_weightedTranslations c.2 hp fun q ↦ (.inl q.2, q.1), fun q ↦ hp (.inr q.1, q.2)⟩, ?_⟩⟩",
+   "uses": [
+    {
+     "decl": "isAdmissibleComb_weil_vacElem"
+    },
+    {
+     "decl": "IsAdmissibleComb.map"
+    },
+    {
+     "decl": "IsAdmissibleComb.of_eq_isOfFinOrder_smul"
+    },
+    {
+     "decl": "isOfFinOrder_ψf"
+    },
+    {
+     "decl": "star_mem_weightedTranslations"
+    }
+   ]
+  },
+  {
+   "id": "18",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Goal 1: hk·(x + y) ∈ weightedTranslations(Q, selfOrConj β) for y ∈ Ô: hk multiplies the b-coordinate by κ_b, and selfOrConj(β, b)κ_b ∈ Ô (hG).",
+   "lines": [
+    146,
+    147
+   ],
+   "lean": "  · simpa [kv, k, mul_assoc] using\n      add_mem hx (fun i w _ ↦ mem_Ô.1 (mul_mem (hG _).2 (hy i)) w) i w e",
+   "uses": [
+    {
+     "step": "11"
+    }
+   ]
+  },
+  {
+   "id": "19",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "Goal 2, the denominator: d/|Δ_f(hk)|² ∈ integralAway(Q) because |Δ_f(hk)|² is the index of Ô ∩ (hk)⁻¹Ô in Ô (norm_finMultiplier_sq), which divides the index of the kernel of reduction modulo β on the coordinates, which divides the cardinality |… → Ô/β| (div_mem_integralAway with k = 0); it remains that this kernel is mapped into Ô by hk.",
+   "lines": [
+    148,
+    150
+   ],
+   "lean": "  · erw [mul_one_div, ← Complex.ofReal_pow, norm_finMultiplier_sq]\n    refine div_mem_integralAway (k := 0) (.trans (dvd_index_map _ (f := .mk' ((Ô E ∙ β).mkQ ⟨_,\n      star_mem_Ô <| ·.2 ·⟩) (by simp; tauto)) fun x hx i ↦ ?_) ((index_dvd_card _).mul_right _))",
+   "uses": [
+    {
+     "decl": "norm_finMultiplier_sq"
+    },
+    {
+     "decl": "div_mem_integralAway"
+    }
+   ]
+  },
+  {
+   "id": "20",
+   "parent": null,
+   "kind": "fact",
+   "claim": "A vector of the kernel has coordinates β̄·z with z ∈ Ô (conjugating), and hk multiplies them by κ_b; β̄κ_b ∈ Ô by hG.",
+   "lines": [
+    151,
+    153
+   ],
+   "lean": "    obtain ⟨z, hz⟩ := (Ideal.Quotient.eq_zero_iff_dvd ..).1 congr($hx i)\n    simpa [kv, k, mul_left_comm (κ _), mul_assoc, eq_star_of_eq_star\n      congr($(hz).1).symm] using! mul_mem (hG _).1 (star_mem_Ô z.2)"
+  },
+  {
+   "id": "21",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "Goal 3, the identity of vectors: write the right side as leftInverse(arrowTensor(·)) of a multiple.",
+   "lines": [
+    154,
+    154
+   ],
+   "lean": "  erw [← leftInverse_arrowTensor (_ • _)]",
+   "uses": [
+    {
+     "decl": "leftInverse_arrowTensor"
+    }
+   ]
+  },
+  {
+   "id": "22",
+   "parent": null,
+   "kind": "identity",
+   "claim": "By the key identity (step 15) applied to ϱ_f(p)vac (P^S fixes it, as p is integral above S because Q is coprime to N and hN), ω(hγ)ϱ_f(p)vac = C·∑_y ϱ_f(j̄ n(y))ϱ_f(p)vac; and τ_N expands into the same sum.",
+   "lines": [
+    155,
+    158
+   ],
+   "lean": "  simp [translateSum, arrowTensor, smul_sum,\n    smul_smul, by simpa +contextual [projOn_finHeisOp, mem_integralBox, S, idem_mul_mem_Ô, or_comm,\n    ← hP.natCast_mem_iff, (by simpa +contextual [selfOrConj, apply_ite, hN] using\n    (fun i w ↦ hp i w ∘ w.2.notMem_of_isCoprime_of_mem o.cast))] using H (Z.finHeisOp p Z.vacElem)]",
+   "uses": [
+    {
+     "step": "15"
+    },
+    {
+     "decl": "Space.projOn_finHeisOp"
+    }
+   ]
+  },
+  {
+   "id": "23",
+   "parent": null,
+   "kind": "identity",
+   "claim": "Expand the arrow product of translated vacua (finHeisOp_arrowProduct, arrowProduct_vacElem) and compare the terms coefficient by coefficient.",
+   "lines": [
+    159,
+    159
+   ],
+   "lean": "  simp [← arrowProduct_vacElem, finHeisOp_arrowProduct, s, Z, smul_smul, mul_comm (_ * C)]; congr! 7",
+   "uses": [
+    {
+     "decl": "finHeisOp_arrowProduct"
+    }
+   ]
+  },
+  {
+   "id": "24",
+   "parent": null,
+   "kind": "computation",
+   "claim": "The remaining identities of adeles follow from step 5 (grind).",
+   "lines": [
+    160,
+    160
+   ],
+   "lean": "  all_goals simp +zetaDelta [apply_ite star]; clear * - a; grind [star_mul', idem_mul_residueOverN]"
+  }
+ ]
+}

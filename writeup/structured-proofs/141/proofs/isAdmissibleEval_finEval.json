@@ -1,0 +1,354 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Seesaw.AdmissibleEvaluation:167:7",
+ "summary": "Combine exists_isAdmissibleEval_std (for X′ ⊔ pt) with the zero term of translated vacua (zeroTermFin_finHeisOp_vacElem) for the integral matrix B built from the frames; the translation by stackedTFin is killed by Bᴴ, and Bᴴy has the right weights by hA.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Apply exists_isAdmissibleEval_std (with X′ ⊔ pt): k = (diag(κ)γ) ⊗ 1, γ = 1 and b = 0 off P ∪ P̄ (hγ), neighbour vectors (hf), and C, H: leftInverse ∘ ω(1, k) satisfies IsAdmissibleEval for β, κ.",
+   "lines": [
+    173,
+    174
+   ],
+   "lean": "  choose k γ b hk hγ hf C H using\n    exists_isAdmissibleEval_std (X' := X' ⊕ Unit) κ δ hN hP hq h1 hG hκ",
+   "uses": [
+    {
+     "decl": "exists_isAdmissibleEval_std"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let f : E → 𝔸_f; S the splitting removing the q planes; s the finite component of the conjugate of flipIdele(ε, 1); J the inclusion matrix of the X′-basis vectors of V′ (along Y′).",
+   "lines": [
+    175,
+    178
+   ],
+   "lean": "  let f := algebraMap E (𝔸f E)\n  let S := removePlanes q (flipSum (stdSpace E (X ⊕ Unit)) (stdSpace E (X'' ⊕ Unit)))\n  let s := (star (flipIdele normNegOne 1)).map (snd _ (𝔸f E)).1; let J :=\n    inclMatrix (𝔸f E) (Y'.indexEquiv ∘ .inl)"
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "fact",
+   "claim": "The inverse finite frame of V⁻ ⊕ V″ is diag(s⁻¹·x_{f,V}⁻¹, x_{f,V″}⁻¹).",
+   "lines": [
+    179,
+    180
+   ],
+   "lean": "  have xV : (flipSum V V'').xFin⁻¹.1 = fromBlocks (s⁻¹.1 • V.xFin⁻¹.1) 0 0 V''.xFin⁻¹.1 := by\n    simp [s, xFin, sum, flipSpace, ← map_inv, ← smul_eq_mul_diagonal, entrywise]",
+   "typed_fact": "(flipSum V V'').xFin⁻¹.1 = fromBlocks (s⁻¹.1 • V.xFin⁻¹.1) 0 0 V''.xFin⁻¹.1"
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let c_{·l} = s·u·b_l and M the matrix whose column j is (0 on the planes, c_{·j}, (s, 1)·κ·γ_{·j}).",
+   "lines": [
+    181,
+    182
+   ],
+   "lean": "  let c := of fun (_ : q) l ↦ s.1 * u * b l\n  let M := (of fun j ↦ (0 : q → _) ⊕ᵥ (c · j) ⊕ᵥ ((fun _ ↦ s.1) ⊕ᵥ 1) * κ * (γ · j))ᵀ"
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "fact",
+   "claim": "M = i_S·x_f·(diag(κ)·γ) + k_S·c, with i_S, k_S the frames of the splitting S.",
+   "lines": [
+    183,
+    185
+   ],
+   "lean": "  have hK : M = S.i.map f * ((flipSum (stdSpace ..) (stdSpace ..)).xFin.1 * (diagonal κ * γ)) +\n    S.k.map f * c := by\n    simp [entrywise, M, S, removePlanes, s, xFin, sum, flipSpace, ← mul_assoc, diagonal_apply]",
+   "typed_fact": "M = S.i.map f * ((flipSum (stdSpace ..) (stdSpace ..)).xFin.1 * (diagonal κ * γ)) +\n    S.k.map f * c"
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let B = (x_f⁻¹·incl_D·M) ⊗ (Jᵀ·x_{f,V′})ᵀ, a matrix over 𝔸_f.",
+   "lines": [
+    186,
+    186
+   ],
+   "lean": "  let B := ((flipSum V V'').xFin⁻¹.1 * (D.zeroPart.incl.map f * M)) ⊗ₖ (Jᵀ * V'.xFin.1)ᵀ"
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "fact",
+   "claim": "B is integral: by hL′, x_{f,V′} = G·k′ with k′ integral invertible, and B_{ij} is a product of two factors.",
+   "lines": [
+    187,
+    191
+   ],
+   "span": [
+    187,
+    1,
+    191,
+    80
+   ],
+   "lean": "  have hB i j : B i j ∈ Ô E := hL'.elim fun k ⟨h, e⟩ ↦ by\n    refine mul_mem (?_ : (_ *ᵥ _) _ ∈ _) (by cases j.2 <;> simp [e, gradedLatticeBasis, J,\n      entrywise, inclMatrix, reindex_equiv Y'.indexEquiv, show ¬Odd m' by grind [D.string_spec],\n      mem_intGL.1 h]); simp [xV, fromBlocks_mulVec, ↓← mulVec_smul, -coe_units_inv]; apply hM _ _\n      ⟨by simp [s, val_flipIdele, ← hδ, mul_assoc], s.inv_mul⟩ _ _ (hf _) _ rfl",
+   "head_lines": [
+    187,
+    187
+   ],
+   "typed_fact": "B i j ∈ Ô E"
+  },
+  {
+   "id": "7.1",
+   "parent": "7",
+   "kind": "fact",
+   "claim": "The second factor (Jᵀ·x_{f,V′})-entry is integral: the X′-rows of the graded lattice basis are standard (case distinction on the point).",
+   "lines": [
+    188,
+    189
+   ],
+   "span": [
+    188,
+    5,
+    189,
+    59
+   ],
+   "lean": "refine mul_mem (?_ : (_ *ᵥ _) _ ∈ _) (by cases j.2 <;> simp [e, gradedLatticeBasis, J,\n      entrywise, inclMatrix, reindex_equiv Y'.indexEquiv, "
+  },
+  {
+   "id": "7.2",
+   "parent": "7",
+   "kind": "fact",
+   "claim": "m′ is even (string_spec of D: m odd and m′ = m − 1).",
+   "lines": [
+    189,
+    189
+   ],
+   "span": [
+    189,
+    59,
+    189,
+    97
+   ],
+   "lean": "show ¬Odd m' by grind [D.string_spec],",
+   "typed_fact": "¬Odd m'"
+  },
+  {
+   "id": "7.3",
+   "parent": "7",
+   "kind": "deduction",
+   "claim": "The first factor is integral by hM, applied to s, t = s⁻¹ (s·(a/ā) = ε̄δ by hδ) and the neighbour vectors of step 1 (hf).",
+   "lines": [
+    190,
+    191
+   ],
+   "lean": "      mem_intGL.1 h]); simp [xV, fromBlocks_mulVec, ↓← mulVec_smul, -coe_units_inv]; apply hM _ _\n      ⟨by simp [s, val_flipIdele, ← hδ, mul_assoc], s.inv_mul⟩ _ _ (hf _) _ rfl"
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "fact",
+   "claim": "By zeroTermFin_finHeisOp_vacElem for the splitting of D, the element k and the matrix fromRows(0, c ⊗ 1) (so that B = ι_f·k + k_f·c′, checked by unfolding the frames), B being integral: there is C₃ such that zeroTermFin(ϱ_f(y)vac) = ζ(y)·C₃·ω(1, k)ϱ_f(Bᴴy)vac₀ with ζ(y) zero or a root of unity (R, hζ).",
+   "lines": [
+    192,
+    196
+   ],
+   "lean": "  choose C₃ ζ hζ R using zeroTermFin_finHeisOp_vacElem D.splitting k (fromRows 0 (c ⊗ₖ 1)) (by\n    simp [Splitting.iAdelic, Splitting.kAdelic, Space.ratMap, ArrowPair.splitting, Splitting.comp,\n      Splitting.homTarget, hom, GradeZeroPart.splitting, ArrowPair.homZeroPart, GradeZeroPart.hom,\n      ← coe_snd, ← coe_comp, *, B, S, J, inclMatrix, xFin, f, toAdele, ← map_inv, add_kronecker,\n      ← submatrix_map, Matrix.mul_assoc, Matrix.mul_add, map_kronecker, ↓transpose_mul]) hB",
+   "uses": [
+    {
+     "decl": "zeroTermFin_finHeisOp_vacElem"
+    }
+   ]
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Bᴴ·stackedTFin(Y, Y′, Y″) = 0.",
+   "lines": [
+    197,
+    204
+   ],
+   "span": [
+    197,
+    1,
+    204,
+    83
+   ],
+   "lean": "  have τ : Bᴴ *ᵥ stackedTFin Y Y' Y'' = 0 := by\n    delta stackedTFin; erw [conjTranspose_kronecker, finCoord_homAtPoint,\n      kronecker_mulVec_eq_matToVec _ _ᴴ]\n    simp [↓vecToMat_matToVec, Matrix.mul_assoc, show (Jᵀ * V'.xFin.1)ᴴ =\n      V'.xFin⁻¹.1 * J by simp [inv_eq_left_inv V'.gram_xFin, J, entrywise, Y'.gram_eq, gradedGram,\n      inclMatrix, reindex_equiv Y'.indexEquiv], show (stackedT Y Y' Y'').map (·.2) * J = 0 by\n      simp [J, mul_inclMatrix, entrywise, stackedT, Y.formAdjoint_apply Y', stringMap,\n        stringReversal, reindex_equiv Y.indexEquiv, reindex_equiv Y''.indexEquiv]]",
+   "head_lines": [
+    197,
+    197
+   ],
+   "typed_fact": "Bᴴ *ᵥ stackedTFin Y Y' Y'' = 0"
+  },
+  {
+   "id": "9.1",
+   "parent": "9",
+   "kind": "reduction",
+   "claim": "Write Bᴴ·stackedTFin through the Kronecker product as a matrix product (matToVec).",
+   "lines": [
+    198,
+    199
+   ],
+   "lean": "    delta stackedTFin; erw [conjTranspose_kronecker, finCoord_homAtPoint,\n      kronecker_mulVec_eq_matToVec _ _ᴴ]"
+  },
+  {
+   "id": "9.2",
+   "parent": "9",
+   "kind": "computation",
+   "claim": "Simplify with the following two identities.",
+   "lines": [
+    200,
+    204
+   ],
+   "span": [
+    200,
+    5,
+    204,
+    83
+   ],
+   "lean": "simp [↓vecToMat_matToVec, Matrix.mul_assoc, show (Jᵀ * V'.xFin.1)ᴴ =\n      V'.xFin⁻¹.1 * J by simp [inv_eq_left_inv V'.gram_xFin, J, entrywise, Y'.gram_eq, gradedGram,\n      inclMatrix, reindex_equiv Y'.indexEquiv], show (stackedT Y Y' Y'').map (·.2) * J = 0 by\n      simp [J, mul_inclMatrix, entrywise, stackedT, Y.formAdjoint_apply Y', stringMap,\n        stringReversal, reindex_equiv Y.indexEquiv, reindex_equiv Y''.indexEquiv]]",
+   "head_lines": [
+    200,
+    200
+   ],
+   "head_span": [
+    200,
+    5,
+    200,
+    49
+   ]
+  },
+  {
+   "id": "9.2.1",
+   "parent": "9.2",
+   "kind": "fact",
+   "claim": "(Jᵀ·x_{f,V′})ᴴ = x_{f,V′}⁻¹·J (from the Gram identity of x_{f,V′}).",
+   "lines": [
+    200,
+    202
+   ],
+   "span": [
+    200,
+    49,
+    202,
+    49
+   ],
+   "lean": "show (Jᵀ * V'.xFin.1)ᴴ =\n      V'.xFin⁻¹.1 * J by simp [inv_eq_left_inv V'.gram_xFin, J, entrywise, Y'.gram_eq, gradedGram,\n      inclMatrix, reindex_equiv Y'.indexEquiv], ",
+   "typed_fact": "(Jᵀ * V'.xFin.1)ᴴ ="
+  },
+  {
+   "id": "9.2.2",
+   "parent": "9.2",
+   "kind": "fact",
+   "claim": "The X′-part of stackedT vanishes: stackedT·J = 0 (the frequency maps only involve string vectors).",
+   "lines": [
+    202,
+    204
+   ],
+   "span": [
+    202,
+    49,
+    204,
+    83
+   ],
+   "lean": "show (stackedT Y Y' Y'').map (·.2) * J = 0 by\n      simp [J, mul_inclMatrix, entrywise, stackedT, Y.formAdjoint_apply Y', stringMap,\n        stringReversal, reindex_equiv Y.indexEquiv, reindex_equiv Y''.indexEquiv]]",
+   "typed_fact": "(stackedT Y Y' Y'').map (·.2) * J = 0"
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "The constant is C₃·C; fix n coprime to N, a size flag r and y ∈ weightedTranslations(n, selfOrConj β) (hy).",
+   "lines": [
+    205,
+    205
+   ],
+   "lean": "  refine ⟨C₃ * C, fun n r hS y hy ↦ ?_⟩"
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "identity",
+   "claim": "finEval(ϱ_f(y)vac) = leftInverse(zeroTermFin(ϱ_f(stackedTFin)ϱ_f(y)vac)) = ψ·ζ·C₃·leftInverse(ω(1, k)ϱ_f(Bᴴy)vac₀), using step 9 (Bᴴ·stackedTFin = 0) and step 8.",
+   "lines": [
+    206,
+    206
+   ],
+   "lean": "  simp [ArrowPair.finEval, finHeisOp_finHeisOp, R, -omega_finHeisOp, τ, mul_smul]",
+   "uses": [
+    {
+     "step": "9"
+    },
+    {
+     "step": "8"
+    },
+    {
+     "decl": "Space.finHeisOp_finHeisOp"
+    }
+   ]
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "So it is admissible: H for the vector Bᴴy ∈ weightedTranslations(n, selfOrConj(β)κ) (mulVec_mem_weightedTranslations with B integral and hy, up to a valuation condition left open), scaled by C₃, then by ζ (zero or a root of unity) and by a root of unity ψ.",
+   "lines": [
+    207,
+    209
+   ],
+   "lean": "  refine .smul_of_eq_zero_or_isOfFinOrder (.smul_of_eq_zero_or_isOfFinOrder\n    ((H n r hS _ (mulVec_mem_weightedTranslations hB hy fun i j u h ↦ ?_)).map (C₃ • .id))\n    (hζ _)) (.inr (isOfFinOrder_ψf (E := E) _))",
+   "uses": [
+    {
+     "decl": "mulVec_mem_weightedTranslations"
+    },
+    {
+     "decl": "IsAdmissibleComb.smul_of_eq_zero_or_isOfFinOrder"
+    },
+    {
+     "decl": "isOfFinOrder_ψf"
+    }
+   ]
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "The valuation condition: B_{ij} is a sum over l of products; by hA, for each l either incl_D(l, ·) vanishes there or the valuations agree; it remains that the corresponding entries of M vanish (first goal) or the other factor does (second goal).",
+   "lines": [
+    210,
+    211
+   ],
+   "lean": "  refine mul_eq_zero_of_left ((map_sum (evalAt _) ..).trans (sum_eq_zero fun l _ ↦ (hA l j.1).elim\n    (fun e ↦ mul_eq_zero_of_right _ ((map_sum (evalAt _) ..).trans (sum_eq_zero ?_))) fun e ↦ ?_)) _"
+  },
+  {
+   "id": "14",
+   "parent": null,
+   "kind": "fact",
+   "claim": "First goal: at a place ū with w ∉ P ∪ P̄, c and b vanish and γ is the identity (hγ); at places above N, κ_j ∈ {1, δ} with δ = 1 and β a unit (hN, hκ), so the valuations agree — a contradiction with the assumption.",
+   "lines": [
+    212,
+    214
+   ],
+   "lean": "  · simp [M, c, e, -evalAt_apply, -mul_eq_zero, hγ (star u) fun a ↦ h (by\n      simp [or_comm, ← hP.natCast_mem_iff] at a\n      cases hκ j.1 <;> simp [selfOrConj, apply_ite, ite_apply, *])]"
+  },
+  {
+   "id": "15",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Second goal: by cases on the indices, closed with step 3.",
+   "lines": [
+    215,
+    215
+   ],
+   "lean": "  obtain ⟨_ | _, _⟩ := i <;> cases l <;> first | cases h (e u) | simp [xV]",
+   "uses": [
+    {
+     "step": "3"
+    }
+   ]
+  }
+ ]
+}

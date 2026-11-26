@@ -1,0 +1,611 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Filling.FiniteSystem:47:7",
+ "summary": "If ∑c = 0 there is nothing to prove. Otherwise build from the step function Ψ (≤ f, ≥ c(z) at the tail vectors, invariant under 𝖧 ∩ K(g) and small translations) the locally constant compactly supported test function n(x) = 1[x integral outside T]·Ψ(tailVector(π̄_T, t_T, x_T)), and apply Siegel's formula (classSum_norm_eq) to n and β = (t t̄ − N²)/N: the class sum dominates ∑_{z∈s} c(z), so ∑c < r·|C·∫F| with r = (1 + b⁻⁶)/(1 + 2^{−n}). The Fourier integral ∫F, over the codifferent scaled by a large M, is continuous in (M-scale, t) by dominated convergence; evaluating it (enorm_integral_codifferent) turns it into the mass of n near the quadric, which off T is v times the mass at T (mass_near_quadric_off_places_le) and at T is at most md(π)·skewMeasure·∫_{slab} Ψ (eventually_mass_near_quadric_le). For small clopen L, averaging over L gives (∑c)·vol(L) ≤ const·∫ 1_slab·Ψ, and the constants combine to (1 + b⁻⁶)·#Cl·siegelConst·(∏(|t|² − N²))^{k−1}.",
+ "intro_lines": [
+  [
+   48,
+   54
+  ]
+ ],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Introduce the hypothesis hs; if ∑_{z∈s} c(z) = 0 the left side is 0 for every L (simp). Otherwise: (The quoted line 55 begins with the end of the statement, up to column 26 before the declaration's `:=`; that part is statement, not proof: the census's statement lines stop at the `:=` of a `let` inside the type; a second-reader message.)",
+   "lines": [
+    55,
+    148
+   ],
+   "lean": "    ∂F.floorQuadric 𝔰.top := fun hs ↦ if y0 : ∑ z ∈ s, (c z : ℝ≥0∞) = 0 then by simp [y0] else by\n  obtain ⟨N0, ⟨_, d⟩⟩ := S.N_prime.pos, S.ϱ_le_k.dest\n  set β := (t * star t - S.N ^ 2) / S.N\n  set t' := evalPlaces T t\n  let π : (LocProd T)ˣ := S.piBar.map (evalPlaces T)\n  have sβ : star β = β := by simp [β, field]\n  obtain ⟨u, hN : π * star π.1 = _⟩ := P.md_evalPlaces_rpow_half (x := .mk0 _ (by simp)) ⟨by simp,\n    hT.2⟩, by simpa using! congr(evalPlaces T $S.piBar_mul_star)\n  have p v : 0 < (Φ v β).re := by simpa [β, mul_conj', sq, N0] using ht v\n  obtain ⟨Ψ, cf, uf, hk, h2, hy⟩ := exists_step_function (hs · · |>.2) fun _ ↦ (·.2.1)\n  let n := LocallyConstant.indicator ⟨(Ψ <| tailVector π t' <| evalPlaces T ∘ ·),\n    .comp_continuous (isLocallyConstant_of_eventually_add uf) (by fun_prop)⟩ (isClopen\n    ⟨(intVectors ..).toAddSubgroup, isOpen_intVectors (isOpen_integralOff T)⟩)\n  have cs : HasCompactSupport n := .of_support_subset_isCompact ((cf.image (f := fun e i ↦\n    adeleOfLocal T (((besselLatticeBasis 𝔰 π).1 *ᵥ e) (𝔰.indexX₀ i))) (by fun_prop)).add\n    stdLattice.isCompact_stdLattice)\n    (Set.support_indicator.trans_le fun x ⟨a, h⟩ ↦ ⟨_, ⟨_, subset_closure h, rfl⟩, _,\n    (by simpa [tailVector, sub_adeleOfLocal_mem_iff] using a ·), add_sub_cancel ..⟩)\n  obtain ⟨sm, key⟩ := classSum_norm_eq (by lia) S.columnLevel n (fun k l x ↦\n    if_congr (mulVec_mem_intVectors_iff (by clear * - l; grind [mem_intGL,\n    mem_Ô_iff T, show k.1 ∈ intGL _ _ from S.hasFiniteType_columnLevel.1 l])) (.trans\n    (congrArg Ψ (by rw [tailVector_evalPlaces,\n    tailVector_evalPlaces]; ext1; erw [← RingHom.map_mulVec]; simp [tailVector, inclHFin,\n    toLatBasis, ← mulVec_mulVec, mulVec_mulVec _ (besselLatticeBasis ..).1, toBesselH,\n    fromBlocks_mulVec])) (hk (S.toPlaces T _) ⟨(inclHFin_mem_besselH k).map_mem_unitriangularOn _,\n    (hF.mem_principalLevel_iff.1 (ok.columnLevel_eq.le l)).2⟩ _)) rfl) cs sβ p\n  generalize eC : ofReal (_ * _) = C at key\n  let r := ENNReal.ofReal ((1 + S.b⁻¹ ^ 6) / (1 + 2⁻¹ ^ 𝔰.n))\n  replace hy := (ENNReal.mul_lt_mul_left y0 (by simp) (by\n    grw [one_lt_ofReal, one_lt_div (by positivity), ← pow_six_le, pow_succ]\n    bound)).trans_le (mul_le_mul_right (congr(‖$key‖ₑ).le.trans' (by\n    simp_rw [classSum_eq_sum, ← NNReal.coe_sum, enorm_eq_nnnorm, nnnorm_real, nnnorm_eq,\n      coe_finsetSum, ENNReal.coe_tsum (sm _)]\n    grw [← ENNReal.tsum_prod.trans (tsum_fintype _), ← ENNReal.sum_le_tsum s]\n    gcongr with z k\n    grw [ite_eq_left (by simp [β, ← (hs z k).1.1]), hy z k, ← tailVector_evalPlaces]\n    exact (ite_eq_left (hs z k).1.2).ge)) r)\n  obtain ⟨nz, K0 : r * ‖C‖ₑ * (.ofReal (1 + 2⁻¹ ^ 𝔰.n) * volÔ E ^ 𝔰.k) * P.md π ≠ ∞⟩ := by\n    simpa using hy.ne_zero, by simp [r, mul_eq_top]\n  have iF := Integrable.of_integral_ne_zero nz.2.2\n  let b τ := (π * star π)⁻¹.1 * τ * star τ - S.N - ratToPlaces T β\n  obtain ⟨_, _, ha, _, hb, h⟩ := (isLocallyConstant_of_eventually_add uf).continuous,\n    eventually_prod_iff.1\n    (nhds_prod_eq.ge ((ENNReal.Tendsto.const_mul ((tendsto_integral_filter_of_dominated_convergence\n    (l := 𝓝 (0, t')) _ (.of_forall fun p ↦ (iF.1.mul (Continuous.aestronglyMeasurable (.subtype_val\n    (f := fun z : selfAdjoint _ ↦ ψf E ((2⁻¹ : E) * (z.1 * -adeleOfLocal T (b p.2)))) (by fun_prop))\n    )).indicator (isOpen_codifferent E p.1).measurableSet) (by simp [(norm_indicator_le_norm_self ..\n    ).trans_eq]) iF.norm (.of_forall fun z ↦ .congr' (((isOpen_Ô.preimage (by fun_prop)\n    ).eventually_mem (by simp)).mono fun p l ↦ .symm (ite_eq_left fun _ ↦ ψf_of_mem ∘ mul_mem l))\n    (Continuous.tendsto' (.const_mul (.subtype_val (by fun_prop)) _) _ _ (by simp [show b t' = 0 by\n      rw [sub_eq_zero, sub_eq_iff_eq_add, mul_assoc, Units.inv_mul_eq_iff_eq_mul]\n      simpa [t', hN] using congrArg (ratToPlaces T) (by field :\n      t * star t = S.N * (β + S.N))])))).const_mul _).enorm (by simp [r])).eventually_const_lt hy))\n  simp only [integral_indicator (isOpen_codifferent ..).measurableSet, Pi.mul_apply,\n    ← integral_mul_const, ← Circle.coe_mul, ← AddChar.map_add_eq_mul, ← mul_add,\n    sub_add, sub_neg_eq_add, one_mul] at h\n  filter_upwards [eventually_smallSets_forall.2 (.and ((map_add_left_nhds_zero t').le hb) ((by\n    fun_prop : Continuous (tailVector π · 0)).tendsto' 0 0 (by simp [tailVector, ← Pi.zero_def])\n    uf))] with L hL oL\n  refine (le_mul_of_forall_lt (by simp [add_pos, nz]) (.inl K0) fun a k c hc ↦\n    ?_).trans (mul_le_mul' (ofReal_toReal K0 ▸ ofReal_le_ofReal (le_of_eq ?_)) (lintegral_mono\n    fun e ↦ (ENNReal.coe_indicator ..).trans_le (Set.indicator_le_indicator (h2 e))))\n  · obtain ⟨V, hV, d⟩ := eventually_smallSets.1 (F.eventually_mass_near_quadric_le hN ((oL.preimage\n      (by fun_prop)).continuous_indicator ‹_›) (cf.mono (by simp)) hc)\n    choose M M0 ha hV using\n      mem_nhds_zero_finAdele_iff.1 (ha.and ((continuous_evalPlaces T).tendsto 0 hV))\n    obtain ⟨⟨u, i⟩, o, z⟩ := (isUnit_natCast_finAdele (E := E) M0).exists_right_inv,\n      Fact.mk ((isCompact_codifferent E (isUnit_natCast_finAdele M0)).measure_lt_top (μ := volume)),\n      idealZeta_intAdeles_pow_le 𝔰.ϱ.succ (S.degree_le.trans' (Nat.mul_le_mul_right _ 𝔰.ϱ.succ_pos))\n    obtain ⟨v, _, hv, sp⟩ := P.mass_near_quadric_off_places_le i (sβ ▸ star_algebraMap_finAdele β :)\n      (le_two_of_pow_le_ofReal z) (by omega : _ ≤ 𝔰.k)\n    grw [← k.le, ← setLIntegral_const, setLIntegral_mono' oL.2.measurableSet fun τ l ↦ ?_,\n      setLIntegral_le_lintegral, lintegral_const_mul', (lintegral_add_left_eq_self _ t').trans_le\n      (d _ (fun a l ↦ by simpa [↓adeleOfLocal_evalPlaces_mul, ← mul_assoc, i] using hV (adeleOfLocal\n      T (evalPlaces T u * a)) (by simpa [↓mem_Ô_iff T, ↓adeleOfLocal_mem_integralOff]))\n      (measurable_const_mul (evalPlaces T u) SemilocalField.isCompact_O.measurableSet))]\n    rotate_right\n    grw [(h (ha 1 (by simp)) (hL _ l).1).le, enorm_mul, mul_one]\n    erw [enorm_integral_codifferent i ?_\n      (by simpa using isFiniteMeasure_withDensity_ofReal ((n.2.comp\n      toReal).continuous.integrable_of_hasCompactSupport (cs.comp_left rfl)).2),\n      withDensity_apply', funext (ENNReal.coe_indicator _ _), sp _ (Ψ <| tailVector π t' ·) (by\n      fun_prop), add_sub_cancel, lintegral_congr fun y ↦ ?_]\n    · simp_rw [← mul_assoc]; rfl\n    · rw [← (hL _ l).2, Set.indicator_of_mem (by simpa [t', form_tailVector hN]), tailVector,\n        tailVector, ← mulVec_add]; congr; simp [funext_iff, mul_add]\n    simp [b, sβ, ← adeleOfLocal_star, -Units.val_inv_eq_inv_val, ← Units.coe_star_inv]; ring_nf\n    grw [← z, pow_one, ← hv]; simp; ring_nf; rfl\n    simp [r, mul_eq_top, o.1.ne, *]\n  simp [← hN, ← sq, ← ENNReal.rpow_natCast_mul] at u\n  clear * - p eC d N0 u\n  simp (disch := positivity) [r, u, ← eC, classSum_eq_sum, abs_of_nonneg, abs_of_pos (p _)]\n  simp [siegelConst, β, mul_conj', sq, div_pow, ← d, mul_add, prod_pow]\n  field",
+   "head_lines": [
+    55,
+    55
+   ]
+  },
+  {
+   "id": "1.1",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "N(S) > 0 (N is prime), and k(𝔰) = 1000(2ϱ+2) + d for some d (ϱ_le_k).",
+   "lines": [
+    56,
+    56
+   ],
+   "lean": "  obtain ⟨N0, ⟨_, d⟩⟩ := S.N_prime.pos, S.ϱ_le_k.dest"
+  },
+  {
+   "id": "1.2",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "β = (t t̄ − N(S)²)/N(S) ∈ E.",
+   "lines": [
+    57,
+    57
+   ],
+   "lean": "  set β := (t * star t - S.N ^ 2) / S.N"
+  },
+  {
+   "id": "1.3",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "t' = t taken at T (evalPlaces T).",
+   "lines": [
+    58,
+    58
+   ],
+   "lean": "  set t' := evalPlaces T t"
+  },
+  {
+   "id": "1.4",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "π = π̄(S) taken at T, a unit of LocProd(T).",
+   "lines": [
+    59,
+    59
+   ],
+   "lean": "  let π : (LocProd T)ˣ := S.piBar.map (evalPlaces T)"
+  },
+  {
+   "id": "1.5",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "β̄ = β (t t̄ and N are fixed by conjugation; field_simp).",
+   "lines": [
+    60,
+    60
+   ],
+   "lean": "  have sβ : star β = β := by simp [β, field]",
+   "typed_fact": "star β = β"
+  },
+  {
+   "id": "1.6",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "u: md(N_T)^{1/2} = (∏_v |Φ_v(N)|)⁻¹ (md_evalPlaces_rpow_half; N and N⁻¹ are integral outside T by hT.2); hN: π·π̄ = N at T (from π̄(S)·π̄(S)* = N).",
+   "lines": [
+    61,
+    62
+   ],
+   "lean": "  obtain ⟨u, hN : π * star π.1 = _⟩ := P.md_evalPlaces_rpow_half (x := .mk0 _ (by simp)) ⟨by simp,\n    hT.2⟩, by simpa using! congr(evalPlaces T $S.piBar_mul_star)",
+   "uses": [
+    {
+     "decl": "IntegralPlace.md_evalPlaces_rpow_half"
+    }
+   ]
+  },
+  {
+   "id": "1.7",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "p: Re Φ_v(β) > 0 for every v, since Φ_v(β) = (|Φ_v t|² − N²)/N and ht.",
+   "lines": [
+    63,
+    63
+   ],
+   "lean": "  have p v : 0 < (Φ v β).re := by simpa [β, mul_conj', sq, N0] using ht v",
+   "typed_fact": "0 < (Φ v β).re"
+  },
+  {
+   "id": "1.8",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "The step function Ψ for the points tailVector(π̄, t, x(z))_T, weights c, f and the group 𝖧 ∩ K(g)_T (integral: K(g)_T consists of integral matrices): Ψ has compact support (cf), is invariant under small translations (uf) and under 𝖧 ∩ K(g)_T (hk), Ψ ≤ f (h2), and c(z) ≤ Ψ(tail vector of x(z)) (hy).",
+   "lines": [
+    64,
+    64
+   ],
+   "lean": "  obtain ⟨Ψ, cf, uf, hk, h2, hy⟩ := exists_step_function (hs · · |>.2) fun _ ↦ (·.2.1)",
+   "uses": [
+    {
+     "decl": "Filling.exists_step_function"
+    }
+   ]
+  },
+  {
+   "id": "1.9",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "n: the locally constant function on 𝔸_f^κ, n(x) = Ψ(tailVector(π, t', x_T)) if x is integral outside T and 0 otherwise (Ψ∘tailVector is locally constant by uf; the integral-outside-T vectors form a clopen subgroup).",
+   "lines": [
+    65,
+    67
+   ],
+   "lean": "  let n := LocallyConstant.indicator ⟨(Ψ <| tailVector π t' <| evalPlaces T ∘ ·),\n    .comp_continuous (isLocallyConstant_of_eventually_add uf) (by fun_prop)⟩ (isClopen\n    ⟨(intVectors ..).toAddSubgroup, isOpen_intVectors (isOpen_integralOff T)⟩)"
+  },
+  {
+   "id": "1.10",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "cs: n has compact support — its support lies in (the image of supp Ψ under a continuous map into 𝔸_f^κ) + the standard lattice, a sum of two compact sets.",
+   "lines": [
+    68,
+    72
+   ],
+   "lean": "  have cs : HasCompactSupport n := .of_support_subset_isCompact ((cf.image (f := fun e i ↦\n    adeleOfLocal T (((besselLatticeBasis 𝔰 π).1 *ᵥ e) (𝔰.indexX₀ i))) (by fun_prop)).add\n    stdLattice.isCompact_stdLattice)\n    (Set.support_indicator.trans_le fun x ⟨a, h⟩ ↦ ⟨_, ⟨_, subset_closure h, rfl⟩, _,\n    (by simpa [tailVector, sub_adeleOfLocal_mem_iff] using a ·), add_sub_cancel ..⟩)",
+   "typed_fact": "HasCompactSupport n"
+  },
+  {
+   "id": "1.11",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Siegel's formula for n, K = columnLevel(S) and α = β (classSum_norm_eq; 3 ≤ k): summability (sm) and the identity key: classSum of ∑_{x̄x = β} n(h⁻¹x) = C·∫F. Its invariance hypothesis: for k in the column level, n(kx) = n(x), since k is integral outside T (it preserves the integral vectors) and the tail vector of kx at T is inclHFin(k)_T applied to that of x (tailVector_evalPlaces), with inclHFin(k)_T ∈ 𝖧 ∩ K(g)_T (inclHFin_mem_besselH; mem_principalLevel_iff with columnLevel_eq), so hk applies.",
+   "lines": [
+    73,
+    75
+   ],
+   "span": [
+    73,
+    3,
+    75,
+    17
+   ],
+   "lean": "obtain ⟨sm, key⟩ := classSum_norm_eq (by lia) S.columnLevel n (fun k l x ↦\n    if_congr (mulVec_mem_intVectors_iff (by clear * - l; grind [mem_intGL,\n    mem_Ô_iff T,",
+   "uses": [
+    {
+     "decl": "classSum_norm_eq"
+    },
+    {
+     "decl": "Filling.tailVector_evalPlaces"
+    },
+    {
+     "decl": "Filling.inclHFin_mem_besselH"
+    },
+    {
+     "decl": "Filling.IsFillingLevel.mem_principalLevel_iff"
+    },
+    {
+     "decl": "Filling.IsAdmissible"
+    }
+   ]
+  },
+  {
+   "id": "1.12",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "The elements of the column level are integral outside T (hasFiniteType_columnLevel).",
+   "lines": [
+    75,
+    80
+   ],
+   "span": [
+    75,
+    18,
+    80,
+    79
+   ],
+   "lean": "show k.1 ∈ intGL _ _ from S.hasFiniteType_columnLevel.1 l])) (.trans\n    (congrArg Ψ (by rw [tailVector_evalPlaces,\n    tailVector_evalPlaces]; ext1; erw [← RingHom.map_mulVec]; simp [tailVector, inclHFin,\n    toLatBasis, ← mulVec_mulVec, mulVec_mulVec _ (besselLatticeBasis ..).1, toBesselH,\n    fromBlocks_mulVec])) (hk (S.toPlaces T _) ⟨(inclHFin_mem_besselH k).map_mem_unitriangularOn _,\n    (hF.mem_principalLevel_iff.1 (ok.columnLevel_eq.le l)).2⟩ _)) rfl) cs sβ p",
+   "typed_fact": "k.1 ∈ intGL _ _"
+  },
+  {
+   "id": "1.13",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Name C the real constant of Siegel's formula (classSum(1)·|d_E|^{1/4}·∏_v π^k/(k−1)!·(Re Φ_vβ)^{k−1}).",
+   "lines": [
+    81,
+    81
+   ],
+   "lean": "  generalize eC : ofReal (_ * _) = C at key"
+  },
+  {
+   "id": "1.14",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "r = (1 + b(S)⁻⁶)/(1 + 2^{−n(𝔰)}).",
+   "lines": [
+    82,
+    82
+   ],
+   "lean": "  let r := ENNReal.ofReal ((1 + S.b⁻¹ ^ 6) / (1 + 2⁻¹ ^ 𝔰.n))"
+  },
+  {
+   "id": "1.15",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "hy: ∑c < r·|C·∫F|: since ∑c ≠ 0 and r > 1 (2^{−n} < 2^{−ϱ} ≤ b⁻⁶ by pow_six_le), ∑c < r·∑c, and ∑c ≤ |classSum| = |C·∫F| (key):",
+   "lines": [
+    83,
+    85
+   ],
+   "span": [
+    83,
+    3,
+    85,
+    21
+   ],
+   "lean": "replace hy := (ENNReal.mul_lt_mul_left y0 (by simp) (by\n    grw [one_lt_ofReal, one_lt_div (by positivity), ← pow_six_le, pow_succ]\n    bound)).trans_le"
+  },
+  {
+   "id": "1.16",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "the class sum is the double sum over classes and vectors of nonnegative terms (classSum_eq_sum), which dominates the sum over s; for z ∈ s, ȳ_z y_z = β (by the quadric hypothesis), x(z) is integral outside T so n(x(z)) = Ψ(tail vector) ≥ c(z) (hy).",
+   "lines": [
+    85,
+    91
+   ],
+   "span": [
+    85,
+    22,
+    91,
+    45
+   ],
+   "lean": "(mul_le_mul_right (congr(‖$key‖ₑ).le.trans' (by\n    simp_rw [classSum_eq_sum, ← NNReal.coe_sum, enorm_eq_nnnorm, nnnorm_real, nnnorm_eq,\n      coe_finsetSum, ENNReal.coe_tsum (sm _)]\n    grw [← ENNReal.tsum_prod.trans (tsum_fintype _), ← ENNReal.sum_le_tsum s]\n    gcongr with z k\n    grw [ite_eq_left (by simp [β, ← (hs z k).1.1]), hy z k, ← tailVector_evalPlaces]\n    exact (ite_eq_left (hs z k).1.2).ge)) r)",
+   "uses": [
+    {
+     "decl": "Filling.classSum_eq_sum"
+    }
+   ]
+  },
+  {
+   "id": "1.17",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "nz: ∫F ≠ 0 (as ∑c > 0), and K0: the constant r·|C|·(1 + 2^{−n})·vol(Ô)^k·md(π) is finite.",
+   "lines": [
+    92,
+    93
+   ],
+   "lean": "  obtain ⟨nz, K0 : r * ‖C‖ₑ * (.ofReal (1 + 2⁻¹ ^ 𝔰.n) * volÔ E ^ 𝔰.k) * P.md π ≠ ∞⟩ := by\n    simpa using hy.ne_zero, by simp [r, mul_eq_top]"
+  },
+  {
+   "id": "1.18",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "iF: the integrand of ∫F is integrable (a nonzero integral).",
+   "lines": [
+    94,
+    94
+   ],
+   "lean": "  have iF := Integrable.of_integral_ne_zero nz.2.2"
+  },
+  {
+   "id": "1.19",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "b(τ) = (ππ̄)⁻¹ττ̄ − N − β_T for τ ∈ LocProd(T): the quadric value of the tail vector of τ.",
+   "lines": [
+    95,
+    95
+   ],
+   "lean": "  let b τ := (π * star π)⁻¹.1 * τ * star τ - S.N - ratToPlaces T β"
+  },
+  {
+   "id": "1.20",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Continuity: the integral ∫_{codifferent(m)} ψ(½ z·(−b(τ)))·(…) depends continuously on (m, τ) at (0, t') (dominated convergence, the integrand bounded by |n|), so there are neighbourhoods (ha of 0, hb of t') on which ∑c < r·|C|·|value| (h), as at (0, t') by hy:",
+   "lines": [
+    96,
+    97
+   ],
+   "lean": "  obtain ⟨_, _, ha, _, hb, h⟩ := (isLocallyConstant_of_eventually_add uf).continuous,\n    eventually_prod_iff.1"
+  },
+  {
+   "id": "1.21",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "the dominated-convergence argument: measurability, the bound by the norm of the integrand, and pointwise convergence (for z in the codifferent, ψ(½z·(…)) is eventually constant).",
+   "lines": [
+    98,
+    104
+   ],
+   "span": [
+    98,
+    5,
+    104,
+    84
+   ],
+   "lean": "(nhds_prod_eq.ge ((ENNReal.Tendsto.const_mul ((tendsto_integral_filter_of_dominated_convergence\n    (l := 𝓝 (0, t')) _ (.of_forall fun p ↦ (iF.1.mul (Continuous.aestronglyMeasurable (.subtype_val\n    (f := fun z : selfAdjoint _ ↦ ψf E ((2⁻¹ : E) * (z.1 * -adeleOfLocal T (b p.2)))) (by fun_prop))\n    )).indicator (isOpen_codifferent E p.1).measurableSet) (by simp [(norm_indicator_le_norm_self ..\n    ).trans_eq]) iF.norm (.of_forall fun z ↦ .congr' (((isOpen_Ô.preimage (by fun_prop)\n    ).eventually_mem (by simp)).mono fun p l ↦ .symm (ite_eq_left fun _ ↦ ψf_of_mem ∘ mul_mem l))\n    (Continuous.tendsto' (.const_mul (.subtype_val (by fun_prop)) _) _ _ (by simp ["
+  },
+  {
+   "id": "1.22",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "b(t') = 0: (ππ̄)⁻¹t't̄' = N + β, because t t̄ = N(β + N) and ππ̄ = N at T.",
+   "lines": [
+    104,
+    107
+   ],
+   "span": [
+    104,
+    84,
+    107,
+    100
+   ],
+   "lean": "show b t' = 0 by\n      rw [sub_eq_zero, sub_eq_iff_eq_add, mul_assoc, Units.inv_mul_eq_iff_eq_mul]\n      simpa [t', hN] using congrArg (ratToPlaces T) (by field :\n      t * star t = S.N * (β + S.N))])))).const_mul _).enorm (by simp [r])).eventually_const_lt hy))",
+   "typed_fact": "b t' = 0"
+  },
+  {
+   "id": "1.23",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Simplify h: the integral of an indicator is a set integral over the codifferent, and products of values of the additive character are values at sums.",
+   "lines": [
+    108,
+    110
+   ],
+   "lean": "  simp only [integral_indicator (isOpen_codifferent ..).measurableSet, Pi.mul_apply,\n    ← integral_mul_const, ← Circle.coe_mul, ← AddChar.map_add_eq_mul, ← mul_add,\n    sub_add, sub_neg_eq_add, one_mul] at h"
+  },
+  {
+   "id": "1.24",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "For all small L: every l ∈ L has t' + l in the hb-neighbourhood and tailVector(π, l, 0) in the neighbourhood of local constancy of Ψ (hL); L is clopen (oL).",
+   "lines": [
+    111,
+    113
+   ],
+   "lean": "  filter_upwards [eventually_smallSets_forall.2 (.and ((map_add_left_nhds_zero t').le hb) ((by\n    fun_prop : Continuous (tailVector π · 0)).tendsto' 0 0 (by simp [tailVector, ← Pi.zero_def])\n    uf))] with L hL oL"
+  },
+  {
+   "id": "1.25",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "It suffices (le_mul_of_forall_lt) to show a·vol(L) ≤ K0·∫_{slab} Ψ for every a < ∑c (then Ψ ≤ f, h2, and the constant is identified in steps 1.26–1.30):",
+   "lines": [
+    114,
+    143
+   ],
+   "lean": "  refine (le_mul_of_forall_lt (by simp [add_pos, nz]) (.inl K0) fun a k c hc ↦\n    ?_).trans (mul_le_mul' (ofReal_toReal K0 ▸ ofReal_le_ofReal (le_of_eq ?_)) (lintegral_mono\n    fun e ↦ (ENNReal.coe_indicator ..).trans_le (Set.indicator_le_indicator (h2 e))))\n  · obtain ⟨V, hV, d⟩ := eventually_smallSets.1 (F.eventually_mass_near_quadric_le hN ((oL.preimage\n      (by fun_prop)).continuous_indicator ‹_›) (cf.mono (by simp)) hc)\n    choose M M0 ha hV using\n      mem_nhds_zero_finAdele_iff.1 (ha.and ((continuous_evalPlaces T).tendsto 0 hV))\n    obtain ⟨⟨u, i⟩, o, z⟩ := (isUnit_natCast_finAdele (E := E) M0).exists_right_inv,\n      Fact.mk ((isCompact_codifferent E (isUnit_natCast_finAdele M0)).measure_lt_top (μ := volume)),\n      idealZeta_intAdeles_pow_le 𝔰.ϱ.succ (S.degree_le.trans' (Nat.mul_le_mul_right _ 𝔰.ϱ.succ_pos))\n    obtain ⟨v, _, hv, sp⟩ := P.mass_near_quadric_off_places_le i (sβ ▸ star_algebraMap_finAdele β :)\n      (le_two_of_pow_le_ofReal z) (by omega : _ ≤ 𝔰.k)\n    grw [← k.le, ← setLIntegral_const, setLIntegral_mono' oL.2.measurableSet fun τ l ↦ ?_,\n      setLIntegral_le_lintegral, lintegral_const_mul', (lintegral_add_left_eq_self _ t').trans_le\n      (d _ (fun a l ↦ by simpa [↓adeleOfLocal_evalPlaces_mul, ← mul_assoc, i] using hV (adeleOfLocal\n      T (evalPlaces T u * a)) (by simpa [↓mem_Ô_iff T, ↓adeleOfLocal_mem_integralOff]))\n      (measurable_const_mul (evalPlaces T u) SemilocalField.isCompact_O.measurableSet))]\n    rotate_right\n    grw [(h (ha 1 (by simp)) (hL _ l).1).le, enorm_mul, mul_one]\n    erw [enorm_integral_codifferent i ?_\n      (by simpa using isFiniteMeasure_withDensity_ofReal ((n.2.comp\n      toReal).continuous.integrable_of_hasCompactSupport (cs.comp_left rfl)).2),\n      withDensity_apply', funext (ENNReal.coe_indicator _ _), sp _ (Ψ <| tailVector π t' ·) (by\n      fun_prop), add_sub_cancel, lintegral_congr fun y ↦ ?_]\n    · simp_rw [← mul_assoc]; rfl\n    · rw [← (hL _ l).2, Set.indicator_of_mem (by simpa [t', form_tailVector hN]), tailVector,\n        tailVector, ← mulVec_add]; congr; simp [funext_iff, mul_add]\n    simp [b, sβ, ← adeleOfLocal_star, -Units.val_inv_eq_inv_val, ← Units.coe_star_inv]; ring_nf\n    grw [← z, pow_one, ← hv]; simp; ring_nf; rfl\n    simp [r, mul_eq_top, o.1.ne, *]",
+   "head_lines": [
+    114,
+    116
+   ]
+  },
+  {
+   "id": "1.25.1",
+   "parent": "1.25",
+   "kind": "deduction",
+   "claim": "Slabs near the quadric at T: a neighbourhood V of 0 such that for measurable S' ⊆ V the slab integral of 1_L·Ψ is ≤ md(π)·skewMeasure(…S')·c (eventually_mass_near_quadric_le, with c from the strict inequality hc).",
+   "lines": [
+    117,
+    118
+   ],
+   "lean": "  · obtain ⟨V, hV, d⟩ := eventually_smallSets.1 (F.eventually_mass_near_quadric_le hN ((oL.preimage\n      (by fun_prop)).continuous_indicator ‹_›) (cf.mono (by simp)) hc)",
+   "uses": [
+    {
+     "decl": "HyperbolicBasis.eventually_mass_near_quadric_le"
+    }
+   ]
+  },
+  {
+   "id": "1.25.2",
+   "parent": "1.25",
+   "kind": "deduction",
+   "claim": "A natural M ≠ 0 with M·Ô inside both the ha-neighbourhood and the preimage of V (mem_nhds_zero_finAdele_iff).",
+   "lines": [
+    119,
+    120
+   ],
+   "lean": "    choose M M0 ha hV using\n      mem_nhds_zero_finAdele_iff.1 (ha.and ((continuous_evalPlaces T).tendsto 0 hV))",
+   "uses": [
+    {
+     "decl": "mem_nhds_zero_finAdele_iff"
+    }
+   ]
+  },
+  {
+   "id": "1.25.3",
+   "parent": "1.25",
+   "kind": "deduction",
+   "claim": "M is a unit of 𝔸_f with inverse m (i); the codifferent scaled by M has finite volume (o); and idealZeta(Ô, ϱ+1) ≤ … (z, idealZeta_intAdeles_pow_le with (ϱ+1)[E:ℚ] ≤ 2^{2ϱ}).",
+   "lines": [
+    121,
+    123
+   ],
+   "lean": "    obtain ⟨⟨u, i⟩, o, z⟩ := (isUnit_natCast_finAdele (E := E) M0).exists_right_inv,\n      Fact.mk ((isCompact_codifferent E (isUnit_natCast_finAdele M0)).measure_lt_top (μ := volume)),\n      idealZeta_intAdeles_pow_le 𝔰.ϱ.succ (S.degree_le.trans' (Nat.mul_le_mul_right _ 𝔰.ϱ.succ_pos))",
+   "uses": [
+    {
+     "decl": "isUnit_natCast_finAdele"
+    },
+    {
+     "decl": "idealZeta_intAdeles_pow_le"
+    }
+   ]
+  },
+  {
+   "id": "1.25.4",
+   "parent": "1.25",
+   "kind": "deduction",
+   "claim": "The mass near the quadric off T: v ≠ ∞ with the volume bound hv and the factorisation sp of the adelic slab integral as v times the slab integral at T (mass_near_quadric_off_places_le; idealZeta ≤ 2; 2(ϱ+2) ≤ k).",
+   "lines": [
+    124,
+    125
+   ],
+   "lean": "    obtain ⟨v, _, hv, sp⟩ := P.mass_near_quadric_off_places_le i (sβ ▸ star_algebraMap_finAdele β :)\n      (le_two_of_pow_le_ofReal z) (by omega : _ ≤ 𝔰.k)",
+   "uses": [
+    {
+     "decl": "IntegralPlace.mass_near_quadric_off_places_le"
+    }
+   ]
+  },
+  {
+   "id": "1.25.5",
+   "parent": "1.25",
+   "kind": "deduction",
+   "claim": "Chain: a·vol(L) ≤ ∫_{τ∈L} (value of the continuous integral at τ) ≤ (the slab integral over the translates t' + L) ≤ md(π)·skewMeasure·c·(constant), by the bound of step 1.25.7 for τ ∈ L and step 1.25.1 applied to the set m_T·(L-slab) ⊆ V.",
+   "lines": [
+    126,
+    130
+   ],
+   "lean": "    grw [← k.le, ← setLIntegral_const, setLIntegral_mono' oL.2.measurableSet fun τ l ↦ ?_,\n      setLIntegral_le_lintegral, lintegral_const_mul', (lintegral_add_left_eq_self _ t').trans_le\n      (d _ (fun a l ↦ by simpa [↓adeleOfLocal_evalPlaces_mul, ← mul_assoc, i] using hV (adeleOfLocal\n      T (evalPlaces T u * a)) (by simpa [↓mem_Ô_iff T, ↓adeleOfLocal_mem_integralOff]))\n      (measurable_const_mul (evalPlaces T u) SemilocalField.isCompact_O.measurableSet))]"
+  },
+  {
+   "id": "1.25.6",
+   "parent": "1.25",
+   "kind": "deduction",
+   "claim": "Reorder the remaining goals.",
+   "lines": [
+    131,
+    131
+   ],
+   "lean": "    rotate_right"
+  },
+  {
+   "id": "1.25.7",
+   "parent": "1.25",
+   "kind": "deduction",
+   "claim": "For τ ∈ L: a < r·|C|·|value at (1, t' + τ)| by h (1 ∈ M·Ô-neighbourhood, t' + τ in the hb-neighbourhood).",
+   "lines": [
+    132,
+    132
+   ],
+   "lean": "    grw [(h (ha 1 (by simp)) (hL _ l).1).le, enorm_mul, mul_one]"
+  },
+  {
+   "id": "1.25.8",
+   "parent": "1.25",
+   "kind": "deduction",
+   "claim": "Evaluate the codifferent integral: |∫_{codifferent(M)} ∫ ψ(½z(x̄x − β − τ)) n(x)| = vol(codifferent(M))·∫_{m(x̄x − β − τ) ∈ Ô} n (enorm_integral_codifferent), and sp turns this adelic slab integral into v·∫_{slab at T} Ψ(tailVector(π, t', y)).",
+   "lines": [
+    133,
+    137
+   ],
+   "lean": "    erw [enorm_integral_codifferent i ?_\n      (by simpa using isFiniteMeasure_withDensity_ofReal ((n.2.comp\n      toReal).continuous.integrable_of_hasCompactSupport (cs.comp_left rfl)).2),\n      withDensity_apply', funext (ENNReal.coe_indicator _ _), sp _ (Ψ <| tailVector π t' ·) (by\n      fun_prop), add_sub_cancel, lintegral_congr fun y ↦ ?_]",
+   "uses": [
+    {
+     "decl": "enorm_integral_codifferent"
+    }
+   ]
+  },
+  {
+   "id": "1.25.9",
+   "parent": "1.25",
+   "kind": "deduction",
+   "claim": "Reassociate the product of constants.",
+   "lines": [
+    138,
+    138
+   ],
+   "lean": "    · simp_rw [← mul_assoc]; rfl"
+  },
+  {
+   "id": "1.25.10",
+   "parent": "1.25",
+   "kind": "deduction",
+   "claim": "On the slab, 1_L((J·tail vector)_top − t') = 1 (form_tailVector: (J tailVector(π, t'+τ, y))_z = t' + τ), and Ψ(tailVector(π, t' + τ, y)) = Ψ(tailVector(π, t', y) + tailVector(π, τ, 0)) = Ψ(tailVector(π, t', y)) (linearity of the tail vector and local constancy, hL).",
+   "lines": [
+    139,
+    140
+   ],
+   "lean": "    · rw [← (hL _ l).2, Set.indicator_of_mem (by simpa [t', form_tailVector hN]), tailVector,\n        tailVector, ← mulVec_add]; congr; simp [funext_iff, mul_add]",
+   "uses": [
+    {
+     "decl": "form_tailVector"
+    }
+   ]
+  },
+  {
+   "id": "1.25.11",
+   "parent": "1.25",
+   "kind": "deduction",
+   "claim": "The slab conditions agree: m(ȳy − β − τ) ∈ Ô ⟺ m_T(ȳy − (ππ̄)⁻¹(t'+τ)(t'+τ)* + N) ∈ R, a ring identity using β̄ = β, hN and the definition of b.",
+   "lines": [
+    141,
+    141
+   ],
+   "lean": "    simp [b, sβ, ← adeleOfLocal_star, -Units.val_inv_eq_inv_val, ← Units.coe_star_inv]; ring_nf"
+  },
+  {
+   "id": "1.25.12",
+   "parent": "1.25",
+   "kind": "deduction",
+   "claim": "The constants: vol(codifferent)·skewMeasure·v ≤ idealZeta·vol(Ô)^k (hv) and idealZeta ≤ 1 + 2^{−n} (z).",
+   "lines": [
+    142,
+    142
+   ],
+   "lean": "    grw [← z, pow_one, ← hv]; simp; ring_nf; rfl"
+  },
+  {
+   "id": "1.25.13",
+   "parent": "1.25",
+   "kind": "deduction",
+   "claim": "The finiteness side condition (r, the measures and the constants are finite).",
+   "lines": [
+    143,
+    143
+   ],
+   "lean": "    simp [r, mul_eq_top, o.1.ne, *]"
+  },
+  {
+   "id": "1.26",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "The constant: rewrite u with hN (md(N_T) = md(π_T)², so md(π) = ∏_v |Φ_v N|⁻¹).",
+   "lines": [
+    144,
+    144
+   ],
+   "lean": "  simp [← hN, ← sq, ← ENNReal.rpow_natCast_mul] at u"
+  },
+  {
+   "id": "1.27",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Keep only p, eC, d, N0, u.",
+   "lines": [
+    145,
+    145
+   ],
+   "lean": "  clear * - p eC d N0 u"
+  },
+  {
+   "id": "1.28",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Unfold r, C (eC) and the class sum (classSum_eq_sum: #Classes), with |Φ_v β| = Re Φ_v β > 0 (p).",
+   "lines": [
+    146,
+    146
+   ],
+   "lean": "  simp (disch := positivity) [r, u, ← eC, classSum_eq_sum, abs_of_nonneg, abs_of_pos (p _)]"
+  },
+  {
+   "id": "1.29",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Unfold siegelConst and β: Φ_v(β) = (|Φ_v t|² − N²)/N, k = 1000(2ϱ+2) + d.",
+   "lines": [
+    147,
+    147
+   ],
+   "lean": "  simp [siegelConst, β, mul_conj', sq, div_pow, ← d, mul_add, prod_pow]"
+  },
+  {
+   "id": "1.30",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "The resulting identity K0 = (1 + b⁻⁶)·#Classes·siegelConst·(∏(|t|² − N²))^{k−1} is an identity of rational expressions (field).",
+   "lines": [
+    148,
+    148
+   ],
+   "lean": "  field"
+  }
+ ]
+}

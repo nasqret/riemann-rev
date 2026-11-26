@@ -1,0 +1,416 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Exchange.DeterminantVectors:88:7",
+ "name": "surjOn_cone_integral_detVectors",
+ "summary": "For v = detVectorFn(s, t, k, m, c, F, ·), take v′ = R(x) = the Fock vector of x·∏_w d(w, 1)^{m_w}·d(w, −1)^{m_w+2k}, d the determinants of linear forms built from G = −s(E)⁻¹(K_A K_X* + L_A L_X*) + I_A F I_X*; v′ is a determinant vector (Weil action computed on polynomial vectors), and the cone integrand of R(dc) at each point q is e^{φ(q)}·d·v, so a suitable x gives cone integral v.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "block",
+   "claim": "Let v ∈ detVectors(k, m) for (s, t): v is rapid and v = detVectorFn(s, t, k, m, c, F, ·) (e); from the line-term expansion of the cone integral (`tsum_lineTerm`) take its splitting data, with the adaptedness hy and the frame relation l.",
+   "lines": [
+    91,
+    144
+   ],
+   "lean": "  fun v ⟨_, c, F, e⟩ ↦ (tsum_lineTerm A X β).2.choose_spec.choose_spec.elim fun _ ⟨hy, l⟩ ↦ by\n  let G := ((-(scaleIdele E).1.1⁻¹, 0) :\n    𝔸 E) • (A.kAdelic * X.kAdelicᴴ + A.lAdelic * X.lAdelicᴴ) + A.iAdelic * F * X.iAdelicᴴ\n  let d w σ := det (of fun l i : {i // t' i = σ} ↦ ∑ j, C (star ((scaleIdele E * G j l).1\n    w)) * if h : _ = 1 then .X (⟨(w, i, j), h⟩ : {c // realSigns E (homSigns s' t') c = 1}) else 0)\n  let R x : PairFock E s' t' :=\n    polyVector _ (rename (↑) (C x * ∏ w, d w 1 ^ m w * d w (-1) ^ (m w + 2 * k)))\n  have K x g (h : ∀ w, g w ∈ blockDiagAlg t') u :\n      realPairWeil (card n' / 2 - (k + m ·) ·) 0 (1, g) (R x) u = detVectorFn s' t' k m x G u := by\n    erw [realPairWeil_polyVector _ _ (by simp) h, IsVacuum.smul_apply, polyVector_apply,\n      aeval_bind₁]\n    set f := fun _ : _ × _ ↦ _\n    simp [detVectorFn, pow_add, hn, zpow_sub₀, two_mul k, (by\n      simpa [hn, two_mul, ← add_assoc] using negCount_neg_add s' :), fun w σ ↦ show\n      eval f (rename (↑) (d w σ)) =\n      principalMinor (posCoordMatrix s' t' G u w)ᴴ (t' · = σ) * principalMinor (g w) (t' · = σ) by\n      rw [← principalMinor_mul (by clear * - h; grind [mem_blockDiagAlg])]\n      simp [f, principalMinor, eval_rename, RingHom.map_det, d]; congr!; ext\n      simp +contextual [posProj, mul_apply, vecToMat, toSquareBlockProp, apply_dite (eval _),\n        sum_mul, holCoord_eq, @sum_comm n', mul_sum, ite_sum_zero, -sum_ite_irrel]\n      clear * - h; grind [mem_blockDiagAlg]]; ring\n  have H x := by simpa using K x 1\n  have Φ q : ∃ φ : ℝ, ∀ d : ℝ, coneIntegrand A X (k + m ·) β z (R (d * c)) q = φ.exp • d • v := ?_\n  choose φ Φ using Φ\n  use R ((∫ q, (φ q).exp ∂.prod .haar .haar)⁻¹ * c),\n    ⟨(weightedNorm_polyVector_ne_top · _), _, _, H _⟩\n  by_cases v = 0 <;> simp [↓Φ, *, fun h ↦ (integral_exp_pos ((integrable_smul_const h).1 (funext\n    (Φ · 1) ▸ (integrable_coneIntegrand _ _ _ _ hz (weightedNorm_polyVector_ne_top · _)).1))).ne']\n  choose y a₁ a₃ using PositivePart.exists_slice_eq hy _\n  use -∑ w, ‖q.2.1 w‖ ^ 2 + .log (ideleAbs (q.2.map (.inl ..)) ^ z *\n    ∏ w, normSq (q.2.1 w) ^ (k + m w)); intro; ext u\n  erw [Real.exp_add, Real.exp_log (by simp [Real.rpow_pos_of_pos, prod_pos]), coneIntegrand, ext\n    (K _ _ (mem_maxCompactU.1 <| q.1.2.1 · ⟨⟩) · |>.trans (H ..).symm), lineTermReal,\n    IsVacuum.smul_apply, a₃, H]\n  have a w σ : principalMinor (posCoordMatrix s' t' G (y u) w) (t' · = σ) =\n    q.2.1 w * principalMinor (posCoordMatrix s t F u w) (t · = σ) := ?_\n  simp [*, ← (by simpa [star_dot_self_eq_sum] using a₃ u 1 :), ← Complex.coe_smul, detVectorFn,\n    pow_add, ← conj_mul',\n    normSq_eq_conj_mul_self, _root_.zpow_mul, prod_pow, pow_right_comm _ 2, prod_eq_zero_iff]; ring\n  have := frameAt_real_unitary (by simp [IsAdapted, IsBaseAdapted.isOrthoIntegral] :\n    X.IsAdapted 1 1) w; extract_lets P at this\n  rw [(?_ : posCoordMatrix _ _ G _ w =\n    P * (scalar (Unit ⊕ Unit) (q.2.1 w)).fromBlocks 0 0 (posCoordMatrix s t F u w) * Pᴴ)]\n  fin_cases σ <;> simp [↓principalMinor_sign_eq_det, principalMinor_eq_det, ← posProj.eq_1,\n    posProj_eq, mul_apply, sub_eq_add_neg, this, ← (signMatrix _).mul_assoc P, ← this.1.elim\n    det_conj_of_mul_eq_one, ↓(det_classical _).symm.trans (det_fin_two _), ← fromBlocks_one',\n    ← Pᴴ.mul_assoc P, fromBlocks_add, fromBlocks_neg, ← det_submatrix_equiv_self (.ofBijective\n    ![.inl (), Sum.inr ()] (by open Calc in decide +kernel)), fromBlocks_smul] <;> ring_nf <;> simp\n  rw [Splitting.frameAt, inv_one, _root_.G.mat_one, Matrix.one_mul, fromCols_ext_iff] at l\n  simp_rw [posCoordMatrix, a₁, map_add, IsAdapted.mixedModel, realVec_realMatrix_mulVec, l.2,\n    fromCols_inj l.1]\n  cases β <;> simp [kronecker_mulVec_eq_matToVec, ← Pi.zero_def, ← matToVec_add, Function.comp_def,\n    mk_zero_zero, G] <;> ext <;> simp [↓← (vecToMat _).mul_assoc, mul_apply, P,\n    vecToMat, -Matrix.mul_assoc, field] <;> ring",
+   "head_lines": [
+    91,
+    91
+   ],
+   "uses": [
+    {
+     "decl": "tsum_lineTerm"
+    }
+   ]
+  },
+  {
+   "id": "1.1",
+   "parent": "1",
+   "kind": "step",
+   "claim": "Let G = −(s(E)⁻¹)_∞·(K_A K_X* + L_A L_X*) + I_A·F·I_X*, an n′ × r′ adelic matrix (F placed inside the bigger spaces, plus the hyperbolic part).",
+   "lines": [
+    92,
+    93
+   ],
+   "lean": "  let G := ((-(scaleIdele E).1.1⁻¹, 0) :\n    𝔸 E) • (A.kAdelic * X.kAdelicᴴ + A.lAdelic * X.lAdelicᴴ) + A.iAdelic * F * X.iAdelicᴴ"
+  },
+  {
+   "id": "1.2",
+   "parent": "1",
+   "kind": "step",
+   "claim": "For an infinite place w and a sign σ let d(w, σ) be the determinant of the matrix of linear forms ∑_j conj((s(E)·G)_{jl}(w))·X_{(w,i,j)} (i with t′(i) = σ), a polynomial in the positive coordinates.",
+   "lines": [
+    94,
+    95
+   ],
+   "lean": "  let d w σ := det (of fun l i : {i // t' i = σ} ↦ ∑ j, C (star ((scaleIdele E * G j l).1\n    w)) * if h : _ = 1 then .X (⟨(w, i, j), h⟩ : {c // realSigns E (homSigns s' t') c = 1}) else 0)",
+   "uses": [
+    {
+     "step": "1.1"
+    }
+   ]
+  },
+  {
+   "id": "1.3",
+   "parent": "1",
+   "kind": "step",
+   "claim": "For x ∈ ℂ let R(x) be the Fock vector (`polyVector`) of the polynomial x·∏_w d(w, 1)^{m(w)}·d(w, −1)^{m(w)+2k}.",
+   "lines": [
+    96,
+    97
+   ],
+   "lean": "  let R x : PairFock E s' t' :=\n    polyVector _ (rename (↑) (C x * ∏ w, d w 1 ^ m w * d w (-1) ^ (m w + 2 * k)))",
+   "uses": [
+    {
+     "step": "1.2"
+    }
+   ]
+  },
+  {
+   "id": "1.4",
+   "parent": "1",
+   "kind": "block",
+   "claim": "For g block diagonal for t′ at every place, the real Weil action of (1, g) (weights |n′|/2 − (k + m)) on R(x), evaluated at u, equals detVectorFn(s′, t′, k, m, x, G, u).",
+   "lines": [
+    98,
+    111
+   ],
+   "lean": "  have K x g (h : ∀ w, g w ∈ blockDiagAlg t') u :\n      realPairWeil (card n' / 2 - (k + m ·) ·) 0 (1, g) (R x) u = detVectorFn s' t' k m x G u := by\n    erw [realPairWeil_polyVector _ _ (by simp) h, IsVacuum.smul_apply, polyVector_apply,\n      aeval_bind₁]\n    set f := fun _ : _ × _ ↦ _\n    simp [detVectorFn, pow_add, hn, zpow_sub₀, two_mul k, (by\n      simpa [hn, two_mul, ← add_assoc] using negCount_neg_add s' :), fun w σ ↦ show\n      eval f (rename (↑) (d w σ)) =\n      principalMinor (posCoordMatrix s' t' G u w)ᴴ (t' · = σ) * principalMinor (g w) (t' · = σ) by\n      rw [← principalMinor_mul (by clear * - h; grind [mem_blockDiagAlg])]\n      simp [f, principalMinor, eval_rename, RingHom.map_det, d]; congr!; ext\n      simp +contextual [posProj, mul_apply, vecToMat, toSquareBlockProp, apply_dite (eval _),\n        sum_mul, holCoord_eq, @sum_comm n', mul_sum, ite_sum_zero, -sum_ite_irrel]\n      clear * - h; grind [mem_blockDiagAlg]]; ring",
+   "head_lines": [
+    98,
+    99
+   ],
+   "typed_fact": "realPairWeil (card n' / 2 - (k + m ·) ·) 0 (1, g) (R x) u = detVectorFn s' t' k m x G u",
+   "uses": [
+    {
+     "step": "1.3"
+    }
+   ]
+  },
+  {
+   "id": "1.4.1",
+   "parent": "1.4",
+   "kind": "step",
+   "claim": "The real Weil action of a block-diagonal point on a polynomial vector is a product of powers of principal minors times the polynomial vector of the substituted polynomial (`realPairWeil_polyVector`); evaluate polynomial vectors.",
+   "lines": [
+    100,
+    101
+   ],
+   "lean": "    erw [realPairWeil_polyVector _ _ (by simp) h, IsVacuum.smul_apply, polyVector_apply,\n      aeval_bind₁]",
+   "uses": [
+    {
+     "decl": "realPairWeil_polyVector"
+    }
+   ]
+  },
+  {
+   "id": "1.4.2",
+   "parent": "1.4",
+   "kind": "step",
+   "claim": "Name the substitution f.",
+   "lines": [
+    102,
+    102
+   ],
+   "lean": "    set f := fun _ : _ × _ ↦ _"
+  },
+  {
+   "id": "1.4.3",
+   "parent": "1.4",
+   "kind": "block",
+   "claim": "With the exponents given by hn (and negCount(−s′) + negCount(s′) = |n′|), the factors from the minors of g cancel those produced by substituting into the d(w, σ), once the identity 1.4.3.1 holds; a ring identity.",
+   "lines": [
+    103,
+    111
+   ],
+   "lean": "    simp [detVectorFn, pow_add, hn, zpow_sub₀, two_mul k, (by\n      simpa [hn, two_mul, ← add_assoc] using negCount_neg_add s' :), fun w σ ↦ show\n      eval f (rename (↑) (d w σ)) =\n      principalMinor (posCoordMatrix s' t' G u w)ᴴ (t' · = σ) * principalMinor (g w) (t' · = σ) by\n      rw [← principalMinor_mul (by clear * - h; grind [mem_blockDiagAlg])]\n      simp [f, principalMinor, eval_rename, RingHom.map_det, d]; congr!; ext\n      simp +contextual [posProj, mul_apply, vecToMat, toSquareBlockProp, apply_dite (eval _),\n        sum_mul, holCoord_eq, @sum_comm n', mul_sum, ite_sum_zero, -sum_ite_irrel]\n      clear * - h; grind [mem_blockDiagAlg]]; ring",
+   "head_lines": [
+    103,
+    103
+   ],
+   "uses": [
+    {
+     "step": "1.4.1"
+    },
+    {
+     "step": "1.4.2"
+    }
+   ]
+  },
+  {
+   "id": "1.4.3.1",
+   "parent": "1.4.3",
+   "kind": "step",
+   "claim": "Evaluating d(w, σ) at f gives principalMinor((posCoordMatrix(s′, t′, G, u)_w)*, t′ = σ)·principalMinor(g_w, t′ = σ), by the multiplicativity of principal minors of block-diagonal matrices (`principalMinor_mul`).",
+   "lines": [
+    104,
+    111
+   ],
+   "lean": "      simpa [hn, two_mul, ← add_assoc] using negCount_neg_add s' :), fun w σ ↦ show\n      eval f (rename (↑) (d w σ)) =\n      principalMinor (posCoordMatrix s' t' G u w)ᴴ (t' · = σ) * principalMinor (g w) (t' · = σ) by\n      rw [← principalMinor_mul (by clear * - h; grind [mem_blockDiagAlg])]\n      simp [f, principalMinor, eval_rename, RingHom.map_det, d]; congr!; ext\n      simp +contextual [posProj, mul_apply, vecToMat, toSquareBlockProp, apply_dite (eval _),\n        sum_mul, holCoord_eq, @sum_comm n', mul_sum, ite_sum_zero, -sum_ite_irrel]\n      clear * - h; grind [mem_blockDiagAlg]]; ring"
+  },
+  {
+   "id": "1.5",
+   "parent": "1",
+   "kind": "step",
+   "claim": "With g = 1: R(x) = detVectorFn(s′, t′, k, m, x, G, ·) (H).",
+   "lines": [
+    112,
+    112
+   ],
+   "lean": "  have H x := by simpa using K x 1",
+   "uses": [
+    {
+     "step": "1.4"
+    }
+   ]
+  },
+  {
+   "id": "1.6",
+   "parent": "1",
+   "kind": "step",
+   "claim": "For every point q there is a real φ(q) with coneIntegrand(A, X, k + m, β, z, R(d·c), q) = e^{φ(q)}·d·v for all real d (proved below).",
+   "lines": [
+    113,
+    113
+   ],
+   "lean": "  have Φ q : ∃ φ : ℝ, ∀ d : ℝ, coneIntegrand A X (k + m ·) β z (R (d * c)) q = φ.exp • d • v := ?_",
+   "typed_fact": "∃ φ : ℝ, ∀ d : ℝ, coneIntegrand A X (k + m ·) β z (R (d * c)) q = φ.exp • d • v"
+  },
+  {
+   "id": "1.7",
+   "parent": "1",
+   "kind": "step",
+   "claim": "Choose such φ.",
+   "lines": [
+    114,
+    114
+   ],
+   "lean": "  choose φ Φ using Φ",
+   "uses": [
+    {
+     "step": "1.6"
+    }
+   ]
+  },
+  {
+   "id": "1.8",
+   "parent": "1",
+   "kind": "step",
+   "claim": "Take v′ = R(x) with x = (∫ e^{φ})⁻¹·c: a polynomial vector, hence rapid (`weightedNorm_polyVector_ne_top`), and a determinant vector by H.",
+   "lines": [
+    115,
+    116
+   ],
+   "lean": "  use R ((∫ q, (φ q).exp ∂.prod .haar .haar)⁻¹ * c),\n    ⟨(weightedNorm_polyVector_ne_top · _), _, _, H _⟩",
+   "uses": [
+    {
+     "step": "1.5"
+    },
+    {
+     "step": "1.7"
+    }
+   ]
+  },
+  {
+   "id": "1.9",
+   "parent": "1",
+   "kind": "step",
+   "claim": "Its cone integral is ∫ e^{φ(q)}·(∫e^φ)⁻¹·v dq = v: for v ≠ 0 the function e^φ is integrable (the cone integrand is, `integrable_coneIntegrand`) and its integral positive (`integral_exp_pos`); for v = 0 both sides are 0.",
+   "lines": [
+    117,
+    118
+   ],
+   "lean": "  by_cases v = 0 <;> simp [↓Φ, *, fun h ↦ (integral_exp_pos ((integrable_smul_const h).1 (funext\n    (Φ · 1) ▸ (integrable_coneIntegrand _ _ _ _ hz (weightedNorm_polyVector_ne_top · _)).1))).ne']",
+   "uses": [
+    {
+     "step": "1.7"
+    },
+    {
+     "step": "1.8"
+    }
+   ],
+   "ambient_uses": [
+    "MeasureTheory.integral_exp_pos"
+   ]
+  },
+  {
+   "id": "1.10",
+   "parent": "1",
+   "kind": "step",
+   "claim": "Proof of step 1.6: for every u, the slice of a polynomial vector in the positive coordinates is its value at a point y(u) with P₊·y(u) = L(−a) + I·P₊u + K(−a) (`PositivePart.exists_slice_eq`, a₁, a₃).",
+   "lines": [
+    119,
+    119
+   ],
+   "lean": "  choose y a₁ a₃ using PositivePart.exists_slice_eq hy _",
+   "uses": [
+    {
+     "decl": "PositivePart.exists_slice_eq"
+    }
+   ]
+  },
+  {
+   "id": "1.11",
+   "parent": "1",
+   "kind": "step",
+   "claim": "Take φ(q) = −∑_w |q_w|² + log(|q|^z·∏_w |q_w|^{2(k+m(w))}) (q_w the Levi coordinate at w) and compare at every u.",
+   "lines": [
+    120,
+    121
+   ],
+   "lean": "  use -∑ w, ‖q.2.1 w‖ ^ 2 + .log (ideleAbs (q.2.map (.inl ..)) ^ z *\n    ∏ w, normSq (q.2.1 w) ^ (k + m w)); intro; ext u"
+  },
+  {
+   "id": "1.12",
+   "parent": "1",
+   "kind": "step",
+   "claim": "Unfold the cone integrand: its line term is the real Weil action of a block-diagonal point (step 1.4), read through the slice (a₃), and R(x) as a determinant function (H).",
+   "lines": [
+    122,
+    124
+   ],
+   "lean": "  erw [Real.exp_add, Real.exp_log (by simp [Real.rpow_pos_of_pos, prod_pos]), coneIntegrand, ext\n    (K _ _ (mem_maxCompactU.1 <| q.1.2.1 · ⟨⟩) · |>.trans (H ..).symm), lineTermReal,\n    IsVacuum.smul_apply, a₃, H]",
+   "uses": [
+    {
+     "step": "1.4"
+    },
+    {
+     "step": "1.5"
+    },
+    {
+     "step": "1.10"
+    }
+   ]
+  },
+  {
+   "id": "1.13",
+   "parent": "1",
+   "kind": "step",
+   "claim": "For every infinite place w and sign σ, the principal minor of posCoordMatrix(s′, t′, G, y(u)) at w on t′ = σ is q_w times that of posCoordMatrix(s, t, F, u) on t = σ (shown below).",
+   "lines": [
+    125,
+    126
+   ],
+   "lean": "  have a w σ : principalMinor (posCoordMatrix s' t' G (y u) w) (t' · = σ) =\n    q.2.1 w * principalMinor (posCoordMatrix s t F u w) (t · = σ) := ?_",
+   "typed_fact": "principalMinor (posCoordMatrix s' t' G (y u) w) (t' · = σ) =\n    q.2.1 w * principalMinor (posCoordMatrix s t F u w) (t · = σ)"
+  },
+  {
+   "id": "1.14",
+   "parent": "1",
+   "kind": "step",
+   "claim": "With these minors, the Gaussian factor (a₃ at 1) and |q_w|² = q_w·conj(q_w), the two sides agree (a ring identity).",
+   "lines": [
+    127,
+    129
+   ],
+   "lean": "  simp [*, ← (by simpa [star_dot_self_eq_sum] using a₃ u 1 :), ← Complex.coe_smul, detVectorFn,\n    pow_add, ← conj_mul',\n    normSq_eq_conj_mul_self, _root_.zpow_mul, prod_pow, pow_right_comm _ 2, prod_eq_zero_iff]; ring",
+   "uses": [
+    {
+     "step": "1.10"
+    },
+    {
+     "step": "1.13"
+    }
+   ]
+  },
+  {
+   "id": "1.15",
+   "parent": "1",
+   "kind": "step",
+   "claim": "The real frame matrix P of X at w is unitary and intertwines diag(t′) with the block form (`frameAt_real_unitary`, X being adapted at 1).",
+   "lines": [
+    130,
+    131
+   ],
+   "lean": "  have := frameAt_real_unitary (by simp [IsAdapted, IsBaseAdapted.isOrthoIntegral] :\n    X.IsAdapted 1 1) w; extract_lets P at this",
+   "uses": [
+    {
+     "decl": "frameAt_real_unitary"
+    }
+   ]
+  },
+  {
+   "id": "1.16",
+   "parent": "1",
+   "kind": "step",
+   "claim": "posCoordMatrix(s′, t′, G, y(u)) at w equals P·diag(q_w·1₂, posCoordMatrix(s, t, F, u)_w)·P* (shown in steps 1.18–1.20).",
+   "lines": [
+    132,
+    133
+   ],
+   "lean": "  rw [(?_ : posCoordMatrix _ _ G _ w =\n    P * (scalar (Unit ⊕ Unit) (q.2.1 w)).fromBlocks 0 0 (posCoordMatrix s t F u w) * Pᴴ)]",
+   "uses": [
+    {
+     "step": "1.15"
+    }
+   ]
+  },
+  {
+   "id": "1.17",
+   "parent": "1",
+   "kind": "step",
+   "claim": "For σ = ±1, the principal minor of P·diag(q_w·1₂, M)·P* on t′ = σ is q_w times that of M on t = σ: conjugating by P to the block form, the hyperbolic plane contributes one entry q_w of each sign (`principalMinor_sign_eq_det`, the 2 × 2 determinant).",
+   "lines": [
+    134,
+    138
+   ],
+   "lean": "  fin_cases σ <;> simp [↓principalMinor_sign_eq_det, principalMinor_eq_det, ← posProj.eq_1,\n    posProj_eq, mul_apply, sub_eq_add_neg, this, ← (signMatrix _).mul_assoc P, ← this.1.elim\n    det_conj_of_mul_eq_one, ↓(det_classical _).symm.trans (det_fin_two _), ← fromBlocks_one',\n    ← Pᴴ.mul_assoc P, fromBlocks_add, fromBlocks_neg, ← det_submatrix_equiv_self (.ofBijective\n    ![.inl (), Sum.inr ()] (by open Calc in decide +kernel)), fromBlocks_smul] <;> ring_nf <;> simp",
+   "uses": [
+    {
+     "step": "1.15"
+    },
+    {
+     "step": "1.16"
+    }
+   ]
+  },
+  {
+   "id": "1.18",
+   "parent": "1",
+   "kind": "step",
+   "claim": "Unfold the frame relation l at the point 1 (the frame at 1 is the identity matrix times the columns).",
+   "lines": [
+    139,
+    139
+   ],
+   "lean": "  rw [Splitting.frameAt, inv_one, _root_.G.mat_one, Matrix.one_mul, fromCols_ext_iff] at l"
+  },
+  {
+   "id": "1.19",
+   "parent": "1",
+   "kind": "step",
+   "claim": "Insert the description a₁ of P₊y(u) and the mixed-model blocks into posCoordMatrix.",
+   "lines": [
+    140,
+    141
+   ],
+   "lean": "  simp_rw [posCoordMatrix, a₁, map_add, IsAdapted.mixedModel, realVec_realMatrix_mulVec, l.2,\n    fromCols_inj l.1]",
+   "uses": [
+    {
+     "step": "1.10"
+    },
+    {
+     "step": "1.18"
+    }
+   ]
+  },
+  {
+   "id": "1.20",
+   "parent": "1",
+   "kind": "step",
+   "claim": "For both values of β the matrix identity holds entrywise, a ring identity in the coordinates.",
+   "lines": [
+    142,
+    144
+   ],
+   "lean": "  cases β <;> simp [kronecker_mulVec_eq_matToVec, ← Pi.zero_def, ← matToVec_add, Function.comp_def,\n    mk_zero_zero, G] <;> ext <;> simp [↓← (vecToMat _).mul_assoc, mul_apply, P,\n    vecToMat, -Matrix.mul_assoc, field] <;> ring",
+   "uses": [
+    {
+     "step": "1.19"
+    }
+   ]
+  }
+ ]
+}

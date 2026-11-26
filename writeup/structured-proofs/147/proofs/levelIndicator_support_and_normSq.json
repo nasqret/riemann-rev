@@ -1,0 +1,85 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Exchange.CharacterLiftNorm:62:7",
+ "name": "AuxPair.levelIndicator_support_and_normSq",
+ "summary": "Reduce matrices over O_E/MQ to families of matrices over the residue fields (a bijection); there levelIndicator(O) is the indicator of a product set, which is counted.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "statement",
+   "claim": "Not a step of the proof: lines 63–65 are the rest of the statement, which ends before the `:=` on line 65 (a second-reader message). The line census takes the `:=` of `let F :=` on line 62 for the start of the value, so the check requires these lines to be owned here. They state: F = #TwistGL(O, r)·levelIndicator(O); (1) F(y) ≠ 0 implies inclMatrix(R, incl(O))ᵀ·y = 1 (R = O_E/levelModulus(O, 1)), and (2) ∑_y |F(y)|² = #TwistGL(O, r)²·(∏_i q(twistPlace(O, i)))^{rankDiff(O)·|r|}.",
+   "lines": [
+    63,
+    65
+   ],
+   "lean": "    (Nat.card (O.TwistGL r) : ℂ) • O.levelIndicator\n  (∀ y, F y ≠ 0 → (inclMatrix (O.levelModulus 1).ResRing O.incl)ᵀ * y = 1) ∧ star F ⬝ᵥ F =\n    Nat.card (O.TwistGL r) ^ 2 * (∏ i, (O.twistPlace i).q) ^ (O.rankDiff * card r) := by"
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "step",
+   "claim": "The map e sending an n × r matrix y over R = O_E/𝔪 to the family of its reductions y mod w at the places w of M and Q is a bijection onto the families of n × r matrices over the residue fields k_w: it is injective because matrices over R are determined by their residues at the pairwise apart places (`Modulus.matrix_ext_modulusResidue`), and both sides have the same number of elements (`LevelPlaces.card_levelModulus_resRing`, `card_ResField`).",
+   "lines": [
+    66,
+    69
+   ],
+   "lean": "  let e := Equiv.ofBijective (fun (y : Matrix n r _) i ↦ (y.map (levelResidueAt i) ·))\n    (Injective.bijective_of_nat_card_le (fun _ _ ↦\n    ((O.levelModulus 1).matrix_ext_modulusResidue O.apart.1).2 ∘ congrFun)\n    (by simp [Matrix, ↓Nat.card_pi, O.card_levelModulus_resRing, ↓card_ResField, prod_pow]))",
+   "uses": [
+    {
+     "decl": "Modulus.matrix_ext_modulusResidue"
+    },
+    {
+     "decl": "LevelPlaces.card_levelModulus_resRing"
+    },
+    {
+     "decl": "card_ResField"
+    }
+   ],
+   "ambient_uses": [
+    "Equiv.ofBijective",
+    "Function.Injective.bijective_of_nat_card_le"
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "step",
+   "claim": "Through e, levelIndicator(O)(y) is 1 exactly when e(y) lies in the product set whose factor at a place w and row a is all of k_w^r if w is a place of Q and a is not in the image of incl(O), and is the single row a of the inclusion matrix otherwise; it is 0 elsewhere. Summing |F|² through the bijection e therefore counts this product set: ∑|F|² = γ²·∏_{w∈Q} (q_w^{|r|})^{|n|−|r|}, which is the asserted value. The description of levelIndicator(O) used here is the goal left open.",
+   "lines": [
+    70,
+    73
+   ],
+   "lean": "  use ?_, (?_ : O.levelIndicator = (if e · ∈ piFinset fun i ↦ piFinset fun a ↦ ite (i.isRight ∧ a ∈\n    (univ.map O.incl)ᶜ) univ {inclMatrix _ O.incl a} then 1 else 0)) ▸ by simp [dotProduct,\n    ← e.symm.sum_comp,\n    prod_pow, apply_ite, ← card_ResField, card_compl, -mem_compl, -mem_piFinset]; ring!",
+   "uses": [
+    {
+     "step": "2"
+    }
+   ],
+   "ambient_uses": [
+    "Equiv.sum_comp",
+    "Fintype.card_piFinset"
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "step",
+   "claim": "The two remaining goals, the support property (1) and the description of levelIndicator(O) through e used in step 3, follow by unfolding levelIndicator(O) and comparing matrices over R through their residues at the places of M and Q (`Modulus.matrix_ext_modulusResidue`).",
+   "lines": [
+    74,
+    75
+   ],
+   "lean": "  repeat simp_all [levelIndicator, (O.levelModulus 1).matrix_ext_modulusResidue O.apart.1, e,\n    mem_ite, ← ext_iff, funext_iff, mul_apply, inclMatrix, -elim_inl, -elim_inr]",
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "decl": "Modulus.matrix_ext_modulusResidue"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,113 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Rows.Carrier:52:7",
+ "name": "explicit_matching_of_sum",
+ "summary": "Rewrite the kernel modulo 𝔫 as one modulo 𝔪 and swap the class sums; apply hK to the partner pair given by partner_block (averaged over GL_b(O/𝔫)); then hF and linearity of the kernel in its datum give the identity.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "Write the kernel with datum f modulo 𝔫 as a kernel modulo 𝔪 (modDatum_factor φ: compose f with the reduction O/𝔪 → O/𝔫), exchange the order of the two class sums (classSum_comm) and move the constant inside the class sum (mul_classSum).",
+   "lines": [
+    60,
+    60
+   ],
+   "lean": "  simp_rw [modKernel, ← modDatum_factor φ, ← modKernel.eq_1, @classSum_comm (Gf E n), mul_classSum]",
+   "uses": [
+    {
+     "decl": "modDatum_factor"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let Ψ(y) = χ(det y₁)·f(y₂ mod 𝔫), y₁ the first rows and y₂ the remaining rows of y.",
+   "lines": [
+    61,
+    61
+   ],
+   "lean": "  let Ψ y := χ (toRows₁ y).det * f (y.toRows₂.map (factor φ))",
+   "uses": []
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "fact",
+   "claim": "For every polynomial P' and point h, the kernel x ↦ θ^{V, I_b ⊕ U}_{a,ββ'}[Ψ, P'](x, h) is integrable on [U(V)] (it is rapidly decreasing by isRapid_modKernel, since Ψ(y) ≠ 0 forces y₁ to be invertible, so y has the left inverse (y₁⁻¹ | 0)), and its integral is unchanged by right translation of x by K₀(b) (the theta functional is invariant under rational points; integral_comp_mul_right); continuity is checked by fun_prop.",
+   "lines": [
+    62,
+    65
+   ],
+   "lean": "  have d P h := (fun c ↦ And.intro ((isRapid_modKernel V ((stdSpace ..).sum U) a (β * β') hχ.1 (Ψ :=\n    Ψ) (fun y h ↦ ⟨fromCols y.toRows₁⁻¹ 0, y.fromRows_toRows ▸ by simp_all [-fromRows_toRows, Ψ,\n    χ.apply_eq_zero_iff]⟩) P h).integrable c) fun x : Kf E b ↦ V.integral_comp_mul_right x\n    (pairThetaKer ..).theta_rat_mul c) (by fun_prop [modKernel])",
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "decl": "isRapid_modKernel"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Specialise hK to Φ as in the statement and to Ψ' = Σ_{i ∈ GL_b(O/𝔫)} χ(det k_i)⁻¹·Ψ(·k_i) (k_i the reduction modulo 𝔪 of the chosen lift of i): these are χ⁻¹-partners, by partner_block applied to the function Σ_{g ∈ GL_b(O/𝔫)} f((·) mod 𝔫 · g), after reindexing the sum over GL_b(O/𝔫) by left multiplication.",
+   "lines": [
+    66,
+    71
+   ],
+   "lean": "  specialize hK _ (∑ i : GL b 𝔫.ResRing, (χ (𝔪.reductionK₀ (liftMod i)).det)⁻¹ •\n    (Ψ <| · * (𝔪.reductionK₀ (liftMod i)).1)) ((funext (fromRows_toRows · ▸ by\n    simp [-fromRows_toRows, ← mul_assoc, ← Finset.mul_sum, Ψ, χ.apply_eq_zero_iff, inv_mul_eq_div]\n    use (em _).imp_left fun h ↦ Finset.sum_equiv (.mulLeft (.map (factor φ) (-.mk'' _ h)⁻¹))\n      (by simp) (by simp [Matrix.map_neg]))).subst\n    (partner_block _ _ (∑ g : GL b 𝔫.ResRing, (f <| ·.map (factor φ) * g.1))))",
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "decl": "partner_block"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Rewrite with the specialised hK, hF, the seesaw rule in the second space (modKernel_sum_right), the behaviour of the kernel under right translation by K₀ (modKernel_mul_Kf_left) and the value of the tame character on determinants (hχ.apply_det).",
+   "lines": [
+    72,
+    73
+   ],
+   "lean": "  simp_all [← mul_classSum, mul_left_comm κ', ← modKernel_sum_right, ← hF, mul_assoc, Ψ,\n    modKernel_mul_Kf_left, ↓hχ.apply_det]",
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "decl": "modKernel_sum_right"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Linearity of the kernel in its datum (modKernelBilin), the definition of the class sum, integrability (step 3) and the integral of a finite sum leave an identity of scalars, which holds by field arithmetic.",
+   "lines": [
+    74,
+    75
+   ],
+   "lean": "  simp_all [← modKernelBilin_apply, classSum, Rat.smul_def, Finset.mul_sum,\n    Integrable.const_mul, ← mul_assoc, integral_finsetSum]; field",
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "decl": "modKernelBilin"
+    }
+   ]
+  }
+ ]
+}

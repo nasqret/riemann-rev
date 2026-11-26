@@ -1,0 +1,238 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Exchange.StableSpaces:29:7",
+ "name": "partner_mem_of_stdColDatum",
+ "summary": "Average translates of p over the compact group GL_n(O), weighted by values of Ψ: the average lies in P and equals a positive multiple of Ψ, because Ψ is invariant under small translations and transforms by χ under GL_b(O).",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "step",
+   "claim": "Ψ is uniformly locally constant on integral translates: there is c with Ψ(y + ϖ^c z) = Ψ(y) for all integral z (hc), because ϖ is topologically nilpotent and the fibres of Ψ are open, uniformly over the compact set of integral matrices; and GL_n(O) is a compact space (`isCompact_intGL`).",
+   "lines": [
+    31,
+    34
+   ],
+   "lean": "  obtain ⟨⟨c, hc⟩, _⟩ := ((V.unif_nilpotent.smul_const (.id _)).eventually\n    (ContinuousMap.eventually_mapsTo isCompact_O.matrix\n    ((isLocallyConstant_curry (Q.mem_matchingPairs hχ hΨ).1.2 (· + ·) (-· + ·)).isOpen_fiber Ψ)\n    (by simp_intro _))).exists, (isCompact_intGL (n := n) V.isCompact_O).compactSpace",
+   "uses": [
+    {
+     "decl": "IsPartner.mem_matchingPairs"
+    },
+    {
+     "decl": "isCompact_intGL"
+    },
+    {
+     "decl": "schwartzBruhat.isLocallyConstant_curry"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "step",
+   "claim": "Let d = ϖ^{−c}·(1 − x(s − ϖ^c s)) ∈ GL_n(F) (invertible: det(1 − x(1 − ϖ^c)s) = det(1 − (1 − ϖ^c)s x) = ϖ^{c·|b|}·…, using s x = 1 and Sylvester's identity).",
+   "lines": [
+    35,
+    36
+   ],
+   "lean": "  let d : GL n F := V.ϖ⁻¹ ^ c • .mk'' (1 - x * (s - V.ϖ ^ c • s))\n    (by simp [↓det_one_sub_mul_comm x, *])",
+   "ambient_uses": [
+    "Matrix.det_one_sub_mul_comm"
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "step",
+   "claim": "The function (k, y) ↦ p(d·k·y) is locally constant on GL_n(O) × (n × b matrices) (`schwartzBruhat.isLocallyConstant_curry`, p being Schwartz–Bruhat by hS).",
+   "lines": [
+    37,
+    37
+   ],
+   "lean": "  have L := isLocallyConstant_curry (Γ := intGL n O) (hS hp) (d.1 * ·.1.1 * ·) (·.1.2 * d.2 * ·)",
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "decl": "schwartzBruhat.isLocallyConstant_curry"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "step",
+   "claim": "It suffices to show that N·Ψ ∈ P for N = ∫_{GL_n(O)} |p(d k x)| dk: this integral is positive (a continuous non-negative function on a compact group, non-zero at k = 1 where p(dx) = r(x)·stdColDatum(χ, s)(dx) ≠ 0 by h₁).",
+   "lines": [
+    38,
+    39
+   ],
+   "lean": "  rw [← P.smul_mem_iff ((L.comp (‖· x‖)).continuous.integral_pos_of_hasCompactSupport_nonneg_nonzero\n    (μ := .haar) (x := 1) (.of_compactSpace _) (by simp_intro _) (by simp [d, invOnUnits, *])).ne']",
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "step": "3"
+    }
+   ],
+   "ambient_uses": [
+    "Continuous.integral_pos_of_hasCompactSupport_nonneg_nonzero"
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "step",
+   "claim": "N·Ψ is the integral over k ∈ GL_n(O) of the functions Ψ(k₂x)·p(d k ·) (k₂ the second component of the point of GL_n(O)), each of which lies in P (hP and scalars), and the integral of a locally constant family in P over a compact group lies in P (`integral_mem_of_isLocallyConstant`); it remains to identify the two functions pointwise at each y.",
+   "lines": [
+    40,
+    41
+   ],
+   "lean": "  convert ← integral_mem_of_isLocallyConstant .haar (L.comp (norm ∘ · • Ψ)) fun k ↦\n    (funext fun y ↦ ?_).subst (P.smul_mem (Ψ (k.1.2 * x)) (hP (d * k) _ hp))",
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "step": "4"
+    },
+    {
+     "decl": "integral_mem_of_isLocallyConstant"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "step",
+   "claim": "Either Ψ(y) = 0 or y = firstCols(e, l) for some l ∈ GL_n(O) (support of a partner, Q); and x = firstCols(e, j) for some j ∈ GL_n(O), x being primitive (integral with integral left inverse s, `IsValuationPair.exists_firstCols_iff`).",
+   "lines": [
+    42,
+    43
+   ],
+   "lean": "  obtain ⟨_ | ⟨l, c, ⟨⟩⟩, j, a, ⟨⟩⟩ := not_or_of_imp (Q.2 ‹_›),\n    (valPair.exists_firstCols_iff e).2 ⟨hx, by tauto⟩",
+   "uses": [
+    {
+     "decl": "IsValuationPair.exists_firstCols_iff"
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "step",
+   "claim": "In the case y = firstCols(e, l): substitute k ↦ k·(j⁻¹l) in the Haar integral over GL_n(O) (right invariance).",
+   "lines": [
+    44,
+    44
+   ],
+   "lean": "  simp_all; rw [← integral_mul_right_eq_self _ ⟨_, div_mem a c⟩]",
+   "uses": [
+    {
+     "step": "6"
+    }
+   ],
+   "ambient_uses": [
+    "MeasureTheory.integral_mul_right_eq_self"
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "step",
+   "claim": "Rewrite the columns of products (`mul_firstCols`) and move the scalar into the integral.",
+   "lines": [
+    45,
+    45
+   ],
+   "lean": "  simp [mul_firstCols, ← integral_smul_const]",
+   "uses": [
+    {
+     "step": "7"
+    },
+    {
+     "decl": "mul_firstCols"
+    }
+   ]
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "step",
+   "claim": "Insert p = r·stdColDatum(χ, s) (H) and split on whether the matrix s·(…) is integral (i) with unit determinant (v); where it is, |χ| = 1 on the unit (`TameLocalChar.norm_eq_one`).",
+   "lines": [
+    46,
+    46
+   ],
+   "lean": "  simp [H, invOnUnits]; split_ifs with i v <;> simp [hχ.norm_eq_one, *]",
+   "uses": [
+    {
+     "step": "8"
+    },
+    {
+     "decl": "TameLocalChar.norm_eq_one"
+    }
+   ]
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "step",
+   "claim": "In that case s·(…) is a primitive square matrix, so it is an element g of GL_b(O) (`isPrimitiveMatrix_iff_isIntegralUnit_det`, `isPrimitiveMatrix_iff`).",
+   "lines": [
+    47,
+    48
+   ],
+   "lean": "  have ⟨g, m, _⟩ :=\n    isPrimitiveMatrix_iff.1 (isPrimitiveMatrix_iff_isIntegralUnit_det.2 ⟨hs.mul i, v⟩)",
+   "uses": [
+    {
+     "step": "9"
+    },
+    {
+     "decl": "isPrimitiveMatrix_iff_isIntegralUnit_det"
+    }
+   ]
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "step",
+   "claim": "By the transformation of a partner under right multiplication by g ∈ GL_b(O) (`IsPartner.right_mul`) and the local constancy hc (the difference is ϖ^c times an integral matrix), Ψ at the translated matrix equals Ψ(y), with the character factors cancelling.",
+   "lines": [
+    49,
+    50
+   ],
+   "lean": "  erw [← Q.right_mul _ m, ← congrFun (hc (k.2.isIntMatrix_inv.mul (i.sub (hx.mul m.isIntMatrix)))),\n    (_ : V.ϖ ^ c • _ + _ = y)]; grind [hχ.norm_eq_one v, norm_zero]",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "step": "10"
+    },
+    {
+     "decl": "IsPartner.right_mul"
+    }
+   ]
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "step",
+   "claim": "The matrix identity behind step 11, ϖ^c·(…) + (…) = y, from the definition of d and s x = 1.",
+   "lines": [
+    51,
+    51
+   ],
+   "lean": "  simp [d, *, smul_sub, ← Matrix.mul_assoc, sub_sub]",
+   "uses": [
+    {
+     "step": "2"
+    }
+   ]
+  }
+ ]
+}

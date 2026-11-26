@@ -1,0 +1,560 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Curve.TightFrameExists:90:7",
+ "summary": "Glue two tight frames: the frame (ζ^i)_{i<N} (N = N₁) of length N, and a frame (u_{l,j,k,i}) of length c built for each prime factor l of N from the primitive l-th root of unity a_l = ζ^{r_l} and t = 1 − c₀ + nz (n = (d+1)/4, N ∣ nz² + z + 1). Since gcd(c, N) = 1 and m − R(c + N) ≥ (N − 1)(c − 1), m − R(c+N) = A·c + B·N (Frobenius), and multiplicities A + R, B + R give length m (the length is the scalar of the weighted Gram identity, not a count of vectors). Integrality of α⁻¹u uses Φ_N′(ζ)(ζ^r − 1)M = N·V. The unit index: the first candidate is the vector 1 = ζ^0; only if |ιₚ(s₁·conj Φ_τ(1))| ≠ 1 for some τ does the proof deduce p ∣ N and take u_{p,0,1,0}; the index chosen works for every τ at the fixed (p, ιₚ).",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Facts: c₀(1 − c₀) = n := (d + 1)/4 in 𝓞_E; ζ is a primitive N₁-th root of unity in 𝓞_E; N₁ ≠ 0; and (ζ^i)_{i<N₁} with multiplicity 1 is a tight frame of length N₁ (`isTightFrame_zeta_pow`).",
+   "lines": [
+    93,
+    94
+   ],
+   "lean": "  obtain ⟨hϵ, hζ, h0, hG⟩ := P.c₀InE_mul_one_sub s, @isPrimitiveRoot_zetaInt P s, ne (P.N₁ s),\n    P.isTightFrame_zeta_pow s 1",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Parameters.c₀InE_mul_one_sub"
+    },
+    {
+     "decl": "Parameters.isTightFrame_zeta_pow"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Abbreviations N = N₁ and n = (d + 1)/4.",
+   "lines": [
+    95,
+    96
+   ],
+   "lean": "  set N := N₁ ..\n  set n := _ / 4",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "fact",
+   "claim": "For every prime factor l of N choose r_l, M_l ≤ N, V_l with N = l·r_l, (q ∣ M_l ⟺ q ≠ l) for the prime factors q of N, V_l ∣ M_l and Φ_N′(ζ)(ζ^{r_l} − 1)M_l = N·V_l.",
+   "lines": [
+    97,
+    97
+   ],
+   "lean": "  choose r M hN hr _ V hV _ using exists_cyclotomic_different_factor hζ",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Parameters.exists_cyclotomic_different_factor"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "fact",
+   "claim": "N divides n^N: every prime factor of N divides n (`dvd_norm_c₀`), and its exponent in N is at most N.",
+   "lines": [
+    98,
+    98
+   ],
+   "lean": "  have ⟨f, hf⟩ : N ∣ n ^ N := by grind [N.dvd_pow_self_iff, dvd_norm_c₀, lt_d]",
+   "typed_fact": "N ∣ n ^ N",
+   "uses": [
+    {
+     "decl": "Parameters.dvd_norm_c₀"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "fact",
+   "claim": "There is z < N with N ∣ n·z² + z + 1. The map y ↦ n·y² + y of ℤ/N is injective: if n a² + a = n b² + b then (a − b)(n(a + b) + 1) = 0, and n(a + b) + 1 is a unit because n(a + b) is nilpotent ((n(a+b))^N = 0 by step 4). Being an injective self-map of a finite set it is surjective, so it takes the value −1.",
+   "lines": [
+    99,
+    102
+   ],
+   "lean": "  have ⟨z, hz, e, he⟩ : ∃ z < N, N ∣ n * z ^ 2 + z + 1 := (@Finite.surjective_of_injective\n    (ZMod N) _ (fun y ↦ n * y ^ 2 + y) (fun a b h ↦ (IsNilpotent.isUnit_add_one (r := n *\n    (a + b)) ⟨N, by simp [mul_pow, ← n.cast_pow, hf]⟩).mul_left_cancel (by linear_combination h))\n    (-1)).elim (⟨_, val_lt ·, by simp [← natCast_eq_zero_iff, ·]⟩)",
+   "typed_fact": "∃ z < N, N ∣ n * z ^ 2 + z + 1",
+   "uses": [
+    {
+     "step": "4"
+    }
+   ],
+   "ambient_uses": [
+    "Finite.surjective_of_injective",
+    "IsNilpotent.isUnit_add_one"
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Put t = 1 − c₀ + n·z ∈ 𝓞_E.",
+   "lines": [
+    103,
+    103
+   ],
+   "lean": "  let t := 1 - P.c₀InE s + n * z",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Put c = ∑_l (N + M_l·(1 + 2n(z + l·M_l·e))), the sum over the prime factors l of N (e from step 5: n z² + z + 1 = N e).",
+   "lines": [
+    104,
+    104
+   ],
+   "lean": "  set c := ∑ l, (N + M l * (1 + 2 * n * (z + l * (M l * e)))) with E",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "estimate",
+   "claim": "R(c + N) + (N − 1)(c − 1) ≤ m: bounding c from above (each M_l and l by N, z < N, N·e = n z² + z + 1, n + 2 ≤ d, at most N + 1 prime factors) gives R(c + N) + (N − 1)(c − 1) ≤ (d·N)^6·(R + 1), which is ≤ m by hypothesis.",
+   "lines": [
+    105,
+    109
+   ],
+   "lean": "  replace hR : R * (c + N) + N.pred * c.pred ≤\n    m := by grw [← hR, c.pred_le, ← (by grind [lt_d] : n + 2 ≤ P.d),\n    E.trans_le (by grw [hN, N.le_of_mem_primeFactors (coe_mem _),\n    ← he, hz]), sum_const, univ_eq_attach, card_attach, card_le_card fun _ ↦ mem_Iic.2\n    ∘ N.le_of_mem_primeFactors, N.card_Iic, N.pred_le]; cases N <;> lia",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Parameters.lt_d"
+    }
+   ]
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "fact",
+   "claim": "There are natural numbers B, A with B·N + A·c = m − R(c + N) (the coin problem: gcd(N, c) = 1 and (N − 1)(c − 1) ≤ m − R(c + N), step 8). Coprimality: for a prime p ∣ N, modulo p every summand of c with l ≠ p vanishes (p ∣ N, p ∣ M_l), and the summand for l = p is ≡ M_p ≢ 0 (p ∤ M_p, p ∣ n).",
+   "lines": [
+    110,
+    112
+   ],
+   "lean": "  have ⟨B, A, _⟩ := N.exists_add_mul_eq_of_gcd_dvd_of_mul_pred_le c _ ((N.coprime_of_dvd\n    fun p _ _ ↦ by rw [← natCast_eq_zero_iff, Nat.cast_sum, Fintype.sum_eq_single ⟨p, by grind⟩] <;>\n    grind [natCast_eq_zero_iff, dvd_norm_c₀]).dvd.trans (one_dvd _)) (le_tsub_of_add_le_left hR)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "8"
+    },
+    {
+     "step": "3"
+    },
+    {
+     "decl": "Parameters.dvd_norm_c₀"
+    }
+   ],
+   "ambient_uses": [
+    "Nat.exists_add_mul_eq_of_gcd_dvd_of_mul_pred_le"
+   ]
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Put a_l = ζ^{r_l}, a primitive l-th root of unity.",
+   "lines": [
+    113,
+    113
+   ],
+   "lean": "  let a := (P.zetaInt s ^ r ·)",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Define the vectors u_{l,j,k,i} = ζ^j·(0^k·a_l^i + t·M_l/N·(a_l^i − a_l^k)) for j < r_l, k < l, i < l (0^k = 1 if k = 0, else 0).",
+   "lines": [
+    114,
+    115
+   ],
+   "lean": "  let u : (Σ l, Fin (r l) × Fin l × Fin l) → P.E s | ⟨l, ⟨j, _⟩, ⟨k, _⟩, i, _⟩ => P.zetaInt s ^ j *\n    (0 ^ k * a l ^ i + t * M l / N * (a l ^ i - a l ^ k))",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "construction",
+   "claim": "Take I = (indices of u) ⊔ (indices i < N of ζ^i), v = u on the left and ζ^i on the right, multiplicities A + R on the left and B + R on the right. R ≤ c_i is immediate. The unit index, by cases: if |ιₚ(s₁·conj Φ_τ(1))| = 1 for every τ, the index of ζ^0 = 1 (on the right) serves; otherwise (hypothesis h of step 14) the vector u_{p,0,1,0} serves. Remaining: the frame identity, that second case, and the integrality of α⁻¹u_{l,j,k,i} at every finite place v.",
+   "lines": [
+    116,
+    117
+   ],
+   "lean": "  refine ⟨_, inferInstance, Sum.elim u _, (cond ·.isLeft A B + R), ⟨Sum.rec (fun ⟨l, j, k, i⟩ ↦\n    mem_Ô.2 fun v ↦ ?m) hG.1, fun σ τ ↦ ?_⟩, by simp, by_cases (⟨.inr 0, ·⟩) fun h ↦ ?_⟩",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "9"
+    },
+    {
+     "step": "11"
+    }
+   ]
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The frame identity: ∑ (multiplicity)·Φ_σ(v)·conj Φ_τ(v) = m·[σ = τ].",
+   "lines": [
+    118,
+    130
+   ],
+   "span": [
+    118,
+    3,
+    130,
+    39
+   ],
+   "lean": "· simp [← mul_sum, by simpa using hG.2]\n    rw [Fintype.sum_sigma, sum_congr rfl fun l ↦ ?_, ← ite_sum_zero (σ = τ), ← Nat.cast_sum, ← E]\n    split <;> norm_cast; lia\n    have := Fact.mk (N.prime_of_mem_primeFactors l.2)\n    have C := (hζ.pow h0.bot_lt (hr l ▸ mul_comm ..)).geom_sum_eq_zero Fact.out\n    have := congr((Φ τ $hϵ, ($he : ℂ), Φ τ $(P.star_c₀InE s), $(hr l ▸ hG.2 σ τ), Φ σ $C,\n      conj (Φ τ $C)))\n    simp [sum_range, pow_add, pow_mul, ← hr, mul_assoc, ← mul_sum, reindex_equiv finProdFinEquiv,\n      Fintype.sum_prod_type_right] at this\n    simp [*, u, a, Fintype.sum_prod_type, @zero_pow_eq ℂ, apply_ite conj, mul_assoc, -nsmul_eq_mul,\n      ← smul_sum, mul_left_comm (_ ^ _) (_ / _), mul_add, add_mul, sub_eq_add_neg,\n      ← mul_sum, ← sum_mul]\n    split <;> simp [t, field]; grobner",
+   "head_lines": [
+    118,
+    118
+   ],
+   "head_span": [
+    118,
+    3,
+    118,
+    4
+   ],
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "13.1",
+   "parent": "13",
+   "kind": "deduction",
+   "claim": "The ζ-part contributes (B + R)·N·[σ = τ] (step 1); what remains is the u-part.",
+   "lines": [
+    118,
+    118
+   ],
+   "span": [
+    118,
+    5,
+    118,
+    42
+   ],
+   "lean": "simp [← mul_sum, by simpa using hG.2]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1"
+    }
+   ]
+  },
+  {
+   "id": "13.2",
+   "parent": "13",
+   "kind": "reduction",
+   "claim": "Split the u-sum over the prime factors l; it suffices that for each l the sum over (j, k, i) is [σ = τ]·(N + M_l(1 + 2n(z + l M_l e))); then the total is (A + R)c + (B + R)N = m when σ = τ (step 9) and 0 otherwise.",
+   "lines": [
+    119,
+    120
+   ],
+   "lean": "    rw [Fintype.sum_sigma, sum_congr rfl fun l ↦ ?_, ← ite_sum_zero (σ = τ), ← Nat.cast_sum, ← E]\n    split <;> norm_cast; lia",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "9"
+    },
+    {
+     "step": "7"
+    }
+   ]
+  },
+  {
+   "id": "13.3",
+   "parent": "13",
+   "kind": "fact",
+   "claim": "l is prime.",
+   "lines": [
+    121,
+    121
+   ],
+   "lean": "    have := Fact.mk (N.prime_of_mem_primeFactors l.2)",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "13.4",
+   "parent": "13",
+   "kind": "fact",
+   "claim": "∑_{i<l} a_l^i = 0, a_l being a primitive l-th root of unity, l > 1.",
+   "lines": [
+    122,
+    122
+   ],
+   "lean": "    have C := (hζ.pow h0.bot_lt (hr l ▸ mul_comm ..)).geom_sum_eq_zero Fact.out",
+   "typed_fact": null,
+   "uses": [],
+   "ambient_uses": [
+    "IsPrimitiveRoot.geom_sum_eq_zero"
+   ]
+  },
+  {
+   "id": "13.5",
+   "parent": "13",
+   "kind": "deduction",
+   "claim": "Collect the relations used below, applied through Φ_σ, Φ_τ and conjugation: c₀(1 − c₀) = n, n z² + z + 1 = N e, c̄₀ = 1 − c₀ (`star_c₀InE`), the frame identity of (a_l^i) with the ζ^j (from step 1 with N = l·r_l), and the vanishing geometric sums of step 13.4.",
+   "lines": [
+    123,
+    126
+   ],
+   "lean": "    have := congr((Φ τ $hϵ, ($he : ℂ), Φ τ $(P.star_c₀InE s), $(hr l ▸ hG.2 σ τ), Φ σ $C,\n      conj (Φ τ $C)))\n    simp [sum_range, pow_add, pow_mul, ← hr, mul_assoc, ← mul_sum, reindex_equiv finProdFinEquiv,\n      Fintype.sum_prod_type_right] at this",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "step": "13.4"
+    },
+    {
+     "decl": "Parameters.star_c₀InE"
+    }
+   ]
+  },
+  {
+   "id": "13.6",
+   "parent": "13",
+   "kind": "computation",
+   "claim": "Expand ∑_{j,k,i} Φ_σ(u)·conj Φ_τ(u) by distributing over the sums in j, k, i.",
+   "lines": [
+    127,
+    129
+   ],
+   "lean": "    simp [*, u, a, Fintype.sum_prod_type, @zero_pow_eq ℂ, apply_ite conj, mul_assoc, -nsmul_eq_mul,\n      ← smul_sum, mul_left_comm (_ ^ _) (_ / _), mul_add, add_mul, sub_eq_add_neg,\n      ← mul_sum, ← sum_mul]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "13.7",
+   "parent": "13",
+   "kind": "computation",
+   "claim": "In each case σ = τ and σ ≠ τ the expanded sum equals the required value: a polynomial identity in the collected relations, found by a Gröbner basis computation (`grobner`).",
+   "lines": [
+    130,
+    130
+   ],
+   "lean": "    split <;> simp [t, field]; grobner",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "13.5"
+    }
+   ]
+  },
+  {
+   "id": "14",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The unit vector: if some τ has |ιₚ(s₁·conj Φ_τ(1))| ≠ 1 (hypothesis h), the vector u_{p,0,1,0} works.",
+   "lines": [
+    131,
+    139
+   ],
+   "span": [
+    131,
+    3,
+    139,
+    42
+   ],
+   "lean": "· let l : N.primeFactors := ⟨p, by grind [norm_iota_periodFactor_eq_one, Fact, by simpa using h]⟩\n    use .inl ⟨l, ⟨0, by grind⟩, ⟨1, Fact.out⟩, 0⟩, fun τ ↦ ?_\n    simp [norm_iota_periodFactor τ, apply_ite, -mem_placeOfEmb] at h ⊢\n    erw [ite_eq_left h.1, ← norm_mul, ← Complex.star_def, ← map_star_complex,\n      ← map_mul (weightEmbedding ..)]\n    convert! (norm_ringOfIntegers_le (weightEmbedding ιₚ τ) (-t * V l)).eq_of_not_lt fun g ↦ by\n      grind [FinPlace.natCast_mem_iff_dvd, natCast_mem_placeOfEmb, mem_of_dvd _ (hV l) (by\n    convert sub_mem (mul_mem_right ((1 - z + P.c₀InE s * z) * V l) _ h.1) (by simpa); grind)]\n    simpa [field] using mod_cast by grind",
+   "head_lines": [
+    131,
+    131
+   ],
+   "head_span": [
+    131,
+    3,
+    131,
+    4
+   ],
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "14.1",
+   "parent": "14",
+   "kind": "deduction",
+   "claim": "p is a prime factor of N: otherwise |ιₚ(s₁)| = 1 (`norm_iota_periodFactor_eq_one`), against h.",
+   "lines": [
+    131,
+    131
+   ],
+   "span": [
+    131,
+    5,
+    131,
+    100
+   ],
+   "lean": "let l : N.primeFactors := ⟨p, by grind [norm_iota_periodFactor_eq_one, Fact, by simpa using h]⟩",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Parameters.norm_iota_periodFactor_eq_one"
+    }
+   ]
+  },
+  {
+   "id": "14.2",
+   "parent": "14",
+   "kind": "witness",
+   "claim": "Take the index (l = p, j = 0, k = 1, i = 0); u_{p,0,1,0} = t·M_p/N·(1 − a_p).",
+   "lines": [
+    132,
+    132
+   ],
+   "lean": "    use .inl ⟨l, ⟨0, by grind⟩, ⟨1, Fact.out⟩, 0⟩, fun τ ↦ ?_",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "14.3",
+   "parent": "14",
+   "kind": "deduction",
+   "claim": "Rewrite h and the goal (at a given τ) with `norm_iota_periodFactor` τ and `adeleExtension_alpha`: h gives that c₀ lies in the prime 𝔓 of E induced by x ↦ ιₚ(Φ_τ(x̄)) (otherwise the α-component is 1 and |ιₚ(s₁)| = 1), and there the α-component is the inverse of the image of P′(ζ).",
+   "lines": [
+    133,
+    133
+   ],
+   "lean": "    simp [norm_iota_periodFactor τ, apply_ite, -mem_placeOfEmb] at h ⊢",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Parameters.norm_iota_periodFactor"
+    }
+   ]
+  },
+  {
+   "id": "14.4",
+   "parent": "14",
+   "kind": "computation",
+   "claim": "Rewrite the goal as |ιₚ(Φ_τ(conj(P′(ζ)·u_{p,0,1,0})))| = 1: the norm of the image of one element of E under x ↦ ιₚ(Φ_τ(x̄)).",
+   "lines": [
+    134,
+    135
+   ],
+   "lean": "    erw [ite_eq_left h.1, ← norm_mul, ← Complex.star_def, ← map_star_complex,\n      ← map_mul (weightEmbedding ..)]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "14.5",
+   "parent": "14",
+   "kind": "deduction",
+   "claim": "That integer is −t·V_p; its image has norm ≤ 1 (`norm_ringOfIntegers_le`) and not < 1: otherwise −t·V_p ∈ 𝔓; since c₀ ∈ 𝔓 and p ∣ n, t ≡ 1 mod 𝔓, so V_p ∈ 𝔓, hence M_p ∈ 𝔓 (V_p ∣ M_p) and p ∣ M_p, against p ∤ M_p (step 3).",
+   "lines": [
+    136,
+    138
+   ],
+   "lean": "    convert! (norm_ringOfIntegers_le (weightEmbedding ιₚ τ) (-t * V l)).eq_of_not_lt fun g ↦ by\n      grind [FinPlace.natCast_mem_iff_dvd, natCast_mem_placeOfEmb, mem_of_dvd _ (hV l) (by\n    convert sub_mem (mul_mem_right ((1 - z + P.c₀InE s * z) * V l) _ h.1) (by simpa); grind)]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "norm_ringOfIntegers_le"
+    },
+    {
+     "step": "3"
+    }
+   ]
+  },
+  {
+   "id": "14.6",
+   "parent": "14",
+   "kind": "computation",
+   "claim": "The identity P′(ζ)·t·M_p(1 − a_p)/N = −t·V_p, from Φ_N′(ζ)(a_p − 1)M_p = N·V_p.",
+   "lines": [
+    139,
+    139
+   ],
+   "lean": "    simpa [field] using mod_cast by grind",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "3"
+    }
+   ]
+  },
+  {
+   "id": "15",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Integrality of α⁻¹u_{l,j,k,i} at a finite place v: write a_l^i − a_l^k = (a_l − 1)·g with g ∈ 𝓞_E, and c₀^N − (n·(−z))^N = (c₀ + nz)·w with w ∈ 𝓞_E.",
+   "lines": [
+    140,
+    141
+   ],
+   "lean": "  obtain ⟨⟨g, _⟩, w, _⟩ := (sub_one_dvd_pow_sub_one (a l) i).sub (sub_one_dvd_pow_sub_one _ k),\n    sub_dvd_pow_sub_pow (P.c₀InE s) (n * -z) N",
+   "typed_fact": null,
+   "uses": [],
+   "ambient_uses": [
+    "sub_one_dvd_pow_sub_one",
+    "sub_dvd_pow_sub_pow"
+   ]
+  },
+  {
+   "id": "16",
+   "parent": null,
+   "kind": "fact",
+   "claim": "For y ∈ 𝓞_E: if N divides y·t·M_l·(a_l − 1), say = N·c, then v(y·u_{l,j,k,i}) ≤ 1, because y·u = ζ^j·(y·0^k·a_l^i + c·g) is an integer of E. (The written type ends at `≤ 1`; the recorded typed_fact runs on into the pattern-matching alternative `| ⟨c, _⟩ =>` of the `have`.)",
+   "lines": [
+    142,
+    145
+   ],
+   "lean": "  have I y : ↑N ∣ y * t * (M l * (a l - 1)) → v.valuation _ (y * u ⟨l, j, k, i⟩) ≤ 1\n    | ⟨c,\n      _⟩ => by convert v.valuation_le_one (P.zetaInt s ^ j.1 * (y * 0 ^ k.1 * a l ^ i.1 + c * g))\n               simpa [field, -coe_zetaInt] using mod_cast by grobner",
+   "typed_fact": "↑N ∣ y * t * (M l * (a l - 1)) → v.valuation _ (y * u ⟨l, j, k, i⟩) ≤ 1\n    | ⟨c,\n      _⟩ =>",
+   "uses": [
+    {
+     "step": "15"
+    }
+   ]
+  },
+  {
+   "id": "17",
+   "parent": null,
+   "kind": "case-split",
+   "claim": "If c₀ ∈ v, then α_v = 1/P′(ζ) and step 16 with y = P′(ζ) applies: P′(ζ)·t·M_l(a_l − 1) = t·N·V_l. If c₀ ∉ v, then α_v = 1, c₀ is a unit at v, and step 16 with y = c₀^N applies: N divides c₀^N·t, using c₀(1 − c₀) = n, N ∣ n^N, N ∣ nz² + z + 1 and step 15.",
+   "lines": [
+    146,
+    148
+   ],
+   "lean": "  by_cases g : P.c₀InE s ∈ v.1 <;> [convert I (relDifferentGen ..) ⟨t * V l, by grind⟩; convert I\n    (P.c₀InE s ^ N) (.mul_right ⟨n * e * w + f * (-z) ^ N * t, by grind [mul_pow, congr((t + $he,\n    t + $hf))]⟩ _)] <;> simp [finiteImage, WeilData.α, α, g, v.valuation_eq_one_iff_notMem.2]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "16"
+    },
+    {
+     "step": "3"
+    },
+    {
+     "step": "4"
+    },
+    {
+     "step": "5"
+    },
+    {
+     "step": "15"
+    }
+   ]
+  }
+ ]
+}

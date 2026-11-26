@@ -1,0 +1,119 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Filling.TopFloor:148:7",
+ "summary": "Expand the inner product as a sum over cosets c; for each c the term equals the 𝖴-measure of {u : uya_c⁻¹ ∈ K(g)} (unfold_besselU with θ = δ₁) times the product of coordinates; pointwise in u, the sum of indicators equals 1_Z(uy)·phase(g, (uy)x(uy)⁻¹) since exactly one coset contains uy.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "For each c: (η₀∗⋯∗η_{ϱ+1})({u : u(y a_c⁻¹) ∈ K(g)}) = unipotentMass(F)·[∃ u ∈ 𝖴 with u(y a_c⁻¹) ∈ K(g)] (unfold_besselU with θ = δ₁).",
+   "lines": [
+    151,
+    152
+   ],
+   "lean": "  have A c := by simpa only [mconv_dirac_one] using\n    h.unfold_besselU (θ := dirac 1) (c := c) h.integral_data.2.2",
+   "uses": [
+    {
+     "decl": "IntegralPlace.IsStdLevel.unfold_besselU"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Replace the integrand a.e. (u ∈ 𝖴) by Σ_c 1_{u y a_c⁻¹ ∈ K(g)}·W_Z(yx)_c·conj(W_Z(y)_c), integrate termwise (each term integrable: finite measure), and expand the inner product.",
+   "lines": [
+    153,
+    157
+   ],
+   "lean": "  rw [integral_congr_ae (g := fun u ↦ ∑ c : Z.Cosets,\n    {u | u * (y * c.out.1⁻¹) ∈ F.congGroup}.indicator (fun _ ↦ Z.besselVector (y * x) c * star\n    (Z.besselVector y c)) u) (ae_ascConv_mem_unipotentBelow.mono fun u hu ↦ ?_), integral_finsetSum\n    _ fun c _ ↦ (integrableOn_const ((A _).trans_ne (by simp [-dirac_apply]))).integrable_indicator\n    (measurable_mul_const _ measurableSet_unitaryLevel), PiLp.inner_apply, mul_sum]",
+   "ambient_uses": [
+    "MeasureTheory.integral_congr_ae"
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Termwise: if W_Z(y)_c = 0 both sides vanish; otherwise the integral of the indicator is unipotentMass(F) by step 1, the existence of u being given by the nonzero phase.",
+   "lines": [
+    158,
+    161
+   ],
+   "lean": "  · congr! with c; by_cases e : Z.besselVector y c = 0; simp [e]\n    erw [integral_indicator_const _ (measurable_mul_const _ measurableSet_unitaryLevel),\n      Measure.real, A, dirac_apply_of_mem\n      (by exact (exists_besselU_of_phase_ne_zero e).imp' (·⁻¹) (by simp)), mul_one]; rfl",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "decl": "IntegralPlace.exists_besselU_of_phase_ne_zero"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The a.e. identity at u ∈ 𝖴: if uy ∉ Z all indicators vanish (u y a_c⁻¹ ∈ K(g) would put uy in Z);",
+   "lines": [
+    162,
+    164
+   ],
+   "lean": "  by_cases! a : u * y ∉ Z.1\n  · exact (ite_eq_right a).trans (Fintype.sum_eq_zero _ fun c ↦ ite_eq_right fun b ↦ a\n      (by simpa using mul_mem (Z.2.1 b) c.out.2)).symm"
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "if uy ∈ Z, exactly one coset d has uy a_d⁻¹ ∈ K(g); u⁻¹ ∈ 𝖴,",
+   "lines": [
+    165,
+    165
+   ],
+   "lean": "  obtain ⟨⟨d, e⟩, i⟩ := Z.exists_coset a, inv_mem (unipotentBelow_le_besselU hu)",
+   "uses": [
+    {
+     "decl": "Level.IntermediateGroup.exists_coset"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "and phase(g, uyx(uy)⁻¹·…) transforms by ψ(g⁻¹σ(u⁻¹)) and is unchanged by K(g) on the right,",
+   "lines": [
+    166,
+    167
+   ],
+   "lean": "  have := (phase_besselU_mul (y :=\n    u * y * x * (u * y)⁻¹ * _) i).trans congr(_ * $(phase_mul_of_mem_unitaryLevel ((e d).2 rfl)))",
+   "uses": [
+    {
+     "decl": "IntegralPlace.phase_besselU_mul"
+    },
+    {
+     "decl": "IntegralPlace.phase_mul_of_mem_unitaryLevel"
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "so the term of d equals phase(g, (uy)x(uy)⁻¹) (|ψ|² = 1).",
+   "lines": [
+    168,
+    170
+   ],
+   "lean": "  simp at e this\n  simp [IntermediateGroup.besselVector, phase_eq i ((e d).2 rfl), mul_left_comm (ψ _),\n    Complex.mul_conj', *]",
+   "uses": [
+    {
+     "decl": "IntegralPlace.phase_eq"
+    }
+   ]
+  }
+ ]
+}

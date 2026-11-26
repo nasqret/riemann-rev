@@ -1,0 +1,76 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.DiscreteSeries.TwoFactorSetup:72:7",
+ "summary": "phase(l, k, ·) kills all higher powers of subOnePair(j, s) (by phase_mul and induction); expanding (1 + rA)⁻¹A in a geometric series shows that the integrand defining lg is constant, equal to φ(s).",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "induction",
+   "lines": [
+    75,
+    77
+   ],
+   "lean": "  have p i t : l.phase k (subOnePair j s ^ i * subOnePair j s * (1 + subOnePair j t)) = 0 ^ i * φ\n    s := by induction' i with i h generalizing t <;> [have := H.phase_mul s t; have := h (s *\n    t)] <;> simp_all [← H.phase_eq, pow_succ, sub_mul, mul_sub] <;> grind",
+   "claim": "For every i ∈ ℕ and t ∈ S, with Y_s = subOnePair(j, s) and pairs of matrices multiplied componentwise: phase(l, k, Y_s^i·Y_s·(1 + Y_t)) = 0^i·φ(s). Induction on i, generalizing t: since j is a homomorphism, Y_s(1 + Y_t) = Y_{st} − Y_t, and phase(l, k, ·) is additive; so for i = 0 the value is phase(l, k, Y_{st}) − phase(l, k, Y_t) = φ(st) − φ(t) = φ(s) (phase_eq, phase_mul), and the step writes Y_s^{i+1}Y_s(1 + Y_t) = Y_s^iY_s(1 + Y_{st}) − Y_s^iY_s(1 + Y_t) and uses the induction hypothesis at st and at t.",
+   "uses": [
+    {
+     "decl": "IsTwoFactor"
+    },
+    {
+     "decl": "HCParam.phase"
+    },
+    {
+     "decl": "subOnePair"
+    }
+   ],
+   "typed_fact": "l.phase k (subOnePair j s ^ i * subOnePair j s * (1 + subOnePair j t)) = 0 ^ i * φ\n    s"
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "fact",
+   "lines": [
+    78,
+    83
+   ],
+   "lean": "  have := intervalIntegral.integral_congr_Ioo_of_le (μ := by volume_tac) zero_le_one fun r o ↦\n    have G {n} [Fintype n] {X D : Matrix n n ℂ} (h : ‖X‖ ≤ 2⁻¹) :=\n      ((hasSum_geom_series_inverse (-r • X) (by simp; grind [norm_smul_le_of_le_one r h])).mul_right\n      X).mapL (traceLinearMap .. ∘ₗ .mulLeft ℂ D).toContinuousLinearMap\n    ((G a).sub (G b)).unique (hasSum_single 0 fun i _ ↦ by\n      simpa [↓smul_pow, *] using Or.inl (p i 1))",
+   "claim": "Let (A, A') = subOnePair(j, s). For every r ∈ (0, 1): tr(diag(Λ(l))(1 + rA)⁻¹A) − tr(diag(Λ(k))(1 + rA')⁻¹A') = tr(diag(Λ(l))A) − tr(diag(Λ(k))A'). Indeed (1 + rA)⁻¹A = Σ_i (−rA)^iA (geometric series, ‖rA‖ ≤ 1/2), and likewise for A', so the left side is the sum of (−r)^i·phase(l, k, Y_s^i·Y_s), whose terms with i ≥ 1 vanish by step 1 at t = 1 (Y_1 = 0). Hence the integrals over r ∈ [0, 1] of the two sides agree.",
+   "uses": [
+    {
+     "step": "1"
+    }
+   ],
+   "ambient_uses": [
+    "hasSum_geom_series_inverse",
+    "intervalIntegral.integral_congr_Ioo_of_le",
+    "hasSum_single"
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "deduction",
+   "lines": [
+    84,
+    84
+   ],
+   "lean": "  simp_all [← H.phase_eq, trace_mul_logOneAdd, ← nonsing_inv_eq_ringInverse]",
+   "claim": "phase(l, k, (lg A, lg A')) = tr(diag(Λ(l))·lg A) − tr(diag(Λ(k))·lg A') = ∫₀¹ [tr(diag(Λ(l))(1 + rA)⁻¹A) − tr(diag(Λ(k))(1 + rA')⁻¹A')] dr (trace_mul_logOneAdd) = ∫₀¹ phase(l, k, (A, A')) dr = φ(s) (step 2 and phase_eq).",
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "decl": "trace_mul_logOneAdd"
+    },
+    {
+     "decl": "IsTwoFactor"
+    }
+   ],
+   "typed_fact": null
+  }
+ ]
+}

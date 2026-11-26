@@ -1,0 +1,1512 @@
+% !TEX program = lualatex
+% ---------------------------------------------------------------------------------------------
+%  Readback note 28: The tower method at a place: floor measures, gauges and the bounds on each floor
+%
+%  Build:  python3 tools/rb.py note <slug>
+%
+%  One unit of a Lean artifact, rewritten as ordinary mathematics. The prose is hand-written. Lean names,
+%  line ranges and counts come from data.tex; quoted Lean statements are copied from the artifact by the build.
+%
+%  Rules of the text: standard terminology; every symbol is explained where it first appears and listed again
+%  in the notation at the end; no letter has two meanings; a proof is complete or says what it takes for granted;
+%  Lean names appear only in the LEAN lines and in the concordance.
+%
+%  The signature rule (the build enforces it): a function, relation or predicate that the artifact defines is
+%  written only through its notation macro, which the build makes from the spec (`notation`) with one slot for
+%  each explicit argument of the Lean definition. No argument is fixed and dropped, also not "for brevity" and
+%  not for one section. Every argument and every hypothesis of a stated declaration stands inside its
+%  statement, or in a Setting that the statement cites by number; only implicit and instance arguments (the
+%  ambient objects) may stand in the conventions.
+% ---------------------------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\ifdefined\pdfvariable\pdfvariable suppressoptionalinfo \numexpr 1+2+4+8\relax\fi
+\usepackage[a4paper,hmargin=35mm,top=22mm,bottom=27mm,footskip=12mm,nohead]{geometry}
+
+\usepackage{fontspec}
+\directlua{
+  luaotfload.add_fallback("gfallback", {"STIXTwoMath-Regular.otf:mode=node;", "DejaVuSans.ttf:mode=node;"})
+  luaotfload.add_fallback("gmonofallback", {"DejaVuSansMono.ttf:mode=node;", "STIXTwoMath-Regular.otf:mode=node;"})
+}
+\setmainfont{NewCM10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookItalic,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldItalic,SmallCapsFont=*-Book,SmallCapsFeatures={Letters=SmallCaps},
+  RawFeature={fallback=gfallback}]
+\setsansfont{NewCMSans10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookOblique,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldOblique,RawFeature={fallback=gfallback}]
+\setmonofont{JetBrainsMono}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,Scale=MatchLowercase,
+  RawFeature={-calt;-liga;fallback=gmonofallback}]
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage[math-style=TeX]{unicode-math}
+\setmathfont{NewCMMath-Book.otf}
+\emergencystretch=2.5em\relax
+
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows.meta,positioning,backgrounds}
+\usepackage[protrusion=true,expansion=true]{microtype}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{multicol}
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+
+\definecolor{ink}{HTML}{0F172A}
+\definecolor{inksoft}{HTML}{475569}
+\definecolor{inkfaint}{HTML}{94A3B8}
+\definecolor{rulegrey}{HTML}{CBD5E1}
+\definecolor{arith}{HTML}{C2410C}
+\definecolor{est}{HTML}{7C3AED}
+\definecolor{ana}{HTML}{0891B2}
+\definecolor{ok}{HTML}{047857}
+\definecolor{leancol}{HTML}{3730A3}
+
+\title{The tower method at a place: floor measures, gauges and the bounds on each floor}
+\author{grh-compact}
+\date{}
+
+% ------------------------------------------------------------------------------------- macros
+\newcommand{\leanfont}{\ttfamily\fontsize{8.6}{10.5}\selectfont\color{leancol}}
+\newcommand{\lean}[1]{\csname LN@#1\endcsname}
+\newcommand{\fillin}[1]{{\color{arith}\itshape[#1]}}  % a place of the template that is not written yet; the build reports every one that is left
+\newcommand{\leanquote}[1]{\csname LQ@#1\endcsname}
+\input{data.tex}
+
+\linespread{1.08}                       % 11 pt on 14.7 pt
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt plus 1.5pt minus 0.5pt}
+\setlength{\abovedisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\belowdisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\abovedisplayshortskip}{3pt plus 2pt}
+\setlength{\belowdisplayshortskip}{6pt plus 2pt minus 2pt}
+\emergencystretch=1.5em
+\clubpenalty=10000 \widowpenalty=10000 \displaywidowpenalty=10000
+\relpenalty=7000 \binoppenalty=9000
+\raggedbottom
+\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\sffamily\fontsize{7.6}{9}\selectfont\color{inkfaint}\thepage\,/\,\pageref*{LastPage}}
+\setlist{topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=4pt,leftmargin=2.1em,labelsep=0.55em}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\len}{\operatorname{len}}
+\newcommand{\cok}{\operatorname{cok}}
+\newcommand{\End}{\operatorname{End}}
+\newcommand{\Hom}{\operatorname{Hom}}
+\newcommand{\Gal}{\operatorname{Gal}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\kw}[1]{\emph{#1}}
+\newcommand{\m}[1]{\mbox{$#1$}}        % a short formula that must not be broken across lines
+\newcommand{\head}[1]{\par\addvspace{17pt plus 4pt minus 2pt}\Needspace{6\baselineskip}%
+  \noindent{\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\sect}[2]{\refstepcounter{section}\label{#2}\par\addvspace{19pt plus 4pt minus 2pt}\Needspace{7\baselineskip}%
+  \noindent\llap{{\fontsize{13.2}{16}\selectfont\bfseries\color{inkfaint}\thesection}\hspace{9pt}}%
+  {\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\subhead}[1]{\par\addvspace{9pt plus 2pt}\Needspace{4\baselineskip}\noindent\textbf{#1}\enspace\ignorespaces}
+% where a statement lives in the Lean archive
+\newcommand{\leantag}{{\sffamily\bfseries\fontsize{6.3}{8}\selectfont\color{leancol}\addfontfeatures{LetterSpace=7}LEAN}}
+\newcommand{\sep}{\unskip\nobreak\hspace{5pt}{\color{inkfaint}\textperiodcentered}\hspace{5pt plus 2pt}\ignorespaces}
+\newcommand{\leanline}[1]{\par\nopagebreak\vspace{-2.5pt}{\fontsize{8.9}{12.4}\selectfont\color{inksoft}\raggedright
+  \noindent\llap{\leantag\hspace{9pt}}#1\par}\vspace{1pt}}
+% a displayed statement in a tinted box: #1 colour, #2 text
+\newcommand{\statement}[2]{\par\addvspace{7pt}\begingroup\setlength{\fboxsep}{8.5pt}\setlength{\fboxrule}{0.6pt}%
+  \noindent\fcolorbox{#1!30!white}{#1!3!white}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{#2}}%
+  \endgroup\par\addvspace{7pt}}
+\newcommand{\nt}[2]{\par\noindent\hangindent=1.1em\hangafter=1 #1\enspace{\color{inksoft}#2}\par\vspace{1pt}}
+\newcommand{\legdot}[1]{\tikz[baseline=-0.62ex]\fill[#1] (0,0) circle (2.5pt);\hspace{3pt}}
+\newcommand{\crow}[4]{\csname CS@#1\endcsname & #2 & \textcolor{inksoft}{#3} & \textcolor{inksoft}{#4}\\}
+\newcommand{\leanquoteline}[2]{\par\noindent\hangindent=\dimexpr#1\fontdimen2\font+2.2em\relax\hangafter=1
+  \hspace*{#1\fontdimen2\font}#2}
+\newcommand{\quoted}[1]{\par\vspace{3pt}{\ttfamily\fontsize{7.5}{10.4}\selectfont\color{leancol}\raggedright
+  \setlength{\parskip}{0pt}\leanquote{#1}\par}\vspace{4pt}}
+\newcommand{\bx}[3]{{\sffamily\bfseries\fontsize{7.3}{9.2}\selectfont\color{#1!82!black}#2}\\[1.5pt]#3}
+\newcommand{\cs}[2]{\expandafter\newcommand\csname CS@#1\endcsname{#2}}
+
+% theorems
+\newtheoremstyle{plainx}{7pt plus 2pt}{7pt plus 2pt}{\itshape}{}{\bfseries}{.}{0.5em}{}
+\newtheoremstyle{uprightx}{7pt plus 2pt}{7pt plus 2pt}{}{}{\bfseries}{.}{0.5em}{}
+\theoremstyle{plainx}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{uprightx}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{setting}[theorem]{Setting}          % hypotheses shared by several statements; each of them cites it by number
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\renewcommand{\qedsymbol}{{\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.5pt}\fbox{\rule{0pt}{0.46em}\hspace{0.46em}}}}
+% what holds throughout the note: the ambient objects only (implicit and instance arguments), never a hypothesis
+\newenvironment{conventions}{\par\addvspace{5pt}\noindent\textbf{Conventions.}\enspace\ignorespaces}{\par\addvspace{3pt}}
+\makeatletter
+\renewenvironment{proof}[1][Proof]{\par\pushQED{\qed}\normalfont\topsep0pt\partopsep0pt
+  \trivlist\item[\hskip\labelsep\itshape #1.]\ignorespaces}{\popQED\endtrivlist\@endpefalse}
+\makeatother
+
+\input{othermacros.tex}
+% hand macros of the three notes of unit 132 (objects of the background library; letters of shared/PLAN-132.md)
+\newcommand{\cL}{\mathcal{L}}
+\newcommand{\CC}{\mathbb{C}}
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\NN}{\mathbb{N}}
+\newcommand{\dd}{\mathrm{d}}
+\newcommand{\GT}[1]{G(#1)}
+\newcommand{\JT}[1]{J(#1)}
+\newcommand{\Hl}[2]{\mathcal{H}_{#1}(#2)}
+\newcommand{\Ql}[2]{\mathcal{Q}_{#1}(#2)}
+\newcommand{\Nb}[2]{\mathcal{N}_{<#1}(#2)}
+\newcommand{\Nf}[2]{\mathcal{N}_{#1}(#2)}
+\newcommand{\UT}[1]{\mathcal{U}(#1)}
+\newcommand{\modA}{\operatorname{mod}_A}
+\newcommand{\ZT}[2]{Z_{#1}(#2)}
+\newcommand{\sd}{\operatorname{sd}}
+\newcommand{\wl}[2]{w_{#1}(#2)}
+\newcommand{\wo}[2]{w^{\circ}_{#1}(#2)}
+\newcommand{\ip}[2]{\langle #1,#2\rangle}
+\newcommand{\gL}[1]{g_{#1}}
+\newcommand{\BoxL}[1]{\operatorname{Box}(#1)}
+\newcommand{\Posn}[1]{\operatorname{Posn}(#1)}
+\newcommand{\Ball}[1]{\mathfrak{B}(#1)}
+\newcommand{\etab}[1]{\eta_{<#1}}
+\newcommand{\vol}{\operatorname{vol}}
+\newcommand{\cLC}[1]{\mathcal{L}_{\CC}(#1)}
+\newcommand{\Gone}[1]{G_1(#1)}
+\newcommand{\Jone}[1]{J_1(#1)}
+\newcommand{\volU}[1]{\vol\mathrm{U}(#1)}
+\newcommand{\hw}[3]{\operatorname{hw}_{#1,#2}(#3)}
+\newcommand{\damp}[2]{\ell_{#1}(#2)}
+\newcommand{\bandc}[1]{\Theta(#1)}
+\newcommand{\cellc}[1]{c_G(#1)}
+\newcommand{\corr}[3]{J^{#1}_{#2}(#3)}
+\newcommand{\boost}[2]{\chi_{#1}(#2)}
+\newcommand{\quadric}[2]{\delta^{(#2)}(#1)}
+\newcommand{\Inp}[1]{\textup{(#1)}}
+% where each declaration of the concordance is treated
+\cs{Size}{Definition~\ref{d:size}}
+\cs{weylRatio}{Definition~\ref{d:wr}}
+\cs{coeweylRatio}{Definition~\ref{d:wr}}
+\cs{weylRatioinv}{Definition~\ref{d:wr}}
+\cs{vecsOfSize}{Definition~\ref{d:sz}}
+\cs{HasMatSize}{Definition~\ref{d:sz}}
+\cs{IsHead}{Definition~\ref{d:sz}}
+\cs{starhead}{Lemma~\ref{l:rules}}
+\cs{memofSizemono}{Lemma~\ref{l:rules}}
+\cs{submemofSize}{Lemma~\ref{l:rules}}
+\cs{monoa}{Lemma~\ref{l:rules}}
+\cs{one}{Lemma~\ref{l:rules}}
+\cs{sub}{Lemma~\ref{l:rules}}
+\cs{dotProductmemofSize}{Lemma~\ref{l:rules}}
+\cs{mulVec}{Lemma~\ref{l:rules}}
+\cs{mul}{Lemma~\ref{l:rules}}
+\cs{detmemofSize}{Lemma~\ref{l:det}}
+\cs{adjointapplymemofSize}{Lemma~\ref{l:adj}}
+\cs{inv}{Lemma~\ref{l:adj}}
+\cs{rowmemofSizeofdualframe}{Lemma~\ref{l:row}}
+\cs{hasMatSizeonesubinv}{Lemma~\ref{l:backsub}}
+\cs{minormuldualmemofSize}{Lemma~\ref{l:minor}}
+\cs{minorsmemofSize}{Lemma~\ref{l:minor}}
+\cs{headentriesmemofSize}{Lemma~\ref{l:minor}}
+\cs{hasMatSizeofisHead}{Lemma~\ref{l:minor}}
+\cs{cardsucclefloorOf}{Lemma~\ref{l:minor}}
+\cs{Level}{Definition~\ref{d:level}}
+\cs{floorMeasure}{Definition~\ref{d:fm}}
+\cs{floorMeasuretop}{Definition~\ref{d:fm}}
+\cs{stackMeasure}{Definition~\ref{d:tower}}
+\cs{groupMeasure}{Definition~\ref{d:tower}}
+\cs{upperMeasure}{Definition~\ref{d:tower}}
+\cs{upperMeasureeqsuccmconv}{Definition~\ref{d:tower}}
+\cs{aestackMeasuremem}{Definition~\ref{d:tower}}
+\cs{IsNear}{Definition~\ref{d:near}}
+\cs{isNearmuliff}{Definition~\ref{d:near}}
+\cs{offloorGroupmul}{Definition~\ref{d:near}}
+\cs{orthonormalPart}{Definition~\ref{d:val}}
+\cs{closePairs}{Definition~\ref{d:val}}
+\cs{floorValues}{Definition~\ref{d:val}}
+\cs{volumeExponent}{Definition~\ref{d:weight}}
+\cs{floorWeight}{Definition~\ref{d:weight}}
+\cs{invWeight}{Definition~\ref{d:weight}}
+\cs{floorModulus}{Definition~\ref{d:weight}}
+\cs{floorWeightsucc}{Definition~\ref{d:weight}}
+\cs{floorWeightnezeroandnetop}{Definition~\ref{d:weight}}
+\cs{floorWeightmulleft}{Definition~\ref{d:weight}}
+\cs{measurablefloorWeight}{Definition~\ref{d:weight}}
+\cs{measurableinvWeight}{Definition~\ref{d:weight}}
+\cs{FloorMassLe}{Definition~\ref{d:mass}}
+\cs{upperPairing}{Definition~\ref{d:av}}
+\cs{pivotModulus}{Definition~\ref{d:av}}
+\cs{IsPairingKernel}{Definition~\ref{d:pk}}
+\cs{weightedSquare}{Definition~\ref{d:sn}}
+\cs{weightedSquareSum}{Definition~\ref{d:sn}}
+\cs{selfNorm}{Definition~\ref{d:sn}}
+\cs{Gauge}{Definition~\ref{d:gauge}}
+\cs{oneleLambda}{Definition~\ref{d:gauge}}
+\cs{positionsOfSize}{Definition~\ref{d:consts}}
+\cs{floorConst}{Definition~\ref{d:consts}}
+\cs{globalConst}{Definition~\ref{d:consts}}
+\cs{measurableSetpositionsOfSize}{Definition~\ref{d:consts}}
+\cs{measurableSetvecsOfSize}{Definition~\ref{d:consts}}
+\cs{HasFibreBound}{Definition~\ref{d:fib}}
+\cs{measurePreservingorbitPoint}{Lemma~\ref{l:orbit}}
+\cs{measurePreservingmulVecorbitPoint}{Lemma~\ref{l:orbit}}
+\cs{aefloorMeasuremem}{Lemma~\ref{l:carried}}
+\cs{lintegralfloorMeasurecongr}{Lemma~\ref{l:carried}}
+\cs{descConvfloorMeasuresucc}{Lemma~\ref{l:desc}}
+\cs{lintegralweylRatiomul}{Lemma~\ref{l:weylratio}}
+\cs{lintegralfloorMeasuremulright}{Lemma~\ref{l:right}}
+\cs{stackMeasurenezero}{Lemma~\ref{l:nz}}
+\cs{lintegralmullefteqoffactor}{Lemma~\ref{l:factor}}
+\cs{memvecsOfSizeofheisenbergElem}{Lemma~\ref{l:heis}}
+\cs{measurableSetisNear}{Lemma~\ref{l:meas}}
+\cs{isOpenfloorValues}{Lemma~\ref{l:meas}}
+\cs{volumefloorValuesnezeronetop}{Lemma~\ref{l:meas}}
+\cs{floorValuesmul}{Lemma~\ref{l:valinv}}
+\cs{invWeightmul}{Lemma~\ref{l:valinv}}
+\cs{upperMeasureisNearle}{Lemma~\ref{l:upper}}
+\cs{memvecsOfSizeoffloorBasismulVec}{Lemma~\ref{l:basis}}
+\cs{setLIntegralleofhasFibreBound}{Lemma~\ref{l:fibint}}
+\cs{setLIntegralorthonormalPartle}{Lemma~\ref{l:fibint}}
+\cs{hasFibreBoundfloorQuadricofle}{Lemma~\ref{l:fibq}}
+\cs{hasFibreBoundfloorQuadric}{Lemma~\ref{l:fibq}}
+\cs{hasFibreBoundfloorVolume}{Lemma~\ref{l:fibq}}
+\cs{lintegralheisenbergMeasurele}{Lemma~\ref{l:heisint}}
+\cs{conjmulinvclosetoone}{Lemma~\ref{l:three}}
+\cs{orbitPointmemvecsOfSize}{Lemma~\ref{l:three}}
+\cs{existshasMatSizeofisNear}{Lemma~\ref{l:three}}
+\cs{hasMatSizesuboneoffloorValues}{Lemma~\ref{l:subone}}
+\cs{existsnezeroofpivotModulus}{Lemma~\ref{l:nokernel}}
+\cs{lintegralupperPairingsqle}{Lemma~\ref{l:nokernel}}
+\cs{integrableupperMeasure}{Lemma~\ref{l:succ}}
+\cs{upperPairingeqintegralsucc}{Lemma~\ref{l:succ}}
+\cs{enormupperPairingle}{Lemma~\ref{l:succ}}
+\cs{stronglyMeasurableupperPairing}{Lemma~\ref{l:succ}}
+\cs{mono}{Lemma~\ref{l:succ}}
+\cs{upperPairinginvariant}{Lemma~\ref{l:kinv}}
+\cs{weightedSquareinvariantsupport}{Lemma~\ref{l:sqinv}}
+\cs{weightedSquareSuminvariantsupport}{Lemma~\ref{l:sqinv}}
+\cs{measurableweightedSquareSum}{Lemma~\ref{l:sqinv}}
+\cs{pivotModulussqle}{Lemma~\ref{l:cs}}
+\cs{selfNormeqaddsucc}{Lemma~\ref{l:sn}}
+\cs{selfNormleselfNormzero}{Lemma~\ref{l:sn}}
+\cs{floorMassLeofchart}{Lemma~\ref{l:chart}}
+\cs{floorMassLefloorWeightdiv}{Lemma~\ref{l:mass}}
+\cs{floorMassLeone}{Lemma~\ref{l:mass}}
+\cs{stackMeasuremconvdirac}{Theorem A (i)}
+\cs{isMulRightInvariantgroupMeasure}{Theorem A (i)}
+\cs{stackMeasurezeroeq}{Theorem A (ii)}
+\cs{lintegralstackMeasuremulleft}{Theorem A (iii)}
+\cs{lintegralfloorWeightle}{Theorem B (i)}
+\cs{lintegralmulinvWeightle}{Theorem B (ii)}
+\cs{amplitudesupportandplancherel}{Theorem C (i)}
+\cs{parsevalheisenbergMeasureofbox}{Theorem C (ii)}
+
+\begin{document}
+\color{ink}
+
+{\raggedright
+{\sffamily\bfseries\fontsize{7.2}{9}\selectfont\color{leancol}\addfontfeatures{LetterSpace=8}READBACK NOTE 28\par}
+\vspace{5pt}
+{\fontsize{21.5}{25.5}\selectfont\bfseries The tower method at a place: floor measures, gauges and the bounds on each floor\par}
+\vspace{5pt}
+{\fontsize{12.4}{16}\selectfont\itshape\color{inksoft} One unit of the Lean artifact \ArtifactName, read back into
+mathematics\par}}
+\vspace{8pt}
+{\color{rulegrey}\hrule height 0.6pt}
+\vspace{7pt}
+\thispagestyle{empty}
+
+\textbf{Summary.} Let $\GT{T}$ be the unitary group of a hermitian space with $\varrho$ hyperbolic planes over a local
+ring $A$. The stabilisers $\Hl{l}{T}$ of the first $l$ planes form a tower, and the quotient of two consecutive
+ones is a quadric. A \emph{level} puts a measure on each floor, the image of an explicit measure on a big cell,
+and their convolution $\groupMeasure{\cL}$ is a right invariant measure on $\GT{T}$: the method works when it is a
+Haar measure. A kernel on $\GT{T}\times\GT{T}$ is averaged floor by floor, and on each floor three tools bound the
+averages: a Cauchy--Schwarz inequality against the mass of the floor, integrals of weights made of volumes, and
+Plancherel's inequality on the quadric and on a Heisenberg group. All sizes are kept by a \emph{gauge}, a filtration
+of~$A$ with one constant~$\Lambda$. This note sets up these objects and proves the tools; the companion notes
+apply them.
+
+\statement{leancol}{\fontsize{9.6}{13.2}\selectfont\textbf{What this note is.} The artifact \ArtifactName{} is a
+body of Lean code whose final theorems are the Riemann hypothesis and the generalized Riemann hypothesis for Dirichlet
+$L$-functions. Its authors report that it compiles and that Lean's kernel accepts these theorems from the three
+standard axioms; nothing was built for this note. That is a statement about a formal text: no mathematician has read
+the argument through, and this note does not say that the Riemann hypothesis is proved. The note treats one part of
+one unit of the artifact (the folder of the analysis at the real places): \UnitInNote{} of the unit's \UnitMembers{}
+declarations, those of five files; two companion notes treat the others (Note~L, \emph{The local theorem for floor
+forms and the band limits at the complex place}; Note~C, \emph{The complex place: the open-cell chart, the Haar measure
+of the tower, the Bessel cut and the volume weight}). Every result of the five files is stated here, compared
+argument by argument with its Lean text, and proved from the inputs of Section~\ref{s:inputs}, which belong to the
+background library; the last section says which proofs follow the formal text step by step and which were only
+traced through its terms. The Lean text read is \PinText; Appendix~A is the concordance of \ConcDecls{} declarations.}
+
+\sect{The statements}{s:intro}
+The objects are defined in Section~\ref{s:setting}. $A$ is a place, $T$ an $\mathfrak{s}$-form over $A$, $\GT{T}$
+the unitary group of its split Gram matrix, $\cL$ a level, $\Gamma$ a gauge on~$\cL$.
+
+\statement{arith}{\phantomsection\label{t:A}\textbf{Theorem A (the tower measure).}\enspace Let $A$,
+$\mathfrak{s}$, $T$, $\Omega$, $\mathfrak{m}$ be as in the conventions and $\cL$ a level in
+$\Levels{\Omega}{T}{\mathfrak{m}}$.
+
+\textbf{(i)} Let $l$, $i$ be natural numbers with $l+i=\varrho+2$ and $s\in\Hl{l}{T}$. Then
+$\stackMeasure{\cL}_{l,i}*\delta_s=\stackMeasure{\cL}_{l,i}$. In particular $\groupMeasure{\cL}$ is invariant under
+right translations.
+
+\textbf{(ii)} For every natural number $j$:
+$\stackMeasure{\cL}_{0,j}=\etab{j}*(\floorMeasure{\cL}{j-1}*\dots*\floorMeasure{\cL}{0})$.
+
+\textbf{(iii)} Suppose that $\groupMeasure{\cL}$ is a Haar measure. Let $j$ be a natural number with
+$j\le\varrho+2$, let $p\colon\NN\to A^{\times}$, and let $\Phi\colon\GT{T}\to[0,\infty]$ be measurable and invariant
+under left translations by $\Hl{j}{T}$. Then
+\[\int\Phi\bigl(\wl{j}{p}^{-1}g\bigr)\,\dd\stackMeasure{\cL}_{0,j}(g)=\int\Phi(g)\,\dd\stackMeasure{\cL}_{0,j}(g).\]}
+\leanline{\lean{stackMeasuremconvdirac}\sep\lean{isMulRightInvariantgroupMeasure}\sep\lean{stackMeasurezeroeq}\sep\lean{lintegralstackMeasuremulleft}}
+
+\begin{setting}[a level with a gauge]\label{set:gauge}
+Let $A$, $\mathfrak{s}$, $T$, $\Omega$, $\mathfrak{m}$ be as in the conventions, $\cL$ a level in
+$\Levels{\Omega}{T}{\mathfrak{m}}$ and $\Gamma$ a gauge in $\Gauges{\cL}$. Sizes ($\operatorname{sz}$,
+$\mathrm{Vec}$, heads) are taken for $\Gamma$.
+\end{setting}
+
+\statement{arith}{\phantomsection\label{t:B}\textbf{Theorem B (two integrals of weights).}\enspace In
+Setting~\ref{set:gauge}, let $j$ be a natural number with $j\le\varrho$.
+
+\textbf{(i)} Let $g,y\in\GT{T}$ with $g$ near at $j$: \m{\IsNear{\cL}{j}{g}}. Then
+\[\int\mathbf{1}_{\positionsOfSize{\cL}{\Gamma}}(g^{-1}\nu y)\;\floorWeight{\cL}{j}{g}{g^{-1}\nu y}\;\dd\etab{j}(\nu)\ \le\ \prod_{l<j}\floorConst{\Gamma}{l}.\]
+
+\textbf{(ii)} Let $p\colon\NN\to A^{\times}$ be a head of length $j$, \m{\IsHead{j}{p}}, let $x\in\Posn{\cL}$, let
+$b$ be a natural number with $j\le b$, let $\rho$ be an $s$-finite measure on $\GT{T}$, and let
+$\Phi\colon\GT{T}\to[0,\infty]$ be measurable, invariant under left translations by $\Ql{b}{T}$, and zero at every
+point that is not near at~$b$. Then
+\[\int\Phi(g)\;\invWeight{\cL}{j}{x}\bigl(\wl{j}{p}g\bigr)\;\dd(\etab{j}*\rho)(g)\ \le\
+\prod_{a<j}\floorModulus{\cL}{a}{p_a^{-1}}\cdot\globalConst{\Gamma}\cdot\int\Phi\,\dd\rho.\]}
+\leanline{\lean{lintegralfloorWeightle}\sep\lean{lintegralmulinvWeightle}}
+
+\statement{arith}{\phantomsection\label{t:C}\textbf{Theorem C (Plancherel on a floor and on a Heisenberg group).}\enspace
+In Setting~\ref{set:gauge}:
+
+\textbf{(i)} Let $b$ be a natural number with $b\le\varrho$, let $t\in\Hl{b}{T}$ and $q,x,y\in\GT{T}$ with
+$t^{-1}q\in\Nb{b}{T}$, let $j$ be a natural number with \m{\HasMatSize{j}{qx}}, and let
+\m{\IsPairingKernel{\cL}{b}{k}{d}}. Put $F(\sigma)=\upperPairing{\cL}{b+1}{k}{\sigma x}{\sigma y}$. Then for
+$\floorMeasure{\cL}{b}$-almost every $\sigma$ with $F(\sigma)\ne0$ the vector $t\sigma^{-1}f_b$ lies in
+$\vecsOfSize{j+6}$; and for every $\xi\in A^{\times}$, every $y'\in V$, every measure $\mu$ on $V$, natural number $i$
+and $M\in[0,\infty]$ with \m{\HasFibreBound{\Gamma}{b}{\mu}{i}{M}},
+\[\begin{aligned}\int_{\vecsOfSize{i}}\Bigl|\int\psi_A\bigl(\xi\,h_T(v+y',t\sigma^{-1}f_b)\bigr)F(\sigma)\,\dd\floorMeasure{\cL}{b}(\sigma)\Bigr|^{2}&\dd\mu(v)\\
+\le M\,\Lambda(\Gamma)^{99n(j+12)}\Bigl(\frac{c_A}{\modA(\xi)}\Bigr)^{|\Omega|}&\int|F|^{2}\,\dd\floorMeasure{\cL}{b}.\end{aligned}\]
+
+\textbf{(ii)} Let $a$ be a natural number with $a<\varrho$, $\xi,u\in A^{\times}$, $\varepsilon\in\NN$,
+$C\in[0,\infty]$, \m{\IsPairingKernel{\cL}{a+1}{k}{d}}, $x,y\in\GT{T}$, $S\subseteq\GT{T}$,
+$\Phi\colon\GT{T}\to[0,\infty]$ and $i,j\in\NN$. Suppose: \emph{(e)} for all $s\in\Nf{a}{T}$,
+$\gL{\cL}^{-1}\bigl(\sd(dsd^{-1})-\sd(s^{\varepsilon})\bigr)=\xi\,\sd(s)$; \emph{(o)} for all $\nu\in\Nf{a}{T}$ with
+$\Phi(\nu)\ne0$: $\nu\in S$ and $\Phi(\nu)\le C\,\bigl|\upperPairing{\cL}{a+1}{k}{\nu^{\varepsilon}x}{\nu y}\bigr|^{2}$;
+\emph{(h)} for every $m\in S$ there are $t\in\Ql{a+1}{T}\cap\Hl{a}{T}$ and $q\in\Nb{a+1}{T}$ with
+\m{\HasMatSize{i}{tqx}} such that for every $\nu\in S$ there is $\nu'\in\Nb{a}{T}$ for which the column at $e^*_a$
+of the matrix $u^{-1}\bigl(\nu'\,tm(t\nu)^{-1}-1\bigr)$ lies in $\vecsOfSize{j}$. Then
+\[\begin{aligned}\int\Phi\,\dd\eta_a\le{}& C\Bigl(\frac{c_A}{\modA(\xi u)}\Bigr)^{|\Omega|}\floorModulus{\cL}{a}{u}\,\Lambda(\Gamma)^{100n(i+j+31)}\\
+&\cdot\int\bigl|\upperPairing{\cL}{a+2}{k}{\sigma x}{\sigma y}\bigr|^{2}\,\dd\floorMeasure{\cL}{a+1}(\sigma).\end{aligned}\]}
+\leanline{\lean{amplitudesupportandplancherel}\sep\lean{parsevalheisenbergMeasureofbox}}
+
+\sect{The setting}{s:setting}
+\begin{conventions}\phantomsection\label{c:conventions}
+$A$ is a commutative ring with an involution $x\mapsto\bar x$; from Definition~\ref{d:level} on it carries a topology
+and a Haar measure $\dd x$ and is a \emph{place} (Section~\ref{s:space}). $\mathfrak{s}=(\varrho,\kappa,k_0)$ is a
+shape, $n=\varrho+1$, $k=|\kappa|$, $r=2\varrho+k+1$. $T$ is an $\mathfrak{s}$-form over $A$; from
+Lemma~\ref{l:adj} on, its split Gram matrix $\JT{T}$ is a hermitian unit. $\Omega$ is a finite set~$\Omega$,
+$\mathfrak{m}$ a natural number, $\cL$ a level in $\Levels{\Omega}{T}{\mathfrak{m}}$. $\mathcal{S}$ is a size in
+$\Sizes{T}$; the predicates $\operatorname{sz}$, $\operatorname{Hd}$ and the sets $\mathrm{Vec}_i$ refer to a size
+that the Lean text takes as an implicit argument, and every statement names it. Index sets of vectors and matrices
+are finite sets. Integrals of functions with values in $[0,\infty]$ are Lebesgue integrals; a product $0\cdot\infty$
+is $0$; subtraction of natural numbers is truncated at $0$. ``Invariant'' means invariant under left translations
+unless said otherwise; a measure is \emph{carried} by a set if the complement is a null set.
+\end{conventions}
+
+\subhead{The space and its groups (background library, units 112 and 119).}\phantomsection\label{s:space} A
+\emph{shape} is a triple $\mathfrak{s}=(\varrho,\kappa,k_0)$ of a natural number, a finite set and an element of it.
+The free module $V=A^{r}$ has the basis $e_0,\dots,e_{\varrho-1}$, $x_i$ ($i\in\kappa$), $z$,
+$e^*_{\varrho-1},\dots,e^*_0$. An \emph{$\mathfrak{s}$-form} $T$ is a square matrix over $A$ on the indices of the
+$x_i$ and of $z$; its \emph{split Gram matrix} $\JT{T}$ has the entries $1$ at $(e_a,e^*_a)$ and $(e^*_a,e_a)$, the
+block $T$ on $V_\varrho=\langle x_i,z\rangle$ and $0$ elsewhere. It is a \emph{hermitian unit} if
+$\JT{T}^{*}=\JT{T}$ and $\det\JT{T}$ is a unit; $X^{*}$ is the conjugate transpose. We write $h_T(v,w)=v^{*}\JT{T}w$,
+and $\GT{T}$ is the group of the invertible matrices $g$ with $g^{*}\JT{T}g=\JT{T}$. Each basis vector has a
+\emph{floor}: $a$ for $e_a$ and $e^*_a$, $\varrho$ for $z$, $n$ for the $x_i$; and a \emph{rank in the flag}: $a$ for
+$e_a$, $\varrho$ for $z$ and the $x_i$, $2\varrho-a$ for $e^*_a$. $V_l$ is the span of the basis vectors of floor at
+least $l$; it has rank $k+1+2(\varrho-l)$ for $l\le\varrho$. The \emph{frame} is $f_0,\dots,f_\varrho$, $f_a=e_a$
+($a<\varrho$), $f_\varrho=z$; $\ZT{T}{g}=(h_T(f_a,gf_b))_{a,b}$ is the frame Gram matrix. The subgroups of $\GT{T}$:
+\begin{itemize}
+\item $\Hl{l}{T}$: the $g$ whose matrix agrees with the identity in every row and column of floor less than $l$;
+\item $\Ql{l}{T}$: the $g$ with $g_{\alpha\beta}=\delta_{\alpha\beta}$ whenever the rank of $\beta$ is at most that of
+  $\alpha$ and the larger of the floor and the rank of $\beta$ is less than $l$; for $l\le n$ this says
+  $gf_a-f_a\in\langle e_0,\dots,e_{a-1}\rangle$ for $a<l$;
+\item $\UT{T}$: the $g$ with $g_{\alpha\beta}=\delta_{\alpha\beta}$ whenever the rank of $\beta$ is at most that of
+  $\alpha$; and $\Nb{l}{T}$: the same condition for the ranks in which every basis vector of floor at least $l$ gets
+  the rank $\varrho$; so $\Nb{l}{T}=\UT{T}$ for $l\ge\varrho$;
+\item $\Nf{l}{T}=\Hl{l}{T}\cap\Nb{l+1}{T}$.
+\end{itemize}
+For $u\in\GT{T}$, $\sd(u)=\sum_{a<\varrho}u_{f_a,f_{a+1}}$. For $p\colon\NN\to A^{\times}$ the \emph{Weyl element}
+$\wl{l}{p}$ maps $e_a\mapsto p_ae^*_a$, $e^*_a\mapsto\bar p_a^{-1}e_a$ for $a<\min(l,\varrho)$ and fixes the other
+basis vectors; $\wo{a}{c}$ ($a<\varrho$, $c\in A^{\times}$) does this for the one pair $(e_a,e^*_a)$. If
+$\tau_A\in A$ has $\tau_A+\bar\tau_A=1$, then for $a<\varrho$, a vector $v\in V_{a+1}$ and a skew $\beta\in A$
+($\bar\beta=-\beta$) the \emph{Heisenberg element} $\mathrm{n}_a(v,\beta)\in\Nf{a}{T}$ is the isometry that maps
+$e^*_a\mapsto e^*_a+v+(\beta-\tau_Ah_T(v,v))e_a$, $w\mapsto w-h_T(v,w)e_a$ for $w\in V_{a+1}$, and fixes $e_a$ and the
+basis vectors of floor less than~$a$.
+
+\emph{Facts used} (all from unit 119): $\Hl{l}{T}$ and $\Ql{l}{T}$ decrease with $l$;
+$\Hl{l}{T}\subseteq\Ql{l}{T}$; $\Nb{l}{T}\subseteq\UT{T}\subseteq\Ql{l'}{T}$; $\Hl{l}{T}=1$ for $l\ge\varrho+2$
+and $\Ql{\varrho+2}{T}=\UT{T}$; $\Hl{l}{T}$ normalises $\Nb{l}{T}$ and $\Hl{l+1}{T}$ normalises $\Nf{l}{T}$;
+\begin{enumerate}[label=\textup{(F\arabic*)}]
+\item every $s\in\Ql{l}{T}$ is $\gamma\nu$ with $\gamma\in\Hl{l}{T}$, $\nu\in\Nb{l}{T}$; every
+  $s\in\Ql{l+1}{T}\cap\Hl{l}{T}$ is $g\nu$ with $g\in\Hl{l+1}{T}$, $\nu\in\Nf{l}{T}$; every element of $\Nf{a}{T}$,
+  $a<\varrho$, is a Heisenberg element;
+\item for $b\le\varrho$ and $s\in\Hl{b}{T}$: $s\in\Ql{b+1}{T}$ if and only if $s^{-1}f_b=f_b$;
+\item for $s\in\Ql{j}{T}$, $a<j$ and $v$ with $v_{e^*_b}=0$ for $b<a$: $(sv)_{e^*_a}=v_{e^*_a}$; the row of $s$ at
+  $e^*_a$ agrees with that of the identity outside the columns $e^*_b$, $b<a$;
+\item for $g\in\Nb{j}{T}$ and $v$ with $v_{e^*_b}=0$ for $b<j$: $(gv)_\alpha=v_\alpha$ at every $\alpha$ of floor at
+  least $j$ or of rank more than $\varrho$;
+\item $\wl{l}{p}$ commutes with $\Hl{l}{T}$; $\wl{l+1}{p}=\wo{l}{p_l}\wl{l}{p}$; $\wl{l}{\bar p}=\wl{l}{p}^{-1}$;
+\item for $s\in\Hl{a+1}{T}$: $s\,\mathrm{n}_a(v,\beta)s^{-1}=\mathrm{n}_a(sv,\beta)$; the product and the inverse of
+  Heisenberg elements are Heisenberg elements, with
+  $\mathrm{n}_a(v,\beta)^{-1}=\mathrm{n}_a(-v,\beta')$ for a skew $\beta'$; and
+  $\sd(s\,\mathrm{n}_a(v,\beta)s^{-1})=-h_T(v,s^{-1}f_{a+1})$;
+\item the elements of $\GT{T}$ preserve $h_T$, and $\JT{T}g^{-1}=g^{*}\JT{T}$.
+\end{enumerate}
+
+\subhead{A place (unit 113).} A \emph{place} is a commutative ring $A$ with involution that is a locally compact
+Polish topological ring, with a Haar measure $\dd x$ on $A$ and: an element $\tau_A$ with $\tau_A+\bar\tau_A=1$; a
+unit $\delta_A$ with $\bar\delta_A=-\delta_A$; a Haar measure $\nu_A$ on the group $A^{-}$ of the skew elements such
+that $(\beta,\beta')\mapsto\tau_A\delta_A^{-1}\beta+\beta'$ carries $\nu_A\times\nu_A$ to $\dd x$; a measurable
+multiplicative $\modA\colon A\to[0,\infty]$ with $\modA(\bar x)=\modA(-x)=\modA(x)$ such that $v\mapsto Mv$ carries
+$\dd v$ on $A^{N}$ to $\modA(\det M)^{-1}\dd v$ whenever $\det M$ is a unit; a continuous additive character
+$\psi_A$ with $|\psi_A|=1$; a constant $c_A\in[0,\infty]$ bounding the $L^1$ norm of the Fourier transform of some
+continuous integrable $G\ge0$ with $G(0)=1$; almost every element of $A$ is a unit; and $\modA(u)^{-1}\le|g(u)|^2$ on
+units for some locally integrable~$g$.
+
+\subhead{Quadric measures and hyperbolic bases (units 113 and 119).} For a hermitian matrix $T'$ on a finite index
+set $\iota$ and a skew $\beta$, the \emph{flat chart} of the quadric $h=\delta_A^{-1}\beta$ in the space
+$A^2\oplus A^{\iota}$ with the form (hyperbolic plane) $\oplus\,T'$ is
+$(t,w,\alpha)\mapsto\bigl(\bar t^{-1}\tau_A(\delta_A^{-1}\beta-w^{*}T'w)+t\alpha,\ t,\ w\bigr)$, for $t\in A$,
+$w\in A^{\iota}$, $\alpha\in A^{-}$, and the \emph{quadric measure} is the image of $\dd t\,\dd w\,\dd\nu_A(\alpha)$
+under it. A \emph{hyperbolic basis} of $V_\varrho$, with parameters $(\Omega,T,\mathfrak{m})$, is a matrix $E$ whose
+columns are $\mathfrak{m}+1$ hyperbolic pairs and vectors indexed by $\Omega$ with $E^{*}TE$ the Gram matrix of
+$\mathfrak{m}+1$ hyperbolic planes plus the identity on $\Omega$, with $k+1=|\Omega|+2\mathfrak{m}+2$ and
+$\modA(\det T)=1$. For $b\le\varrho$ its \emph{floor basis} $E_b$ is the basis of $V_b$ made of $E$ and of the pairs
+$(e_a,e^*_a)$, $b\le a<\varrho$; its coordinates are: the first hyperbolic pair, a first half of the other pairs
+(indexed by a set $\pi_b$ of $\mathfrak{m}+\varrho-b$ elements), the orthonormal part $\Omega$, and the second half.
+The \emph{floor quadric measure} $\quadric{\cL}{b}$ of a level is the image under $E_b$ of the quadric measure with
+$\beta=\delta_Ah_T(f_b,f_b)$ in these coordinates, and $\vol_b$ is the Haar measure of $V_b$, the image of the volume
+of the coordinates of floor at least $b$.
+
+\subhead{Sizes.}
+\begin{definition}[size]\label{d:size}
+Let $A$ be a commutative ring with involution, $\mathfrak{s}$ a shape and $T$ an $\mathfrak{s}$-form over $A$. A
+\emph{size} for $T$, an element of $\Sizes{T}$, is a family $\mathcal{S}=(\mathcal{S}_i)_{i\in\NN}$ of subsets of
+$A$ such that: $\mathcal{S}_i\mathcal{S}_{i'}\subseteq\mathcal{S}_{i+i'}$; the sum of a family of elements of
+$\mathcal{S}_i$ indexed by a finite set of at most $r+1$ elements lies in $\mathcal{S}_{i+1}$; $-x\in\mathcal{S}_i$
+if and only if $x\in\mathcal{S}_i$, and $\bar x\in\mathcal{S}_i$ if and only if $x\in\mathcal{S}_i$;
+$0,1\in\mathcal{S}_i$ for all $i$; and all entries of $\JT{T}$ and of $\JT{T}^{-1}$ lie in $\mathcal{S}_1$.
+\end{definition}
+\leanline{\lean{Size}}
+\begin{definition}[vectors and matrices of a size; heads]\label{d:sz}
+Let $\mathcal{S}$ be a size in $\Sizes{T}$ (an implicit argument of the three notions). For a natural number $i$,
+$\vecsOfSize{i}$ is the set of the vectors $v$, on a given finite index set, with all coordinates in $\mathcal{S}_i$.
+A matrix $X$ over $A$ \emph{has size at most $i$}, \m{\HasMatSize{i}{X}}, if all its entries lie in
+$\mathcal{S}_i$; for $g\in\GT{T}$ this refers to the matrix of $g$. A sequence $p\colon\NN\to A^{\times}$ is a
+\emph{head of length $j$}, \m{\IsHead{j}{p}}, if $(p_0p_1\cdots p_{l-1})^{-1}\in\mathcal{S}_1$ for every $l\le j$.
+\end{definition}
+\leanline{\lean{vecsOfSize}\sep\lean{HasMatSize}\sep\lean{IsHead}}
+\begin{definition}[Weyl ratio]\label{d:wr}
+For a natural number $j$ and $p,q\colon\NN\to A^{\times}$, the element $\weylRatio{j}{p}{q}$ of $\GT{T}$ is the
+product of the inverse of the Weyl element of $q$ and the Weyl element of $p$, both of length~$j$.
+\end{definition}
+\leanline{\lean{weylRatio}\sep\lean{coeweylRatio}\sep\lean{weylRatioinv}}
+Its matrix is diagonal: the entry is $p_a/q_a$ at $e_a$ and $\overline{q_a/p_a}$ at $e^*_a$ for
+$a<\min(j,\varrho)$, and $1$ elsewhere; and $(\weylRatio{j}{p}{q})^{-1}=\weylRatio{j}{q}{p}$.
+
+\subhead{Levels and the tower measure.}
+\begin{definition}[level]\label{d:level}
+Let $A$ be a place, $T$ an $\mathfrak{s}$-form whose split Gram matrix is a hermitian unit, $\Omega$ a finite set
+and $\mathfrak{m}$ a natural number. A \emph{level}, an element $\cL$ of $\Levels{\Omega}{T}{\mathfrak{m}}$, consists
+of: a hyperbolic basis $E(\cL)$ of $V_\varrho$ with parameters $(\Omega,T,\mathfrak{m})$; two $s$-finite measures
+$\theta$ and $\mu_H$ on $\GT{T}$ with $\mu_H\ne0$; a unit $\gL{\cL}$ of $A$ with $\overline{\gL{\cL}}=\gL{\cL}$; a set
+$\Ball{\cL}\subseteq V$, the \emph{ball}; and two sets $\BoxL{\cL},\Posn{\cL}\subseteq\GT{T}$, the \emph{box} and the
+\emph{positions}; such that
+\begin{enumerate}[label=\textup{(L\arabic*)}]
+\item $\theta$ is carried by $\Hl{\varrho}{T}$, and its image under $\sigma\mapsto\sigma^{-1}z$ is the floor quadric
+  measure $\quadric{\cL}{\varrho}$;
+\item $\mu_H$ is carried by $\Hl{n}{T}$; $\mu_H*\delta_s=\mu_H$ for $s\in\Hl{n}{T}$; and
+  $\mu_H\{h:u\,h\,g\in\BoxL{\cL}\text{ for some }u\in\UT{T}\}\le1$ for every $g\in\GT{T}$;
+\item $\Ball{\cL}$ is open, contains $0$ and has compact closure; $\BoxL{\cL}$ is compact; $\Posn{\cL}$ is
+  measurable.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{Level}}
+\begin{definition}[floor measures]\label{d:fm}
+For a level $\cL$ in $\Levels{\Omega}{T}{\mathfrak{m}}$ and a natural number $l$, the measure
+$\floorMeasure{\cL}{l}$ on $\GT{T}$ is: $\varpi_l*\eta_l$ for $l<\varrho$; $\theta$ for $l=\varrho$; $\mu_H$ for
+$l=n$; and the unit mass $\delta_1$ for $l>n$. Here $*$ is the convolution of measures, $\varpi_l$ (the \emph{Weyl
+law}) is the image of $\modA(c)^{k+1+2(\varrho-(l+1))}\dd c$ under $c\mapsto\wo{l}{c}^{-1}$, and $\eta_l$ (the
+\emph{Heisenberg measure}) is the image of $\dd v\,\dd\nu_A(\beta)$ on (coordinates of $V_{l+1})\times A^{-}$ under
+$(v,\beta)\mapsto\mathrm{n}_l(v,\beta)$; we put $\eta_l=\delta_1$ for $l\ge\varrho$ and
+$\etab{j}=\eta_0*\eta_1*\dots*\eta_{j-1}$.
+\end{definition}
+\leanline{\lean{floorMeasure}\sep\lean{floorMeasuretop}}
+\begin{definition}[stack, group and upper measures]\label{d:tower}
+For a level $\cL$ in $\Levels{\Omega}{T}{\mathfrak{m}}$, $\stackMeasure{\cL}$ is the family of measures
+\[\stackMeasure{\cL}_{a,i}=(\eta_{a+i-1}*\floorMeasure{\cL}{a+i-1})*\dots*(\eta_{a+1}*\floorMeasure{\cL}{a+1})*(\eta_a*\floorMeasure{\cL}{a})\]
+($i$ factors; $\delta_1$ for $i=0$), indexed by natural numbers $a,i$. The \emph{tower measure} is
+$\groupMeasure{\cL}=\stackMeasure{\cL}_{0,\varrho+2}$, and for a natural number $l$,
+$\upperMeasure{\cL}{l}=\floorMeasure{\cL}{\varrho+1}*\dots*\floorMeasure{\cL}{l}$ ($\varrho+2-l$ factors; $\delta_1$
+for $l\ge\varrho+2$).
+\end{definition}
+\leanline{\lean{stackMeasure}\sep\lean{groupMeasure}\sep\lean{upperMeasure}\sep\lean{upperMeasureeqsuccmconv}\sep\lean{aestackMeasuremem}}
+So $\upperMeasure{\cL}{l}=\upperMeasure{\cL}{l+1}*\floorMeasure{\cL}{l}$, and $\stackMeasure{\cL}_{l,i}$ is carried
+by $\Hl{l}{T}$ (Lemma~\ref{l:carried} and \Inp{I2}).
+
+\subhead{Nearness, floor values, weights.}
+\begin{definition}[near points]\label{d:near}
+For a level $\cL$ in $\Levels{\Omega}{T}{\mathfrak{m}}$, a natural number $j$ and $g\in\GT{T}$: $g$ is \emph{near at
+$j$}, \m{\IsNear{\cL}{j}{g}}, if $\xi g\in\BoxL{\cL}$ for some $\xi\in\Ql{j}{T}$.
+\end{definition}
+\leanline{\lean{IsNear}\sep\lean{isNearmuliff}\sep\lean{offloorGroupmul}}
+Hence nearness at $j$ is invariant under $\Ql{j}{T}$; and if $xg$ is near at $i$, $x\in\Hl{j}{T}$ and $j\le i$, then
+$g$ is near at $j$, because $\Ql{i}{T}\,x\subseteq\Ql{j}{T}$.
+\begin{definition}[orthonormal part, close pairs, floor values]\label{d:val}
+Let $\cL$ be a level in $\Levels{\Omega}{T}{\mathfrak{m}}$. Its \emph{orthonormal part} $\orthonormalPart{\cL}$ is
+the matrix whose columns are the vectors of $E(\cL)$ indexed by $\Omega$, as vectors of $V$. The set
+$\closePairs{\cL}$ consists of the pairs $(u_1,u_2)$ of vectors of $V$ with $u_1\in\Ball{\cL}$ and
+$\gL{\cL}^{-1}(u_1-u_2)\in\Ball{\cL}$. For a natural number $a<\varrho$ and $x,y\in\GT{T}$,
+\[\floorValues{\cL}{a}{x}{y}=\bigl\{w_{e^*_a}:\ w\in V,\ (x^{-1}w,(xy)^{-1}w)\in\closePairs{\cL},\ w_{e^*_b}=0\text{ for all }b<a\bigr\}\subseteq A.\]
+\end{definition}
+\leanline{\lean{orthonormalPart}\sep\lean{closePairs}\sep\lean{floorValues}}
+\begin{definition}[volume exponent, weights, floor module]\label{d:weight}
+For a level $\cL$ in $\Levels{\Omega}{T}{\mathfrak{m}}$: the \emph{volume exponent} is the natural number
+$\volumeExponent{\cL}=|\Omega|-(3n+1+\mathfrak{m})$; for a natural number $j$ and $x,y\in\GT{T}$ the \emph{weight} is
+\[\floorWeight{\cL}{j}{x}{y}=\prod_{a<\min(j,\varrho)}\vol\bigl(\floorValues{\cL}{a}{x}{y}\bigr)^{\volumeExponent{\cL}}\in[0,\infty];\]
+for $x\in\GT{T}$, $\invWeight{\cL}{j}{x}$ is the function on $\GT{T}$ that is $z\mapsto\floorWeight{\cL}{j}{z}{x}^{-1}$
+at the points $z$ near at $j$ and $0$ elsewhere; and for a natural number $l$ and $g\in A^{\times}$ the \emph{floor
+module} is $\floorModulus{\cL}{l}{g}=\modA(g)^{k+1+2(\varrho-(l+1))}\cdot\modA(g)^{1/2}$. In the Lean text the last
+argument of the floor module has the default value $\gL{\cL}$. (The census lists, among the arguments of the
+inverse weight, the hypothesis that the tower measure is a Haar measure; the definition does not use it.)
+\end{definition}
+\leanline{\lean{volumeExponent}\sep\lean{floorWeight}\sep\lean{invWeight}\sep\lean{floorModulus}\sep\lean{floorWeightsucc}\sep\lean{floorWeightnezeroandnetop}\sep\lean{floorWeightmulleft}\sep\lean{measurablefloorWeight}\sep\lean{measurableinvWeight}}
+\begin{definition}[mass of a floor]\label{d:mass}
+For a level $\cL$ in $\Levels{\Omega}{T}{\mathfrak{m}}$, a natural number $j$, $K\in[0,\infty]$ and a function
+$c\colon\GT{T}\to[0,\infty]$: \m{\FloorMassLe{\cL}{j}{K}{c}} means that for every $g\in\GT{T}$
+\[\int_{\{\sigma:\ \sigma g\text{ is near at }j+1\}}c(\sigma g)\,\dd\floorMeasure{\cL}{j}(\sigma)\le K.\]
+\end{definition}
+\leanline{\lean{FloorMassLe}}
+
+\subhead{Kernels averaged over floors.}
+\begin{definition}[averaged kernel, pivot]\label{d:av}
+For a level $\cL$ in $\Levels{\Omega}{T}{\mathfrak{m}}$, a natural number $j$, a function
+$k\colon\GT{T}\times\GT{T}\to\CC$ and $g,y\in\GT{T}$,
+\[\begin{gathered}\upperPairing{\cL}{j}{k}{g}{y}=\int k(\sigma g,\sigma y)\,\dd\upperMeasure{\cL}{j}(\sigma),\\
+\pivotModulus{\cL}{j}{k}{g}{y}=\int\bigl|\upperPairing{\cL}{j+1}{k}{\sigma g}{\sigma y}\bigr|\,\dd\floorMeasure{\cL}{j}(\sigma).\end{gathered}\]
+The first is a Bochner integral, $0$ if the integrand is not integrable; the second lies in $[0,\infty]$. (The
+census lists, among the arguments of the pivot, the hypothesis that the tower measure is a Haar measure; the
+definition does not use it.)
+\end{definition}
+\leanline{\lean{upperPairing}\sep\lean{pivotModulus}}
+\begin{definition}[pairing kernel]\label{d:pk}
+For a level $\cL$ in $\Levels{\Omega}{T}{\mathfrak{m}}$, a natural number $j$, $k\colon\GT{T}\times\GT{T}\to\CC$ and
+$w\in\GT{T}$: the pair is a \emph{pairing kernel at $j$}, \m{\IsPairingKernel{\cL}{j}{k}{w}}, if
+\begin{enumerate}[label=\textup{(K\arabic*)}]
+\item $k$ is measurable;
+\item for all $l$, all $\nu,\nu'\in\Nb{l}{T}$ and all $g,y$:
+  $\upperPairing{\cL}{l+1}{k}{\nu g}{\nu'y}=\psi_A\bigl(\gL{\cL}^{-1}(\sd(w\nu'w^{-1})-\sd(\nu))\bigr)\,\upperPairing{\cL}{l+1}{k}{g}{y}$;
+\item $wsw^{-1}=s$ for all $s\in\Hl{j}{T}$;
+\item for every $l$ there is $c<\infty$ with $\int|k(\sigma g,\sigma y)|\,\dd\upperMeasure{\cL}{l}(\sigma)\le c$ for
+  all $g,y$;
+\item for all $l,g,y$: if $\upperPairing{\cL}{l}{k}{g}{y}\ne0$ then $g$ is near at $l$.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{IsPairingKernel}}
+\begin{definition}[weighted squares, self-norm]\label{d:sn}
+For a level $\cL$ in $\Levels{\Omega}{T}{\mathfrak{m}}$, $k\colon\GT{T}\times\GT{T}\to\CC$, natural numbers $j$ and
+$x,g\in\GT{T}$:
+\[\weightedSquare{\cL}{j}{k}{x}{g}=\floorWeight{\cL}{j}{g}{x}\cdot\bigl|\upperPairing{\cL}{j+1}{k}{g}{gx}\bigr|^{2};\]
+the \emph{weighted square sum} is defined by recursion on $n-j$:
+\[\weightedSquareSum{\cL}{k}{x}{j}{g}=\int\Bigl(\weightedSquare{\cL}{j}{k}{x}{\sigma g}+\weightedSquareSum{\cL}{k}{x}{j+1}{\sigma g}\Bigr)\dd\floorMeasure{\cL}{j}(\sigma)\]
+for $j<n$ and $\weightedSquareSum{\cL}{k}{x}{j}{g}=0$ for $j\ge n$; and the \emph{self-norm} is
+\[\selfNorm{\cL}{j}{k}{x}=\int\weightedSquareSum{\cL}{k}{x}{j}{g}\,\dd(\floorMeasure{\cL}{j-1}*\dots*\floorMeasure{\cL}{0})(g).\]
+(The census lists, among the arguments of the first two notions, the hypothesis that the tower measure is a Haar
+measure; the definitions do not use it.)
+\end{definition}
+\leanline{\lean{weightedSquare}\sep\lean{weightedSquareSum}\sep\lean{selfNorm}}
+
+\subhead{Gauges.}
+\begin{definition}[gauge]\label{d:gauge}
+Let $\cL$ be a level in $\Levels{\Omega}{T}{\mathfrak{m}}$. A \emph{gauge} on $\cL$, an element $\Gamma$ of
+$\Gauges{\cL}$, is a size $(\Gamma_i)_{i\in\NN}$ for $T$ together with a constant $\Lambda(\Gamma)\in[0,\infty]$
+such that, with sizes taken for $\Gamma$ and $\Lambda=\Lambda(\Gamma)$:
+\begin{enumerate}[label=\textup{(G\arabic*)}]
+\item every $\Gamma_j$ is compact; $2\le\Lambda<\infty$; $\mathfrak{m}\le9n$; $c_A\ge1$;
+\item $\gL{\cL}\in\Gamma_1$; \m{\HasMatSize{1}{E(\cL)}}; $\tau_A\delta_A^{-1}\in\Gamma_1$;
+\item \m{\HasMatSize{1}{x}} for every $x\in\BoxL{\cL}$; $\Ball{\cL}\subseteq\vecsOfSize{1}$;
+\item $\modA(u)\le\Lambda^{j}$ for every unit $u\in\Gamma_j$; $\vol(\Gamma_j)\le\Lambda^{j+1}$;
+\item \emph{(cone)} for every finite set $\pi$ with $\mathfrak{m}\le|\pi|\le\mathfrak{m}+\varrho$ and every $j$, the
+  quadric measure with $\beta=0$ of the sum of $|\pi|+1$ hyperbolic planes gives $\vecsOfSize{j}$ mass at most
+  $\Lambda^{99n(j+1)}$;
+\item \emph{(volumes)} for every $x\in\BoxL{\cL}$, $y\in\Posn{\cL}$ and every matrix $v$ over $A$ with $\varrho$
+  rows and columns indexed by $\Omega$, let
+  \[W=\{w\in A^{\Omega}:vw=0,\ (x^{-1}\orthonormalPart{\cL}w,(xy)^{-1}\orthonormalPart{\cL}w)\in\closePairs{\cL}\};\]
+  then there is a measurable $\varphi\colon A^{\Omega}\to[0,\infty]$ such that for every $u\in A^{\Omega}$
+  \[\vol\{u^{*}w:w\in W\}^{-1}\le\varphi(u),\qquad\vol\,\mathcal{C}_u\le\varphi(u),\]
+  where $\mathcal{C}_u$ is the set of the $c\in A$ such that for every $w\in W$ there are
+  $z,z'\in\closePairs{\cL}$ with $(cu)^{*}w=\gL{\cL}^{-1}\bigl(h_T(z_1,z'_1)-h_T(z_2,z'_2)\bigr)$; and
+  $\int_{\vecsOfSize{j}}\varphi(u)^{\volumeExponent{\cL}}\dd u\le\Lambda^{99n(j+1)}$ for every $j$.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{Gauge}\sep\lean{oneleLambda}}
+In particular $\Lambda(\Gamma)\ge1$.
+\begin{definition}[positions of size $1$; constants]\label{d:consts}
+For a level $\cL$ in $\Levels{\Omega}{T}{\mathfrak{m}}$ and a gauge $\Gamma$ in $\Gauges{\cL}$,
+$\positionsOfSize{\cL}{\Gamma}$ is the set of the $x\in\Posn{\cL}$ with \m{\HasMatSize{1}{\gL{\cL}^{-1}(x-1)}} for
+$\Gamma$; for a natural number $l$,
+$\floorConst{\Gamma}{l}=\floorModulus{\cL}{l}{\gL{\cL}}\cdot c_A^{|\Omega|}\cdot\Lambda(\Gamma)^{4600n}$; and
+$\globalConst{\Gamma}=\Lambda(\Gamma)^{10^{6}n^{3}}$.
+\end{definition}
+\leanline{\lean{positionsOfSize}\sep\lean{floorConst}\sep\lean{globalConst}\sep\lean{measurableSetpositionsOfSize}\sep\lean{measurableSetvecsOfSize}}
+The sets $\vecsOfSize{j}$ (for a gauge) and $\positionsOfSize{\cL}{\Gamma}$ are measurable, by compactness of the
+$\Gamma_j$.
+\begin{definition}[fibre bound]\label{d:fib}
+Let $\cL$ be a level in $\Levels{\Omega}{T}{\mathfrak{m}}$, $\Gamma$ a gauge in $\Gauges{\cL}$, $b$ a natural number
+with $b\le\varrho$, $q$ a measure on $V$, $j$ a natural number and $M\in[0,\infty]$. Write a coordinate vector for
+the floor basis $E_b$ as $(t',t,\pi',w,\pi'')$: the first hyperbolic pair $(t',t)$, the first half $\pi'$ of the
+other pairs, the orthonormal part $w\in A^{\Omega}$, the second half $\pi''$; call $P=(t,\pi')$ the \emph{fixed}
+coordinates. Then \m{\HasFibreBound{\Gamma}{b}{q}{j}{M}} means: there are a measurable space $Z$ with an $s$-finite
+measure $\zeta$, a measure $\rho'$ on coordinate vectors with $E_b\rho'=q$, a map $\mathsf{k}$ from triples $(P,w,z)$,
+$z\in Z$, to coordinate vectors that carries $\dd P\,\dd w\,\dd\zeta(z)$ to $\rho'$ and whose values have the fixed
+coordinates $P$ and the orthonormal coordinates $w$, and a measurable $\mu$ with
+\[\zeta\{z:\mathsf{k}(P,w,z)\in\vecsOfSize{j+4}\}\le\mu(P)\ \text{ for all }P,w,\qquad\int\mu(P)\,\dd P\le M.\]
+\end{definition}
+\leanline{\lean{HasFibreBound}}
+\sect{What is taken for granted}{s:inputs}
+Besides the facts \textup{(F1)}--\textup{(F7)} about the groups, the proofs use the following results of the
+background library. None is a member of this unit; the unit that owns each is given.
+
+\Inp{I1} \emph{Convolution} (unit 119). For $s$-finite measures $\mu,\nu$ on $\GT{T}$ and measurable $f\ge0$:
+$\int f\,\dd(\mu*\nu)=\iint f(xy)\,\dd\mu(x)\,\dd\nu(y)$; $\mu*\delta_s$ and $\delta_s*\mu$ are the right and left
+translates of $\mu$; if $\delta_s*\nu=\nu*\delta_s$ for $\mu$-almost every $s$, then $\mu*\nu=\nu*\mu$; if
+$\delta_s*\mu=\mu*\delta_t$, then $\int f\,\dd\mu=\int f(s^{-1}xt)\,\dd\mu(x)$.
+
+\Inp{I2} (unit 119) A convolution of measures carried by a measurable subgroup is carried by it; the groups
+$\Hl{l}{T}$, $\Ql{l}{T}$, $\Nb{l}{T}$ are closed (unit 112).
+
+\Inp{I3} \emph{Heisenberg measures} (unit 119). $\eta_l$ is carried by $\Nf{l}{T}$;
+$\eta_l*\delta_s=\eta_l=\delta_s*\eta_l$ for $s\in\Nf{l}{T}$; $\delta_s*\eta_l=\eta_l*\delta_s$ for
+$s\in\Hl{l+1}{T}$. $\etab{j}$ is carried by $\Nb{j}{T}$; $\etab{j}*\delta_s=\etab{j}=\delta_s*\etab{j}$ for
+$s\in\Nb{j}{T}$; $\delta_s*\etab{j}=\etab{j}*\delta_s$ for $s\in\Hl{j}{T}$; and $\etab{j+1}=\eta_j*\etab{j}$.
+
+\Inp{I4} \emph{Disintegration} (units 113, 119). Call a family $(\lambda_\beta)$ of measures on a space with a
+hermitian form $h$, indexed by the skew $\beta$, a \emph{disintegration} of a measure $\mu$ if it is weakly
+continuous in $\beta$, finite on compact sets, and
+$\int f(h(x,x),x)\,\dd\mu=\iint f(\delta_A^{-1}\beta,x)\,\dd\lambda_\beta(x)\,\dd\nu_A(\beta)$ for measurable $f\ge0$.
+Then: (a) the quadric measures of the flat charts disintegrate the volume of $A^2\oplus A^{\iota}$; (b) the image of
+a disintegration under a linear map with a left inverse that respects the forms is a disintegration of the image
+measure; (c) a disintegration is unique; (d) the floor quadric measures of a hyperbolic basis disintegrate $\vol_b$
+along $h_T$, the floor basis $E_b$ carries the volume of its coordinates to $\vol_b$, and $E_b^{*}\JT{T}E_b$ is the
+Gram matrix of hyperbolic planes plus the identity on $\Omega$; (e) for $s\in\Hl{l}{T}$ the action of $s$ on $V_l$
+preserves $\vol_l$. The catalogue of the write-up classes (a) as a standard local computation (Leray measures on
+quadrics); reference to be confirmed.
+
+\Inp{I5} \emph{Functions on a floor} (unit 119). A measurable function on $\GT{T}$ with values in a standard Borel
+space that is invariant under $\Ql{b+1}{T}\cap\Hl{b}{T}$, $b\le\varrho$, is on $\Hl{b}{T}$ a measurable function of
+$\sigma^{-1}f_b$.
+
+\Inp{I6} \emph{Plancherel's inequality at a place} (unit 119). For $\xi\in A^{\times}$, a finite set $\iota$ and
+$f\colon A^{\iota}\to\CC$ measurable and integrable:
+$\int|\int\psi_A(\xi\,v^{*}w)f(w)\,\dd w|^2\dd v\le(c_A/\modA(\xi))^{|\iota|}\int|f|^2$. The second reader of the
+artifact relates it to J.~Tate, \emph{Fourier analysis in number fields and Hecke's zeta-functions} (1950), \S2.2, as
+a weaker form: a one-sided consequence of abelian Plancherel; the place of the reference was not opened for this
+note.
+
+\Inp{I7} \emph{Skew elements} (unit 113). If $S\subseteq A^{-}$, $u\in A^{\times}$ and $C\subseteq A$ are such that
+$u(\tau_A\delta_A^{-1}\beta+\beta')\in C$ for all differences $\beta,\beta'$ of elements of $S$, and
+$\vol(C)/\modA(u)\le t^2$, then $\nu_A(S)\le t$.
+
+\Inp{I8} The \emph{Cauchy--Schwarz inequality} for integrals of functions with values in $[0,\infty]$ (unit 117):
+if $h^2\le f_1f_2$ pointwise then $(\int h)^2\le\int f_1\int f_2$.
+
+\Inp{I9} Laplace expansion of a determinant along a row; the determinant of a triangular matrix (unit 112).
+
+\sect{Sizes}{s:sizes}
+In this section $\mathcal{S}$ is a size in $\Sizes{T}$, and sizes are taken for $\mathcal{S}$; index sets of rows
+may be any finite sets, and vectors and columns are indexed by the basis of $V$.
+
+\begin{lemma}[rules]\label{l:rules}
+Let $\mathcal{S}$ be a size in $\Sizes{T}$, $i,j$ natural numbers, $\alpha,\beta\in A$, $v,w\in V$, and $X,Z$
+matrices with columns indexed by the basis of $V$, $Y$ a matrix with rows indexed by it. Then:
+\textup{(a)} if $\alpha\in\mathcal{S}_i$ and $i\le j$ then $\alpha\in\mathcal{S}_j$; if \m{\HasMatSize{i}{X}} and
+$i\le j$ then \m{\HasMatSize{j}{X}};
+\textup{(b)} if $\alpha,\beta\in\mathcal{S}_i$ then $\alpha-\beta\in\mathcal{S}_{i+1}$; if \m{\HasMatSize{i}{X}} and
+\m{\HasMatSize{i}{Z}} then \m{\HasMatSize{i+1}{X-Z}}; the identity matrix has \m{\HasMatSize{i}{1}};
+\textup{(c)} if $w_\alpha\in\mathcal{S}_i$ at every index where $v_\alpha\ne0$, and $v\in\vecsOfSize{j}$, then
+$\sum_\alpha w_\alpha v_\alpha\in\mathcal{S}_{i+j+1}$;
+\textup{(d)} if \m{\HasMatSize{i}{X}} and $v\in\vecsOfSize{j}$ then $Xv\in\vecsOfSize{i+j+1}$; if moreover
+\m{\HasMatSize{j}{Y}} then \m{\HasMatSize{i+j+1}{XY}};
+\textup{(e)} if $p$ is a head of length $j$, \m{\IsHead{j}{p}}, then so is $\bar p$: \m{\IsHead{j}{\bar p}}.
+\end{lemma}
+\begin{proof}
+(a) $\alpha=\alpha\cdot1$ with $1\in\mathcal{S}_{j-i}$. (b) $\alpha-\beta$ is a sum of two elements of
+$\mathcal{S}_i$, and $2\le r+1$. (c) Each term $w_\alpha v_\alpha$ is $0$ or lies in $\mathcal{S}_{i+j}$, and there
+are $r$ terms. (d) follows from (c), entry by entry. (e) The sets $\mathcal{S}_1$ are stable under the involution.
+\end{proof}
+\leanline{\lean{memofSizemono}\sep\lean{monoa}\sep\lean{submemofSize}\sep\lean{sub}\sep\lean{one}\sep\lean{dotProductmemofSize}\sep\lean{mulVec}\sep\lean{mul}\sep\lean{starhead}}
+
+\begin{lemma}[determinants]\label{l:det}
+Let $\mathcal{S}$ be a size in $\Sizes{T}$, $j$ a natural number with $j\le\varrho$ and $Z$ a $j\times j$ matrix
+over $A$ with \m{\HasMatSize{7}{Z}}. Then $\det Z\in\mathcal{S}_{8j}$.
+\end{lemma}
+\begin{proof}
+Induction on $j$; for $j=0$ the determinant is $1$. For $j+1$, expand along the first row \Inp{I9}: each of the
+$j+1$ terms is $\pm$ an entry of $Z$ times the determinant of a $j\times j$ minor, so it lies in
+$\mathcal{S}_{7+8j}$; and $j+1\le r+1$, so the sum lies in $\mathcal{S}_{8j+8}$.
+\end{proof}
+\leanline{\lean{detmemofSize}}
+
+\begin{lemma}[adjoints and inverses]\label{l:adj}
+Let $\mathcal{S}$ be a size in $\Sizes{T}$ and suppose that $\JT{T}$ is a hermitian unit. \textup{(i)} Let $X,Y$ be
+square matrices on the basis of $V$ with $\JT{T}X=Y^{*}\JT{T}$, let $a,b$ be two indices and $i$ a natural number
+such that for every index $\nu$ with $\JT{T}_{\nu b}\ne0$ the row $\nu$ of $Y$ lies in $\vecsOfSize{i}$. Then
+$X_{ab}\in\mathcal{S}_{i+4}$. \textup{(ii)} If $x\in\GT{T}$ has \m{\HasMatSize{i}{x}}, then
+\m{\HasMatSize{i+4}{x^{-1}}}.
+\end{lemma}
+\begin{proof}
+(i) $X=\JT{T}^{-1}(Y^{*}\JT{T})$. The entry $(m,b)$ of $Y^{*}\JT{T}$ is $\sum_\nu\overline{Y_{\nu m}}\JT{T}_{\nu b}$,
+in $\mathcal{S}_{i+2}$ by rule (c), because the column $b$ of $\JT{T}$ has size $1$; and the row $a$ of
+$\JT{T}^{-1}$ has size $1$, so $X_{ab}\in\mathcal{S}_{1+(i+2)+1}$. (ii) Apply (i) to $X=x^{-1}$, $Y=x$, by (F7).
+\end{proof}
+\leanline{\lean{adjointapplymemofSize}\sep\lean{inv}}
+
+\begin{lemma}[back substitution in a row]\label{l:row}
+Let $\mathcal{S}$ be a size in $\Sizes{T}$, $X$ a matrix with columns indexed by the basis of $V$, $m$ one of its
+rows, and $c,d,j$ natural numbers. Suppose \textup{(h)} for every $a<\min(j,\varrho)$ there is $w\in V$ with
+$w_{e^*_b}=0$ for $b<a$, $w_{e^*_a}=1$, $w\in\vecsOfSize{c}$ and $Xw\in\vecsOfSize{d}$; and \textup{(z)}
+$X_{mk}\in\mathcal{S}_d$ for every column $k$ of floor at least $j$ or of rank at most $\varrho$. Then for every
+natural number $i$ and every column $k$ whose floor is at least $j-i$ or whose rank is at most $\varrho$,
+$X_{mk}\in\mathcal{S}_{d+(c+3)i}$.
+\end{lemma}
+\begin{proof}
+Induction on $i$; $i=0$ is (z). A column new at step $i+1$ is $k=e^*_a$ with $a=j-i-1$. Take $w$ from (h) for this
+$a$ and let $w'=w-e^*_a$; then $X_{mk}=(Xw)_m-\sum_{k'}X_{mk'}w'_{k'}$. The non-zero coordinates of $w'$ are at
+columns of rank at most $\varrho$ or at $e^*_{b}$ with $b>a$, where the induction hypothesis gives
+$X_{mk'}\in\mathcal{S}_{d+(c+3)i}$; and $w'\in\vecsOfSize{c+1}$. By rules (c) and (b),
+$X_{mk}\in\mathcal{S}_{d+(c+3)i+(c+1)+1+1}$.
+\end{proof}
+\leanline{\lean{rowmemofSizeofdualframe}}
+
+\begin{lemma}[back substitution for an inverse]\label{l:backsub}
+Let $\mathcal{S}$ be a size in $\Sizes{T}$, $\JT{T}$ a hermitian unit, $j$ and $c$ natural numbers,
+$u\in\Nb{j}{T}$, and $r\in A^{\times}$ with $\bar r=r$ and $r\in\mathcal{S}_1$. Suppose that for every
+$a<\min(j,\varrho)$ there is $w\in V$ with $w_{e^*_b}=0$ for $b<a$, $w_{e^*_a}=1$, $w\in\vecsOfSize{c}$ and
+$r^{-1}(1-u)w\in\vecsOfSize{c}$. Then \m{\HasMatSize{c+4+(2c+8)j}{r^{-1}(1-u^{-1})}}.
+\end{lemma}
+\begin{proof}
+Let $Y=r^{-1}(1-u)$ and $X=r^{-1}(1-u^{-1})$; then $\JT{T}X=Y^{*}\JT{T}$ by (F7), as $\bar r=r$. \emph{Rows of $Y$.}
+If the row $\nu$ of $\JT{T}$ is not zero at a column $k$ of floor at least $j$ or of rank at most $\varrho$, then
+the entries of row $\nu$ of $u$ at such columns are those of the identity (definition of $\Nb{j}{T}$), so (z) of
+Lemma~\ref{l:row} holds for $Y$ with any $d$, and (h) holds by hypothesis with $d=c$; taking $i=j$, the whole row
+$\nu$ of $Y$ lies in $\vecsOfSize{c+(c+3)j}$. \emph{Entries of $X$ at the columns of (z).} By
+Lemma~\ref{l:adj}(i) they lie in $\mathcal{S}_{d'}$, $d'=c+(c+3)j+4$. \emph{All entries of $X$.} For $w$ as in the
+hypothesis, $uw$ has the same coordinates at $e^*_b$, $b\le a$ (F3), $uw=w-r\cdot(Yw)\in\vecsOfSize{c+2}$, and
+$X(uw)=-Yw\in\vecsOfSize{c}$. So Lemma~\ref{l:row} applies to $X$ with $c+2$, $d'$ and $i=j$, and gives the size
+$d'+(c+5)j$.
+\end{proof}
+\leanline{\lean{hasMatSizeonesubinv}}
+
+\begin{setting}[two frames near a set of size $1$]\label{set:two}
+Let $\mathcal{S}$ be a size in $\Sizes{T}$ and $\JT{T}$ a hermitian unit. Let $K\subseteq\GT{T}$ be a set with
+\m{\HasMatSize{1}{x}} for all $x\in K$, let $j$ be a natural number with $j\le\varrho$, $p\colon\NN\to A^{\times}$,
+and $g,s\in\GT{T}$ such that $\eta\,\wl{j}{p}^{-1}g\in K$ for some $\eta\in\Ql{j}{T}$, and such that
+$s\in\Ql{j}{T}$ and $sg\in K$.
+\end{setting}
+
+\begin{lemma}[minors and heads]\label{l:minor}
+In Setting~\ref{set:two}: \textup{(i)} for every $a<j$ and every index $i$ of the basis,
+$(p_0p_1\cdots p_a)\cdot s_{i,e^*_a}\in\mathcal{S}_{9n}$; \textup{(ii)} for every $l\le j$,
+$p_0\cdots p_{l-1}\in\mathcal{S}_{9n}$; \textup{(iii)} if $p$ is a head of length $j$, \m{\IsHead{j}{p}}, and
+$a<j$, then $p_a$, $p_a^{-1}$ and all entries $s_{i,e^*_a}$ lie in $\mathcal{S}_{10n}$; \textup{(iv)} if
+\m{\IsHead{j}{p}} and $s\in\Nb{j}{T}$, then \m{\HasMatSize{60n^2}{g}} and \m{\HasMatSize{99n^2}{\wl{j}{p}^{-1}g}}.
+\end{lemma}
+\begin{proof}
+(i) The element $M=(sg)(\eta\wl{j}{p}^{-1}g)^{-1}=s\,\wl{j}{p}\,\eta^{-1}$ has size at most $1+(1+4)+1=7$. Take its
+minor with the rows $e^*_0,\dots,e^*_{a-1},i$ and the columns $e_0,\dots,e_a$; by Lemma~\ref{l:det} its
+determinant lies in $\mathcal{S}_{8(a+1)}\subseteq\mathcal{S}_{9n}$. Since $\eta^{-1}\in\Ql{j}{T}$ acts on
+$\langle e_0,\dots,e_a\rangle$ by a unitriangular matrix, the determinant is that of the same minor of
+$s\,\wl{j}{p}$; $\wl{j}{p}$ maps $e_b$ to $p_be^*_b$; and by (F3) the matrix of $s$ with the rows
+$e^*_0,\dots,e^*_{a-1},i$ and the columns $e^*_0,\dots,e^*_a$ is lower triangular with diagonal
+$1,\dots,1,s_{i,e^*_a}$ \Inp{I9}. So the determinant is $p_0\cdots p_a\cdot s_{i,e^*_a}$. (ii) Take $i=e^*_a$,
+$a=l-1$, where $s_{e^*_a,e^*_a}=1$. (iii) $p_a=(p_0\cdots p_{a-1})^{-1}(p_0\cdots p_a)$,
+$p_a^{-1}=(p_0\cdots p_a)^{-1}(p_0\cdots p_{a-1})$ and $s_{i,e^*_a}=(p_0\cdots p_a)^{-1}\cdot(p_0\cdots
+p_a\,s_{i,e^*_a})$ lie in $\mathcal{S}_{1+9n}$. (iv) Apply Lemma~\ref{l:backsub} to $u=s$, $r=1$ and the vectors
+$w=e^*_a$: $(1-s)e^*_a$ has size $10n+1$ by (iii), so $1-s^{-1}$ has size $10n+5+(20n+10)j$,
+$g=s^{-1}(sg)$ has size at most $10n+8+(20n+10)(n-1)\le60n^2$, and $\wl{j}{p}^{-1}$, whose entries are $0$, $1$,
+$p_a^{-1}$ or $\bar p_a$, has size $10n$.
+\end{proof}
+\leanline{\lean{minormuldualmemofSize}\sep\lean{minorsmemofSize}\sep\lean{headentriesmemofSize}\sep\lean{hasMatSizeofisHead}\sep\lean{cardsucclefloorOf}}
+
+\sect{The tower measure}{s:tower}
+\begin{lemma}[a floor measure and its quadric]\label{l:orbit}
+Let $\cL$ be a level in $\Levels{\Omega}{T}{\mathfrak{m}}$ and $b$ a natural number with $b\le\varrho$.
+\textup{(i)} The map $\sigma\mapsto\sigma^{-1}f_b$ is measurable and carries $\floorMeasure{\cL}{b}$ to the floor
+quadric measure $\quadric{\cL}{b}$. \textup{(ii)} For $s\in\Hl{b}{T}$ the map $\sigma\mapsto s\sigma^{-1}f_b$ carries
+$\floorMeasure{\cL}{b}$ to $\quadric{\cL}{b}$.
+\end{lemma}
+\begin{proof}
+(i) For $b=\varrho$ this is (L1). Let $b=a<\varrho$ and $\sigma=\wo{a}{c}^{-1}\mathrm{n}_a(v,\beta)$. Then
+$\sigma^{-1}e_a=\mathrm{n}_a(v,\beta)^{-1}(ce^*_a)=c\,e^*_a-cv+c(\beta'-\tau_Ah_T(v,v))e_a$ with $\beta'$ skew, by
+(F6). In the decomposition $V_a=\langle e_a,e^*_a\rangle\oplus V_{a+1}$ this is the point of the flat chart of the
+cone $h_T=0$ with the parameters $t=c$, $w=-cv$ and a skew parameter that is a translate of $\bar c c\,\beta'$ hence
+of $\beta$. Under $(c,v,\beta)\mapsto(c,-cv,\cdot)$ the measure $\modA(c)^{N}\dd c\,\dd v\,\dd\nu_A(\beta)$,
+$N=k+1+2(\varrho-a-1)$ the rank of $V_{a+1}$, becomes the measure of the flat chart; so the image of
+$\floorMeasure{\cL}{a}$ is the quadric measure of $V_a$ for the standard pair $(e_a,e^*_a)$. It and
+$\quadric{\cL}{a}$ are both the member at $\beta=0$ of a disintegration of $\vol_a$ along $h_T$ (\Inp{I4}(a),(b),(d)),
+and a disintegration is unique (\Inp{I4}(c)). (ii) By \Inp{I4}(e) and (b), $s$ carries the disintegration of
+$\vol_b$ to a disintegration of $\vol_b$, so $s$ preserves $\quadric{\cL}{b}$ by uniqueness; compose with (i).
+\end{proof}
+\leanline{\lean{measurePreservingorbitPoint}\sep\lean{measurePreservingmulVecorbitPoint}}
+
+\begin{lemma}[floor measures are carried by their floors]\label{l:carried}
+Let $\cL$ be a level in $\Levels{\Omega}{T}{\mathfrak{m}}$ and $l$ a natural number. Then $\floorMeasure{\cL}{l}$ is
+carried by $\Hl{l}{T}$. Hence, if a measure $\mu$ equals $\floorMeasure{\cL}{l}$ and two functions $f,\Phi$ agree
+on $\Hl{l}{T}$, then $\int f\,\dd\floorMeasure{\cL}{l}=\int\Phi\,\dd\mu$.
+\end{lemma}
+\begin{proof}
+For $l<\varrho$: $\wo{l}{c}\in\Hl{l}{T}$, $\eta_l$ is carried by $\Nf{l}{T}\subseteq\Hl{l}{T}$ \Inp{I3}, and
+\Inp{I2}. For $l=\varrho$, $l=n$ these are (L1), (L2); for $l>n$ the measure is $\delta_1$.
+\end{proof}
+\leanline{\lean{aefloorMeasuremem}\sep\lean{lintegralfloorMeasurecongr}}
+
+\begin{lemma}[moving a Weyl law to the left]\label{l:desc}
+Let $\cL$ be a level in $\Levels{\Omega}{T}{\mathfrak{m}}$, $l,i$ natural numbers with $l<\varrho$. Then
+\[\floorMeasure{\cL}{l+i}*\dots*\floorMeasure{\cL}{l+1}*\floorMeasure{\cL}{l}=
+\bigl(\varpi_l*(\floorMeasure{\cL}{l+i}*\dots*\floorMeasure{\cL}{l+1})\bigr)*\eta_l.\]
+\end{lemma}
+\begin{proof}
+$\floorMeasure{\cL}{l}=\varpi_l*\eta_l$, and $\varpi_l$ commutes with every measure carried by $\Hl{l+1}{T}$, because
+$\wo{l}{c}$ commutes with $\Hl{l+1}{T}$ (\Inp{I1}, Lemma~\ref{l:carried}, \Inp{I2}).
+\end{proof}
+\leanline{\lean{descConvfloorMeasuresucc}}
+
+\begin{lemma}[translation by a Weyl ratio]\label{l:weylratio}
+Let $\cL$ be a level in $\Levels{\Omega}{T}{\mathfrak{m}}$, $j$ a natural number with $j\le\varrho$,
+$p,q\colon\NN\to A^{\times}$ and $\Phi\colon\GT{T}\to[0,\infty]$ measurable. Then
+\[\int\Phi\bigl(\weylRatio{j}{p}{q}\,x\bigr)\,\dd\upperMeasure{\cL}{0}(x)=\prod_{a<j}\modA(p_a/q_a)^{k+2(\varrho-a)}\int\Phi\,\dd\upperMeasure{\cL}{0}.\]
+\end{lemma}
+\begin{proof}
+Induction on $j$. Write $\upperMeasure{\cL}{0}=\upperMeasure{\cL}{j}*(\floorMeasure{\cL}{j-1}*\dots*\floorMeasure{\cL}{0})$
+and use Lemma~\ref{l:desc} at $l=j$: $\upperMeasure{\cL}{0}=(\varpi_j*M')*\eta_j*M''$ with $M'$ carried by
+$\Hl{j+1}{T}$. The Weyl ratio of length $j+1$ is that of length $j$ times
+$\wo{j}{q_j}^{-1}\wo{j}{p_j}$, and $\wo{j}{q_j}^{-1}\wo{j}{p_j}\wo{j}{c}^{-1}=\wo{j}{cq_j/p_j}^{-1}$ up to an element
+that fixes the measure; the change of variable $c\mapsto cp_j/q_j$ in
+$\modA(c)^{k+1+2(\varrho-j-1)}\dd c$ produces the factor $\modA(p_j/q_j)^{k+1+2(\varrho-j-1)+1}$. The remaining
+translation, by the ratio of length $j$, commutes with the factors carried by $\Hl{j}{T}$ and is handled by the
+induction hypothesis.
+\end{proof}
+\leanline{\lean{lintegralweylRatiomul}}
+
+\begin{lemma}[right translations on a floor]\label{l:right}
+Let $\cL$ be a level in $\Levels{\Omega}{T}{\mathfrak{m}}$, $l$ a natural number, $S$ a subgroup of $\GT{T}$ that
+contains $\Hl{l}{T}$, $f\colon\GT{T}\to[0,\infty]$ a measurable function invariant under left translations by
+$\Ql{l+1}{T}\cap S$, and $s\in\Ql{l}{T}\cap S$. Then
+$\int f(xs)\,\dd\floorMeasure{\cL}{l}(x)=\int f(x)\,\dd\floorMeasure{\cL}{l}(x)$.
+\end{lemma}
+\begin{proof}
+Write $s=\gamma\nu$ with $\gamma\in\Hl{l}{T}$, $\nu\in\Nb{l}{T}$ (F1). For $x\in\Hl{l}{T}$, $x\gamma\nu(x\gamma)^{-1}$
+lies in $\Nb{l}{T}\subseteq\Ql{l+1}{T}$ and in $S$, so $f(x\gamma\nu)=f(x\gamma)$; by Lemma~\ref{l:carried} we may
+assume $s=\gamma\in\Hl{l}{T}$. If $l\le\varrho$, then on $\Hl{l}{T}$ we have $f(\sigma)=F(\sigma^{-1}f_l)$ with $F$
+measurable \Inp{I5}, and by Lemma~\ref{l:orbit}(ii) and (i)
+$\int F(\gamma^{-1}x^{-1}f_l)\,\dd\floorMeasure{\cL}{l}(x)=\int F\,\dd\quadric{\cL}{l}=\int F(x^{-1}f_l)\,\dd\floorMeasure{\cL}{l}(x)$.
+If $l=n$ this is the right invariance in (L2); if $l>n$ then $\Hl{l}{T}=1$.
+\end{proof}
+\leanline{\lean{lintegralfloorMeasuremulright}}
+
+\begin{proof}[Proof of Theorem A\textup{(i)}, \textup{(ii)}]
+(i) Induction on $i$. For $i=0$, $l=\varrho+2$ and $s=1$. For $i+1$:
+$\stackMeasure{\cL}_{l,i+1}=\stackMeasure{\cL}_{l+1,i}*\eta_l*\floorMeasure{\cL}{l}$. For measurable $f\ge0$ let
+$F(x)=\int f(mx)\,\dd(\stackMeasure{\cL}_{l+1,i}*\eta_l)(m)$. An element of $\Ql{l+1}{T}\cap\Hl{l}{T}$ is $g\nu$ with
+$g\in\Hl{l+1}{T}$, $\nu\in\Nf{l}{T}$ (F1); $\eta_l*\delta_\nu=\eta_l$,
+$\eta_l*\delta_g=\delta_g*\eta_l$ \Inp{I3}, and $\stackMeasure{\cL}_{l+1,i}*\delta_g=\stackMeasure{\cL}_{l+1,i}$ by
+induction; so $F$ is invariant under $\Ql{l+1}{T}\cap\Hl{l}{T}$. By Lemma~\ref{l:right} with $S=\Hl{l}{T}$,
+$\int F(xs)\,\dd\floorMeasure{\cL}{l}(x)=\int F\,\dd\floorMeasure{\cL}{l}$, which is the claim. For $l=0$,
+$i=\varrho+2$ every $s\in\GT{T}=\Hl{0}{T}$ is allowed.
+
+(ii) Induction on $j$: $\stackMeasure{\cL}_{0,j+1}=\eta_j*\floorMeasure{\cL}{j}*\etab{j}*(\floorMeasure{\cL}{j-1}*\dots)$;
+$\floorMeasure{\cL}{j}$ is carried by $\Hl{j}{T}$, whose unit masses commute with $\etab{j}$, so
+$\floorMeasure{\cL}{j}*\etab{j}=\etab{j}*\floorMeasure{\cL}{j}$ \Inp{I1}; and $\eta_j*\etab{j}=\etab{j+1}$ \Inp{I3}.
+\end{proof}
+
+\begin{lemma}[the stack measures are not zero]\label{l:nz}
+Let $\cL$ be a level in $\Levels{\Omega}{T}{\mathfrak{m}}$ and $l,i$ natural numbers. Then
+$\stackMeasure{\cL}_{l,i}\ne0$.
+\end{lemma}
+\begin{proof}
+The total mass of a convolution is the product of the total masses. $\eta_l$ and $\delta_1$ are not zero,
+$\floorMeasure{\cL}{n}\ne0$ by definition of a level, and for $l\le\varrho$ the image $\quadric{\cL}{l}$ of
+$\floorMeasure{\cL}{l}$ (Lemma~\ref{l:orbit}) is not zero.
+\end{proof}
+\leanline{\lean{stackMeasurenezero}}
+
+\begin{lemma}[left translations of a factor of a Haar measure]\label{l:factor}
+Let $\cL$ be a level in $\Levels{\Omega}{T}{\mathfrak{m}}$ whose tower measure $\groupMeasure{\cL}$ is a Haar
+measure. Let $\rho,\nu$ be $s$-finite measures on $\GT{T}$ with $\groupMeasure{\cL}=\rho*\nu$, let $S$ be a subgroup
+and $s\in\GT{T}$, and suppose that $\rho$ is carried by $S$, that $\rho*\delta_{s'}=\rho$ for all $s'\in S$, and that
+$\delta_s*\rho=\rho*\delta_s$. Then for every measurable $\Phi\colon\GT{T}\to[0,\infty]$ that is invariant under
+left translations by $S$,
+\[\int\Phi(sg)\,\dd\nu(g)=\int\Phi\,\dd\nu.\]
+\end{lemma}
+\begin{proof}
+Choose a measurable $f>0$ with $\int f\,\dd\groupMeasure{\cL}<\infty$ and put $D(x)=\int f(yx)\,\dd\rho(y)$. For
+\emph{every} $s$-finite $\nu'$ with $\groupMeasure{\cL}=\rho*\nu'$ we claim
+$\int\Phi(x)D(x)^{-1}f(x)\,\dd\groupMeasure{\cL}(x)=\int\Phi\,\dd\nu'$. Indeed the left side is
+$\iint\Phi(yx)D(yx)^{-1}f(yx)\,\dd\rho(y)\,\dd\nu'(x)$ \Inp{I1}; for $y\in S$, $\Phi(yx)=\Phi(x)$ and
+$D(yx)=D(x)$ by the right invariance of $\rho$; $D(x)<\infty$ for $\nu'$-almost every $x$ and $D(x)>0$ because
+$\rho\ne0$ (Lemma~\ref{l:nz} excludes $\rho=0$, as $\groupMeasure{\cL}\ne0$); so the inner integral is $\Phi(x)$.
+Apply the claim to $\nu$ and to $\delta_s*\nu$: the latter is allowed since
+$\rho*(\delta_s*\nu)=\delta_s*\rho*\nu=\delta_s*\groupMeasure{\cL}=\groupMeasure{\cL}$ by left invariance.
+\end{proof}
+\leanline{\lean{lintegralmullefteqoffactor}}
+
+\begin{proof}[Proof of Theorem A\textup{(iii)}]
+$\groupMeasure{\cL}=\stackMeasure{\cL}_{j,\varrho+2-j}*\stackMeasure{\cL}_{0,j}$. The first factor is carried by
+$\Hl{j}{T}$, is invariant under right translations by $\Hl{j}{T}$ by (i), and commutes with the unit mass at
+$\wl{j}{p}^{-1}$ by (F5) and \Inp{I1}. Apply Lemma~\ref{l:factor} with $S=\Hl{j}{T}$ and $s=\wl{j}{p}^{-1}$.
+\end{proof}
+
+\sect{Nearness, floor values and weights}{s:near}
+\begin{lemma}[measurability and openness]\label{l:meas}
+Let $\cL$ be a level in $\Levels{\Omega}{T}{\mathfrak{m}}$, $j$ a natural number and $a$ a natural number with
+$a<\varrho$. \textup{(i)} The set of the points near at $j$ is measurable. \textup{(ii)} The set of the triples
+$(x,y,c)\in\GT{T}\times\GT{T}\times A$ with $c\in\floorValues{\cL}{a}{x}{y}$ is open. \textup{(iii)} For all
+$x,y\in\GT{T}$: $0<\vol(\floorValues{\cL}{a}{x}{y})<\infty$.
+\end{lemma}
+\begin{proof}
+(i) It is the product $\Ql{j}{T}^{-1}\BoxL{\cL}$ of a closed set \Inp{I2} and a compact set, hence closed. (ii) If
+$c=w_{e^*_a}$ for an admissible $w$, then for $(x',y',c')$ near $(x,y,c)$ the vector $w$ with the coordinate at
+$e^*_a$ replaced by $c'$ is admissible, since $\Ball{\cL}$ is open and the conditions are continuous. (iii) The
+set is open by (ii) and contains $0$ (take $w=0$; $0\in\Ball{\cL}$), so its volume is positive; it is contained in
+the image of the compact set $x\,\overline{\Ball{\cL}}$ under a coordinate, so its volume is finite.
+\end{proof}
+\leanline{\lean{measurableSetisNear}\sep\lean{isOpenfloorValues}\sep\lean{volumefloorValuesnezeronetop}}
+
+\begin{lemma}[invariance of floor values and weights]\label{l:valinv}
+Let $\cL$ be a level in $\Levels{\Omega}{T}{\mathfrak{m}}$, $x,y,g\in\GT{T}$. \textup{(i)} For $a<\varrho$ and
+$\xi\in\Ql{a+1}{T}$: $\floorValues{\cL}{a}{\xi x}{y}=\floorValues{\cL}{a}{x}{y}$. \textup{(ii)} For a natural number
+$j$ and $\xi\in\Ql{j}{T}$: $\floorWeight{\cL}{j}{\xi x}{y}=\floorWeight{\cL}{j}{x}{y}$ and
+$\invWeight{\cL}{j}{x}(\xi g)=\invWeight{\cL}{j}{x}(g)$.
+\end{lemma}
+\begin{proof}
+(i) If $w$ is admissible for $(x,y)$ then $\xi w$ is admissible for $(\xi x,y)$, because
+$(\xi x)^{-1}\xi w=x^{-1}w$ and $(\xi xy)^{-1}\xi w=(xy)^{-1}w$, and by (F3) $\xi w$ has the same coordinates at
+$e^*_b$, $b\le a$, as $w$; conversely with $\xi^{-1}$. (ii) The weight is a product over $a<\min(j,\varrho)$, and
+$\Ql{j}{T}\subseteq\Ql{a+1}{T}$; nearness at $j$ is $\Ql{j}{T}$-invariant.
+\end{proof}
+\leanline{\lean{floorValuesmul}\sep\lean{invWeightmul}}
+Also $\floorWeight{\cL}{a+1}{x}{y}=\floorWeight{\cL}{a}{x}{y}\cdot\vol(\floorValues{\cL}{a}{x}{y})^{\volumeExponent{\cL}}$
+for $a<\varrho$, the weights are neither $0$ nor $\infty$ (Lemma~\ref{l:meas}(iii)), and they are measurable in
+$(x,y)$ because the set of Lemma~\ref{l:meas}(ii) is open.
+
+\begin{lemma}[the upper measure of the near points]\label{l:upper}
+Let $\cL$ be a level in $\Levels{\Omega}{T}{\mathfrak{m}}$ and $V\in[0,\infty]$ with \m{\FloorMassLe{\cL}{a}{V}{1}}
+for every $a\le\varrho$. Then for every natural number $l$ and every $c\in\GT{T}$,
+\[\upperMeasure{\cL}{l}\{g:\ gc\text{ is near at }\varrho+2\}\le V^{\,n-l}.\]
+\end{lemma}
+\begin{proof}
+Induction on $\varrho+2-l$. For $l\ge n$ the bound is $1$: for $l=n$ it is the last part of (L2), since
+$\Ql{\varrho+2}{T}=\UT{T}$. For $l<n$, $\upperMeasure{\cL}{l}=\upperMeasure{\cL}{l+1}*\floorMeasure{\cL}{l}$, so the
+measure is $\int\upperMeasure{\cL}{l+1}\{g:g\sigma c\text{ near at }\varrho+2\}\,\dd\floorMeasure{\cL}{l}(\sigma)$
+\Inp{I1}. The integrand is at most $V^{n-l-1}$ by induction, and it is $0$ unless $\sigma c$ is near at $l+1$,
+because $\upperMeasure{\cL}{l+1}$ is carried by $\Hl{l+1}{T}$. The $\floorMeasure{\cL}{l}$-measure of these $\sigma$
+is at most $V$.
+\end{proof}
+\leanline{\lean{upperMeasureisNearle}}
+
+\sect{Kernels}{s:kernels}
+\begin{lemma}[without the kernel axioms]\label{l:nokernel}
+Let $\cL$ be a level in $\Levels{\Omega}{T}{\mathfrak{m}}$, $k\colon\GT{T}\times\GT{T}\to\CC$, $l$ a natural number
+and $g,y,x\in\GT{T}$. \textup{(i)} If $\pivotModulus{\cL}{l}{k}{g}{y}\ne0$, then $k(\sigma g,\sigma y)\ne0$ for some
+$\sigma\in\Hl{l}{T}$. \textup{(ii)} If $l\le\varrho$, then
+\[\int\bigl|\upperPairing{\cL}{l+1}{k}{\sigma g}{\sigma gx}\bigr|^{2}\,\dd\floorMeasure{\cL}{l}(\sigma)\le
+\frac{\weightedSquareSum{\cL}{k}{x}{l}{g}}{\floorWeight{\cL}{l}{g}{x}}.\]
+\end{lemma}
+\begin{proof}
+(i) Some $\sigma_1\in\Hl{l}{T}$ has $\upperPairing{\cL}{l+1}{k}{\sigma_1g}{\sigma_1y}\ne0$, and then
+$k(\sigma_2\sigma_1g,\sigma_2\sigma_1y)\ne0$ for some $\sigma_2\in\Hl{l+1}{T}$, since the measures are carried by
+these groups. (ii) By definition the weighted square sum is at least
+$\int\weightedSquare{\cL}{l}{k}{x}{\sigma g}\,\dd\floorMeasure{\cL}{l}(\sigma)$, and
+$\floorWeight{\cL}{l}{\sigma g}{x}=\floorWeight{\cL}{l}{g}{x}$ for $\sigma\in\Hl{l}{T}$
+(Lemma~\ref{l:valinv}).
+\end{proof}
+\leanline{\lean{existsnezeroofpivotModulus}\sep\lean{lintegralupperPairingsqle}}
+
+\begin{setting}[a pairing kernel]\label{set:pk}
+Let $\cL$ be a level in $\Levels{\Omega}{T}{\mathfrak{m}}$, $j$ a natural number,
+$k\colon\GT{T}\times\GT{T}\to\CC$ and $d\in\GT{T}$ with \m{\IsPairingKernel{\cL}{j}{k}{d}}.
+\end{setting}
+
+\begin{lemma}[averages floor by floor]\label{l:succ}
+In Setting~\ref{set:pk}, let $l$ be a natural number and $g,y\in\GT{T}$. Then
+\textup{(i)} $x\mapsto k(xg,xy)$ is integrable for $\upperMeasure{\cL}{l}$;
+\textup{(ii)} $\sigma\mapsto\upperPairing{\cL}{l+1}{k}{\sigma g}{\sigma y}$ is integrable for $\floorMeasure{\cL}{l}$
+and
+\[\upperPairing{\cL}{l}{k}{g}{y}=\int\upperPairing{\cL}{l+1}{k}{\sigma g}{\sigma y}\,\dd\floorMeasure{\cL}{l}(\sigma);\]
+hence $|\upperPairing{\cL}{l}{k}{g}{y}|\le\pivotModulus{\cL}{l}{k}{g}{y}$, and $\upperPairing{\cL}{l}{k}{\cdot}{\cdot}$
+is measurable;
+\textup{(iii)} if $j\le l$, then \m{\IsPairingKernel{\cL}{l}{k}{d}}.
+\end{lemma}
+\begin{proof}
+(i) is (K1) and (K4). (ii) is Fubini's theorem for
+$\upperMeasure{\cL}{l}=\upperMeasure{\cL}{l+1}*\floorMeasure{\cL}{l}$, with (i). (iii) Only (K3) depends on $j$, and
+$\Hl{l}{T}\subseteq\Hl{j}{T}$.
+\end{proof}
+\leanline{\lean{integrableupperMeasure}\sep\lean{upperPairingeqintegralsucc}\sep\lean{enormupperPairingle}\sep\lean{stronglyMeasurableupperPairing}\sep\lean{mono}}
+
+\begin{lemma}[invariance of the averages]\label{l:kinv}
+In Setting~\ref{set:pk}, let $l$ be a natural number with $j\le l$, let $s\in\Ql{l}{T}\cap\Hl{j}{T}$ and
+$g,y\in\GT{T}$. Then $\upperPairing{\cL}{l}{k}{sg}{sy}=\upperPairing{\cL}{l}{k}{g}{y}$.
+\end{lemma}
+\begin{proof}
+Induction on $\varrho+2-l$. If $l\ge\varrho+2$, then $s\in\UT{T}=\Nb{\varrho+1}{T}$, the average is $k$ itself, and
+(K2) with $\nu=\nu'=s$ gives the factor $\psi_A(\gL{\cL}^{-1}(\sd(dsd^{-1})-\sd(s)))=1$ by (K3). Otherwise write
+both sides by Lemma~\ref{l:succ}(ii). The function
+$\sigma\mapsto\upperPairing{\cL}{l+1}{k}{\sigma g}{\sigma y}$ is invariant under $\Ql{l+1}{T}\cap\Hl{j}{T}$ by
+induction, so Lemma~\ref{l:right} with $S=\Hl{j}{T}\supseteq\Hl{l}{T}$ allows to replace $\sigma$ by $\sigma s$.
+\end{proof}
+\leanline{\lean{upperPairinginvariant}}
+
+\begin{lemma}[invariance and support of the weighted squares]\label{l:sqinv}
+In Setting~\ref{set:pk}, let $x\in\GT{T}$. \textup{(i)} The function $\weightedSquare{\cL}{j}{k}{x}{\cdot}$ is
+invariant under $\Ql{j+1}{T}$ and vanishes at every $g$ that is not near at $j+1$. \textup{(ii)} The function
+$\weightedSquareSum{\cL}{k}{x}{j}{\cdot}$ is invariant under $\Ql{j}{T}$ and vanishes at every $g$ that is not near
+at $j$; it is measurable in $(x,g)$.
+\end{lemma}
+\begin{proof}
+(i) Let $s\in\Ql{j+1}{T}$, and write $s=\gamma\nu$ with $\gamma\in\Hl{j}{T}$, $\nu\in\Nb{j}{T}$ (F1); then
+$\gamma=s\nu^{-1}\in\Ql{j+1}{T}\cap\Hl{j}{T}$. The weight is invariant (Lemma~\ref{l:valinv}). For the average at
+$j+1$: Lemma~\ref{l:kinv} removes $\gamma$, and (K2) at $l=j$ with $\nu'=\nu$ shows that
+$\upperPairing{\cL}{j+1}{k}{\nu g}{\nu gx}$ and $\upperPairing{\cL}{j+1}{k}{g}{gx}$ differ by a factor of absolute
+value $1$. The support is
+(K5). (ii) Downward induction on $j$ along the recursion: by (i), (iii) of Lemma~\ref{l:succ} and the induction
+hypothesis the integrand $\sigma\mapsto(\dots)(\sigma g)$ is $\Ql{j+1}{T}$-invariant in $\sigma g$, and
+Lemma~\ref{l:right} with $S=\GT{T}$ gives the invariance under $s\in\Ql{j}{T}$. If the sum at $g$ is not $0$, some
+$\sigma\in\Hl{j}{T}$ has $\sigma g$ near at $j+1$, so $g$ is near at $j$.
+\end{proof}
+\leanline{\lean{weightedSquareinvariantsupport}\sep\lean{weightedSquareSuminvariantsupport}\sep\lean{measurableweightedSquareSum}}
+
+\begin{lemma}[Cauchy--Schwarz on a floor]\label{l:cs}
+In Setting~\ref{set:pk}, let $l$ be a natural number, $g,y\in\GT{T}$, $K\in[0,\infty]$ and
+$u\colon\GT{T}\to[0,\infty]$, $v\colon\GT{T}\to[0,\infty]$ measurable with \m{\FloorMassLe{\cL}{l}{K}{u}} and
+\[\bigl|\upperPairing{\cL}{l+1}{k}{\sigma g}{\sigma y}\bigr|^{2}\le u(\sigma g)\,v(\sigma)\qquad\text{for all }\sigma\in\Hl{l}{T}.\]
+Then $\pivotModulus{\cL}{l}{k}{g}{y}^{2}\le K\int v\,\dd\floorMeasure{\cL}{l}$.
+\end{lemma}
+\begin{proof}
+By (K5) the integrand of the pivot vanishes unless $\sigma g$ is near at $l+1$. Restrict the integral to these
+$\sigma$ and to $\Hl{l}{T}$, apply \Inp{I8} with $f_1=u(\sigma g)$ and $f_2=v$, and bound the integral of $f_1$ by
+$K$.
+\end{proof}
+\leanline{\lean{pivotModulussqle}}
+
+\begin{lemma}[the self-norm, floor by floor]\label{l:sn}
+In Setting~\ref{set:pk}, let $x\in\GT{T}$ and $l$ a natural number. \textup{(i)} If $l\le\varrho$, then
+\[\selfNorm{\cL}{l}{k}{x}=\int\weightedSquare{\cL}{l}{k}{x}{g}\,\dd(\floorMeasure{\cL}{l}*\dots*\floorMeasure{\cL}{0})(g)+\selfNorm{\cL}{l+1}{k}{x}.\]
+\textup{(ii)} If $l\le n$, then $\selfNorm{\cL}{l}{k}{x}\le\selfNorm{\cL}{0}{k}{x}$.
+\end{lemma}
+\begin{proof}
+(i) Insert the recursion for the weighted square sum and use \Inp{I1} for
+$\floorMeasure{\cL}{l}*(\floorMeasure{\cL}{l-1}*\dots*\floorMeasure{\cL}{0})$. (ii) follows from (i) by induction.
+\end{proof}
+\leanline{\lean{selfNormeqaddsucc}\sep\lean{selfNormleselfNormzero}}
+\sect{Sizes in a gauge and fibre bounds}{s:gsizes}
+\begin{lemma}[the vector of a Heisenberg element]\label{l:heis}
+Let $A$ be a place, $\mathcal{S}$ a size in $\Sizes{T}$, $a$ a natural number with $a<\varrho$, $u\in A^{\times}$,
+$i$ a natural number, $v\in V_{a+1}$ and $\beta$ a skew element of $A$. If there is $\nu\in\Nb{a}{T}$ such that the
+column at $e^*_a$ of $u^{-1}(\nu\,\mathrm{n}_a(v,\beta)-1)$ lies in $\vecsOfSize{i}$, then $u^{-1}v\in\vecsOfSize{i}$
+and $u^{-1}(\beta-\tau_Ah_T(v,v))\in\mathcal{S}_i$.
+\end{lemma}
+\begin{proof}
+The column at $e^*_a$ of $\mathrm{n}_a(v,\beta)$ is $e^*_a+v+(\beta-\tau_Ah_T(v,v))e_a$; its coordinates at
+$e^*_b$, $b<a$, vanish, so by (F4) multiplication by $\nu$ does not change its coordinates of floor at least $a$:
+those on $V_{a+1}$, which are $v$, and the one at $e_a$.
+\end{proof}
+\leanline{\lean{memvecsOfSizeofheisenbergElem}}
+
+\begin{lemma}[coordinates in a floor basis]\label{l:basis}
+In Setting~\ref{set:gauge}, let $b\le\varrho$, $j$ a natural number and $x$ a coordinate vector for the floor basis
+$E_b$ with $E_bx\in\vecsOfSize{j}$. Then $x\in\vecsOfSize{j+4}$.
+\end{lemma}
+\begin{proof}
+By \Inp{I4}(d), $E_b^{*}\JT{T}E_bx$ is $x$ with its coordinates permuted. The entries of $E_b$ are those of
+$E(\cL)$ or $0$, $1$, so $E_b^{*}$ has size $1$ by (G2), $E_b^{*}\JT{T}$ has size $3$, and
+$E_b^{*}\JT{T}(E_bx)\in\vecsOfSize{3+j+1}$.
+\end{proof}
+\leanline{\lean{memvecsOfSizeoffloorBasismulVec}}
+
+\begin{lemma}[integrating against a fibre bound]\label{l:fibint}
+In Setting~\ref{set:gauge}, let $b\le\varrho$, $q$ a measure on $V$, $j$ a natural number and $M,K\in[0,\infty]$
+with \m{\HasFibreBound{\Gamma}{b}{q}{j}{M}}. \textup{(i)} Let $\Phi\colon V\to[0,\infty]$ and let $G$ be a function
+of the fixed and the orthonormal coordinates with values in $[0,\infty]$ such that, for every $P$, $G(P,\cdot)$ is
+measurable with $\int G(P,w)\,\dd w\le K$, and such that $\Phi(E_bx)\le G(P(x),w(x))$ for every coordinate vector
+$x\in\vecsOfSize{j+4}$ with fixed coordinates $P(x)$ and orthonormal coordinates $w(x)$. Then
+$\int_{\vecsOfSize{j}}\Phi\,\dd q\le M\cdot K$. \textup{(ii)} Let $\varphi\colon A^{\Omega}\to[0,\infty]$ be
+measurable with $\int_{\vecsOfSize{j+4}}\varphi(w)\,\dd w\le K$. Then
+\[\int_{\vecsOfSize{j}}\varphi\bigl(\orthonormalPart{\cL}^{*}\JT{T}x\bigr)\,\dd q(x)\le M\cdot K.\]
+\end{lemma}
+\begin{proof}
+(i) With the notation of Definition~\ref{d:fib}, $\int_{\vecsOfSize{j}}\Phi\,\dd q$ is the integral of
+$\mathbf{1}[E_b\mathsf{k}\in\vecsOfSize{j}]\,\Phi(E_b\mathsf{k})$ over $(P,w,z)$. By Lemma~\ref{l:basis} the
+integrand is at most $\mathbf{1}[\mathsf{k}(P,w,z)\in\vecsOfSize{j+4}]\,G(P,w)$; integrate over $z$ (at most
+$\mu(P)G(P,w)$), then over $w$ (at most $\mu(P)K$), then over $P$. (ii) By \Inp{I4}(d),
+$\orthonormalPart{\cL}^{*}\JT{T}E_bx=w(x)$; apply (i) with $G(P,w)=\mathbf{1}[w\in\vecsOfSize{j+4}]\varphi(w)$.
+\end{proof}
+\leanline{\lean{setLIntegralleofhasFibreBound}\sep\lean{setLIntegralorthonormalPartle}}
+
+\begin{lemma}[fibre bounds for the quadric and for the volume]\label{l:fibq}
+In Setting~\ref{set:gauge}, let $b\le\varrho$ and $j$ a natural number. \textup{(i)} Let $M\in[0,\infty]$ be such
+that the quadric measure with $\beta=0$ of the sum of $|\pi_b|+1$ hyperbolic planes gives $\vecsOfSize{j+5}$ mass at
+most $M$. Then \m{\HasFibreBound{\Gamma}{b}{\quadric{\cL}{b}}{j}{M}}. \textup{(ii)} In particular
+\m{\HasFibreBound{\Gamma}{b}{\quadric{\cL}{b}}{j}{\Lambda(\Gamma)^{99n(j+6)}}}. \textup{(iii)} Also
+\m{\HasFibreBound{\Gamma}{b}{\vol_b}{j}{\Lambda(\Gamma)^{99n(j+6)}}}.
+\end{lemma}
+\begin{proof}
+(i) In the coordinates of $E_b$, $\quadric{\cL}{b}$ is the image of $\dd t\,\dd(\pi',w,\pi'')\,\dd\nu_A(\alpha)$
+under the flat chart, which fills in the coordinate $t'$. Take $Z$ the space of the pairs $(\pi'',\alpha)$ with
+its product measure and $\mathsf{k}$ the flat chart after regrouping the variables as $((t,\pi'),w,(\pi'',\alpha))$,
+which preserves the product measure. Fix $P=(t,\pi')$ and $w$, and a point $z_0$ of the fibre set
+$\{z:\mathsf{k}(P,w,z)\in\vecsOfSize{j+4}\}$. For another point $z$ of it, the difference of the two values of
+$\mathsf{k}$ has $w$-coordinate $0$, sizes at most $j+5$ by rule (b), and is the value at $(P,0,z-z_0)$ of the flat
+chart of the cone of the hyperbolic planes alone (the chart is affine in $(\pi'',\alpha)$ for fixed $t,\pi',w$). So
+the fibre set, translated by $z_0$, lies in the corresponding set for the cone and size $j+5$, whose measure we
+call $\mu(P)$; and $\int\mu(P)\,\dd P$ is the cone measure of $\vecsOfSize{j+5}$. (ii) is (i) with (G5), since
+$\mathfrak{m}\le|\pi_b|\le\mathfrak{m}+\varrho$. (iii) Take $Z$ the space of the coordinates $(t',\pi'')$ with its
+volume, $\mathsf{k}$ the regrouping, and $\mu(P)=\vol(\Gamma_{j+4})^{1+|\pi_b|}$ for $P\in\vecsOfSize{j+4}$, $0$
+otherwise; then $\int\mu\le\Lambda(\Gamma)^{2(j+5)(1+\mathfrak{m}+\varrho)}$ by (G4), and
+$2(1+\mathfrak{m}+\varrho)\le20n$ by (G1).
+\end{proof}
+\leanline{\lean{hasFibreBoundfloorQuadricofle}\sep\lean{hasFibreBoundfloorQuadric}\sep\lean{hasFibreBoundfloorVolume}}
+
+\begin{lemma}[an integral over a Heisenberg group]\label{l:heisint}
+In Setting~\ref{set:gauge}, let $a<\varrho$, $u\in A^{\times}$, $j$ a natural number, $C,K,M\in[0,\infty]$,
+$\Phi\colon\GT{T}\to[0,\infty]$ and $\Psi\colon V\to[0,\infty]$ measurable. Suppose
+$\int_{\vecsOfSize{j}}\Psi\,\dd\vol_{a+1}\le M$ and $\floorModulus{\cL}{a}{u}\cdot\Lambda(\Gamma)^{j+2}\cdot M\le K$,
+and that for every $v\in V_{a+1}$ and skew $\beta$ with $\Phi(\mathrm{n})\ne0$, $\mathrm{n}=\mathrm{n}_a(v,\beta)$:
+there is $\nu\in\Nb{a}{T}$ such that the column at $e^*_a$ of $u^{-1}(\nu\mathrm{n}^{-1}-1)$ lies in
+$\vecsOfSize{j}$, and $\Phi(\mathrm{n})\le C\cdot\Psi(u^{-1}v)$. Then $\int\Phi\,\dd\eta_a\le C\cdot K$.
+\end{lemma}
+\begin{proof}
+$\eta_a$ is the image of $\dd v\,\dd\nu_A(\beta)$. Let $\Phi(\mathrm{n}_a(v,\beta))\ne0$. As
+$\mathrm{n}^{-1}=\mathrm{n}_a(-v,\beta')$ with $\beta'$ a translate of $-\beta$ depending on $v$ only (F6),
+Lemma~\ref{l:heis} gives $u^{-1}v\in\vecsOfSize{j}$ and $u^{-1}(\beta'-\tau_Ah_T(v,v))\in\Gamma_j$. So for fixed
+$v$ the set $S_v$ of the $\beta$ with $\Phi\ne0$ has $u^{-1}(\beta_1-\beta_2)\in\Gamma_{j+1}$ for
+$\beta_1,\beta_2\in S_v$; by (G2) and the rules, $u^{-1}(\tau_A\delta_A^{-1}\beta+\beta'')\in\Gamma_{j+3}$ for
+differences $\beta,\beta''$, and by \Inp{I7} and (G4)
+$\nu_A(S_v)\le(\Lambda(\Gamma)^{j+4}\modA(u))^{1/2}\le\Lambda(\Gamma)^{j+2}\modA(u)^{1/2}$. Hence
+\[\begin{aligned}\int\Phi\,\dd\eta_a&\le C\,\Lambda(\Gamma)^{j+2}\modA(u)^{1/2}\int\mathbf{1}[u^{-1}v\in\vecsOfSize{j}]\,\Psi(u^{-1}v)\,\dd v\\
+&=C\,\Lambda(\Gamma)^{j+2}\modA(u)^{1/2}\modA(u)^{N}\int_{\vecsOfSize{j}}\Psi\,\dd\vol_{a+1},\end{aligned}\]
+where $N=k+1+2(\varrho-(a+1))$ is the rank of $V_{a+1}$. The factor in front is
+$C\,\floorModulus{\cL}{a}{u}\,\Lambda(\Gamma)^{j+2}$.
+\end{proof}
+\leanline{\lean{lintegralheisenbergMeasurele}}
+
+\begin{lemma}[three size bounds]\label{l:three}
+In Setting~\ref{set:gauge}: \textup{(i)} if $g\in\BoxL{\cL}$, $x,y\in\positionsOfSize{\cL}{\Gamma}$ and
+$\sigma=gx(gy)^{-1}$, then \m{\HasMatSize{14}{\gL{\cL}^{-1}(\sigma-1)}}; \textup{(ii)} if $b\le\varrho$,
+$\sigma\in\Hl{b}{T}$, $g\in\GT{T}$ with \m{\HasMatSize{i}{g}} for a natural number $i$, and $\sigma g$ is near at
+$b+1$, \m{\IsNear{\cL}{b+1}{\sigma g}}, then $\sigma^{-1}f_b\in\vecsOfSize{i+6}$; \textup{(iii)} if $j\le\varrho$,
+$p\colon\NN\to A^{\times}$ is a head of length $j$, \m{\IsHead{j}{p}}, and $g$ and $\wl{j}{p}^{-1}g$ are near at
+$j$, \m{\IsNear{\cL}{j}{g}} and \m{\IsNear{\cL}{j}{\wl{j}{p}^{-1}g}}, then there is $\sigma\in\Hl{j}{T}$ with
+\m{\HasMatSize{60n^2}{\sigma g}} and \m{\HasMatSize{99n^2}{\sigma\wl{j}{p}^{-1}g}}.
+\end{lemma}
+\begin{proof}
+(i) $\sigma-1=g(x-y)(gy)^{-1}$. Here $\gL{\cL}^{-1}(x-y)$ has size $2$, $y=1+\gL{\cL}\cdot\gL{\cL}^{-1}(y-1)$ has
+size $3$, $gy$ size $5$, its inverse size $9$ (Lemma~\ref{l:adj}), and the product size $(1+2+1)+9+1$. (ii) Let
+$\xi\in\Ql{b+1}{T}$ with $\xi\sigma g\in\BoxL{\cL}$. By (F2) and (F3) the coordinates of $\sigma^{-1}f_b$ of floor
+less than $b$ vanish and the others are those of $\sigma^{-1}\xi^{-1}f_b$, a column of
+$g(\xi\sigma g)^{-1}$, of size $i+5+1$. (iii) Let $\xi g\in\BoxL{\cL}$, $\xi=\sigma\nu$ with $\sigma\in\Hl{j}{T}$,
+$\nu\in\Nb{j}{T}$ (F1). Then $(\sigma\nu\sigma^{-1})(\sigma g)\in\BoxL{\cL}$ with
+$\sigma\nu\sigma^{-1}\in\Nb{j}{T}$, and $\wl{j}{p}^{-1}\sigma g=\sigma\wl{j}{p}^{-1}g$ is near at $j$; apply
+Lemma~\ref{l:minor}(iv) to $K=\BoxL{\cL}$, $\sigma g$ and $s=\sigma\nu\sigma^{-1}$.
+\end{proof}
+\leanline{\lean{conjmulinvclosetoone}\sep\lean{orbitPointmemvecsOfSize}\sep\lean{existshasMatSizeofisNear}}
+
+\begin{lemma}[a position between two near points is small]\label{l:subone}
+In Setting~\ref{set:gauge}, let $\Gamma_S$ be a second gauge in $\Gauges{\cL}$, $j$ a natural number with
+$j\le\varrho$, and $p,q\colon\NN\to A^{\times}$ heads of length $j$ for $\Gamma_S$: \m{\IsHead{j}{p}} and
+\m{\IsHead{j}{q}} for $\Gamma_S$. Suppose that, if $j\ne0$, then $\gL{\cL}^{-1}c\in\Gamma_1$ for all
+$c\in(\Gamma_S)_{10n}$. Let $x,y\in\GT{T}$ be such that: there are $u,v\in\UT{T}$ with $ux\in\BoxL{\cL}$,
+$v(xy)\in\BoxL{\cL}$ and \m{\HasMatSize{2}{\gL{\cL}^{-1}(v(xy)-ux)}}; $\wl{j}{p}^{-1}x$ is near at $j$,
+\m{\IsNear{\cL}{j}{\wl{j}{p}^{-1}x}}; $\wl{j}{q}^{-1}xy$ is near at $j$; and for every $a$ with $j\le a<\varrho$
+there is a unit $c\in\floorValues{\cL}{a}{x}{y}$ with $c^{-1}\in\Gamma_1$. Then
+\m{\HasMatSize{99n}{\gL{\cL}^{-1}(y-1)}}.
+\end{lemma}
+\begin{proof}
+Put $X=ux$, $Y=v(xy)$; then $y-1=X^{-1}\bigl((Y-X)-(1-uv^{-1})Y\bigr)$. We bound $\gL{\cL}^{-1}(1-uv^{-1})$ by
+Lemma~\ref{l:backsub} for the element $vu^{-1}\in\UT{T}=\Nb{\varrho}{T}$, $r=\gL{\cL}$ and $c=6$. For $a<j$ take
+$w=ue^*_a$, the column of $u$ at $e^*_a$: by Lemma~\ref{l:minor}(iii) for $\Gamma_S$ and $K=\BoxL{\cL}$ its
+entries, and those of $ve^*_a$, lie in $(\Gamma_S)_{10n}$, so $\gL{\cL}^{-1}w$ and $\gL{\cL}^{-1}(u-v)e^*_a$ have
+size at most $2$. For $a\ge j$ take the unit $c=w'_{e^*_a}$ of the hypothesis, $w'$ admissible, and $w=c^{-1}uw'$:
+by (F3) $w_{e^*_a}=1$; $uw'=X(x^{-1}w')$ has size $3$ by (G3); and
+$\gL{\cL}^{-1}(u-v)w'=\gL{\cL}^{-1}(X-Y)u_1+Y\gL{\cL}^{-1}(u_1-u_2)$ with $(u_1,u_2)$ the close pair of $w'$, of size
+$5$. So $\gL{\cL}^{-1}(1-uv^{-1})$ has size $10+20\varrho$, and $\gL{\cL}^{-1}(y-1)$ has size at most
+$5+(13+20\varrho)+1\le99n$.
+\end{proof}
+\leanline{\lean{hasMatSizesuboneoffloorValues}}
+
+\sect{Masses of floors and integrals of weights}{s:masses}
+\begin{lemma}[the mass of a floor through its quadric]\label{l:chart}
+In Setting~\ref{set:gauge}, let $b\le\varrho$, $K\in[0,\infty]$, and $f\colon\GT{T}\to[0,\infty]$ measurable and
+invariant under left translations by $\Ql{b+1}{T}$. Suppose that for every $g\in\BoxL{\cL}$ there is a measurable
+$\Psi\colon V\to[0,\infty]$ with $\int_{\vecsOfSize{7}}\Psi\,\dd\quadric{\cL}{b}\le K$ and
+$f(\sigma g)\le\Psi(\sigma^{-1}f_b)$ for all $\sigma\in\Hl{b}{T}$. Then \m{\FloorMassLe{\cL}{b}{K}{f}}.
+\end{lemma}
+\begin{proof}
+Fix $g$. If $g$ is not near at $b$ the integral is over a null set. Otherwise $\xi g\in\BoxL{\cL}$ for some
+$\xi\in\Ql{b}{T}$, and by Lemma~\ref{l:right} (with $S=\GT{T}$ and $s=\xi^{-1}$) we may replace $g$ by $\xi g$. For
+$g\in\BoxL{\cL}$ and $\sigma\in\Hl{b}{T}$ with $\sigma g$ near at $b+1$, Lemma~\ref{l:three}(ii) gives
+$\sigma^{-1}f_b\in\vecsOfSize{7}$; so the integral is at most
+$\int\mathbf{1}_{\vecsOfSize{7}}(\sigma^{-1}f_b)\Psi(\sigma^{-1}f_b)\,\dd\floorMeasure{\cL}{b}(\sigma)$, which is
+$\int_{\vecsOfSize{7}}\Psi\,\dd\quadric{\cL}{b}$ by Lemma~\ref{l:orbit}.
+\end{proof}
+\leanline{\lean{floorMassLeofchart}}
+
+\begin{lemma}[two masses]\label{l:mass}
+In Setting~\ref{set:gauge}: \textup{(i)} for $a<\varrho$ and $x\in\Posn{\cL}$, the function
+$u(g)=\floorWeight{\cL}{a}{g}{x}/\floorWeight{\cL}{a+1}{g}{x}$ satisfies
+\[\FloorMassLe{\cL}{a}{\Lambda(\Gamma)^{10^{4}n}}{u};\]
+\textup{(ii)} for $b\le\varrho$ and $M\in[0,\infty]$ with \m{\HasFibreBound{\Gamma}{b}{\quadric{\cL}{b}}{7}{M}},
+\[\FloorMassLe{\cL}{b}{M\cdot\vol(\Gamma_{11})^{|\Omega|}}{1}.\]
+\end{lemma}
+\begin{proof}
+(i) Here $u(g)=\vol(\floorValues{\cL}{a}{g}{x})^{-s}$, $s=\volumeExponent{\cL}$, invariant under $\Ql{a+1}{T}$
+(Lemma~\ref{l:valinv}). Let $g\in\BoxL{\cL}$, and take $\varphi$ from (G6) for $g$, the position $x$ and the matrix
+$v=0$; put $\Psi(v')=\varphi(\orthonormalPart{\cL}^{*}\JT{T}v')^{s}$. For $\sigma\in\Hl{a}{T}$ and
+$u'=\orthonormalPart{\cL}^{*}\JT{T}\sigma^{-1}f_a$, every $w\in W$ gives the vector $\sigma\orthonormalPart{\cL}w$,
+which is admissible for $(\sigma g,x)$ and has the coordinate $h_T(\sigma^{-1}f_a,\orthonormalPart{\cL}w)=u'^{*}w$
+at $e^*_a$; so $\{u'^{*}w:w\in W\}\subseteq\floorValues{\cL}{a}{\sigma g}{x}$ and
+$u(\sigma g)\le\varphi(u')^{s}=\Psi(\sigma^{-1}f_a)$. By Lemma~\ref{l:fibint}(ii), Lemma~\ref{l:fibq}(ii) and (G6),
+$\int_{\vecsOfSize{7}}\Psi\,\dd\quadric{\cL}{a}\le\Lambda(\Gamma)^{99n\cdot13}\Lambda(\Gamma)^{99n\cdot12}$. Apply
+Lemma~\ref{l:chart}. (ii) Lemma~\ref{l:chart} with $f=1$, $\Psi=1$, and Lemma~\ref{l:fibint}(ii) with $\varphi=1$.
+\end{proof}
+\leanline{\lean{floorMassLefloorWeightdiv}\sep\lean{floorMassLeone}}
+
+\begin{proof}[Proof of Theorem B\textup{(i)}]
+\emph{Reduction to the box.} Let $\xi g\in\BoxL{\cL}$, $\xi=\gamma\nu_0$ with $\gamma\in\Hl{j}{T}$,
+$\nu_0\in\Nb{j}{T}$. The weight of $(g,\cdot)$ is that of $(\xi g,\cdot)$, and
+$g^{-1}\nu y=(\xi g)^{-1}(\gamma\nu_0\nu\gamma^{-1})\gamma y$; by \Inp{I3} the law of $\gamma\nu_0\nu\gamma^{-1}$ is
+again $\etab{j}$. So we may assume $g\in\BoxL{\cL}$, for all $y$. \emph{Induction on $j$.} For $j=0$ both sides
+are at most $1$. Let $a=j<\varrho$ and assume the bound for $j$ and all $y$. If the integral for $j+1$ is not $0$,
+there is $\tau\in\Nb{j+1}{T}$ with $x_0=g^{-1}\tau y\in\positionsOfSize{\cL}{\Gamma}$, and by invariance we may
+replace $y$ by $y_0=\tau y$. Write $\etab{j+1}=\etab{j}*\eta_j$ and
+$\Phi(\mathrm{n})=\int\mathbf{1}_{P}(g^{-1}\nu\mathrm{n}y_0)\,\floorWeight{\cL}{j+1}{g}{g^{-1}\nu\mathrm{n}y_0}\,\dd\etab{j}(\nu)$,
+$P=\positionsOfSize{\cL}{\Gamma}$. We apply Lemma~\ref{l:heisint} with $u=\gL{\cL}$, size $14$ and
+$\Psi(v')=\varphi(\orthonormalPart{\cL}^{*}\JT{T}v')^{s}$, $\varphi$ from (G6) for $g$, the position $x_0$ and
+$v=0$. Its hypotheses: if $g^{-1}\nu\mathrm{n}y_0\in P$, then by Lemma~\ref{l:three}(i) the element
+$gx_0(g\cdot g^{-1}\nu\mathrm{n}y_0)^{-1}=\mathrm{n}^{-1}\nu^{-1}=\nu''\mathrm{n}^{-1}$, with $\nu''\in\Nb{j}{T}$, has
+$\gL{\cL}^{-1}(\,\cdot-1)$ of size $14$. Next, with $x'=g^{-1}\nu\mathrm{n}y_0$, the weight at $j+1$ is the weight at
+$j$ times $\vol(\floorValues{\cL}{j}{g}{x'})^{s}$, and $\floorValues{\cL}{j}{g}{x'}\subseteq\mathcal{C}_{u'}$ for
+$u'=\orthonormalPart{\cL}^{*}\JT{T}\gL{\cL}^{-1}v$: for an admissible $w'$ with $c=w'_{e^*_j}$ and for $w\in W$,
+the two close pairs give $h_T(w',\orthonormalPart{\cL}w)-h_T(w',\nu\mathrm{n}\orthonormalPart{\cL}w)$, and
+$(1-\nu\mathrm{n})\orthonormalPart{\cL}w$ is $h_T(v,\orthonormalPart{\cL}w)e_j$ up to terms that $w'$ does not see
+(F4), which gives $(cu')^{*}w$ after division by $\gL{\cL}$. So
+$\vol(\floorValues{\cL}{j}{g}{x'})^{s}\le\varphi(u')^{s}$, and by the induction hypothesis (with $\mathrm{n}y_0$
+for $y$) $\Phi(\mathrm{n})\le\prod_{l<j}\floorConst{\Gamma}{l}\cdot\Psi(\gL{\cL}^{-1}v)$. Finally
+$\int_{\vecsOfSize{14}}\Psi\,\dd\vol_{j+1}\le\Lambda(\Gamma)^{99n\cdot20}\Lambda(\Gamma)^{99n\cdot19}$
+(Lemmas~\ref{l:fibint}(ii), \ref{l:fibq}(iii), (G6)). Lemma~\ref{l:heisint} gives the bound
+$\prod_{l<j}\floorConst{\Gamma}{l}\cdot\floorModulus{\cL}{j}{\gL{\cL}}\Lambda(\Gamma)^{16+3861n}
+\le\prod_{l\le j}\floorConst{\Gamma}{l}$, as $c_A\ge1$.
+\end{proof}
+
+\begin{proof}[Proof of Theorem B\textup{(ii)}]
+The function $\Phi$ is invariant under $\Nb{j}{T}$, a subgroup of $\Ql{b}{T}$. So the left side is
+\[\int\Phi(y)\,I(y)\,\dd\rho(y)\qquad\text{with}\qquad I(y)=\int\invWeight{\cL}{j}{x}(\wl{j}{p}\nu y)\,\dd\etab{j}(\nu),\]
+and only the $y$ near at $b$ count. We show $I(y)\le\prod_{a<j}\floorModulus{\cL}{a}{p_a^{-1}}\cdot\globalConst{\Gamma}$ for
+such $y$. As in the proof of (i), with $\xi y\in\BoxL{\cL}$, $\xi\in\Ql{b}{T}\subseteq\Ql{j}{T}$, the invariance of
+$\etab{j}$ and of the inverse weight (Lemma~\ref{l:valinv}) and (F5), we may assume $y\in\BoxL{\cL}$. The proof is
+by induction on $j$, with $p$ a head of each length up to $j$; we show that floor $a$ contributes a factor
+$\floorModulus{\cL}{a}{p_a^{-1}}\Lambda(\Gamma)^{10^6n^2}$. For the step from $a$ to $a+1$ write
+$\etab{a+1}=\eta_a*\etab{a}$ and fix $\nu\in\Nb{a}{T}$. Lemma~\ref{l:heisint} is applied to the function
+\[\mathrm{n}\mapsto\invWeight{\cL}{a+1}{x}(\wl{a+1}{p}\mathrm{n}\nu y),\]
+with the unit $u=(-\bar p_a)^{-1}$ and $\Psi=\varphi(\orthonormalPart{\cL}^{*}\JT{T}\,\cdot\,)^{s}$, where $\varphi$ comes from (G6) for $y\in\BoxL{\cL}$,
+the position $x$ and the matrix $v$ of the coordinates at $e_0,\dots,e_{\varrho-1}$ of the columns of
+$\nu\orthonormalPart{\cL}$. If the inverse weight is not $0$, then $\wl{a+1}{p}\mathrm{n}\nu y$ is near at $a+1$,
+and Lemma~\ref{l:minor}(iii) (for $K=\BoxL{\cL}$, the head $\bar p$, the point $\mathrm{n}\nu y$ and
+$s=(\mathrm{n}\nu)^{-1}$) bounds the column at $e^*_a$ of $\bar p_a(\nu^{-1}\mathrm{n}^{-1}-1)$, which is the size
+condition; and the inverse weight at $a+1$ is the inverse weight at $a$ of $\wl{a}{p}\nu y$ times the power $-s$ of the
+volume of $\floorValues{\cL}{a}{\wl{a+1}{p}\mathrm{n}\nu y}{x}$, where this set of floor values contains
+$\{u'^{*}w:w\in W\}$ for the vector $u'$ attached to $u^{-1}v$ as in the proof of Lemma~\ref{l:mass}(i); so the
+first inequality of (G6) bounds it by $\varphi(u')^{s}$. The integral of $\Psi$ is bounded as in (i), and the
+exponents add up to at most $10^6n^2$ for each floor; $j\le n$ floors give $\globalConst{\Gamma}$.
+\end{proof}
+
+\sect{Plancherel}{s:plancherel}
+\begin{proof}[Proof of Theorem C\textup{(i)}]
+\emph{Support.} Let $\sigma\in\Hl{b}{T}$ with $F(\sigma)\ne0$. By (K5) $\sigma x$ is near at $b+1$, and so is
+$(\sigma t^{-1})(qx)=(\sigma t^{-1}q\sigma^{-1})\sigma x$, because $\sigma(t^{-1}q)\sigma^{-1}\in\Nb{b}{T}
+\subseteq\Ql{b+1}{T}$. Lemma~\ref{l:three}(ii) for $\sigma t^{-1}\in\Hl{b}{T}$ and $qx$ gives
+$t\sigma^{-1}f_b\in\vecsOfSize{j+6}$.
+
+\emph{Plancherel.} By Lemma~\ref{l:kinv}, $F$ is invariant under $\Ql{b+1}{T}\cap\Hl{b}{T}$, so on $\Hl{b}{T}$ it is
+a measurable function of $\sigma^{-1}f_b$ \Inp{I5}; by Lemma~\ref{l:orbit}(ii) the inner integral is
+\[G(v)=\int\psi_A\bigl(\xi\,h_T(v+y',v')\bigr)\,\alpha(v')\,\dd\quadric{\cL}{b}(v'),\qquad
+\int|\alpha|^2\,\dd\quadric{\cL}{b}=\int|F|^2\,\dd\floorMeasure{\cL}{b},\]
+with $\alpha$ supported in $\vecsOfSize{j+6}$ by the first part. Write $\quadric{\cL}{b}$ by its fibre bound of
+size $j+6$ (Lemma~\ref{l:fibq}(ii)): $v'=E_b\mathsf{k}(P',w',z)$, with fibre masses $\mu'(P')$,
+$\int\mu'\le\Lambda(\Gamma)^{99n(j+12)}$. In the coordinates of $E_b$ the form $h_T$ pairs the orthonormal
+coordinates with themselves and the fixed coordinates $(t,\pi')$ with the remaining ones $(t',\pi'')$. So for
+$v=E_bx$ the phase $\psi_A(\xi h_T(v+y',v'))$ is the product of $\psi_A(\xi\,w(x)^{*}w')$, of a factor of absolute
+value $1$ that depends on $x$ and $P'$ only, and of a factor that depends on $(P(x),P',w',z)$. Hence
+$|G(E_bx)|\le\int|\widehat{\beta_{P(x),P'}}(w(x))|\,\dd P'$, where $\beta_{P,P'}(w')$ is the integral over $z$ of the
+last factor times $\alpha$ and the hat is the Fourier transform $\int\psi_A(\xi\,w^{*}w')\,\cdot\,\dd w'$. We apply
+Lemma~\ref{l:fibint}(i) to the measure $\mu$ with $G(P,w)=(\int|\widehat{\beta_{P,P'}}(w)|\,\dd P')^{2}$. By the
+Cauchy--Schwarz inequality in $P'$ with the weight $\mu'$, by \Inp{I6} in $w$, and by the Cauchy--Schwarz
+inequality in $z$ on the fibre, whose mass is at most $\mu'(P')$ because $\alpha$ lives on $\vecsOfSize{j+6}$
+(Lemma~\ref{l:basis}),
+\[\begin{aligned}\int G(P,w)\,\dd w&\le\int\mu'\cdot\Bigl(\frac{c_A}{\modA(\xi)}\Bigr)^{|\Omega|}\iint\frac{|\beta_{P,P'}(w')|^{2}}{\mu'(P')}\,\dd w'\,\dd P'\\
+&\le\Lambda(\Gamma)^{99n(j+12)}\Bigl(\frac{c_A}{\modA(\xi)}\Bigr)^{|\Omega|}\int|\alpha|^{2}\,\dd\quadric{\cL}{b}.\end{aligned}\]
+The integrability that \Inp{I6} needs comes from Lemma~\ref{l:succ}(ii).
+\end{proof}
+
+\begin{proof}[Proof of Theorem C\textup{(ii)}]
+We may assume $\int\Phi\,\dd\eta_a\ne0$; then $\Phi(m)\ne0$ for some $m\in\Nf{a}{T}$ \Inp{I3}, and $m\in S$ by
+(o). Take $t$, $q$ from (h) for this $m$ and write $t=t_0r$ with $t_0\in\Hl{a+1}{T}$, $r\in\Nf{a}{T}$ (F1). By
+\Inp{I3} and \Inp{I1}, $\eta_a$ is invariant under $\nu\mapsto r^{-1}\nu\,rm$ and under conjugation by $t_0$, so
+\[\int\Phi(\nu)\,\dd\eta_a(\nu)=\int\Phi\bigl(t^{-1}\nu\,tm\bigr)\,\dd\eta_a(\nu).\]
+We apply Lemma~\ref{l:heisint} to $\nu\mapsto\Phi(t^{-1}\nu tm)$, with $u$ and the size $j$. \emph{The size
+condition.} If $\Phi(\nu_1)\ne0$ for $\nu_1=t^{-1}\nu tm$, then $\nu_1\in S$ by (o), and (h) gives
+$\nu'\in\Nb{a}{T}$ with the column at $e^*_a$ of $u^{-1}(\nu'tm(t\nu_1)^{-1}-1)=u^{-1}(\nu'\nu^{-1}-1)$ in
+$\vecsOfSize{j}$. \emph{The pointwise bound.} By (o), $\Phi(\nu_1)\le C|\upperPairing{\cL}{a+1}{k}{\nu_1^{\varepsilon}x}{\nu_1y}|^2$.
+By Lemma~\ref{l:succ}(ii) this average is the integral over $\sigma\in\Hl{a+1}{T}$ of
+$\upperPairing{\cL}{a+2}{k}{c^{\varepsilon}\sigma x}{c\,\sigma y}$ with $c=\sigma\nu_1\sigma^{-1}\in\Nf{a}{T}$,
+which by (K2) and (e) is $\psi_A(\xi\,\sd(c))\cdot F_2(\sigma)$, $F_2(\sigma)=\upperPairing{\cL}{a+2}{k}{\sigma x}{\sigma y}$.
+By (F6), $\sd(\sigma\nu_1\sigma^{-1})=-h_T(v_1,\sigma^{-1}f_{a+1})$, and the vector $v_1$ of $\nu_1$ is
+$t_0^{-1}$ applied to the sum of the vector $v$ of $\nu$ and a vector that does not depend on $\nu$. So, with
+$\xi'=-\xi\bar u$ and a fixed $y'\in V$,
+\[\Phi(\nu_1)\le C\,\Psi(u^{-1}v),\qquad
+\Psi(v')=\Bigl|\int\psi_A\bigl(\xi'\,h_T(v'+y',t_0\sigma^{-1}f_{a+1})\bigr)F_2(\sigma)\,\dd\floorMeasure{\cL}{a+1}(\sigma)\Bigr|^{2}.\]
+\emph{The integral of $\Psi$.} Theorem~C(i) at $b=a+1$, with $t_0$, the element $tq$ (for which
+$t_0^{-1}tq=rq\in\Nb{a+1}{T}$ and \m{\HasMatSize{i}{tqx}}), the unit $\xi'$ and the measure $\vol_{a+1}$ with its
+fibre bound (Lemma~\ref{l:fibq}(iii)), gives
+\[\int_{\vecsOfSize{j}}\Psi\,\dd\vol_{a+1}\le\Lambda(\Gamma)^{99n(j+6)}\Lambda(\Gamma)^{99n(i+12)}\Bigl(\frac{c_A}{\modA(\xi u)}\Bigr)^{|\Omega|}\int|F_2|^2\dd\floorMeasure{\cL}{a+1}.\]
+Lemma~\ref{l:heisint} multiplies this by $C\,\floorModulus{\cL}{a}{u}\Lambda(\Gamma)^{j+2}$, and
+$99n(i+j+18)+j+2\le100n(i+j+31)$.
+\end{proof}
+
+\sect{Where the results are used}{s:used}
+Note~L uses almost everything: Theorem~A in the descent between floors and in every change of variables; Theorems B
+and~C and Lemmas~\ref{l:cs}, \ref{l:mass}, \ref{l:minor}, \ref{l:three}, \ref{l:subone} in the three bounds of the
+local theorem and in the integration over positions. Note~C constructs the level and the gauges at the complex
+place, proves there that the tower measure is a Haar measure (the hypothesis of Theorem~A(iii)), and verifies the
+axioms (G1)--(G6). No other unit of the artifact uses this one directly except through these two.
+
+\sect{Notes on the formal text}{s:notes}
+\textbf{Implicit arguments.} The size is an implicit argument of $\operatorname{sz}$, $\mathrm{Vec}$ and
+$\operatorname{Hd}$; a gauge is a size with further data, and for a gauge these predicates are applied to it. The
+level is an explicit argument of all notions of Section~\ref{s:setting} except the volume exponent, whose only
+argument it is.
+
+\textbf{Argument lists not confirmed by Lean.} For 43 declarations of the five files the reader's dossier derived the
+list of arguments by Lean's rules for section variables, because the census reads a name that the declaration binds
+anew ($n$, $i$, $a$, $j$, $x$) as the section variable of that name, misses the section variables after a
+\texttt{let} in a statement, or drops the variable \texttt{m} where a hypothesis has that name. Nothing was compiled,
+so these lists are not confirmed by Lean; among them are the definitions of sizes, of vectors and matrices of a
+size, of heads, of floor values, of the mass of a floor, of the averaged kernel, of pairing kernels, of the
+self-norm, of gauges and of fibre bounds. The statements above follow the Lean text of each declaration. Three
+statements continue after a \texttt{let} and were read to their end: Lemma~\ref{l:minor}(iii),
+Lemma~\ref{l:heis} and Theorem~C(i).
+
+\textbf{Differences from the natural statements.} (1) Averaged kernels are Bochner integrals, $0$ when the
+integrand is not integrable; (K4) makes them honest integrals for pairing kernels. (2) In (L2) the third condition
+is stated with $\UT{T}$, which is $\Ql{\varrho+2}{T}$; it is the bound \m{\FloorMassLe{\cL}{n}{1}{1}}. (3) The Weyl
+law is defined with the exponent $k+1+2(\varrho-(l+1))$ in truncated subtraction for all $l$, and used for
+$l<\varrho$. (4) A gauge allows $c_A=\infty$; the bounds are then empty. (5) In Lemma~\ref{l:row} and
+Lemma~\ref{l:backsub} the hypothesis runs over the $a<\varrho$ with $a<j$; $j$ may exceed $\varrho$. (6) In
+Lemma~\ref{l:rules}(d) the Lean text takes the first matrix with columns indexed by the basis of $V$ and any finite
+set of rows. (7) Lemma~\ref{l:factor} takes two $s$-finite measures and does not ask that $\rho$ be a probability.
+(8) In Theorem~B(i) the indicator of the positions of size $1$ and the weight are one function in the Lean text
+(an indicator of the weight). (9) In Lemma~\ref{l:weylratio} the product runs over $a<j$ with exponents
+$k+2(\varrho-a)$, the rank of $V_{a+1}$ plus one. (10) The count of the basis vectors of floor at least $a+1$,
+$k+1+2(\varrho-(a+1))$, is a lemma of the formal text; it is used as the rank of $V_{a+1}$. (11) One line of the
+file of the charts that the census gives to the invariance of the inverse weight belongs to the next declaration.
+
+\textbf{Small results.} The declarations without a statement of their own are cited where they are used: the
+matrix and the inverse of a Weyl ratio after Definition~\ref{d:wr}; the two rules for floor measures after
+Definitions~\ref{d:fm} and~\ref{d:tower}; nearness after Definition~\ref{d:near}; the rules for weights after
+Definition~\ref{d:weight} and Lemma~\ref{l:valinv}; measurability after Definition~\ref{d:consts}; the bound
+$\Lambda\ge1$ after Definition~\ref{d:gauge}; and the count of (10) in Lemma~\ref{l:minor}.
+
+\subhead{How this note was written.} From the structured proofs of the reader's dossier and from the Lean text. I
+read the five Lean files completely, statements and proofs, and the definitions of the background library that they
+use (shapes, split Gram matrices, the groups of the tower, Weyl and Heisenberg elements, places, flat charts,
+quadric measures, hyperbolic bases, convolutions). The proofs of Sections~\ref{s:sizes}, \ref{s:tower},
+\ref{s:near} and \ref{s:kernels}, of Lemmas~\ref{l:heis}, \ref{l:basis}, \ref{l:fibint}, \ref{l:heisint},
+\ref{l:three}, \ref{l:subone}, \ref{l:chart}, \ref{l:mass} and of Theorem~C(ii) follow the formal proofs step by
+step; the exponents in them were recomputed. The proofs flagged by the reader as least certain were read line by
+line in the Lean text: the two integrals of Theorem~B, the two parts of Theorem~C, and Lemma~\ref{l:fibq}(i). For
+these the text gives the argument as I could rebuild it from the terms: which lemma is applied to which objects,
+and with which sizes. Three places are less than a full proof and say so here: in Lemma~\ref{l:fibq}(i) the
+comparison of a fibre of the quadric with the cone uses a library lemma on measures of sets whose differences lie
+in a given set, whose statement I took from its use; in Theorem~B the inclusions of sets of floor values in the
+sets of (G6) are checked in the formal text by a computation with Heisenberg elements that I describe and did not
+redo entry by entry, and the exponent per floor in Theorem~B(ii) was not recomputed; in Theorem~C(i) the splitting
+of the phase in the coordinates of the floor basis is the formal text's computation. Lemma~\ref{l:weylratio} and
+Lemma~\ref{l:orbit}(i) are written from the formal proofs, with the change of variables described and not carried
+out. The program check of the unit's dossier covered \UnitSteps{} leaf steps of \UnitProofs{} proofs.
+
+\head{Appendix A. Concordance with the Lean artifact}
+The letters of this note and the names of the formal text: $\cL$ is \texttt{F}; $\Omega$ is \texttt{ι};
+$\mathfrak{m}$ is \texttt{m}; $\mathcal{S}$ is \texttt{S}; $\Gamma_i$ and $\mathcal{S}_i$ are \texttt{ofSize i};
+$\modA$, $\psi_A$, $c_A$, $\tau_A$, $\delta_A$, $\nu_A$ are the fields \texttt{md}, \texttt{ψ}, \texttt{c},
+\texttt{τ}, \texttt{skewUnit}, \texttt{skewMeasure} of the place; $\Hl{l}{T}$, $\Ql{l}{T}$, $\Nb{l}{T}$,
+$\Nf{l}{T}$, $\UT{T}$ are \texttt{GT}, \texttt{unitriGroup}, \texttt{unipotentBelow}, \texttt{floorUnipotent},
+\texttt{besselU}; $\mathrm{n}_a$ is \texttt{heisenbergElem}; $\eta_l$, $\etab{j}$, $\varpi_l$ are
+\texttt{heisenbergMeasure}, \texttt{ascConv heisenbergMeasure}, \texttt{weylLaw}; $\quadric{\cL}{b}$ and $\vol_b$
+are \texttt{floorQuadric} and \texttt{floorVolume}; $E_b$ is \texttt{floorBasis}; $\sd$ is \texttt{simpleRootSum};
+$\sigma^{-1}f_b$ is \texttt{orbitPoint}. Two statements as the artifact has them:
+\quoted{stackMeasuremconvdirac}
+\quoted{pivotModulussqle}
+{\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}\setlength{\tabcolsep}{0pt}
+\begin{longtable}{@{}p{30mm}p{56mm}p{43mm}r@{}}
+\textbf{In this note} & \textbf{Lean declaration} & \textbf{File} & \textbf{Lines}\\\midrule\endhead
+\ConcordanceRows
+\end{longtable}}
+
+\head{Notation}
+\begingroup\fontsize{8.6}{10.9}\selectfont\raggedright
+\setlength{\columnsep}{9mm}\setlength{\parskip}{0pt}
+\begin{multicols}{2}
+\nt{$A$, $\bar x$, $\dd x$, $A^{-}$}{the place; involution; Haar measure; skew elements}
+\nt{$\modA$, $\psi_A$, $c_A$, $\tau_A$, $\delta_A$, $\nu_A$}{module, character, Plancherel constant, trace-one element, skew unit, measure on $A^{-}$}
+\nt{$\mathfrak{s}=(\varrho,\kappa,k_0)$, $n$, $k$, $r$}{the shape; $\varrho+1$; $|\kappa|$; $2\varrho+k+1$}
+\nt{$V$, $V_l$, $e_a$, $e^*_a$, $x_i$, $z$, $f_a$}{the space, its floors, basis, frame}
+\nt{$T$, $\JT{T}$, $h_T$, $\GT{T}$, $\ZT{T}{g}$}{form, split Gram matrix, hermitian form, unitary group, frame Gram matrix}
+\nt{$\Hl{l}{T}$, $\Ql{l}{T}$, $\Nb{l}{T}$, $\Nf{l}{T}$, $\UT{T}$}{the subgroups of Section~\ref{s:space}}
+\nt{$\sd$, $\wl{l}{p}$, $\wo{a}{c}$, $\mathrm{n}_a(v,\beta)$}{superdiagonal sum; Weyl elements; Heisenberg element}
+\nt{$\Omega$, $\mathfrak{m}$, $E$, $E_b$, $\pi_b$}{parameters of a hyperbolic basis; basis matrices; index set of the extra pairs}
+\nt{$\cL$, $E(\cL)$, $\gL{\cL}$, $\theta$, $\mu_H$}{a level and its data}
+\nt{$\Ball{\cL}$, $\BoxL{\cL}$, $\Posn{\cL}$}{ball, box, positions}
+\nt{$\operatorname{Lev}$, $\operatorname{Siz}$, $\operatorname{Gau}$}{levels, sizes, gauges}
+\nt{$\floorMeasure{\cL}{l}$, $\eta_l$, $\etab{j}$, $\varpi_l$}{floor measure, Heisenberg measures, Weyl law}
+\nt{$\stackMeasure{\cL}_{a,i}$, $\groupMeasure{\cL}$, $\upperMeasure{\cL}{l}$}{stack, tower and upper measures}
+\nt{$\quadric{\cL}{b}$, $\vol_b$, $\vol$, $\delta_s$, $*$}{quadric measure, volume of $V_b$, volume, unit mass, convolution}
+\nt{$\mathcal{S}$, $\mathcal{S}_i$, $\Gamma$, $\Gamma_i$, $\Lambda$, $\Gamma_S$}{a size, a gauge, its constant, a second gauge}
+\nt{$\operatorname{sz}$, $\mathrm{Vec}_i$, $\operatorname{Hd}_j$}{size of a matrix, vectors of size $i$, heads}
+\nt{$\operatorname{Near}_j$, $\mathsf{O}$, $\operatorname{Cl}$, $\operatorname{Val}_a$}{near points, orthonormal part, close pairs, floor values}
+\nt{$\mathsf{s}$, $\mathsf{w}_j$, $\mathsf{w}^{-1}_j$, $\mathsf{d}_l$, $\operatorname{Mass}_j$}{volume exponent, weight, inverse weight, floor module, mass}
+\nt{$\mathsf{Av}_j$, $\mathsf{Pv}_j$, $\operatorname{PK}_j$}{averaged kernel, pivot, pairing kernels}
+\nt{$\mathsf{Sq}_j$, $\mathsf{Sm}_j$, $\operatorname{SN}_j$}{weighted square, its sum, self-norm}
+\nt{$\operatorname{Pos}$, $C_l$, $C_{\mathrm{gl}}$, $\operatorname{Fib}$}{positions of size $1$, constants, fibre bound}
+\nt{$W$, $\varphi$, $\mathcal{C}_u$}{the objects of axiom (G6)}
+\nt{$P$, $w$, $t$, $t'$, $\pi'$, $\pi''$, $\mathsf{k}$, $Z$, $\zeta$, $\mu$, $\rho'$}{coordinates and data of a fibre bound}
+\nt{$p$, $q$, $d$}{sequences of units; also $q$ a group element or a measure, $d$ the element of a pairing kernel or a size}
+\nt{$g$, $x$, $y$, $s$, $u$, $v$, $m$, $h$}{group elements, vectors, units; $u$, $v$ also functions}
+\nt{$\sigma$, $\tau$, $\nu$, $\gamma$, $\xi$, $\eta$, $\alpha$, $\beta$}{variables of integration, group elements, units, skew elements}
+\nt{$i$, $j$, $l$, $a$, $b$, $c$, $N$}{natural numbers: sizes, floors, ranks; $c$ also an element of $A$}
+\nt{$k$, $K$, $C$, $M$, $V$}{a kernel (also $k=|\kappa|$); constants; $K$ also a set}
+\nt{$f$, $F$, $G$, $\Phi$, $\Psi$, $D$, $X$, $Y$, $S$, $I$}{auxiliary functions, matrices, sets}
+\nt{$\varepsilon$, $\rho$, $\lambda$, $\iota$, $\theta$, $\psi$, $\varrho$, $\kappa$, $\Lambda$, $\delta$}{an exponent; measures; an index set; letters of names}
+\nt{$\mathbf{1}$, $\infty$, $L$, $H$, $O$, $Q$, $U$, $B$, $e$, $n$, $o$, $r$, $z$}{indicator; infinity; letters inside names}
+\end{multicols}
+\endgroup
+
+\end{document}

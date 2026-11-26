@@ -1,0 +1,695 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.TwistedHecke.ElementaryDivisors:77:7",
+ "name": "TwistingData.exists_depth_factorization",
+ "summary": "Hermite form J = U_ι·D and Smith form D = K·diag(t)·P over O. Q = U_ι (not square), d = D (square) and R = rows ι of U⁻¹ give (i) and (iii). For (ii), each t_i divides w^x; put m_i = #{τ < x : t_i ∤ w^τ}, the number of initial failures (divisibility by w^τ only improves as τ grows), so that t_i divides w^{m_i}. m_i is not the valuation of t_i in general (w = π² and t_i = π in a discrete valuation ring give m_i = 1, while the valuation normalised by v(w) = 1 is 1/2). By double counting Σ_i m_i = Σ_{τ<x} #{i : t_i ∤ w^τ}, and the columns i of P⁻¹ with t_i ∤ w^τ reduce to deep forms of level τ (card_le_finrank_translatesIn). For (iv), J sends P⁻¹·diag(t')·K⁻¹·j to w^x times the blocks of Q·j. With ω = deepIndicator − excessWeight_i/2, choose for every family γ an order l(γ) such that w^{l(γ)} divides every translated coefficient at γ and l(γ) ≤ ⌈x − ω·γ⌉₊, while some translated coefficient at γ is not divisible by w^{l(γ)+1} or ⌈x − ω·γ⌉₊ < l(γ) + 1; a γ minimising l(γ) + ω·γ has x ≤ l(γ) + ω·γ. In the first case x ≤ l(γ) + depth(γ) (by hf; equality allowed) and the root lemma, applied at the constant Levi labelling 0 and the adic order l(γ), gives excess_i(γ) ≤ 0, so ω·γ ≥ depth(γ); in the second case directly.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let J be the matrix of (i).",
+   "lines": [
+    83,
+    83
+   ],
+   "lean": "  set J := of _",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Claim hJ: (J·φ)(e, ·) = (diag(w^{depth})·ρ(g(e)))·φ(s(e), ·) for every vector φ and e.",
+   "lines": [
+    84,
+    84
+   ],
+   "lean": "  have hJ φ e : (J *ᵥ φ) ∘ (e, ·) = _ *ᵥ φ ∘ _ := funext (by simp [J, -diagonal_mul]; tauto)",
+   "typed_fact": "(J *ᵥ φ) ∘ (e, ·) = _ *ᵥ φ ∘ _",
+   "uses": [
+    {
+     "step": "1"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Claim hf: if z divides every entry of J·φ, then z divides w^{depth β}·(ρ(γ)·φ(x, ·))_β for every x ∈ X, γ ∈ GL_k(W) and family β.",
+   "lines": [
+    85,
+    96
+   ],
+   "lean": "  have hf {z φ} (h : ∀ y, z ∣ (J *ᵥ φ) y) x γ β :\n      z ∣ T.w ^ T.depth k n r β * (T.letterRep n γ *ᵥ φ ∘ (x, ·)) β := by\n    obtain ⟨e, rfl, he⟩ := by simpa [QuotientGroup.eq] using hs (x, ↑γ⁻¹)\n    choose A hA using show ∀ s i j,\n      T.w ^ T.deepIndicator r (j, s) ∣ T.w ^ T.deepIndicator r (i, s) * T.letterMatrix s\n      (g e * γ⁻¹)⁻¹ i j by grind [p_dvd_letterMatrix_of_mem_parahoric, inv_mem, w_sq]\n    rw [← mulVec_diagonal (_ ^ T.depth k n r ·), ← inv_mul_cancel_right γ, map_mul, mulVec_mulVec, ←\n      mul_assoc, (?_ : diagonal _ * _ = kroneckerPi (symPowMatrix n ∘ of ∘ A) * _), mul_assoc,\n      ← mulVec_mulVec, ← hJ]\n    exact dvd_sum (by grind)\n    simp [letterRep, diagonal_pow_depth]; congr! 3\n    ext; simpa [mul_comm] using hA ..",
+   "head_lines": [
+    85,
+    86
+   ],
+   "typed_fact": "z ∣ T.w ^ T.depth k n r β * (T.letterRep n γ *ᵥ φ ∘ (x, ·)) β",
+   "uses": []
+  },
+  {
+   "id": "3.1",
+   "parent": "3",
+   "kind": "setup",
+   "claim": "By hs choose e with s(e) = x and g(e)⁻¹𝒫 = γ⁻¹𝒫, so g(e)γ⁻¹ ∈ 𝒫 (he).",
+   "lines": [
+    87,
+    87
+   ],
+   "lean": "    obtain ⟨e, rfl, he⟩ := by simpa [QuotientGroup.eq] using hs (x, ↑γ⁻¹)",
+   "typed_fact": null,
+   "uses": [],
+   "ambient_uses": [
+    "QuotientGroup.eq"
+   ]
+  },
+  {
+   "id": "3.2",
+   "parent": "3",
+   "kind": "setup",
+   "claim": "Choose matrices A_s with w^{deepIndicator(j,s)}·(A_s)_{ij} = w^{deepIndicator(i,s)}·(letterMatrix s (g(e)γ⁻¹)⁻¹)_{ij}.",
+   "lines": [
+    88,
+    90
+   ],
+   "lean": "    choose A hA using show ∀ s i j,\n      T.w ^ T.deepIndicator r (j, s) ∣ T.w ^ T.deepIndicator r (i, s) * T.letterMatrix s\n      (g e * γ⁻¹)⁻¹ i j by grind [p_dvd_letterMatrix_of_mem_parahoric, inv_mem, w_sq]",
+   "head_lines": [
+    88,
+    88
+   ],
+   "head_span": [
+    88,
+    5,
+    88,
+    23
+   ],
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "3.2.1",
+   "parent": "3.2",
+   "kind": "fact",
+   "claim": "Such a divisibility holds for all s, i, j: when the indicators differ, the entry is divisible by p = w² (p_dvd_letterMatrix_of_mem_parahoric, the parahoric subgroup being closed under inverses).",
+   "lines": [
+    88,
+    90
+   ],
+   "span": [
+    88,
+    23,
+    90,
+    86
+   ],
+   "lean": "show ∀ s i j,\n      T.w ^ T.deepIndicator r (j, s) ∣ T.w ^ T.deepIndicator r (i, s) * T.letterMatrix s\n      (g e * γ⁻¹)⁻¹ i j by grind [p_dvd_letterMatrix_of_mem_parahoric, inv_mem, w_sq]",
+   "typed_fact": "∀ s i j,",
+   "uses": [
+    {
+     "step": "3.1"
+    },
+    {
+     "decl": "TwistingData.p_dvd_letterMatrix_of_mem_parahoric"
+    },
+    {
+     "decl": "TwistingData.deepIndicator"
+    }
+   ]
+  },
+  {
+   "id": "3.3",
+   "parent": "3",
+   "kind": "reduction",
+   "claim": "Write diag(w^{depth})·ρ(γ) = (⊗_s Sym^n(A_s))·diag(w^{depth})·ρ(g(e)) (a goal, below) and use hJ: the vector in question is (⊗_s Sym^n(A_s)) applied to (J·φ)(e, ·).",
+   "lines": [
+    91,
+    93
+   ],
+   "lean": "    rw [← mulVec_diagonal (_ ^ T.depth k n r ·), ← inv_mul_cancel_right γ, map_mul, mulVec_mulVec, ←\n      mul_assoc, (?_ : diagonal _ * _ = kroneckerPi (symPowMatrix n ∘ of ∘ A) * _), mul_assoc,\n      ← mulVec_mulVec, ← hJ]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "step": "3.2"
+    },
+    {
+     "decl": "kroneckerPi"
+    },
+    {
+     "decl": "symPowMatrix"
+    }
+   ],
+   "ambient_uses": [
+    "Matrix.mulVec_diagonal",
+    "Matrix.mulVec_mulVec"
+   ]
+  },
+  {
+   "id": "3.4",
+   "parent": "3",
+   "kind": "deduction",
+   "claim": "Each entry is a combination of entries of J·φ, all divisible by z.",
+   "lines": [
+    94,
+    94
+   ],
+   "lean": "    exact dvd_sum (by grind)",
+   "typed_fact": null,
+   "uses": [],
+   "ambient_uses": [
+    "Finset.dvd_sum"
+   ]
+  },
+  {
+   "id": "3.5",
+   "parent": "3",
+   "kind": "computation",
+   "claim": "The matrix identity, letter by letter, via diagonal_pow_depth (the depth diagonal is the Kronecker product of symmetric powers of the letterwise diagonals).",
+   "lines": [
+    95,
+    95
+   ],
+   "lean": "    simp [letterRep, diagonal_pow_depth]; congr! 3",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "TwistingData.diagonal_pow_depth"
+    },
+    {
+     "decl": "TwistingData.letterRep"
+    }
+   ]
+  },
+  {
+   "id": "3.6",
+   "parent": "3",
+   "kind": "computation",
+   "claim": "Entrywise it is the defining property of A_s.",
+   "lines": [
+    96,
+    96
+   ],
+   "lean": "    ext; simpa [mul_comm] using hA ..",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "3.2"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Hermite form of J for the embedding X × Fam ↪ E × Fam given by a section of e ↦ s(e) (hs): J = U_{·,ι}·D, (U⁻¹)_{ι,·}·J = D (e), U ∈ GL(O).",
+   "lines": [
+    97,
+    98
+   ],
+   "lean": "  have ⟨U, _, D, _, e, _⟩ := isValuationPair_top.hermite\n    (.ofSurjective _ ((Prod.fst_surjective.comp hs).prodMap surjective_id)) J",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "decl": "IsValuationPair.hermite"
+    },
+    {
+     "decl": "isValuationPair_top"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Smith normal form D = K·diag(t)·P with K, P ∈ GL(O).",
+   "lines": [
+    99,
+    99
+   ],
+   "lean": "  obtain ⟨K, -, P, -, t, rfl⟩ := isValuationPair_top.smith_normal_form D",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "decl": "IsValuationPair.smith_normal_form"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "fact",
+   "claim": "h0: for every i, t_i divides every entry of J·(column i of P⁻¹), by hf (as J·P⁻¹ = U_ι·K·diag(t)).",
+   "lines": [
+    100,
+    100
+   ],
+   "lean": "  have h0 i := @hf (t i) (P.2ᵀ i) (by simp [e, ← Matrix.mul_assoc])",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "step": "4"
+    },
+    {
+     "step": "5"
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "fact",
+   "claim": "For every i choose t'_i with t_i·t'_i = w^x.",
+   "lines": [
+    101,
+    102
+   ],
+   "lean": "  choose t' ht using fun i ↦ by simpa using show t i ∣ (P.1 * T.w ^ x • P.2) i i from (dvd_sum\n    fun ⟨y, β⟩ _ ↦ by grw [h0 i y 1 β, hm]; simp [-mulVec])",
+   "head_lines": [
+    101,
+    101
+   ],
+   "head_span": [
+    101,
+    3,
+    101,
+    45
+   ],
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "7.1",
+   "parent": "7",
+   "kind": "fact",
+   "claim": "t_i divides (P·w^x·P⁻¹)_{ii} = w^x: by h0 with γ = 1 each term w^{depth β}·(…) is divisible by t_i, and depth β ≤ x (hm).",
+   "lines": [
+    101,
+    102
+   ],
+   "span": [
+    101,
+    45,
+    102,
+    60
+   ],
+   "lean": "show t i ∣ (P.1 * T.w ^ x • P.2) i i from (dvd_sum\n    fun ⟨y, β⟩ _ ↦ by grw [h0 i y 1 β, hm]; simp [-mulVec])",
+   "typed_fact": "t i ∣ (P.1 * T.w ^ x • P.2) i i",
+   "uses": [
+    {
+     "step": "6"
+    }
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "witness",
+   "claim": "Take Q = U_{·,ι}, d = D, R = (U⁻¹)_{ι,·}: (i) is e reversed and (iii) is the corresponding block of U⁻¹U = 1; (ii) and (iv) remain.",
+   "lines": [
+    103,
+    104
+   ],
+   "lean": "  refine ⟨_, _, U.2.submatrix _ id, e.symm, ?_, by\n    simpa [← submatrix_mul] using submatrix_one_embedding _, fun j _ _ _ l hl β ⟨i, h⟩ ↦ ?_⟩",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "4"
+    }
+   ],
+   "ambient_uses": [
+    "Matrix.submatrix_mul",
+    "Matrix.submatrix_one_embedding"
+   ]
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "computation",
+   "claim": "(ii): det D is a unit times Π_i t_i.",
+   "lines": [
+    105,
+    105
+   ],
+   "lean": "  simp [-finrank_pi_fintype, -prod_prod_type]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "Each t_i divides w^{m_i}, m_i = #{τ < x : t_i ∤ w^τ}: as t_i ∣ w^τ implies t_i ∣ w^{τ+1}, the τ < x with t_i ∤ w^τ are the first m_i of them, and t_i ∣ w^x (7); so Π_i t_i divides w^{Σ_i m_i}. (m_i counts these initial failures; it need not be the valuation of t_i.)",
+   "lines": [
+    106,
+    108
+   ],
+   "lean": "  grw [prod_dvd_prod_of_dvd _ (T.w ^ #{τ ∈ range x | ¬t · ∣ T.w ^ τ}) fun i _ ↦ by\n    set m := #_\n    grind [@card_le_card _ (range (m + 1))]]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "7"
+    }
+   ],
+   "ambient_uses": [
+    "Finset.prod_dvd_prod_of_dvd",
+    "Finset.card_le_card"
+   ]
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Double counting: Σ_i #{τ < x : t_i ∤ w^τ} = Σ_{τ<x} #{i : t_i ∤ w^τ}.",
+   "lines": [
+    109,
+    109
+   ],
+   "lean": "  erw [prod_pow_eq_pow_sum, sum_card_bipartiteAbove_eq_sum_card_bipartiteBelow]",
+   "typed_fact": null,
+   "uses": [],
+   "ambient_uses": [
+    "Finset.prod_pow_eq_pow_sum",
+    "Finset.sum_card_bipartiteAbove_eq_sum_card_bipartiteBelow"
+   ]
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "#{i : t_i ∤ w^τ} ≤ dim(X → deepForms (T mod 𝔪) k n r τ): card_le_finrank_translatesIn for the columns i of P⁻¹ (P·P⁻¹ = 1); their blocks lie in translatesIn T n 0 𝔪 {depth < τ}, since by h0 the entries w^{depth β}(ρ(γ)…)_β are divisible by t_i, which does not divide w^τ, w^{depth β} with depth β < τ.",
+   "lines": [
+    110,
+    111
+   ],
+   "lean": "  gcongr; exact T.card_le_finrank_translatesIn P.2 P.1 (by simp [one_apply]) fun i hi y γ _ β hβ e ↦\n    (mem_filter.1 hi).2 ((e.dvd_mul_right.1 (h0 ..)).trans (pow_dvd_pow _ hβ.le))",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "6"
+    },
+    {
+     "decl": "TwistingData.card_le_finrank_translatesIn"
+    },
+    {
+     "decl": "TwistingData.deepForms"
+    }
+   ]
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "fact",
+   "claim": "(iv): hφ: J·(P⁻¹·diag(t')·K⁻¹·j) = U_ι·K·diag(t)·diag(t')·K⁻¹·j = w^x·(Q·j).",
+   "lines": [
+    113,
+    113
+   ],
+   "lean": "  have hφ := congr($e *ᵥ P.2 *ᵥ diagonal t' *ᵥ K.2 *ᵥ j)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "step": "5"
+    },
+    {
+     "step": "7"
+    }
+   ]
+  },
+  {
+   "id": "14",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Simplify hφ with t_i·t'_i = w^x.",
+   "lines": [
+    114,
+    114
+   ],
+   "lean": "  simp [← mul_assoc (diagonal t), ← ht, ← smul_one_eq_diagonal] at hφ",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "7"
+    },
+    {
+     "step": "13"
+    }
+   ]
+  },
+  {
+   "id": "15",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "The goal (ρ(l)·(Q·j)(e,·))_β ∈ w^c·O for l in the Levi subgroup and β with excess > h at the letter i: multiply by w^x and use hφ and hJ; it becomes w^{x+c} ∣ w^{depth β}·(ρ(l·g(e))·F)_β for the vector F = (P⁻¹diag(t')K⁻¹j)(s(e), ·), up to a commutation of ρ(l) with the depth diagonal (a goal).",
+   "lines": [
+    115,
+    117
+   ],
+   "lean": "  rw [mem_span_singleton, ← mul_dvd_mul_iff_left (pow_ne_zero x T.w_ne_zero), ← pow_add, ←\n    smul_eq_mul, ← Pi.smul_apply, ← mulVec_smul, ← Pi.smul_comp, ← hφ, ← mulVec_mulVec, hJ,\n    mulVec_mulVec, Commute.left_comm, ← map_mul, ← mulVec_mulVec, mulVec_diagonal]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "step": "13"
+    },
+    {
+     "decl": "TwistingData.w_ne_zero"
+    }
+   ],
+   "ambient_uses": [
+    "Submodule.mem_span_singleton",
+    "mul_dvd_mul_iff_left"
+   ]
+  },
+  {
+   "id": "16",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Name F that vector.",
+   "lines": [
+    119,
+    119
+   ],
+   "lean": "  set F := _ ∘ _",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "17",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let ω(y) = deepIndicator T r y − excessWeight T i a r y / 2.",
+   "lines": [
+    120,
+    120
+   ],
+   "lean": "  let ω y := T.deepIndicator r y - T.excessWeight i a r y / 2",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "18",
+   "parent": null,
+   "kind": "setup",
+   "claim": "For a family γ let B_γ(l) say: w^l ∤ (ρ(g)F)_γ for some g ∈ GL_k(W), or ⌈x − ω·γ⌉₊ < l. B_γ(0) fails and B_γ(⌈x − ω·γ⌉₊ + 1) holds (with g = 1), so the successor lemma gives an l with ¬B_γ(l) and B_γ(l + 1). Choose such an l(γ) for every γ: L says ¬B_γ(l(γ)) — w^{l(γ)} divides every translated coefficient (ρ(g)F)_γ, and l(γ) ≤ ⌈x − ω·γ⌉₊ — and G says B_γ(l(γ) + 1) with the witness g(γ): w^{l(γ)+1} ∤ (ρ(g(γ))F)_γ, or ⌈x − ω·γ⌉₊ < l(γ) + 1. (l(γ) is not claimed to be least with any property: the failure is at w^{l(γ)+1}.)",
+   "lines": [
+    121,
+    122
+   ],
+   "lean": "  choose l L g G using fun γ ↦ @Nat.exists_not_and_succ_of_not_zero_of_exists (fun l ↦ ∃ g, ¬T.w ^\n    l ∣ (T.letterRep n g *ᵥ F) γ ∨ ⌈x - (exponentOf γ).weight ω⌉₊ < l) (by simp) ⟨_, 1, .inr .refl⟩",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "16"
+    },
+    {
+     "step": "17"
+    }
+   ],
+   "ambient_uses": [
+    "Nat.exists_not_and_succ_of_not_zero_of_exists"
+   ]
+  },
+  {
+   "id": "19",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Choose γ minimising l(γ) + ω·γ; then (H) w^{⌈l(γ) + ω·γ − ω·δ⌉₊} divides (ρ(g)F)_δ for all δ and g: by minimality ⌈l(γ) + ω·γ − ω·δ⌉₊ ≤ l(δ), and w^{l(δ)} divides every translated coefficient at δ (L).",
+   "lines": [
+    123,
+    125
+   ],
+   "lean": "  let ⟨γ, H⟩ := (@Finite.exists_min _ _ _ ⟨β⟩ _ fun γ ↦\n    l γ + (exponentOf γ).weight ω).imp fun _ M g δ ↦\n    (pow_dvd_pow _ (Nat.ceil_le.2 (sub_le_iff_le_add.2 (M δ)))).trans (by_contra (L δ ⟨g, .inl ·⟩))",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "18"
+    }
+   ],
+   "ambient_uses": [
+    "Finite.exists_min",
+    "Nat.ceil_le"
+   ]
+  },
+  {
+   "id": "20",
+   "parent": null,
+   "kind": "fact",
+   "claim": "From G at γ: either w^{l(γ)+1} ∤ (ρ(g(γ))F)_γ, and then (a) x ≤ l(γ) + depth(γ), equality allowed — otherwise depth(γ) + l(γ) + 1 ≤ x, and hf with z = w^x (J·φ = w^x·(Q·j) by hφ) would give w^{l(γ)+1} ∣ (ρ(g(γ))F)_γ after cancelling w^{depth γ} — and (b) the excess of γ at the letter i is ≤ 0, by the root lemma at the letter i with a ≠ r, the constant Levi labelling τ = 0 (its Levi subgroup is all of GL_k(W), and hτ is rfl), the weights ω and the adic order l = l(γ) (the argument written 0 in the call is the labelling, not the order), for f = polyOfCoeffs(ρ(g(γ))F): every translate of f lies in the w-adic Gauss filtration at l(γ) + ω·γ by H, w^{l(γ)+1} does not divide the coefficient of f at γ (the case hypothesis, the root lemma's h0), and hc comes from excessWeight_mem_Icc; or ⌈x − ω·γ⌉₊ < l(γ) + 1.",
+   "lines": [
+    126,
+    131
+   ],
+   "lean": "  have := (G γ).imp_left fun hg ↦ And.intro (fun d : _ ≤ x ↦ hg (by\n    grw [← mul_dvd_mul_iff_left (pow_ne_zero _ T.w_ne_zero), ← @hf (_ ^ x), ← pow_add, ← d]\n    simp [hφ, -mulVec])) (T.root_lemma i ha.ne 0 ω _ (f := polyOfCoeffs (T.letterRep n (g γ) *ᵥ F))\n    (fun g _ ↦ by simpa [↓polyAction_polyOfCoeffs, -mulVec] using\n    (_root_.sum_mem fun _ _ ↦ monomial_mem_gaussFiltration (H ..)))\n    (by simpa [coeff_sum]) rfl (by simp [ω, deepIndicator]; grind [excessWeight_mem_Icc]))",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "step": "13"
+    },
+    {
+     "step": "17"
+    },
+    {
+     "step": "18"
+    },
+    {
+     "step": "19"
+    },
+    {
+     "decl": "TwistingData.root_lemma"
+    },
+    {
+     "decl": "TwistingData.polyAction_polyOfCoeffs"
+    },
+    {
+     "decl": "monomial_mem_gaussFiltration"
+    },
+    {
+     "decl": "TwistingData.excessWeight_mem_Icc"
+    },
+    {
+     "decl": "TwistingData.deepIndicator"
+    },
+    {
+     "decl": "TwistingData.w_ne_zero"
+    }
+   ]
+  },
+  {
+   "id": "21",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "By H at β (for the translate in question) it suffices that x + c ≤ depth(β) + ⌈l(γ) + ω·γ − ω·β⌉₊.",
+   "lines": [
+    132,
+    132
+   ],
+   "lean": "  grw [← H, ← pow_add, pow_dvd_pow]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "19"
+    }
+   ]
+  },
+  {
+   "id": "22",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Unfold ω, depth and the weights as sums.",
+   "lines": [
+    133,
+    133
+   ],
+   "lean": "  simp [← add_assoc, ω, depth, Finsupp.weight_eq_sum, mul_sub, mul_div, ← sum_div] at this h ⊢",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "17"
+    },
+    {
+     "decl": "TwistingData.depth"
+    }
+   ]
+  },
+  {
+   "id": "23",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "In both cases of 20, x ≤ l(γ) + ω·γ: in the first, ω·γ = depth(γ) − excess_i(γ)/2 ≥ depth(γ) (excess_i(γ) ≤ 0) and x ≤ l(γ) + depth(γ); in the second, ⌈x − ω·γ⌉₊ ≤ l(γ). Linear arithmetic with this, the excess of β > h ≥ 2c (hl, h) and the ceilings concludes.",
+   "lines": [
+    134,
+    134
+   ],
+   "lean": "  rify at *; grind [Nat.le_ceil]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "20"
+    }
+   ],
+   "ambient_uses": [
+    "Nat.le_ceil"
+   ]
+  },
+  {
+   "id": "24",
+   "parent": null,
+   "kind": "computation",
+   "claim": "The commutation goal: ρ(l) commutes with the depth diagonal letter by letter (diagonal_pow_depth).",
+   "lines": [
+    135,
+    135
+   ],
+   "lean": "  simp [commute_iff_eq, letterRep, diagonal_pow_depth]; congr! 3",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "TwistingData.diagonal_pow_depth"
+    },
+    {
+     "decl": "TwistingData.letterRep"
+    }
+   ]
+  },
+  {
+   "id": "25",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Entrywise: l and l⁻¹ are block diagonal for twoBlock k r (hl), so letterMatrix of l preserves the deep and non-deep variables.",
+   "lines": [
+    136,
+    137
+   ],
+   "lean": "  ext; simp [letterMatrix, -coe_units_inv]; clear * - hl; grind [hl _, inv_mem hl _,\n    transpose_apply]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "TwistingData.letterMatrix"
+    }
+   ]
+  }
+ ]
+}

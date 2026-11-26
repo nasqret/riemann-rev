@@ -1,0 +1,496 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Filling.BlockBound:232:7",
+ "summary": "Rewrite the sum over congruent near pairs as a sum over tuples (codimension i, label t, class c, subspace T = commonLink, terms q, p); for codimension m bound the p-sum and the q-sum by tsum_invPowWeight_le_of_codim_le (codimensions ≤ m+ϱ+1 and m), the divisibility hypotheses coming from lattice inclusions given by the links, and the sum over classes and subspaces by sum_latticeDisc_inv_le; against countWeight(m) this gives 2^{−m}τ², summing to 2τ².",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Use the size facts; write the sum through the fibres of the map from tuples (i, t, c, T, q, p) — q a labelled term, T a subspace with dim T + i = k, p a labelled term congruent to q with commonLink = T — to (c, c', γ, γ'); it suffices to bound each pairWeight by its fibre sum and the total over tuples.",
+   "lines": [
+    234,
+    237
+   ],
+   "lean": "  apply S.of_size_bounds; intros; apply ((tsum_fiberwise (fun (⟨i, t, c, T, q, p⟩ : Σ i t c, Σ (T :\n    {T : Submodule E (𝔰.κ → E) // finrank E T + i = 𝔰.k}) (q : ofPred (S.IsLabelledTerm j c t)),\n    {p | S.IsLabelledTerm j c t p ∧ S.CongruentTerms c p.1 q.1.2 p.2 ∧ commonLink q.1.2 p.2 = T}) ↦\n    S.termWeight j i c q p T) fun ⟨_, _, c, _, q, p⟩ ↦ (c, p.1.1, q.1.2, p.1.2)).trans_le ?_).trans'",
+   "uses": [
+    {
+     "decl": "Filling.of_size_bounds"
+    },
+    {
+     "decl": "Filling.pairWeight"
+    },
+    {
+     "decl": "Filling.termWeight"
+    }
+   ],
+   "ambient_uses": [
+    "tsum_fiberwise"
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Each pairWeight is at most its fibre sum: when it is nonzero, (γ, γ') come from the tuple with i = codim of commonLink, T = commonLink(γ, γ').",
+   "lines": [
+    238,
+    241
+   ],
+   "lean": "  · simp -iota [pairWeight]; gcongr; split_ifs with h; have ⟨h@⟨s, o, o'⟩, m, m'⟩ := h\n    exact .trans (by rfl) (ENNReal.le_tsum ⟨⟨_, _, _, ⟨commonLink .., by simp [(finrank_le\n      _).trans]⟩, ⟨(_, _), m, s, o, rfl⟩, (_, _), ⟨m', s, o', rfl⟩, h, rfl⟩, rfl⟩)\n    simp",
+   "head_lines": [
+    238,
+    238
+   ]
+  },
+  {
+   "id": "2.1",
+   "parent": "2",
+   "kind": "deduction",
+   "claim": "The tuple exists and its term is the pairWeight.",
+   "lines": [
+    239,
+    240
+   ],
+   "lean": "    exact .trans (by rfl) (ENNReal.le_tsum ⟨⟨_, _, _, ⟨commonLink .., by simp [(finrank_le\n      _).trans]⟩, ⟨(_, _), m, s, o, rfl⟩, (_, _), ⟨m', s, o', rfl⟩, h, rfl⟩, rfl⟩)"
+  },
+  {
+   "id": "2.2",
+   "parent": "2",
+   "kind": "deduction",
+   "claim": "The other case is 0.",
+   "lines": [
+    241,
+    241
+   ],
+   "lean": "    simp"
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Unfold the sum over the sigma type and termWeight.",
+   "lines": [
+    242,
+    242
+   ],
+   "lean": "  simp [ENNReal.tsum_sigma', termWeight]"
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "It suffices to show that the tuples of codimension m contribute at most 2^{−m}τ² (then Σ_m 2^{−m}τ² = 2τ²).",
+   "lines": [
+    243,
+    243
+   ],
+   "lean": "  grw [ENNReal.tsum_le_tsum (g := (.ofReal <| 2⁻¹ ^ · * S.tailScale ^ 2)) fun m ↦ ?_]"
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Simplify.",
+   "lines": [
+    244,
+    244
+   ],
+   "lean": "  simp [-inv_pow]"
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Bound the p-sum by tsum_invPowWeight_le_of_codim_le with codimension bound m+ϱ+1 and the subspace ?T, and the q-sum by the same lemma with codimension m, the index divisibility for q obtained from the chain relIndex ≤ … (submoduleIndex_gIdele_smul and the lattice inclusion colLattice ≤ …).",
+   "lines": [
+    245,
+    250
+   ],
+   "lean": "  grw [tsum_invPowWeight_le_of_codim_le (m + 𝔰.ϱ + 1) (by exact inf_le_left) ?T ?A ?C, ENNReal.tsum_mul_right.le,\n    tsum_invPowWeight_le_of_codim_le m (by rfl) _ (by exact fun p h ↦ (relIndex_dvd_of_le_left _ inf_le_left).trans ((\n                        relIndex_inf_mul_relIndex _ (toAddSubgroup _) _).symm.dvd.trans (mul_dvd_mul ((submoduleIndex_dvd_of_le\n                        (K' := _ ⊓ _) .id le_rfl (by simp)).trans ((submoduleIndex_gIdele_smul (one_le_xRowsIndex_and_saturationIndex h.2.choose_spec.1 h.1.2).1\n                        (colLattice_le (col_mem_colLattice ·.1))).dvd.trans (submoduleIndex_dvd_of_le _ (fun | _, ⟨v, h, rfl⟩ => ⟨_, ⟨_, h, rfl⟩,\n                                                  by simp⟩) le_sup_left))) dvd_rfl))) (by exact a.2.ge)]",
+   "uses": [
+    {
+     "decl": "Filling.tsum_invPowWeight_le_of_codim_le"
+    },
+    {
+     "decl": "Filling.submoduleIndex_gIdele_smul"
+    },
+    {
+     "decl": "Filling.one_le_xRowsIndex_and_saturationIndex"
+    },
+    {
+     "decl": "Filling.submoduleIndex_dvd_of_le"
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Choose ?T = T ∩ ker(frameMiddle(q)ᴴ restricted to its first rows).",
+   "lines": [
+    251,
+    251
+   ],
+   "lean": "  case T T => exact T.1 ⊓ (frameMiddle a.1.2.1).toRows₁ᴴ.mulVecLin.ker"
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Write the codimension condition through the kernel of the restricted map.",
+   "lines": [
+    252,
+    252
+   ],
+   "lean": "  case' C T => rw [← map_comap_subtype, ← LinearMap.ker_domRestrict]"
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Codimension: k ≤ dim(T ∩ ker) + m + ϱ + 1 by rank–nullity (the map goes to a space of dimension ≤ ϱ + 1).",
+   "lines": [
+    253,
+    255
+   ],
+   "lean": "  · set N := (mulVecLin _).domRestrict T.1\n    obtain ⟨e : _ = _⟩ := T.2, N.finrank_range_add_finrank_ker, N.range.finrank_le\n    simp_all [SubmoduleElem]; omega",
+   "head_lines": [
+    253,
+    253
+   ]
+  },
+  {
+   "id": "9.1",
+   "parent": "9",
+   "kind": "deduction",
+   "claim": "Rank–nullity for the restricted map; dim T + m = k.",
+   "lines": [
+    254,
+    254
+   ],
+   "lean": "    obtain ⟨e : _ = _⟩ := T.2, N.finrank_range_add_finrank_ker, N.range.finrank_le"
+  },
+  {
+   "id": "9.2",
+   "parent": "9",
+   "kind": "deduction",
+   "claim": "Linear arithmetic.",
+   "lines": [
+    255,
+    255
+   ],
+   "lean": "    simp_all [SubmoduleElem]; omega"
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Divisibility for the p-sum: the index frameValueIndex divides the index of the lattice spanned by the columns of (frameImage p)ᴴ·splitGram (a chain of inclusions), reduced to a lattice inclusion (?_).",
+   "lines": [
+    256,
+    261
+   ],
+   "lean": "  case' A c _ T => refine fun y ⟨_, ⟨s, ⟨k, rk, ek⟩, k', rk', ek'⟩, f⟩ ↦\n    submoduleIndex_dvd_of_le (S.gIdele • ((frameImage (S.termElem c y).1.1)ᴴ *\n    (S.latMiddle (𝔸f E)).splitGram).mulVecLin) (colLattice_le (Sum.rec (⟨_, col_mem_colLattice ·, by\n    ext1; simp [frameGram, splitGram, mulVec_eq_sum, mul_apply, Units.smul_def]⟩) fun a ↦\n    ⟨0, by simp, congrArg _ (funext fun i ↦ .trans (by cases i using Fin.lastCases <;> simp)\n    (congrFun₂ (termElem ..).2 ..).symm)⟩)) (le_sup_of_le_left ?_)"
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The lattice inclusion, from the links.",
+   "lines": [
+    262,
+    292
+   ],
+   "lean": "  · set γ := a.1.2; set L := T.1 ⊓ _; obtain ⟨_, ⟨hb, -⟩, p, a, -, hp, rfl⟩ := sublatticeBasis _ L\n    rintro _ ⟨r, hy, rfl⟩\n    let P : Matrix 𝔰.BesselIndex .. := fromRows 0 ((p.fromRows 0).fromRows 0)\n    have φ : (frameImage γ.1.1)ᴴ * S.ratGram * P = 0 := .trans (by simp [P, splitGram, entrywise,\n      middleGram]) (mul_eq_zero_of_range_le_ker (hp.le.trans inf_le_right))\n    obtain ⟨w, hw⟩ := exists_mul_eq_of_col_mem_range (x := isotropicFramePair y.2) (y :=\n      y.2.1.1 * (γ⁻¹.1.1 * P) - P) fun i ↦ by\n      obtain ⟨z, ⟨⟨h, h'⟩, hq⟩, e⟩ := f.ge (hp.le ⟨_, p.mulVec_single_one i⟩).1\n      obtain ⟨w, a, e'⟩ := congr(($(U.form_mul_inv_eq _) *ᵥ _) ∘ 𝔰.besselFrame).trans congr($φᵀ i),\n        mem_link.1 h'\n      rw [← mulVec_mulVec] at w; set u := γ⁻¹.1.1 *ᵥ _\n      simp [funext_iff, middleGram, splitGram, mulVec_eq_sum, Fin.forall_fin_succ'] at hq e w\n      have l := (link γ).sub_mem ⟨_, isotropicFramePair_mulVec_eq_zero_iff.2 ⟨fun _ ↦ rfl, w.1⟩,\n        rfl⟩ h\n      have f := by simpa [funext_iff] using\n        eq_zero_of_ratMiddle_form_eq_zero (u ∘ .inr ∘ .inl - z ∘ .inr) (by simp [*]) (by\n        simpa [-Finset.sum_add_distrib, dot_mulVec_eq_sum_sum, u, P, *, ← neg_add,\n          -neg_add_rev] using mem_link_iff_orthogonal.1 l _ l)\n      use (y.2.1.1 *ᵥ (a ⊕ᵥ (z ∘ .inr ⊕ᵥ 0))) ∘ .inl ⊕ᵥ (u ∘ .inl - a); show _ = _ *ᵥ u - _\n      simp [funext_iff, mulVec_eq_sum, sub_mul, P, w.1] at e' ⊢; grind-linarith only\n    refine ⟨_, ⟨((S.principalLevel_eq_unitaryLevel.le ⟨k' * k⁻¹, by simp [*], rfl⟩).2.mul (N :=\n      S.classCoord c * (finAdeleMat P * a.1)) (by simpa [IsIntMatrix, P,\n      classCoord_eq_fromBlocks] using hb)).neg.mulVec hy, -(S.gIdele⁻¹ • finAdeleMat w * a.1) *ᵥ r,\n      ?_⟩, ?_⟩ <;> simp [-sub_mulVec, ← smul_mulVec, -coe_units_inv] <;> congr\n    simpa [↓← classCoord_mul_isotropicFramePair, ek, ek', coe_termPosition, Matrix.map_sub,\n      classCoord, ← (classBasis _).1.mul_assoc, -coe_units_inv]\n      using! congr(S.classCoord c * finAdeleMat ($hw) * a.1)\n    simp [← ek', by simpa [↓← frameImage_mul] using congr($((U.gram_invariant (k' * k⁻¹).1\n      (frameImage k) (S.classCoord c * finAdeleMat P)).trans (by erw [ek, frameImage_termPosition,\n      classCoord_gram, φ])) * a.1)]\n    simp [entrywise, P, classCoord_eq_fromBlocks, splitGram]",
+   "head_lines": [
+    262,
+    262
+   ]
+  },
+  {
+   "id": "11.1",
+   "parent": "11",
+   "kind": "deduction",
+   "claim": "Take a vector r of the lattice (hy).",
+   "lines": [
+    263,
+    263
+   ],
+   "lean": "    rintro _ ⟨r, hy, rfl⟩"
+  },
+  {
+   "id": "11.2",
+   "parent": "11",
+   "kind": "deduction",
+   "claim": "P = the inclusion of the basis p of L = T ∩ ker into the middle coordinates.",
+   "lines": [
+    264,
+    264
+   ],
+   "lean": "    let P : Matrix 𝔰.BesselIndex .. := fromRows 0 ((p.fromRows 0).fromRows 0)"
+  },
+  {
+   "id": "11.3",
+   "parent": "11",
+   "kind": "deduction",
+   "claim": "(γf)ᴴ·J·P = 0: the columns of P lie in the kernel (L ⊆ ker).",
+   "lines": [
+    265,
+    266
+   ],
+   "lean": "    have φ : (frameImage γ.1.1)ᴴ * S.ratGram * P = 0 := .trans (by simp [P, splitGram, entrywise,\n      middleGram]) (mul_eq_zero_of_range_le_ker (hp.le.trans inf_le_right))",
+   "typed_fact": "(frameImage γ.1.1)ᴴ * S.ratGram * P = 0"
+  },
+  {
+   "id": "11.4",
+   "parent": "11",
+   "kind": "deduction",
+   "claim": "There is w with (isotropic frame pair of y)·w = y·γ⁻¹·P − P (every column lies in the range):",
+   "lines": [
+    267,
+    281
+   ],
+   "lean": "    obtain ⟨w, hw⟩ := exists_mul_eq_of_col_mem_range (x := isotropicFramePair y.2) (y :=\n      y.2.1.1 * (γ⁻¹.1.1 * P) - P) fun i ↦ by\n      obtain ⟨z, ⟨⟨h, h'⟩, hq⟩, e⟩ := f.ge (hp.le ⟨_, p.mulVec_single_one i⟩).1\n      obtain ⟨w, a, e'⟩ := congr(($(U.form_mul_inv_eq _) *ᵥ _) ∘ 𝔰.besselFrame).trans congr($φᵀ i),\n        mem_link.1 h'\n      rw [← mulVec_mulVec] at w; set u := γ⁻¹.1.1 *ᵥ _\n      simp [funext_iff, middleGram, splitGram, mulVec_eq_sum, Fin.forall_fin_succ'] at hq e w\n      have l := (link γ).sub_mem ⟨_, isotropicFramePair_mulVec_eq_zero_iff.2 ⟨fun _ ↦ rfl, w.1⟩,\n        rfl⟩ h\n      have f := by simpa [funext_iff] using\n        eq_zero_of_ratMiddle_form_eq_zero (u ∘ .inr ∘ .inl - z ∘ .inr) (by simp [*]) (by\n        simpa [-Finset.sum_add_distrib, dot_mulVec_eq_sum_sum, u, P, *, ← neg_add,\n          -neg_add_rev] using mem_link_iff_orthogonal.1 l _ l)\n      use (y.2.1.1 *ᵥ (a ⊕ᵥ (z ∘ .inr ⊕ᵥ 0))) ∘ .inl ⊕ᵥ (u ∘ .inl - a); show _ = _ *ᵥ u - _\n      simp [funext_iff, mulVec_eq_sum, sub_mul, P, w.1] at e' ⊢; grind-linarith only",
+   "head_lines": [
+    267,
+    268
+   ],
+   "uses": [
+    {
+     "decl": "Filling.exists_mul_eq_of_col_mem_range"
+    }
+   ]
+  },
+  {
+   "id": "11.4.1",
+   "parent": "11.4",
+   "kind": "deduction",
+   "claim": "For column i: the basis vector lies in the common link, giving z with (z, ·) in link(γ) ∩ link(γ') and orthogonal to z.",
+   "lines": [
+    269,
+    269
+   ],
+   "lean": "      obtain ⟨z, ⟨⟨h, h'⟩, hq⟩, e⟩ := f.ge (hp.le ⟨_, p.mulVec_single_one i⟩).1"
+  },
+  {
+   "id": "11.4.2",
+   "parent": "11.4",
+   "kind": "deduction",
+   "claim": "From the isometry property and step 11.3, w with the frame relations, and membership in the link.",
+   "lines": [
+    270,
+    271
+   ],
+   "lean": "      obtain ⟨w, a, e'⟩ := congr(($(U.form_mul_inv_eq _) *ᵥ _) ∘ 𝔰.besselFrame).trans congr($φᵀ i),\n        mem_link.1 h'"
+  },
+  {
+   "id": "11.4.3",
+   "parent": "11.4",
+   "kind": "deduction",
+   "claim": "Rewrite; u = γ⁻¹·(…).",
+   "lines": [
+    272,
+    272
+   ],
+   "lean": "      rw [← mulVec_mulVec] at w; set u := γ⁻¹.1.1 *ᵥ _"
+  },
+  {
+   "id": "11.4.4",
+   "parent": "11.4",
+   "kind": "deduction",
+   "claim": "Expand the frame relations entrywise.",
+   "lines": [
+    273,
+    273
+   ],
+   "lean": "      simp [funext_iff, middleGram, splitGram, mulVec_eq_sum, Fin.forall_fin_succ'] at hq e w"
+  },
+  {
+   "id": "11.4.5",
+   "parent": "11.4",
+   "kind": "deduction",
+   "claim": "The difference lies in link(γ).",
+   "lines": [
+    274,
+    275
+   ],
+   "lean": "      have l := (link γ).sub_mem ⟨_, isotropicFramePair_mulVec_eq_zero_iff.2 ⟨fun _ ↦ rfl, w.1⟩,\n        rfl⟩ h"
+  },
+  {
+   "id": "11.4.6",
+   "parent": "11.4",
+   "kind": "deduction",
+   "claim": "The X₀-part of u minus z vanishes: it has z-coordinate 0 and norm 0 (the link is Lagrangian, mem_link_iff_orthogonal; eq_zero_of_ratMiddle_form_eq_zero).",
+   "lines": [
+    276,
+    279
+   ],
+   "lean": "      have f := by simpa [funext_iff] using\n        eq_zero_of_ratMiddle_form_eq_zero (u ∘ .inr ∘ .inl - z ∘ .inr) (by simp [*]) (by\n        simpa [-Finset.sum_add_distrib, dot_mulVec_eq_sum_sum, u, P, *, ← neg_add,\n          -neg_add_rev] using mem_link_iff_orthogonal.1 l _ l)",
+   "uses": [
+    {
+     "decl": "mem_link_iff_orthogonal"
+    },
+    {
+     "decl": "Filling.eq_zero_of_ratMiddle_form_eq_zero"
+    }
+   ]
+  },
+  {
+   "id": "11.4.7",
+   "parent": "11.4",
+   "kind": "deduction",
+   "claim": "Exhibit the preimage vector",
+   "lines": [
+    280,
+    280
+   ],
+   "span": [
+    280,
+    7,
+    280,
+    72
+   ],
+   "lean": "use (y.2.1.1 *ᵥ (a ⊕ᵥ (z ∘ .inr ⊕ᵥ 0))) ∘ .inl ⊕ᵥ (u ∘ .inl - a);"
+  },
+  {
+   "id": "11.4.8",
+   "parent": "11.4",
+   "kind": "deduction",
+   "claim": "and reduce to the identity of vectors,",
+   "lines": [
+    280,
+    280
+   ],
+   "span": [
+    280,
+    73,
+    280,
+    92
+   ],
+   "lean": "show _ = _ *ᵥ u - _",
+   "typed_fact": "_ = _ *ᵥ u - _"
+  },
+  {
+   "id": "11.4.9",
+   "parent": "11.4",
+   "kind": "deduction",
+   "claim": "which holds entrywise (linear arithmetic).",
+   "lines": [
+    281,
+    281
+   ],
+   "lean": "      simp [funext_iff, mulVec_eq_sum, sub_mul, P, w.1] at e' ⊢; grind-linarith only"
+  },
+  {
+   "id": "11.5",
+   "parent": "11",
+   "kind": "deduction",
+   "claim": "The required element of the lattice: the integral matrix (k'k⁻¹ ∈ K(g)) applied to r, and the correction −(g⁻¹w a)r.",
+   "lines": [
+    282,
+    285
+   ],
+   "lean": "    refine ⟨_, ⟨((S.principalLevel_eq_unitaryLevel.le ⟨k' * k⁻¹, by simp [*], rfl⟩).2.mul (N :=\n      S.classCoord c * (finAdeleMat P * a.1)) (by simpa [IsIntMatrix, P,\n      classCoord_eq_fromBlocks] using hb)).neg.mulVec hy, -(S.gIdele⁻¹ • finAdeleMat w * a.1) *ᵥ r,\n      ?_⟩, ?_⟩ <;> simp [-sub_mulVec, ← smul_mulVec, -coe_units_inv] <;> congr"
+  },
+  {
+   "id": "11.6",
+   "parent": "11",
+   "kind": "deduction",
+   "claim": "First identity: from hw transported by classCoord(c).",
+   "lines": [
+    286,
+    288
+   ],
+   "lean": "    simpa [↓← classCoord_mul_isotropicFramePair, ek, ek', coe_termPosition, Matrix.map_sub,\n      classCoord, ← (classBasis _).1.mul_assoc, -coe_units_inv]\n      using! congr(S.classCoord c * finAdeleMat ($hw) * a.1)"
+  },
+  {
+   "id": "11.7",
+   "parent": "11",
+   "kind": "deduction",
+   "claim": "Second identity: the Gram invariance of k'k⁻¹ and step 11.3.",
+   "lines": [
+    289,
+    291
+   ],
+   "lean": "    simp [← ek', by simpa [↓← frameImage_mul] using congr($((U.gram_invariant (k' * k⁻¹).1\n      (frameImage k) (S.classCoord c * finAdeleMat P)).trans (by erw [ek, frameImage_termPosition,\n      classCoord_gram, φ])) * a.1)]"
+  },
+  {
+   "id": "11.8",
+   "parent": "11",
+   "kind": "deduction",
+   "claim": "Entrywise simplification.",
+   "lines": [
+    292,
+    292
+   ],
+   "lean": "    simp [entrywise, P, classCoord_eq_fromBlocks, splitGram]"
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Collect the remaining sum over classes and subspaces.",
+   "lines": [
+    293,
+    293
+   ],
+   "lean": "  conv_lhs => simp [ENat.card_eq_coe_natCard, ← Finset.sum_mul]"
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Σ_c Σ_T latticeDisc^{−(k+1)} ≤ #Classes·N^{−kf}·τ^{m+1} (sum_latticeDisc_inv_le).",
+   "lines": [
+    294,
+    294
+   ],
+   "lean": "  grw [sum_latticeDisc_inv_le, ← ofReal_natCast]",
+   "uses": [
+    {
+     "decl": "Filling.sum_latticeDisc_inv_le"
+    }
+   ]
+  },
+  {
+   "id": "14",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Real arithmetic: cancel #Classes and N^{−kf} against countWeight(m) = |S̄|#Classes N^{−kf}(2τ²)^m.",
+   "lines": [
+    295,
+    295
+   ],
+   "lean": "  simp (disch := positivity) only [mul_pow, ← ofReal_mul, ofReal_le_ofReal_iff, inv_pow, field]"
+  },
+  {
+   "id": "15",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Use b^{…} ≤ τ (pow_le_tailScale) for the remaining factor,",
+   "lines": [
+    296,
+    296
+   ],
+   "lean": "  rw [← pow_succ, sq S.tailScale, mul_pow]; nth_grw 3 [← pow_le_tailScale le_rfl]",
+   "uses": [
+    {
+     "decl": "Filling.pow_le_tailScale"
+    }
+   ]
+  },
+  {
+   "id": "16",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "and compare exponents.",
+   "lines": [
+    297,
+    297
+   ],
+   "lean": "  simp [← pow_mul, mul_assoc, ← pow_add]; gcongr; lia"
+  }
+ ]
+}

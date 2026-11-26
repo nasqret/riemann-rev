@@ -1,0 +1,143 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Selmer.DeterminantBound:111:7",
+ "summary": "Choose a basis ω of Z inside A, the operators G_p and scalars l_{p,k} with G_p(ω_k) = l_{p,k}·j(ω_k), and an integral point d making the linear forms Σ_p ιℓ(l_{p,k})·m·X_p large; the matrix (ιℓη_a(ω_k))·diag(Σ_p ιℓ(l_{p,k}) m d_p)·(ιℓP_{b,k})ᵀ is integral, so its determinant has norm ≤ 1, and the diagonal factors are ≥ e^{−γ}.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Replace Z by span A. Choose ω_1, …, ω_N ∈ A linearly independent with span = span A (N = dim Z).",
+   "lines": [
+    116,
+    116
+   ],
+   "lean": "  subst Z; let ⟨ω, hω, e, i⟩ := exists_fun_fin_finrank_span_eq ℂ A",
+   "ambient_uses": [
+    "exists_fun_fin_finrank_span_eq"
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "setup",
+   "claim": "For each basis vector ω_p (nonzero, in A) choose the operator G_p of the hypothesis, with property (ii) (any l with G_p(ω_p) = l·j(ω_p) has e^{−γ} ≤ ‖ιℓ(l)m‖) and (iii); by (i) choose l_{p,k} ∈ ℂ with G_p(ω_k) = l_{p,k}·j(ω_k).",
+   "lines": [
+    117,
+    117
+   ],
+   "lean": "  choose G l hl h using (h _ (hω _) <| i.ne_zero ·); choose l hG using (l · _ <| hω ·)"
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "fact",
+   "claim": "For the N linear polynomials f_k = Σ_p ιℓ(l_{p,k})·m·X_p over ℚ̄_ℓ there is a point d with ‖d_p‖ ≤ 1 such that every coefficient c of f_k has |c| ≤ |f_k(d)| (for the norm of ℚ̄_ℓ).",
+   "lines": [
+    118,
+    118
+   ],
+   "lean": "  let ⟨d, hd⟩ := exists_val_coeff_le_val_eval NormedField.valuation (∑ p, (ιℓ ∘ l p) · • C m * X p)",
+   "uses": [
+    {
+     "decl": "exists_val_coeff_le_val_eval"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "fact",
+   "claim": "In particular (coefficient of X_k in f_k): ‖ιℓ(l_{k,k})·m‖ ≤ ‖Σ_p ιℓ(l_{p,k})·m·d_p‖ for every k.",
+   "lines": [
+    119,
+    119
+   ],
+   "lean": "  have hd k := by simpa [coeff_sum, ← norm_mul] using NNReal.coe_mono (hd k (.single k 1))",
+   "uses": [
+    {
+     "step": "3"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Write each x_b in the basis: x_b = Σ_k P_{b,k}·ω_k (x_b ∈ Z = span ω).",
+   "lines": [
+    120,
+    120
+   ],
+   "lean": "  choose P hP using by simpa [← e, mem_span_range_iff_exists_fun] using hx"
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "fact",
+   "claim": "The matrix M = (ιℓη_a(ω_k))_{a,k} · diag(Σ_p ιℓ(l_{p,k})·m·d_p) · ((ιℓP_{b,k})_{b,k})ᵀ has integral entries, hence ‖det M‖ ≤ 1: its (a, b) entry is Σ_p d_p·(m·ιℓ(η_a(w_{p,b}))) with w_{p,b} = Σ_k P_{b,k}·l_{p,k}·ω_k ∈ Z and j(w_{p,b}) = G_p(x_b), so each term is integral by (iii) and ‖d_p‖ ≤ 1.",
+   "lines": [
+    121,
+    125
+   ],
+   "lean": "  have t : ‖_‖ ≤ 1 := IsIntMatrix.det_mem (M := of (ιℓ ∘ η · ∘ ω) * diagonal\n    (fun k ↦ ∑ p, ιℓ (l p k) * (m * d p)) * (of P)ᵀ.map ιℓ) fun a b ↦ by\n    convert Subring.sum_mem _ (t := univ) fun p _ ↦ mul_mem (d p).2 (h p a b\n      (∑ k, P b k • l p k • ω k) (sum_mem (by bound)) (by simp [← hP, hG]))\n    simpa [mul_apply, diagonal, mul_sum, sum_mul] using sum_comm.trans (by ac_rfl)",
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "step": "3"
+    },
+    {
+     "step": "5"
+    },
+    {
+     "decl": "IsIntMatrix.det_mem"
+    }
+   ],
+   "typed_fact": "‖_‖ ≤ 1"
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "computation",
+   "claim": "det M = det(ιℓη_a(ω_k))·det(ιℓP)·∏_k Σ_p ιℓ(l_{p,k}) m d_p; each factor of the product has norm ≥ ‖ιℓ(l_{k,k})m‖ ≥ e^{−γ} (steps 4 and 2, as G_k(ω_k) = l_{k,k}·j(ω_k)).",
+   "lines": [
+    126,
+    126
+   ],
+   "lean": "  grw [det_mul_right_comm, det_mul, det_diagonal, norm_mul, norm_prod, ← hd, ← hl _ _ (hG ..)] at t",
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "step": "4"
+    },
+    {
+     "step": "6"
+    }
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Since (η_a(x_b))_{a,b} = (η_a(ω_k))·Pᵀ, ‖ιℓ det(η_a(x_b))‖·e^{−Nγ} ≤ 1, that is ‖ιℓ det(η_a(x_b))‖ ≤ e^{Nγ}.",
+   "lines": [
+    127,
+    127
+   ],
+   "lean": "  simpa [det_apply', ← hP, mul_apply, exp_neg, exp_nat_mul, field, mul_comm (P ..)] using t",
+   "uses": [
+    {
+     "step": "5"
+    },
+    {
+     "step": "7"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,691 @@
+% !TEX program = lualatex
+% ---------------------------------------------------------------------------------------------
+%  Readback note 15: A crude bound for a class number, and divisibility of indices of submodules
+%
+%  Build:  python3 tools/rb.py note <slug>
+%
+%  One unit of a Lean artifact, rewritten as ordinary mathematics. The prose is hand-written. Lean names,
+%  line ranges and counts come from data.tex; quoted Lean statements are copied from the artifact by the build.
+%
+%  Rules of the text: standard terminology; every symbol is explained where it first appears and listed again
+%  in the notation at the end; no letter has two meanings; a proof is complete or says what it takes for granted;
+%  Lean names appear only in the LEAN lines and in the concordance.
+%
+%  The signature rule (the build enforces it): a function, relation or predicate that the artifact defines is
+%  written only through its notation macro, which the build makes from the spec (`notation`) with one slot for
+%  each explicit argument of the Lean definition. No argument is fixed and dropped, also not "for brevity" and
+%  not for one section. Every argument and every hypothesis of a stated declaration stands inside its
+%  statement, or in a Setting that the statement cites by number; only implicit and instance arguments (the
+%  ambient objects) may stand in the conventions.
+% ---------------------------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\ifdefined\pdfvariable\pdfvariable suppressoptionalinfo \numexpr 1+2+4+8\relax\fi
+\usepackage[a4paper,hmargin=35mm,top=22mm,bottom=27mm,footskip=12mm,nohead]{geometry}
+
+\usepackage{fontspec}
+\directlua{
+  luaotfload.add_fallback("gfallback", {"STIXTwoMath-Regular.otf:mode=node;", "DejaVuSans.ttf:mode=node;"})
+  luaotfload.add_fallback("gmonofallback", {"DejaVuSansMono.ttf:mode=node;", "STIXTwoMath-Regular.otf:mode=node;"})
+}
+\setmainfont{NewCM10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookItalic,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldItalic,SmallCapsFont=*-Book,SmallCapsFeatures={Letters=SmallCaps},
+  RawFeature={fallback=gfallback}]
+\setsansfont{NewCMSans10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookOblique,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldOblique,RawFeature={fallback=gfallback}]
+\setmonofont{JetBrainsMono}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,Scale=MatchLowercase,
+  RawFeature={-calt;-liga;fallback=gmonofallback}]
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage[math-style=TeX]{unicode-math}
+\setmathfont{NewCMMath-Book.otf}
+\emergencystretch=2.5em\relax
+
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows.meta,positioning,backgrounds}
+\usepackage[protrusion=true,expansion=true]{microtype}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{multicol}
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+
+\definecolor{ink}{HTML}{0F172A}
+\definecolor{inksoft}{HTML}{475569}
+\definecolor{inkfaint}{HTML}{94A3B8}
+\definecolor{rulegrey}{HTML}{CBD5E1}
+\definecolor{arith}{HTML}{C2410C}
+\definecolor{est}{HTML}{7C3AED}
+\definecolor{ana}{HTML}{0891B2}
+\definecolor{ok}{HTML}{047857}
+\definecolor{leancol}{HTML}{3730A3}
+
+\title{A crude bound for a class number, and divisibility of indices of submodules}
+\author{grh-compact}
+\date{}
+
+% ------------------------------------------------------------------------------------- macros
+\newcommand{\leanfont}{\ttfamily\fontsize{8.6}{10.5}\selectfont\color{leancol}}
+\newcommand{\lean}[1]{\csname LN@#1\endcsname}
+\newcommand{\fillin}[1]{{\color{arith}\itshape[#1]}}  % a place of the template that is not written yet; the build reports every one that is left
+\newcommand{\leanquote}[1]{\csname LQ@#1\endcsname}
+\input{data.tex}
+
+\linespread{1.08}                       % 11 pt on 14.7 pt
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt plus 1.5pt minus 0.5pt}
+\setlength{\abovedisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\belowdisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\abovedisplayshortskip}{3pt plus 2pt}
+\setlength{\belowdisplayshortskip}{6pt plus 2pt minus 2pt}
+\emergencystretch=1.5em
+\clubpenalty=10000 \widowpenalty=10000 \displaywidowpenalty=10000
+\relpenalty=7000 \binoppenalty=9000
+\raggedbottom
+\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\sffamily\fontsize{7.6}{9}\selectfont\color{inkfaint}\thepage\,/\,\pageref*{LastPage}}
+\setlist{topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=4pt,leftmargin=2.1em,labelsep=0.55em}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\len}{\operatorname{len}}
+\newcommand{\cok}{\operatorname{cok}}
+\newcommand{\End}{\operatorname{End}}
+\newcommand{\Hom}{\operatorname{Hom}}
+\newcommand{\Gal}{\operatorname{Gal}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\kw}[1]{\emph{#1}}
+\newcommand{\m}[1]{\mbox{$#1$}}        % a short formula that must not be broken across lines
+\newcommand{\head}[1]{\par\addvspace{17pt plus 4pt minus 2pt}\Needspace{6\baselineskip}%
+  \noindent{\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\sect}[2]{\refstepcounter{section}\label{#2}\par\addvspace{19pt plus 4pt minus 2pt}\Needspace{7\baselineskip}%
+  \noindent\llap{{\fontsize{13.2}{16}\selectfont\bfseries\color{inkfaint}\thesection}\hspace{9pt}}%
+  {\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\subhead}[1]{\par\addvspace{9pt plus 2pt}\Needspace{4\baselineskip}\noindent\textbf{#1}\enspace\ignorespaces}
+% where a statement lives in the Lean archive
+\newcommand{\leantag}{{\sffamily\bfseries\fontsize{6.3}{8}\selectfont\color{leancol}\addfontfeatures{LetterSpace=7}LEAN}}
+\newcommand{\sep}{\unskip\nobreak\hspace{5pt}{\color{inkfaint}\textperiodcentered}\hspace{5pt plus 2pt}\ignorespaces}
+\newcommand{\leanline}[1]{\par\nopagebreak\vspace{-2.5pt}{\fontsize{8.9}{12.4}\selectfont\color{inksoft}\raggedright
+  \noindent\llap{\leantag\hspace{9pt}}#1\par}\vspace{1pt}}
+% a displayed statement in a tinted box: #1 colour, #2 text
+\newcommand{\statement}[2]{\par\addvspace{7pt}\begingroup\setlength{\fboxsep}{8.5pt}\setlength{\fboxrule}{0.6pt}%
+  \noindent\fcolorbox{#1!30!white}{#1!3!white}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{#2}}%
+  \endgroup\par\addvspace{7pt}}
+\newcommand{\nt}[2]{\par\noindent\hangindent=1.1em\hangafter=1 #1\enspace{\color{inksoft}#2}\par\vspace{1pt}}
+\newcommand{\legdot}[1]{\tikz[baseline=-0.62ex]\fill[#1] (0,0) circle (2.5pt);\hspace{3pt}}
+\newcommand{\crow}[4]{\csname CS@#1\endcsname & #2 & \textcolor{inksoft}{#3} & \textcolor{inksoft}{#4}\\}
+\newcommand{\leanquoteline}[2]{\par\noindent\hangindent=\dimexpr#1\fontdimen2\font+2.2em\relax\hangafter=1
+  \hspace*{#1\fontdimen2\font}#2}
+\newcommand{\quoted}[1]{\par\vspace{3pt}{\ttfamily\fontsize{7.5}{10.4}\selectfont\color{leancol}\raggedright
+  \setlength{\parskip}{0pt}\leanquote{#1}\par}\vspace{4pt}}
+\newcommand{\bx}[3]{{\sffamily\bfseries\fontsize{7.3}{9.2}\selectfont\color{#1!82!black}#2}\\[1.5pt]#3}
+\newcommand{\cs}[2]{\expandafter\newcommand\csname CS@#1\endcsname{#2}}
+
+% theorems
+\newtheoremstyle{plainx}{7pt plus 2pt}{7pt plus 2pt}{\itshape}{}{\bfseries}{.}{0.5em}{}
+\newtheoremstyle{uprightx}{7pt plus 2pt}{7pt plus 2pt}{}{}{\bfseries}{.}{0.5em}{}
+\theoremstyle{plainx}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{uprightx}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{setting}[theorem]{Setting}          % hypotheses shared by several statements; each of them cites it by number
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\renewcommand{\qedsymbol}{{\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.5pt}\fbox{\rule{0pt}{0.46em}\hspace{0.46em}}}}
+% what holds throughout the note: the ambient objects only (implicit and instance arguments), never a hypothesis
+\newenvironment{conventions}{\par\addvspace{5pt}\noindent\textbf{Conventions.}\enspace\ignorespaces}{\par\addvspace{3pt}}
+\makeatletter
+\renewenvironment{proof}[1][Proof]{\par\pushQED{\qed}\normalfont\topsep0pt\partopsep0pt
+  \trivlist\item[\hskip\labelsep\itshape #1.]\ignorespaces}{\popQED\endtrivlist\@endpefalse}
+\makeatother
+
+% where each declaration of the concordance is treated: \cs{key}{place}, the place naming a \label or a lettered item
+\cs{cardclassesle}{Theorem 1}
+\cs{ofdetdvd}{Theorem 2}
+\cs{IndexDvd}{Definition~\ref{d:index}}
+\cs{HasType}{Definition~\ref{d:type}}
+\cs{Kf}{Definition~\ref{d:classes}}
+\cs{StdClasses}{Definition~\ref{d:classes}}
+\cs{numInf}{Definition~\ref{d:classes}}
+\cs{sbc}{Definition~\ref{d:classes}}
+\cs{shortbasis}{Input 1}
+\cs{ratnear}{Input 2}
+\cs{enc}{Input 3}
+\cs{hermite}{Input 4}
+\cs{valtop}{Input 4}
+\cs{ofle}{Lemma~\ref{l:incl}}
+\cs{comap}{Lemma~\ref{l:comap}}
+\cs{trans}{Lemma~\ref{l:trans}}
+\cs{map}{Lemma~\ref{l:map}}
+\cs{sup}{Lemma~\ref{l:sup}}
+\cs{comp}{Lemma~\ref{l:comp}}
+\cs{prod}{Proposition~\ref{p:prod}}
+\newcommand{\cO}{\mathcal{O}}
+\newcommand{\cJ}{\mathcal{J}}
+\newcommand{\cS}{\mathcal{S}}
+\newcommand{\Af}{\mathbb{A}_{E,f}}
+\newcommand{\Oh}{\widehat{\mathcal{O}}_{E}}
+\newcommand{\UJ}{\mathrm{U}_{\mathcal{J}}}
+\newcommand{\GLJ}{\mathrm{GL}_{\mathcal{J}}}
+\newcommand{\MJ}{\mathrm{M}_{\mathcal{J}}}
+\newcommand{\fc}{\mathfrak{c}}
+\newcommand{\CC}{\mathbb{C}}
+
+\begin{document}
+\color{ink}
+
+{\raggedright
+{\sffamily\bfseries\fontsize{7.2}{9}\selectfont\color{leancol}\addfontfeatures{LetterSpace=8}READBACK NOTE 15\par}
+\vspace{5pt}
+{\fontsize{21.5}{25.5}\selectfont\bfseries A crude bound for a class number, and divisibility of indices of submodules\par}
+\vspace{5pt}
+{\fontsize{12.4}{16}\selectfont\itshape\color{inksoft} One unit of the Lean artifact \ArtifactName, read back into
+mathematics\par}}
+\vspace{8pt}
+{\color{rulegrey}\hrule height 0.6pt}
+\vspace{7pt}
+\thispagestyle{empty}
+
+\textbf{Summary.} The unit holds two pieces of bookkeeping that do not depend on each other. The first is an
+explicit, crude bound for the number of classes in the genus of the standard lattice of a definite hermitian
+space over a CM field: each class is recorded by two matrices of algebraic integers of bounded size, and such
+matrices are counted. The second is a way to say, over an arbitrary commutative ring, that the index of one
+submodule in another divides a given element: every finite family of the first is moved into the second by a
+square matrix whose determinant divides that element. The unit proves the calculus of this notion and a
+criterion by determinants over a valuation domain, which rests on the Hermite normal form. Both pieces serve
+Theorem~A of the write-up (short forms): the class number enters the sizes of the columns, and the index language
+is the one in which the losses of divisibility at single primes are stated.
+
+\statement{leancol}{\fontsize{9.6}{13.2}\selectfont\textbf{What this note is.} The artifact \ArtifactName{} is a
+body of Lean code: the compact edition of a formal proof, due to L.~Alpöge with the AI system Claude, of the
+Riemann hypothesis and of its generalisation to Dirichlet $L$-functions. That headline is a claim. The authors
+report that every file compiles with Lean v4.35.0 against a pinned version of the library Mathlib and that Lean's
+kernel accepted the proofs; an independent build is recorded in the handout's record of checks when it reports.
+No mathematician has read the argument through, and nothing here says that the Riemann hypothesis is proved. This
+note treats one unit of the artifact: all \UnitInNote{} of its \UnitMembers{} declarations. Their proofs are given
+in full, \emph{given} four results of other units, which are stated as Inputs~1 to~4 and not proved here: two
+lemmas of reduction theory, a count of bounded integral vectors, and the Hermite normal form. Every statement of
+the unit and of the Inputs was compared with its Lean text, argument by argument. The Lean text read is
+\PinText; Appendix~A is the concordance of \ConcDecls{} declarations.}
+
+\sect{The statements}{s:intro}
+The notions are defined in §\ref{s:setting}. In short: for a CM field~$E$ and a finite set~$\cJ$,
+\m{\StdClasses{\Kf{E}{\cJ}}} is the set of classes in the genus of the standard lattice of the hermitian space
+$E^{\cJ}$ with the form \m{\sum_{i}\bar v_i v_i}; \m{\numInf{E}} is the number of infinite places of~$E$; and
+\m{\sbc{E}{\cJ}{M}=6M(\numInf{E}\cdot\#\cJ)^{2}}. For submodules $A$, $B$ of a module and a ring element~$z$,
+\m{\IndexDvd{A}{B}{z}} is read \emph{the index of $B$ in $A$ divides~$z$}; it is one symbol, defined in
+Definition~\ref{d:index}.
+
+\statement{arith}{\phantomsection\label{t:1}\textbf{Theorem 1} (a crude bound for the class number).\enspace
+\emph{Let $E$ be a CM field with a CM type, let \m{M\ge1} be an integer whose image in the ring of integers of~$E$
+lies in the different of~$E$, and let $\cJ$ be a finite set. Then}
+\[\#\,\StdClasses{\Kf{E}{\cJ}}\ \le\ \bigl(1+2\,\sbc{E}{\cJ}{M}^{3}\bigr)^{4\,\numInf{E}\,(\#\cJ)^{2}}.\]
+
+\vspace{2pt}\phantomsection\label{t:2}\textbf{Theorem 2} (the determinant criterion).\enspace
+\emph{Let $\cO$ be a valuation domain, $\cJ$ a finite set, $z$ an element of~$\cO$, and $G$ a square matrix over~$\cO$
+with rows and columns indexed by~$\cJ$; in words, a matrix~$G$ in \m{\MJ(\cO)}. Let $B$ be a submodule
+of~\m{\cO^{\cJ}}. If \m{\det G} divides~$z$ and \m{G(\cO^{\cJ})\subseteq B}, then
+\m{\IndexDvd{\cO^{\cJ}}{B}{z}}.}}
+\leanline{\lean{cardclassesle}\sep \lean{ofdetdvd}}
+
+In Theorem~1 the number of elements is taken as the formal text takes it, a natural number that would be~$0$ for
+an infinite set; the proof shows that the set is finite (§\ref{s:notes}, note~1). Between the two theorems stands
+the calculus of §\ref{s:calculus}: inclusion, pull-back, transitivity, push-forward, sums and composition
+(Lemmas \ref{l:incl} to~\ref{l:comp}), and the additivity of the \emph{type} of an endomorphism under composition
+(Proposition~\ref{p:prod}).
+
+\sect{The setting}{s:setting}
+\begin{conventions}\phantomsection\label{c:conventions}
+The natural numbers are \m{0,1,2,\dots}. Every ring is a commutative ring with~$1$. In §\ref{s:calculus} and
+§\ref{s:det}, $\cO$ is a commutative ring, $V$ and $V'$ are $\cO$-modules, and a submodule is an $\cO$-submodule
+of a module. For submodules $A$, $B$ of one module, \m{A+B} is their sum; for an element~$w$ of~$\cO$, \m{wA} is the
+submodule of the multiples \m{wv}, \m{v\in A}; for a linear map~$G$, \m{G(A)} is the image and \m{G^{-1}(B)} the
+preimage of a submodule. A \kw{valuation domain} is an integral domain in which, of any two elements, one divides
+the other. A finite set indexes coordinates: for a finite set~$\cJ$, \m{\cO^{\cJ}} is the module of families
+\m{(v_i)_{i\in\cJ}}, \m{\MJ(\cO)} is the ring of matrices with rows and columns indexed by~$\cJ$, acting on
+\m{\cO^{\cJ}}, and \m{\GLJ(\cO)} is its group of units. The number of elements of a finite set~$\cS$ is
+\m{\#\cS}.
+
+In §\ref{s:class}, $E$ is a CM field: a totally complex quadratic extension of a totally real number field.
+Complex conjugation of~$E$ is written \m{v\mapsto\bar v}. A \kw{CM type} of~$E$ is a family \m{\Phi=(\Phi_w)_w} of
+field embeddings \m{\Phi_w\colon E\to\CC}, one for each infinite place~$w$ of~$E$, such that $\Phi_w$
+induces~$w$. The ring of integers of~$E$ is \m{\cO_E}, its different (over~$\mathbb{Z}$) is the ideal whose
+inverse is the dual of~\m{\cO_E} for the trace form. The ring of finite adeles of~$E$ is~$\Af$, and $\Oh$ is the
+closure of~\m{\cO_E} in it, the product of the rings of integers of the completions of~$E$ at the finite places;
+$E$ is a subring of~$\Af$, and \m{E\cap\Oh=\cO_E}. Complex conjugation extends to~$\Af$ and preserves~$\Oh$. For a
+matrix~$h$ over $E$ or over~$\Af$, \m{h^{*}} is its conjugate transpose.
+\end{conventions}
+
+\begin{definition}[index divisibility]\label{d:index}
+Let $A$ and $B$ be submodules of the $\cO$-module~$V$, and let $z$ be an element of~$\cO$. We write
+\[\IndexDvd{A}{B}{z}\]
+and say that \kw{the index of $B$ in $A$ divides~$z$}, if for every natural number~$n$ and all elements
+\m{y_1,\dots,y_n} of~$A$ there is an \m{n\times n} matrix \m{u=(u_{ii'})} over~$\cO$ such that \m{\det u}
+divides~$z$ and
+\[\sum_{i'=1}^{n}u_{ii'}\,y_{i'}\in B\qquad\text{for } i=1,\dots,n.\]
+\end{definition}
+\leanline{\lean{IndexDvd}}
+
+The definition does not ask that $B$ lie in~$A$, nor that either module be free or finitely generated. Since the
+combinations \m{\sum_{i'}u_{ii'}y_{i'}} lie in~$A$, the statement \m{\IndexDvd{A}{B}{z}} depends on $B$ only
+through \m{A\cap B}; it holds for \m{z=0} (take \m{u=0}), and for every~$z$ when \m{A\subseteq B}
+(Lemma~\ref{l:incl}). The bracket alone has no meaning. Remark~\ref{r:dvr} compares the notion with the length
+of a quotient in the one case where both are defined. The overview of the handout uses the same pattern for the
+index of a family of rows: there, too, a matrix~$u$ with a large determinant moves a family into the integral
+forms.
+
+\begin{definition}[type of an endomorphism]\label{d:type}
+Let $p$ be an element of~$\cO$, $A$ a submodule of the $\cO$-module~$V$, $\nu$ a natural number, $Y$ an
+$\cO$-linear endomorphism of~$V$, and $c$ a real number. We say that
+\par\vspace{3pt}\centerline{\HasType{p}{A}{\nu}{Y}{c}}\par\vspace{3pt}\noindent
+if \m{Y(A)\subseteq A} and there is a natural number \m{i\le c} with
+\m{\IndexDvd{A}{Y(A)+p^{\nu}A}{p^{i}}}.
+\end{definition}
+\leanline{\lean{HasType}}
+
+When $\cO$ is a discrete valuation ring with uniformiser~$p$ and $A$ is free of finite rank, this says that $Y$
+preserves~$A$ and that the cokernel of $Y$ on \m{A/p^{\nu}A} has length at most~$c$ (Remark~\ref{r:dvr}): the
+elementary divisors of~$Y$ on~$A$, cut off at~\m{p^{\nu}}, have exponents of sum at most~$c$.
+
+\begin{definition}[the standard definite space and its classes]\label{d:classes}
+Let $E$ be a CM field and $\cJ$ a finite set.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item \m{\UJ(\Af)} is the group of the matrices~$h$ in \m{\GLJ(\Af)} with \m{h^{*}h=1}: the finite adelic points
+of the unitary group of the hermitian form \m{\sum_{i\in\cJ}\bar v_iv_i} on~\m{E^{\cJ}}. \m{\UJ(E)} is the group of
+the matrices~$\gamma$ in \m{\GLJ(E)} with \m{\gamma^{*}\gamma=1}; it is a subgroup of \m{\UJ(\Af)}. The subgroup
+\[\Kf{E}{\cJ}\]
+of \m{\UJ(\Af)} consists of the elements~$h$ such that $h$ and \m{h^{-1}} have all entries in~$\Oh$; it is the
+stabiliser of the standard lattice~\m{\Oh^{\cJ}}.
+\item For a subgroup~$K$ of \m{\UJ(\Af)}, the set of \kw{classes at level~$K$} is the set of double cosets
+\[\StdClasses{K}=\UJ(E)\backslash\UJ(\Af)/K .\]
+\item \m{\numInf{E}} is the number of infinite places of~$E$; this is defined for every number field.
+\item For a natural number~$M$, \m{\sbc{E}{\cJ}{M}=6\,M\,(\numInf{E}\cdot\#\cJ)^{2}}, a natural number.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{Kf}\sep \lean{StdClasses}\sep \lean{numInf}\sep \lean{sbc}\sep these four definitions belong to the
+background library (units 122, 102, 10 and~99)}
+
+The classes at level \m{\Kf{E}{\cJ}} correspond to the isometry classes of the hermitian lattices in~\m{E^{\cJ}}
+that are everywhere locally isometric to~\m{\cO_E^{\cJ}}: the class of~$h$ is that of the lattice
+\m{E^{\cJ}\cap h\,\Oh^{\cJ}}. The number of classes is the class number of the genus.
+
+\statement{inksoft}{\textbf{Inputs from other units.} The four results below are taken for granted in this note.
+
+\vspace{4pt}\phantomsection\label{i:1}\textbf{Input 1} (short bases; unit 99, background).\enspace
+\emph{Let $E$ be a CM field with a CM type, $\cJ$ a finite set, and \m{M\ge1} an integer that, as an element of
+\m{\cO_E}, lies in the different of~$E$. For every $h$ in \m{\UJ(\Af)} there is a matrix~$L$ in \m{\GLJ(E)} such that
+\m{h^{-1}L} has all entries in~$\Oh$ and \m{|\varphi(L_{ii'})|\le\sbc{E}{\cJ}{M}} for every ring homomorphism
+\m{\varphi\colon E\to\CC} and all \m{i,i'} in~$\cJ$.}
+
+\vspace{3pt}\phantomsection\label{i:2}\textbf{Input 2} (rational approximation of an adele; unit 99,
+background).\enspace
+\emph{Let $E$ be a CM field with a CM type \m{(\Phi_w)_w}, and let $\delta$ be a nonzero element of the different
+of~$E$. For every family \m{(z_w)_w} of complex numbers indexed by the infinite places of~$E$ and every finite
+adele~$\eta$ in~$\Af$ there is $\alpha$ in~$E$ with \m{\eta-\alpha\in\Oh} and
+\m{|z_w-\Phi_w(\alpha)|\le(2\,\numInf{E})^{2}\,|\Phi_w(\delta)|} for every infinite place~$w$.}
+
+\vspace{3pt}\phantomsection\label{i:3}\textbf{Input 3} (bounded integral vectors are few; unit 148).\enspace
+\emph{Let $E'$ be a number field with an embedding \m{\Phi_v\colon E'\to\CC} inducing~$v$ for each infinite
+place~$v$. Let $\cS$ be a set, $\cS'$ a subset of it, $\cJ$ a finite set, $\omega$ a real number with
+\m{0\le\omega}, and $F$ a map from $\cS$ to \m{E'^{\cJ}}. Suppose that for every $c$ in~$\cS'$ and every $i$
+in~$\cJ$ the coordinate \m{F(c)_i} is an algebraic integer with \m{|\Phi_v(F(c)_i)|\le\omega} for every~$v$, and
+that $F$ is injective on~$\cS'$. Then $\cS'$ is finite, with at most
+\m{(1+2\omega)^{2\,\#\cJ\,\numInf{E'}}} elements.} (The reading of this lemma by program lists, besides these
+arguments, variables of its file that the statement does not mention, among them a matrix; by Lean's rules for
+such variables they are not arguments of the lemma.)
+
+\vspace{3pt}\phantomsection\label{i:4}\textbf{Input 4} (Hermite normal form; unit 120, background).\enspace
+\emph{\textup{(a)} Let $\mathcal{A}$ be a commutative ring and $\mathcal{R}$ a subring such that
+\m{(\mathcal{A},\mathcal{R})} is a valuation pair: for any two elements $y$, $y'$ of~$\mathcal{A}$ there is an
+idempotent~$\epsilon$ of~$\mathcal{R}$ with
+\m{\mathcal{R}y+\mathcal{R}y'\subseteq\mathcal{R}\,(y-\epsilon(y-y'))}. Let $\mathcal{K}$ and $\mathcal{N}$ be
+finite sets, \m{\iota\colon\mathcal{K}\to\mathcal{N}} an injective map, $X$ a matrix over~$\mathcal{A}$ with rows
+indexed by~$\mathcal{N}$ and columns by~$\mathcal{K}$, and $\omega$ a map from~$\mathcal{K}$ to the natural numbers
+\textup{(}weights\textup{)}. Then there are an invertible matrix~$T$ over~$\mathcal{A}$, indexed
+by~$\mathcal{N}$, such that $T$ and \m{T^{-1}} have their entries in~$\mathcal{R}$, and a square
+matrix~$\Delta$ over~$\mathcal{A}$, indexed by~$\mathcal{K}$, with \m{\Delta_{ll'}=0} whenever
+\m{\omega(l')<\omega(l)}, such that
+\[X=T_{\cdot,\iota}\,\Delta\qquad\text{and}\qquad (T^{-1})_{\iota,\cdot}\,X=\Delta ,\]
+where \m{T_{\cdot,\iota}} consists of the columns \m{\iota(l)} of~$T$ and \m{(T^{-1})_{\iota,\cdot}} of the rows
+\m{\iota(l)} of~\m{T^{-1}}, \m{l\in\mathcal{K}}.
+\textup{(b)} If $\mathcal{A}$ is a valuation domain, then \m{(\mathcal{A},\mathcal{A})} is a valuation pair.}
+(The reading of~(a) by program also lists a ring with involution, from an earlier part of its file; the statement
+does not involve it.)}
+\leanline{\lean{shortbasis}\sep \lean{ratnear}\sep \lean{enc}\sep \lean{hermite}\sep \lean{valtop}}
+
+Inputs 1 and~2 are lemmas of the reduction theory that the artifact develops for the standard space: Input~1
+comes from a transference argument (a basis of short vectors, from the covering radius of a lattice against the
+first minimum of its dual), Input~2 from a fundamental domain for~\m{\cO_E} scaled by the different. Input~3 is a
+packing count: distinct algebraic integers are at distance at least~$1$ at some infinite place. Input~4(a), for a
+discrete valuation ring and \m{\mathcal{K}=\mathcal{N}}, is the Hermite normal form obtained by column operations;
+the valuation pair is the form in which the artifact proves it once for a valuation domain and for $\Oh$
+inside~$\Af$. The catalogue of quoted results of this write-up lists Inputs 1, 2 and~4 as elementary lemmas, with
+no confirmed place in the literature: \emph{reference to be confirmed}.
+
+\sect{The class number}{s:class}
+\begin{proof}[Proof of Theorem 1]
+Write \m{\mathrm{Cl}} for the set \m{\StdClasses{\Kf{E}{\cJ}}}, and choose for every class~$\fc$ in it a
+representative \m{h_{\fc}} in \m{\UJ(\Af)}.
+
+\emph{Short bases.} By Input~1 there is, for every class~$\fc$, a matrix \m{L_{\fc}} in \m{\GLJ(E)} such that
+\[Q_{\fc}=h_{\fc}^{-1}L_{\fc}\ \text{ has its entries in } \Oh\]
+and
+\[|\varphi((L_{\fc})_{ii'})|\le\sbc{E}{\cJ}{M}\quad\text{for every ring homomorphism } \varphi\colon E\to\CC \text{ and all } i,i'.\]
+Let \m{H_{\fc}=L_{\fc}^{*}L_{\fc}}, the Gram matrix of the columns of~\m{L_{\fc}}; it lies in \m{\GLJ(E)}.
+
+\emph{An approximate inverse.} Apply Input~2 with \m{\delta=M} and \m{z_w=0}: for every finite adele~$\eta$ there
+is \m{\varrho(\eta)} in~$E$ with
+\[\eta-\varrho(\eta)\in\Oh,\qquad|\Phi_w(\varrho(\eta))|\le(2\,\numInf{E})^{2}M\ \text{ for every infinite place } w.\]
+Let \m{Z_{\fc}} be the matrix over~$E$ obtained by applying $\varrho$ to each entry of \m{Q_{\fc}^{-1}}. Then
+\m{Q_{\fc}^{-1}-Z_{\fc}} has its entries in~$\Oh$, and so, for all classes $\fc$ and~$\fc'$,
+\begin{equation}\label{e:int}
+Q_{\fc'}Q_{\fc}^{-1}-Q_{\fc'}Z_{\fc}=Q_{\fc'}\bigl(Q_{\fc}^{-1}-Z_{\fc}\bigr)\quad\text{has its entries in } \Oh .
+\end{equation}
+
+\emph{The map.} Send a class~$\fc$ to the pair of matrices \m{(H_{\fc},\,H_{\fc}Z_{\fc})}, a vector with
+\m{2(\#\cJ)^{2}} coordinates in~$E$. We show that its coordinates are algebraic integers, that they are bounded
+by \m{\sbc{E}{\cJ}{M}^{3}} at every infinite place, and that the map is injective. Input~3, for the field~$E$ with
+its CM type, the set \m{\cS=\cS'=\mathrm{Cl}}, an index set of \m{2(\#\cJ)^{2}} elements and
+\m{\omega=\sbc{E}{\cJ}{M}^{3}}, then shows that \m{\mathrm{Cl}} is finite with at most
+\m{(1+2\,\sbc{E}{\cJ}{M}^{3})^{2\cdot2(\#\cJ)^{2}\cdot\numInf{E}}} elements, which is the bound of the theorem.
+
+\emph{Integrality.} Since \m{h_{\fc}^{-1}} is unitary,
+\m{H_{\fc}=(h_{\fc}^{-1}L_{\fc})^{*}(h_{\fc}^{-1}L_{\fc})=Q_{\fc}^{*}Q_{\fc}}, and the entries of \m{Q_{\fc}^{*}}
+lie in~$\Oh$ because conjugation preserves~$\Oh$. So $H_{\fc}$ has its entries in \m{E\cap\Oh=\cO_E}. In the same
+way \m{H_{\fc}Z_{\fc}=Q_{\fc}^{*}\,(Q_{\fc}Z_{\fc})}, and \m{Q_{\fc}Z_{\fc}=1-Q_{\fc}(Q_{\fc}^{-1}-Z_{\fc})} has its
+entries in~$\Oh$ by \eqref{e:int} with \m{\fc'=\fc}.
+
+\emph{Size.} Let $w$ be an infinite place. The composite of $\Phi_w$ with complex conjugation of~$E$ is again a
+ring homomorphism from $E$ to~$\CC$, so every entry of $L_{\fc}$ and of $L_{\fc}^{*}$ has absolute value at most
+\m{\sbc{E}{\cJ}{M}} under~$\Phi_w$. Hence
+\[|\Phi_w((H_{\fc})_{ii'})|\le\#\cJ\cdot\sbc{E}{\cJ}{M}^{2},\qquad
+|\Phi_w((H_{\fc}Z_{\fc})_{ii'})|\le(\#\cJ)^{2}\,\sbc{E}{\cJ}{M}^{2}\,(2\,\numInf{E})^{2}M .\]
+Here \m{\#\cJ\ge1}, as there is an entry, and \m{M\ge1}, \m{\numInf{E}\ge1}. So
+\[\#\cJ\le\sbc{E}{\cJ}{M}\qquad\text{and}\qquad 4M\,\numInf{E}^{2}(\#\cJ)^{2}\le 6M(\numInf{E}\cdot\#\cJ)^{2}=\sbc{E}{\cJ}{M},\]
+and both bounds are at most the cube of \m{\sbc{E}{\cJ}{M}}.
+
+\emph{Injectivity.} Let $\fc$ and $\fc'$ be classes with \m{H_{\fc}=H_{\fc'}} and
+\m{H_{\fc}Z_{\fc}=H_{\fc'}Z_{\fc'}}. As \m{H_{\fc}} is invertible, \m{Z_{\fc}=Z_{\fc'}}. Put
+\m{\gamma=L_{\fc}L_{\fc'}^{-1}}, a matrix in \m{\GLJ(E)}. Then
+\[\gamma^{*}\gamma=(L_{\fc'}^{-1})^{*}\,H_{\fc}\,L_{\fc'}^{-1}=(L_{\fc'}^{-1})^{*}\,H_{\fc'}\,L_{\fc'}^{-1}=1,\]
+so $\gamma$ lies in \m{\UJ(E)}. Put \m{\kappa=(\gamma h_{\fc'})^{-1}h_{\fc}}, an element of \m{\UJ(\Af)}. Then
+\[\kappa=h_{\fc'}^{-1}L_{\fc'}L_{\fc}^{-1}h_{\fc}=Q_{\fc'}Q_{\fc}^{-1},\]
+and by \eqref{e:int}, used for the pairs \m{(\fc,\fc')} and \m{(\fc',\fc')}, and by \m{Z_{\fc}=Z_{\fc'}},
+\[\kappa=1+\bigl(Q_{\fc'}Q_{\fc}^{-1}-Q_{\fc'}Z_{\fc}\bigr)-\bigl(Q_{\fc'}Q_{\fc'}^{-1}-Q_{\fc'}Z_{\fc'}\bigr)\]
+has its entries in~$\Oh$. The inverse of the unitary matrix~$\kappa$ is \m{\kappa^{*}}, which has its entries
+in~$\Oh$ as well, so $\kappa$ lies in \m{\Kf{E}{\cJ}}. From \m{h_{\fc}=\gamma\,h_{\fc'}\,\kappa} the two
+representatives lie in one double coset, and \m{\fc=\fc'}.
+\end{proof}
+\leanline{\lean{cardclassesle}\sep the formal proof has these five parts in this order}
+
+The bound is far from the truth: the mass formula gives the order of magnitude of the class number. What the
+argument of the write-up needs is a bound that is explicit and at most exponential in a polynomial of
+\m{\numInf{E}}, \m{\#\cJ} and~$M$.
+
+\sect{The calculus of index divisibility}{s:calculus}
+In this section $\cO$ is a commutative ring and $V$, $V'$ are $\cO$-modules, as in the conventions.
+
+\begin{lemma}[inclusion]\label{l:incl}
+Let $A$ and $B$ be submodules of~$V$ and $z$ an element of~$\cO$. If \m{A\subseteq B}, then
+\m{\IndexDvd{A}{B}{z}}.
+\end{lemma}
+\begin{proof}
+For \m{y_1,\dots,y_n} in~$A$ the identity matrix serves: its determinant~$1$ divides~$z$, and each $y_i$ lies
+in~$B$.
+\end{proof}
+\leanline{\lean{ofle}}
+
+\begin{lemma}[pull-back]\label{l:comap}
+Let $A$, $B$ be submodules of~$V$, let $A'$, $B'$ be submodules of~$V'$, let $z$ be an element of~$\cO$, and let
+\m{G\colon V'\to V} be an $\cO$-linear map. Suppose that \m{\IndexDvd{A}{B}{z}}, that \m{G(A')\subseteq A}, and
+that every $v$ in~$A'$ with \m{G(v)\in B} lies in~$B'$. Then \m{\IndexDvd{A'}{B'}{z}}.
+\end{lemma}
+\begin{proof}
+Let \m{y_1,\dots,y_n} lie in~$A'$. The elements \m{G(y_i)} lie in~$A$, so there is a matrix~$u$ with \m{\det u}
+dividing~$z$ and \m{\sum_{i'}u_{ii'}G(y_{i'})\in B} for all~$i$. The element \m{v_i=\sum_{i'}u_{ii'}y_{i'}} lies
+in~$A'$ and \m{G(v_i)\in B}; hence \m{v_i\in B'}.
+\end{proof}
+\leanline{\lean{comap}}
+
+\begin{lemma}[transitivity]\label{l:trans}
+Let $A$, $B$, $C$ be submodules of~$V$ and let $z$ and $w$ be elements of~$\cO$. If \m{\IndexDvd{A}{B}{z}} and
+\m{\IndexDvd{B}{C}{w}}, then \m{\IndexDvd{A}{C}{zw}}.
+\end{lemma}
+\begin{proof}
+Let \m{y_1,\dots,y_n} lie in~$A$. There is $u$ with \m{\det u} dividing~$z$ such that the elements
+\m{y'_i=\sum_{i'}u_{ii'}y_{i'}} lie in~$B$; and for these there is $u'$ with \m{\det u'} dividing~$w$ such that
+\m{\sum_{i}u'_{li}y'_{i}\in C} for all~$l$. The matrix \m{u'u} has determinant \m{\det u'\cdot\det u}, which
+divides~\m{zw}, and \m{\sum_{i'}(u'u)_{li'}y_{i'}=\sum_iu'_{li}y'_i} lies in~$C$.
+\end{proof}
+\leanline{\lean{trans}}
+
+\begin{lemma}[push-forward]\label{l:map}
+Let $A$, $B$ be submodules of~$V$, let $A'$, $B'$ be submodules of~$V'$, let $z$ be an element of~$\cO$, and let
+\m{G\colon V\to V'} be an $\cO$-linear map. Suppose that \m{\IndexDvd{A}{B}{z}}, that
+\m{A'\subseteq G(A)+B'}, and that \m{G(B)\subseteq B'}. Then \m{\IndexDvd{A'}{B'}{z}}.
+\end{lemma}
+\begin{proof}
+Let \m{y_1,\dots,y_n} lie in~$A'$, and write \m{y_i=G(v_i)+b_i} with $v_i$ in~$A$ and $b_i$ in~$B'$. There is $u$
+with \m{\det u} dividing~$z$ and \m{\sum_{i'}u_{ii'}v_{i'}\in B} for all~$i$. Then
+\[\sum_{i'}u_{ii'}y_{i'}=G\Bigl(\sum_{i'}u_{ii'}v_{i'}\Bigr)+\sum_{i'}u_{ii'}b_{i'}\ \in\ G(B)+B'\subseteq B'.\qedhere\]
+\end{proof}
+\leanline{\lean{map}}
+
+\begin{lemma}[finite sums]\label{l:sup}
+Let $\cJ$ be a set, let \m{G_i\colon V\to V'}, for $i$ in~$\cJ$, be $\cO$-linear maps, let $A$ be a submodule
+of~$V$, $B'$ a submodule of~$V'$ and $z$ an element of~$\cO$. Suppose that
+\m{\IndexDvd{A}{G_i^{-1}(B')}{z}} for every $i$ in~$\cJ$. Then for every finite subset $\cS$ of~$\cJ$,
+\[\IndexDvd{\textstyle\sum_{i\in\cS}G_i(A)+B'}{B'}{z^{\#\cS}} .\]
+\end{lemma}
+\begin{proof}
+By induction on~$\cS$. For the empty set the left module is~$B'$, and Lemma~\ref{l:incl} applies. Let
+\m{\cS=\cS_0\cup\{i\}} with $i$ not in~$\cS_0$, and put \m{A'_0=\sum_{l\in\cS_0}G_l(A)+B'} and
+\m{A'=G_i(A)+A'_0}. Lemma~\ref{l:map}, for the map~$G_i$ and the submodules $A$, \m{G_i^{-1}(B')} of~$V$ and $A'$,
+$A'_0$ of~$V'$, gives \m{\IndexDvd{A'}{A'_0}{z}}: indeed \m{A'\subseteq G_i(A)+A'_0} and
+\m{G_i(G_i^{-1}(B'))\subseteq B'\subseteq A'_0}. By the induction hypothesis
+\m{\IndexDvd{A'_0}{B'}{z^{\#\cS_0}}}, and Lemma~\ref{l:trans} gives the claim with
+\m{z\cdot z^{\#\cS_0}=z^{\#\cS}}.
+\end{proof}
+\leanline{\lean{sup}\sep the formal statement writes the left module as the span of the union of the images
+\m{G_i(A)}, \m{i\in\cS}, and of~$B'$}
+
+\begin{lemma}[composition]\label{l:comp}
+Let $A$ and $B$ be submodules of~$V$, let $z$, $z'$ and $w$ be elements of~$\cO$, and let \m{G\colon V\to V} be an
+$\cO$-linear map with \m{G(A)\subseteq A}. If \m{\IndexDvd{A}{G(A)+wA}{z}} and \m{\IndexDvd{A}{B+wA}{z'}}, then
+\m{\IndexDvd{A}{G(B)+wA}{zz'}}.
+\end{lemma}
+\begin{proof}
+Apply Lemma~\ref{l:map} to the second hypothesis and the map~$G$, with \m{A'=G(A)+wA} and \m{B'=G(B)+wA}. The
+inclusion \m{A'\subseteq G(A)+B'} is clear, and
+\[G(B+wA)=G(B)+w\,G(A)\subseteq G(B)+wA\]
+because \m{G(A)\subseteq A}. This gives \m{\IndexDvd{G(A)+wA}{G(B)+wA}{z'}}. Lemma~\ref{l:trans}, with the first
+hypothesis, gives the claim.
+\end{proof}
+\leanline{\lean{comp}}
+
+\begin{proposition}[types add under composition]\label{p:prod}
+Let $\cJ$ be a set, and for every $i$ in~$\cJ$ let $Y_i$ be an $\cO$-linear endomorphism of~$V$ and $c_i$ a real
+number. Let $p$ be an element of~$\cO$ \textup{(}the formal text calls it~$z$; we write $p$ as in
+Definition~\ref{d:type}, and \m{z=p} here\textup{)}, $A$ a submodule of~$V$ and $\nu$ a natural number. Let
+\m{(i_1,\dots,i_e)} be a finite list of elements of~$\cJ$, with \m{e\ge0}; repetitions are allowed. Suppose that
+\HasType{p}{A}{\nu}{Y_{i_l}}{c_{i_l}} for \m{l=1,\dots,e}. Then
+\HasType{p}{A}{\nu}{Y_{i_1}\circ\dots\circ Y_{i_e}}{c_{i_1}+\dots+c_{i_e}}; for \m{e=0} the composite is the
+identity and the sum is~$0$.
+\end{proposition}
+\begin{proof}
+By induction on~$e$. For \m{e=0}: the identity preserves~$A$, and \m{\IndexDvd{A}{A+p^{\nu}A}{p^{0}}} by
+Lemma~\ref{l:incl}, with the natural number \m{0\le0}. For the step put \m{Y=Y_{i_1}} and
+\m{Y'=Y_{i_2}\circ\dots\circ Y_{i_e}}. By the hypothesis on~$Y$ there is a natural number \m{i\le c_{i_1}} with
+\m{\IndexDvd{A}{Y(A)+p^{\nu}A}{p^{i}}}, and \m{Y(A)\subseteq A}; by the induction hypothesis \m{Y'(A)\subseteq A} and
+there is a natural number \m{i'\le c_{i_2}+\dots+c_{i_e}} with \m{\IndexDvd{A}{Y'(A)+p^{\nu}A}{p^{i'}}}. Then
+\m{Y(Y'(A))\subseteq Y(A)\subseteq A}, and Lemma~\ref{l:comp}, with \m{G=Y}, \m{B=Y'(A)} and \m{w=p^{\nu}}, gives
+\m{\IndexDvd{A}{Y(Y'(A))+p^{\nu}A}{p^{i+i'}}}, where \m{i+i'\le c_{i_1}+\dots+c_{i_e}}.
+\end{proof}
+\leanline{\lean{prod}}
+
+\sect{The determinant criterion}{s:det}
+\begin{proof}[Proof of Theorem 2]
+Let \m{y_1,\dots,y_n} be elements of~\m{\cO^{\cJ}}; write \m{(y_i)_l} for the coordinates, \m{l\in\cJ}. Let
+$\mathcal{N}$ be the disjoint union of \m{\{1,\dots,n\}} and~$\cJ$, and let $X$ be the square matrix over~$\cO$,
+indexed by~$\mathcal{N}$, with the blocks
+\[X=\begin{pmatrix}1&-(y_i)_l\\[1pt]0&G^{\mathsf{T}}\end{pmatrix},\]
+where $1$ is the identity matrix of size~$n$, the upper right block has the entry \m{-(y_i)_l} in row~$i$ and
+column~$l$, and \m{G^{\mathsf{T}}} is the transpose of~$G$. By Input~4(b) the pair \m{(\cO,\cO)} is a valuation
+pair. Input~4(a), for \m{\mathcal{K}=\mathcal{N}}, the identity map~$\iota$, the matrix~$X$ and the weights
+\m{\omega=1} on \m{\{1,\dots,n\}} and \m{\omega=0} on~$\cJ$, gives an invertible matrix~$T$ over~$\cO$ whose
+inverse has entries in~$\cO$, and a matrix~$\Delta$ with
+\[X=T\Delta,\qquad T^{-1}X=\Delta,\qquad \Delta_{il}=0\ \text{ for } i\in\{1,\dots,n\},\ l\in\cJ .\]
+Write \m{\Delta=\bigl(\begin{smallmatrix}\Delta_{11}&0\\\Delta_{21}&\Delta_{22}\end{smallmatrix}\bigr)} and
+\m{T^{-1}=\bigl(\begin{smallmatrix}T'_{11}&T'_{12}\\T'_{21}&T'_{22}\end{smallmatrix}\bigr)} in blocks. We claim that
+\m{u=\Delta_{11}} is a matrix as Definition~\ref{d:index} asks for.
+
+\emph{The determinant.} As $X$ is block upper triangular, \m{\det X=\det G^{\mathsf{T}}=\det G}; as $\Delta$ is
+block lower triangular, \m{\det X=\det T\cdot\det\Delta_{11}\cdot\det\Delta_{22}}. So \m{\det u} divides
+\m{\det G}, which divides~$z$.
+
+\emph{The combinations.} The first block row of \m{T^{-1}X=\Delta} reads \m{T'_{11}=\Delta_{11}} in the first block
+column and \m{-T'_{11}\,(y_i)_l+T'_{12}\,G^{\mathsf{T}}=0} in the second. Hence, for \m{i=1,\dots,n} and
+\m{l\in\cJ},
+\[\sum_{i'=1}^{n}u_{ii'}\,(y_{i'})_l=\sum_{l'\in\cJ}(T'_{12})_{il'}\,G_{ll'} ,\]
+that is, \m{\sum_{i'}u_{ii'}y_{i'}=G(t_i)} for the vector \m{t_i=((T'_{12})_{il'})_{l'}} of~\m{\cO^{\cJ}}. It
+lies in \m{G(\cO^{\cJ})\subseteq B}.
+\end{proof}
+\leanline{\lean{ofdetdvd}\sep \lean{hermite}\sep \lean{valtop}}
+
+\begin{remark}[comparison with the length of a quotient; not in the formal text]\label{r:dvr}
+Let $\cO$ be a discrete valuation ring with uniformiser~$p$, let $A$ be a free $\cO$-module of finite rank~$n$ and
+$B$ a submodule of~$A$ with \m{A/B} of finite length~$e$. Then, for $z$ in~$\cO$: \m{\IndexDvd{A}{B}{z}} holds if and
+only if \m{p^{e}} divides~$z$. Indeed, $B$ is free of rank~$n$, so in a basis of~$A$ it is the image of a
+matrix~$G$ with \m{\det G} a unit times~\m{p^{e}}, and Theorem~2 gives one direction. Conversely, apply
+Definition~\ref{d:index} to a basis \m{y_1,\dots,y_n} of~$A$: if \m{z\ne0}, the matrix~$u$ defines an injective
+endomorphism of~$A$ with image in~$B$ and cokernel of length the valuation of \m{\det u}, so $e$ is at most the
+valuation of~$z$; and \m{p^{e}} divides~$0$.
+\end{remark}
+
+\sect{Where the results are used}{s:use}
+Theorem~1 is used once, in the unit of the columns (unit~145), in a bound for the number of classes of
+standard definite spaces at the levels that contain a principal level: such a level has finite index in
+\m{\Kf{E}{\cJ}}, and the number of classes is at most that index times the bound of Theorem~1.
+
+The index language is used in the units that prove Theorem~A of the write-up. The determinant criterion is
+applied there with diagonal matrices (units 150 and~141); pull-back and push-forward transport index statements
+along the maps between spaces of forms (units 141 and~145); the lemma on finite sums is the step, in the unit
+of the endgame (unit~151), from one translate of a Poincar\'e series to finitely many, which is where the
+number of translates enters the index bound of Theorem~A(b); and Proposition~\ref{p:prod} adds the types of the
+operators attached to the marked primes (unit~145). Unit~144, on the elementary divisors of a Frobenius-twisted
+Hecke operator, uses Theorem~2, transitivity, push-forward and composition, and states its result with
+Definition~\ref{d:type}.
+
+\sect{Notes on the formal text}{s:notes}
+\begin{enumerate}[label=\textup{\arabic*.},leftmargin=1.6em,itemsep=5pt]
+\item \emph{The number of classes.} The formal statement of Theorem~1 bounds the cardinality of the set of
+classes as a natural number, which the library defines to be~$0$ for an infinite set. The formal proof bounds
+the cardinality as an extended natural number, through Input~3, and so proves that the set is finite; the
+statement does not say it.
+\item \emph{Letters.} The formal text calls the integer of Theorem~1 $N$ and the index set~$n$; here they are $M$
+and~$\cJ$, the letter $N$ being kept in this write-up for the level. The submodules $M$, $N$, $P$, $M'$, $N'$ of
+the formal text are $A$, $B$, $C$, $A'$, $B'$ here; its modules $V$ and $U$ are $V$ and $V'$; its scalar~$a$
+is~$w$; its linear maps~$f$ are~$G$. In Proposition~\ref{p:prod} the formal text writes $z$, $s$, $T$, $t$, $L$ for
+what is here $p$, $\nu$, \m{(Y_i)}, \m{(c_i)} and the list.
+\item \emph{The arguments of the index relation.} The file declares $M$, $N$, $z$ as implicit variables and then
+makes them explicit for this one definition. A reading of the text by program therefore lists each of the three
+twice. Lean takes each once, as an explicit argument: every use in the artifact gives exactly three arguments.
+This was not confirmed by asking Lean.
+\item \emph{Inferred types.} In the definition of the type the formal text does not write the types of $p$, of the
+submodule and of the exponent; Lean infers them. The uses (Proposition~\ref{p:prod}, where $p$ is an element
+of the ring) show that $p$ is a ring element and the exponent a natural number.
+\item \emph{Families of length zero.} Definition~\ref{d:index} quantifies over all~$n$, including \m{n=0}, where
+there is nothing to check. The families are indexed by \m{\{0,\dots,n-1\}} in the formal text.
+\item \emph{Lemma~\ref{l:sup}.} Its hypothesis is asked for every $i$ in~$\cJ$, not only for those in~$\cS$, and
+$\cJ$ is an arbitrary set. The formal proof is one line of induction that calls push-forward and transitivity,
+as here.
+\item \emph{The injectivity step of Theorem~1.} The formal proof gives the rational unitary matrix and the
+integral adelic matrix as terms and leaves it to Lean to see that they relate the two representatives. The
+arrangement written above, \m{h_{\fc}=\gamma h_{\fc'}\kappa} with \m{\gamma=L_{\fc}L_{\fc'}^{-1}} and
+\m{\kappa=Q_{\fc'}Q_{\fc}^{-1}}, is read off these terms: the unitarity is proved for the product
+\m{L_{\fc}L_{\fc'}^{-1}}, and the integrality for the combination of the two instances of \eqref{e:int} displayed
+in the proof, which is \m{Q_{\fc'}Q_{\fc}^{-1}}. The library's lemma on double cosets, which fixes the order, was
+not opened: the library is not on the machine where this note was written.
+\item \emph{The size estimates.} The formal proof closes the two inequalities of the paragraph \emph{Size} by
+automation. The intermediate bounds written there are ours; they were checked by hand.
+\item \emph{What an assembly assembles.} Lemma~\ref{l:comp} is push-forward followed by transitivity, and
+Lemma~\ref{l:sup} is an induction on these two; their content lies in Lemmas \ref{l:trans} and~\ref{l:map}.
+\item \emph{The place of Theorem~1.} The header of its file counts it with the reduction theory of the
+background (Mahler and Godement compactness, finite covolume, adelic Minkowski theorems), a known subject; it
+stands in this unit because its proof needs the count of Input~3, which belongs to the argument.
+\end{enumerate}
+
+\subhead{How this note was written.} From the dossier of the unit: its eleven statement readings, its five
+structured proofs and the reader's list of doubts. The program check of the dossier covered \UnitSteps{} leaf steps
+of \UnitProofs{} proofs. A second reader compared the eleven readings with the Lean text and sampled the proofs;
+the remarks of that reading are taken up in the paragraph after Definition~\ref{d:index} and in the hypotheses
+of Theorem~2. I read both files of the unit completely, and in the background library the statements and
+definitions that the unit rests on: the unitary groups, the level subgroup, the rational points and the classes,
+the constant and the two lemmas of Inputs 1 and~2, the count of Input~3 with the variables of its file, the
+valuation pairs and the Hermite form. I did not read the proofs of the Inputs. The three lemmas without a
+structured proof (pull-back, inclusion, composition) and Lemma~\ref{l:sup} were read in the source. The proofs
+above follow the formal ones; the proof of Theorem~2 writes out in blocks what the formal proof obtains by
+simplification, and Remark~\ref{r:dvr} is mine. Lean was not run for this note.
+
+\head{Appendix A. Concordance with the Lean artifact}
+{\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}\setlength{\tabcolsep}{0pt}
+\begin{longtable}{@{}p{30mm}p{56mm}p{43mm}r@{}}
+\textbf{In this note} & \textbf{Lean declaration} & \textbf{File} & \textbf{Lines}\\\midrule\endhead
+\ConcordanceRows
+\end{longtable}}
+
+\subhead{The two theorems and the two definitions as they are written in the artifact.}
+\quoted{cardclassesle}
+\quoted{ofdetdvd}
+\quoted{IndexDvd}
+\quoted{HasType}
+In these texts {\leanfont ⊤} is the whole module, {\leanfont ⊔} the sum of submodules, {\leanfont M.map y} the
+image and {\leanfont p \textasciicircum{} n • M} the multiples; {\leanfont Fin n} is the set \m{\{0,\dots,n-1\}}.
+
+\head{Notation}
+\begingroup\fontsize{8.6}{10.9}\selectfont\raggedright
+\setlength{\columnsep}{9mm}\setlength{\parskip}{0pt}
+\begin{multicols}{2}
+\nt{$\cO$}{a commutative ring; in Theorem~2 a valuation domain; $\mathcal{O}$ with a subscript is a ring of integers}
+\nt{$V$, $V'$}{$\cO$-modules}
+\nt{$A$, $B$, $C$, $A'$, $B'$, $A'_0$}{submodules}
+\nt{$z$, $z'$, $w$}{elements of~$\cO$}
+\nt{\m{\IndexDvd{A}{B}{z}}}{the index of $B$ in $A$ divides~$z$ (Definition~\ref{d:index})}
+\nt{$n$; \m{y_1,\dots,y_n}; $y'_i$, $v_i$, $b_i$, $t_i$}{the length of a family; a family of elements of a module; further elements}
+\nt{$u$, $u'$, \m{u_{ii'}}}{square matrices over~$\cO$ and their entries}
+\nt{$i$, $i'$, $l$, $l'$}{indices; also natural numbers bounding exponents}
+\nt{$G$, $G_i$, \m{G^{\mathsf{T}}}}{a linear map, also a square matrix; a family of linear maps; the transpose}
+\nt{$p$, $\nu$, $Y$, $c$}{a ring element, a natural number, an endomorphism, a real number (Definition~\ref{d:type})}
+\nt{$Y_i$, $c_i$, $Y'$, $e$}{endomorphisms, real numbers; a composite; the length of a list, in Remark~\ref{r:dvr} a length}
+\nt{$\cJ$, $\cS$, $\cS'$, $\cS_0$, \m{\#\cS}}{finite sets or sets of indices; the number of elements}
+\nt{\m{\cO^{\cJ}}, \m{\MJ(\cO)}, \m{\GLJ(\cO)}}{families, matrices and invertible matrices indexed by~$\cJ$}
+\nt{$E$, $\cO_E$, $\Af$, $\Oh$}{a CM field, its integers, its finite adeles, the integral adeles}
+\nt{$\Phi_w$, $\varphi$, $w$, $v$}{the embeddings of a CM type; a ring homomorphism to~$\CC$; infinite places ($w$ is also a ring element in §\ref{s:calculus})}
+\nt{$M$}{an integer \m{\ge1} in the different of~$E$}
+\nt{\m{\UJ(\Af)}, \m{\UJ(E)}, \m{\Kf{E}{\cJ}}}{the unitary group of the standard form: adelic points, rational points, the stabiliser of the standard lattice}
+\nt{\m{\StdClasses{K}}, $K$}{the classes at level~$K$; a subgroup of \m{\UJ(\Af)}}
+\nt{\m{\numInf{E}}}{the number of infinite places of~$E$}
+\nt{\m{\sbc{E}{\cJ}{M}}}{the constant \m{6M(\numInf{E}\cdot\#\cJ)^{2}}}
+\nt{$\fc$, $\fc'$, $h_{\fc}$, $h$, \m{h^{*}}}{classes; a representative; an adelic matrix; the conjugate transpose}
+\nt{$L_{\fc}$, $L$, $Q_{\fc}$, $H_{\fc}$, $Z_{\fc}$}{a short basis; \m{h_{\fc}^{-1}L_{\fc}}; the Gram matrix; the approximate inverse}
+\nt{$\varrho$, $\eta$, $\alpha$, $\delta$, $z_w$}{the approximation map; an adele; an element of~$E$; an element of the different; complex numbers}
+\nt{$\gamma$, $\kappa$}{a rational unitary matrix; an element of the level subgroup}
+\nt{$E'$, $\Phi_v$, $F$, $\omega$}{in Input~3: a number field, its embeddings, a map, a bound; in Input~4, $\omega$ are weights}
+\nt{$\mathcal{A}$, $\mathcal{R}$, $\mathcal{K}$, $\mathcal{N}$, $\iota$, $\epsilon$}{in Input~4: a ring, a subring, finite sets, an injection, an idempotent}
+\nt{$X$, $T$, $\Delta$, $T'_{11}$, $\Delta_{11}$}{the matrix to be reduced, the transformation, the triangular form, their blocks}
+\nt{$y$, $y'$, $\bar v$}{in Input~4 two ring elements; the complex conjugate}
+\nt{$N$, $P$, $U$, $a$, $f$, $s$, $t$, $L$}{letters of the formal text, used only in §\ref{s:notes}, note~2}
+\end{multicols}
+\endgroup
+
+\end{document}

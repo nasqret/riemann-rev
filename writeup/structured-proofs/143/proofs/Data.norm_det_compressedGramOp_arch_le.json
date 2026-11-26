@@ -1,0 +1,175 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Rows.LiftVolumeHeight:76:7",
+ "name": "Data.norm_det_compressedGramOp_arch_le",
+ "summary": "The determinant is the product of the eigenvalues; for an eigenvector z with eigenvalue α, pairing gl(gl*z) with the σ-twisted table of gl*z and using that projection to L does not increase the σ-norm of tested forms gives |σα| ≤ exp β.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "σ(det) is the product of σ applied to the roots of the characteristic polynomial, which splits over ℂ, and exp(dim L·β) = exp(β)^{number of roots}.",
+   "lines": [
+    79,
+    80
+   ],
+   "lean": "  erw [← place_apply σ.toRingHom, End.det_eq_prod_roots_charpoly_of_splits (splits _), exp_nat_mul,\n    map_multiset_prod, ← charpoly_natDegree, ← card_roots_eq_natDegree]",
+   "uses": [],
+   "ambient_uses": [
+    "Module.End.det_eq_prod_roots_charpoly_of_splits"
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "It suffices that |σ(α)| ≤ exp β for every root α; α is an eigenvalue, with an eigenvector z.",
+   "lines": [
+    81,
+    82
+   ],
+   "lean": "  refine Multiset.prod_map_le_pow_card (by simp) fun α h ↦ ((End.hasEigenvalue_iff_isRoot_charpoly\n    ..).2 (Polynomial.mem_roots'.1 h).2).exists_hasEigenvector.elim fun z h ↦ ?_",
+   "uses": [],
+   "ambient_uses": [
+    "Multiset.prod_map_le_pow_card"
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "witness",
+   "claim": "A split finite place w off the places of the pair and their conjugates (frequently_isSplit_notMem_places).",
+   "lines": [
+    83,
+    83
+   ],
+   "lean": "  obtain ⟨w, hw, t⟩ := (frequently_isSplit_notMem_places (D.auxPair ϑ j)).exists",
+   "uses": [
+    {
+     "decl": "frequently_isSplit_notMem_places"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let ζ = gl*(z), a table.",
+   "lines": [
+    84,
+    84
+   ],
+   "lean": "  let ζ := gl.adjoint z",
+   "uses": []
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Applying σ to ⟨gl(ζ'), compressedGramOp z⟩ = α·⟨gl(ζ'), z⟩ (eigenvector) and taking norms, where ζ' is the auxiliary table obtained by applying conj ∘ σ⁻¹ ∘ conj ∘ σ entrywise to ζ (σ need not commute with complex conjugation; this choice makes σ⟨ζ', ζ⟩ = Σ_i weylNormSq(σ ∘ ζ_i), step 7.1).",
+   "lines": [
+    85,
+    86
+   ],
+   "lean": "  have := congr(‖σ (inner ℂ (gl (.toLp 2 (star ∘ σ.symm ∘ star ∘ σ ∘ ζ ·)))\n    ($h.apply_eq_smul).1)‖).ge",
+   "uses": [
+    {
+     "step": "4"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Unfold compressedGramOp and move gl* across (adjoint).",
+   "lines": [
+    87,
+    87
+   ],
+   "lean": "  simp [compressedGramOp, ← adjoint_inner_right gl _ z, ← le_div_iff₀'] at this S",
+   "uses": []
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Bound: rewrite σ⟨…⟩ by step 7.1, the norm of σ of an inner product by the σ-norms (norm_map_inner_le), the projection to L (= range goodLift ⊂ good ∩ ker of the Hecke polynomial at w: range_goodLift_le, heckePolyOnForms_testValue_eq_zero) does not increase the σ-norm of the tested form gl(gl*z) (normSqAt_starProjection_le), and S twice.",
+   "lines": [
+    88,
+    91
+   ],
+   "span": [
+    88,
+    3,
+    91,
+    92
+   ],
+   "lean": "grw [show σ (inner ..) = ∑ i, weylNormSq (σ <| ζ i ·) by simp [ζ, inner, coe_weylNormSq,\n    dotProduct, mulVec, mul_comm (conj _)], norm_map_inner_le, normSqAt_starProjection_le _ hw t\n    D.isCentralProj_e₀ (e ▸ D.range_goodLift_le fun _ _ a _ k m ↦ ⟨D.range_tupleIdem_le k m,\n    heckePolyOnForms_testValue_eq_zero _ _ (D.lifts_auxLift _ a.2)⟩) (tst z), S, S] at this",
+   "head_lines": [
+    88,
+    88
+   ],
+   "head_span": [
+    88,
+    3,
+    88,
+    8
+   ],
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "step": "5"
+    },
+    {
+     "decl": "AuxPair.normSqAt_starProjection_le"
+    },
+    {
+     "decl": "Data.range_goodLift_le"
+    }
+   ]
+  },
+  {
+   "id": "7.1",
+   "parent": "7",
+   "kind": "identity",
+   "claim": "σ⟨ζ', ζ⟩ = Σ_i weylNormSq(σ ∘ ζ_i) (the inner product of tables is the Gram pairing, and σ(conj ζ'_i) = conj(σ(ζ_i)) by the choice of ζ').",
+   "lines": [
+    88,
+    91
+   ],
+   "span": [
+    88,
+    8,
+    91,
+    92
+   ],
+   "lean": "show σ (inner ..) = ∑ i, weylNormSq (σ <| ζ i ·) by simp [ζ, inner, coe_weylNormSq,\n    dotProduct, mulVec, mul_comm (conj _)], norm_map_inner_le, normSqAt_starProjection_le _ hw t\n    D.isCentralProj_e₀ (e ▸ D.range_goodLift_le fun _ _ a _ k m ↦ ⟨D.range_tupleIdem_le k m,\n    heckePolyOnForms_testValue_eq_zero _ _ (D.lifts_auxLift _ a.2)⟩) (tst z), S, S] at this",
+   "typed_fact": "σ (inner ..) = ∑ i, weylNormSq (σ <| ζ i ·)",
+   "uses": [
+    {
+     "step": "4"
+    }
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Divide by Σ_i weylNormSq(σ ∘ ζ_i) > 0 (ζ ≠ 0 since gl* is injective on L (sep) and z ≠ 0; the Gram matrix is positive definite): |σ(α)| ≤ exp β.",
+   "lines": [
+    92,
+    95
+   ],
+   "lean": "  simpa [ζ, comp_def, abs_of_pos, field, ↓Complex.norm_real, le_of_lt, (sum_pos' (by simp)\n    ((not_forall.1 (h.2 ∘ sep z ∘ PiLp.ext)).imp (⟨mem_univ ·,\n    weylGram_posDef.re_dotProduct_pos <| by simpa [funext_iff, SmallFormValues] using! ·⟩)) : 0 <\n    ∑ i, weylNormSq (σ <| ζ i ·)), exp_pos] using this",
+   "uses": [
+    {
+     "step": "4"
+    }
+   ]
+  }
+ ]
+}

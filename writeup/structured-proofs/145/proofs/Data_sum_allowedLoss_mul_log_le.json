@@ -1,0 +1,168 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Columns.SizeEstimates:88:7",
+ "summary": "Bound allowedLoss(p)·log p by terms indexed by (c, r) ∈ [1, x₁] × {0,1,2,3} with p ∈ {N, mc − 1, c, mc + 1}, of size 3fa(log b)²·(log-term)·2/c; the harmonic sum ∑_{c ≤ x₁} 1/c ≤ 1 + log x₁ and size comparisons give ≤ fa(log b)³.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "fact",
+   "claim": "log x₁ > 0, and ∑_{c ≤ x₁} 1/c ≤ 1 + log x₁ (harmonic sum).",
+   "lines": [
+    89,
+    90
+   ],
+   "lean": "  obtain := (HasLogBound.pos D : 0 < D.logX₁).le, D.hasLogUpper_of_le_of_nonneg\n    (log_exp _ ▸ harmonic_eq_sum_Icc ▸ harmonic_floor_le_one_add_log D.x₁ D.le_of_hasLogBound)",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "Bound each term allowedLoss(p)·log p by the sum, over the pairs (c, r) ∈ [1, ⌊x₁⌋] × {0,1,2,3} with p = [N, mc − 1, c, mc + 1]_r, of 3fa(log b)²·(·)·2/c (shown below); regroup the total by fibers.",
+   "lines": [
+    91,
+    93
+   ],
+   "lean": "  grw [sum_le_sum fun p _ ↦ ?_, (Icc 1 ⌊D.x₁⌋₊ ×ˢ range 4).sum_fiberwise_eq_sum_filter _\n    (fun (c, r) ↦ [D.N, D.m * c - 1, c, D.m * c + 1][r]!)\n    (3 * D.f * D.a * D.logB ^ 2 * _ * 2 / ·.1), filter_subset]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "estimate",
+   "claim": "The regrouped total is ≤ budget (harmonic bound, size comparison).",
+   "lines": [
+    94,
+    94
+   ],
+   "lean": "  simp_all [sum_product, division_def, ← mul_sum]; use D.le_of_hasLogBound",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "case-split",
+   "claim": "Unfold allowedLoss; cases: p ∈ nonsplitPrimes, p = N, other.",
+   "lines": [
+    95,
+    95
+   ],
+   "lean": "  simp [allowedLoss, lt_ceil]; split_ifs with h h",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "case",
+   "claim": "Case p ∈ nonsplitPrimes (p < x₁ prime, χ_K(p) ≠ 1).",
+   "lines": [
+    96,
+    101
+   ],
+   "lean": "  · obtain := h.2.1.two_le, le_floor h.1.le\n    rsuffices ⟨u, a, b⟩ : ∃ u ∈ @filter .., @ite .. ≤ 2 * p / Prod.fst u\n    grw [loss, b, ← single_le_sum (by bound) a, h.1, log_exp, cast_div_le]; simp [field]\n    split; obtain ⟨c, _⟩ | ⟨c, _⟩ := ‹_› <;> [use (c, 3); use (c, 1)] <;>\n      grind [c.div_lt_iff_lt_mul, mul_le_mul_left c D.le_m]\n    use (p, 2); grind [mul_div_left]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "5.1",
+   "parent": "5",
+   "kind": "fact",
+   "claim": "p ≥ 2 and p ≤ ⌊x₁⌋.",
+   "lines": [
+    96,
+    96
+   ],
+   "lean": "  · obtain := h.2.1.two_le, le_floor h.1.le",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "5.2",
+   "parent": "5",
+   "kind": "reduction",
+   "claim": "It suffices to find a pair (c, r) in the fiber of p with the loss factor ≤ 2p/c.",
+   "lines": [
+    97,
+    97
+   ],
+   "lean": "    rsuffices ⟨u, a, b⟩ : ∃ u ∈ @filter .., @ite .. ≤ 2 * p / Prod.fst u",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "5.3",
+   "parent": "5",
+   "kind": "estimate",
+   "claim": "Then loss(p)·log p ≤ fa(log b)²·(a/p)·μ·log x₁ ≤ the term at (c, r).",
+   "lines": [
+    98,
+    98
+   ],
+   "lean": "    grw [loss, b, ← single_le_sum (by bound) a, h.1, log_exp, cast_div_le]; simp [field]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "5.4",
+   "parent": "5",
+   "kind": "case-split",
+   "claim": "If p is short (m ∣ p − 1 or m ∣ p + 1, p = mc ± 1): take (c, 3) or (c, 1); μ = m and m/p = m/(mc ± 1) ≤ 2/c.",
+   "lines": [
+    99,
+    100
+   ],
+   "lean": "    split; obtain ⟨c, _⟩ | ⟨c, _⟩ := ‹_› <;> [use (c, 3); use (c, 1)] <;>\n      grind [c.div_lt_iff_lt_mul, mul_le_mul_left c D.le_m]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "5.5",
+   "parent": "5",
+   "kind": "case",
+   "claim": "If p is not short: take (p, 2), μ = 1.",
+   "lines": [
+    101,
+    101
+   ],
+   "lean": "    use (p, 2); grind [mul_div_left]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "case",
+   "claim": "Case p = N: the term 4mfb·log N is bounded by the term at (1, 0).",
+   "lines": [
+    102,
+    102
+   ],
+   "lean": "  grw [h, ← single_le_sum (by bound) (a := (1, 0)) (by simpa)]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "estimate",
+   "claim": "The remaining size comparison and non-negativity.",
+   "lines": [
+    103,
+    103
+   ],
+   "lean": "  exacts [D.le_of_hasLogBound (by grind [log_nonneg, scale]), by positivity]",
+   "typed_fact": null,
+   "uses": []
+  }
+ ]
+}

@@ -1,0 +1,190 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Rows.LiftVolumeHeight:47:7",
+ "name": "Data.norm_det_compressedGramOp_padic_le",
+ "summary": "Choose test tables f_a from the integral Fock pairing matrix, an Auerbach basis z of L for the forms ⟨f_a, gl*·⟩, and apply DenominatorLe to the family y_a = gl(f_{c(a)}) (integral at every ℓ-adic place) and the family y'_b = gl(gl*(𝗁·z_b)) in the ambient space of forms (tested by tst, integral at ι): the matrix ⟨y_a, pr_L y'_b⟩ is the matrix of compressedGramOp in the basis z.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "witness",
+   "claim": "For each class c of D.SmallClasses choose a rational δ_c with δ_c·(representative of c) integral above ℓ (exists_mul_mem_integralAbove).",
+   "lines": [
+    51,
+    51
+   ],
+   "lean": "  choose δ hγ _ using fun c : D.SmallClasses ↦ exists_mul_mem_integralAbove ι.1 c.out 1",
+   "uses": [
+    {
+     "decl": "exists_mul_mem_integralAbove"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "setup",
+   "claim": "For a = (b, i) let f_a be the table equal at b to the conjugate of the weight representation of δ_{b.2}⁻¹ applied to the column i of the integer matrix of Fock pairings ⟨b_i, b_k⟩ of the basis polynomials (weight k⁻), and 0 at the other indices.",
+   "lines": [
+    52,
+    54
+   ],
+   "lean": "  let f (a : _ × _) : Tables j := .toLp 2 fun b ↦ (star (weightRep _ 0 _ (δ b.2)⁻¹\n    (star (((ite (b = a.1) (of fun i k ↦ fockPairing ℤ (nablaBasis ℤ _ _ i)\n    (nablaBasis ℤ _ (untwistedAuxPair j).colsMinus k)) 0).map (↑)).col a.2))) :)",
+   "uses": [
+    {
+     "step": "1"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "fact",
+   "claim": "For every a and table ζ: ⟨f_a, ζ⟩ = 𝗁·conj(the a.2-coordinate of the weight representation of δ_{a.1.2} applied to conj ζ(a.1)): the inner product of tables reduces to the entry a.1 (sum_eq_single), which by step 3.1 is a Gram pairing;",
+   "lines": [
+    55,
+    59
+   ],
+   "span": [
+    55,
+    3,
+    59,
+    85
+   ],
+   "lean": "have Y a ζ : inner ℂ (f a) ζ = smallHookNumber j * conj (weightRep _ 0 _ (δ a.1.2) (star (ζ a.1))\n    a.2) := by erw [PiLp.inner_apply, Fintype.sum_eq_single a.1, show inner .. = gramForm _ _ from\n    dotProduct_comm .., ← conj_gramForm, ← star_star (R := _ → ℂ) (ζ _), ← gramForm_map_weightRep\n    (e := 0) conj (δ a.1.2)] <;> simp +contextual [f, comp_def, gramForm_apply, ← mulVec_single_one,\n    -mulVec_single, ← map_mul_intCast, weylGram_mul_fockPairing, ← diagonal_intCast]",
+   "head_lines": [
+    55,
+    56
+   ],
+   "head_span": [
+    55,
+    3,
+    56,
+    66
+   ],
+   "typed_fact": "inner ℂ (f a) ζ = smallHookNumber j * conj (weightRep _ 0 _ (δ a.1.2) (star (ζ a.1))\n    a.2)",
+   "uses": [
+    {
+     "step": "2"
+    }
+   ]
+  },
+  {
+   "id": "3.1",
+   "parent": "3",
+   "kind": "identity",
+   "claim": "the inner product of value vectors is the Gram pairing (dotProduct_comm); the Gram form is conjugate symmetric and equivariant under the weight representation (conj_gramForm, gramForm_map_weightRep), and the Fock pairing matrix times the Gram matrix is 𝗁·1 (weylGram_mul_fockPairing).",
+   "lines": [
+    56,
+    59
+   ],
+   "span": [
+    56,
+    66,
+    59,
+    85
+   ],
+   "lean": "show inner .. = gramForm _ _ from\n    dotProduct_comm .., ← conj_gramForm, ← star_star (R := _ → ℂ) (ζ _), ← gramForm_map_weightRep\n    (e := 0) conj (δ a.1.2)] <;> simp +contextual [f, comp_def, gramForm_apply, ← mulVec_single_one,\n    -mulVec_single, ← map_mul_intCast, weylGram_mul_fockPairing, ← diagonal_intCast]",
+   "typed_fact": "inner .. = gramForm _ _",
+   "uses": []
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "witness",
+   "claim": "Auerbach's lemma for the linear forms z ↦ ⟨f_a, gl*(z)⟩ on L (only common zero 0, by sep and step 3) and the embedding ι: a basis z of L and indices c(k) such that the coordinates of z are the forms of c(k) and |ι⟨f_a, gl*(z_k)⟩| ≤ 1 for all a, k (exists_auerbach).",
+   "lines": [
+    60,
+    63
+   ],
+   "lean": "  choose c z e hz using exists_auerbach (finBasis ..) (fun a ↦ innerₛₗ ℂ (f a) ∘ₗ\n    gl.adjoint.domRestrict _) (fun v h ↦ sep v (PiLp.ext fun c ↦ star_injective (R := _ → ℂ)\n    ((Representation.apply_bijective ..).1 (by ext; simpa [Y] using h (c, _)))))\n    (complexToCp ι.2) fun _ ↦ continuous_bot",
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "decl": "exists_auerbach"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "Apply h with Z = L to the families y_a = gl(f_{c(a)}) (y = gl ∘ f ∘ c; integral at every embedding above ℓ, goal of step 6) and y'_b = gl(gl*(𝗁·z_b)), forms in the ambient space (not 𝗁·z_b ∈ L): tested by tst(𝗁·z_b), whose type sends w ∈ L to the testing assertion for gl(gl* w), and integral at the specified embedding ι (goal of step 6, finished in step 9); the matrix of h has entries ⟨y_a, pr_L y'_b⟩; |r| = |RowIndex| (card_rowIndex).",
+   "lines": [
+    64,
+    65
+   ],
+   "lean": "  convert card_rowIndex D ▸ h _ rfl (gl ∘ f ∘ c) _ ?_ fun a ↦\n    ⟨?_, tst ((smallHookNumber j : ℂ) • z a)⟩",
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "decl": "DenominatorLe"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "Integrality of both families (y_a at every ℓ-adic place, y'_b at ι): by int it suffices that the conjugate table is integral at each class representative; the gauge is transported to the adelic representative made integral by δ (weylGauge_embFin, weylGauge_le_one_iff with hγ), so what remains is that the weight representation at δ of the conjugate table has ℓ-adically integral entries (steps 8 and 9).",
+   "lines": [
+    66,
+    66
+   ],
+   "lean": "  any_goals intros; apply int; intro; rw [← weylGauge_embFin, @weylGauge_le_one_iff (hk := hγ _)]",
+   "uses": [
+    {
+     "step": "1"
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "computation",
+   "claim": "The determinant of the matrix ⟨y_a, pr_L y'_b⟩ = ⟨f_{c(a)}, gl*(compressedGramOp 𝗁 L gl z_b)⟩ is that of compressedGramOp 𝗁 L gl in the basis z, whose coordinate functionals are w ↦ ⟨f_{c(a)}, gl* w⟩ (det_toMatrix, coordinates of z, adjoint).",
+   "lines": [
+    67,
+    68
+   ],
+   "lean": "  simp [← det_toMatrix z, toMatrix_apply, ← z.coord_apply, e, compressedGramOp, adjoint_inner_right,\n    det_apply]",
+   "uses": []
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "computation",
+   "claim": "First family: after the transport of step 6 the weight representation at δ cancels the one at δ⁻¹ and the complex conjugation in the definition of f_a, leaving the entries of the integer Fock-pairing matrix, of ℓ-adic size ≤ 1 (norm_intCast_le_one). The integer entries are those of the Fock-pairing matrix before the transport, not of f_a itself.",
+   "lines": [
+    69,
+    69
+   ],
+   "lean": "  · simp [f, IsUltrametricDist.norm_intCast_le_one]",
+   "uses": []
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Second family: after the transport its entries are, by step 3, the Auerbach coordinates ⟨f_{(c,i)}, gl*(z_a)⟩, of ι-adic size ≤ 1 (the Auerbach bound hz).",
+   "lines": [
+    70,
+    70
+   ],
+   "lean": "  simpa [Y] using fun i ↦ hz (_, i) a",
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "step": "4"
+    }
+   ]
+  }
+ ]
+}

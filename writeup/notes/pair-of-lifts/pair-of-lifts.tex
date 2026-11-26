@@ -1,0 +1,1736 @@
+% !TEX program = lualatex
+% ---------------------------------------------------------------------------------------------
+%  Readback note 22: Two consecutive theta lifts: admissible combinations, arrow pairs and zero terms
+%
+%  Build:  python3 tools/rb.py note <slug>
+%
+%  One unit of a Lean artifact, rewritten as ordinary mathematics. The prose is hand-written. Lean names,
+%  line ranges and counts come from data.tex; quoted Lean statements are copied from the artifact by the build.
+%
+%  Rules of the text: standard terminology; every symbol is explained where it first appears and listed again
+%  in the notation at the end; no letter has two meanings; a proof is complete or says what it takes for granted;
+%  Lean names appear only in the LEAN lines and in the concordance.
+%
+%  The signature rule (the build enforces it): a function, relation or predicate that the artifact defines is
+%  written only through its notation macro, which the build makes from the spec (`notation`) with one slot for
+%  each explicit argument of the Lean definition. No argument is fixed and dropped, also not "for brevity" and
+%  not for one section. Every argument and every hypothesis of a stated declaration stands inside its
+%  statement, or in a Setting that the statement cites by number; only implicit and instance arguments (the
+%  ambient objects) may stand in the conventions.
+% ---------------------------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\ifdefined\pdfvariable\pdfvariable suppressoptionalinfo \numexpr 1+2+4+8\relax\fi
+\usepackage[a4paper,hmargin=35mm,top=22mm,bottom=27mm,footskip=12mm,nohead]{geometry}
+
+\usepackage{fontspec}
+\directlua{
+  luaotfload.add_fallback("gfallback", {"STIXTwoMath-Regular.otf:mode=node;", "DejaVuSans.ttf:mode=node;"})
+  luaotfload.add_fallback("gmonofallback", {"DejaVuSansMono.ttf:mode=node;", "STIXTwoMath-Regular.otf:mode=node;"})
+}
+\setmainfont{NewCM10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookItalic,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldItalic,SmallCapsFont=*-Book,SmallCapsFeatures={Letters=SmallCaps},
+  RawFeature={fallback=gfallback}]
+\setsansfont{NewCMSans10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookOblique,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldOblique,RawFeature={fallback=gfallback}]
+\setmonofont{JetBrainsMono}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,Scale=MatchLowercase,
+  RawFeature={-calt;-liga;fallback=gmonofallback}]
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage[math-style=TeX]{unicode-math}
+\setmathfont{NewCMMath-Book.otf}
+\emergencystretch=2.5em\relax
+
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows.meta,positioning,backgrounds}
+\usepackage[protrusion=true,expansion=true]{microtype}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{multicol}
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+
+\definecolor{ink}{HTML}{0F172A}
+\definecolor{inksoft}{HTML}{475569}
+\definecolor{inkfaint}{HTML}{94A3B8}
+\definecolor{rulegrey}{HTML}{CBD5E1}
+\definecolor{arith}{HTML}{C2410C}
+\definecolor{est}{HTML}{7C3AED}
+\definecolor{ana}{HTML}{0891B2}
+\definecolor{ok}{HTML}{047857}
+\definecolor{leancol}{HTML}{3730A3}
+
+\title{Two consecutive theta lifts: admissible combinations, arrow pairs and zero terms}
+\author{grh-compact}
+\date{}
+
+% ------------------------------------------------------------------------------------- macros
+\newcommand{\leanfont}{\ttfamily\fontsize{8.6}{10.5}\selectfont\color{leancol}}
+\newcommand{\lean}[1]{\csname LN@#1\endcsname}
+\newcommand{\fillin}[1]{{\color{arith}\itshape[#1]}}  % a place of the template that is not written yet; the build reports every one that is left
+\newcommand{\leanquote}[1]{\csname LQ@#1\endcsname}
+\input{data.tex}
+
+\linespread{1.08}                       % 11 pt on 14.7 pt
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt plus 1.5pt minus 0.5pt}
+\setlength{\abovedisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\belowdisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\abovedisplayshortskip}{3pt plus 2pt}
+\setlength{\belowdisplayshortskip}{6pt plus 2pt minus 2pt}
+\emergencystretch=1.5em
+\clubpenalty=10000 \widowpenalty=10000 \displaywidowpenalty=10000
+\relpenalty=7000 \binoppenalty=9000
+\raggedbottom
+\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\sffamily\fontsize{7.6}{9}\selectfont\color{inkfaint}\thepage\,/\,\pageref*{LastPage}}
+\setlist{topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=4pt,leftmargin=2.1em,labelsep=0.55em}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\len}{\operatorname{len}}
+\newcommand{\cok}{\operatorname{cok}}
+\newcommand{\End}{\operatorname{End}}
+\newcommand{\Hom}{\operatorname{Hom}}
+\newcommand{\Gal}{\operatorname{Gal}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\kw}[1]{\emph{#1}}
+\newcommand{\m}[1]{\mbox{$#1$}}        % a short formula that must not be broken across lines
+\newcommand{\head}[1]{\par\addvspace{17pt plus 4pt minus 2pt}\Needspace{6\baselineskip}%
+  \noindent{\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\sect}[2]{\refstepcounter{section}\label{#2}\par\addvspace{19pt plus 4pt minus 2pt}\Needspace{7\baselineskip}%
+  \noindent\llap{{\fontsize{13.2}{16}\selectfont\bfseries\color{inkfaint}\thesection}\hspace{9pt}}%
+  {\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\subhead}[1]{\par\addvspace{9pt plus 2pt}\Needspace{4\baselineskip}\noindent\textbf{#1}\enspace\ignorespaces}
+% where a statement lives in the Lean archive
+\newcommand{\leantag}{{\sffamily\bfseries\fontsize{6.3}{8}\selectfont\color{leancol}\addfontfeatures{LetterSpace=7}LEAN}}
+\newcommand{\sep}{\unskip\nobreak\hspace{5pt}{\color{inkfaint}\textperiodcentered}\hspace{5pt plus 2pt}\ignorespaces}
+\newcommand{\leanline}[1]{\par\nopagebreak\vspace{-2.5pt}{\fontsize{8.9}{12.4}\selectfont\color{inksoft}\raggedright
+  \noindent\llap{\leantag\hspace{9pt}}#1\par}\vspace{1pt}}
+% a displayed statement in a tinted box: #1 colour, #2 text
+\newcommand{\statement}[2]{\par\addvspace{7pt}\begingroup\setlength{\fboxsep}{8.5pt}\setlength{\fboxrule}{0.6pt}%
+  \noindent\fcolorbox{#1!30!white}{#1!3!white}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{#2}}%
+  \endgroup\par\addvspace{7pt}}
+\newcommand{\nt}[2]{\par\noindent\hangindent=1.1em\hangafter=1 #1\enspace{\color{inksoft}#2}\par\vspace{1pt}}
+\newcommand{\legdot}[1]{\tikz[baseline=-0.62ex]\fill[#1] (0,0) circle (2.5pt);\hspace{3pt}}
+\newcommand{\crow}[4]{\csname CS@#1\endcsname & #2 & \textcolor{inksoft}{#3} & \textcolor{inksoft}{#4}\\}
+\newcommand{\leanquoteline}[2]{\par\noindent\hangindent=\dimexpr#1\fontdimen2\font+2.2em\relax\hangafter=1
+  \hspace*{#1\fontdimen2\font}#2}
+\newcommand{\quoted}[1]{\par\vspace{3pt}{\ttfamily\fontsize{7.5}{10.4}\selectfont\color{leancol}\raggedright
+  \setlength{\parskip}{0pt}\leanquote{#1}\par}\vspace{4pt}}
+\newcommand{\bx}[3]{{\sffamily\bfseries\fontsize{7.3}{9.2}\selectfont\color{#1!82!black}#2}\\[1.5pt]#3}
+\newcommand{\cs}[2]{\expandafter\newcommand\csname CS@#1\endcsname{#2}}
+
+% theorems
+\newtheoremstyle{plainx}{7pt plus 2pt}{7pt plus 2pt}{\itshape}{}{\bfseries}{.}{0.5em}{}
+\newtheoremstyle{uprightx}{7pt plus 2pt}{7pt plus 2pt}{}{}{\bfseries}{.}{0.5em}{}
+\theoremstyle{plainx}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{uprightx}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{setting}[theorem]{Setting}          % hypotheses shared by several statements; each of them cites it by number
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\renewcommand{\qedsymbol}{{\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.5pt}\fbox{\rule{0pt}{0.46em}\hspace{0.46em}}}}
+% what holds throughout the note: the ambient objects only (implicit and instance arguments), never a hypothesis
+\newenvironment{conventions}{\par\addvspace{5pt}\noindent\textbf{Conventions.}\enspace\ignorespaces}{\par\addvspace{3pt}}
+\makeatletter
+\renewenvironment{proof}[1][Proof]{\par\pushQED{\qed}\normalfont\topsep0pt\partopsep0pt
+  \trivlist\item[\hskip\labelsep\itshape #1.]\ignorespaces}{\popQED\endtrivlist\@endpefalse}
+\makeatother
+
+
+% where each declaration of the concordance is treated: \cs{key}{place}, the place naming a \label or a lettered item
+\cs{integralAway}{Definition~\ref{d:away}}
+\cs{IsAdmissibleCoeffs}{Definition~\ref{d:adm}}
+\cs{IsAdmissibleComb}{Definition~\ref{d:adm}}
+\cs{ofsum}{Lemma~\ref{l:rules}}
+\cs{single}{Lemma~\ref{l:rules}}
+\cs{map}{Lemma~\ref{l:rules}}
+\cs{smul}{Lemma~\ref{l:rules}}
+\cs{smulofeqzeroorisOfFinOrder}{Lemma~\ref{l:rules}}
+\cs{ofeqisOfFinOrdersmul}{Lemma~\ref{l:rules}}
+\cs{mapbilinear}{Lemma~\ref{l:rules}}
+\cs{normUnitsmul}{Lemma~\ref{l:rules}}
+\cs{bind}{Theorem A}
+\cs{smulmem}{Theorem A}
+\cs{pure}{Theorem A}
+\cs{divmemintegralAway}{Lemma~\ref{l:away}}
+\cs{localLevelleintegralAboveofcoprime}{Lemma~\ref{l:away}}
+\cs{normfinMultipliereqone}{Lemma~\ref{l:away}}
+\cs{normpadicdet}{Lemma~\ref{l:away}}
+\cs{weightedTranslations}{Definition~\ref{d:transl}}
+\cs{translations}{Definition~\ref{d:transl}}
+\cs{selfOrConj}{Definition~\ref{d:transl}}
+\cs{mulVecmemweightedTranslations}{Lemma~\ref{l:transl}}
+\cs{starmemweightedTranslations}{Lemma~\ref{l:transl}}
+\cs{IsSplitSquarefree}{Definition~\ref{d:splsq}}
+\cs{gradedLatticeBasis}{Definition~\ref{d:lattice}}
+\cs{SpansLattice}{Definition~\ref{d:lattice}}
+\cs{isUnimodulargradedLatticeBasisgram}{Proposition~\ref{p:unimod}}
+\cs{existsframegradedGram}{Proposition~\ref{p:frame}}
+\cs{invxFinmulVecmemofspansLattice}{Lemma~\ref{l:inlattice}}
+\cs{isAdmissibleCombweilvacElem}{Proposition~\ref{p:moved}}
+\cs{zeroTermFin}{Definition~\ref{d:ztf}}
+\cs{zeroTermFinspec}{Proposition~\ref{p:ztfspec}}
+\cs{zeroTermFinfinHeisOpfinFrameVector}{Proposition~\ref{p:ztfspec}}
+\cs{zeroTermFinsupport}{Proposition~\ref{p:support}}
+\cs{zeroTermFinfinHeisOpvacElem}{Proposition~\ref{p:vac}}
+\cs{GradeZeroPart}{Definition~\ref{d:gzp}}
+\cs{splitting}{Definition~\ref{d:gzp}}
+\cs{hom}{Definition~\ref{d:gzphom}}
+\cs{ratCoordMatrixsum}{Lemma~\ref{l:coord}}
+\cs{inclXmulstringMapmulinclXinv}{Lemma~\ref{l:coord}}
+\cs{stackedT}{Definition~\ref{d:stacked}}
+\cs{stackedTFin}{Definition~\ref{d:stacked}}
+\cs{ArrowPair}{Definition~\ref{d:arrow}}
+\cs{homZeroPart}{Definition~\ref{d:fev}}
+\cs{splittinga}{Definition~\ref{d:fev}}
+\cs{finEval}{Definition~\ref{d:fev}}
+\cs{arrowTensorfinEval}{Lemma~\ref{l:atfev}}
+\cs{zeroTermsplittingtripleWeil}{Theorem B}
+\cs{finEvalinclXFin}{Theorem B}
+\cs{middlePair}{Definition~\ref{d:pairs}}
+\cs{lastPair}{Definition~\ref{d:pairs}}
+\cs{integralconstTermAtTmul}{Theorem C}
+\cs{integralthetaeqlift}{Theorem C}
+\cs{IsNeighbourVector}{Definition~\ref{d:nbv}}
+\cs{IsAdmissibleEval}{Definition~\ref{d:admev}}
+\cs{existsisAdmissibleEvalstd}{Proposition~\ref{p:std}}
+\cs{isAdmissibleEvalfinEval}{Theorem D}
+\cs{inFinFin}{Input~\ref{in:1}}
+\cs{inPsiFin}{Input~\ref{in:1}}
+\cs{inFinVac}{Input~\ref{in:1}}
+\cs{inFinMem}{Input~\ref{in:1}}
+\cs{inOmFin}{Input~\ref{in:1}}
+\cs{inOmInt}{Input~\ref{in:1}}
+\cs{inRhoInt}{Input~\ref{in:1}}
+\cs{inVacSum}{Input~\ref{in:1}}
+\cs{inNormSq}{Input~\ref{in:1}}
+\cs{inSmulVac}{Input~\ref{in:1}}
+\cs{inDual}{Input~\ref{in:1}}
+\cs{inProj}{Input~\ref{in:1}}
+\cs{inThArrow}{Input~\ref{in:2}}
+\cs{inHomArrow}{Input~\ref{in:2}}
+\cs{inFinArrow}{Input~\ref{in:2}}
+\cs{inArrowPair}{Input~\ref{in:2}}
+\cs{inTensorLift}{Input~\ref{in:2}}
+\cs{inLeftInv}{Input~\ref{in:2}}
+\cs{inRange}{Input~\ref{in:2}}
+\cs{inThRat}{Input~\ref{in:2}}
+\cs{inPairHeis}{Input~\ref{in:2}}
+\cs{inAdapted}{Input~\ref{in:3}}
+\cs{inMixedVac}{Input~\ref{in:3}}
+\cs{inRealZero}{Input~\ref{in:3}}
+\cs{inZeroRho}{Input~\ref{in:3}}
+\cs{inFrameVec}{Input~\ref{in:3}}
+\cs{inFrameAdj}{Input~\ref{in:3}}
+\cs{inZeroIncl}{Input~\ref{in:3}}
+\cs{inHomTarget}{Input~\ref{in:3}}
+\cs{inNameBox}{Input~\ref{in:3}}
+\cs{inNameTr}{Input~\ref{in:3}}
+\cs{inNameOm}{Input~\ref{in:3}}
+\cs{inBesselMean}{Input~\ref{in:4}}
+\cs{inGenConst}{Input~\ref{in:4}}
+\cs{inConstRat}{Input~\ref{in:4}}
+\cs{inAutCoef}{Input~\ref{in:5}}
+\cs{inHermite}{Input~\ref{in:6}}
+\cs{inDense}{Input~\ref{in:7}}
+\cs{inPolyProd}{Input~\ref{in:7}}
+\cs{inMeans}{Input~\ref{in:7}}
+\cs{inCoprime}{Input~\ref{in:7}}
+
+% ------------------------------------------------------------------ macros of this note that are not notations of
+% defined functions (those are made by the build, in data.tex, from the spec)
+\newcommand{\CC}{\mathbb{C}}
+\newcommand{\NN}{\mathbb{N}}
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\A}{\mathbb{A}}
+\newcommand{\Af}{\mathbb{A}_f}
+\newcommand{\Oh}{\hat{\mathcal{O}}}
+\newcommand{\cj}[1]{\overline{#1}}
+\newcommand{\cX}{\mathcal{X}}
+\newcommand{\cY}{\mathcal{Y}}
+\newcommand{\cZ}{\mathcal{Z}}
+\newcommand{\cR}{\mathcal{R}}
+\newcommand{\pt}{\mathrm{pt}}
+\newcommand{\Sch}[1]{\mathcal{S}(#1)}           % the space of data of a hermitian space
+\newcommand{\Wf}[1]{\mathcal{W}_f(#1)}          % its finite part
+\newcommand{\om}[1]{\omega_{#1}}                % the Weil representation
+\newcommand{\rh}[1]{\varrho_{#1}}               % the Heisenberg operators
+\newcommand{\rhf}[1]{\varrho^{f}_{#1}}          % the finite Heisenberg operators
+\newcommand{\vac}[1]{\mathrm{vac}_{#1}}         % the vacuum
+\newcommand{\tht}[1]{\theta_{#1}}               % the theta functional
+\newcommand{\Df}{\Delta_f}                      % the finite multiplier
+\newcommand{\Hm}[2]{\Hom(#1,#2)}
+\newcommand{\fls}[2]{#1^{-}\oplus #2}           % the first space with its form negated, plus the second
+\newcommand{\St}[1]{\langle #1\rangle}          % the standard definite space on an index set
+\newcommand{\Hyp}[2]{\mathbb{H}^{#1}\oplus #2}  % hyperbolic planes plus a space
+\newcommand{\ev}[1]{\operatorname{ev}_{#1}}     % the zero term along a splitting
+\newcommand{\gr}[1]{\operatorname{gr}_{#1}}     % the grade of a grading
+\newcommand{\Tm}[2]{T_{#1,#2}}                  % the frequency map of two gradings
+\newcommand{\inX}[1]{\imath_{#1}}               % the inclusion of the definite part
+\newcommand{\inXf}[1]{\imath^{f}_{#1}}
+\newcommand{\fc}[1]{\mathfrak{c}(#1)}           % the constant of a grading
+\newcommand{\tW}[2]{\omega^{\mathrm{tr}}_{#1,#2}}       % the triple Weil action
+\newcommand{\pW}[1]{\omega^{\mathrm{pr}}_{#1}}          % the twisted pair action
+\newcommand{\pWf}[1]{\omega^{\mathrm{pr},f}_{#1}}       % its finite part
+\newcommand{\at}{\operatorname{at}}
+\newcommand{\atl}{\operatorname{at}^{\flat}}
+\newcommand{\tsum}[5]{\tau^{#3}_{#4}[#1,#2,#5]}        % the translate sum of the note on the Gauss-sum operator
+\newcommand{\Gg}[1]{G(#1)}
+\newcommand{\Gfin}[1]{G_f(#1)}
+\newcommand{\qG}[1]{[G(#1)]}
+\newcommand{\Bes}[1]{B(#1)}
+\newcommand{\qB}[1]{[B(#1)]}
+\newcommand{\coef}[1]{\operatorname{coef}_{#1}}
+\newcommand{\ct}[3]{\operatorname{ct}^{#3}_{#1,#2}}    % the constant term at T of two gradings, for a character
+\newcommand{\AF}[3]{\mathcal{A}(#1;#2,#3)}             % algebraic forms on a standard space
+\newcommand{\epsm}{\epsilon_{-}}                        % the chosen integral finite adele of norm -1
+\newcommand{\wt}{\operatorname{wt}}
+\newcommand{\ind}[1]{\operatorname{ind}_{#1}}
+\newcommand{\inc}[1]{\operatorname{inc}_{#1}}
+\newcommand{\psio}{\psi_0}
+\newcommand{\gram}[2]{\operatorname{Gr}_{#1}(#2)}       % the Gram matrix of a definite part plus a string
+\newcommand{\gzh}[2]{\Hom(#1,#2)^{0}}                   % the grade-zero part of a space of homomorphisms
+\newcommand{\Rmid}[3]{\cR_{\mathrm{mid}}(#1,#2,#3)}
+\newcommand{\Rlast}[4]{\cR_{\mathrm{last}}(#1,#2,#3;#4)}
+\newcommand{\nun}{\operatorname{nu}}
+\newcommand{\Fock}[1]{\mathcal{F}(#1)}                  % the real data (Fock space) of a hermitian space
+\newcounter{inputno}
+\newcommand{\inp}[1]{\refstepcounter{inputno}\textbf{Input~\theinputno.}}   % the argument is the number, for the reader of the source
+
+\begin{document}
+\color{ink}
+
+{\raggedright
+{\sffamily\bfseries\fontsize{7.2}{9}\selectfont\color{leancol}\addfontfeatures{LetterSpace=8}READBACK NOTE 22\par}
+\vspace{5pt}
+{\fontsize{21.5}{25.5}\selectfont\bfseries Two consecutive theta lifts: admissible combinations, arrow pairs and zero terms\par}
+\vspace{5pt}
+{\fontsize{12.4}{16}\selectfont\itshape\color{inksoft} One unit of the Lean artifact \ArtifactName, read back into
+mathematics\par}}
+\vspace{8pt}
+{\color{rulegrey}\hrule height 0.6pt}
+\vspace{7pt}
+\thispagestyle{empty}
+
+\textbf{Summary.} The seesaw identity of Chapter~V is proved by unfolding a chain of theta lifts two lifts at a
+time. This note supplies that two-lift step and its arithmetic bookkeeping. First, a calculus of \kw{admissible
+combinations}: finite linear combinations whose coefficients are integral away from a given integer, up to a
+denominator, and bounded at every conjugate. Second, for three hermitian spaces graded by strings of lengths
+$l$, \m{l-1}, \m{l-2}, an \kw{arrow pair}: a splitting of the space of homomorphisms that carries two consecutive lifts
+at once; its zero term intertwines the Weil actions, so that the period of a generic function against two
+consecutive constant terms is a matrix coefficient of two definite theta lifts. Third, the finite part of that
+zero term sends translated vacua to admissible combinations of Gauss-sum translates of pairs of translated vacua.
+
+\statement{leancol}{\fontsize{9.6}{13.2}\selectfont\textbf{What this note is.} The artifact \ArtifactName{} is a
+body of Lean code whose final theorems state the Riemann hypothesis and its analogue for Dirichlet $L$-functions.
+Its authors report that it compiles and that Lean's kernel accepts these theorems from the three standard axioms;
+the record of checks of this write-up says who replayed what. That is a fact about a formal text: no
+mathematician has read the argument through, and the result is a \emph{claim}. This note treats one part of one
+unit of the argument (the folder of the seesaw identity): \UnitInNote{} of its \UnitMembers{} declarations,
+those of eight files; the other declarations are treated in the notes on the seesaw identity, on the
+Gauss-sum operator and on the characters and index sets of the data. Every statement below was compared, argument
+by argument, with its Lean statement, and every proof is written out, except that two statements proved in
+the formal text by one automatic step are only described (Lemma~\ref{l:away}, parts~(c) and~(d)). What is
+taken for granted is stated as Inputs~1 to~7 with its owner: the construction of the Weil representation, its
+mixed model and the unfolding of Bessel periods come from the background library of the artifact, which this
+write-up quotes and does not read. The Lean text read is \PinText; Appendix~A is the concordance of \ConcDecls{}
+declarations.}
+
+\sect{The statements}{s:intro}
+The objects are defined in Section~\ref{s:setting}; the four statements cite its Settings. Throughout, a
+\kw{proposition} $p$ is a statement that may or may not hold: it switches the size bounds on.
+
+\statement{arith}{\phantomsection\label{t:A}\textbf{Theorem A} (calculus of admissible combinations).\enspace
+Let $\cX$, $\cX'$ be sets, $Z$ a complex vector space, \m{v\colon\cX\to Z} and \m{v'\colon\cX'\to Z} families of
+vectors, \m{A\subseteq\cX} and \m{A'\subseteq\cX'}, $n$ and $d$ natural numbers, $p$ a proposition, $B$ a real
+number and \m{z\in Z} with $\AdmComb{v}{A}{n}{d}{p}{B}{z}$ (Definition~\ref{d:adm}).
+
+\emph{(i) Substitution.} Let $d'$, $d''$ be natural numbers and $B'$, $C$ real numbers. Suppose that
+$\AdmComb{v'}{A'}{n}{d'}{p}{B'}{v(x)}$ for every \m{x\in A}, that \m{d\cdot d'} divides $d''$, and that $p$
+implies \m{B\cdot|B'|\le C}. Then $\AdmComb{v'}{A'}{n}{d''}{p}{C}{z}$.
+
+\emph{(ii) Integrality.} Let $\ell$ be a prime number that does not divide~$n$, let
+\m{\jmath\colon\CC\to\CC_\ell} be a ring homomorphism, $O_\jmath$ the ring of the complex numbers $w$ with
+\m{|\jmath(w)|_\ell\le1}, and $M$ an $O_\jmath$-submodule of $Z$ that contains $v(x)$ for every \m{x\in A}. Then
+\m{d\cdot z\in M}.
+
+\emph{(iii) Tensor products.} Let $n$ be a natural number and $p$ a proposition. For \m{j\in\NN} let $\cX_j$ be
+an additive group and $A_j$ a subgroup of it; for \m{i\in\NN} let $F_i$ be a complex vector space,
+\m{v_i\colon\cX_{2i}\times\cX_{2i+1}\to F_i} a family and \m{f_i\in F_i}. Let $d$, $m$ be natural numbers and $B$
+a real number, and suppose $\AdmComb{v_i}{A_{2i}\times A_{2i+1}}{n}{d}{p}{B}{f_i}$ for every \m{i<m}. Let $v_{\otimes m}$ be
+the family \m{y\mapsto v_{m-1}(y_{2m-2},y_{2m-1})\otimes\dots\otimes v_0(y_0,y_1)}, indexed by all tuples
+\m{y=(y_j)_{j\in\NN}} with \m{y_j\in\cX_j}, and $A_{*}$ the set of the tuples with \m{y_j\in A_j} for all~$j$. Then the
+pure tensor satisfies
+\[\AdmComb{v_{\otimes m}}{A_{*}}{n}{d^{m}}{p}{|B|^{m}}{f_{m-1}\otimes\dots\otimes f_0}.\]}
+
+\statement{arith}{\phantomsection\label{t:B}\textbf{Theorem B} (the zero term of an arrow pair is equivariant).\enspace
+In Setting~\ref{set:three}, let $X''$ and $H$ be finite index sets and \m{\cR\in\ArP{\cY}{\cY'}{\cY''}{X''}{H}} an
+arrow pair (Definition~\ref{d:arrow}), with its homomorphism
+$\operatorname{emb}_{\cR}\colon\Gg{\St{X_0}}\to\Gg{\St{X''}}$, its splitting $\aps{\cR}$ and its finite evaluation
+$\fev{\cR}$ (Definition~\ref{d:fev}). Let $\mu$, $\mu'$ be characters of $\mathrm{U}(1)(\A)$ trivial on
+$\mathrm{U}(1)(E)$.
+
+\emph{(i)} For all \m{g\in\Gg{\St{X}}}, \m{g'\in\Gg{\St{X'}}}, \m{k\in\Gg{\St{X_0}}} and
+\m{f\in\Sch{\Hm{V'}{\fls{V}{V''}}}},
+\[\ev{\aps{\cR}}\Bigl(\tW{\mu}{\mu'}\bigl(\inX{\cY}(g),\inX{\cY'}(g'),\inX{\cY''}(k)\bigr)f\Bigr)
+=\tW{\mu}{\mu'}\bigl(g,g',\operatorname{emb}_{\cR}(k)\bigr)\,\ev{\aps{\cR}}(f).\]
+
+\emph{(ii)} Let \m{g\in\Gfin{X}}, \m{g'\in\Gfin{X'}}, \m{k\in\Gfin{X_0}}, \m{k'\in\Gfin{X''}} and \m{x\in\Gfin{I''}}
+be finite points with \m{\inXf{\cY''}(k)=x} and \m{\operatorname{emb}_{\cR}(1,k)=(1,k')}, and let
+\m{\Phi\in\Wf{\Hm{V}{V'}}}, \m{\Phi'\in\Wf{\Hm{V'}{V''}}}. Then
+\[\begin{aligned}
+&\fev{\cR}\Bigl(\pWf{\mu}\bigl(\inXf{\cY}(g),\inXf{\cY'}(g')\bigr)\Phi\boxtimes\pWf{\mu'}\bigl(\inXf{\cY'}(g'),x\bigr)\Phi'\Bigr)\\
+&\qquad=\bigl(\pWf{\mu}(g,g')\otimes\pWf{\mu'}(g',k')\bigr)\,\fev{\cR}(\Phi\boxtimes\Phi').
+\end{aligned}\]}
+
+\statement{arith}{\phantomsection\label{t:C}\textbf{Theorem C} (two unfolding steps are a double lift).\enspace
+\emph{(i)} In Setting~\ref{set:three}, let $X''$ and $H$ be finite index sets and
+\m{\cR\in\ArP{\cY}{\cY'}{\cY''}{X''}{H}}. There is \m{z\in\CC} such that for all characters $\mu$, $\mu'$ of
+$\mathrm{U}(1)(\A)$ trivial on $\mathrm{U}(1)(E)$, all data \m{f\in\Sch{\Hm{V}{V'}}} and
+\m{f'\in\Sch{\Hm{V'}{V''}}}, all \m{k\in\Gg{\St{X_0}}}, all functions \m{P\colon\Gg{V}\to\CC} and all
+\m{h\in\Gg{V}}: if $P$ is generic for~$\cY$, then
+\[\begin{aligned}
+&\int_{\qB{\cY'}}\int_{\qB{\cY}}P(gh)\,\ct{\cY}{\cY'}{\mu}(f)(g,r)\,\ct{\cY'}{\cY''}{\mu'}(f')\bigl(r,\inX{\cY''}(k)\bigr)\,dg\,dr\\
+&\quad=\int_{\qG{\St{X}}}P\bigl(\inX{\cY}(g)h\bigr)\Bigl(z\int_{\qG{\St{X'}}}\tht{}\bigl(\tW{\mu}{\mu'}\bigl(g,r,\operatorname{emb}_{\cR}(k)\bigr)f_{\cR}\bigr)\,dr\Bigr)dg,\\
+&\qquad\text{where }f_{\cR}=\ev{\aps{\cR}}\bigl(\rh{}(\stT{\cY}{\cY'}{\cY''})(f\boxtimes f')\bigr).
+\end{aligned}\]
+Here \m{\rh{}(\stT{\cY}{\cY'}{\cY''})} is the Heisenberg operator of \m{\Hm{V'}{\fls{V}{V''}}} at the frame coordinates
+of the stacked frequency map (Definition~\ref{d:stacked}), and $\tht{}$ is the theta functional of
+\m{\Hm{\St{X'}}{\fls{\St{X}}{\St{X''}}}}.
+
+\emph{(ii)} Let $E$ be a CM field with Weil data, $X$, $X'$, $X_0$ finite index sets, $\varkappa$ a weight and $e$,
+$e'$, $e''$ determinant exponents, $U$ a set, and for \m{o\in U} let $\mu_o$, $\mu'_o$ be characters of
+$\mathrm{U}(1)(\A)$ trivial on $\mathrm{U}(1)(E)$ and
+\[\begin{aligned}
+\mathcal{L}_o&\colon\Wf{\Hm{\St{X}}{\St{X'}}}\to\Hom_{\CC}\bigl(\AF{X}{\varkappa}{e},\AF{X'}{\varkappa}{e'}\bigr),\\
+\mathcal{L}'_o&\colon\Wf{\Hm{\St{X'}}{\St{X_0}}}\to\Hom_{\CC}\bigl(\AF{X'}{\varkappa}{e'},\AF{X_0}{\varkappa}{e''}\bigr)
+\end{aligned}\]
+linear maps such that $(\mathcal{L}_o)_o$ is a family of theta lifts for $(\mu_o)_o$ and $(\mathcal{L}'_o)_o$ a
+family of theta lifts for $(\mu'_o)_o$ (Input~5). Let $u$ be a real datum of
+\m{\Hm{\St{X'}}{\fls{\St{X}}{\St{X_0}}}} and $t$ a linear functional on the vectors of weight~$\varkappa$ for~$X$. Let
+$\mathcal{L}''_o$ be the linear map on $\Wf{\Hm{\St{X}}{\St{X'}}}\otimes\Wf{\Hm{\St{X'}}{\St{X_0}}}$ with
+$\mathcal{L}''_o(\Phi\otimes\Phi')=\mathcal{L}'_o(\Phi')\circ\mathcal{L}_o(\Phi)$. Then there is a linear functional
+$t''$ on the vectors of weight~$\varkappa$ for~$X_0$ such that for all \m{o\in U}, all $y$ in the tensor product, all
+\m{\varphi\in\AF{X}{\varkappa}{e}} and all \m{g\in\Gg{\St{X_0}}}
+\[\begin{aligned}
+&\int_{\qG{\St{X}}}\coef{t}(\varphi)(x)\int_{\qG{\St{X'}}}\tht{}\Bigl(\tW{\mu_o}{\mu'_o}(x,r,g)\bigl(u\otimes\at(y)\bigr)\Bigr)\,dr\,dx\\
+&\qquad=\coef{t''}\bigl(\mathcal{L}''_o(y)(\varphi)\bigr)(g).
+\end{aligned}\]}
+
+\statement{arith}{\phantomsection\label{t:D}\textbf{Theorem D} (the finite evaluation of an arrow pair is admissible).\enspace
+In Setting~\ref{set:adm}, with its index sets $X$, $X''$ and its objects $N$, $\Sigma$, $\pi$, $\delta$, $\beta$,
+$\kappa$, let $X'$, $X_0$, $H$ be finite index sets and $l$, $l'$, $l''$ natural numbers; let $V$, $V'$, $V''$ be
+hermitian spaces over~$E$ with index sets $I$, $I'$, $I''$ and with gradings: $\cY$ of $V$ with definite part
+\m{X^{+}} and a string of length~$l$, $\cY'$ of $V'$ with definite part \m{X'^{+}} and a string of length~$l'$,
+$\cY''$ of $V''$ with definite part $X_0$ and a string of length~$l''$, all of norm~$N$. Let $a$ be a finite idele
+and $u$ a finite adele with \m{u\bar u=1} such that \m{\Spans{\cY'}{a}{\pi}{u}}, and suppose
+\m{\delta=(\bar\alpha/\alpha)\cdot(a/\bar a)}, $\alpha$ the idele of the Weil data. Let
+\m{\cR\in\ArP{\cY}{\cY'}{\cY''}{X''^{+}}{H}} be an arrow pair, with the matrix $\inc{\cR}$ of its zero part
+(rows \m{I\sqcup I''}, columns \m{(H\sqcup H)\sqcup(X^{+}\sqcup X''^{+})}). Suppose:
+
+\emph{(weights)} for all \m{i\in I\sqcup I''} and \m{b\in X^{+}\sqcup X''^{+}}, either \m{\inc{\cR}(i,b)=0} or
+\m{|\soc{\beta}{i}|_w=|\soc{\beta}{b}\kappa_b|_w} for every finite place~$w$;
+
+\emph{(lattices)} for all \m{r_1,r_2\in\Af} with \m{r_1\cdot(a/\bar a)=\cj{\epsm}\,\delta} and \m{r_2r_1=1}, all $c$,
+$x$ such that \m{\NbV{\pi}{\delta}{c}{x}}, and the vector
+$v=\inc{\cR}\cdot\bigl((0,\,r_1uc),\ (r_1\kappa_bx_b)_{b\in X^{+}},\ (\kappa_bx_b)_{b\in X''^{+}}\bigr)$, whose
+coordinates on the first copy of $H$ are $0$ and on the second copy all equal to $r_1uc$: all entries of
+\m{x_{V,f}^{-1}(r_2\,v|_{I})} and of \m{x_{V'',f}^{-1}(v|_{I''})} lie in~$\Oh$.
+
+Then $\AdmEv{N}{\Sigma}{\beta}{\fev{\cR}}{\soc{\beta}{\,\cdot\,}}$: the finite evaluation of $\cR$ is an admissible
+evaluation for $(N,\Sigma,\beta)$ (Definition~\ref{d:admev}, with the index sets $X$, \m{X'^{+}}, $X''$).}
+
+The four theorems are used in the note on the seesaw identity. Theorem~A is the bookkeeping of every
+denominator and every size there; Theorem~C, applied once for each pair of consecutive lifts, turns the function left after an even
+number of unfoldings into a matrix coefficient of a chain of pairs of definite lifts; Theorem~B makes the
+resulting data invariant under the levels; Theorem~D, with Theorem~A(iii), expresses these data through
+translated vacua with controlled denominators. The transfer of a Bessel or Fourier--Jacobi period under one
+theta lift is known; the file of the seesaw theorem names as related work B.~Wang (2025), Gomez--Zhu (2014) and
+Gan--Ichino (2016). The seesaw principle of Kudla, which the background library proves in a weaker form for
+periods, is not used in this note.
+
+\sect{The setting}{s:setting}
+\begin{conventions}\phantomsection\label{c:conventions}
+In every statement $E$ is a CM field with a CM type (one embedding into~$\CC$ chosen from each pair of complex
+conjugate embeddings). The bar is complex conjugation on $E$, on its adeles~$\A$, on the finite adeles~$\Af$ and
+on the ring $\Oh$ of integral finite adeles; $M^{*}$ is the conjugate transpose of a matrix. Finite places of $E$
+are written $w$, with conjugate place $\bar w$; $|\cdot|_w$ is the absolute value at~$w$, with value $e^{-1}$ at a
+uniformiser, and $u_w$ is the component at $w$ of a finite adele~$u$. Where a statement says so, $E$ carries
+\kw{Weil data} (Definition~\ref{d:weil}). All index sets ($I$, $I'$, $I''$, $I_0$, $I_1$, $I_2$, $X$, $X'$,
+$X''$, $X_0$, $H$) are finite; for an index set $X$ we put \m{X^{+}=X\sqcup\{\pt\}}, and \m{\{0,\dots,l-1\}} indexes a
+\kw{string} of length~$l$. Vectors over $\Af$ indexed by a product of index sets are also read as matrices.
+The letters $Z$, $Z'$, $W$, $F_i$ denote complex vector spaces, $\cX$, $\cX'$ sets that index families of
+vectors, $\cX_j$ an additive group. A prime number is $\ell$ or~$N$; \m{\jmath\colon\CC\to\CC_\ell} is a ring
+homomorphism and $O_\jmath$ the ring of the \m{w\in\CC} with \m{|\jmath(w)|_\ell\le1}; $\sigma$ runs over the field
+automorphisms of~$\CC$. In Section~\ref{s:lattices}, $R$ and $S$ are commutative rings and $R$ has an involution,
+written as a bar. A hermitian space $V$ has an index set and signs (Definition~\ref{d:spaces}); gradings are written
+$\cY$, $\cY'$, $\cY''$, with strings of lengths $l$, $l'$, $l''$ and norm~$N$.
+\end{conventions}
+
+\subhead{Vocabulary of the background library.} The next five definitions recall objects that the artifact
+constructs in its background library. They are not declarations of this unit; we state what the proofs use, and
+quote their properties as Inputs~1 to~7.
+
+\begin{definition}[hermitian spaces and their groups; recalled]\label{d:spaces}
+A \kw{hermitian space} $V$ over $E$ consists of a finite index set $I$, \kw{signs} \m{I\to\{\pm1\}}, a hermitian
+matrix \m{J_V\in M_I(E)} and a \kw{frame} \m{x_V\in\mathrm{GL}_I(\A)} such that \m{x_V^{*}J_Vx_V} is the diagonal
+matrix of the signs at every infinite place and the identity at every finite place; $x_{V,f}$ is the finite part
+of~$x_V$. So $x_{V,f}\Oh^{I}$ is a self-dual lattice for~$J_V$. The adelic unitary group is
+\m{\Gg{V}=G_\infty(V)\times\Gfin{I}}, where $G_\infty(V)$ is the product over the infinite places of the unitary
+groups of the signs and \m{\Gfin{I}=\{g\in\mathrm{GL}_I(\Af):g^{*}g=1\}}; an element \m{g=(g_\infty,g_f)} has the
+\kw{matrix in rational coordinates} \m{x_Vgx_V^{-1}}, which is unitary for~$J_V$. The \kw{rational points}
+$\Gamma(V)$ are the $g$ whose matrix in rational coordinates has entries in~$E$, and \m{\qG{V}=\Gamma(V)\backslash\Gg{V}}
+carries the invariant measure of the library (a probability measure when $V$ is definite). The \kw{standard space}
+$\St{X}$ on an index set $X$ has all signs $+1$, \m{J=1} and frame~$1$; it is definite. For hermitian spaces $V$,
+$V'$ (index sets $I$, $I'$), \m{\Hm{V}{V'}} is the hermitian space with index set \m{I'\times I}, matrix
+\m{J_{V'}\otimes(J_V^{-1})^{\mathsf T}} and frame \m{x_{V'}\otimes(x_V^{-1})^{\mathsf T}}; a pair
+\m{(g,g')\in\Gg{V}\times\Gg{V'}} acts on it by \m{y\mapsto g'yg^{-1}}. \m{V\oplus V'} is the orthogonal sum,
+$\mathbb{H}^{H}$ the hyperbolic space with index set \m{H\sqcup H} and matrix
+$\bigl(\begin{smallmatrix}0&1\\1&0\end{smallmatrix}\bigr)$, and \m{\Hyp{H}{V}} their sum. An adelic matrix
+\m{y\colon V\to V'} \kw{in rational coordinates} is an \m{I'\times I} matrix over~$\A$; its \kw{frame coordinates}
+are \m{x_{V'}^{-1}yx_V}, and its \kw{adjoint} is \m{y^{\dagger}=J_V^{-1}y^{*}J_{V'}}.
+\end{definition}
+
+\begin{definition}[Weil data, spaces of data, the Weil representation; recalled]\label{d:weil}
+\kw{Weil data} for $E$ are: the condition that $E$ is stably unramified in the sense of the library, which
+provides a unit $\epsm$ of $\Oh$ with \m{\cj{\epsm}\,\epsm=-1}; an element \m{\mathbf{j}\in E} with
+\m{\bar{\mathbf{j}}=-\mathbf{j}}; a finite idele $\alpha$ such that \m{\mathbf{j}\alpha\bar\alpha} generates the
+inverse different at every finite place; and a splitting character $\upsilon$, a Hecke character of $E$ whose
+restriction to the norm-one ideles is again written~$\upsilon$. For a hermitian space $V$ over such an $E$, with
+index set~$I$, the library constructs: a Banach space $\Sch{V}$ of \kw{data}, which are functions on $\A^{I}$;
+\kw{Heisenberg operators} $\rh{V}(y)$ on it, for \m{y\in\A^{I}}; the \kw{Weil representation} $\om{V}$ of $\Gg{V}$
+on it; the \kw{theta functional} \m{\tht{V}\colon\Sch{V}\to\CC}, invariant under $\Gamma(V)$, with
+\m{f(y)=\tht{V}(\rh{V}(y)f)} for every datum $f$ and \m{y\in\A^{I}}; the \kw{vacuum}
+\m{\vac{V}\in\Sch{V}}; and a space $\Fock{V}$ of \kw{real data} (a Fock space) with its \kw{polynomial vectors}
+$v_Q$, $Q$ a complex polynomial, and a bounded bilinear map \m{\Fock{V}\times\Sch{V}\to\Sch{V}},
+\m{(v,f)\mapsto v\otimes f}. The \kw{finite Heisenberg operator} of \m{x\in\Af^{I}} is $\rhf{V}(x)$, a root of unity
+times $\rh{V}$ at the adelic vector with real part $0$ and finite part $\alpha x$; the \kw{finite part} of
+$\Sch{V}$ is the span $\Wf{V}$ of the vectors \m{\rhf{V}(x)\vac{V}}. For an adelic vector $y$ its \kw{finite
+coordinates} are \m{y_f=\alpha^{-1}\cdot(\text{finite part of }y)}. The \kw{finite multiplier} of
+\m{g\in\Gfin{I}} is a complex number \m{\Df(g)\ne0}; $\psio$ is the additive character
+\m{u\mapsto\psi_f(\mathbf{j}\alpha\bar\alpha u)} of $\Af$, $\psi_f$ the standard one. For a set $S$ of finite
+places, $P^{S}$ is the bounded operator on $\Sch{V}$ that averages $\rhf{V}(y)$ over the \m{y\in\Oh^{I}} supported at
+the places of $S$ and their conjugates. For matrices \m{y\colon V\to V'} in rational coordinates, \m{\rh{}(y)}
+denotes the Heisenberg operator of $\Hm{V}{V'}$ at the frame coordinates of~$y$.
+\end{definition}
+
+\statement{ana}{\inp{1}\label{in:1} (the Weil representation; background library, units of the
+folders \emph{Weil/Construction} and \emph{Adelic/Adeles}). Let $V$ be a hermitian space with index set $I$
+over a field with Weil data.
+(a) \m{\rhf{V}(x)\rhf{V}(y)=\varsigma\cdot\rhf{V}(x+y)} with $\varsigma$ a value of $\psio$, and every value of
+$\psio$ is a root of unity; \m{\rhf{V}(y)\vac{V}=\vac{V}} for \m{y\in\Oh^{I}}; $\rhf{V}(x)$ maps $\Wf{V}$ into itself.
+(b) \m{\om{V}(g)\rhf{V}(x)=\rhf{V}(g_fx)\om{V}(g)} and $\om{V}(g)(v\otimes f)=(\om{V}(g_\infty)v)\otimes\om{V}(1,g_f)f$,
+where $G_\infty(V)$ acts on~$\Fock{V}$; for an adelic vector $y$ and \m{v\in\Fock{V}} there is \m{v_1\in\Fock{V}}
+with \m{\rh{V}(y)(v\otimes f)=v_1\otimes\rhf{V}(y_f)f} for all~$f$; \m{\rhf{V}(x)(v\otimes f)=v\otimes\rhf{V}(x)f}; and
+$\om{V}(1,g)$ maps $\Wf{V}$ into itself.
+(c) For \m{g\in\Gfin{I}}, $\om{V}(1,g)\vac{V}=\Df(g)|\Df(g)|^{-2}\sum_y\rhf{V}(gy)\vac{V}$, the sum over
+representatives $y$ of $\Oh^{I}$ modulo \m{\Oh^{I}\cap g^{-1}\Oh^{I}}; the number of classes is $|\Df(g)|^{2}$.
+(d) If \m{f\in\Wf{V}} and \m{\rhf{V}(gy)f=f} for all \m{y\in\Oh^{I}}, then \m{f=c\cdot\om{V}(1,g)\vac{V}} for some
+\m{c\in\CC}.
+(e) A vector \m{u\in\Af^{I}} lies in $\Oh^{I}$ if and only if \m{\psio(x^{*}u)=1} for every \m{x\in\Oh^{I}}; and
+$\rhf{V}(x)\rhf{V}(y)=\psio(y^{*}x)\cdot\rhf{V}(y)\rhf{V}(x)$.
+(f) If \m{P^{S}f=f}, then \m{P^{S}(\rhf{V}(y)f)} is $\rhf{V}(y)f$ if $y$ is integral at the places of $S$ and their
+conjugates, and $0$ otherwise.
+\emph{References.} The library gives as its sources for the Weil representation A.~Weil, Acta Math.\ 111 (1964),
+and S.~Kudla, Israel J. Math.\ 87 (1994); the catalogue of this write-up has not confirmed the places: reference
+to be confirmed. The formulas above are those of the lattice model.}
+\leanline{\lean{inFinFin}\sep \lean{inPsiFin}\sep \lean{inFinVac}\sep \lean{inFinMem}\sep \lean{inOmFin}\sep
+\lean{inOmInt}\sep \lean{inRhoInt}\sep \lean{inVacSum}\sep \lean{inNormSq}\sep \lean{inSmulVac}\sep \lean{inDual}\sep
+\lean{inProj}}
+
+\begin{definition}[arrow products and the triple action; recalled]\label{d:arrowprod}
+Let $E$ carry Weil data and let $V$, $V'$, $V''$ be hermitian spaces with index sets $I$, $I'$, $I''$. $V^{-}$ is
+$V$ with the matrix $-J_V$, the opposite signs and the frame $x_V$ multiplied at the finite places by the idele
+\m{\cj{\epsm}\bar\alpha/\alpha}; an element $g$ of $\Gg{V}$, read in $\Gg{V^{-}}$, is written $g^{-}$. For a character
+$\mu$ of $\mathrm{U}(1)(\A)$ trivial on $\mathrm{U}(1)(E)$ put \m{\mu_V=\mu\cdot\upsilon^{\lfloor|I|/2\rfloor}}. The
+\kw{twisted pair action} on \m{\Sch{\Hm{V}{V'}}} is
+$\pW{\mu}(g,g')=\mu_V(\det g')\,\mu_{V'}(\det g)^{-1}\,\om{\Hm{V}{V'}}(g,g')$, and $\pWf{\mu}$ is its restriction
+to finite points, acting on \m{\Wf{\Hm{V}{V'}}}. The \kw{arrow product} is a bounded bilinear map
+\m{(f,f')\mapsto f\boxtimes f'} from \m{\Sch{\Hm{V}{V'}}\times\Sch{\Hm{V'}{V''}}} to \m{\Sch{\Hm{V'}{\fls{V}{V''}}}}; it
+induces the linear map $\at\colon\Wf{\Hm{V}{V'}}\otimes\Wf{\Hm{V'}{V''}}\to\Sch{\Hm{V'}{\fls{V}{V''}}}$, and $\atl$ is
+a chosen linear left inverse of~$\at$. The \kw{triple action} of
+\m{(g,g',g'')\in\Gg{V}\times\Gg{V'}\times\Gg{V''}} on \m{\Sch{\Hm{V'}{\fls{V}{V''}}}} is
+\[\begin{aligned}
+\tW{\mu}{\mu'}(g,g',g'')={}&\mu_V(\det g')\,\mu_{V'}(\det g)^{-1}\,\mu'_{V'}(\det g'')\,\mu'_{V''}(\det g')^{-1}\\
+&\cdot\upsilon(\det g)^{|I'|}\,\upsilon(\det g')^{-|I|}\cdot\om{}(g',g^{-}\oplus g''),
+\end{aligned}\]
+$\om{}$ the Weil representation of \m{\Hm{V'}{\fls{V}{V''}}}.
+\end{definition}
+
+\statement{ana}{\inp{2}\label{in:2} (two lifts as one pair; background library, unit of the folder
+\emph{Weil/DualPair}). In the situation of Definition~\ref{d:arrowprod}:
+(a) there is \m{z\ne0} with \m{\tht{}(f\boxtimes f')=z\cdot\tht{}(f)\tht{}(f')} for all $f$, $f'$;
+(b) for matrices \m{y\colon V\to V'}, \m{y'\colon V'\to V''} in rational coordinates,
+$\rh{}\bigl(\begin{smallmatrix}y^{\dagger}\\y'\end{smallmatrix}\bigr)(f\boxtimes f')=\rh{}(y)f\boxtimes\rh{}(y')f'$;
+(c) for a finite vector $y$ of \m{\Hm{V'}{\fls{V}{V''}}}, with blocks \m{y_1} (indices \m{I\times I'}) and
+\m{y_2} (indices \m{I''\times I'}), $\rhf{}(y)(f\boxtimes f')=\varsigma\cdot\rhf{}(\epsm\,y_1^{*})f\boxtimes\rhf{}(y_2)f'$
+with $\varsigma$ a root of unity, and \m{\vac{}\boxtimes\vac{}=\vac{}};
+(d) $\pW{\mu}(g,g')f\boxtimes\pW{\mu'}(g',g'')f'=\tW{\mu}{\mu'}(g,g',g'')(f\boxtimes f')$, and for finite points
+$\at\circ(\pWf{\mu}(p,q)\otimes\pWf{\mu'}(q,r))=\tW{\mu}{\mu'}((1,p),(1,q),(1,r))\circ\at$;
+(e) $\at$ is injective, \m{\atl\circ\at=1}, and the range of $\at$ is \m{\Wf{\Hm{V'}{\fls{V}{V''}}}};
+(f) \m{(g,g')\mapsto\tht{}(\tW{\mu}{\mu'}(g,g',k)f)} is invariant under left multiplication by
+\m{\Gamma(V)\times\Gamma(V')};
+(g) $\pW{\mu}(g,g')\rh{}(y)=\rh{}(g'yg^{-1})\pW{\mu}(g,g')$, with $g$, $g'$ read in rational coordinates.
+\emph{References:} none in the catalogue; reference to be confirmed.}
+\leanline{\lean{inThArrow}\sep \lean{inHomArrow}\sep \lean{inFinArrow}\sep \lean{inArrowPair}\sep \lean{inTensorLift}\sep
+\lean{inLeftInv}\sep \lean{inRange}\sep \lean{inThRat}\sep \lean{inPairHeis}}
+
+\begin{definition}[splittings and zero terms; recalled]\label{d:split}
+Let $V$, $V_0$ be hermitian spaces with index sets $I$, $I_0$ and $H$ a finite index set. A \kw{splitting} $\Xi$ of
+$V$ over $V_0$ along~$H$ consists of matrices $\mathsf{k}_\Xi,\mathsf{l}_\Xi\in M_{I\times H}(E)$ and
+\m{\mathsf{i}_\Xi\in M_{I\times I_0}(E)} with
+\m{\mathsf{k}^{*}J_V\mathsf{k}=0}, \m{\mathsf{l}^{*}J_V\mathsf{l}=0}, \m{\mathsf{l}^{*}J_V\mathsf{k}=1},
+\m{\mathsf{i}^{*}J_V\mathsf{i}=J_{V_0}}, \m{\mathsf{i}^{*}J_V\mathsf{k}=0}, \m{\mathsf{i}^{*}J_V\mathsf{l}=0} and
+\m{|I|=|I_0|+2|H|}. In frame coordinates these are \m{x_V^{-1}\mathsf{k}_\Xi}, \m{x_V^{-1}\mathsf{l}_\Xi} and
+\m{x_V^{-1}\mathsf{i}_\Xi x_{V_0}}; their finite parts are written \m{\mathsf{k}_{\Xi,f}}, \m{\mathsf{l}_{\Xi,f}},
+\m{\mathsf{i}_{\Xi,f}}. If $E$ carries Weil data, the \kw{zero term} \m{\ev{\Xi}\colon\Sch{V}\to\Sch{V_0}} is the
+bounded linear map with \m{(\ev{\Xi}f)(y)} the mean of $f(x_V^{-1}\mathsf{i}_\Xi x_{V_0}y+x_V^{-1}\mathsf{k}_\Xi b)$
+over \m{b\in\A^{H}} modulo~$E^{H}$. Splittings compose: one of $V$ over $V_0$ and one of $V_0$ over $V_1$ give
+one of $V$ over $V_1$, and the zero term of the composite is the composite of the zero terms. For a hermitian
+space $V'$, a splitting $\Xi$ of $V$ over $V_0$ along $H$ induces one of \m{\Hm{V'}{V}} over \m{\Hm{V'}{V_0}} along
+\m{H\times I'}. The space \m{\Hyp{H}{V_0}} has the splitting over $V_0$ that \kw{removes the planes}. An element
+\m{g\in\Gg{V}} is \kw{adapted} to $\Xi$ if the matrix with column blocks
+$g^{-1}x_V^{-1}(\mathsf{l}_\Xi,\mathsf{k}_\Xi,\mathsf{i}_\Xi x_{V_0})$ has orthonormal columns at every infinite place
+and integral entries at the finite places.
+\end{definition}
+
+\statement{ana}{\inp{3}\label{in:3} (zero terms and the mixed model; background library, units of
+the folders \emph{Weil/MixedModel} and \emph{Weil/DualPair}). Let $\Xi$ be a splitting of $V$ over $V_0$
+along~$H$, over a field with Weil data.
+(a) An element of $\Gg{V}$ adapted to $\Xi$ exists. If $g$ is adapted to $\Xi$, there are \m{c\ne0} and a
+function $\epsilon$ on $\A^{H}$ with
+$\ev{\Xi}\bigl(\rh{V}(x_V^{-1}\mathsf{l}_\Xi b)\,\om{V}(g)\vac{V}\bigr)=c\,\epsilon(b)\,\vac{V_0}$ for all \m{b\in\A^{H}},
+and there is a bounded linear map \m{\Lambda\colon\Fock{V}\to\Fock{V_0}} with
+$\ev{\Xi}(\om{V}(g)(v\otimes f))=\Lambda v\otimes\ev{\Xi}(\om{V}(g)(v_{\mathrm{vac}}\otimes f))$ for all $v$,
+$f$, where $v_{\mathrm{vac}}$ is the vacuum of~$\Fock{V}$; moreover \m{v_{\mathrm{vac}}\otimes f=f} for
+\m{f\in\Wf{V}}.
+(b) $\ev{\Xi}(\rh{V}(x_V^{-1}\mathsf{i}_\Xi x_{V_0}y)f)=\rh{V_0}(y)\ev{\Xi}(f)$ and
+$\ev{\Xi}(\rh{V}(x_V^{-1}\mathsf{k}_\Xi b)f)=\ev{\Xi}(f)$.
+(c) Every \m{y\in\Af^{I}} is $\mathsf{l}_{\Xi,f}a+\mathsf{i}_{\Xi,f}w+\mathsf{k}_{\Xi,f}b$ for unique $a$, $w$, $b$, and
+\m{a=\mathsf{k}_{\Xi,f}^{*}y}, \m{w=\mathsf{i}_{\Xi,f}^{*}y}.
+(d) Suppose that $\mathsf{k}_\Xi$ is the inclusion of the basis vectors of positive weight, for weights
+\m{\wt\colon I\to\Z}. Let \m{g\in\Gg{V}}, \m{g_0\in\Gg{V_0}}, let $C$ be an \m{I\times I} matrix over $\A$ and $u$ an
+idele of norm one, and suppose, in rational coordinates: $g$ and $C$ have the same columns of positive weight;
+the entry \m{(b,a)} of \m{C-1} vanishes whenever \m{\wt(b)\le\min(0,\wt(a))}; \m{\det C=u}; and
+\m{g\,\mathsf{i}_\Xi-\mathsf{i}_\Xi g_0} has non-zero entries only in rows of positive weight. Then
+$\ev{\Xi}(\om{V}(g)f)=\upsilon(u)^{-1}\om{V_0}(g_0)\ev{\Xi}(f)$ for all~$f$.
+(e) For the splitting of \m{\Hm{V'}{\Hyp{H}{V_0}}} over \m{\Hm{V'}{V_0}} induced by removing the planes, and
+\m{h\in\Gg{V'}}, \m{r\in\Gg{V_0}}:
+$\ev{}(\om{}(h,1\oplus r)f)=\upsilon(\det h)^{|H|}\om{}(h,r)\ev{}(f)$.
+(f) For a set $S$ of finite places disjoint from its conjugate, functions $\Psi$ of the components at $S$ of a
+finite vector \kw{name} operators \m{\Psi\otimes{}} on $\Sch{V}$: the indicator of the vectors integral at $S$ names
+$P^{S}$; the name of its translate by $y$ is \m{\rhf{V}(y_S)\circ P^{S}} up to a root of unity, $y_S$ the part of $y$
+at $S$ and its conjugate; and for \m{g\in\Gfin{I}} with component $1$ outside $S$ and its conjugate,
+$\om{V}(1,g)\circ(\Psi\otimes{})=C_g\cdot(\Psi(g^{-1}\,\cdot\,)\otimes{})$ with a constant \m{C_g\in\CC}.
+\emph{References.} The library gives as its sources M\oe glin--Vign\'eras--Waldspurger, LNM 1291 (1987), and
+S.~Kudla, Israel J. Math.\ 87 (1994); not confirmed by the catalogue: reference to be confirmed.}
+\leanline{\lean{inAdapted}\sep \lean{inMixedVac}\sep \lean{inRealZero}\sep \lean{inZeroRho}\sep \lean{inFrameVec}\sep
+\lean{inFrameAdj}\sep \lean{inZeroIncl}\sep \lean{inHomTarget}\sep \lean{inNameBox}\sep \lean{inNameTr}\sep
+\lean{inNameOm}}
+
+\begin{definition}[gradings, Bessel groups, constant terms; recalled]\label{d:grading}
+A \kw{grading} $\cY$ of a hermitian space $V$ (index set~$I$) with \kw{definite part} $X$ and a string of
+length~$l$, of \kw{norm} \m{N\in E^{\times}}, \m{\bar N=N}, consists of a bijection
+$\mathbf{e}_{\cY}\colon X\sqcup\{0,\dots,l-1\}\to I$ with \m{J_V=\gram{\mathbf{e}_{\cY}}{N}} and a constant
+\m{\fc{\cY}\in E^{\times}}, \m{\cj{\fc{\cY}}=\fc{\cY}}. Here \m{\gram{\mathbf{e}}{N}} is the matrix that is the identity
+on~$X$, pairs the string vectors $a$ and \m{l-1-a} to~$1$ for \m{a\ne l-1-a}, and has the entry $-N$ at the middle
+string vector \m{a=l-1-a} (which exists when $l$ is odd). The \kw{grade} $\gr{\cY}$ is $0$ on $X$ and \m{l-1-2a}
+at the string vector~$a$. The homomorphism \m{\inX{\cY}\colon\Gg{\St{X}}\to\Gg{V}} lets a unitary matrix act on~$X$
+and fixes the string vectors (in rational coordinates), and $\inXf{\cY}$ is its restriction to finite points. The
+\kw{Bessel group} $\Bes{\cY}$ is the group of the \m{g\in\Gg{V}} that, in rational coordinates, fix every string
+vector of grade \m{\ge0} up to string vectors of higher grade; it contains $\inX{\cY}(\Gg{\St{X}})$ and the group
+of the \kw{unipotent} elements, those $g$ for which \m{g-1} strictly raises grades. \m{\qB{\cY}} is the quotient of
+$\Bes{\cY}$ by its rational points, with the measure of the library. If $E$ carries Weil data, a function
+\m{P\colon\Gg{V}\to\CC} is \kw{generic} for $\cY$ if it is continuous, left invariant under the rational points of
+$\Bes{\cY}$, and multiplied by an explicit character under left multiplication by the unipotent elements $n$ for
+which \m{n-1} raises grades by at least~$2$. For a second grading $\cY'$ of $V'$ with definite part~$X'$, the
+\kw{frequency map} \m{\Tm{\cY}{\cY'}\colon V\to V'} is the rational matrix that kills $X$ and sends the string vector
+$a$ of $\cY$ to a multiple of the string vector $a$ of~$\cY'$, the multiple being one of $1$, $\fc{\cY}$,
+\m{-N\fc{\cY}} according to the grade. The \kw{constant term at the frequency map} of a datum
+\m{f\in\Sch{\Hm{V}{V'}}}, for a character $\mu$ as in Definition~\ref{d:arrowprod}, is the function
+\m{\ct{\cY}{\cY'}{\mu}(f)} on \m{\Gg{V}\times\Gg{V'}} whose value at $(g,r)$ is the mean, over the adelic matrices
+\m{V\to V'} with entries only in positions of positive degree modulo the rational ones, of the datum
+\m{\rh{}(\Tm{\cY}{\cY'})\pW{\mu}(g,r)f}; the \kw{degree} of the position \m{(b,a)\in I'\times I} is
+\m{\gr{\cY'}(b)-\gr{\cY}(a)}.
+\end{definition}
+
+\statement{ana}{\inp{4}\label{in:4} (Bessel periods; background library, unit of the folder
+\emph{Weil/Periods}). Let $\cY$, $\cY'$ be gradings of $V$, $V'$ over a field with Weil data.
+(a) Let $H$ be a finite index set and $\gamma\colon H\hookrightarrow\{b\in I:\gr{\cY}(b)=1\}$ an injection. There is
+\m{C\in\CC} such that \m{\int_{\qB{\cY}}\phi=C\int_{\qG{\St{X}}}M} whenever $\phi$ is a continuous function on $\Gg{V}$,
+left invariant under the rational points of $\Bes{\cY}$, such that for every \m{a\in\Gg{\St{X}}} the function
+\m{n\mapsto\phi(n\,\inX{\cY}(a))} of unipotent $n$ is a continuous function, periodic for the rational
+matrices, of mean $M(a)$, of the entries of \m{\fc{\cY}(n-1)} in the rows $\gamma(H)$ and the columns~$X$ (in rational
+coordinates), and $M$ is continuous and left invariant under \m{\Gamma(\St{X})}.
+(b) If $P$ is generic for $\cY$ and $n$ is unipotent with \m{n-1} raising grades by at least~$2$, then
+$g\mapsto P(ng)\cdot(\text{constant term of }\pW{\mu}(ng,r)f\text{ at a matrix }y)$ equals an explicit value of the
+Heisenberg bicharacter of $\Hm{V}{V'}$ times the same expression at~$g$, provided \m{y(n-1)} has only entries in
+positions of positive degree.
+(c) $\ct{\cY}{\cY'}{\mu}(f)(\gamma g,\gamma'r)=\ct{\cY}{\cY'}{\mu}(f)(g,r)$ for rational points $\gamma$, $\gamma'$ of
+the two Bessel groups; and the constant term of \m{\pW{\mu}(ng,n'r)f} at a matrix $y$ is that of \m{\pW{\mu}(g,r)f}
+at \m{n'^{-1}yn}, for unipotent $n$ and $n'$ with \m{n'-1} raising degrees.
+\emph{References.} The library gives as its source for the unfolding of Bessel periods B.~Wang Peng Jun,
+J. Number Theory 271 (2025), Prop.~3.2 and Thm.~4.5, and the authors record the place as compared; the
+catalogue of this write-up has not confirmed it: reference to be confirmed.}
+\leanline{\lean{inBesselMean}\sep \lean{inGenConst}\sep \lean{inConstRat}}
+
+
+\statement{ana}{\inp{5}\label{in:5} (algebraic forms and theta lifts; background library, units of
+the folders \emph{Adelic/CuspForms} and \emph{Weil/Periods}). For a finite index set~$X$, a weight $\varkappa$ and
+a determinant exponent~$e$, \m{\AF{X}{\varkappa}{e}} is the space of algebraic modular forms of weight
+$(\varkappa,e)$ on the definite unitary group of~$\St{X}$: functions on \m{\Gfin{X}} with values in the space of
+vectors of weight~$\varkappa$ for~$X$ (the catalogue names B.~Gross, Algebraic modular forms, Israel J. Math.\ 113
+(1999), for this notion; place not confirmed). For a linear functional $t$ on that space of vectors,
+\m{\coef{t}(\varphi)} is the function \m{g\mapsto t(\bar g_\infty^{-1}\varphi(g_f))} on \m{\Gg{\St{X}}}; it is continuous
+and left invariant under \m{\Gamma(\St{X})}. Let $E$ carry Weil data. A family of linear maps
+$\mathcal{L}_o\colon\Wf{\Hm{\St{X}}{\St{X'}}}\to\Hom_{\CC}(\AF{X}{\varkappa}{e},\AF{X'}{\varkappa}{e'})$, \m{o\in U}, is a
+\kw{family of theta lifts} for characters $(\mu_o)_{o\in U}$ if for every complex polynomial $Q$ and every functional
+$t$ there is a functional $t'$ such that for all \m{o\in U}, $\Phi$, $\varphi$ and \m{h\in\Gg{\St{X'}}}
+\[\int_{\qG{\St{X}}}\tht{}\bigl(\pW{\mu_o}(g,h)(v_Q\otimes\Phi)\bigr)\,\coef{t}(\varphi)(g)\,dg=\coef{t'}\bigl(\mathcal{L}_o(\Phi)\varphi\bigr)(h).\]
+This is a definition of the library; the lifts to which the seesaw note applies it are theta lifts in this sense
+by a result of the library that this note does not use.}
+\leanline{\lean{inAutCoef}}
+
+\statement{ana}{\inp{6}\label{in:6} (Hermite reduction; background library, unit of the folder
+\emph{Adelic/Witt}). Let $I$, $H$ be finite index sets and $Y$ an \m{I\times H} matrix over $\Af$ that has a left
+inverse. Then there is an invertible \m{H\times H} matrix $t$ over $\Af$ such that $Yt$ has entries in $\Oh$ and a
+left inverse with entries in~$\Oh$. (The library proves this for pairs of a ring and a subring with a valuation
+property, with $t$ block triangular; the catalogue classes it as elementary.)}
+\leanline{\lean{inHermite}}
+
+\statement{ana}{\inp{7}\label{in:7} (analysis; background library). (a) The polynomial vectors $v_Q$
+are dense in the space $\Fock{V}$ of real data (folder \emph{Weil/Fock}). (b) If two families of variables together
+exhaust the variables of a polynomial ring over~$\CC$, every polynomial is a finite sum of products of a
+polynomial in the first family with a polynomial in the second (folder \emph{General/LinearAlgebra}). (c) Let
+$\phi\colon\mathsf{A}\times\mathsf{A}'\to\mathsf{B}$ be a continuous surjective homomorphism of topological abelian
+groups that maps the product of two cocompact lattices into a cocompact lattice of~$\mathsf{B}$. Then the mean
+over $\mathsf{A}$ of the mean over $\mathsf{A}'$ of \m{F\circ\phi} is the mean of $F$ over~$\mathsf{B}$, each mean
+taken modulo its lattice (folder \emph{Adelic/QuotientMeasure}). (d) If a prime $\ell$ does not divide the natural
+number~$n$, then \m{|n|=1} in every normed field that is a normed algebra over the $\ell$-adic numbers (folder
+\emph{General/Algebra}).}
+\leanline{\lean{inDense}\sep \lean{inPolyProd}\sep \lean{inMeans}\sep \lean{inCoprime}}
+
+\begin{setting}[three graded spaces]\label{set:three}
+$E$ is a CM field with a CM type and Weil data. $V$, $V'$, $V''$ are hermitian spaces over $E$ with finite index
+sets $I$, $I'$, $I''$ and their signs. $\cY$, $\cY'$, $\cY''$ are gradings of $V$, $V'$, $V''$ of the same norm
+\m{N\in E}, with finite definite parts $X$, $X'$, $X_0$ and strings of lengths $l$, $l'$, $l''$.
+\end{setting}
+
+\subhead{Admissible combinations.}
+\begin{definition}[integral away from $n$]\label{d:away}
+For a natural number $n$, \m{\intaw{n}} is the set of the complex numbers $w$ with \m{|\jmath(w)|_\ell\le1} for every
+prime number $\ell$ coprime to~$n$ and every ring homomorphism \m{\jmath\colon\CC\to\CC_\ell}. It is a subring
+of~$\CC$, by the ultrametric inequality, and \m{\intaw{n}\subseteq O_\jmath} for every such $\ell$ and~$\jmath$.
+\end{definition}
+\leanline{\lean{integralAway}}
+
+\begin{definition}[admissible coefficients and combinations]\label{d:adm}
+Let $\cX$ be a set, \m{A\subseteq\cX}, $n$ and $d$ natural numbers, $p$ a proposition and $B$ a real number. A
+finitely supported function \m{r\colon\cX\to\CC} is \kw{admissible}, written \m{\AdmCo{A}{n}{d}{p}{B}{r}}, if its support
+lies in~$A$; \m{d\cdot r(x)\in\intaw{n}} for every \m{x\in\cX}; and, if $p$ holds, \m{\sum_x|\sigma(r(x))|\le B} for
+every field automorphism $\sigma$ of~$\CC$. For a complex vector space $Z$, a family \m{v\colon\cX\to Z} and
+\m{z\in Z} we write $\AdmComb{v}{A}{n}{d}{p}{B}{z}$ if \m{z=\sum_xr(x)v(x)} for some $r$ with
+\m{\AdmCo{A}{n}{d}{p}{B}{r}}: $z$ is an \kw{admissible combination} of the $v(x)$, \m{x\in A}, \kw{away from} $n$,
+with \kw{denominator}~$d$ and, under~$p$, \kw{size}~$B$. The size is an upper bound, and it is asked only when
+$p$ holds.
+\end{definition}
+\leanline{\lean{IsAdmissibleCoeffs}\sep \lean{IsAdmissibleComb}}
+
+\subhead{Translations and lattices.}
+\begin{definition}[groups of translations]\label{d:transl}
+Let $E$ be a CM field, $I$ an index set, $n$ a natural number and \m{d\colon I\to\Af} a family of finite adeles.
+\m{\wtr{n}{d}} is the additive group of the \m{x\in\Af^{I}} such that \m{d_ix_i} is integral at every finite place
+that does not divide~$n$, for every \m{i\in I}. For a single finite adele $d$, \m{\trl{I}{n}{d}} is the group
+\m{\wtr{n}{d}} for the constant family \m{i\mapsto d} on~$I$. For index sets $I_1$, $I_2$, \m{\beta\in\Oh} and
+\m{j\in I_1\sqcup I_2} we put \m{\soc{\beta}{j}=\beta} if \m{j\in I_1} and \m{\soc{\beta}{j}=\bar\beta} if \m{j\in I_2}.
+\end{definition}
+\leanline{\lean{weightedTranslations}\sep \lean{translations}\sep \lean{selfOrConj}}
+
+\begin{definition}[split and squarefree]\label{d:splsq}
+Let $E$ be a CM field with a CM type, $\Sigma$ a finite set of finite places of~$E$, \m{N\in E} and $\pi$ a finite
+idele. We write \m{\SplSq{\Sigma}{N}{\pi}}, and say that $N$ is \kw{split and squarefree along} $\Sigma$ through~$\pi$, if
+\m{N=\pi\bar\pi} in $\Af$ and, for every finite place~$w$,
+\m{|\pi_w|_w=e^{-1}} if \m{w\in\Sigma} and \m{|\pi_w|_w=1} otherwise, and \m{w\in\Sigma} implies
+\m{\bar w\notin\Sigma}.
+\end{definition}
+\leanline{\lean{IsSplitSquarefree}}
+
+\begin{definition}[graded lattice basis]\label{d:lattice}
+Let $R$ be a commutative ring with an involution, $X$ and $I$ index sets, $l$ a natural number,
+\m{\mathbf{e}\colon X^{+}\sqcup\{0,\dots,l-1\}\to I} a bijection, $a$ and $\pi$ units of~$R$ and \m{u\in R} with
+\m{u\bar u=1}. The matrix \m{\glb{\mathbf{e}}{a}{\pi}{u}\in M_I(R)} is defined by its columns, indexed
+through~$\mathbf{e}$ (write $e_i$ for the basis vectors). If $l$ is odd, with middle string index~$z$: the column of
+\m{x\in X} is~$e_x$, the column of $\pt$ is \m{\bar\pi^{-1}e_{\pt}+u(\pi\bar\pi)^{-1}e_z}, and the column of a
+string index $b$ is~$ue_b$. If $l$ is even: the column of \m{x\in X^{+}} is $e_x$, and the column of a string
+index $b$ is \m{ua^{-1}e_b} if \m{2b<l} and \m{u\bar ae_b} otherwise.
+
+Let now $E$ be a CM field with a CM type, $V$ a hermitian space with index set~$I$, and $\cY$ a grading of $V$
+with definite part $X^{+}$ and a string of length~$l$, of norm~$N$; let $a$, $\pi$ be finite ideles and $u$ a finite
+adele with \m{u\bar u=1}. We write \m{\Spans{\cY}{a}{\pi}{u}} if
+\m{x_{V,f}=\glb{\mathbf{e}_{\cY}}{a}{\pi}{u}\cdot k} for some \m{k\in\mathrm{GL}_I(\Oh)}: the columns of the finite
+frame of $V$ and of the graded lattice basis span the same lattice.
+\end{definition}
+\leanline{\lean{gradedLatticeBasis}\sep \lean{SpansLattice}}
+
+\subhead{Zero terms and arrow pairs.}
+\begin{definition}[the finite zero term]\label{d:ztf}
+Let $E$ carry Weil data and let $\Xi$ be a splitting of $V$ over $V_0$ along~$H$ (Definition~\ref{d:split}; index
+sets $I$, $I_0$; signs as in Definition~\ref{d:spaces}). Choose an element of $\Gg{V}$ adapted to~$\Xi$
+(Input~3(a)), let $g_\infty$ be its real component and $v_\Xi=\om{V}(g_\infty)v_{\mathrm{vac}}\in\Fock{V}$. The
+\kw{finite zero term} is the bounded linear map
+\[\ztf{\Xi}\colon\Sch{V}\to\Sch{V_0},\qquad \ztf{\Xi}(f)=\ev{\Xi}(v_\Xi\otimes f).\]
+\end{definition}
+\leanline{\lean{zeroTermFin}}
+
+\begin{definition}[grade-zero parts]\label{d:gzp}
+Let $E$ carry Weil data, let $V$, $V''$ be hermitian spaces with index sets $I$, $I''$ and their signs, and
+\m{\wt\colon I\to\Z} a function (\kw{weights}). A \kw{grade-zero part} of $V$ for $\wt$ with zero part $V''$, an
+element of the set \m{\GZP{V}{V''}{\wt}}, is a pair \m{\cZ=(\ind{\cZ},\inc{\cZ})} of an injection
+\m{\ind{\cZ}\colon I''\hookrightarrow I} whose image is \m{\{i:\wt(i)=0\}} and a matrix
+\m{\inc{\cZ}\in M_{I\times I''}(E)} such that \m{\inc{\cZ}(a,b)=0} whenever \m{\wt(a)\ne0}, such that
+\m{\inc{\cZ}^{*}J_V\inc{\cZ}=J_{V''}}, and such that \m{J_V(a,b)\ne0} implies \m{\wt(a)+\wt(b)=0}. Its
+\kw{splitting} \m{\gzs{\cZ}} is the splitting of $V$ over $V''$ along \m{\{i:\wt(i)>0\}} with $\mathsf{k}$ the
+inclusion of the basis vectors of positive weight, \m{\mathsf{l}=J_V^{-1}\mathsf{k}} and
+\m{\mathsf{i}=\inc{\cZ}}; the equations of Definition~\ref{d:split} hold because $J_V$ and $J_V^{-1}$ pair only
+opposite weights.
+\end{definition}
+\leanline{\lean{GradeZeroPart}\sep \lean{splitting}}
+
+\begin{definition}[the grade-zero part of a space of homomorphisms]\label{d:gzphom}
+Let $E$ carry Weil data, let $V$, $V'$, $V''$ be hermitian spaces with index sets $I$, $I'$, $I''$, let $\cY'$ be a
+grading of $V'$ of norm $N$ with definite part $X'$ and a string of length~$l'$, let \m{\wt\colon I\to\Z} and
+\m{\cZ\in\GZP{V}{V''}{\wt}}. Suppose that $l'$ is even and that $\wt(i)$ is even for every \m{i\in I}. Then
+\m{\gzh{\cY'}{\cZ}} is the grade-zero part of \m{\Hm{V'}{V}} for the weights \m{(i,j)\mapsto\wt(i)-\gr{\cY'}(j)}, with
+zero part \m{\Hm{\St{X'}}{V''}}: its injection is $\ind{\cZ}$ times the inclusion of $X'$ into $I'$
+along~$\mathbf{e}_{\cY'}$, and its matrix is the Kronecker product of $\inc{\cZ}$ with the inclusion matrix of~$X'$.
+(The two hypotheses make \m{\wt(i)-\gr{\cY'}(j)=0} possible only for \m{j\in X'}.)
+\end{definition}
+\leanline{\lean{hom}}
+
+\begin{definition}[the stacked frequency map]\label{d:stacked}
+In Setting~\ref{set:three}, \m{\stT{\cY}{\cY'}{\cY''}} is the adelic matrix \m{V'\to\fls{V}{V''}} in rational
+coordinates with the two row blocks \m{\Tm{\cY}{\cY'}^{\dagger}} (rows~$I$) and \m{\Tm{\cY'}{\cY''}} (rows~$I''$), and
+\m{\stTf{\cY}{\cY'}{\cY''}} is the vector of the finite coordinates of its frame coordinates, a finite vector of
+\m{\Hm{V'}{\fls{V}{V''}}}.
+\end{definition}
+\leanline{\lean{stackedT}\sep \lean{stackedTFin}}
+
+\begin{definition}[arrow pairs]\label{d:arrow}
+In Setting~\ref{set:three}, let $X''$ and $H$ be finite index sets. An \kw{arrow pair} for
+\m{\cY\to\cY'\to\cY''}, an element of the set \m{\ArP{\cY}{\cY'}{\cY''}{X''}{H}}, consists of the following.
+\begin{enumerate}[label=(\alph*)]
+\item A grade-zero part $\cZ_{\cR}\in\GZP{\fls{V}{V''}}{\Hyp{H}{(\fls{\St{X}}{\St{X''}})}}{\gr{\cY}\sqcup\gr{\cY''}}$;
+  its matrix is written $\inc{\cR}$ and its injection $\ind{\cR}$.
+\item The conditions: $l$ is odd, \m{l'=l-1}, \m{l''=l'-1} (subtraction of natural numbers, truncated at~$0$: so
+  \m{l''=l-2} if \m{l\ge3} and \m{l'=l''=0} if \m{l=1}), \m{\fc{\cY'}=\fc{\cY}}, and \m{|I|+|I''|} is even.
+\item A homomorphism $\operatorname{emb}_{\cR}\colon\Gg{\St{X_0}}\to\Gg{\St{X''}}$ with
+  \m{\det\operatorname{emb}_{\cR}(k)=\det k}, such that for all \m{g\in\Gg{\St{X}}} and \m{k\in\Gg{\St{X_0}}}, in
+  rational coordinates,
+  \[\bigl(\inX{\cY}(g)\oplus\inX{\cY''}(k)\bigr)\cdot\inc{\cR}=\inc{\cR}\cdot\bigl(1\oplus g^{-}\oplus\operatorname{emb}_{\cR}(k)\bigr).\]
+\item An injection $\gamma_{\cR}\colon H\hookrightarrow\{b\in I':\gr{\cY'}(b)=1\}$ such that for every index $a$ of
+  the zero part and every \m{b\in I'} the entry of \m{\stT{\cY}{\cY'}{\cY''}} at \m{(\ind{\cR}(a),b)} is
+  $\sum_{k\in H,\ \gamma_{\cR}(k)=b}\inc{\cR}(\ind{\cR}(a),k^{*})\cdot\fc{\cY'}$, where $k^{*}$ is the index of the
+  $k$-th vector of the second copy of $H$ in~$\mathbb{H}^{H}$.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{ArrowPair}}
+
+\begin{definition}[the splitting and the finite evaluation of an arrow pair]\label{d:fev}
+In Setting~\ref{set:three}, let $X''$, $H$ be finite index sets and \m{\cR\in\ArP{\cY}{\cY'}{\cY''}{X''}{H}}.
+(i) \m{\hzp{\cR}=\gzh{\cY'}{\cZ_{\cR}}} is the grade-zero part of $\Hm{V'}{\fls{V}{V''}}$ with zero part
+$\Hm{\St{X'}}{\Hyp{H}{(\fls{\St{X}}{\St{X''}})}}$; Definition~\ref{d:gzphom} applies because $l'$ is even and the
+grades of $\cY$ and $\cY''$ are even, $l$ being odd and $l''$ odd or zero.
+(ii) \m{\aps{\cR}} is the splitting of $\Hm{V'}{\fls{V}{V''}}$ over $\Hm{\St{X'}}{\fls{\St{X}}{\St{X''}}}$ obtained by
+composing the splitting \m{\gzs{\hzp{\cR}}} with the splitting induced by removing the $H$ planes.
+(iii) The \kw{finite evaluation} of $\cR$ is the linear map
+\[\fev{\cR}=\atl\circ\ztf{\aps{\cR}}\circ\rhf{}\bigl(\stTf{\cY}{\cY'}{\cY''}\bigr)\]
+from $\Sch{\Hm{V'}{\fls{V}{V''}}}$ to $\Wf{\Hm{\St{X}}{\St{X'}}}\otimes\Wf{\Hm{\St{X'}}{\St{X''}}}$.
+\end{definition}
+\leanline{\lean{homZeroPart}\sep \lean{splittinga}\sep \lean{finEval}}
+
+\begin{definition}[the middle pair and the last pair]\label{d:pairs}
+In Setting~\ref{set:three}, suppose that $l$ is odd, \m{l'=l-1}, \m{l''=l'-1} and \m{\fc{\cY'}=\fc{\cY}}, and that
+\m{|I|+|I''|} is even. Let $z$, $z''$ be the middle string vectors of $\cY$ and~$\cY''$.
+
+(i) If \m{l\ne1}, the \kw{middle pair} \m{\Rmid{\cY}{\cY'}{\cY''}}, an element of \m{\ArP{\cY}{\cY'}{\cY''}{X_0}{\{\pt\}}}, removes one
+hyperbolic plane: its zero part sends the two basis vectors of the plane to \m{(2N)^{-1}(z-z'')} and \m{z+z''}, and
+the basis vectors of $X$ and of $X_0$ to the corresponding basis vectors of $V$ and~$V''$; its homomorphism
+\m{\operatorname{emb}} is the identity of \m{\Gg{\St{X_0}}}; its injection $\gamma$ picks the string vector of
+$\cY'$ with index~\m{(l''-1)/2}, which has grade~$1$.
+
+(ii) If \m{l=1}, and \m{\pi_0\in E} satisfies \m{\pi_0\cj{\pi_0}=N}, the \kw{last pair}
+\m{\Rlast{\cY}{\cY'}{\cY''}{\pi_0}}, an element of \m{\ArP{\cY}{\cY'}{\cY''}{X_0^{+}}{\emptyset}}, removes no plane: its zero part sends
+the basis vectors of $X$ and of $X_0$ to the corresponding basis vectors and the new point to \m{z/\pi_0}, $z$ the
+only string vector of~$\cY$; its homomorphism \m{\operatorname{emb}} is the block embedding \m{k\mapsto k\oplus1}
+of \m{\Gg{\St{X_0}}} into \m{\Gg{\St{X_0^{+}}}}.
+
+In both cases the conditions of Definition~\ref{d:arrow} are verified entry by entry from the explicit matrices
+\m{\gram{\mathbf{e}}{N}} and the definition of the frequency maps.
+\end{definition}
+\leanline{\lean{middlePair}\sep \lean{lastPair}}
+
+\subhead{Admissible evaluations.}
+\begin{setting}[data at a split prime]\label{set:adm}
+$E$ is a CM field with a CM type and Weil data, and $X$, $X''$ are finite index sets. $N$ is a prime number and
+$\Sigma$ a finite set of finite places of $E$ that is a \kw{split level} for~$N$ in the sense of the note on the
+Gauss-sum operator: \m{\bar w\notin\Sigma} for \m{w\in\Sigma}, every \m{w\in\Sigma} has norm~$N$ and $N$ is a
+uniformiser at~$w$, and a finite place divides $N$ exactly if it or its conjugate lies in~$\Sigma$. $\pi$ is a
+finite idele with \m{\SplSq{\Sigma}{N}{\pi}}. $\delta$ is a finite adele with \m{\delta\bar\delta=1}, and
+\m{\beta\in\Oh}, such that \m{\delta_w=1} and \m{|\beta_w|_w=1} at every finite place $w$ dividing~$N$. Finally
+\m{\kappa\colon X^{+}\sqcup X''^{+}\to\Af} is a family with \m{\kappa_b\in\{1,\delta\}}, \m{\bar\beta\kappa_b\in\Oh} and
+\m{\soc{\beta}{b}\kappa_b\in\Oh} for every~$b$.
+\end{setting}
+
+\begin{definition}[neighbour vectors]\label{d:nbv}
+Let $E$ carry Weil data, let $X$, $H$ be finite index sets, $\pi$ a finite idele, $\delta$ and $c$ finite adeles
+and $x$ a vector over $\Af$ indexed by \m{X^{+}\sqcup H^{+}}; write $\pt_1$, $\pt_2$ for the points of $X^{+}$
+and~$H^{+}$. We write \m{\NbV{\pi}{\delta}{c}{x}}, and call $(c,x)$ a \kw{neighbour vector} for $(\pi,\delta)$, if: \m{\delta c=c}; \m{x_i\in\Oh} for every index $i$ other than
+$\pt_1$, $\pt_2$; \m{\bar\pi x_i\in\Oh} for every~$i$; \m{c-\pi^{-1}x_{\pt_1}\in\Oh}; and
+\m{\cj{\epsm}c-\pi^{-1}x_{\pt_2}\in\Oh}.
+\end{definition}
+\leanline{\lean{IsNeighbourVector}}
+
+\begin{definition}[admissible evaluations]\label{d:admev}
+Let $E$ carry Weil data; let $V$, $V'$, $V''$ be hermitian spaces with index sets $I$, $I'$, $I''$ and their signs,
+and $X$, $X'$, $X''$ finite index sets. Let $N$ be a prime number, $\Sigma$ a finite set of finite places,
+\m{\beta\in\Oh}, \m{d\colon I\sqcup I''\to\Af} a family (by default \m{d=\soc{\beta}{\,\cdot\,}}), and $L$ a map
+from \m{\Sch{\Hm{V'}{\fls{V}{V''}}}} to $\Wf{\Hm{\St{X^{+}}}{\St{X'}}}\otimes\Wf{\Hm{\St{X'}}{\St{X''^{+}}}}$. We write
+$\AdmEv{N}{\Sigma}{\beta}{L}{d}$, and call $L$ an \kw{admissible evaluation} for $(N,\Sigma,\beta)$ with weights~$d$,
+if there is \m{C\in\CC} such that for every natural number $n$ coprime
+to~$N$, every proposition~$p$ and every \m{y\in\wtr{n}{(i,i')\mapsto d_i}} (a finite vector indexed by
+\m{(I\sqcup I'')\times I'})
+\[\AdmComb{v_C}{A_n}{n}{D}{p}{1}{L\bigl(\rhf{}(y)\vac{}\bigr)},\]
+where $v_C$ is the family
+\m{t=(t_1,t_2)\mapsto C\cdot\tsum{X}{X'}{\Sigma}{N}{X''}\bigl(\rhf{}(t_1)\vac{}\otimes\rhf{}(t_2)\vac{}\bigr)}, the set $A_n$ is
+\m{\trl{X'\times X^{+}}{n}{\bar\beta}\times\trl{X''^{+}\times X'}{n}{\bar\beta}}, $D$ is the number of maps from \m{(X^{+}\sqcup X''^{+})\times X'} to \m{\Oh/\beta\Oh} (zero if infinite), and
+\m{\tsum{X}{X'}{\Sigma}{N}{X''}} is the translate sum of the note on the Gauss-sum operator: the operator
+$\sum_y\rhf{}(\mathrm{c}(y))\otimes\rhf{}(\mathrm{r}(y))$ on
+$\Wf{\Hm{\St{X^{+}}}{\St{X'}}}\otimes\Wf{\Hm{\St{X'}}{\St{X''^{+}}}}$, the sum over \m{y\in((\Z/N)^{\Sigma})^{X'}},
+where the matrix $\mathrm{c}(y)$ has last column \m{-\tilde y/N} and $\mathrm{r}(y)$ has last row
+\m{-\cj{\tilde y/N}}, both zero elsewhere, and \m{\tilde y/N} is the finite adele with component \m{\tilde y_w/N} at
+\m{w\in\Sigma}, $\tilde y_w$ the least non-negative representative, and $0$ at the other places.
+\end{definition}
+\leanline{\lean{IsAdmissibleEval}}
+
+\sect{Admissible combinations}{s:adm}
+\begin{lemma}[rules]\label{l:rules}
+Let $\cX$, $\cX'$ be sets, $Z$, $Z'$, $W$ complex vector spaces, \m{v\colon\cX\to Z} a family, \m{A\subseteq\cX},
+\m{A'\subseteq\cX'}, $n$, $d$, $d'$ natural numbers, $p$ a proposition and $B$, $B'$ real numbers.
+\begin{enumerate}[label=(\alph*)]
+\item Let \m{F\subseteq\cX} be a finite subset and \m{c\colon\cX\to\CC} a function such that
+  \m{d\cdot c(x)\in\intaw{n}} for every \m{x\in F}, and such that $p$ implies \m{\sum_{x\in F}|\sigma(c(x))|\le B} for
+  every automorphism~$\sigma$. Then $\AdmComb{v}{F}{n}{d}{p}{B}{\sum_{x\in F}c(x)v(x)}$.
+\item If \m{x\in A}, then $\AdmComb{v}{A}{n}{d}{p}{1}{v(x)}$.
+\end{enumerate}
+In (c) to (g) let \m{z\in Z} with $\AdmComb{v}{A}{n}{d}{p}{B}{z}$.
+\begin{enumerate}[label=(\alph*),resume]
+\item For a linear map \m{L\colon Z\to Z'}, $\AdmComb{L\circ v}{A}{n}{d}{p}{B}{L(z)}$.
+\item If \m{c\in\intaw{n}}, and $p$ implies \m{|\sigma(c)|\le1} for every automorphism~$\sigma$, then
+  $\AdmComb{v}{A}{n}{d}{p}{B}{c\cdot z}$.
+\item If \m{\varsigma\in\CC} is zero or a root of unity, then $\AdmComb{v}{A}{n}{d}{p}{B}{\varsigma\cdot z}$.
+\item Let \m{v'\colon\cX'\to Z}. If for every \m{x\in A} there are a root of unity $\varsigma$ and \m{y\in A'} with
+  \m{v(x)=\varsigma\cdot v'(y)}, then $\AdmComb{v'}{A'}{n}{d}{p}{B}{z}$.
+\item Let \m{v'\colon\cX'\to Z'} be a family, let \m{z'\in Z'} satisfy
+  $\AdmComb{v'}{A'}{n}{d'}{p}{B'}{z'}$, and let \m{b\colon Z\times Z'\to W} be bilinear. Then, for the family \m{v_b\colon(x,x')\mapsto b(v(x),v'(x'))} on
+  \m{\cX\times\cX'}, $\AdmComb{v_b}{A\times A'}{n}{d\cdot d'}{p}{B\cdot|B'|}{b(z,z')}$.
+\item Let \m{C,a\in\CC}, suppose \m{d\ne0}, and let \m{z\in Z} with $\AdmComb{(x\mapsto C\cdot v(x))}{A}{n}{d}{p}{B}{z}$.
+  Then $\AdmComb{v}{A}{n}{1}{p}{d\cdot B}{\nun(aC/d)\cdot a\cdot z}$, where \m{\nun(w)=w^{-1}} for \m{w\ne0} and
+  \m{\nun(0)=1}.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) Take the coefficients $c$ on $F$ and $0$ elsewhere. (b) Take the coefficient $1$ at $x$; the size is~$1$, and
+\m{d\cdot1\in\intaw{n}}. (c) Apply $L$ to \m{z=\sum_xr(x)v(x)}. (d), (e), (f) follow from Theorem~A(i), proved
+below without them. For (d): by (c), $\AdmComb{(x\mapsto c\cdot v(x))}{A}{n}{d}{p}{B}{c\cdot z}$, and each
+$c\cdot v(x)$ is the combination of the $v$'s with the single coefficient $c$, which is admissible with
+denominator $1$ and size~$1$; substitute. For (e): $0$ and the roots of unity lie in $\intaw{n}$, since a ring
+homomorphism to a field sends a root of unity to a root of unity, of absolute value~$1$; the same holds for the
+automorphisms~$\sigma$; apply~(d). For (f): by (b) and (e), $\AdmComb{v'}{A'}{n}{1}{p}{1}{v(x)}$ for \m{x\in A};
+substitute. (g) By (c) for the linear map \m{b(\,\cdot\,,z')},
+$\AdmComb{(x\mapsto b(v(x),z'))}{A}{n}{d}{p}{B}{b(z,z')}$. For \m{x\in A}, by (c) for \m{b(v(x),\,\cdot\,)}, the vector
+\m{b(v(x),z')} is an admissible combination of the \m{b(v(x),v'(x'))}, \m{x'\in A'}, with denominator $d'$ and size
+$B'$, hence, each of these being a single vector of the family indexed by \m{A\times A'}, an admissible combination
+of that family; substitute. (h) Let \m{z=\sum_xr(x)\,C\,v(x)} with $r$ admissible. The coefficients \m{d\cdot r} are
+admissible with denominator $1$ and, under~$p$, size \m{d\cdot B}; let \m{z_1=\sum_xd\,r(x)v(x)}. If \m{aC\ne0} then
+$\nun(aC/d)\,a\,z=(d/(aC))\cdot aC\sum_xr(x)v(x)=z_1$; if \m{aC=0} then \m{a\,z=0}. In both cases
+\m{\nun(aC/d)\,a\,z=\varsigma z_1} with \m{\varsigma\in\{0,1\}}, and (e) applies.
+\end{proof}
+\leanline{\lean{ofsum}\sep \lean{single}\sep \lean{map}\sep \lean{smul}\sep \lean{smulofeqzeroorisOfFinOrder}\sep
+\lean{ofeqisOfFinOrdersmul}\sep \lean{mapbilinear}\sep \lean{normUnitsmul}}
+
+\begin{proof}[Proof of Theorem A]
+(i) Write \m{z=\sum_xc(x)v(x)} with $c$ admissible for $(A;n,d;p,B)$; for \m{x\in A} write
+\m{v(x)=\sum_yr_x(y)v'(y)} with $r_x$ admissible for $(A';n,d';p,B')$; and write \m{d''=d\,d'\,k}. Put
+\m{\rho=\sum_{x\in\operatorname{supp}c}c(x)\,r_x}, a finitely supported function on~$\cX'$. Then
+\m{z=\sum_y\rho(y)v'(y)}. The support of $\rho$ lies in~$A'$, because the support of $c$ lies in $A$ and that of every
+$r_x$, \m{x\in A}, in~$A'$. Next \m{d''\rho(y)=k\sum_x(d\,c(x))(d'\,r_x(y))} is a sum of products of elements of the
+ring $\intaw{n}$. Finally suppose $p$ and let $\sigma$ be an automorphism of~$\CC$. Then \m{B\ge0}, and
+\[\sum_y|\sigma(\rho(y))|\le\sum_x|\sigma(c(x))|\sum_y|\sigma(r_x(y))|\le\sum_x|\sigma(c(x))|\cdot|B'|\le B\cdot|B'|\le C.\]
+(ii) Write \m{z=\sum_xr(x)v(x)} with $r$ admissible. Then \m{d\cdot z=\sum_x(d\,r(x))\,v(x)}; each \m{d\,r(x)} lies in
+\m{\intaw{n}\subseteq O_\jmath}, as $\ell$ is coprime to~$n$, and each $v(x)$ with \m{r(x)\ne0} has \m{x\in A}, so lies
+in~$M$.
+
+(iii) Induction on~$m$. For \m{m=0} the pure tensor is \m{1\in\CC}, the single vector of the family at the tuple
+\m{y=0}, whose entries lie in the subgroups~$A_j$; use Lemma~\ref{l:rules}(b). For the step from $m$ to \m{m+1},
+apply Lemma~\ref{l:rules}(g) to the bilinear map \m{(f,f')\mapsto f\otimes f'}, to $f_m$ (denominator~$d$,
+size~$B$) and to the pure tensor of \m{f_{m-1},\dots,f_0} (denominator $d^{m}$, size $|B|^{m}$, by induction): the
+pure tensor of \m{f_m,\dots,f_0} is an admissible combination, with denominator \m{d^{m+1}} and size \m{|B|^{m+1}},
+of the tensors \m{v_m(x)\otimes(\text{pure tensor at }y)}, for \m{x\in A_{2m}\times A_{2m+1}} and $y$ a tuple with
+entries in the~$A_j$. Such a tensor is the vector of the family for \m{m+1} at the tuple that agrees with $y$
+except at the places $2m$ and \m{2m+1}, where it has the entries of~$x$; that tuple has its entries in the~$A_j$.
+Lemma~\ref{l:rules}(f), with \m{\varsigma=1}, re-indexes the combination.
+\end{proof}
+\leanline{\lean{bind}\sep \lean{smulmem}\sep \lean{pure}}
+
+\begin{lemma}[integrality away from $n$]\label{l:away}
+\begin{enumerate}[label=(\alph*)]
+\item Let $n$, $c$, $d$, $k$ be natural numbers such that $c$ divides \m{d\cdot n^{k}}. Then \m{d/c\in\intaw{n}}.
+\item Let $E$ be a CM field with a CM type, $I$ a finite index set, and $n$, $m$ natural numbers that are coprime.
+  If \m{g\in\Gfin{I}} has \m{g_w\in\mathrm{GL}_I(O_w)} at every finite place $w$ that does not divide~$n$, then
+  \m{g_w\in\mathrm{GL}_I(O_w)} at every finite place $w$ that divides~$m$; here $O_w$ is the ring of integers at~$w$.
+\item Let $E$ carry Weil data, let $\ell$ be a prime number, \m{\jmath\colon\CC\to\CC_\ell} a ring homomorphism,
+  $I$ a finite index set and \m{g\in\Gfin{I}} \kw{integral above} $\ell$: \m{g_w\in\mathrm{GL}_I(O_w)} at every
+  finite place $w$ dividing~$\ell$. Then \m{|\jmath(\Df(g))|_\ell=1}.
+\item Let $E$ be a CM field with a CM type, $\ell$, $\jmath$, $I$ as in (c), \m{g\in\Gfin{I}} integral above~$\ell$, and
+  $\mu$ a character of $\mathrm{U}(1)(\A)$, trivial on $\mathrm{U}(1)(E)$, that has a weight and a tame part in the
+  sense of the note on the characters of the data. For any signs on~$I$, with \m{\det(1,g)} the determinant of
+  the element $(1,g)$ of the adelic unitary group of these signs: \m{|\jmath(\mu(\det(1,g)))|_\ell=1}.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) Let $\ell$ be a prime coprime to $n$ and \m{\jmath\colon\CC\to\CC_\ell} a ring homomorphism. Write
+\m{d\,n^{k}=c\,m} with $m$ a natural number. Since $\ell$ does not divide~$n$, \m{|\jmath(n)|_\ell=1}, so
+$|\jmath(d)|_\ell=|\jmath(c)|_\ell\,|\jmath(m)|_\ell$ and \m{|\jmath(d/c)|_\ell=|\jmath(m)|_\ell\le1}, the image of a
+natural number being integral. (For \m{c=0} the quotient is $0$ by convention, and the claim is trivial.)
+(b) A finite place that divides $m$ does not divide~$n$: its prime ideal would contain \m{1\in m\Z+n\Z}.
+(c), (d) In the formal text each is proved by one call of the simplifier, which we did not expand. It unfolds
+$\Df(g)$ into the value of the finite part of the splitting character, and of an absolute value, at the
+determinant of a matrix $\lambda$ with \m{\lambda\Oh^{I}=\Oh^{I}\cap g^{-1}\Oh^{I}}, which is a unit at the places above
+$\ell$ when $g$ is integral there; and it unfolds \m{\mu(\det(1,g))} into a product of values of the tame part and of
+the weight at the local determinants, which are units above~$\ell$. The lemmas of the library that say that
+such values are $\ell$-adic units under $\jmath$ are quoted, not read.
+\end{proof}
+\leanline{\lean{divmemintegralAway}\sep \lean{localLevelleintegralAboveofcoprime}\sep \lean{normfinMultipliereqone}\sep
+\lean{normpadicdet}}
+
+\begin{lemma}[groups of translations]\label{l:transl}
+Let $E$ be a CM field and $n$ a natural number.
+\begin{enumerate}[label=(\alph*)]
+\item Let $I$, $I_0$ be finite index sets, $M$ an \m{I\times I_0} matrix over $\Af$ with all entries in~$\Oh$,
+  \m{d\colon I\to\Af} and \m{d'\colon I_0\to\Af} families, and \m{y\in\wtr{n}{d}}. Suppose that for all
+  \m{i\in I}, \m{j\in I_0} and every finite place $w$ with \m{|d_{i,w}|_w\ne|d'_{j,w}|_w} the component of $M_{ij}$ at
+  $\bar w$ is~$0$. Then \m{M^{*}y\in\wtr{n}{d'}}.
+\item Let $I$, $X$ be index sets, \m{c\in\Oh}, \m{d\colon I\to\Af} a family, \m{x\in\wtr{n}{d}} and
+  \m{f\colon X\to I} a map. Then the vector \m{(c\cdot\cj{x_{f(i)}})_{i\in X}} lies in
+  \m{\wtr{n}{(\cj{d_{f(i)}})_{i\in X}}}.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) \m{(M^{*}y)_j=\sum_i\cj{M_{ij}}\,y_i}, and the conditions define a group, so fix $i$, $j$ and a finite place
+$w$ not dividing~$n$. If \m{|d_{i,w}|_w=|d'_{j,w}|_w}, then
+$|d'_j\cj{M_{ij}}y_i|_w=|\cj{M_{ij}}|_w\,|d_iy_i|_w\le1$. Otherwise $M_{ij}$ vanishes at~$\bar w$, so $\cj{M_{ij}}$
+vanishes at~$w$. (b) $|\cj{d_{f(i)}}\,c\,\cj{x_{f(i)}}|_w=|c|_w\,|d_{f(i)}x_{f(i)}|_{\bar w}\le1$ for $w$ not dividing
+$n$, since then $\bar w$ does not divide $n$ either.
+\end{proof}
+\leanline{\lean{mulVecmemweightedTranslations}\sep \lean{starmemweightedTranslations}}
+
+\begin{proposition}[a moved translate of the vacuum]\label{p:moved}
+Let $E$ carry Weil data and let $V$ be a hermitian space with index set $I$ and its signs. Let $n$, $d$ be natural
+numbers, \m{g\in\Gfin{I}}, \m{x\in\Af^{I}}, \m{A\subseteq\Af^{I}} a set, $p$ a proposition and \m{C,c\in\CC}. Suppose
+that \m{c\cdot C=\Df(g)}; that \m{g(x+y)\in A} for every \m{y\in\Oh^{I}}; that \m{d\cdot c/|\Df(g)|^{2}\in\intaw{n}}; and
+that $p$ implies \m{|\sigma(c)|\le1} for every automorphism~$\sigma$. Then
+\[\AdmComb{\bigl(z\mapsto C\cdot\rhf{V}(z)\vac{V}\bigr)}{A}{n}{d}{p}{1}{\om{V}(1,g)\,\rhf{V}(x)\vac{V}}.\]
+\end{proposition}
+\begin{proof}
+By Input~1(b), (c) and (a),
+\[\om{V}(1,g)\rhf{V}(x)\vac{V}=\rhf{V}(gx)\,\om{V}(1,g)\vac{V}=\frac{c\,C}{|\Df(g)|^{2}}\sum_y\varsigma_y\,\rhf{V}\bigl(g(x+y)\bigr)\vac{V},\]
+the sum over representatives $y$ of the \m{|\Df(g)|^{2}} classes of $\Oh^{I}$ modulo \m{\Oh^{I}\cap g^{-1}\Oh^{I}}, with
+roots of unity~$\varsigma_y$. This is a sum, over a finite set, of the vectors
+\m{C\varsigma_y\rhf{V}(g(x+y))\vac{V}} with the constant coefficient \m{c/|\Df(g)|^{2}}. Its $d$-fold lies in
+$\intaw{n}$ by hypothesis; under $p$ the size is \m{|\Df(g)|^{2}\cdot|\sigma(c)|/|\Df(g)|^{2}\le1}, the positive integer
+\m{|\Df(g)|^{2}} being fixed by~$\sigma$. So Lemma~\ref{l:rules}(a) applies, and Lemma~\ref{l:rules}(f) replaces
+each vector by \m{C\rhf{V}(z)\vac{V}} with \m{z=g(x+y)\in A}.
+\end{proof}
+\leanline{\lean{isAdmissibleCombweilvacElem}}
+
+\sect{Lattices of graded spaces}{s:lattices}
+\begin{proposition}[the graded lattice basis is unimodular]\label{p:unimod}
+Let $X$, $I$ be finite index sets, $l$ and $N$ natural numbers, $R$ a commutative ring with an involution,
+\m{\mathbf{e}\colon X^{+}\sqcup\{0,\dots,l-1\}\to I} a bijection, $S$ a commutative ring, $R_0$ a subring of~$R$,
+\m{f\colon S\to R} a ring homomorphism, $a$ and $\pi$ units of $R$ and \m{u\in R} with \m{u\bar u=1}. Suppose
+\m{f(N)=\pi\bar\pi}. Then the matrix
+$\glb{\mathbf{e}}{a}{\pi}{u}^{*}\cdot f(\gram{\mathbf{e}}{N})\cdot\glb{\mathbf{e}}{a}{\pi}{u}$ is hermitian and lies
+in \m{\mathrm{GL}_I(R_0)}: its entries and those of its inverse lie in~$R_0$.
+\end{proposition}
+\begin{proof}
+Let $g_i$ be the columns of the graded lattice basis and \m{\langle\,,\rangle} the form of \m{f(\gram{\mathbf{e}}{N})}.
+For $l$ even, \m{g_b=ua^{-1}e_b} for \m{2b<l} and \m{g_b=u\bar ae_b} otherwise, so
+$\langle g_b,g_{l-1-b}\rangle=\cj{ua^{-1}}\,u\bar a=1$ for \m{2b<l}, and the Gram matrix is
+\m{\gram{\mathbf{e}}{N}} itself (there is no middle vector), a permutation matrix equal to its inverse. For $l$ odd
+with middle index~$z$: \m{\langle g_b,g_{l-1-b}\rangle=u\bar u=1} for \m{b\ne z};
+\m{\langle g_z,g_z\rangle=-u\bar uf(N)=-f(N)};
+$\langle g_{\pt},g_z\rangle=\cj{u(\pi\bar\pi)^{-1}}\cdot(-f(N))\cdot u=-1$; and
+$\langle g_{\pt},g_{\pt}\rangle=(\pi\bar\pi)^{-1}-u\bar uf(N)(\pi\bar\pi)^{-2}=0$. So the Gram matrix is the image of the
+integer matrix that agrees with \m{\gram{\mathbf{e}}{N}} except for the entries $0$ at $(\pt,\pt)$ and $-1$ at
+$(\pt,z)$ and $(z,\pt)$. On the span of $e_{\pt}$, $e_z$ it is
+$\bigl(\begin{smallmatrix}0&-1\\-1&-N\end{smallmatrix}\bigr)$, with inverse
+$\bigl(\begin{smallmatrix}N&-1\\-1&0\end{smallmatrix}\bigr)$; elsewhere it is a permutation matrix. Both
+matrices are hermitian with entries in the image of~$\Z$, hence in~$R_0$.
+\end{proof}
+\leanline{\lean{isUnimodulargradedLatticeBasisgram}}
+
+\begin{proposition}[a real frame]\label{p:frame}
+Let $X$, $I$ be finite index sets, $l$ and $N$ natural numbers, $R$ a commutative ring,
+\m{\mathbf{e}\colon X^{+}\sqcup\{0,\dots,l-1\}\to I} a bijection and \m{\phi\colon R\to\CC} a ring homomorphism.
+Suppose \m{N>0}, and let \m{\varepsilon\colon I\to\{\pm1\}} be signs with exactly \m{\lfloor(l+1)/2\rfloor} minus
+signs. Then there is a complex \m{I\times I} matrix $y$ with \m{y^{*}\phi(\gram{\mathbf{e}}{N})y} the diagonal matrix of
+$\varepsilon$, and with \m{y^{*}y=1} if \m{N=1}.
+\end{proposition}
+\begin{proof}
+Let \m{\eta_b=-1} for \m{b<\lfloor(l+1)/2\rfloor} and \m{\eta_b=1} for the other string indices. The signs equal to
+$1$ on $X^{+}$ and to $\eta$ on the string have \m{\lfloor(l+1)/2\rfloor} minus signs, like~$\varepsilon$, so after
+a bijection of the index sets we may assume that they are~$\varepsilon$. Let $y$ be the identity on $X^{+}$ and
+have, at a string index $b$ with \m{b'=l-1-b\ne b}, the column \m{y_b=(\eta_be_b+e_{b'})/\sqrt2}, and at the middle
+index (if $l$ is odd) the column \m{e_b/\sqrt N}. For \m{b\ne b'} the form pairs $e_b$ with $e_{b'}$ to~$1$, so
+\m{\langle y_b,y_b\rangle=\eta_b} and $\langle y_b,y_{b'}\rangle=(\eta_b\eta_{b'}+1)/2=0$, because exactly one of
+$b$, $b'$ is smaller than \m{\lfloor(l+1)/2\rfloor}. At the middle index \m{\langle y_b,y_b\rangle=-N/N=-1=\eta_b}. If
+\m{N=1} the columns are orthonormal for the standard hermitian form:
+\m{|\eta_b|^{2}/2+1/2=1}, \m{(\eta_b+\eta_{b'})/2=0}, and \m{1/N=1}.
+\end{proof}
+\leanline{\lean{existsframegradedGram}}
+
+\begin{lemma}[vectors in the lattice]\label{l:inlattice}
+Let $E$ be a CM field with a CM type, $V$ a hermitian space with index set $I$ and its signs, and $\cY$ a grading
+of $V$ of norm~$N$ with definite part $X^{+}$ and a string of odd length~$l$. Let $a$, $\pi$ be finite ideles and
+$u$ a finite adele with \m{u\bar u=1} such that \m{\Spans{\cY}{a}{\pi}{u}}. Let \m{c\in\Oh}, and let
+\m{x\colon X^{+}\to\Af} be a vector with \m{x_i\in\Oh} for \m{i\in X} and \m{\bar\pi x_{\pt}\in\Oh}. Let
+\m{v\in\Af^{I}} be the vector with the coordinates $x_i$ at the indices of $X^{+}$,
+\m{u(\pi^{-1}x_{\pt}+c)} at the middle string index and $0$ at the other string indices. Then every coordinate
+\m{(x_{V,f}^{-1}v)_i}, \m{i\in I}, lies in~$\Oh$.
+\end{lemma}
+\begin{proof}
+Write \m{x_{V,f}=\glb{\mathbf{e}_{\cY}}{a}{\pi}{u}\cdot k} with \m{k\in\mathrm{GL}_I(\Oh)}. Let $w$ be the vector
+with coordinates $x_i$ at \m{i\in X}, \m{\bar\pi x_{\pt}} at~$\pt$, $c$ at the middle index~$z$ and $0$ elsewhere; it
+is integral. By Definition~\ref{d:lattice}, for odd~$l$,
+\[\glb{\mathbf{e}_{\cY}}{a}{\pi}{u}\,w=\sum_{i\in X}x_ie_i+\bar\pi x_{\pt}\bigl(\bar\pi^{-1}e_{\pt}+u(\pi\bar\pi)^{-1}e_z\bigr)+c\,u\,e_z=v .\]
+Hence \m{x_{V,f}^{-1}v=k^{-1}w} is integral.
+\end{proof}
+\leanline{\lean{invxFinmulVecmemofspansLattice}}
+
+\sect{The finite zero term}{s:ztf}
+\begin{proposition}\label{p:ztfspec}
+Let $E$ carry Weil data and let $\Xi$ be a splitting of $V$ over $V_0$ along~$H$, with index sets $I$, $I_0$ and
+their signs.
+\begin{enumerate}[label=(\roman*)]
+\item $\ztf{\Xi}$ maps $\Wf{V}$ into $\Wf{V_0}$.
+\item For every adelic vector \m{y\in\A^{I}} and every \m{v\in\Fock{V}} there is \m{v_0\in\Fock{V_0}} such that, for all \m{f\in\Sch{V}},
+  \[\ev{\Xi}\bigl(\rh{V}(y)(v\otimes f)\bigr)=v_0\otimes\ztf{\Xi}\bigl(\rhf{V}(y_f)f\bigr).\]
+\item Let \m{b\in\Af^{H}}, \m{w\in\Af^{I_0}} and \m{z=\mathsf{i}_{\Xi,f}w+\mathsf{k}_{\Xi,f}b}. Then
+  $\ztf{\Xi}\bigl(\rhf{V}(z)f\bigr)=\rhf{V_0}(w)\,\ztf{\Xi}(f)$ for every \m{f\in\Sch{V}}.
+\end{enumerate}
+\end{proposition}
+\begin{proof}
+Let \m{g=(g_\infty,g_f)} be the adapted element chosen in Definition~\ref{d:ztf}, so that, by Input~1(b),
+$v_\Xi\otimes f=\om{V}(g)\bigl(v_{\mathrm{vac}}\otimes\om{V}(1,g_f^{-1})f\bigr)$.
+
+(iii) \m{\rhf{V}(z)} is a root of unity times the Heisenberg operator at the adelic vector with real part $0$ and
+finite part \m{\alpha z}, which in frame coordinates is the sum of an $\mathsf{i}$-part and a $\mathsf{k}$-part.
+Finite translations commute with \m{v_\Xi\otimes{}}, and Input~3(b) moves them through the zero term: the
+$\mathsf{k}$-part disappears and the $\mathsf{i}$-part becomes the translation by~$\alpha w$. Since $\mathsf{k}$ is
+isotropic and orthogonal to~$\mathsf{i}$, \m{z^{*}z=w^{*}w}, so the root of unity in $\rhf{V}(z)$ is that of
+\m{\rhf{V_0}(w)} and the two translations commute without a factor.
+
+(i) Let \m{f\in\Wf{V}}. Then \m{f_1=\om{V}(1,g_f^{-1})f\in\Wf{V}} and \m{v_{\mathrm{vac}}\otimes f_1=f_1}
+(Inputs~1(b), 3(a)), so \m{\ztf{\Xi}(f)=\ev{\Xi}(\om{V}(g)f_1)}, and it suffices to see that
+\m{\ev{\Xi}\circ\om{V}(g)} maps every \m{\rhf{V}(x)\vac{V}} into~$\Wf{V_0}$. By Input~1(b),
+$\om{V}(g)\rhf{V}(x)\vac{V}=\rhf{V}(g_fx)\om{V}(g)\vac{V}$. Decompose \m{g_fx} along the finite frame as in
+Input~3(c), into an $\mathsf{l}$-part, an $\mathsf{i}$-part with coordinates~$w$ and a $\mathsf{k}$-part. By
+Input~3(b) the zero term turns the translation by the $\mathsf{i}$-part into~$\rhf{V_0}(w)$ and forgets the
+$\mathsf{k}$-part, up to roots of unity, and by Input~3(a) what remains, the zero term of an
+$\mathsf{l}$-translate of \m{\om{V}(g)\vac{V}}, is a multiple of~$\vac{V_0}$. So the result is a multiple of
+\m{\rhf{V_0}(w)\vac{V_0}}.
+
+(ii) By Input~1(b), \m{\rh{V}(y)(v\otimes f)=v_1\otimes f_2} with \m{f_2=\rhf{V}(y_f)f} and some \m{v_1\in\Fock{V}}.
+Again by Input~1(b), $v_1\otimes f_2=\om{V}(g)\bigl((\om{V}(g_\infty)^{-1}v_1)\otimes\om{V}(1,g_f^{-1})f_2\bigr)$.
+Input~3(a) gives
+\[\ev{\Xi}(v_1\otimes f_2)=\Lambda\bigl(\om{V}(g_\infty)^{-1}v_1\bigr)\otimes\ev{\Xi}\bigl(\om{V}(g)(v_{\mathrm{vac}}\otimes\om{V}(1,g_f^{-1})f_2)\bigr)
+=v_0\otimes\ztf{\Xi}(f_2),\]
+with \m{v_0=\Lambda(\om{V}(g_\infty)^{-1}v_1)}.
+\end{proof}
+\leanline{\lean{zeroTermFinspec}\sep \lean{zeroTermFinfinHeisOpfinFrameVector}}
+
+\begin{proposition}[the frequency of a non-zero finite zero term]\label{p:support}
+Let $E$ carry Weil data and let $\Xi$ be a splitting of $V$ over $V_0$ along~$H$, with index sets $I$, $I_0$ and
+their signs. Let $M$, $M'$ be \m{I\times I} matrices over $\Af$ with \m{M\cdot M'^{*}=1}, let \m{f\in\Sch{V}} with
+\m{\rhf{V}(Mx)f=f} for every \m{x\in\Oh^{I}}, and let \m{y\in\Af^{I}} with \m{\ztf{\Xi}(\rhf{V}(y)f)\ne0}. Then there is
+\m{x_0\in\Oh^{I}} with \m{\mathsf{k}_{\Xi,f}^{*}\,(y-M'x_0)=0}.
+\end{proposition}
+\begin{proof}
+The \m{I\times H} matrix \m{M'^{*}\mathsf{k}_{\Xi,f}} has a left inverse: if $\mathsf{c}$ is the matrix that reads off
+the $\mathsf{k}$-coordinate (Input~3(c)), then $\mathsf{c}MM'^{*}\mathsf{k}_{\Xi,f}=\mathsf{c}\mathsf{k}_{\Xi,f}=1$. By
+Hermite reduction over $(\Af,\Oh)$ (Input~6) there is an invertible \m{H\times H} matrix $t$ over $\Af$ such that
+\m{M'^{*}\mathsf{k}_{\Xi,f}t} has entries in $\Oh$ and a left inverse $L$ with entries in~$\Oh$. Put
+\m{u=t^{*}\mathsf{k}_{\Xi,f}^{*}y} and \m{x_0=L^{*}u}.
+
+We claim \m{u\in\Oh^{H}}; by Input~1(e) it suffices that \m{\psio(x^{*}u)=1} for \m{x\in\Oh^{H}}. For such $x$ the
+vector \m{M'^{*}\mathsf{k}_{\Xi,f}tx} is integral, so, by the hypothesis on $f$ and \m{MM'^{*}=1},
+\m{\rhf{V}(\mathsf{k}_{\Xi,f}tx)f=f}. By Input~1(e),
+$\rhf{V}(y)f=\rhf{V}(y)\rhf{V}(\mathsf{k}_{\Xi,f}tx)f=\psio(x^{*}u)\cdot\rhf{V}(\mathsf{k}_{\Xi,f}tx)\rhf{V}(y)f$. Apply
+$\ztf{\Xi}$; by Proposition~\ref{p:ztfspec}(iii), with \m{w=0}, the translation along $\mathsf{k}$ disappears:
+$\ztf{\Xi}(\rhf{V}(y)f)=\psio(x^{*}u)\cdot\ztf{\Xi}(\rhf{V}(y)f)$. As this vector is not zero, \m{\psio(x^{*}u)=1}.
+
+So \m{x_0\in\Oh^{I}}, and
+$t^{*}\mathsf{k}_{\Xi,f}^{*}(y-M'x_0)=u-(LM'^{*}\mathsf{k}_{\Xi,f}t)^{*}u=0$; as $t^{*}$ is invertible, the claim
+follows.
+\end{proof}
+\leanline{\lean{zeroTermFinsupport}}
+
+\begin{proposition}[the finite zero term of a translated vacuum]\label{p:vac}
+Let $E$ carry Weil data and let $\Xi$ be a splitting of $V$ over $V_0$ along~$H$, with index sets $I$, $I_0$ and
+their signs. Let \m{g\in\Gfin{I_0}}, let $c$ be an \m{H\times I_0} matrix over~$\Af$, and suppose that the matrix
+\m{B=\mathsf{i}_{\Xi,f}\,g+\mathsf{k}_{\Xi,f}\,c} has all its entries in~$\Oh$. Then there is \m{C\in\CC} such that for
+every \m{y\in\Af^{I}} there is \m{\varsigma\in\CC}, zero or a root of unity, with
+\[\ztf{\Xi}\bigl(\rhf{V}(y)\vac{V}\bigr)=\varsigma\cdot C\cdot\om{V_0}(1,g)\,\rhf{V_0}(B^{*}y)\vac{V_0}.\]
+\end{proposition}
+\begin{proof}
+\emph{The constant.} \m{f_0=\ztf{\Xi}(\vac{V})} lies in $\Wf{V_0}$ (Proposition~\ref{p:ztfspec}(i)). For
+\m{x\in\Oh^{I_0}}, by Proposition~\ref{p:ztfspec}(iii) with \m{w=gx} and \m{b=cx},
+$\rhf{V_0}(gx)f_0=\ztf{\Xi}(\rhf{V}(Bx)\vac{V})=f_0$, as \m{Bx\in\Oh^{I}} (Input~1(a)). By Input~1(d),
+\m{f_0=C\cdot\om{V_0}(1,g)\vac{V_0}} for some~$C$.
+
+\emph{The identity.} Fix~$y$. If \m{\ztf{\Xi}(\rhf{V}(y)\vac{V})=0}, take \m{\varsigma=0}. Otherwise
+Proposition~\ref{p:support}, with \m{M=M'=1} and \m{f=\vac{V}}, gives \m{x_0\in\Oh^{I}} with
+\m{\mathsf{k}_{\Xi,f}^{*}(y-x_0)=0}. By Input~3(c), \m{y-x_0=\mathsf{i}_{\Xi,f}w+\mathsf{k}_{\Xi,f}b} with
+\m{w=\mathsf{i}_{\Xi,f}^{*}(y-x_0)}. Hence, with roots of unity \m{\varsigma_1}, \m{\varsigma_2} from Input~1(a),
+\[\begin{aligned}
+\ztf{\Xi}(\rhf{V}(y)\vac{V})&=\ztf{\Xi}(\rhf{V}(y)\rhf{V}(-x_0)\vac{V})=\varsigma_1\ztf{\Xi}(\rhf{V}(y-x_0)\vac{V})\\
+&=\varsigma_1\rhf{V_0}(w)f_0=\varsigma_1C\,\rhf{V_0}(w)\om{V_0}(1,g)\vac{V_0}.
+\end{aligned}\]
+Since $g$ is unitary and \m{\mathsf{k}_{\Xi,f}^{*}(y-x_0)=0}, we have
+$gB^{*}(y-x_0)=gg^{*}\mathsf{i}_{\Xi,f}^{*}(y-x_0)=w$, so by Input~1(b)
+$\rhf{V_0}(w)\om{V_0}(1,g)=\om{V_0}(1,g)\rhf{V_0}(B^{*}(y-x_0))$; and \m{B^{*}x_0\in\Oh^{I_0}} fixes the vacuum, so
+$\rhf{V_0}(B^{*}(y-x_0))\vac{V_0}=\varsigma_2\rhf{V_0}(B^{*}y)\vac{V_0}$. Take \m{\varsigma=\varsigma_1\varsigma_2}.
+\end{proof}
+\leanline{\lean{zeroTermFinfinHeisOpvacElem}}
+
+\sect{Arrow pairs}{s:arrow}
+\begin{lemma}[two computations in rational coordinates]\label{l:coord}
+Let $E$ be a CM field with a CM type and $V$, $V'$ hermitian spaces with index sets $I$, $I'$ and their signs.
+\begin{enumerate}[label=(\alph*)]
+\item For a pair \m{g=(g_1,g_2)} of elements of $\Gg{V}$ and $\Gg{V'}$, the matrix in rational coordinates of
+  \m{g_1\oplus g_2}, an element of \m{\Gg{V\oplus V'}}, is the block diagonal matrix of those of $g_1$ and~$g_2$.
+\item Let $\cY$, $\cY'$ be gradings of $V$, $V'$ of norm~$N$, with definite parts $X$, $X'$ and strings of lengths
+  $l$, $l'$. For \m{g\in\Gg{\St{X}}} and \m{g'\in\Gg{\St{X'}}}, in rational coordinates,
+  $\inX{\cY'}(g')\cdot\Tm{\cY}{\cY'}\cdot\inX{\cY}(g)^{-1}=\Tm{\cY}{\cY'}$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) The frame of \m{V\oplus V'} is block diagonal. (b) In rational coordinates $\inX{\cY}(g)$ is block diagonal for
+the decomposition into $X$ and the string, with the identity on the string, and likewise~$\inX{\cY'}(g')$; the
+frequency map has its only non-zero block from string to string.
+\end{proof}
+\leanline{\lean{ratCoordMatrixsum}\sep \lean{inclXmulstringMapmulinclXinv}}
+
+\begin{lemma}\label{l:atfev}
+In Setting~\ref{set:three}, let $X''$, $H$ be finite index sets and \m{\cR\in\ArP{\cY}{\cY'}{\cY''}{X''}{H}}. For all
+\m{\Phi\in\Wf{\Hm{V}{V'}}} and \m{\Phi'\in\Wf{\Hm{V'}{V''}}},
+\[\at\bigl(\fev{\cR}(\Phi\boxtimes\Phi')\bigr)=\ztf{\aps{\cR}}\Bigl(\rhf{}\bigl(\stTf{\cY}{\cY'}{\cY''}\bigr)(\Phi\boxtimes\Phi')\Bigr),\]
+where $\at$ is the map of the standard spaces $\St{X}$, $\St{X'}$, $\St{X''}$.
+\end{lemma}
+\begin{proof}
+\m{\Phi\boxtimes\Phi'=\at(\Phi\otimes\Phi')} lies in \m{\Wf{\Hm{V'}{\fls{V}{V''}}}} (Input~2(e)); the finite Heisenberg
+operators preserve finite parts (Input~1(a)); and $\ztf{\aps{\cR}}$ maps finite parts to finite parts
+(Proposition~\ref{p:ztfspec}(i)). So the right side lies in \m{\Wf{\Hm{\St{X'}}{\fls{\St{X}}{\St{X''}}}}}, which is the
+range of $\at$ for the standard spaces, and \m{\at\circ\atl} is the identity on that range because
+\m{\atl\circ\at=1}.
+\end{proof}
+\leanline{\lean{arrowTensorfinEval}}
+
+\begin{proof}[Proof of Theorem B]
+(i) Put \m{\wt=\gr{\cY}\sqcup\gr{\cY''}}, write \m{l'=2j} (possible as $l$ is odd and \m{l'=l-1}), let $m_+$ be the
+number of indices of \m{I\sqcup I''} of positive weight, and let
+$x=\inX{\cY}(g)^{-}\oplus\inX{\cY''}(k)\in\Gg{\fls{V}{V''}}$. In rational coordinates $x$ is the identity on the basis
+vectors of non-zero weight, because $\inX{\cY}$ and $\inX{\cY''}$ fix the string vectors (Lemma~\ref{l:coord}(a)).
+The splitting $\aps{\cR}$ is a composite, so its zero term is the composite of two zero terms
+(Definition~\ref{d:split}), and
+$\tW{\mu}{\mu'}(\inX{\cY}g,\inX{\cY'}g',\inX{\cY''}k)$ is a scalar \m{c_V} times the Weil operator of
+\m{(\inX{\cY'}(g'),x)} on \m{\Hm{V'}{\fls{V}{V''}}} (Definition~\ref{d:arrowprod}).
+
+\emph{First zero term.} Apply Input~3(d) to the splitting \m{\gzs{\hzp{\cR}}}, whose frame $\mathsf{k}$ consists of
+the basis vectors \m{(i,b)} of positive degree \m{\wt(i)-\gr{\cY'}(b)}, with the element \m{(\inX{\cY'}(g'),x)}, the
+element $g_0=(g',1\oplus g^{-}\oplus\operatorname{emb}_{\cR}(k))$ of the group of the zero part, and the matrix $C$
+that acts by $x$ on the rows above each \m{b\in I'} of negative grade and by the inverse transpose of
+\m{\inX{\cY'}(g')} on the columns above each \m{i} of positive weight, and is the identity elsewhere. Its
+determinant is \m{u=(\det g\cdot\det k)^{j}\cdot(\det g')^{-m_+}}, since $\cY'$ has $j$ string vectors of negative
+grade, \m{\det x=\det g\cdot\det k} and \m{\det\inX{\cY'}(g')=\det g'}. The conditions of Input~3(d) are statements
+about the entries of block diagonal matrices: they hold because $x$ is the identity off weight zero, because the
+zero part has degree zero only above~$X'$ (Definition~\ref{d:gzphom}), and, for the last one, by condition~(c) of
+Definition~\ref{d:arrow}. Hence the first zero term carries the Weil operator of \m{(\inX{\cY'}(g'),x)} to
+\m{\upsilon(u)^{-1}} times that of~$g_0$.
+
+\emph{Second zero term.} By Input~3(e), removing the $H$ planes carries the Weil operator of
+$(g',1\oplus g^{-}\oplus\operatorname{emb}_{\cR}(k))$ to \m{\upsilon(\det g')^{|H|}} times that of
+\m{(g',g^{-}\oplus\operatorname{emb}_{\cR}(k))}; the side conditions of the input hold for the explicit frames of the
+splitting that removes the planes.
+
+\emph{The scalars.} The right side of (i) is the scalar $c_X$ of the triple action for the standard spaces $\St{X}$,
+$\St{X'}$, $\St{X''}$ at \m{(g,g',\operatorname{emb}_{\cR}(k))} times the same Weil operator. So it remains to see
+$c_V=c_X\cdot\upsilon(u)\,\upsilon(\det g')^{-|H|}$. The values of $\mu$ and $\mu'$ in $c_V$ and $c_X$ agree, since
+\m{\det\inX{\cY}(g)=\det g} and \m{\det\operatorname{emb}_{\cR}(k)=\det k}. It remains to compare the exponents of
+$\upsilon$ at the three determinants, with \m{\mu_V=\mu\upsilon^{\lfloor|I|/2\rfloor}}. At \m{\det g}:
+$(|I'|-\lfloor|I'|/2\rfloor)-(|X'|-\lfloor|X'|/2\rfloor)=2j-j=j$, as \m{|I'|=|X'|+2j}. At \m{\det k}:
+\m{\lfloor|I'|/2\rfloor-\lfloor|X'|/2\rfloor=j}. At \m{\det g'}: counting the weights of \m{I\sqcup I''},
+\m{|I|+|I''|=2m_++2|H|+|X|+|X''|}; this number is even by condition~(b) of Definition~\ref{d:arrow}, so
+$\lfloor|I|/2\rfloor-\lfloor|I''|/2\rfloor=(|I|-|I''|)/2$ and likewise for $X$, $X''$, and the exponent is
+\[\tfrac12(|I|-|I''|)-|I|-\tfrac12(|X|-|X''|)+|X|=-\tfrac12(|I|+|I''|)+\tfrac12(|X|+|X''|)=-m_+-|H|.\]
+These are the exponents of \m{\upsilon(u)\upsilon(\det g')^{-|H|}}.
+
+(ii) Since \m{\atl\circ\at=1}, Input~2(d), Lemma~\ref{l:atfev} and the hypothesis
+\m{\operatorname{emb}_{\cR}(1,k)=(1,k')} give for the right side
+\[\atl\Bigl(\tW{\mu}{\mu'}\bigl((1,g),(1,g'),\operatorname{emb}_{\cR}(1,k)\bigr)\,\ztf{\aps{\cR}}\bigl(\rhf{}(\mathbf{t})(\Phi\boxtimes\Phi')\bigr)\Bigr),
+\qquad\mathbf{t}=\stTf{\cY}{\cY'}{\cY''}.\]
+Now \m{\ztf{\aps{\cR}}(F)=\ev{\aps{\cR}}(v\otimes F)} for a fixed real datum~$v$, and the triple action of finite points
+commutes with \m{v\otimes{}} (Input~1(b)). So part~(i), with \m{\inXf{\cY''}(k)=x}, turns this into the first of the
+two vectors
+\[\begin{aligned}
+&\atl\,\ztf{\aps{\cR}}\bigl(\tW{\mu}{\mu'}(\inXf{\cY}g,\inXf{\cY'}g',x)\,\rhf{}(\mathbf{t})(\Phi\boxtimes\Phi')\bigr),\\
+&\atl\,\ztf{\aps{\cR}}\bigl(\rhf{}(\mathbf{t})\,\tW{\mu}{\mu'}(\inXf{\cY}g,\inXf{\cY'}g',x)(\Phi\boxtimes\Phi')\bigr),
+\end{aligned}\]
+and by Input~2(d) the left side of (ii) is the second.
+The two agree: on an arrow product the translation by the stacked frequency map is the arrow product of the
+translations by the finite parts of the two frequency maps (Input~2(b)), the triple action is the arrow product
+of the two pair actions (Input~2(d)), and each pair action commutes with the translation by its frequency map
+by Input~2(g) and Lemma~\ref{l:coord}(b).
+\end{proof}
+\leanline{\lean{zeroTermsplittingtripleWeil}\sep \lean{finEvalinclXFin}}
+
+\sect{Two unfolding steps}{s:double}
+\begin{proof}[Proof of Theorem C(i)]
+Let \m{z_0\ne0} be the constant of Input~2(a) for $V$, $V'$, $V''$. Let $C_1$ be the constant of Input~4(a) for
+$\cY$ and the set of all its indices of grade~$1$; this set is empty, the grades of $\cY$ being even. Let $C_2$
+be the constant of Input~4(a) for $\cY'$ and the injection $\gamma_{\cR}$. We show the claim with
+\m{z=C_1C_2z_0^{-1}}. Fix $\mu$, $\mu'$, $f$, $f'$, $k$, $h$ and a generic~$P$, and put
+\[F(g,r)=P(gh)\,\ct{\cY}{\cY'}{\mu}(f)(g,r)\,\ct{\cY'}{\cY''}{\mu'}(f')\bigl(r,\inX{\cY''}(k)\bigr).\]
+It is continuous, and invariant under the rational points of $\Bes{\cY}$ in $g$ and of $\Bes{\cY'}$ in~$r$
+(Input~4(c)).
+
+\emph{Step 1: a product of two constant terms is a zero term.} For data $f_1$, $f_2$ and matrices
+\m{y\colon V\to V'}, \m{y'\colon V'\to V''} in rational coordinates, the product of the constant term of $f_1$
+at $y$ and of $f_2$ at~$y'$ equals
+$z_0^{-1}\cdot\ev{\Xi_1}\bigl(\rh{}(y)f_1\boxtimes\rh{}(y')f_2\bigr)(0)$, where \m{\Xi_1=\gzs{\hzp{\cR}}}. Indeed, the
+value at $0$ of this zero term is the mean of the datum over the matrices \m{V'\to\fls{V}{V''}} of positive degree
+(Definition~\ref{d:split}). The map $(a,b)\mapsto\bigl(\begin{smallmatrix}a^{\dagger}\\b\end{smallmatrix}\bigr)$
+carries the pairs of a matrix \m{V\to V'} and a matrix \m{V'\to V''}, both of positive degree, onto these
+matrices, because the adjoint exchanges the positions \m{(b,a)} and \m{(a,b)} up to the reversal of the strings,
+which changes the sign of both grades. So the mean is an iterated mean (Input~7(c)); by Input~2(b) and~(a) the
+integrand is
+$\tht{}\bigl(\rh{}(a)\rh{}(y)f_1\boxtimes\rh{}(b)\rh{}(y')f_2\bigr)=z_0\,\tht{}(\rh{}(a)\rh{}(y)f_1)\,\tht{}(\rh{}(b)\rh{}(y')f_2)$,
+and the two means of the factors are the two constant terms (Definition~\ref{d:grading}).
+
+\emph{Step 2: the inner integral.} Fix~$r$. For a unipotent element $n$ of $\cY$, \m{n-1} raises grades by at
+least~$2$, the grades being even; so by Input~4(b), at the frequency map, where the two values of the bicharacter
+cancel, \m{F(n\,\inX{\cY}(a),r)=F(\inX{\cY}(a),r)} for \m{a\in\Gg{\St{X}}}. Input~4(a), with the constant function of
+mean \m{F(\inX{\cY}(a),r)}, gives
+$\int_{\qB{\cY}}F(g,r)\,dg=C_1\int_{\qG{\St{X}}}F(\inX{\cY}(a),r)\,da$.
+
+\emph{Step 3: Fubini.} The function \m{(a,r)\mapsto F(\inX{\cY}(a),r)} is continuous and invariant on a product of
+two compact quotients, so the integrals over $r$ and $a$ may be exchanged.
+
+\emph{Step 4: the integral over $\qB{\cY'}$.} Fix \m{a\in\Gg{\St{X}}} and let \m{g'\in\Gg{\St{X'}}} and $n'$ a
+unipotent element of~$\cY'$. Put \m{f_1=\pW{\mu}(\inX{\cY}a,\inX{\cY'}g')f} and
+\m{f_2=\pW{\mu'}(\inX{\cY'}g',\inX{\cY''}k)f'}. By Input~4(c) the two constant terms in
+\m{F(\inX{\cY}(a),n'\inX{\cY'}(g'))} are the constant terms of $f_1$ at \m{n'^{-1}\Tm{\cY}{\cY'}} and of $f_2$ at
+\m{\Tm{\cY'}{\cY''}n'}. Since $n'$ is unitary, $(n'^{-1}\Tm{\cY}{\cY'})^{\dagger}=\Tm{\cY}{\cY'}^{\dagger}n'$, so by Step~1 and
+Input~2(b)
+\[F\bigl(\inX{\cY}(a),n'\inX{\cY'}(g')\bigr)=P(\inX{\cY}(a)h)\cdot z_0^{-1}\cdot
+\ev{\Xi_1}\Bigl(\rh{}\bigl(\mathbf{T}+\mathbf{T}(n'-1)\bigr)(f_1\boxtimes f_2)\Bigr)(0),\]
+where we write $\mathbf{T}$ for \m{\stT{\cY}{\cY'}{\cY''}}.
+The matrix \m{\stT{\cY}{\cY'}{\cY''}(n'-1)} has two kinds of entries. Outside the positions of degree
+zero, which are the positions \m{(\ind{\cR}(a'),x')} with \m{x'\in X'}, it has entries only in positions of positive
+degree, because the frequency maps lower degrees by at most one and \m{n'-1} raises them; translations in these
+directions do not change the zero term (Input~3(b)). At the positions of degree zero, condition~(d) of
+Definition~\ref{d:arrow} shows that its entries are those of \m{\inc{\cR}} applied to the vector that has, at the
+second copy of \m{k\in H} and at \m{x'\in X'}, the entry of \m{\fc{\cY'}(n'-1)} at \m{(\gamma_{\cR}(k),x')}, and zeros
+elsewhere. By Input~3(b) the zero term turns
+this translation into the translation of the zero part by that vector; the Heisenberg cocycles that occur are
+trivial. The directions of these vectors are exactly those over which the splitting that removes the planes
+averages. Therefore \m{n'\mapsto F(\inX{\cY}(a),n'\inX{\cY'}(g'))} is a continuous periodic function of the entries of
+\m{\fc{\cY'}(n'-1)} in the rows $\gamma_{\cR}(H)$ and the columns~$X'$, and its mean is
+\[M(g')=P(\inX{\cY}(a)h)\cdot z_0^{-1}\cdot\tht{}\Bigl(\ev{\aps{\cR}}\bigl(\rh{}(\stT{\cY}{\cY'}{\cY''})(f_1\boxtimes f_2)\bigr)\Bigr).\]
+Now $f_1\boxtimes f_2=\tW{\mu}{\mu'}(\inX{\cY}a,\inX{\cY'}g',\inX{\cY''}k)(f\boxtimes f')$ (Input~2(d)); this triple action
+commutes with \m{\rh{}(\stT{\cY}{\cY'}{\cY''})}, as in the proof of Theorem~B(ii); and Theorem~B(i) moves it through
+the zero term. So
+\[M(g')=P(\inX{\cY}(a)h)\,z_0^{-1}\,\tht{}\Bigl(\tW{\mu}{\mu'}\bigl(a,g',\operatorname{emb}_{\cR}(k)\bigr)\,\ev{\aps{\cR}}\bigl(\rh{}(\mathbf{T})(f\boxtimes f')\bigr)\Bigr),\]
+a continuous function of $g'$, left invariant under \m{\Gamma(\St{X'})} by Input~2(f). Input~4(a) for $\cY'$ gives
+$\int_{\qB{\cY'}}F(\inX{\cY}(a),r)\,dr=C_2\int_{\qG{\St{X'}}}M(g')\,dg'$. Together with Steps 2 and~3 this is the
+claim.
+\end{proof}
+\leanline{\lean{integralconstTermAtTmul}}
+
+\begin{proof}[Proof of Theorem C(ii)]
+Let \m{z_0\ne0} be the constant of Input~2(a) for the standard spaces $\St{X}$, $\St{X'}$, $\St{X_0}$. For
+\m{o\in U}, $\varphi$, $g$ and a datum $f$ of \m{\Hm{\St{X'}}{\fls{\St{X}}{\St{X_0}}}}, the function
+$(x,r)\mapsto\coef{t}(\varphi)(x)\cdot\tht{}(\tW{\mu_o}{\mu'_o}(x,r,g)f)$ on
+\m{\qG{\St{X}}\times\qG{\St{X'}}} is continuous and well defined (Inputs~5 and~2(f)), on a compact space since the
+standard spaces are definite; so it is integrable, and its integral $\mathcal{I}_{o,\varphi,g}(f)$ is a continuous
+linear functional of~$f$.
+
+\emph{Reduction to polynomial vectors.} The real data $u$ for which the theorem holds form a linear subspace
+of the Fock space. It is closed: the map sending $u$ to the function
+$(o,y,\varphi,g)\mapsto\mathcal{I}_{o,\varphi,g}(u\otimes\at(y))$ is continuous for pointwise convergence, and the
+functions of the form $(o,y,\varphi,g)\mapsto\coef{t''}(\mathcal{L}''_o(y)\varphi)(g)$, $t''$ in the finite-dimensional
+dual of the vectors of weight~$\varkappa$, form a finite-dimensional, hence closed, subspace. By Input~7(a) it
+suffices to treat \m{u=v_Q}, and by Input~7(b) and linearity a product \m{Q=Q_1Q_2} of a polynomial $Q_1$ in the
+coordinates of \m{\Hm{\St{X'}}{\St{X}^{-}}} and a polynomial $Q_2$ in those of \m{\Hm{\St{X'}}{\St{X_0}}}.
+
+\emph{Products.} For such $Q$ the polynomial vector is an arrow product, \m{v_Q=v_{Q_1'}\boxtimes v_{Q_2}} on real
+data, where $Q_1'$ is $Q_1$ read in the coordinates of \m{\Hm{\St{X}}{\St{X'}}}. Let $t'$ be the functional that
+Input~5 gives for $(\mathcal{L}_o)_o$, $Q_1'$ and~$t$, and $t''$ the one for $(\mathcal{L}'_o)_o$, \m{z_0Q_2} and~$t'$.
+By linearity in $y$ it suffices to take \m{y=\Phi\otimes\Phi'}. Then
+$v_Q\otimes\at(y)=(v_{Q_1'}\otimes\Phi)\boxtimes(v_{Q_2}\otimes\Phi')$, and by Input~2(d) and~(a)
+\[\tht{}\bigl(\tW{\mu_o}{\mu'_o}(x,r,g)(v_Q\otimes\at(y))\bigr)
+=z_0\cdot\tht{}\bigl(\pW{\mu_o}(x,r)(v_{Q_1'}\otimes\Phi)\bigr)\cdot\tht{}\bigl(\pW{\mu'_o}(r,g)(v_{Q_2}\otimes\Phi')\bigr).\]
+Integrating first over $x$ (Fubini) and using the property of $\mathcal{L}_o$, then over $r$ and using that of
+$\mathcal{L}'_o$, we get
+\[\begin{aligned}
+\mathcal{I}_{o,\varphi,g}\bigl(v_Q\otimes\at(y)\bigr)&=\int_{\qG{\St{X'}}}\coef{t'}\bigl(\mathcal{L}_o(\Phi)\varphi\bigr)(r)\,
+\tht{}\bigl(\pW{\mu'_o}(r,g)(v_{z_0Q_2}\otimes\Phi')\bigr)\,dr\\
+&=\coef{t''}\bigl(\mathcal{L}'_o(\Phi')\mathcal{L}_o(\Phi)\varphi\bigr)(g).
+\end{aligned}\qedhere\]
+\end{proof}
+\leanline{\lean{integralthetaeqlift}}
+
+\sect{Admissible evaluations}{s:admev}
+\begin{proposition}[the standard evaluation]\label{p:std}
+In Setting~\ref{set:adm}, with its objects $N$, $\Sigma$, $\pi$, $\delta$, $\beta$, $\kappa$, let $X'$ be a finite index set,
+put \m{T=X^{+}\sqcup X''^{+}}, with the points $\pt_1$ of $X^{+}$ and $\pt_2$ of~$X''^{+}$, and let
+$V_{\mathrm{st}}=\Hm{\St{X'}}{\fls{\St{X^{+}}}{\St{X''^{+}}}}$, a standard space with index set \m{T\times X'}. There are an
+element \m{k\in\Gfin{T\times X'}}, a \m{T\times T} matrix $\gamma$ over $\Af$ and a family \m{b\colon T\to\Af} such that:
+\begin{enumerate}[label=(\arabic*)]
+\item the matrix of $k$ is the Kronecker product of \m{\operatorname{diag}(\kappa)\cdot\gamma} with the identity matrix
+  of~$X'$;
+\item at every finite place $w$ with \m{w\notin\Sigma} and \m{\bar w\notin\Sigma}, every $b_j$ has component~$0$ and
+  $\gamma$ has the identity as component;
+\item for every \m{j\in T}, \m{\NbV{\pi}{\delta}{b_j}{\gamma_{\cdot j}}}, where $\gamma_{\cdot j}$ is the column $j$ of~$\gamma$;
+\item $\AdmEv{N}{\Sigma}{\beta}{\bigl(f\mapsto\atl(\om{V_{\mathrm{st}}}(1,k)f)\bigr)}{\soc{\beta}{\,\cdot\,}\kappa}$
+  (Definition~\ref{d:admev} for the spaces $\St{X^{+}}$, $\St{X'}$, $\St{X''^{+}}$).
+\end{enumerate}
+\end{proposition}
+\begin{proof}
+\emph{The element.} Let \m{\mathbf{1}_\Sigma\in\Oh} be the adele equal to $1$ at the places of $\Sigma$ and $0$
+elsewhere. Then \m{\mathbf{1}_\Sigma\cj{\mathbf{1}_\Sigma}=0} and \m{\mathbf{1}_\Sigma\delta=\mathbf{1}_\Sigma}, as
+\m{\Sigma\cap\bar\Sigma=\emptyset} and \m{\delta=1} above~$N$. Let $\lambda$ be the finite idele equal to $\pi$ at
+the places of~$\Sigma$, to \m{\bar\pi^{-1}} at their conjugates and to $1$ elsewhere; so \m{\lambda\bar\lambda=1}. Let
+\m{\xi\in\Oh^{T}} be the vector \m{e_{\pt_1}+\cj{\epsm\mathbf{1}_\Sigma}\,e_{\pt_2}}; then \m{\xi^{*}\xi=1}, and
+\[\gamma=1+(\lambda-1)\,\xi\xi^{*}\]
+is unitary: it multiplies $\xi$ by $\lambda$ and fixes the vectors orthogonal to~$\xi$. For \m{m\in T} put
+$b_m=(\lambda-1)\pi^{-1}\bigl(\cj{\mathbf{1}_\Sigma}\,[m=\pt_1]+\epsm\mathbf{1}_\Sigma\,[m=\pt_2]\bigr)$, where
+\m{[m=\pt_1]} is $1$ if \m{m=\pt_1} and $0$ otherwise.
+The diagonal matrix \m{\operatorname{diag}(\kappa)} is unitary, because \m{\kappa_b\in\{1,\delta\}} and
+\m{\delta\bar\delta=1}, and it commutes with~$\gamma$, because \m{\gamma-1} is supported above $N$, where all
+$\kappa_b$ are~$1$. Let $k$ be the element of \m{\Gfin{T\times X'}} acting by \m{\operatorname{diag}(\kappa)\gamma}
+on each column \m{x'\in X'}. This is~(1), and (2) holds because \m{\lambda-1} vanishes outside
+\m{\Sigma\cup\bar\Sigma}.
+
+\emph{Neighbour vectors.} \m{\delta b_m=b_m} since $b_m$ is supported above~$N$. The entries \m{\gamma_{im}} with
+\m{i\ne\pt_1,\pt_2} are those of the identity. Next \m{\bar\pi(\lambda-1)\in\Oh}: it is \m{\bar\pi(\pi-1)} at $\Sigma$,
+\m{1-\bar\pi} at $\bar\Sigma$ and $0$ elsewhere; so \m{\bar\pi\gamma_{im}\in\Oh}. Let
+$\varpi_0=\mathbf{1}_\Sigma+(1-\mathbf{1}_\Sigma)\pi^{-1}$, an element of $\Oh$ since $\pi$ is a unit outside~$\Sigma$.
+A direct computation with \m{\mathbf{1}_\Sigma\cj{\mathbf{1}_\Sigma}=0} and \m{\cj{\epsm}\epsm=-1} gives
+\m{b_m-\pi^{-1}\gamma_{\pt_1m}=-\varpi_0\,[m=\pt_1]} and $\cj{\epsm}b_m-\pi^{-1}\gamma_{\pt_2m}=-\varpi_0\,[m=\pt_2]$:
+for instance $\gamma_{\pt_1m}=[m=\pt_1]+(\lambda-1)([m=\pt_1]+\epsm\mathbf{1}_\Sigma[m=\pt_2])$, so the coefficient of
+\m{[m=\pt_2]} cancels and that of \m{[m=\pt_1]} is
+$-\pi^{-1}(1+(\lambda-1)(1-\cj{\mathbf{1}_\Sigma}))=-\pi^{-1}(1+\mathbf{1}_\Sigma(\pi-1))=-\varpi_0$. This is~(3).
+
+\emph{The key identity.} Let \m{\bar\Sigma} be the set of the conjugates of the places of~$\Sigma$ and
+$\gamma_{X'}$ the element acting by $\gamma$ on each column \m{x'\in X'}. We claim that there is \m{C_0\in\CC} with
+\[\om{V_{\mathrm{st}}}(1,\gamma_{X'})\,P^{\bar\Sigma}f=C_0\sum_y\rhf{}\bigl(\cj{\mathbf{1}_\Sigma}\,\mathrm{n}(y)\bigr)P^{\bar\Sigma}f
+\qquad\text{for all }f\in\Sch{V_{\mathrm{st}}},\]
+the sum over \m{y\in((\Z/N)^{\Sigma})^{X'}}, where \m{\mathrm{n}(y)} is the finite vector with the entry
+\m{\epsm\,\xi_i\,\cj{\tilde y_{x'}/N}} at \m{(i,x')}. By Input~3(f), $P^{\bar\Sigma}$ is named by the indicator of the
+vectors integral at~$\bar\Sigma$, the element $\gamma_{X'}$, supported at $\Sigma$ and $\bar\Sigma$, transforms
+this function by \m{\gamma_{X'}^{-1}} up to a constant, and translates of the indicator name the corresponding
+Heisenberg translates of~$P^{\bar\Sigma}$. So the claim is an identity of functions: for every finite vector $x$
+there is an element $b(x)$ such that, for every $y$, the vector \m{\gamma_{X'}x+\mathrm{n}(y)} is integral at
+$\bar\Sigma$ if and only if $x$ is integral at $\bar\Sigma$ and \m{y=b(x)}. Thus the sum over $y$ of the translated
+indicators has at most the one term \m{y=b(x)} at \m{\gamma_{X'}x}, and no term when $x$ is not integral
+at~$\bar\Sigma$. At a place of $\bar\Sigma$ we have \m{\lambda=\bar\pi^{-1}},
+\m{\xi=e_{\pt_1}+\cj{\epsm}e_{\pt_2}}, and the column $x'$ of \m{\gamma_{X'}x+\mathrm{n}(y)} is
+$x_{\cdot x'}+\xi\cdot\bigl((\bar\pi^{-1}-1)x_{\pt_1x'}+\epsm\,\tilde y_{x'}/N\bigr)$. If it is integral, its coordinate
+at $\pt_1$, \m{\bar\pi^{-1}x_{\pt_1x'}+\epsm\tilde y_{x'}/N}, is integral; multiplying by the uniformiser $\bar\pi$ and
+using that \m{\bar\pi/N=\pi^{-1}} is a unit there, \m{x_{\pt_1x'}} is integral, and then so are all coordinates
+of~$x$. Conversely, for integral $x$ the column is integral exactly if
+\m{\bar\pi^{-1}x_{\pt_1x'}+\epsm\tilde y_{x'}/N} is. The lemma of the note on the Gauss-sum operator on residues
+modulo~$N$ at a split level, applied after complex conjugation at~$\Sigma$, provides a residue class $b_{x'}$ such
+that this holds if and only if \m{y_{x'}=b_{x'}}, the product of $N$ and \m{\bar\pi^{-1}x_{\pt_1x'}} being integral;
+the family of the $b_{x'}$ is~$b(x)$.
+
+\emph{The admissible evaluation.} We show (4) with the constant \m{C=\Df(k_0)\,C_0}, where $k_0$ acts by
+\m{\operatorname{diag}(\kappa)} on each column, so that \m{k=\gamma_{X'}k_0}. Let $n$ be coprime to~$N$, $p$ a
+proposition and \m{x\in\wtr{n}{(i,x')\mapsto\soc{\beta}{i}\kappa_i}}. First, Proposition~\ref{p:moved}, with \m{c=1}
+and the set \m{A=\wtr{n}{(i,x')\mapsto\soc{\beta}{i}}}, shows that
+\m{\om{V_{\mathrm{st}}}(1,k_0)\rhf{}(x)\vac{}} is an admissible combination of the vectors
+\m{\Df(k_0)\rhf{}(z)\vac{}}, \m{z\in A}, away from~$n$, with denominator $D$ and size~$1$. Its hypotheses hold: $k_0$
+multiplies the coordinate \m{(i,x')} by~$\kappa_i$, and \m{\soc{\beta}{i}\kappa_i(x+y)_{(i,x')}} is integral away from $n$
+for \m{y\in\Oh^{T\times X'}}, by the choice of $x$ and because \m{\soc{\beta}{i}\kappa_i\in\Oh}; and
+\m{D/|\Df(k_0)|^{2}\in\intaw{n}} by Lemma~\ref{l:away}(a) with \m{k=0}, because \m{|\Df(k_0)|^{2}}, the index of
+\m{\Oh^{T\times X'}\cap k_0^{-1}\Oh^{T\times X'}} (Input~1(c)), divides~$D$: this lattice contains the kernel of the
+map \m{y\mapsto(\bar y\bmod\beta)} to \m{(\Oh/\beta\Oh)^{T\times X'}}, since a vector with coordinates \m{\bar\beta\bar c},
+\m{c\in\Oh}, is mapped by $k_0$ to one with coordinates \m{\bar\beta\kappa_i\bar c\in\Oh}. Second, apply the linear map
+\m{\atl\circ\om{V_{\mathrm{st}}}(1,\gamma_{X'})} (Lemma~\ref{l:rules}(c)). Third, re-index by
+Lemma~\ref{l:rules}(f): for \m{z\in A},
+\[\Df(k_0)\,\atl\bigl(\om{V_{\mathrm{st}}}(1,\gamma_{X'})\rhf{}(z)\vac{}\bigr)
+=\varsigma\cdot C\cdot\tsum{X}{X'}{\Sigma}{N}{X''}\bigl(\rhf{}(t_1)\vac{}\otimes\rhf{}(t_2)\vac{}\bigr)\]
+with a root of unity $\varsigma$, where $t_1$ is \m{\epsm} times the conjugate transpose of the block of $z$ with
+rows $X^{+}$ and $t_2$ is the block of $z$ with rows~$X''^{+}$; both lie in the groups of translations for
+$\bar\beta$ (Lemma~\ref{l:transl}(b)). To see this identity, note that $z$ is integral at the places above~$N$:
+they do not divide $n$, and $\beta$ and $\bar\beta$, the weights of the two blocks, are units there. So \m{P^{\bar\Sigma}\rhf{}(z)\vac{}=\rhf{}(z)\vac{}}
+(Input~1(f)), and the key identity gives
+$\om{V_{\mathrm{st}}}(1,\gamma_{X'})\rhf{}(z)\vac{}=C_0\sum_y\rhf{}(\cj{\mathbf{1}_\Sigma}\mathrm{n}(y))\rhf{}(z)\vac{}$. By
+Input~2(c) each term is a root of unity times an arrow product of two translated vacua, and the terms are those of
+$\at\bigl(\tsum{X}{X'}{\Sigma}{N}{X''}(\rhf{}(t_1)\vac{}\otimes\rhf{}(t_2)\vac{})\bigr)$, by the definition of the
+translate sum (the first block of \m{\cj{\mathbf{1}_\Sigma}\mathrm{n}(y)} gives the last column \m{-\tilde y/N}, the second
+block the last row \m{-\cj{\tilde y/N}}, with the same root of unity for all~$y$); apply $\atl$.
+\end{proof}
+\leanline{\lean{existsisAdmissibleEvalstd}}
+
+\begin{proof}[Proof of Theorem D]
+Apply Proposition~\ref{p:std} with the index set \m{X'^{+}} in place of~$X'$: it gives $k$, $\gamma$, $b$ with the
+properties (1) to~(4), and the constant $C$ of~(4). Let $r_1$ be the finite idele \m{\cj{\epsm}\bar\alpha/\alpha}, by
+which the frame of $V^{-}$ differs from that of~$V$ (Definition~\ref{d:arrowprod}); so the inverse finite frame of
+\m{\fls{V}{V''}} is the block diagonal matrix of \m{r_1^{-1}x_{V,f}^{-1}} and~\m{x_{V'',f}^{-1}}, and
+\m{r_1\cdot(a/\bar a)=\cj{\epsm}\delta} by the hypothesis on~$\delta$.
+
+\emph{An integral matrix.} Let $M$ be the matrix with rows \m{(H\sqcup H)\sqcup T} and columns \m{j\in T} whose column
+$j$ is: $0$ on the first copy of~$H$; \m{r_1ub_j} at every index of the second copy; \m{r_1\kappa_i\gamma_{ij}} at
+\m{i\in X^{+}}; and \m{\kappa_i\gamma_{ij}} at \m{i\in X''^{+}}. Let $\mathsf{J}$ be the inclusion matrix of the basis
+vectors of $X'^{+}$ into~$I'$, and
+\[B=\bigl(x_{\fls{V}{V''},f}^{-1}\,\inc{\cR}\,M\bigr)\otimes\bigl(\mathsf{J}^{\mathsf T}x_{V',f}\bigr)^{\mathsf T},\]
+a matrix with rows \m{(I\sqcup I'')\times I'} and columns \m{T\times X'^{+}}. It is integral. The second factor is:
+\m{x_{V',f}=\glb{\mathbf{e}_{\cY'}}{a}{\pi}{u}\,k'} with \m{k'\in\mathrm{GL}_{I'}(\Oh)}, and for the even length $l'$ the
+rows $X'^{+}$ of the graded lattice basis are those of the identity. The first factor is by the hypothesis
+(lattices), applied to $r_1$, \m{r_2=r_1^{-1}} and the neighbour vectors \m{(b_j,\gamma_{\cdot j})} of~(3): the column
+$j$ of \m{\inc{\cR}M} is the vector $v$ of that hypothesis.
+
+\emph{The zero term.} By the definitions of the splittings, \m{B=\mathsf{i}_fk+\mathsf{k}_fc'} for the frames of
+$\aps{\cR}$ and a suitable matrix~$c'$: the columns of $M$ split into the part \m{(r_1\kappa_i\gamma_{ij},\kappa_i\gamma_{ij})},
+which is the frame of \m{\fls{\St{X^{+}}}{\St{X''^{+}}}} applied to \m{\operatorname{diag}(\kappa)\gamma}, and the part
+along the second copy of~$H$, which is the isotropic frame of the splitting that removes the planes. So
+Proposition~\ref{p:vac} gives \m{C_3\in\CC} and, for every finite vector~$y$, a number \m{\varsigma(y)}, zero or a
+root of unity, with
+$\ztf{\aps{\cR}}(\rhf{}(y)\vac{})=\varsigma(y)\,C_3\,\om{V_{\mathrm{st}}}(1,k)\,\rhf{}(B^{*}y)\vac{}$.
+
+\emph{The frequency map disappears.} \m{B^{*}\,\stTf{\cY}{\cY'}{\cY''}=0}. Indeed
+$(\mathsf{J}^{\mathsf T}x_{V',f})^{*}=x_{V',f}^{-1}\mathsf{J}$, by \m{x_{V',f}^{*}J_{V'}x_{V',f}=1} and because $J_{V'}$ is
+the identity on~$X'^{+}$; and \m{\stT{\cY}{\cY'}{\cY''}\,\mathsf{J}=0}, the frequency maps and their adjoints having
+non-zero columns only at string vectors.
+
+\emph{Conclusion.} Let $n$ be coprime to~$N$, $p$ a proposition and \m{y\in\wtr{n}{(i,i')\mapsto\soc{\beta}{i}}}. By
+Definition~\ref{d:fev}, Input~1(a) and the two preceding paragraphs,
+\[\begin{aligned}
+\fev{\cR}\bigl(\rhf{}(y)\vac{}\bigr)&=\varsigma'\,\atl\,\ztf{\aps{\cR}}\bigl(\rhf{}(\stTf{\cY}{\cY'}{\cY''}+y)\vac{}\bigr)\\
+&=\varsigma'\,\varsigma(y)\,C_3\cdot\atl\bigl(\om{V_{\mathrm{st}}}(1,k)\,\rhf{}(B^{*}y)\vac{}\bigr)
+\end{aligned}\]
+with a root of unity~$\varsigma'$. By Lemma~\ref{l:transl}(a) the vector \m{B^{*}y} lies in
+\m{\wtr{n}{(j,x')\mapsto\soc{\beta}{j}\kappa_j}}; its condition on the valuations is checked below. So~(4) applies to
+\m{B^{*}y}, and Lemma~\ref{l:rules}(c) and~(e) carry the scalars $C_3$, \m{\varsigma(y)}, $\varsigma'$: the claim holds
+with the constant \m{C_3C}.
+
+\emph{The condition on the valuations.} Let \m{(i,i')} be a row and \m{(j,x')} a column of~$B$, and $w$ a finite
+place with \m{|\soc{\beta}{i}|_w\ne|\soc{\beta}{j}\kappa_j|_w}; we show that the first factor of the entry of $B$ vanishes
+at~$\bar w$. That factor is $\sum_{i_1}(x_{\fls{V}{V''},f}^{-1})_{ii_1}(\inc{\cR}M)_{i_1j}$. Fix~$i_1$ and use the
+hypothesis (weights) for $i_1$ and~$j$. If \m{\inc{\cR}(i_1,j)=0}: the place $\bar w$ does not lie above~$N$, since
+above $N$ all $\kappa$ are $1$ and $\beta$ is a unit, so that the two absolute values would both be~$1$; hence, by~(2),
+at $\bar w$ the $b$'s vanish and $\gamma$ is the identity, the column $j$ of $M$ has at $\bar w$ only the entry at
+the index~$j$, and \m{(\inc{\cR}M)_{i_1j}} is a multiple of \m{\inc{\cR}(i_1,j)=0} there. Otherwise
+$|\soc{\beta}{i_1}|_w=|\soc{\beta}{j}\kappa_j|_w\ne|\soc{\beta}{i}|_w$, so $i_1$ and $i$ lie in different ones of the two
+sets $I$, $I''$, and \m{(x_{\fls{V}{V''},f}^{-1})_{ii_1}=0} because this matrix is block diagonal.
+\end{proof}
+\leanline{\lean{isAdmissibleEvalfinEval}}
+
+\sect{Where the results are used}{s:used}
+\emph{In the unit.} The note on the seesaw identity uses: Theorem~A and Lemma~\ref{l:rules} wherever a
+denominator or a size is tracked (the unfolding to an admissible combination, the combination of reduced vacua,
+the passage to a good datum); Lemma~\ref{l:away}(a) for the multiplicities of the finite cuts, which divide powers
+of the conductor of the twist; Theorem~C, with the middle pairs and the last pair of Definition~\ref{d:pairs} for
+the gradings of the spaces of the chain of lifts, to identify the function left after $2i+2$ unfoldings with a matrix
+coefficient of \m{i+1} pairs of definite lifts; Theorem~B(ii) for the invariance of the evaluated data under the
+levels; Theorem~D, Lemma~\ref{l:inlattice} and Proposition~\ref{p:moved}, with Lemma~\ref{l:away}(b) to~(d), to write
+the evaluated data through reduced vacua; and Proposition~\ref{p:support} in the step that bounds how far the
+lines of a lattice move under one lift.
+
+\emph{In other units.} Admissible coefficients enter the definition of a good datum in the unit of the columns,
+and admissible combinations are produced in the unit of the CM curve (named data as combinations of translated
+vacua) and used in the units of the exchange identity and of the rows. Propositions~\ref{p:unimod}
+and~\ref{p:frame} are used in the unit that constructs the spaces of the chain of lifts and in the unit of the filling:
+the first shows that the lattice spanned by the graded lattice basis is self-dual, the second provides the real
+part of the frame.
+
+\sect{Notes on the formal text}{s:notes}
+\subhead{Arguments.} The lists of arguments used by the checks of this note are read from the text of the
+artifact, not printed by Lean. They contain entries that Lean does not take, as the reader's dossier records: an index
+type listed for \m{\intaw{n}}; an index type listed for admissible evaluations; and a first copy of the field
+instances for Proposition~\ref{p:std} and for Theorem~D. The two index sets $X''$, $H$ of an arrow pair are listed
+twice, as implicit and as explicit arguments, because a prefix makes them explicit for that declaration. For
+admissible evaluations the lists also carry a finite index type named like the proposition of
+Definition~\ref{d:admev}, with its finiteness: the definition binds that name as the proposition~$p$ and its
+translate sum has the three index sets $X$, $X'$, $X''$ only, so these two entries are inferred from the text, as
+the second reader of the dossier notes; a signature printed by Lean would settle them. In the other direction, the text reading of Theorem~C(ii) misses the field $E$, the index sets $X$,
+$X'$, $X_0$ and their instances, which the formal statement names after a local definition; they stand in the
+statement above. In Theorem~A(i) the two hypotheses on $d''$ and $C$ have default proofs by simplification, so
+that the formal text can omit them at a use.
+
+\subhead{Differences from the statements above.} (1) Coprimality of a prime $\ell$ and $n$ is the formal
+hypothesis in Theorem~A(ii) and Definition~\ref{d:away}; for \m{n=0} no prime is coprime to~$n$, so
+\m{\intaw{0}=\CC}. (2) The automorphisms $\sigma$ are ring automorphisms of~$\CC$. (3) The ring homomorphism $\jmath$
+is an instance argument in Theorem~A(ii) and an ordinary one in Lemma~\ref{l:away}(c),~(d). (4) The finite zero term
+and the left inverse $\atl$ depend on choices made once by the axiom of choice (an adapted element; a left
+inverse of an injective linear map). (5) The denominator $D$ of Definition~\ref{d:admev} is a cardinality that
+is~$0$ when infinite. (6) In Definition~\ref{d:arrow} the subtraction is that of natural numbers. (7) In
+Theorem~C(ii) the hypothesis is the library's predicate on families of lifts, stated here as Input~5; the
+characters enter through the twist \m{\mu\mapsto\mu\upsilon^{\lfloor|X|/2\rfloor}}. (8) Proposition~\ref{p:frame} takes
+a ring homomorphism $\phi$ that only transports an integer matrix, and Proposition~\ref{p:unimod} a homomorphism
+\m{f\colon S\to R} of the same kind. (9) The formal statements of Lemma~\ref{l:rules}(a) and of Theorem~A(iii)
+are for a finite subset given as such, and for the iterated tensor product of the library, in which the factor
+of index $m-1$ stands first. (10) In Lemma~\ref{l:rules}(h) the scalar is Mathlib's normalising unit, with its
+value $1$ at zero; its description is recalled, Mathlib not being part of the text read. The scalar must not be
+simplified to \m{d/C}: nothing is assumed non-zero, and for \m{a=0} the vector of the conclusion is zero. (11) In
+Definition~\ref{d:transl} and in Theorem~D the two blocks of a vector carry the weights $\beta$ and~$\bar\beta$;
+they are never replaced by one common weight.
+
+\subhead{What the formal proofs do differently.} The unitary matrix $\gamma$ of Proposition~\ref{p:std} is given
+entry by entry in the formal text, and its unitarity and the properties of neighbour vectors are found by
+automation from a list of identities; the description \m{\gamma=1+(\lambda-1)\xi\xi^{*}} and the computations with
+it are ours. The comparison of the scalars in Theorem~B(i) is, formally, a linear-arithmetic certificate; the
+count with the weights is ours. The identity of functions behind the key identity of Proposition~\ref{p:std},
+and the condition on the valuations in Theorem~D, are long simplification chains in the formal text, which we
+read as the identities they establish and derived again by hand. Lemma~\ref{l:away}(c),~(d) are not expanded.
+Which hypotheses the formal proofs leave unused was not determined: nothing was compiled for this note.
+
+\subhead{The dossier and its second reading.} The reader's dossier describes Input~3(e) without the factor
+\m{\upsilon(\det h)^{|H|}}. The formal statement has it, through a twist of one of the two characters, and the
+scalars of Theorem~B(i) agree only with it. A second reader compared the dossier of the unit with the Lean text
+after this note was drafted. Her corrections that concern this note are followed here: the zero case of
+Lemma~\ref{l:rules}(h), where the dossier had simplified the scalar; the two weights of the blocks; the
+index types and the proposition in Definition~\ref{d:admev}; and, in Proposition~\ref{p:std}, that the comparison
+of indicators leaves at most one term.
+
+\subhead{How this note was written.} From the structured proofs of the reader's dossier for the eight files of
+this note, after its program check passed. We read these eight files of the Lean text
+completely, the statements argument by argument, and line by line the proofs of Theorem~B(i),
+Proposition~\ref{p:std} and Theorem~D, which the reader had marked as read from the names of the lemmas only;
+the two statements with a local definition (Theorem~C) were read in full. Of the background library we read the
+statements and comments of the declarations quoted as Inputs~1 to~7, and none of their proofs. No Lean was run.
+The program check of the unit's dossier covered \UnitSteps{} leaf steps of \UnitProofs{} proofs.
+
+\head{Appendix A. Concordance with the Lean artifact}
+The first \UnitInNote{} rows are the declarations of the unit treated here; the rows whose place is an Input are
+declarations of the background library, quoted and not read.
+
+{\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}\setlength{\tabcolsep}{0pt}
+\begin{longtable}{@{}p{30mm}p{56mm}p{43mm}r@{}}
+\textbf{In this note} & \textbf{Lean declaration} & \textbf{File} & \textbf{Lines}\\\midrule\endhead
+\ConcordanceRows
+\end{longtable}}
+
+\subhead{Legend.} Formal names of objects and our letters: \emph{Space} with its matrix and point: a hermitian
+space $V$ with $J_V$ and the frame~$x_V$; the data space, the Heisenberg and finite Heisenberg operators, the
+vacuum, the finite part: $\Sch{V}$, $\rh{V}$, $\rhf{V}$, $\vac{V}$, $\Wf{V}$; \emph{integrated}: \m{v\otimes f};
+\emph{Splitting} with its fields \emph{k}, \emph{l}, \emph{i}: $\Xi$ with $\mathsf{k}_\Xi$, $\mathsf{l}_\Xi$,
+$\mathsf{i}_\Xi$; \emph{zeroTerm}: $\ev{\Xi}$; \emph{Grading} with \emph{indexEquiv}, \emph{c}, \emph{gradeOf},
+\emph{inclX}, \emph{stringMap}: $\cY$ with $\mathbf{e}_{\cY}$, $\fc{\cY}$, $\gr{\cY}$, $\inX{\cY}$, \m{\Tm{\cY}{\cY'}};
+\emph{arrowProduct}, \emph{arrowTensor}, \emph{tripleWeil}, \emph{liftWeilFin}: $\boxtimes$, $\at$, \m{\tW{\mu}{\mu'}},
+$\pWf{\mu}$; the fields \emph{zeroPart}, \emph{embX}, \emph{gradeOne} of an arrow pair: $\cZ_{\cR}$,
+$\operatorname{emb}_{\cR}$, $\gamma_{\cR}$; \emph{normNegOne}: $\epsm$; \emph{translateSum}: \m{\tsum{X}{X'}{\Sigma}{N}{X''}}.
+
+\head{Notation}
+\begingroup\fontsize{8.6}{10.9}\selectfont\raggedright
+\setlength{\columnsep}{9mm}\setlength{\parskip}{0pt}
+\begin{multicols}{2}
+\nt{$E$, $\A$, $\Af$, $\Oh$}{a CM field with a CM type; its adeles, finite adeles, integral finite adeles}
+\nt{$w$, $\bar w$, $|\cdot|_w$, $O_w$}{a finite place, its conjugate, its absolute value, its ring of integers}
+\nt{$\mathbf{j}$, $\alpha$, $\upsilon$, $\epsm$}{Weil data: an element of $E$, an idele, the splitting character; a unit
+  of $\Oh$ of norm $-1$}
+\nt{$\ell$, $\jmath$, $O_\jmath$, $\sigma$}{a prime; a ring homomorphism \m{\CC\to\CC_\ell}; its ring of integral
+  complex numbers; an automorphism of~$\CC$}
+\nt{$\intaw{n}$}{complex numbers integral away from~$n$}
+\nt{$\cX$, $\cX'$, $\cX_j$, $A$, $A'$, $A_j$}{index sets of families of vectors and subsets of them}
+\nt{$Z$, $Z'$, $W$, $F_i$, $M$}{complex vector spaces; an $O_\jmath$-submodule (also: a matrix)}
+\nt{$v$, $v'$, $v_i$, $z$, $z'$, $f_i$}{families of vectors and vectors (also: $v$ a real datum, $f$ a datum or a map)}
+\nt{$n$, $d$, $d'$, $d''$, $m$, $k$}{natural numbers: the modulus of integrality, denominators, a number of
+  factors, an exponent (also: $k$ a group element, $d$ a family of adeles)}
+\nt{$p$, $B$, $B'$, $C$, $C_0$, $C_1$, $C_2$, $C_3$, $D$}{a proposition; real bounds; complex constants; a denominator}
+\nt{$r$, $r_x$, $c$, $\rho$, $\varsigma$}{coefficient functions; a root of unity or zero (also: $r$ a group element,
+  $c$ an adele or matrix)}
+\nt{\m{\AdmCo{A}{n}{d}{p}{B}{r}}}{admissible coefficients}
+\nt{$\AdmComb{v}{A}{n}{d}{p}{B}{z}$}{admissible combination}
+\nt{$\nun$, $L$, $b$}{the inverse or $1$; a linear map; a bilinear map (also: $b$ an index or a vector)}
+\nt{$I$, $I'$, $I''$, $I_0$, $I_1$, $I_2$, $X$, $X'$, $X''$, $X_0$, $H$, $T$, $U$}{finite index sets; a set of
+  parameters $o$}
+\nt{$X^{+}$, $\pt$, $\pt_1$, $\pt_2$}{an index set with one more point; the points}
+\nt{$V$, $V'$, $V''$, $V_0$, $V_{\mathrm{st}}$, $J_V$, $x_V$, $x_{V,f}$}{hermitian spaces; matrix, frame, finite frame}
+\nt{$\Gg{V}$, $\Gfin{I}$, $\Gamma(V)$, $\qG{V}$}{the adelic unitary group, its finite part, rational points, quotient}
+\nt{$\St{X}$, \m{\Hm{V}{V'}}, \m{\fls{V}{V''}}, \m{\Hyp{H}{V}}}{standard space; homomorphisms; first form negated; with
+  hyperbolic planes}
+\nt{$\Sch{V}$, $\Fock{V}$, $\Wf{V}$, $\vac{V}$, $v_Q$, $Q$}{data, real data, finite part, vacuum, polynomial vectors,
+  polynomials}
+\nt{$\rh{V}$, $\rhf{V}$, $\om{V}$, $\tht{V}$, $\Df$, $\psio$, $\psi_f$, $P^{S}$}{Heisenberg and finite Heisenberg
+  operators, Weil representation, theta functional, finite multiplier, additive characters, a projection}
+\nt{$y$, $y_f$, $y^{\dagger}$, $x$, $u$, $g$, $g'$, $h$, $a$}{vectors and matrices, finite coordinates, adjoint; group
+  elements (also: $a$ an idele, $u$ a unitary adele)}
+\nt{$\mu$, $\mu'$, $\mu_V$, $\mu_o$}{characters of $\mathrm{U}(1)(\A)$; twisted by a power of~$\upsilon$}
+\nt{$\pW{\mu}$, $\pWf{\mu}$, \m{\tW{\mu}{\mu'}}}{twisted pair action, its finite part, the triple action}
+\nt{$\boxtimes$, $\at$, $\atl$}{arrow product; the induced map on finite parts; a left inverse}
+\nt{$\Xi$, $\mathsf{k}_\Xi$, $\mathsf{l}_\Xi$, $\mathsf{i}_\Xi$, $\ev{\Xi}$, $\ztf{\Xi}$}{a splitting, its frames, its
+  zero term, its finite zero term}
+\nt{$\Lambda$, $\epsilon$, $v_{\mathrm{vac}}$, $v_\Xi$}{objects of Input~3: a map of real data, a function, the real
+  vacuum and its translate}
+\nt{$\cY$, $\cY'$, $\cY''$, $\mathbf{e}_{\cY}$, $l$, $l'$, $l''$, $N$, $\fc{\cY}$}{gradings: bijection, string lengths,
+  norm, constant}
+\nt{$\gr{\cY}$, $\inX{\cY}$, $\inXf{\cY}$, $\Bes{\cY}$, $\qB{\cY}$, \m{\Tm{\cY}{\cY'}}}{grade, inclusion of the definite
+  part, Bessel group and quotient, frequency map}
+\nt{\m{\ct{\cY}{\cY'}{\mu}(f)}, $P$, $\gram{\mathbf{e}}{N}$}{constant term at the frequency map; a generic function; the
+  Gram matrix of a string}
+\nt{\m{\wtr{n}{d}}, \m{\trl{I}{n}{d}}, \m{\soc{\beta}{j}}}{groups of translations; $\beta$ or its conjugate}
+\nt{\m{\SplSq{\Sigma}{N}{\pi}}}{the split squarefree condition}
+\nt{\m{\glb{\mathbf{e}}{a}{\pi}{u}}, \m{\Spans{\cY}{a}{\pi}{u}}}{graded lattice basis; the lattice condition}
+\nt{$R$, $R_0$, $S$, $\phi$, $\varepsilon$, $\eta_b$, $e_i$, $g_i$}{rings and a homomorphism; signs; basis vectors and
+  columns}
+\nt{$\wt$, \m{\GZP{V}{V''}{\wt}}, $\cZ$, $\ind{\cZ}$, $\inc{\cZ}$, \m{\gzs{\cZ}}, \m{\gzh{\cY'}{\cZ}}}{weights; grade-zero
+  parts with injection and matrix; their splitting; the part of a space of homomorphisms}
+\nt{\m{\stT{\cY}{\cY'}{\cY''}}, \m{\stTf{\cY}{\cY'}{\cY''}}}{the stacked frequency map and its finite coordinates}
+\nt{\m{\ArP{\cY}{\cY'}{\cY''}{X''}{H}}, $\cR$, $\cZ_{\cR}$, $\inc{\cR}$, $\ind{\cR}$, $\operatorname{emb}_{\cR}$,
+  $\gamma_{\cR}$}{arrow pairs and their components}
+\nt{\m{\hzp{\cR}}, \m{\aps{\cR}}, \m{\fev{\cR}}}{grade-zero part, splitting and finite evaluation of an arrow pair}
+\nt{\m{\Rmid{\cY}{\cY'}{\cY''}}, \m{\Rlast{\cY}{\cY'}{\cY''}{\pi_0}}, $\pi_0$}{the middle pair and the last pair}
+\nt{$\varkappa$, $e$, $e'$, $e''$, \m{\AF{X}{\varkappa}{e}}, $\varphi$, $t$, $t'$, $t''$, \m{\coef{t}}}{weight and
+  determinant exponents; algebraic forms; functionals; coefficients}
+\nt{$\mathcal{L}_o$, $\mathcal{L}'_o$, $\mathcal{L}''_o$, $\Phi$, $\Phi'$, $\Psi$, $\mathcal{I}$}{theta lifts and their
+  composite; finite data; a function that names an operator; an integral}
+\nt{$\Sigma$, $\bar\Sigma$, $\pi$, $\delta$, $\beta$, $\kappa$}{a split level and its conjugate; the objects of
+  Setting~\ref{set:adm}}
+\nt{\m{\NbV{\pi}{\delta}{c}{x}}}{neighbour vector}
+\nt{$\AdmEv{N}{\Sigma}{\beta}{L}{d}$, \m{\tsum{X}{X'}{\Sigma}{N}{X''}}, $\tilde y$}{admissible evaluation; the translate
+  sum; least non-negative representatives}
+\nt{$\gamma$, $\gamma_{X'}$, $\lambda$, $\xi$, $\mathbf{1}_\Sigma$, $\varpi_0$, $\mathrm{n}(y)$, $k_0$, $B$,
+  $\mathsf{J}$, $\mathsf{c}$}{objects of the proofs of Proposition~\ref{p:std} and Theorem~D}
+\nt{$z_0$, $F$, $M$, $m_+$, $j$, $i$, $q$, $G$, $K$, $O$, $Y$, $s$}{further letters of the proofs: constants, functions,
+  counts and indices; $G$, $O$, $Y$, $K$, $s$, $q$ occur only inside the symbols above}
+\nt{$\mathsf{A}$, $\mathsf{A}'$, $\mathsf{B}$}{topological abelian groups in Input~7}
+\end{multicols}
+\endgroup
+
+\end{document}

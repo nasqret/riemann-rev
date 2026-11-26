@@ -1,0 +1,1402 @@
+% !TEX program = lualatex
+% ---------------------------------------------------------------------------------------------
+%  Readback note 34: Exponents of elements of Kisin modules, the cost of deepening them, and cokernel killers
+%
+%  Build:  python3 tools/rb.py note <slug>
+%
+%  One unit of a Lean artifact, rewritten as ordinary mathematics. The prose is hand-written. Lean names,
+%  line ranges and counts come from data.tex; quoted Lean statements are copied from the artifact by the build.
+%
+%  Rules of the text: standard terminology; every symbol is explained where it first appears and listed again
+%  in the notation at the end; no letter has two meanings; a proof is complete or says what it takes for granted;
+%  Lean names appear only in the LEAN lines and in the concordance.
+%
+%  The signature rule (the build enforces it): a function, relation or predicate that the artifact defines is
+%  written only through its notation macro, which the build makes from the spec (`notation`) with one slot for
+%  each explicit argument of the Lean definition. No argument is fixed and dropped, also not "for brevity" and
+%  not for one section. Every argument and every hypothesis of a stated declaration stands inside its
+%  statement, or in a Setting that the statement cites by number; only implicit and instance arguments (the
+%  ambient objects) may stand in the conventions.
+% ---------------------------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\ifdefined\pdfvariable\pdfvariable suppressoptionalinfo \numexpr 1+2+4+8\relax\fi
+\usepackage[a4paper,hmargin=35mm,top=22mm,bottom=27mm,footskip=12mm,nohead]{geometry}
+
+\usepackage{fontspec}
+\directlua{
+  luaotfload.add_fallback("gfallback", {"STIXTwoMath-Regular.otf:mode=node;", "DejaVuSans.ttf:mode=node;"})
+  luaotfload.add_fallback("gmonofallback", {"DejaVuSansMono.ttf:mode=node;", "STIXTwoMath-Regular.otf:mode=node;"})
+}
+\setmainfont{LibertinusSerif}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-Semibold,BoldItalicFont=*-SemiboldItalic,RawFeature={fallback=gfallback}]
+\setsansfont{Inter}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,RawFeature={fallback=gfallback}]
+\setmonofont{JetBrainsMono}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,Scale=MatchLowercase,
+  RawFeature={-calt;-liga;fallback=gmonofallback}]
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage[math-style=TeX]{unicode-math}
+\setmathfont{LibertinusMath-Regular.otf}
+
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows.meta,positioning,backgrounds}
+\usepackage[protrusion=true,expansion=true]{microtype}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{multicol}
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+
+\definecolor{ink}{HTML}{0F172A}
+\definecolor{inksoft}{HTML}{475569}
+\definecolor{inkfaint}{HTML}{94A3B8}
+\definecolor{rulegrey}{HTML}{CBD5E1}
+\definecolor{arith}{HTML}{C2410C}
+\definecolor{est}{HTML}{7C3AED}
+\definecolor{ana}{HTML}{0891B2}
+\definecolor{ok}{HTML}{047857}
+\definecolor{leancol}{HTML}{3730A3}
+
+\title{Exponents of elements of Kisin modules, the cost of deepening them, and cokernel killers}
+\author{grh-compact}
+\date{}
+
+% ------------------------------------------------------------------------------------- macros
+\newcommand{\leanfont}{\ttfamily\fontsize{8.6}{10.5}\selectfont\color{leancol}}
+\newcommand{\lean}[1]{\csname LN@#1\endcsname}
+\newcommand{\fillin}[1]{{\color{arith}\itshape[#1]}}  % a place of the template that is not written yet; the build reports every one that is left
+\newcommand{\leanquote}[1]{\csname LQ@#1\endcsname}
+\input{data.tex}
+
+\linespread{1.08}                       % 11 pt on 14.7 pt
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt plus 1.5pt minus 0.5pt}
+\setlength{\abovedisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\belowdisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\abovedisplayshortskip}{3pt plus 2pt}
+\setlength{\belowdisplayshortskip}{6pt plus 2pt minus 2pt}
+\emergencystretch=1.5em
+\clubpenalty=10000 \widowpenalty=10000 \displaywidowpenalty=10000
+\relpenalty=7000 \binoppenalty=9000
+\raggedbottom
+\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\sffamily\fontsize{7.6}{9}\selectfont\color{inkfaint}\thepage\,/\,\pageref*{LastPage}}
+\setlist{topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=4pt,leftmargin=2.1em,labelsep=0.55em}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\len}{\operatorname{len}}
+\newcommand{\cok}{\operatorname{cok}}
+\newcommand{\End}{\operatorname{End}}
+\newcommand{\Hom}{\operatorname{Hom}}
+\newcommand{\Gal}{\operatorname{Gal}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\kw}[1]{\emph{#1}}
+\newcommand{\m}[1]{\mbox{$#1$}}        % a short formula that must not be broken across lines
+\newcommand{\head}[1]{\par\addvspace{17pt plus 4pt minus 2pt}\Needspace{6\baselineskip}%
+  \noindent{\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\sect}[2]{\refstepcounter{section}\label{#2}\par\addvspace{19pt plus 4pt minus 2pt}\Needspace{7\baselineskip}%
+  \noindent\llap{{\fontsize{13.2}{16}\selectfont\bfseries\color{inkfaint}\thesection}\hspace{9pt}}%
+  {\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\subhead}[1]{\par\addvspace{9pt plus 2pt}\Needspace{4\baselineskip}\noindent\textbf{#1}\enspace\ignorespaces}
+% where a statement lives in the Lean archive
+\newcommand{\leantag}{{\sffamily\bfseries\fontsize{6.3}{8}\selectfont\color{leancol}\addfontfeatures{LetterSpace=7}LEAN}}
+\newcommand{\sep}{\unskip\nobreak\hspace{5pt}{\color{inkfaint}\textperiodcentered}\hspace{5pt plus 2pt}\ignorespaces}
+\newcommand{\leanline}[1]{\par\nopagebreak\vspace{-2.5pt}{\fontsize{8.9}{12.4}\selectfont\color{inksoft}\raggedright
+  \noindent\llap{\leantag\hspace{9pt}}#1\par}\vspace{1pt}}
+% a displayed statement in a tinted box: #1 colour, #2 text
+\newcommand{\statement}[2]{\par\addvspace{7pt}\begingroup\setlength{\fboxsep}{8.5pt}\setlength{\fboxrule}{0.6pt}%
+  \noindent\fcolorbox{#1!30!white}{#1!3!white}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{#2}}%
+  \endgroup\par\addvspace{7pt}}
+\newcommand{\nt}[2]{\par\noindent\hangindent=1.1em\hangafter=1 #1\enspace{\color{inksoft}#2}\par\vspace{1pt}}
+\newcommand{\legdot}[1]{\tikz[baseline=-0.62ex]\fill[#1] (0,0) circle (2.5pt);\hspace{3pt}}
+\newcommand{\crow}[4]{\csname CS@#1\endcsname & #2 & \textcolor{inksoft}{#3} & \textcolor{inksoft}{#4}\\}
+\newcommand{\leanquoteline}[2]{\par\noindent\hangindent=\dimexpr#1\fontdimen2\font+2.2em\relax\hangafter=1
+  \hspace*{#1\fontdimen2\font}#2}
+\newcommand{\quoted}[1]{\par\vspace{3pt}{\ttfamily\fontsize{7.5}{10.4}\selectfont\color{leancol}\raggedright
+  \setlength{\parskip}{0pt}\leanquote{#1}\par}\vspace{4pt}}
+\newcommand{\bx}[3]{{\sffamily\bfseries\fontsize{7.3}{9.2}\selectfont\color{#1!82!black}#2}\\[1.5pt]#3}
+\newcommand{\cs}[2]{\expandafter\newcommand\csname CS@#1\endcsname{#2}}
+
+% theorems
+\newtheoremstyle{plainx}{7pt plus 2pt}{7pt plus 2pt}{\itshape}{}{\bfseries}{.}{0.5em}{}
+\newtheoremstyle{uprightx}{7pt plus 2pt}{7pt plus 2pt}{}{}{\bfseries}{.}{0.5em}{}
+\theoremstyle{plainx}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{uprightx}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{setting}[theorem]{Setting}          % hypotheses shared by several statements; each of them cites it by number
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\renewcommand{\qedsymbol}{{\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.5pt}\fbox{\rule{0pt}{0.46em}\hspace{0.46em}}}}
+% what holds throughout the note: the ambient objects only (implicit and instance arguments), never a hypothesis
+\newenvironment{conventions}{\par\addvspace{5pt}\noindent\textbf{Conventions.}\enspace\ignorespaces}{\par\addvspace{3pt}}
+\makeatletter
+\renewenvironment{proof}[1][Proof]{\par\pushQED{\qed}\normalfont\topsep0pt\partopsep0pt
+  \trivlist\item[\hskip\labelsep\itshape #1.]\ignorespaces}{\popQED\endtrivlist\@endpefalse}
+\makeatother
+
+% where each declaration of the concordance is treated: \cs{key}{place}
+\cs{existsdepthstep}{Theorem A}
+\cs{memwithExponentsstdExponentiff}{Theorem B}
+\cs{wittPairingmemwithExponents}{Theorem C}
+\cs{killsCokernelofisUnramified}{Theorem D}
+\cs{cost}{Definition~\ref{d:cost}}
+\cs{withExponents}{Definition~\ref{d:exp}}
+\cs{locLetterPart}{Definition~\ref{d:exp}}
+\cs{locKisinPart}{Definition~\ref{d:ops}}
+\cs{invariantsMod}{Definition~\ref{d:ops}}
+\cs{improvedExponent}{Definition~\ref{d:ops}}
+\cs{frobExponent}{Definition~\ref{d:ops}}
+\cs{wittPairinga}{Definition~\ref{d:ops}}
+\cs{PairingSide}{Definition~\ref{d:side}}
+\cs{extLattice}{Definition~\ref{d:side}}
+\cs{trivLattice}{Definition~\ref{d:side}}
+\cs{projTriv}{Definition~\ref{d:side}}
+\cs{IsInJumpWindow}{Definition~\ref{d:win}}
+\cs{raisedAtE}{Definition~\ref{d:win}}
+\cs{twoWindows}{Definition~\ref{d:win}}
+\cs{NoMultipleNear}{Definition~\ref{d:win}}
+\cs{constantAt}{Definition~\ref{d:lift}}
+\cs{liftIdeal}{Definition~\ref{d:lift}}
+\cs{KillsCokernel}{Definition~\ref{d:lift}}
+\cs{existsdepthstepzero}{Lemma~\ref{l:zero}}
+\cs{coordRetract}{Definition~\ref{d:ret}}
+\cs{existscoordRetract}{Lemma~\ref{l:ret}}
+\cs{smulsubmemzTaukisinLocAinf}{Lemma~\ref{l:ztau}}
+\cs{smulsubmemzTauUnitsmulofdeep}{Lemma~\ref{l:ztau}}
+\cs{valueAtmemofhodgeFille}{Lemma~\ref{l:any}}
+\cs{costleofisUnramified}{Lemma~\ref{l:small}}
+\cs{galMonoidsmullocalFieldOf}{Lemma~\ref{l:small}}
+\cs{memwithExponentsofdeep}{Lemma~\ref{l:deep}}
+\cs{existsreachesdepthsucc}{Proposition~\ref{p:succ}}
+\cs{memhodgeFilofhodgebasis}{Lemma~\ref{l:basis}}
+\cs{phipowmemwithExponents}{Lemma~\ref{l:shift}}
+\cs{letterProjmemwithExponents}{Lemma~\ref{l:proj}}
+\cs{letterProjmemofvalueFieldPoints}{Lemma~\ref{l:proj}}
+\cs{wittPairingletterProjleft}{Lemma~\ref{l:pair}}
+\cs{wittPairingmemsaturateBy}{Lemma~\ref{l:pair}}
+\cs{sumtwoWindowsle}{Lemma~\ref{l:count}}
+\cs{taupowsmulmemainfLatticeofchi}{Lemma~\ref{l:chi}}
+\cs{existsliftofmemliftIdeal}{Lemma~\ref{l:liftS}}
+\cs{memliftIdealofderivation}{Lemma~\ref{l:der}}
+\cs{memliftIdealzeroofmemone}{Lemma~\ref{l:down}}
+\cs{memliftIdealofmulEpow}{Lemma~\ref{l:down}}
+\cs{existszpowmemliftIdeal}{Lemma~\ref{l:zpow}}
+\cs{frobEsmulmemkisinLocAinfiff}{Lemma~\ref{l:loc}}
+\cs{frobEUnitzpowsmulmemkisinLoc}{Lemma~\ref{l:loc}}
+\cs{wittMapmemkisinLocAinf}{Lemma~\ref{l:loc}}
+\cs{wittMapmemkisinLoc}{Lemma~\ref{l:loc}}
+\cs{galsmulmemkisinLocAinf}{Lemma~\ref{l:loc}}
+\cs{kisinLocAinflefracSpan}{Lemma~\ref{l:loc}}
+\cs{valueAtsmulsub}{Lemma~\ref{l:loc}}
+\cs{phipowmemkisinLoc}{Lemma~\ref{l:loc}}
+\cs{spankisinLoc}{Lemma~\ref{l:loc}}
+\cs{valueAtmemvalueField}{Lemma~\ref{l:loc}}
+\cs{valueAtzero}{Lemma~\ref{l:loc}}
+\cs{memwithExponentsofmemhodgeFil}{Lemma~\ref{l:exp}}
+\cs{memwithExponentsofle}{Lemma~\ref{l:exp}}
+\cs{valueAtmemhodgeFilofmemainfLattice}{Lemma~\ref{l:exp}}
+\cs{mapmemwithExponents}{Lemma~\ref{l:exp}}
+\cs{memwithExponentsofsmul}{Lemma~\ref{l:exp}}
+\cs{frobEUnitzpowmemwithExponents}{Lemma~\ref{l:exp}}
+\cs{smulsubmemwithExponents}{Lemma~\ref{l:exp}}
+\cs{coordRetractsum}{Lemma~\ref{l:retprop}}
+\cs{coordRetractofmemkisinLoc}{Lemma~\ref{l:retprop}}
+\cs{mapcoordRetract}{Lemma~\ref{l:retprop}}
+\cs{valueAtcoordRetractsubmemhodgeFil}{Lemma~\ref{l:retprop}}
+\cs{coordRetractmemwithExponents}{Lemma~\ref{l:retprop}}
+\cs{memliftIdealiff}{Lemma~\ref{l:ideal}}
+\cs{ppowmemliftIdealself}{Lemma~\ref{l:ideal}}
+\cs{phipowsmulconstantAt}{Lemma~\ref{l:ideal}}
+\cs{mulEpowmemliftIdealone}{Lemma~\ref{l:ideal}}
+\cs{liftIdealleofppowmem}{Lemma~\ref{l:ideal}}
+\cs{constantAtmemlocLetterPart}{Lemma~\ref{l:ideal}}
+\cs{phipowmemliftIdealiff}{Lemma~\ref{l:ideal}}
+\cs{ppowmulzpowmemliftIdealiff}{Lemma~\ref{l:ideal}}
+% ---------- common symbols of the notes on unit 136
+\providecommand{\Zp}{\mathbb{Z}_p}\providecommand{\Qp}{\mathbb{Q}_p}\providecommand{\GQp}{G_{\mathbb{Q}_p}}
+\providecommand{\Ainf}{A_{\inf}}\providecommand{\WC}{W(C^{\flat})}\providecommand{\BdR}{B_{\mathrm{dR}}}
+\providecommand{\Fil}{\operatorname{Fil}}\providecommand{\fS}{\mathfrak{S}}\providecommand{\cE}{\mathcal{E}}
+\providecommand{\cO}{\mathcal{O}}\providecommand{\fc}{\mathfrak{c}}\providecommand{\fd}{\mathfrak{d}}
+\providecommand{\WW}{\mathbb{W}}\providecommand{\Per}{\operatorname{Per}}\providecommand{\pr}{\operatorname{pr}}
+\providecommand{\Minf}{\mathfrak{M}^{\inf}}\providecommand{\Mloc}{\mathfrak{M}_{\mathrm{loc}}}
+\providecommand{\Mlocinf}{\mathfrak{M}^{\inf}_{\mathrm{loc}}}\providecommand{\std}{\operatorname{std}}
+\providecommand{\ret}{\operatorname{ret}}
+\providecommand{\inputbox}[1]{\statement{inksoft}{#1}}
+% the exponent module (the spec says why it has no generated macro): lattice datum, letter, exponent function
+\providecommand{\wExp}[3]{\mathfrak{X}_{#1}(#2;#3)}
+
+\begin{document}
+\color{ink}
+
+{\raggedright
+{\sffamily\bfseries\fontsize{7.2}{9}\selectfont\color{leancol}\addfontfeatures{LetterSpace=8}READBACK NOTE · CHAPTER VIII · UNIT 136 · PART 1 OF 3\par}
+\vspace{5pt}
+{\fontsize{21.5}{25.5}\selectfont\bfseries Exponents of elements of Kisin modules, the cost of deepening them, and cokernel killers\par}
+\vspace{5pt}
+{\fontsize{12.4}{16}\selectfont\itshape\color{inksoft} One unit of the Lean artifact \ArtifactName, read back into
+mathematics\par}}
+\vspace{8pt}
+{\color{rulegrey}\hrule height 0.6pt}
+\vspace{7pt}
+\thispagestyle{empty}
+
+\textbf{Summary.} The last step of the choice of the twists bounds the loss that the conditions at~$\ell$ cause in
+Selmer groups, by lifting crystalline extension classes in large weight. Its tool is local and $p$-adic: the
+Breuil--Kisin module of a crystalline lattice, seen inside \m{\WC\otimes L}. This note measures an element of that
+module, with all Frobenius translates \m{\cE_\nu=\varphi^\nu(\cE)} of the Eisenstein element inverted, by an
+\emph{exponent} at each~$\cE_\nu$ and each Hodge--Tate weight. Three things are proved. A Galois operator
+\m{(g-1)/(z\tau)} raises the exponent at~$\cE_\nu$ by one at the price of an explicit power of~$p$ (the
+\emph{cost}). The standard exponents of level~$l$ describe exactly the $l$-th Frobenius pullback of the Kisin
+module, and exponents add under equivariant pairings. Finally, for an extension of a trivial lattice by a
+crystalline one over an unramified base, \m{p^{\kappa}\cE^{\rho}} kills the cokernel of the map of Kisin modules as
+soon as all weights are at most \m{(p-3)(\kappa+\rho)}.
+
+\statement{leancol}{\fontsize{9.6}{13.2}\selectfont\textbf{What this note is.} The artifact \ArtifactName{} is a
+body of Lean code: the compact edition of a formal proof, due to L.~Alpöge with the AI system Claude, of the Riemann
+hypothesis and of its generalisation to Dirichlet $L$-functions. That headline is a claim. The authors report that
+every file compiles with Lean v4.35.0 against a pinned version of Mathlib and that Lean's kernel accepted the
+proofs; an independent build is recorded in the handout's record of checks when it reports. No mathematician has
+read the argument through, and nothing here says that the Riemann hypothesis is proved. This note is the first of
+three on one unit of the artifact, the folder on lifting; it treats \UnitInNote{} of the unit's \UnitMembers{}
+declarations: three files (exponent lattices, the Hodge expansion, cokernel killers) and four definitions of a
+fourth. Theorems A to~D and every lemma below are proved from the Inputs of Section~\ref{s:setting}, which belong to
+the background library and are stated and not proved here; the main one is the frame theorem for the Kisin module
+of a crystalline lattice. Every statement was compared with its Lean text, argument by argument. The Lean text read
+is \PinText; Appendix~A is the concordance of \ConcDecls{} declarations.}
+
+\sect{The statements}{s:intro}
+The objects are those of Settings \ref{set:rings} and~\ref{set:lattice}: a prime~$p$, a group~$\Gamma$ over the
+absolute Galois group of~$\Qp$, a Kummer chart with ring \m{\fS\subset\Ainf}, coordinate~$z$ and Eisenstein
+element~$\cE$, and lattice data~$L$ with their periods. The exponent module \m{\wExp{L}{i}{o}} is
+Definition~\ref{d:exp}, the cost \m{\cost{\nu}{n}} is Definition~\ref{d:cost}.
+
+\statement{arith}{\phantomsection\label{t:A}\textbf{Theorem A} (the depth step).\enspace
+\emph{In Setting~\ref{set:rings}, let \m{\nu\ge0} be an integer and let~$n$ be an integer with \m{n\ne0}. Then
+there are \m{g\in\Gamma'}, a unit~$w$ of~$\Ainf$ and elements \m{y,X\in\Ainf} such that
+\[\begin{gathered}g\cdot\cE_\nu=w\,\cE_\nu,\qquad \cE_\nu\mid g\cdot s-s\ \text{ in $\Ainf$ for every }s\in\fS,\\
+\cE_\nu\mid y\,X-p^{\cost{\nu}{n}},\qquad z\tau\cdot X=w^{n}-1 .\end{gathered}\]}}
+\leanline{\lean{existsdepthstep}}
+
+\statement{arith}{\phantomsection\label{t:B}\textbf{Theorem B} (standard exponents are Frobenius pullbacks).\enspace
+\emph{In Setting~\ref{set:lattice}, let $x\in\WC\otimes L$, let~$i$ be a letter and let \m{l\ge0} be an integer.
+Then \m{x\in\wExp{L}{i}{\std_l}} if and only if \m{\varphi^{-l}x\in\Minf(L)} and \m{x\in(\WC\otimes L)_i}.}}
+\leanline{\lean{memwithExponentsstdExponentiff}}
+
+\statement{arith}{\phantomsection\label{t:C}\textbf{Theorem C} (exponents add).\enspace
+\emph{In Setting~\ref{set:lattice}, let $A$, $L$, $C$ be lattice data over~$\cO$ and let \m{b\colon A\times L\to C}
+be an $\cO$-bilinear map of their lattices with \m{b(g a,g t)=g\,b(a,t)} for all \m{g\in\Gamma}, \m{a\in A},
+\m{t\in L}. Let~$i$ be a letter, let $o_A$, $o$, $o_C$ be exponent functions, let \m{y\in\wExp{A}{i}{o_A}} and
+\m{x\in\wExp{L}{i}{o}}, and suppose that
+\[o_C(\nu,v)\ \le\ o(\nu,u')+o_A(\nu,u)\]
+for every \m{\nu\ge0} and all \m{u\in U_A(i^{p^{-\nu}})}, \m{u'\in U_L(i^{p^{-\nu}})}, \m{v\in U_C(i^{p^{-\nu}})} with
+\m{u+u'\le v}. Then $\wPair{b}{y}{x}\in\wExp{C}{i}{o_C}$.}}
+\leanline{\lean{wittPairingmemwithExponents}}
+
+\statement{arith}{\phantomsection\label{t:D}\textbf{Theorem D} (a cokernel killer over an unramified chart).\enspace
+\emph{In Setting~\ref{set:lattice}, suppose that the Kummer chart is unramified and that \m{p\ge5}. Let $S$ be a
+side over~$\cO$, let $i$ be a letter and let \m{\kappa,\rho\ge0} be integers such that
+\m{u\le(p-3)(\kappa+\rho)} for every letter~$j$ and every \m{u\in U_{Y_S}(j)}. Then \m{\Kills{S}{i}{\kappa}{\rho}}:
+the element \m{p^{\kappa}\cE^{\rho}} multiplies the part at~$i$ of \m{\Ainf\otimes C_S} into the image of
+\m{\wExp{\extL{S}}{i}{\std_0}}.}}
+\leanline{\lean{killsCokernelofisUnramified}}
+
+Theorem~A is the arithmetic heart: the cost \m{v_p(n)+\fd+3\nu} is what one Galois step costs. Theorem~B is the
+bridge between the exponents and Kisin's module, and makes the definition of the exponents usable. Theorem~C is
+what lets Part~2 pair a class with a dual class. Theorem~D is the first source of cokernel killers; Part~3 has a
+second, for tame types.
+
+\sect{The setting}{s:setting}
+\begin{conventions}\phantomsection\label{c:conventions}
+Throughout, $p$ is a prime number. The declarations of this unit take the following ambient objects as implicit or
+instance arguments; they are fixed by Settings \ref{set:rings} and~\ref{set:lattice} and named again in each
+statement that needs them: the prime~$p$; the group~$\Gamma$ over~$\GQp$; the Kummer chart~$\fc$ for~$\Gamma$; the
+coefficient ring~$\cO$ with its root of unity~$\omega$; lattice data $L$, $L'$, $A$, $C$ over~$\cO$; a side~$S$; a
+letter~$i$; integers $l$, $\nu$, $n$, $\kappa$, $r$; exponent functions $o$, $o'$; elements $x$, $y$ of
+\m{\WC\otimes L}; a period~$\mu$; an element~$g$ of~$\Gamma'$. Rings are commutative with~$1$. For an
+integer~$n$, \m{v_p(n)} is the exponent of~$p$ in~$n$, with the convention \m{v_p(0)=0}. A unit~$w$ of a ring
+has all integral powers \m{w^{n}}, \m{n\in\mathbb{Z}}. Tensor products without a subscript are over~$\Zp$. An
+\kw{exponent function} is a function $o\colon\mathbb{N}\times\mathbb{Z}\to\mathbb{Z}$, written
+\m{(\nu,u)\mapsto o(\nu,u)}; inequalities between exponent functions are meant pointwise. The Lean text calls
+the artifact's period ring \emph{Bcris}; it is Colmez's ring $B_{\max}$, and this note writes $B_{\max}$.
+\end{conventions}
+
+\begin{setting}[period rings and a Kummer chart; from the background library]\label{set:rings}
+\emph{Period rings.} $C$ is the completion of an algebraic closure~$\bar{\mathbb{Q}}_p$ of~$\Qp$, with ring of
+integers~$\mathcal{O}_C$; $\GQp=\mathrm{Gal}(\bar{\mathbb{Q}}_p/\Qp)$. $\mathcal{O}_C^\flat$ is the tilt
+of~$\mathcal{O}_C$, with fraction field~$C^\flat$; $\Ainf=W(\mathcal{O}_C^\flat)\subset\WC$ are the rings of Witt
+vectors, with Frobenius automorphism~$\varphi$ and the action of~$\GQp$; $[\,\cdot\,]$ is the Teichmüller lift;
+$\theta\colon\Ainf\to\mathcal{O}_C$ is Fontaine's map. Fix $\varepsilon\in\mathcal{O}_C^\flat$, a compatible
+system of $p$-power roots of unity whose component of level one is a primitive $p$-th root of unity, and put
+\[\tau=[\varepsilon^{1/p}]-1,\qquad \xi=\sum_{0\le a<p}[\varepsilon^{1/p}]^{a},\qquad\text{so that}\quad
+\xi\,\tau=[\varepsilon]-1 ;\]
+$\xi$ generates the kernel of~$\theta$. $B^+_{\mathrm{dR}}$ is the completion of \m{\Ainf[1/p]} along the kernel
+of~$\theta$, a complete discrete valuation ring with residue field~$C$, and $\BdR$ is its fraction field; for
+\m{n\in\mathbb{Z}}, \m{\Fil^{n}\BdR} is the $n$-th power of the maximal ideal of $B^+_{\mathrm{dR}}$, so that
+\m{\Fil^{0}\BdR=B^+_{\mathrm{dR}}}. The group~$\GQp$ acts on~$\BdR$ and preserves each \m{\Fil^{n}\BdR}. For
+\m{\nu\ge0}, the composite of $\varphi^{-\nu}\colon\Ainf\to\Ainf$ with \m{\Ainf\to\BdR} is again written
+$\varphi^{-\nu}\colon\Ainf\to\BdR$, and $\theta_\nu=\theta\circ\varphi^{-\nu}\colon\Ainf\to\mathcal{O}_C$.
+
+\emph{The group.} $\Gamma$ is a group with a homomorphism \m{j_\Gamma\colon\Gamma\to\GQp} whose image is open; it
+acts on the rings above through~$j_\Gamma$, and \m{\chi\colon\Gamma\to\Zp^\times} is the cyclotomic character
+composed with~$j_\Gamma$. A property holds \kw{near~$1$} if it holds for all \m{g\in\Gamma} with \m{j_\Gamma(g)} in
+some neighbourhood of~$1$. The group \m{\mathbb{Z}\times\Gamma} acts on~$\WC$ by
+$(a,g)\cdot c=\varphi^{a}(j_\Gamma(g)c)$; write $\varphi$ for \m{(1,1)} and $g$ for \m{(0,g)}.
+
+\emph{The chart.} A \kw{chart} consists of an integer \m{h\ge1}, the ring \m{\WW=W(\mathbb{F}_{p^h})} of Witt
+vectors of the field $\mathbb{F}_{p^h}=\{c\in\mathcal{O}_C^\flat: c^{p^h}=c\}$, a homomorphism of
+$\WW$-algebras \m{\WW[[X]]\to\Ainf} that sends~$X$ to a Teichmüller lift~$z$ which is not a unit, a natural
+number~$e_{\fc}$ and a unit~$\mathsf{A}$ of \m{\WW[[X]]} such that the image~$\cE$ of
+\m{X^{e_{\fc}}\mathsf{A}+p} is~$\xi$ times a unit of~$\Ainf$. Its ring~$\fS$ is the image of \m{\WW[[X]]}; it
+contains $z$ and~$\cE$, is stable under~$\varphi$, and $\cE_\nu=\varphi^{\nu}(\cE)\in\fS$ for \m{\nu\ge0}. The
+integer $h$ is the \kw{residue degree}, $e_{\fc}$ the \kw{index}, and
+\[\fd=0\ \text{ if }e_{\fc}=1,\qquad \fd=v_p(e_{\fc})+1\ \text{ otherwise}.\]
+A \kw{Kummer chart}~$\fc$ for~$\Gamma$ is a chart together with a subgroup~$\Gamma'$ of~$\Gamma$, of index prime
+to~$p$, that contains all elements near~$1$, such that \m{j_\Gamma(g)} fixes $\WW$ and~\m{\theta(z)} for every
+\m{g\in\Gamma'}, every element of~$\GQp$ that fixes $\WW$ and \m{\theta(z)} lies in \m{j_\Gamma(\Gamma')}, and for
+every integer \m{a\ge0} some \m{g\in\Gamma'} has \m{g\cdot z=[\varepsilon]^{a}z}. It is \kw{unramified} if
+\m{\cE=z+p}, \m{e_{\fc}=1} and \m{\fd=0}. The field~$F$ is the subfield of~$\bar{\mathbb{Q}}_p$ fixed by
+\m{j_\Gamma(\Gamma')}. The ring~$\fS_B$ is the $\fS$-algebra of the elements of \m{B^{+}=A_{\max}[1/p]} whose
+multiplication commutes with every $\fS$-linear endomorphism of~$B^{+}$ that preserves the image of~$A_{\max}$; it
+contains the image of~$\fS$. For \m{\nu\ge0}, $F_\nu$ is the subfield of~$\BdR$ generated over~$F$ by the products
+of an element of~$\fS_B$ and an element of \m{\varphi^{-\nu}(\fS)}; so $\varphi^{-\nu}(\fS)\subseteq F_\nu$ and
+\m{F_0\subseteq F_\nu}. Finally $\operatorname{co}_0\colon\Ainf\to\fS$ is a fixed $\fS$-linear map that is the
+identity on~$\fS$, one of the coordinates \m{(\operatorname{co}_a)_a} of a fixed topological basis of~$\Ainf$
+over~$\fS$ for the \m{(p,z)}-adic topology; an element of~$\Ainf$ all of whose coordinates vanish is~$0$.
+\end{setting}
+
+\begin{setting}[lattice data, periods and Kisin modules; from the background library]\label{set:lattice}
+In Setting~\ref{set:rings}:
+
+\emph{Letters and coefficients.} A \kw{letter} is an element of \m{\mathbb{F}_{p^h}^\times}; the letters are
+permuted by \m{i\mapsto i^{p}}, and \m{i^{p^{-\nu}}} is the letter whose $p^{\nu}$-th power is~$i$. A
+\kw{coefficient ring} is the ring of integers~$\cO$ of a finite extension of~$\Qp$ together with an element
+\m{\omega\in\cO} with \m{\omega^{p^h-1}=1}.
+
+\emph{Lattices.} A \kw{lattice} over~$\cO$ is a finite free $\cO$-module with an $\cO$-linear action
+of~$\Gamma$. For a lattice~$T$, \m{\WC\otimes T} carries the action
+$(a,g)(c\otimes t)=\varphi^{a}(j_\Gamma(g)c)\otimes gt$ of \m{\mathbb{Z}\times\Gamma}, and \m{\Ainf\otimes T}
+is the $\Ainf$-submodule spanned by the \m{1\otimes t}. A $\Zp$-bilinear map \m{b\colon T\times T'\to T''} has
+a $\WC$-bilinear extension to these modules. For a letter~$i$, \m{(\WC\otimes T)_i} is the $\Ainf$-submodule on
+which \m{1\otimes\omega} acts as~$[i]$, and
+\[\pr_i=\frac1{p^h-1}\sum_{0\le a<p^h-1}\bigl([i]^{-1}(1\otimes\omega)\bigr)^{a}\]
+is the projector onto it. The lattice~$T$ is \kw{potentially crystalline} if the elements of
+\m{B_{\max}\otimes T} fixed near~$1$ span it over~$B_{\max}$, and \kw{crystalline on~$\Gamma'$} if those fixed by
+all of~$\Gamma'$ do. For a $\Zp$-algebra map \m{\gamma\colon\cO\to C} and \m{u\in\mathbb{Z}}, the
+\kw{multiplicity of the Hodge--Tate jump~$u$ of~$T$ at~$\gamma$} is the dimension over~$\bar{\mathbb{Q}}_p$ of
+the space of $\gamma$-semilinear maps \m{\lambda\colon T\to C} with
+$\lambda(gt)=\chi(g)^{-u}\,g\lambda(t)$ for each~$t$ and all~$g$ near~$1$. \m{Z^{1}_{\mathrm{f}}(T)} is the
+$\cO$-module of the maps \m{c\colon\Gamma\to T} for which some \m{y\in B_{\max}\otimes T} has
+\m{1\otimes c(g)=g y-y} for all~$g$ (the crystalline cocycles).
+
+\emph{Lattice data.} A \kw{lattice datum}~$L$ over~$\cO$ is a lattice, also written~$L$, that is crystalline
+on~$\Gamma'$, together with a finite set \m{U_L(i)\subset\mathbb{Z}} for every letter~$i$, such that
+\m{U_L(i)} contains every~$u$ that is a Hodge--Tate jump of~$L$ of non-zero multiplicity at some
+\m{\gamma\colon\cO\to C} with \m{\gamma(\omega)=\theta([i])}. (The formal structure also records a jump set for
+each~$\gamma$, contained in the corresponding~\m{U_L(i)}.) An \kw{equivariant map} \m{f\colon L\to L'} of lattice
+data is a $\Gamma$-equivariant $\cO$-linear map of the lattices; \m{1\otimes f} is its extension
+\m{\WC\otimes L\to\WC\otimes L'}. The \kw{jump bound} \m{h_L\ge0} is the least integer~$a$ such that all
+Hodge--Tate jumps of~$L$, as a $\Zp$-representation of~$\Gamma'$, lie in \m{[-a,a]}.
+
+\emph{Periods.} \m{\Per(L)} is the set of the $\Ainf$-linear maps \m{\mu\colon\WC\otimes L\to\BdR} with
+$\mu(1\otimes gt)=g\cdot\mu(1\otimes t)$ for \m{t\in L}, \m{g\in\Gamma'}. For a letter~$i$ and
+\m{u\in\mathbb{Z}}, \m{\Per_{i,u}(L)} is the set of the \m{\mu\in\Per(L)} with
+$\mu(\pr_i(1\otimes t))\in\Fil^{-u}\BdR$ for all \m{t\in L} (the periods \kw{of type~$u$ at~$i$}). For
+\m{\nu\ge0} the map \m{x\mapsto\mu(\varphi^{-\nu}x)} is semilinear along $\varphi^{-\nu}\colon\Ainf\to\BdR$.
+The \kw{fraction span} of~$L$ is the set of the $x\in\WC\otimes L$ that a non-zero element of~$\Ainf$
+multiplies into \m{\Ainf\otimes L}.
+
+\emph{Kisin modules.} \m{\Minf(L)} is the $\Ainf$-module of the $x\in\WC\otimes L$ such that
+\m{\tau^{a}x\in\Ainf\otimes L} for some \m{a\ge0} and $\mu(\varphi^{a+1}x)\in\Fil^{0}\BdR$ for all
+\m{a\ge0} and \m{\mu\in\Per(L)}. \m{\Mlocinf(L)} is the $\Ainf$-module of the~$x$ that some finite product of
+the~$\cE_\nu$ multiplies into \m{\Minf(L)}. For an $\Ainf$-submodule~$Q$ of \m{\WC\otimes L}, its \kw{points
+over~$F_0$} are the \m{x\in Q} with \m{\mu(x)\in F_0} for all \m{\mu\in\Per(L)}; they form an $\fS$-module.
+\m{\mathfrak{M}(L)} is the $\fS$-module of the points of \m{\Minf(L)} over~$F_0$ (the \kw{Kisin module}), and
+\m{\Mloc(L)} that of the points of \m{\Mlocinf(L)} over~$F_0$. For \m{l\ge0}, \m{\std_l} is the exponent
+function with \m{\std_l(\nu,u)=0} for \m{\nu<l} and \m{\std_l(\nu,u)=-u} for \m{\nu\ge l}.
+\end{setting}
+
+\begin{definition}[the cost of a step]\label{d:cost}
+In Setting~\ref{set:rings}, for integers \m{\nu\ge0} and~$n$,
+\[\cost{\nu}{n}\ =\ v_p(n)+\fd+3\nu .\]
+\end{definition}
+\leanline{\lean{cost}}
+
+\begin{definition}[elements with exponents]\label{d:exp}
+In Setting~\ref{set:lattice}, for a lattice datum~$L$, a letter~$i$ and an exponent function~$o$,
+\m{\wExp{L}{i}{o}} is the set of the $x\in\Mlocinf(L)\cap(\WC\otimes L)_i$ such that, for every \m{\nu\ge0},
+\[\mu(\varphi^{-\nu}x)\in\Fil^{\,o(\nu,u)}\BdR\qquad\text{for all }u\in U_L(i^{p^{-\nu}})\text{ and all }
+\mu\in\Per_{i^{p^{-\nu}},u}(L).\]
+It is an $\Ainf$-submodule of \m{\WC\otimes L}. For an integer \m{l\ge0},
+\[\locLP{l}{i}(L)\ =\ \Mloc(L)\cap\wExp{L}{i}{\std_l},\]
+an $\fS$-module.
+\end{definition}
+\leanline{\lean{withExponents}\sep \lean{locLetterPart}}
+
+\begin{definition}[parts, invariants, operations on exponents]\label{d:ops}
+In Setting~\ref{set:lattice}, let $L$, $A$, $C$ be lattice data.
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=2pt]
+\item For an $\Ainf$-submodule~$Q$ of \m{\WC\otimes L}, \m{\locKP{Q}} is the $\Zp$-module of the elements of
+\m{\Mloc(L)} that lie in~$Q$, and \m{\invMod{Q}} is the $\Zp$-module of the $x\in\WC\otimes L$ with
+\m{g x-x\in Q} for all \m{g\in\Gamma'}. (The module \m{\Mloc(L)} is a $\Zp$-module because $\fS$ is a
+$\Zp$-algebra; the formal text records this as an instance.)
+\item For exponent functions $o^{\mathrm{lo}}$, $o^{\mathrm{hi}}$, an integer \m{\nu\ge0} and
+\m{u\in\mathbb{Z}},
+\[\begin{gathered}\impE{o^{\mathrm{lo}}}{o^{\mathrm{hi}}}{\nu}{u}=o^{\mathrm{hi}}(\nu,u)\ \text{ if }o^{\mathrm{lo}}(\nu,u)>0,\\
+\impE{o^{\mathrm{lo}}}{o^{\mathrm{hi}}}{\nu}{u}=\min\bigl(o^{\mathrm{hi}}(\nu,u),0\bigr)\ \text{ otherwise.}\end{gathered}\]
+\item For integers \m{l\ge0} and~$n$, an exponent function~$o$, an integer \m{\nu\ge0} and
+\m{u\in\mathbb{Z}},
+\[\frobX{l}{n}{o}{\nu}{u}=n\ \text{ if }\nu<l,\qquad \frobX{l}{n}{o}{\nu}{u}=o(\nu-l,u)\ \text{ if }\nu\ge l .\]
+\item For an $\cO$-bilinear map \m{b\colon A\times L\to C} of the lattices, $y\in\WC\otimes A$ and
+$x\in\WC\otimes L$, $\wPair{b}{y}{x}\in\WC\otimes C$ is the value at \m{(y,x)} of the $\WC$-bilinear
+extension of~$b$.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{locKisinPart}\sep \lean{invariantsMod}\sep \lean{improvedExponent}\sep \lean{frobExponent}\sep
+\lean{wittPairinga}}
+
+\begin{definition}[sides]\label{d:side}
+In Setting~\ref{set:lattice}, a \kw{side} over~$\cO$ is a triple \m{S=(Y_S,C_S,\alpha_S)} of a lattice
+datum~$Y_S$ over~$\cO$ with \m{0\in U_{Y_S}(i)} for every letter~$i$, a lattice~$C_S$ over~$\cO$, and an
+$\cO$-linear map $\alpha_S\colon C_S\to Z^{1}_{\mathrm{f}}(Y_S)$. For a side~$S$:
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=2pt]
+\item \m{\extL{S}} is the lattice datum on \m{Y_S\times C_S} with the action
+\m{g(y,c)=(gy+\alpha_S(c)(g),\,c)} and \m{U_{\extL{S}}(i)=U_{Y_S}(i)} for every letter~$i$: the extension of the
+module~$C_S$, with trivial action, by~$Y_S$ along the cocycles~$\alpha_S$. It is crystalline on~$\Gamma'$, and its
+non-zero jumps are jumps of~$Y_S$ (Input~\ref{i:ext}).
+\item \m{\trivL{S}} is the lattice datum formed by the module~$C_S$ with the trivial action of~$\Gamma$ and
+\m{U_{\trivL{S}}(i)=\{0\}} for every letter~$i$.
+\item $\projC{S}\colon\extL{S}\to\trivL{S}$ is the equivariant map \m{(y,c)\mapsto c}.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{PairingSide}\sep \lean{extLattice}\sep \lean{trivLattice}\sep \lean{projTriv}}
+
+\begin{definition}[windows]\label{d:win}
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=2pt]
+\item For integers \m{\eta,\beta,W\ge0}, a sign \m{\varsigma\in\{1,-1\}} and a finite set~$U$ of integers,
+$\JumpWin{\eta}{\varsigma}{\beta}{W}{U}$ means that every \m{u\in U} satisfies \m{-\eta\le u\le\eta} or
+\m{\beta\le\varsigma u\le\beta+W}.
+\item For integers $n$, \m{\nu\ge0} and~$u$, \m{\raisedE{n}{\nu}{u}=n-u} if \m{\nu=0} and
+\m{\raisedE{n}{\nu}{u}=-u} if \m{\nu>0}.
+\item For integers \m{n\ge0} and~$c$, $\twoWin{n}{c}=[-n,n]\cup[c-n,c+n]$, a finite set of integers.
+\item For integers \m{p,n\ge0} and~$\beta$, \m{\NoMult{p}{n}{\beta}} means that every
+$a\in\twoWin{n}{\beta}\cup\twoWin{n}{-\beta}$ that is divisible by~$p$ is~$0$.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{IsInJumpWindow}\sep \lean{raisedAtE}\sep \lean{twoWindows}\sep \lean{NoMultipleNear}}
+
+\begin{definition}[constants, the lifting ideal, cokernel killers]\label{d:lift}
+In Setting~\ref{set:lattice}, let $S$ be a side over~$\cO$ and $i$ a letter.
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=2pt]
+\item For \m{c\in C_S}, $\constAt{S}{i}{c}=\pr_i(1\otimes c)\in\WC\otimes C_S$; the map
+\m{c\mapsto\constAt{S}{i}{c}} is $\Zp$-linear.
+\item For integers \m{r,l\ge0}, \m{\liftId{S}{r}{l}{i}} is the ideal of~$\Ainf$ generated by~$r$ and by the
+\m{a\in\Ainf} with
+\[a\cdot\pr_i\bigl(\Ainf\otimes C_S\bigr)\ \subseteq\ (1\otimes\projC{S})\bigl(\wExp{\extL{S}}{i}{\std_l}\bigr).\]
+\item For integers \m{\kappa,\rho\ge0}, \m{\Kills{S}{i}{\kappa}{\rho}} means
+$p^{\kappa}\cE^{\rho}\in\liftId{S}{0}{0}{i}$; in words, \m{p^{\kappa}\cE^{\rho}} \kw{kills the cokernel
+of~$S$ at~$i$}.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{constantAt}\sep \lean{liftIdeal}\sep \lean{KillsCokernel}}
+
+\inputbox{\textbf{Inputs from the background library.} The following results are taken for granted. Each is a
+declaration of the background library, read in its Lean text; the number in brackets is the unit that owns it.
+All are in Setting~\ref{set:lattice}, for a lattice datum~$L$.
+\begin{enumerate}[label=\textup{I\arabic*.},ref=I\arabic*,leftmargin=2.6em,itemsep=2.5pt]
+\item\label{i:div} \emph{Divisibility and filtration} [83]. For \m{r\in\Ainf} and \m{\nu\ge0}: \m{\cE_\nu\mid r}
+if and only if \m{\theta_\nu(r)=0}, if and only if $\varphi^{-\nu}(r)\in\Fil^{1}\BdR$. The image
+\m{\varphi^{-\nu}(\cE_\nu)} generates the maximal ideal of~$B^{+}_{\mathrm{dR}}$. If \m{\cE_\nu\nmid r}, then
+\m{\varphi^{-\nu}(r)} is a unit of~$B^{+}_{\mathrm{dR}}$. Moreover \m{\cE_\nu\nmid\cE_{\nu'}} for
+\m{\nu\ne\nu'}, \m{\cE_\nu\nmid z\tau}, \m{\cE_\nu\nmid p}, \m{\cE_\nu\mid\varphi^{l}(\tau)} for \m{\nu<l},
+\m{z\tau\mid\varphi^{\nu}(z\tau)}, \m{\theta(z)\mid p} and \m{\tau\mid\xi-p}; $p$ divides neither $z$ nor~$\tau$,
+so \m{z\tau} and the~$\cE_\nu$ are units of~$\WC$.
+\item\label{i:gal} \emph{Galois action on the chart} [83]. For \m{g\in\GQp}, \m{g\cdot\cE} is~$\cE$ times a unit
+of~$\Ainf$. If $g$ fixes~$\WW$ and \m{d\in\Ainf} divides \m{gz-z}, then $d$ divides \m{gs-s} for every
+\m{s\in\fS}; if moreover $g$ fixes \m{\theta(z)}, it fixes \m{\theta(s)} for every \m{s\in\fS}. For
+\m{g\in\Gamma'} and \m{s\in\fS}, \m{z\tau\cE} divides \m{gs-s}.
+\item\label{i:der} \emph{A derivative} [83]. There is a polynomial~$P_0$ over~$\WW$ with \m{\cE\mid P_0(z)}
+in~$\fS$ and \m{\theta(P_0'(z))\mid p^{\fd}}. The handout's catalogue relates it to the different of a totally ramified extension (J.-P.~Serre, \emph{Local Fields}, Ch.~III, §6; place not confirmed).
+\item\label{i:lte} \emph{Lifting the exponent} [83]. Let \m{f\colon\Ainf\to R} be a surjective ring
+homomorphism, \m{a\in\Ainf}, and \m{v\in\Ainf} a non-unit dividing \m{a-1} with
+\m{p\,f(a-1)\,f(v)\mid f(a-1)^{p}}. Then $f(a^{n}-1)\mid p^{v_p(n)}f(a-1)$ for every integer \m{n\ge1}. Also:
+for \m{n\ge1} there are \m{\alpha,\beta\in\Ainf} with
+$\tau\cE\,(p^{v_p(n)}+\beta z)=\alpha\,([\varepsilon]^{n}-1)$. A divisibility form of the folklore lemma on lifting the
+exponent.
+\item\label{i:mod} \emph{Residues modulo~$\cE_\nu$} [83]. For \m{\nu\ge0}, every \m{s\in\fS} is congruent
+modulo~$\cE_\nu$ to $\sum_{a<p^{\nu}e_{\fc}}w_a z^{a}$ with \m{w_a\in\WW}. Moreover \m{z^{e_{\fc}}} lies in the
+ideal \m{(\cE,p)} of~$\fS$, and \m{\theta_\nu([\varepsilon])} is a primitive $p^{\nu}$-th root of unity.
+\end{enumerate}}
+
+\inputbox{\textbf{Inputs from the background library, continued.}
+\begin{enumerate}[label=\textup{I\arabic*.},ref=I\arabic*,leftmargin=2.6em,itemsep=2.5pt,start=6]
+\item\label{i:tate} \emph{Tate} [58]. Let $V\in\BdR$ and let $M$ be a $B^{+}_{\mathrm{dR}}$-submodule of~$\BdR$.
+If \m{gV-V\in M} for all \m{g\in\Gamma'}, there is \m{c\in F} with \m{V-c\in M}. An element~$c$
+of~$\bar{\mathbb{Q}}_p$ lies in \m{\Fil^{n}\BdR} if and only if \m{c=0} or \m{n\le0}. An element of~$\BdR$
+fixed by~$\Gamma'$ lies in \m{\Fil^{0}\BdR\cap F_0}. The first statement is, in the second reader's comparison,
+a weaker form of the degree-zero parts of Tate's two theorems (J.~Tate, \emph{$p$-Divisible Groups}, §3.3,
+Theorems 1 and~2; P.~Colmez, \emph{Théorie d'Iwasawa des représentations de de Rham d'un corps local}, §III.1).
+\item\label{i:val} \emph{Values in the fields~$F_\nu$} [83]. \emph{(a)} Let \m{f\colon\Ainf\to\fS} be
+$\fS$-linear, \m{r_k\in\Ainf} and \m{v_k\in F_\nu}, finitely many, and $M$ a $B^{+}_{\mathrm{dR}}$-submodule
+of~$\BdR$. If $\sum_k\varphi^{-\nu}(r_k)v_k\in M$, then $\sum_k\varphi^{-\nu}(f(r_k))v_k\in M$.
+\emph{(b)} Let \m{V\in F_\nu\cap\Fil^{0}\BdR} and \m{g,t_1,\dots,t_m\in\Gamma'}. If
+$\cE_\nu\mid g\sum_k t_k s-\sum_k t_k s$ for all \m{s\in\fS}, then
+$g\sum_k t_kV-\sum_k t_kV\in\Fil^{1}\BdR$.
+\item\label{i:frame} \emph{The frame theorem} [83]. \emph{(a)} If \m{v_1,\dots,v_m} are points of the fraction
+span over~$F_0$ and \m{c_k\in\Ainf} with \m{\sum_kc_kv_k=0}, then \m{\sum_kf(c_k)v_k=0} for every $\fS$-linear
+\m{f\colon\Ainf\to\fS}. \emph{(b)} $\Minf(L)=\Ainf\cdot\mathfrak{M}(L)$. \emph{(c)}
+$\tau^{h_L}\Minf(L)\subseteq\Ainf\otimes L$ and $\tau^{h_L}(\Ainf\otimes L)\subseteq\Minf(L)$.
+\emph{(d)} $\cE^{h_L}\varphi(x)\in\mathfrak{M}(L)$ for \m{x\in\mathfrak{M}(L)}. \emph{(e)} Let
+\m{d\in\Ainf} be such that $d$ divides~$r$ whenever $d$ divides \m{\cE^{a}r} in~$B^{+}$. If \m{x\in\Minf(L)}
+and \m{\cE^{2h_L}\mu(x)\in B^{+}d} for every crystalline period~$\mu$ (a period in \m{\Per(L)} whose values on
+\m{1\otimes L} lie in the image of~$B_{\max}$), then \m{x\in d\,\Minf(L)}; and \m{\cE^{h_L}\mu(x)} lies in
+the image of~$\fS_B$ for such~$\mu$ and \m{x\in\mathfrak{M}(L)}. The element \m{d=z\tau} has the divisibility
+property, and \m{z\tau\mid gs-s} in~$B^{+}$ for \m{g\in\Gamma'}, \m{s\in\fS_B}. This is the artifact's form of
+the existence and the finite height of the Breuil--Kisin module of a crystalline lattice; the file names it a
+known result (Kisin lattice of a crystalline lattice). Reference to be confirmed.
+\end{enumerate}}
+
+\inputbox{\textbf{Inputs from the background library, concluded.}
+\begin{enumerate}[label=\textup{I\arabic*.},ref=I\arabic*,leftmargin=2.6em,itemsep=2.5pt,start=9]
+\item\label{i:forms} \emph{Periods} [82, 83]. \emph{(a)} For \m{\mu\in\Per(L)}, $x$ in the fraction span and
+\m{g\in\Gamma'}: \m{\mu(gx)=g\cdot\mu(x)}. The fraction span contains \m{\Minf(L)} and is stable under
+\m{\mathbb{Z}\times\Gamma}, as is \m{\Ainf\otimes L}; \m{\Minf(L)} is stable under~$\Gamma'$; \m{\WC\otimes L} has
+no $\Ainf$-torsion. \emph{(b)} For an equivariant \m{f\colon L\to L'}: \m{\mu\circ(1\otimes f)\in\Per(L)} for
+\m{\mu\in\Per(L')}, and \m{1\otimes f} maps \m{\Minf(L)} into \m{\Minf(L')}; \m{\mu\circ\pr_i\in\Per(L)} for
+\m{\mu\in\Per(L)}. \emph{(c)} $\varphi^{\nu}x\in(\WC\otimes L)_i$ if and only if
+$x\in(\WC\otimes L)_{i^{p^{-\nu}}}$; $\pr_i$ commutes with~$\Gamma'$ and with \m{1\otimes f}. \emph{(d)} If
+\m{u\notin U_L(i)}, then $\Per_{i,u}(L)\subseteq\Per_{i,u-1}(L)$. \emph{(e)} Every $\Zp$-linear map
+\m{L\to\BdR} is \m{t\mapsto\mu(1\otimes t)} for an $\Ainf$-linear \m{\mu\colon\WC\otimes L\to\BdR}; two such
+maps that agree on \m{1\otimes L} agree on the fraction span.
+\item\label{i:hodge} \emph{A Hodge basis} [87]. Let \m{(e_k)_k} be a $\Zp$-basis of~$L$. There are integers
+$\kappa_k$ and an invertible matrix~$\mathsf{H}$ over~$\BdR$, the product of an invertible matrix
+over~$B^{+}_{\mathrm{dR}}$ and of a diagonal matrix with entries generating \m{\Fil^{\kappa_k}\BdR}, such that
+$\mathsf{R}(g)\cdot g(\mathsf{H})=\mathsf{H}$ for all \m{g\in\Gamma'}, where \m{\mathsf{R}(g)} is the matrix
+of~$g$ on~$L$ in the basis. This is the Hodge--Tate decomposition of a potentially crystalline lattice; in the
+second reader's comparison the passage from potential crystallinity to Hodge--Tate weights is classical for
+field coefficients (J.-M.~Fontaine, \emph{Représentations $p$-adiques semi-stables}, Astérisque~223, Exposé~III,
+Theorem~3.8(i), Remark~3.9(ii), §5.1.7) and the formulation for coefficient fibres is not located.
+\item\label{i:ext} \emph{Extensions and twists} [86, 87]. For a side~$S$, the lattice \m{\extL{S}} is
+crystalline on~$\Gamma'$, and for \m{u\ne0} the multiplicity of the jump~$u$ of \m{\extL{S}} at any~$\gamma$ is
+at most that of~$Y_S$. If $\Gamma$ acts on a lattice through the $c$-th power of~$\chi$, its jumps are all
+equal to~$-c$. Both rest on Tate's vanishing of the invariants of the non-trivial twists of~$C$.
+\item\label{i:rad} \emph{A radical} [59]. If \m{a\in\Ainf} is not a unit and \m{d\in\Ainf} is not divisible
+by~$p$, then $a$ lies in the radical of the ideal \m{(p,d)}. The ring~$\Ainf$ is $p$-adically complete, and
+$p$ does not divide~$\tau$.
+\end{enumerate}}
+
+\sect{The depth steps}{s:depth}
+Throughout this section the setting is Setting~\ref{set:rings}. By Input~\ref{i:div}, the ring homomorphism
+\m{\theta_\nu} has kernel \m{\cE_\nu\Ainf}; it commutes with~$\GQp$, so this ideal is stable under~$\GQp$.
+
+\begin{proof}[Proof of Theorem A]
+\emph{The elements.} Choose \m{\gamma\in\Gamma'} with $\gamma z=[\varepsilon]^{p^\nu}z$. By Input~\ref{i:gal},
+\m{\gamma\cE=w_0\cE} for a unit~$w_0$ of~$\Ainf$, and \m{z\tau\cE} divides
+\m{\gamma\cE-\cE=(w_0-1)\cE}; as $\cE\ne0$ and $\Ainf$ is a domain, \m{z\tau\mid w_0-1}. For every integer
+\m{n\ne0}, \m{w_0-1} divides \m{w_0^{n}-1} (for \m{n<0} write \m{w_0^{n}-1=-w_0^{n}(w_0^{-n}-1)}). Since
+\m{z\tau\mid\varphi^\nu(z\tau)} (Input~\ref{i:div}), \m{z\tau} divides
+\m{\varphi^\nu(w_0^{n}-1)=w^{n}-1}, where \m{w=\varphi^\nu(w_0)}. Let \m{g=\gamma} and let~$X$ be the
+quotient, so that \m{z\tau X=w^{n}-1}. Then $g\cE_\nu=\varphi^\nu(\gamma\cE)=w\cE_\nu$, because the actions
+of~$\varphi$ and of~$\GQp$ commute. Next $\theta_\nu([\varepsilon]^{p^\nu}-1)=\theta([\varepsilon]-1)=0$, so
+$\cE_\nu$ divides $\gamma z-z=([\varepsilon]^{p^\nu}-1)z$, and therefore \m{\gamma s-s} for every
+\m{s\in\fS}, by Input~\ref{i:gal} ($\gamma$ fixes~$\WW$).
+
+\emph{Reduction.} It remains to find~$y$ with $\cE_\nu\mid yX-p^{\cost{\nu}{n}}$. It suffices that
+\m{\theta_\nu(X)} divides \m{p^{\cost{\nu}{n}}} in~$\mathcal{O}_C$: then, $\theta$ being surjective, there is
+$y_0$ with $\theta(y_0)\theta_\nu(X)=p^{\cost{\nu}{n}}$, and \m{y=\varphi^\nu(y_0)} has
+$\theta_\nu(yX-p^{\cost{\nu}{n}})=0$. Now \m{\theta_\nu(z\tau)\ne0} (Input~\ref{i:div}) and
+$\theta_\nu(z\tau)\,\theta_\nu(X)=\theta_\nu(w^{n}-1)=\theta(w_0^{n}-1)$. So it suffices to prove
+\begin{equation}\label{e:goal}
+\theta(w_0^{n}-1)\ \mid\ p^{\,v_p(n)+\fd+3\nu}\cdot\theta_\nu(z\tau)\qquad\text{in }\mathcal{O}_C .
+\end{equation}
+
+\emph{The term \m{v_p(n)}.} Write \m{w_0-1=z\tau d} with \m{d\in\Ainf}. The number \m{\theta(\tau)+1} is a
+$p$-th root of unity, so the binomial theorem gives $\theta(\tau)^{p}=-p\,\theta(\tau)\,c$ for some
+\m{c\in\mathcal{O}_C}. Hence
+\[\theta(w_0-1)^{p}=-p\,c\,\theta(\tau)\,\theta(z)^{p}\theta(d)^{p}\qquad\text{is divisible by}\qquad
+p\cdot\theta(w_0-1)\cdot\theta(z)=p\,\theta(\tau)\,\theta(z)^{2}\theta(d),\]
+because \m{p\ge2}. So Input~\ref{i:lte} applies to \m{f=\theta}, \m{a=w_0} and the non-unit \m{v=z}, with
+the exponent~$|n|$: \m{\theta(w_0^{|n|}-1)} divides \m{p^{v_p(n)}\theta(w_0-1)}, and \m{w_0^{n}-1} is
+\m{w_0^{|n|}-1} times a unit.
+
+\emph{The term \m{\fd+\nu}.} Let $P_0$ be the polynomial of Input~\ref{i:der}, with \m{P_0(z)=\cE G},
+\m{G\in\fS}. Taylor's formula gives \m{r\in\Ainf} with
+\[P_0(\gamma z)=P_0(z)+P_0'(z)\,(\gamma z-z)+r\,(\gamma z-z)^{2}.\]
+The left side is $\gamma(P_0(z))=w_0\cE\,\gamma(G)$, as $\gamma$ fixes~$\WW$. On the right,
+$\gamma z-z=([\varepsilon]^{p^\nu}-1)z$ and
+$[\varepsilon]^{p^\nu}-1=([\varepsilon]-1)\,\sigma_\nu$ with
+$\sigma_\nu=\sum_{a<p^\nu}[\varepsilon]^{a}$, while $[\varepsilon]-1=\xi\tau=\cE\tau\,\mathsf{u}$ for a
+unit~$\mathsf{u}$. Dividing by~$\cE$:
+\[w_0\,\gamma(G)-G=P_0'(z)\,\tau\mathsf{u}\,\sigma_\nu z+r\,\tau\mathsf{u}\,\sigma_\nu z\cdot
+([\varepsilon]^{p^\nu}-1)z .\]
+Apply~$\theta$. The last term vanishes; \m{\theta(\gamma G)=\theta(G)} by Input~\ref{i:gal}; and
+\m{\theta(\sigma_\nu)=p^{\nu}}, since \m{\theta([\varepsilon])=1}. Therefore
+$\theta(G)\,\theta(w_0-1)=\theta(P_0'(z))\,\theta(\mathsf{u})\,p^{\nu}\,\theta(z\tau)$, and
+\m{\theta(w_0-1)} divides \m{p^{\fd+\nu}\,\theta(z\tau)}.
+
+\emph{The term \m{2\nu}.} If \m{\nu=0} then \m{\theta_\nu=\theta}. If \m{\nu\ge1}, then \m{\theta(z)\mid p}
+and \m{\theta(\tau)\mid p} (Input~\ref{i:div}: $\tau$ divides \m{\xi-p} and \m{\theta(\xi)=0}), so
+\m{\theta(z\tau)} divides~$p^{2}$, hence \m{p^{2\nu}\theta_\nu(z\tau)}. In both cases
+$\theta(z\tau)\mid p^{2\nu}\theta_\nu(z\tau)$. The three divisibilities give~\eqref{e:goal}.
+\end{proof}
+
+\begin{lemma}[the depth step at exponent~$0$]\label{l:zero}
+In Setting~\ref{set:rings}, let \m{\nu\ge0} be an integer and put \m{m=p^{\cost{\nu}{0}}}. There are
+\m{t_1,\dots,t_m\in\Gamma'} such that, for every \m{g\in\Gamma'} and every \m{s\in\fS},
+\[\cE_\nu\ \mid\ g\cdot\sum_{k=1}^{m}t_k\cdot s-\sum_{k=1}^{m}t_k\cdot s\qquad\text{in }\Ainf .\]
+\end{lemma}
+\leanline{\lean{existsdepthstepzero}}
+\begin{proof}
+For \m{0\le k<m} choose \m{t_k\in\Gamma'} with \m{t_kz=[\varepsilon]^{k}z}. Divisibility by~$\cE_\nu$ is the
+vanishing of~$\theta_\nu$, which commutes with~$\Gamma'$; so by Input~\ref{i:mod} it suffices to treat
+\m{s=wz^{a}} with \m{w\in\WW}, and to show that
+$\theta_\nu(g\sum_kt_ks)=\theta_\nu(\sum_kt_ks)$. Each~$t_k$ fixes~$w$, so
+$\theta_\nu(t_ks)=\theta_\nu(w)\theta_\nu(z)^{a}\varrho^{ka}$, where $\varrho=\theta_\nu([\varepsilon])$ is a
+primitive $p^\nu$-th root of unity. If \m{p^\nu\nmid a}, then \m{\varrho^{a}\ne1} and
+\m{(\varrho^{a})^{m}=1}, because \m{p^\nu} divides \m{m=p^{\fd+3\nu}}; the geometric sum
+\m{\sum_{k<m}\varrho^{ka}} vanishes, and both sides are~$0$. If \m{a=p^\nu a'}, then
+\m{z^{a}=\varphi^{\nu}(z^{a'})} and, for every \m{\gamma\in\Gamma'},
+$\theta_\nu(\gamma s)=\theta(\gamma\varphi^{-\nu}(w))\,\theta(\gamma z^{a'})=\theta_\nu(s)$, because
+$\gamma$ fixes $\WW$ and~\m{\theta(z)}. So $\theta_\nu(\sum_kt_ks)=m\,\theta_\nu(s)$, and the same
+computation with \m{gt_k} in place of~$t_k$ gives the same value.
+\end{proof}
+
+\sect{Exponent modules: first properties}{s:first}
+Throughout, the setting is Setting~\ref{set:lattice}; $L$ and~$L'$ are lattice data over~$\cO$.
+
+\begin{lemma}[the localized modules]\label{l:loc}
+Let $x\in\WC\otimes L$, let \m{\nu,l\ge0} and $n$ be integers, let \m{g\in\Gamma'} and let
+\m{f\colon L\to L'} be an equivariant map.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item \m{\cE_\nu x\in\Mlocinf(L)} if and only if \m{x\in\Mlocinf(L)}.
+\item \m{\cE_\nu^{\,n}x\in\Mloc(L)} if and only if \m{x\in\Mloc(L)}.
+\item If \m{x\in\Mlocinf(L)}, then $(1\otimes f)(x)\in\Mlocinf(L')$; if \m{x\in\Mloc(L)}, then
+$(1\otimes f)(x)\in\Mloc(L')$.
+\item If \m{x\in\Mlocinf(L)}, then \m{g x\in\Mlocinf(L)}.
+\item \m{\Mlocinf(L)} is contained in the fraction span of~$L$.
+\item If \m{x\in\Mlocinf(L)} and \m{\mu\in\Per(L)}, then
+$\mu(\varphi^{-\nu}(gx-x))=g\cdot\mu(\varphi^{-\nu}x)-\mu(\varphi^{-\nu}x)$.
+\item If \m{x\in\Mloc(L)}, then \m{\varphi^{l}x\in\Mloc(L)}.
+\item The $\Ainf$-span of \m{\Mloc(L)} is \m{\Mlocinf(L)}.
+\item If \m{x\in\Mloc(L)} and \m{\mu\in\Per(L)}, then \m{\mu(\varphi^{-\nu}x)\in F_\nu}.
+\end{enumerate}
+\end{lemma}
+\leanline{\lean{frobEsmulmemkisinLocAinfiff}\sep \lean{frobEUnitzpowsmulmemkisinLoc}\sep
+\lean{wittMapmemkisinLocAinf}\sep \lean{wittMapmemkisinLoc}\sep \lean{galsmulmemkisinLocAinf}\sep
+\lean{kisinLocAinflefracSpan}\sep \lean{valueAtsmulsub}\sep \lean{phipowmemkisinLoc}\sep \lean{spankisinLoc}\sep
+\lean{valueAtmemvalueField}\sep \lean{valueAtzero} (the identity \m{\mu(\varphi^{0}x)=\mu(x)})}
+\begin{proof}
+Several proofs go by \emph{induction on the localization}: a property that holds on \m{\Minf(L)} and passes
+from \m{\cE_\nu x} to~$x$, for every~$\nu$, holds on \m{\Mlocinf(L)}.
+
+(a) holds by the definition of \m{\Mlocinf(L)} as a saturation. (b) The units~$c$ of~$\WC$ with
+\m{c\,\Mloc(L)=\Mloc(L)} form a group, so it suffices to show that \m{\cE_\nu x\in\Mloc(L)} if and only if
+\m{x\in\Mloc(L)}. For \m{\Mlocinf} this is~(a); and \m{\mu(\cE_\nu x)=\cE_\nu\mu(x)} lies in~$F_0$ exactly
+when \m{\mu(x)} does, because the image of~$\cE_\nu$ in~$\BdR$ is a non-zero element of~$F_0$.
+
+(c) \m{1\otimes f} is $\WC$-linear and maps \m{\Minf(L)} into \m{\Minf(L')}, hence \m{\Mlocinf(L)} into
+\m{\Mlocinf(L')}; and \m{\mu\circ(1\otimes f)\in\Per(L)} for \m{\mu\in\Per(L')} (Input~\ref{i:forms}), which
+gives the values in~$F_0$. (d) By induction on the localization: \m{\Minf(L)} is stable under~$\Gamma'$, and
+\m{g(\cE_\nu x)=g(\cE_\nu)\,gx} with \m{g(\cE_\nu)} equal to~$\cE_\nu$ times a unit of~$\Ainf$, so (a) applies.
+(e) By the same induction from \m{\Minf(L)}, which lies in the fraction span. (f) $g$ commutes
+with~$\varphi^{-\nu}$, the fraction span is stable under \m{\mathbb{Z}\times\Gamma}, and
+\m{\mu(gx')=g\mu(x')} on it (Input~\ref{i:forms}).
+
+(g) It suffices to treat \m{l=1}. By induction on the localization, applied to the points over~$F_0$: for
+\m{x\in\mathfrak{M}(L)}, $\cE^{h_L}\varphi(x)\in\mathfrak{M}(L)$ by the frame theorem
+(Input~\ref{i:frame}(d)), so \m{\varphi(x)\in\Mloc(L)} by~(b); and
+$\varphi(\cE_\nu x)=\cE_{\nu+1}\varphi(x)$, so (b) passes the property from \m{\cE_\nu x} to~$x$.
+
+(h) By induction on the localization: $\Minf(L)=\Ainf\cdot\mathfrak{M}(L)$ (Input~\ref{i:frame}(b)), and if
+\m{\cE_\nu x=\sum_ka_kv_k} with \m{v_k\in\Mloc(L)}, then \m{x=\sum_ka_k\,\cE_\nu^{-1}v_k} with
+\m{\cE_\nu^{-1}v_k\in\Mloc(L)} by~(b).
+
+(i) By (e) there is \m{r\ne0} in~$\Ainf$ with $r\varphi^{-\nu}x\in\Ainf\otimes L$; then
+$\tau^{h_L}r\varphi^{-\nu}x\in\Minf(L)$ (Input~\ref{i:frame}(c)), and by~(h) it is \m{\sum_ka_kv_k} with
+\m{a_k\in\Ainf}, \m{v_k\in\Mloc(L)}. Apply~$\varphi^{\nu}$:
+\[-\varphi^{\nu}(\tau^{h_L}r)\,x+\sum_k\varphi^{\nu}(a_k)\,\varphi^{\nu}v_k=0 ,\]
+a relation with coefficients in~$\Ainf$ between $x$ and the \m{\varphi^{\nu}v_k}, which lie in \m{\Mloc(L)}
+by~(g). By Input~\ref{i:frame}(a) it persists when a coordinate~\m{\operatorname{co}_a} is applied to the
+coefficients; choose~$a$ with $c=\operatorname{co}_a(\varphi^{\nu}(\tau^{h_L}r))\ne0$. Applying
+\m{\mu\circ\varphi^{-\nu}} gives
+$\varphi^{-\nu}(c)\,\mu(\varphi^{-\nu}x)=\sum_k\varphi^{-\nu}(\operatorname{co}_a(\varphi^\nu a_k))\,\mu(v_k)$.
+Here \m{\mu(v_k)\in F_0\subseteq F_\nu} and $\varphi^{-\nu}(\fS)\subseteq F_\nu$, and $F_\nu$ is a field.
+\end{proof}
+
+\begin{lemma}[the exponent modules]\label{l:exp}
+Let $x\in\WC\otimes L$, let $i$ be a letter and let $o$, $o'$ be exponent functions.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item Let \m{x\in\wExp{L}{i}{o}}. Suppose that, for every \m{\nu\ge0}, every \m{u\in U_L(i^{p^{-\nu}})} with
+\m{o(\nu,u)<o'(\nu,u)} and every \m{\mu\in\Per_{i^{p^{-\nu}},u}(L)}, one has
+$\mu(\varphi^{-\nu}x)\in\Fil^{o'(\nu,u)}\BdR$. Then \m{x\in\wExp{L}{i}{o'}}.
+\item Let \m{x\in\wExp{L}{i}{o}}. If \m{o'(\nu,u)\le o(\nu,u)} for all \m{\nu\ge0} and
+\m{u\in U_L(i^{p^{-\nu}})}, then \m{x\in\wExp{L}{i}{o'}}.
+\item Let \m{\nu\ge0}, \m{u\in\mathbb{Z}} and \m{\mu\in\Per_{i^{p^{-\nu}},u}(L)}. If \m{x\in\Ainf\otimes L} and
+\m{x\in(\WC\otimes L)_i}, then $\mu(\varphi^{-\nu}x)\in\Fil^{-u}\BdR$.
+\item Let \m{f\colon L\to L'} be an equivariant map with \m{U_{L'}(j)\subseteq U_L(j)} for every letter~$j$. If
+\m{x\in\wExp{L}{i}{o}}, then $(1\otimes f)(x)\in\wExp{L'}{i}{o}$.
+\item Let \m{r\in\Ainf} with \m{\cE_\nu\nmid r} for all \m{\nu\ge0}, and let \m{x\in\Mlocinf(L)}. If
+\m{rx\in\wExp{L}{i}{o}}, then \m{x\in\wExp{L}{i}{o}}.
+\item Let \m{\nu_0\ge0} and $n$ be integers and \m{x\in\wExp{L}{i}{o}}. If
+\m{o'(\nu,u)\le o(\nu,u)+n} for \m{\nu=\nu_0} and \m{o'(\nu,u)\le o(\nu,u)} for \m{\nu\ne\nu_0}, for all
+\m{u\in U_L(i^{p^{-\nu}})}, then $\cE_{\nu_0}^{\,n}x\in\wExp{L}{i}{o'}$.
+\item If \m{x\in\wExp{L}{i}{o}} and \m{g\in\Gamma'}, then \m{gx-x\in\wExp{L}{i}{o}}.
+\end{enumerate}
+\end{lemma}
+\leanline{\lean{memwithExponentsofmemhodgeFil}\sep \lean{memwithExponentsofle}\sep
+\lean{valueAtmemhodgeFilofmemainfLattice}\sep \lean{mapmemwithExponents}\sep \lean{memwithExponentsofsmul}\sep
+\lean{frobEUnitzpowmemwithExponents}\sep \lean{smulsubmemwithExponents}}
+\begin{proof}
+(a) and (b) hold because the filtration decreases. (c) The element \m{\varphi^{-\nu}x} lies in
+\m{\Ainf\otimes L} and in the part at~\m{i^{p^{-\nu}}} (Input~\ref{i:forms}), so it is an $\Ainf$-combination
+of elements \m{\pr_{i^{p^{-\nu}}}(1\otimes t)}, on which $\mu$ takes values in the
+$B^{+}_{\mathrm{dR}}$-module \m{\Fil^{-u}\BdR}. (d) Membership in \m{\Mlocinf} is Lemma~\ref{l:loc}(c);
+\m{1\otimes f} commutes with \m{1\otimes\omega} and with~$\varphi$; and for \m{\mu\in\Per_{j,u}(L')} with
+\m{u\in U_{L'}(j)\subseteq U_L(j)} the period \m{\mu\circ(1\otimes f)} lies in \m{\Per_{j,u}(L)}, because
+\m{1\otimes f} commutes with~$\pr_j$. (e) $r$ is a non-zero-divisor on \m{\WC\otimes L} and commutes with
+\m{1\otimes\omega}, so $x$ lies in the part at~$i$; and
+$\mu(\varphi^{-\nu}(rx))=\varphi^{-\nu}(r)\mu(\varphi^{-\nu}x)$ with \m{\varphi^{-\nu}(r)} a unit
+of~$B^{+}_{\mathrm{dR}}$ (Input~\ref{i:div}). (f) \m{\cE_{\nu_0}^{\,n}x} lies in \m{\Mlocinf(L)} by
+Lemma~\ref{l:loc}(a) and in the part at~$i$, and
+$\mu(\varphi^{-\nu}(\cE_{\nu_0}^{\,n}x))=\varphi^{-\nu}(\cE_{\nu_0})^{n}\mu(\varphi^{-\nu}x)$; the factor
+\m{\varphi^{-\nu}(\cE_{\nu_0})} is a uniformizer of~$B^{+}_{\mathrm{dR}}$ for \m{\nu=\nu_0} and a unit
+otherwise (Input~\ref{i:div}). (g) By Lemma~\ref{l:loc}(d) and~(f): \m{gx-x} lies in \m{\Mlocinf(L)}, in the
+part at~$i$, and its values are $g\mu(\varphi^{-\nu}x)-\mu(\varphi^{-\nu}x)$, in the Galois-stable module
+\m{\Fil^{o(\nu,u)}\BdR}.
+\end{proof}
+
+\begin{lemma}[division by \m{z\tau}]\label{l:ztau}
+Let \m{g\in\Gamma'} and \m{x\in\Mloc(L)}.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item $(z\tau)^{-1}(gx-x)\in\Mlocinf(L)$.
+\item Let $i$ be a letter and $o$ an exponent function. If \m{gx-x\in\wExp{L}{i}{o}}, then
+$(z\tau)^{-1}(gx-x)\in\wExp{L}{i}{o}$.
+\end{enumerate}
+\end{lemma}
+\leanline{\lean{smulsubmemzTaukisinLocAinf}\sep \lean{smulsubmemzTauUnitsmulofdeep}}
+\begin{proof}
+(a) By induction on the localization, for the points over~$F_0$. Let \m{x\in\mathfrak{M}(L)}. Then
+\m{gx-x\in\Minf(L)}, and for a crystalline period~$\mu$ we have \m{\mu(gx-x)=g\mu(x)-\mu(x)} and
+\m{\cE^{h_L}\mu(x)=s} in the image of~$\fS_B$. Since \m{z\tau} divides \m{gs-s} and \m{g\cE-\cE} in~$B^{+}$,
+the element \m{\cE^{2h_L}(g\mu(x)-\mu(x))} is a multiple of~\m{z\tau}; so \m{gx-x\in z\tau\,\Minf(L)} by
+Input~\ref{i:frame}(e). For the step, let \m{\cE_\nu x} satisfy the claim, with \m{x\in\Mloc(L)}. Then
+\[g(\cE_\nu x)-\cE_\nu x=(g\cE_\nu-\cE_\nu)\,gx+\cE_\nu(gx-x),\]
+and \m{z\tau} divides \m{g\cE_\nu-\cE_\nu} in~$\Ainf$ (Input~\ref{i:gal}) while \m{gx\in\Mlocinf(L)}; so
+$(z\tau)^{-1}\cE_\nu(gx-x)\in\Mlocinf(L)$, and Lemma~\ref{l:loc}(a) removes~$\cE_\nu$. (b) follows from (a)
+and Lemma~\ref{l:exp}(e) with \m{r=z\tau} (Input~\ref{i:div}).
+\end{proof}
+
+\begin{lemma}[values at a period of any type]\label{l:any}
+Let \m{\nu\ge0}, let $i$ be a letter, $o$ an exponent function, \m{u\in\mathbb{Z}}, \m{x\in\wExp{L}{i}{o}} and
+\m{\mu\in\Per_{i^{p^{-\nu}},u}(L)}. Let $M$ be a $B^{+}_{\mathrm{dR}}$-submodule of~$\BdR$ with
+\m{\Fil^{o(\nu,v)}\BdR\subseteq M} for every \m{v\in U_L(i^{p^{-\nu}})} with \m{v\le u}. Then
+\m{\mu(\varphi^{-\nu}x)\in M}.
+\end{lemma}
+\leanline{\lean{valueAtmemofhodgeFille}\sep the integer~$u$ need not lie in \m{U_L(i^{p^{-\nu}})}}
+\begin{proof}
+Put \m{j=i^{p^{-\nu}}} and suppose \m{\mu(\varphi^{-\nu}x)\notin M}. We show by descending induction that
+\m{\mu\in\Per_{j,v}(L)} for every \m{v\le u}. If this holds for~$v$ and \m{v\in U_L(j)}, then
+$\mu(\varphi^{-\nu}x)\in\Fil^{o(\nu,v)}\BdR\subseteq M$, which is excluded; so \m{v\notin U_L(j)}, and
+\m{\mu\in\Per_{j,v-1}(L)} by Input~\ref{i:forms}(d). Now choose \m{r\ne0} in~$\Ainf$ with
+\m{rx\in\Ainf\otimes L} (Lemma~\ref{l:loc}(e)). By Lemma~\ref{l:exp}(c),
+$\varphi^{-\nu}(r)\,\mu(\varphi^{-\nu}x)\in\Fil^{-v}\BdR$ for every \m{v\le u}, so it is~$0$; as \m{\varphi^{-\nu}(r)\ne0},
+\m{\mu(\varphi^{-\nu}x)=0\in M}: a contradiction.
+\end{proof}
+
+\sect{The retraction}{s:ret}
+\begin{lemma}[a retraction onto the module over~$\fS$]\label{l:ret}
+In Setting~\ref{set:lattice}, for a lattice datum~$L$ there is an $\fS$-linear map
+\m{r\colon\Mlocinf(L)\to\Mloc(L)} with $r(a x)=\operatorname{co}_0(a)\,x$ for all \m{a\in\Ainf} and
+\m{x\in\Mloc(L)}.
+\end{lemma}
+\leanline{\lean{existscoordRetract}}
+\begin{proof}
+By Lemma~\ref{l:loc}(h), \m{\Mlocinf(L)} is the image of \m{\Ainf\otimes_{\fS}\Mloc(L)}. The $\fS$-linear map
+$a\otimes x\mapsto\operatorname{co}_0(a)x$ on the tensor product factors through this image if and only if
+every relation \m{\sum_ka_kx_k=0} with \m{x_k\in\Mloc(L)} implies $\sum_k\operatorname{co}_0(a_k)x_k=0$; this
+is Input~\ref{i:frame}(a), the elements of \m{\Mloc(L)} being points of the fraction span over~$F_0$.
+\end{proof}
+
+\begin{definition}[the retraction]\label{d:ret}
+In Setting~\ref{set:lattice}, for a lattice datum~$L$, $\ret_L\colon\Mlocinf(L)\to\Mloc(L)$ is a chosen map
+with the property of Lemma~\ref{l:ret}.
+\end{definition}
+\leanline{\lean{coordRetract}}
+
+\begin{lemma}[properties of the retraction]\label{l:retprop}
+In Setting~\ref{set:lattice}, let $L$, $L'$ be lattice data.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item If \m{v_1,\dots,v_m\in\Mloc(L)}, \m{a_1,\dots,a_m\in\Ainf} and $y\in\Mlocinf(L)$ with
+\m{\sum_ka_kv_k=y}, then $\ret_L(y)=\sum_k\operatorname{co}_0(a_k)v_k$. If \m{x\in\Mloc(L)}, then
+\m{\ret_L(x)=x}.
+\item Let \m{f\colon L\to L'} be an equivariant map, $y\in\Mlocinf(L)$ and $y'\in\Mlocinf(L')$ with
+$(1\otimes f)(y)=y'$. Then $(1\otimes f)(\ret_L(y))=\ret_{L'}(y')$.
+\item Let \m{n\in\mathbb{Z}}, \m{l\ge0}, \m{\mu\in\Per(L)}, $y\in\Mlocinf(L)$ and \m{v\in F_l}. If
+$\mu(\varphi^{-l}y)-v\in\Fil^{n}\BdR$, then $\mu(\varphi^{-l}\ret_L(y))-v\in\Fil^{n}\BdR$.
+\item Let $i$ be a letter, $o$ an exponent function and $y\in\Mlocinf(L)$. If \m{y\in\wExp{L}{i}{o}}, then
+\m{\ret_L(y)\in\wExp{L}{i}{o}}.
+\end{enumerate}
+\end{lemma}
+\leanline{\lean{coordRetractsum}\sep \lean{coordRetractofmemkisinLoc}\sep \lean{mapcoordRetract}\sep
+\lean{valueAtcoordRetractsubmemhodgeFil}\sep \lean{coordRetractmemwithExponents}}
+\begin{proof}
+(a) is the defining property, with \m{\operatorname{co}_0(1)=1}. (b) Write \m{y=\sum_ka_kv_k} with
+\m{v_k\in\Mloc(L)} (Lemma~\ref{l:loc}(h)). Then \m{y'=\sum_ka_k(1\otimes f)(v_k)} with
+\m{(1\otimes f)(v_k)\in\Mloc(L')}, and both sides equal $\sum_k\operatorname{co}_0(a_k)(1\otimes f)(v_k)$
+by~(a). (c) With $y$ written as in~(b),
+\[\mu(\varphi^{-l}y)-v=\sum_k\varphi^{-l}(a_k)\,\mu(\varphi^{-l}v_k)+\varphi^{-l}(1)\cdot(-v),\]
+and the values \m{\mu(\varphi^{-l}v_k)} lie in~$F_l$ by Lemma~\ref{l:loc}(i). Input~\ref{i:val}(a) with
+\m{f=\operatorname{co}_0} replaces each coefficient~$a_k$ by \m{\operatorname{co}_0(a_k)} and keeps~$1$.
+(d) $\ret_L(y)\in\Mloc(L)\subseteq\Mlocinf(L)$. Multiplication by~$\omega$ is an equivariant map
+\m{L\to L}, so by~(b) and the $\fS$-linearity of~$\ret_L$,
+$(1\otimes\omega)\ret_L(y)=\ret_L((1\otimes\omega)y)=\ret_L([i]y)=[i]\ret_L(y)$, as \m{[i]\in\WW}. The
+values are in the right steps of the filtration by~(c) with \m{v=0}.
+\end{proof}
+
+\sect{Deepening}{s:deep}
+\begin{lemma}[small facts]\label{l:small}
+In Setting~\ref{set:lattice}:
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item If the Kummer chart is unramified and $n$ is an integer such that \m{p\mid n} implies \m{n=0}, then
+\m{\cost{\nu}{n}\le3\nu} for every \m{\nu\ge0}.
+\item Every element~$c$ of~$F$, seen in~$\BdR$, satisfies \m{g\cdot c=c} for all \m{g\in\Gamma'}.
+\end{enumerate}
+\end{lemma}
+\leanline{\lean{costleofisUnramified}\sep \lean{galMonoidsmullocalFieldOf}}
+\begin{proof}
+(a) \m{v_p(n)=0} and \m{\fd=0}. (b) $F$ is the field fixed by \m{j_\Gamma(\Gamma')}.
+\end{proof}
+
+\begin{lemma}[deep elements have better exponents]\label{l:deep}
+In Setting~\ref{set:lattice}, let $L$ be a lattice datum, $i$ a letter, $o^{\mathrm{lo}}$ and
+$o^{\mathrm{hi}}$ exponent functions, and $x\in\wExp{L}{i}{o^{\mathrm{lo}}}$. If
+$x\in\invMod{\wExp{L}{i}{o^{\mathrm{hi}}}}$, then
+$x\in\wExp{L}{i}{\impE{o^{\mathrm{lo}}}{o^{\mathrm{hi}}}{\cdot}{\cdot}}$.
+\end{lemma}
+\leanline{\lean{memwithExponentsofdeep}}
+\begin{proof}
+Fix \m{\nu\ge0}, \m{u\in U_L(i^{p^{-\nu}})} and \m{\mu\in\Per_{i^{p^{-\nu}},u}(L)}, and write
+\m{a=o^{\mathrm{lo}}(\nu,u)}, \m{b=o^{\mathrm{hi}}(\nu,u)} and \m{V=\mu(\varphi^{-\nu}x)}. Then
+\m{V\in\Fil^{a}\BdR}, and $gV-V=\mu(\varphi^{-\nu}(gx-x))\in\Fil^{b}\BdR$ for all \m{g\in\Gamma'}
+(Lemma~\ref{l:loc}(f)). By Input~\ref{i:tate} there is \m{c\in F} with \m{V-c\in\Fil^{b}\BdR}. Then
+\m{c\in\Fil^{\min(a,b)}\BdR}, so \m{c=0} or \m{\min(a,b)\le0}. If \m{a>0}: either \m{c=0}, or \m{b\le0} and
+$c\in\Fil^{0}\BdR\subseteq\Fil^{b}\BdR$; in both cases \m{V\in\Fil^{b}\BdR}. If \m{a\le0}: \m{V-c} and~$c$
+lie in \m{\Fil^{\min(b,0)}\BdR}.
+\end{proof}
+
+\begin{proposition}[one step deeper, at an explicit cost]\label{p:succ}
+In Setting~\ref{set:lattice}, let $L$ be a lattice datum, \m{\nu\ge0} an integer and $n$ an integer. There are
+an integer \m{m\ge0}, elements \m{t_1,\dots,t_m\in\Gamma'} and \m{y\in\Ainf} such that for every
+\m{x\in\Mloc(L)} and every \m{\mu\in\Per(L)}: if there is \m{c\in F} with
+$\mu(\varphi^{-\nu}x)-c\in\Fil^{n}\BdR$, then there is \m{c'\in F} with
+\[\mu\Bigl(\varphi^{-\nu}\Bigl(p^{\cost{\nu}{n}}x+\sum_{k=1}^{m}y\,(z\tau)^{-1}(t_kx-x)\Bigr)\Bigr)-c'
+\ \in\ \Fil^{n+1}\BdR .\]
+\end{proposition}
+\leanline{\lean{existsreachesdepthsucc}}
+\begin{proof}
+\emph{The case \m{n\ne0}.} Take \m{g,w,y_0,X} from Theorem~A for \m{(\nu,n)}, and \m{m=1}, \m{t_1=g},
+\m{y=-y_0}. Let \m{V=\mu(\varphi^{-\nu}x)} and \m{V-c\in\Fil^{n}\BdR}. Put
+$\pi_\nu=\varphi^{-\nu}(\cE_\nu)$, a uniformizer of~$B^{+}_{\mathrm{dR}}$ in~$F_\nu$, and
+\m{V-c=\pi_\nu^{\,n}V_0}; then \m{V_0\in F_\nu\cap\Fil^{0}\BdR}, by Lemma~\ref{l:loc}(i). With
+\m{\hat w=\varphi^{-\nu}(w)} we have \m{g\pi_\nu=\hat w\pi_\nu} and \m{gc=c}, so
+\[gV-V=\pi_\nu^{\,n}\bigl(\hat w^{n}\,gV_0-V_0\bigr)
+=\pi_\nu^{\,n}\bigl((\hat w^{n}-1)V_0+\hat w^{n}(gV_0-V_0)\bigr).\]
+Here \m{gV_0-V_0\in\Fil^{1}\BdR} by Input~\ref{i:val}(b), applied to the single element~$1$ and to the
+divisibility \m{\cE_\nu\mid gs-s} of Theorem~A; and $\hat w^{n}-1=\varphi^{-\nu}(z\tau)\,\varphi^{-\nu}(X)$.
+As \m{\varphi^{-\nu}(z\tau)} is a unit of~$B^{+}_{\mathrm{dR}}$, Lemma~\ref{l:loc}(f) gives
+\[\mu\bigl(\varphi^{-\nu}((z\tau)^{-1}(gx-x))\bigr)\ \equiv\ \pi_\nu^{\,n}\varphi^{-\nu}(X)V_0
+\pmod{\Fil^{n+1}\BdR}.\]
+Multiply by \m{\varphi^{-\nu}(y_0)} and use
+$\varphi^{-\nu}(y_0X)\equiv p^{\cost{\nu}{n}}$ modulo \m{\Fil^{1}\BdR}: the value of~$\mu$ at
+$\varphi^{-\nu}(y_0(z\tau)^{-1}(gx-x))$ is congruent to \m{p^{\cost{\nu}{n}}(V-c)}. So the element of the
+statement has value congruent to $p^{\cost{\nu}{n}}V-p^{\cost{\nu}{n}}(V-c)=p^{\cost{\nu}{n}}c$, and
+\m{c'=p^{\cost{\nu}{n}}c} serves.
+
+\emph{The case \m{n=0}.} Take the \m{m=p^{\cost{\nu}{0}}} elements~$t_k$ of Lemma~\ref{l:zero} and
+\m{y=z\tau}. The element of the statement is \m{mx+\sum_k(t_kx-x)=\sum_kt_kx}, with value
+\m{\sum_kt_kV}, where $V=\mu(\varphi^{-\nu}x)\in F_\nu\cap\Fil^{0}\BdR$. By Lemma~\ref{l:zero} and
+Input~\ref{i:val}(b), $g\sum_kt_kV-\sum_kt_kV\in\Fil^{1}\BdR$ for all \m{g\in\Gamma'}; Input~\ref{i:tate}
+gives~$c'$.
+\end{proof}
+
+\sect{The Hodge expansion and the proof of Theorem B}{s:hodge}
+Throughout, the setting is Setting~\ref{set:lattice}. The space \m{\operatorname{Fun}(L)} of all $\Ainf$-linear
+maps \m{\WC\otimes L\to\BdR} is a vector space over~$\BdR$.
+
+\begin{lemma}[testing a value on a Hodge basis]\label{l:basis}
+Let $L$ be a lattice datum, $x$ an element of the fraction span of~$L$, $i$ a letter, \m{n\in\mathbb{Z}} and
+\m{\mu\in\operatorname{Fun}(L)}. Suppose that $D(\mu)\cdot\mu'(x)\in\Fil^{n}\BdR$ for every
+\m{\kappa\in\mathbb{Z}}, every \m{\mu'\in\Per_{i,\kappa}(L)} and every $\BdR$-linear map
+$D\colon\operatorname{Fun}(L)\to\BdR$ with the two properties
+\begin{enumerate}[label=\textup{(D\arabic*)},leftmargin=2.9em,itemsep=2pt]
+\item if $\lambda\in\operatorname{Fun}(L)$, \m{a\in\mathbb{Z}} and $\lambda(1\otimes t)\in\Fil^{a}\BdR$ for
+all \m{t\in L}, then $D(\lambda)\in\Fil^{a+\kappa}\BdR$;
+\item if $\lambda,\lambda'\in\operatorname{Fun}(L)$, \m{g\in\Gamma'} and
+$\lambda'(1\otimes gt)=g\cdot\lambda(1\otimes t)$ for all \m{t\in L}, then \m{D(\lambda')=g\cdot D(\lambda)}.
+\end{enumerate}
+Then \m{\mu(x)\in\Fil^{n}\BdR}.
+\end{lemma}
+\leanline{\lean{memhodgeFilofhodgebasis}}
+\begin{proof}
+Take a $\Zp$-basis \m{(e_k)_k} of~$L$ and $\kappa_k$, $\mathsf{H}$ as in Input~\ref{i:hodge}. By
+Input~\ref{i:forms}(e) there are \m{\mu_k\in\operatorname{Fun}(L)} with
+$\mu_k(1\otimes e_a)=(\mathsf{H}^{-1})_{ka}$. For $\lambda\in\operatorname{Fun}(L)$ put
+$D_k(\lambda)=\sum_a\lambda(1\otimes e_a)\mathsf{H}_{ak}$. Then \m{\lambda} and \m{\sum_kD_k(\lambda)\mu_k}
+agree on the basis, hence on the fraction span, so
+$\mu(x)=\sum_kD_k(\mu)\,\mu_k(x)$. It suffices to check that each triple \m{(\kappa_k,\mu_k,D_k)} is
+admissible. The identity $\mathsf{R}(g)\,g(\mathsf{H})=\mathsf{H}$ says exactly that $\mu_k$ is
+$\Gamma'$-equivariant on \m{1\otimes L} and that $D_k$ has~(D2). The entries of the $k$-th row
+of~$\mathsf{H}^{-1}$ lie in \m{\Fil^{-\kappa_k}\BdR}; as $\pr_i(1\otimes t)\in\Ainf\otimes L$, this gives
+\m{\mu_k\in\Per_{i,\kappa_k}(L)}. The entries of the $k$-th column of~$\mathsf{H}$ lie in
+\m{\Fil^{\kappa_k}\BdR}, which gives~(D1).
+\end{proof}
+
+\begin{lemma}[Frobenius shifts the exponents]\label{l:shift}
+Let $L$ be a lattice datum, $i$ a letter, \m{l\ge0} an integer, $o$ an exponent function and
+$x\in\WC\otimes L$. If \m{x\in\wExp{L}{i^{p^{-l}}}{o}}, then
+$\varphi^{l}x\in\wExp{L}{i}{\frobX{l}{0}{o}{\cdot}{\cdot}}$.
+\end{lemma}
+\leanline{\lean{phipowmemwithExponents}}
+\begin{proof}
+\m{\varphi^{l}x} lies in \m{\Mlocinf(L)} by Lemma~\ref{l:loc}(g) and~(h), and in the part at~$i$. Let
+\m{\mu\in\Per_{i^{p^{-\nu}},u}(L)}. For \m{\nu\ge l},
+$\mu(\varphi^{-\nu}\varphi^{l}x)=\mu(\varphi^{-(\nu-l)}x)\in\Fil^{o(\nu-l,u)}\BdR$, the letter being
+\m{(i^{p^{-l}})^{p^{-(\nu-l)}}}. For \m{\nu<l} we need $\mu(\varphi^{a+1}x)\in\Fil^{0}\BdR$ with
+\m{a=l-\nu-1\ge0}: this holds on \m{\Minf(L)} by definition, and it passes from \m{\cE_{\nu'}x} to~$x$
+because $\mu(\varphi^{a+1}(\cE_{\nu'}x))=\cE_{\nu'+a+1}\,\mu(\varphi^{a+1}x)$ and the image
+of~\m{\cE_{\nu'+a+1}} in~$\BdR$ is a unit of~$B^{+}_{\mathrm{dR}}$ (Input~\ref{i:div}, with index~$0$).
+\end{proof}
+
+\begin{proof}[Proof of Theorem B]
+Write \m{x=\varphi^{l}x_0} and \m{j=i^{p^{-l}}}; then \m{x\in(\WC\otimes L)_i} if and only if
+\m{x_0\in(\WC\otimes L)_j}.
+
+\emph{From the Kisin module to the exponents.} Let \m{x_0\in\Minf(L)} lie in the part at~$j$. Then
+\m{\tau^{a}x_0\in\Ainf\otimes L} for some~$a$, and for \m{\mu\in\Per_{j^{p^{-\nu}},u}(L)} Lemma~\ref{l:exp}(c)
+gives $\varphi^{-\nu}(\tau)^{a}\mu(\varphi^{-\nu}x_0)\in\Fil^{-u}\BdR$, with \m{\varphi^{-\nu}(\tau)} a unit
+of~$B^{+}_{\mathrm{dR}}$. So \m{x_0\in\wExp{L}{j}{\std_0}}, and Lemma~\ref{l:shift} gives
+$x\in\wExp{L}{i}{\frobX{l}{0}{\std_0}{\cdot}{\cdot}}=\wExp{L}{i}{\std_l}$.
+
+\emph{From the exponents to the Kisin module.} Let \m{x\in\wExp{L}{i}{\std_l}}. We must show that $x_0$ is
+killed into \m{\Ainf\otimes L} by a power of~$\tau$, and that $\mu(\varphi^{a+1}x_0)\in\Fil^{0}\BdR$ for
+\m{a\ge0}, \m{\mu\in\Per(L)}.
+
+\emph{First.} We show that every \m{x'\in\wExp{L}{i}{\std_l}} is multiplied into \m{\Ainf\otimes L} by a power
+of~\m{\varphi^{l}(\tau)}; applying~$\varphi^{-l}$ then gives the claim for~$x_0$. This goes by induction on the
+localization. On \m{\Minf(L)} it holds because $\tau$ divides \m{\varphi^{l}(\tau)}. Suppose it holds for
+\m{\cE_\nu x'}, where \m{x'\in\wExp{L}{i}{\std_l}}: so \m{c\,\cE_\nu x'\in\Ainf\otimes L} with~$c$ a power of
+\m{\varphi^{l}(\tau)}. If \m{\nu<l}, then \m{\cE_\nu} divides \m{\varphi^{l}(\tau)} (Input~\ref{i:div}), and a
+higher power works for~$x'$. If \m{\nu\ge l}, write $c\,\cE_\nu x'=\sum_kb_k(1\otimes e_k)$ in a
+$\Zp$-basis of~$L$ and let $\lambda_k\in\operatorname{Fun}(L)$ extend the $k$-th coordinate. Then
+\[\varphi^{-\nu}(b_k)=\lambda_k\bigl(\varphi^{-\nu}(c\,\cE_\nu x')\bigr)
+=\varphi^{-\nu}(c)\,\varphi^{-\nu}(\cE_\nu)\,\lambda_k(\varphi^{-\nu}x').\]
+We claim $\lambda_k(\varphi^{-\nu}x')\in\Fil^{0}\BdR$. By Lemma~\ref{l:basis}, at the letter
+\m{i^{p^{-\nu}}} and for the element \m{\varphi^{-\nu}x'} of the fraction span, it suffices that
+$D(\lambda_k)\mu'(\varphi^{-\nu}x')\in\Fil^{0}\BdR$ for admissible \m{(\kappa,\mu',D)}: by~(D1),
+$D(\lambda_k)\in\Fil^{\kappa}\BdR$, and by Lemma~\ref{l:any} with \m{M=\Fil^{-\kappa}\BdR},
+$\mu'(\varphi^{-\nu}x')\in\Fil^{-\kappa}\BdR$, since \m{\std_l(\nu,v)=-v\ge-\kappa} for \m{v\le\kappa}. So
+$\varphi^{-\nu}(b_k)\in\Fil^{1}\BdR$, that is \m{\cE_\nu\mid b_k}, and \m{c\,x'\in\Ainf\otimes L} because
+\m{\WC\otimes L} has no $\Ainf$-torsion.
+
+\emph{Second.} Let \m{\mu\in\Per(L)} and \m{a\ge0}; apply Lemma~\ref{l:basis} to~$\mu$, the element
+\m{\varphi^{a+1}x_0} and the letter \m{j^{p^{a+1}}}, with \m{n=0}. For admissible \m{(\kappa,\mu',D)}:
+\m{D(\mu)} is fixed by~$\Gamma'$ by~(D2), because $\mu$ is a period, so \m{D(\mu)\in\Fil^{0}\BdR}
+(Input~\ref{i:tate}). And $\varphi^{a+1}x\in\wExp{L}{i^{p^{a+1}}}{\frobX{a+1}{0}{\std_l}{\cdot}{\cdot}}$ by
+Lemma~\ref{l:shift}, with \m{\frobX{a+1}{0}{\std_l}{l}{v}=0} for every~$v$; so
+$\mu'(\varphi^{a+1}x_0)=\mu'(\varphi^{-l}\varphi^{a+1}x)\in\Fil^{0}\BdR$ by Lemma~\ref{l:any} with
+\m{M=\Fil^{0}\BdR}.
+\end{proof}
+
+\begin{lemma}[projections to a letter]\label{l:proj}
+Let $L$ be a lattice datum, $x\in\WC\otimes L$, $i$ a letter and \m{l\ge0}.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item If \m{\varphi^{-l}x\in\Minf(L)}, then \m{\pr_i(x)\in\wExp{L}{i}{\std_l}}.
+\item If $x$ is a point over~$F_0$ of \m{\varphi^{l}\Minf(L)}, that is \m{\varphi^{-l}x\in\Minf(L)} and
+\m{\mu(x)\in F_0} for all \m{\mu\in\Per(L)}, then \m{\pr_i(x)\in\locLP{l}{i}(L)}.
+\end{enumerate}
+\end{lemma}
+\leanline{\lean{letterProjmemwithExponents}\sep \lean{letterProjmemofvalueFieldPoints}}
+\begin{proof}
+(a) $\pr_i$ is a combination, with coefficients in~$\Ainf$, of powers of \m{1\otimes\omega}, and
+multiplication by~$\omega$ is an equivariant map \m{L\to L}; so $\varphi^{-l}\pr_i(x)\in\Minf(L)$
+(Input~\ref{i:forms}(b)), and Theorem~B applies. (b) By (a), and because \m{\mu\circ\pr_i\in\Per(L)}.
+\end{proof}
+
+\sect{Exponents add: the proof of Theorem C}{s:add}
+\begin{lemma}[pairings]\label{l:pair}
+In Setting~\ref{set:lattice}, let $A$, $L$, $C$ be lattice data and \m{b\colon A\times L\to C} an
+$\cO$-bilinear map.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item For a letter~$i$, $x\in\WC\otimes L$ and $y\in\WC\otimes A$:
+$\wPair{b}{\pr_i(y)}{x}=\pr_i\bigl(\wPair{b}{y}{x}\bigr)$.
+\item Let $T$ be a multiplicative subset of~$\Ainf$ and let $N_A$, $N_L$, $N_C$ be $\Ainf$-submodules of
+\m{\WC\otimes A}, \m{\WC\otimes L}, \m{\WC\otimes C}. If some element of~$T$ multiplies $y$ into~$N_A$, some
+element of~$T$ multiplies $x$ into~$N_L$, and \m{\wPair{b}{y'}{x'}\in N_C} for all \m{y'\in N_A},
+\m{x'\in N_L}, then some element of~$T$ multiplies \m{\wPair{b}{y}{x}} into~$N_C$.
+\end{enumerate}
+\end{lemma}
+\leanline{\lean{wittPairingletterProjleft}\sep \lean{wittPairingmemsaturateBy}}
+\begin{proof}
+(a) $b$ is $\cO$-bilinear, so its extension carries \m{1\otimes\omega} in the first variable to
+\m{1\otimes\omega} on~$C$. (b) By bilinearity.
+\end{proof}
+
+\begin{proof}[Proof of Theorem C]
+\emph{A criterion.} Let \m{\mu\in\Per(C)}, \m{m\in\mathbb{Z}\times\Gamma}, a letter~$j$, \m{u\in\mathbb{Z}} and
+\m{n\in\mathbb{Z}}; let $x'$ lie in the fraction span of~$L$ and \m{y'\in\WC\otimes A}. We claim that
+$\mu(m\cdot\wPair{b}{y'}{x'})\in\Fil^{n}\BdR$ provided that
+\begin{equation}\label{e:crit}
+\lambda(my')\cdot\mu'(mx')\in\Fil^{n}\BdR
+\end{equation}
+for all \m{\kappa\in\mathbb{Z}}, all \m{\mu'\in\Per_{j,\kappa}(L)} and all \m{\lambda\in\Per(A)} such that
+\m{\lambda\in\Per_{j,u-\kappa}(A)} if \m{\mu\in\Per_{j,u}(C)}. Indeed, the equivariance of~$b$ gives
+$m\cdot\wPair{b}{y'}{x'}=\wPair{b}{my'}{mx'}$. Apply Lemma~\ref{l:basis} to the lattice datum~$L$, the
+element \m{mx'} and the functional \m{\mu\circ\wPair{b}{my'}{\cdot}}. For an admissible triple
+\m{(\kappa,\mu',D)} put $\lambda(a)=D\bigl(\mu\circ\wPair{b}{a}{\cdot}\bigr)$ for \m{a\in\WC\otimes A}. This
+is an $\Ainf$-linear map; it is a period of~$A$ by~(D2) and the equivariance of $b$ and~$\mu$; and if
+\m{\mu\in\Per_{j,u}(C)}, then by Lemma~\ref{l:pair}(a) the functional
+$\mu\circ\wPair{b}{\pr_j(1\otimes a)}{\cdot}$ takes values in \m{\Fil^{-u}\BdR} on \m{1\otimes L}, so
+$\lambda(\pr_j(1\otimes a))\in\Fil^{-u+\kappa}\BdR$ by~(D1): $\lambda$ has type \m{u-\kappa} at~$j$.
+So~\eqref{e:crit} is what Lemma~\ref{l:basis} asks.
+
+\emph{The localized module.} By Lemma~\ref{l:pair}(b) for the multiplicative set generated by the~$\cE_\nu$,
+then for the powers of~$\tau$, it suffices to see that \m{\wPair{b}{y'}{x'}\in\Minf(C)} for
+\m{y'\in\Minf(A)}, \m{x'\in\Minf(L)}. The pairing maps $(\Ainf\otimes A)\times(\Ainf\otimes L)$ into
+\m{\Ainf\otimes C}. And for \m{\mu\in\Per(C)}, \m{a\ge0}, the criterion with \m{m=\varphi^{a+1}} and
+\m{n=0} applies: \m{\lambda(\varphi^{a+1}y')} and \m{\mu'(\varphi^{a+1}x')} lie in \m{\Fil^{0}\BdR} by the
+definition of the Kisin modules.
+
+\emph{The letter.} \m{y=\pr_i(y)}, so $\wPair{b}{y}{x}=\pr_i(\wPair{b}{y}{x})$ by Lemma~\ref{l:pair}(a).
+
+\emph{The exponents.} Let \m{\nu\ge0}, \m{j=i^{p^{-\nu}}}, \m{v\in U_C(j)} and \m{\mu\in\Per_{j,v}(C)}. By the
+criterion with \m{m=\varphi^{-\nu}}, \m{u=v} and \m{n=o_C(\nu,v)}, it suffices that
+$\lambda(\varphi^{-\nu}y)\,\mu'(\varphi^{-\nu}x)\in\Fil^{o_C(\nu,v)}\BdR$ for \m{\mu'\in\Per_{j,\kappa}(L)}
+and \m{\lambda\in\Per_{j,v-\kappa}(A)}. Apply Lemma~\ref{l:any} to~$y$ and~$\lambda$, with the module
+$M_1=\{a\in\BdR: a\,\mu'(\varphi^{-\nu}x)\in\Fil^{o_C(\nu,v)}\BdR\}$: we must show
+$\Fil^{o_A(\nu,u)}\BdR\subseteq M_1$ for \m{u\in U_A(j)}, \m{u\le v-\kappa}. Fix such~$u$ and
+\m{a\in\Fil^{o_A(\nu,u)}\BdR}, and apply Lemma~\ref{l:any} to~$x$ and~$\mu'$, with
+$M_2=\{c\in\BdR: a\,c\in\Fil^{o_C(\nu,v)}\BdR\}$: for \m{u'\in U_L(j)} with \m{u'\le\kappa} we have
+\m{u+u'\le v}, so $o_C(\nu,v)\le o(\nu,u')+o_A(\nu,u)$ and
+$a\cdot\Fil^{o(\nu,u')}\BdR\subseteq\Fil^{o_C(\nu,v)}\BdR$.
+\end{proof}
+
+\sect{The lifting ideal and cokernel killers}{s:kill}
+Throughout, the setting is Setting~\ref{set:lattice} and $S$ is a side over~$\cO$.
+
+\begin{lemma}[counting in two windows]\label{l:count}
+Let \m{n,p,d,m,H\ge0} be integers and $c$ an integer. If \m{n\le p\,m} and \m{|c|+n\le H}, then
+\[\sum_{a\in\twoWin{n}{c}}\bigl(v_p(a)+d\bigr)\ \le\ (4m+2)\,\lfloor\log_pH\rfloor+(4n+2)\,d .\]
+\end{lemma}
+\leanline{\lean{sumtwoWindowsle}\sep here $p$ is any natural number, \m{v_p(0)=0}, and \m{\lfloor\log_pH\rfloor} is read as~$0$ when \m{p\le1} or \m{H=0}}
+\begin{proof}
+The set \m{\twoWin{n}{c}} has at most \m{4n+2} elements, which accounts for the terms~$d$. A non-zero
+\m{a\in\twoWin{n}{c}} has \m{|a|\le H}, so \m{v_p(a)\le\lfloor\log_pH\rfloor}; and \m{v_p(a)\ne0} only if
+\m{a=pa'}, where $a'$ lies in \m{\twoWin{m}{\lfloor c/p\rfloor}}, a set with at most \m{4m+2} elements.
+\end{proof}
+
+\begin{lemma}[cyclotomic twists]\label{l:chi}
+Let $L$ be a lattice datum, \m{c\ge0} an integer, $i$ a letter and \m{x\in\wExp{L}{i}{\std_0}}. If
+\m{g t=\chi(g)^{c}t} for all \m{g\in\Gamma} and \m{t\in L}, then \m{\tau^{c}x\in\Ainf\otimes L}.
+\end{lemma}
+\leanline{\lean{taupowsmulmemainfLatticeofchi}}
+\begin{proof}
+By Theorem~B with \m{l=0}, \m{x\in\Minf(L)}; by the frame theorem \m{\tau^{h_L}x\in\Ainf\otimes L}; and
+\m{h_L\le c} because all jumps of~$L$ are~$-c$ (Input~\ref{i:ext}).
+\end{proof}
+
+\begin{lemma}[the lifting ideal: formal properties]\label{l:ideal}
+Let \m{r,l,n,c,a\ge0} be integers, $i$ a letter and \m{s\in\Ainf}.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item \m{s\in\liftId{S}{r}{l}{i}} if and only if there is $t\in\Ainf$ such that for every $c'\in C_S$
+some $x\in\wExp{\extL{S}}{i}{\std_l}$ has $(1\otimes\projC{S})(x)=(s-rt)\cdot\constAt{S}{i}{c'}$.
+\item $p^{\kappa}\in\liftId{S}{p^{\kappa}}{l}{i}$ for every integer \m{\kappa\ge0}.
+\item $\varphi^{l}\,\constAt{S}{i}{c'}=\constAt{S}{i^{p^{l}}}{c'}$ for $c'\in C_S$.
+\item If \m{s\in\liftId{S}{r}{0}{i}} and \m{u\le n} for every \m{u\in U_{Y_S}(i)}, then
+$s\,\cE^{n}\in\liftId{S}{r}{1}{i}$.
+\item If $p^{c}\in\liftId{S}{p^{c+1}}{l}{i}$, then $\liftId{S}{p^{c+1}}{l}{i}\subseteq\liftId{S}{0}{l}{i}$.
+\item $\constAt{S}{i}{c'}\in\locLP{l}{i}(\trivL{S})$ for $c'\in C_S$.
+\item $\varphi^{l}(s)\in\liftId{S}{r}{l}{i^{p^{l}}}$ if and only if \m{s\in\liftId{S}{r}{0}{i}}.
+\item $p^{c}z^{pa}\in\liftId{S}{r}{1}{i^{p}}$ if and only if $p^{c}z^{a}\in\liftId{S}{r}{0}{i}$.
+\end{enumerate}
+\end{lemma}
+\leanline{\lean{memliftIdealiff}\sep \lean{ppowmemliftIdealself}\sep \lean{phipowsmulconstantAt}\sep
+\lean{mulEpowmemliftIdealone}\sep \lean{liftIdealleofppowmem}\sep \lean{constantAtmemlocLetterPart}\sep
+\lean{phipowmemliftIdealiff}\sep \lean{ppowmulzpowmemliftIdealiff}}
+\begin{proof}
+(a) \m{\Ainf\otimes C_S} is spanned over~$\Ainf$ by the \m{1\otimes c'}, and the image of
+\m{\wExp{\extL{S}}{i}{\std_l}} is an $\Ainf$-module. (b) It is the generator. (c) $\varphi$ maps the
+Teichmüller lift of~$i$ to that of~$i^{p}$, and fixes \m{1\otimes\omega} and \m{1\otimes c'}.
+
+(d) Let $x$ lift \m{(s-rt)\constAt{S}{i}{c'}} as in~(a), with \m{l=0}. By Lemma~\ref{l:exp}(f) with
+\m{\nu_0=0}, \m{\cE^{n}x} has the exponents \m{n-u\ge0=\std_1(0,u)} at \m{\nu=0} and \m{-u=\std_1(\nu,u)} at
+\m{\nu\ge1}, for \m{u\in U_{Y_S}(i)}; it lifts $(s\cE^{n}-rt\cE^{n})\constAt{S}{i}{c'}$.
+
+(e) Put \m{J=\liftId{S}{0}{l}{i}}; then $\liftId{S}{p^{c+1}}{l}{i}=(p^{c+1})+J$. The hypothesis says
+$(p^{c})\subseteq p\cdot(p^{c})+J$. As $\Ainf$ is $p$-adically complete, $p$ lies in its Jacobson radical,
+and Nakayama's lemma gives \m{(p^{c})\subseteq J}.
+
+(f) The element \m{1\otimes c'} lies in \m{\Ainf\otimes C_S}, is fixed by~$\varphi$, and every period takes a
+$\Gamma'$-fixed value on it, which lies in \m{\Fil^{0}\BdR\cap F_0} (Input~\ref{i:tate}); so it is a point
+over~$F_0$ of \m{\varphi^{l}\Minf(\trivL{S})}, and Lemma~\ref{l:proj}(b) applies.
+
+(g) By (a), Theorem~B and~(c): $x\in\wExp{\extL{S}}{i^{p^{l}}}{\std_l}$ if and only if
+$\varphi^{-l}x\in\wExp{\extL{S}}{i}{\std_0}$, and $\varphi^{l}$ is a bijection that commutes with
+\m{1\otimes\projC{S}} and fixes the integer~$r$. (h) is (g) for \m{l=1}, since \m{\varphi(z)=z^{p}}.
+\end{proof}
+
+\begin{lemma}[lifts over~$\fS$]\label{l:liftS}
+Let \m{r,l\ge0} be integers, $i$ a letter and \m{f\in\fS} with \m{f\in\liftId{S}{r}{l}{i}}. Then there is
+\m{t\in\fS} such that for every \m{y\in\locLP{l}{i}(\trivL{S})} some \m{x\in\locLP{l}{i}(\extL{S})} has
+$(1\otimes\projC{S})(x)=(f-rt)\,y$.
+\end{lemma}
+\leanline{\lean{existsliftofmemliftIdeal}}
+\begin{proof}
+Write \m{f=rt_0+s} with \m{t_0\in\Ainf} and $s$ in the colon ideal of Definition~\ref{d:lift}(ii), and put
+\m{t=\operatorname{co}_0(t_0)}. Let \m{y\in\locLP{l}{i}(\trivL{S})}. As \m{U_{\trivL{S}}(j)=\{0\}}, $y$ has
+the exponents~$\std_0$, so \m{y\in\Ainf\otimes C_S} by Lemma~\ref{l:chi} with \m{c=0}, and
+\m{y=\pr_i(y)}. Hence \m{sy=(1\otimes\projC{S})(x_1)} with $x_1\in\wExp{\extL{S}}{i}{\std_l}$. Put
+\m{x=\ret_{\extL{S}}(x_1)}; it lies in \m{\locLP{l}{i}(\extL{S})} by Lemma~\ref{l:retprop}(d), and by
+Lemma~\ref{l:retprop}(b) and~(a),
+$(1\otimes\projC{S})(x)=\ret_{\trivL{S}}(sy)=\operatorname{co}_0(s)\,y=(f-rt)\,y$.
+\end{proof}
+
+\begin{lemma}[differentiating in the lifting ideal]\label{l:der}
+Let \m{r\ge0} be an integer, $i$ a letter, \m{f\in\fS}, \m{s,\alpha,\beta\in\Ainf} and \m{g\in\Gamma'}. If
+\m{f\in\liftId{S}{r}{1}{i}} and $z\tau\,\cE\,(s+\beta f)=\alpha\,(g f-f)$, then
+\m{s\in\liftId{S}{r}{1}{i}}.
+\end{lemma}
+\leanline{\lean{memliftIdealofderivation}}
+\begin{proof}
+Take \m{t\in\fS} from Lemma~\ref{l:liftS} with \m{l=1}, and \m{v\in\Ainf} with \m{gt-t=z\tau\cE v}
+(Input~\ref{i:gal}). Let $c'\in C_S$, \m{y=\constAt{S}{i}{c'}}, which lies in \m{\locLP{1}{i}(\trivL{S})}
+by Lemma~\ref{l:ideal}(f) and is fixed by~$g$, and let \m{x\in\locLP{1}{i}(\extL{S})} with
+\m{(1\otimes\projC{S})(x)=(f-rt)y}. Then
+$(1\otimes\projC{S})(gx-x)=\bigl((gf-f)-r\,z\tau\cE v\bigr)y$, and
+\[x'=\alpha\,\cE^{-1}(z\tau)^{-1}(gx-x)-\beta x\qquad\text{has}\qquad
+(1\otimes\projC{S})(x')=\bigl(s-r(\alpha v-\beta t)\bigr)\,y .\]
+By Lemma~\ref{l:ideal}(a) it remains to see that $x'\in\wExp{\extL{S}}{i}{\std_1}$. The element \m{gx-x}
+has the exponents~$\std_1$ (Lemma~\ref{l:exp}(g)). At \m{\nu=0} it has more: for a period~$\mu$ of type~$u$
+at~$i$, \m{V=\mu(x)} lies in \m{F_0\cap\Fil^{0}\BdR}, and \m{gV-V\in\Fil^{1}\BdR} by Input~\ref{i:val}(b),
+since \m{\cE\mid gs'-s'} for \m{s'\in\fS}. So $gx-x\in\wExp{\extL{S}}{i}{\frobX{1}{1}{\std_0}{\cdot}{\cdot}}$
+by Lemma~\ref{l:exp}(a), and so does \m{(z\tau)^{-1}(gx-x)} by Lemma~\ref{l:ztau}(b). Lemma~\ref{l:exp}(f)
+with \m{\nu_0=0}, \m{n=-1} then gives the exponents~$\std_1$ for \m{\cE^{-1}(z\tau)^{-1}(gx-x)}.
+\end{proof}
+
+\begin{lemma}[from level one to level zero, and removing~$\cE$]\label{l:down}
+Let \m{r,a,n,c,\kappa,b\ge0} be integers and $i$ a letter.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item If \m{pa\le n}, $p^{c}z^{n}\in\liftId{S}{r}{1}{i^{p}}$ and
+\m{c+v_p(n!)\le\kappa+v_p((pa)!)}, then $p^{\kappa}z^{a}\in\liftId{S}{r}{0}{i}$.
+\item If $p^{c}z^{a}\cE^{n}\in\liftId{S}{r}{1}{i}$, \m{c+\fd\,n+v_p(n!)\le b} and \m{a+n\le\kappa}, then
+$p^{b}z^{\kappa}\in\liftId{S}{r}{1}{i}$.
+\end{enumerate}
+\end{lemma}
+\leanline{\lean{memliftIdealzeroofmemone}\sep \lean{memliftIdealofmulEpow}}
+\begin{proof}
+(a) By induction on \m{n\ge pa}. If \m{n=pa}, then \m{c\le\kappa} and Lemma~\ref{l:ideal}(h) applies. For
+the step from $n$ to \m{n+1}, let $f=p^{c}z^{n+1}\in\liftId{S}{r}{1}{i^{p}}$ with
+$c+v_p((n+1)!)\le\kappa+v_p((pa)!)$. Choose \m{g\in\Gamma'} with \m{gz=[\varepsilon]z}, and
+\m{\alpha,\beta} with $\tau\cE(p^{v_p(n+1)}+\beta z)=\alpha([\varepsilon]^{n+1}-1)$
+(Input~\ref{i:lte}). Then $gf-f=p^{c}([\varepsilon]^{n+1}-1)z^{n+1}$ and
+\[z\tau\,\cE\,\bigl(p^{c+v_p(n+1)}z^{n}+\beta f\bigr)=\alpha\,(gf-f).\]
+By Lemma~\ref{l:der}, $p^{c+v_p(n+1)}z^{n}\in\liftId{S}{r}{1}{i^{p}}$, and the induction hypothesis applies
+to it, because $c+v_p(n+1)+v_p(n!)=c+v_p((n+1)!)$.
+
+(b) By induction on~$n$; for \m{n=0} the element \m{p^{b}z^{\kappa}} is a multiple of \m{p^{c}z^{a}}. For the
+step, let $f=p^{c}z^{a}\cE^{n+1}\in\liftId{S}{r}{1}{i}$. Take \m{g,w,y,X} from Theorem~A for
+\m{(0,n+1)}, and write \m{yX-p^{\cost{0}{n+1}}=\cE b_0}, \m{gz=z(1+\tau\cE v)} (Input~\ref{i:gal}) and
+$(1+\tau\cE v)^{a}=1+\tau\cE vt'$. Then
+\[gf-f=p^{c}z^{a}\cE^{n+1}\bigl((1+\tau\cE vt')w^{n+1}-1\bigr)
+=p^{c}z^{a}\cE^{n+1}\,\tau\,\bigl(zX+\cE vt'w^{n+1}\bigr),\]
+and a direct computation gives
+\[\begin{gathered}zy\cdot(gf-f)=z\tau\,\cE\,\bigl(s_1+\beta_1f\bigr),\\
+s_1=p^{c+\cost{0}{n+1}}z^{a+1}\cE^{n},\qquad \beta_1=zb_0+yvt'w^{n+1}.\end{gathered}\]
+By Lemma~\ref{l:der}, \m{s_1\in\liftId{S}{r}{1}{i}}. The induction hypothesis applies to it, with \m{a+1} in
+place of~$a$ and \m{c'=c+\cost{0}{n+1}} in place of~$c$: indeed \m{a+1+n\le\kappa} and
+\[c'+\fd n+v_p(n!)=c+v_p(n+1)+\fd+\fd n+v_p(n!)=c+\fd(n+1)+v_p((n+1)!)\le b .\]
+\end{proof}
+
+\begin{lemma}[a power of the coordinate, modulo~$p^{\kappa}$]\label{l:zpow}
+Let \m{n\ge0} be an integer with \m{u\le n} for every letter~$j$ and every \m{u\in U_{Y_S}(j)}, and let
+\m{\kappa\ge0} be an integer. Then there is an integer \m{a\ge0} with
+$z^{a}\in\liftId{S}{p^{\kappa}}{0}{j}$ for every letter~$j$ and \m{a\,p\le e_{\fc}\,(n+\kappa)+a}.
+\end{lemma}
+\leanline{\lean{existszpowmemliftIdeal}}
+\begin{proof}
+Let $I$ be the intersection of the ideals \m{\liftId{S}{p^{\kappa}}{0}{j}} over the letters~$j$. It
+contains~$p^{\kappa}$. It contains \m{\tau^{h}} with \m{h=h_{\extL{S}}}: for $c'\in C_S$,
+$\tau^{h}(1\otimes(0,c'))\in\Minf(\extL{S})$ by the frame theorem, its projection to the letter~$j$ has the
+exponents~$\std_0$ by Lemma~\ref{l:proj}(a), and it maps to \m{\tau^{h}\constAt{S}{j}{c'}}. Since $z$ is not
+a unit and \m{p\nmid\tau}, $z$ lies in the radical of \m{(p,\tau)} (Input~\ref{i:rad}), hence in the radical
+of~$I$. Let $a$ be the least integer with \m{z^{a}\in I}, and put \m{N=e_{\fc}(n+\kappa)+a} and
+\m{a'=\lfloor N/p\rfloor}. It suffices to show \m{z^{a'}\in I}: then \m{a\le a'}, that is \m{ap\le N}.
+
+Fix a letter~$i$. By Lemma~\ref{l:ideal}(d), $z^{a}\cE^{n}\in\liftId{S}{p^{\kappa}}{1}{i^{p}}$, and
+\m{p^{\kappa}z^{a}} lies there too. Since \m{z^{e_{\fc}}\in(\cE,p)} (Input~\ref{i:mod}),
+$z^{e_{\fc}(n+\kappa)}\in(\cE,p)^{n+\kappa}\subseteq(\cE^{n},p^{\kappa})$, and so
+$z^{N}\in\liftId{S}{p^{\kappa}}{1}{i^{p}}$. Now Lemma~\ref{l:down}(a), with \m{c=0}, exponent~$0$ of~$p$ in
+the conclusion, and \m{pa'\le N}, gives $z^{a'}\in\liftId{S}{p^{\kappa}}{0}{i}$: its numerical condition
+\m{v_p(N!)\le v_p((pa')!)} holds because no multiple of~$p$ lies in \m{(pa',N]}.
+\end{proof}
+
+\begin{proof}[Proof of Theorem D]
+Here \m{\cE=z+p}, \m{e_{\fc}=1} and \m{\fd=0}. Put \m{q=\kappa+\rho}. By Lemma~\ref{l:zpow} for
+\m{n=(p-3)q} and the modulus \m{p^{q+1}} there is~$b$ with $z^{b}\in\liftId{S}{p^{q+1}}{0}{j}$ for all
+letters~$j$ and \m{(p-1)\,b\le(p-2)\,q+1}. We claim that, for every integer \m{a\ge0},
+\begin{equation}\label{e:mono}
+p^{\max(q-a,0)}z^{a}\in\liftId{S}{p^{q+1}}{0}{i}.
+\end{equation}
+Put \m{a_1=\max(a,b)}. Then $z^{a_1}\in\liftId{S}{p^{q+1}}{0}{i}$, so
+$z^{pa_1}\in\liftId{S}{p^{q+1}}{1}{i^{p}}$ by Lemma~\ref{l:ideal}(h), and Lemma~\ref{l:down}(a) with
+\m{c=0} and \m{n=pa_1} gives~\eqref{e:mono} as soon as
+$v_p((pa_1)!)\le\max(q-a,0)+v_p((pa)!)$. For \m{a\ge b} this is clear. For \m{a<b}, since
+\m{v_p((pa)!)=a+v_p(a!)}, it follows from \m{b+v_p(b!)\le q}; this is clear for \m{b=0}, and \m{(p-1)v_p(b!)\le b-1} for
+\m{b\ge1}, so
+\[(p-1)^{2}\bigl(b+v_p(b!)\bigr)\le(p-1)(pb-1)\le p(p-2)q+1<(p-1)^{2}(q+1).\]
+For \m{a=0}, \eqref{e:mono} reads $p^{q}\in\liftId{S}{p^{q+1}}{0}{i}$, so
+$\liftId{S}{p^{q+1}}{0}{i}\subseteq\liftId{S}{0}{0}{i}$ by Lemma~\ref{l:ideal}(e). Finally
+\[p^{\kappa}\cE^{\rho}=\sum_{a=0}^{\rho}\binom{\rho}{a}\,p^{\,q-a}z^{a},\]
+and each term lies in \m{\liftId{S}{p^{q+1}}{0}{i}} by~\eqref{e:mono}.
+\end{proof}
+
+\sect{Where the results are used}{s:used}
+Parts 2 and~3 of the notes on this unit (\emph{Cup products of crystalline classes vanish up to a power of~$p$:
+the walk along Frobenius orbits}, and the note on few low weights and tame types) use everything above. Proposition~\ref{p:succ} and Lemma~\ref{l:deep} are
+iterated in Part~2 over finite sets of steps \m{(\nu,n)}, the sum of whose costs is the price of a deep point;
+Theorem~C pairs a point of a side with a point of the dual side; Theorem~D feeds the walk
+along Frobenius orbits that bounds cup products of crystalline classes; and Lemma~\ref{l:count} and the lifting
+ideal with its differentiation lemma return in Part~3, in the estimates for cut windows and in the cokernel killer
+for tame types. Outside this unit nothing of this note is
+used directly.
+
+\sect{Notes on the formal text}{s:notes}
+\emph{Arguments as the text gives them.} The arguments of the declarations were read from the Lean text and from
+the census of the workspace; they were not printed by Lean. The census reads a bound variable of the definition of
+the exponent module as an explicit argument (an index~$\nu$): the definition has the two explicit arguments
+$i$ and~$o$ and the implicit~$L$, as every use shows, and the note writes all three. In the definition of the
+constants the census counts the element~$c$ to which the linear map is applied as an argument, and the note
+writes it so. In the pairing \m{\wPair{b}{y}{x}} the census reads the arrows of the bilinear map as two
+arguments, which are $y$ and~$x$. The declarations of the three files take the prime, the group and the chart as
+instance arguments through the types of their other arguments, also where the census does not list them.
+
+\emph{What the formal statements contain beyond the natural ones.} A lattice datum records a jump set at every
+embedding of~$\cO$, of which only the union over a letter, \m{U_L(i)}, is used here. A side carries an action of~$\Gamma$ on its module~$C_S$ that is never used: the extension and the trivial datum give~$C_S$ the trivial action. The sets \m{U_L(i)} are
+bounds: they contain the jumps and may be larger; this is why Lemma~\ref{l:any} allows a type~$u$ outside the
+set. The localized modules invert all~$\cE_\nu$, \m{\nu\ge0}, at once, and the exponent at each of them is a
+separate condition. In Definition~\ref{d:win}(iv) and Lemma~\ref{l:count} the letter~$p$ is an arbitrary natural
+number. Theorem~D assumes \m{p\ge5}; we did not examine whether the formal proof needs this, and the estimate
+given above uses only \m{p\ge3}. Theorem~A is stated for all \m{n\ne0}, negative ones included; the cost depends
+only on \m{v_p(n)}.
+
+\emph{Assemblies and small results.} Lemma~\ref{l:loc}, Lemma~\ref{l:exp}, Lemma~\ref{l:retprop},
+Lemma~\ref{l:small}, Lemma~\ref{l:pair} and Lemma~\ref{l:ideal} collect several declarations each; the Lean
+names are listed under them. The identity \m{\mu(\varphi^{0}x)=\mu(x)} is a declaration of its own in the formal
+text and is not stated here.
+
+\emph{The background.} The Inputs are stated as their Lean texts read; the frame theorem (Input~\ref{i:frame})
+has further clauses that this note does not use (a spanning statement up to a power of~$p$, used in Part~2). The
+period ring is Colmez's $B_{\max}$ under the name \emph{Bcris}. The second reader of the workspace compared the
+$p$-adic Hodge inputs with the literature: for Input~\ref{i:tate} she finds a weaker form of Tate's theorems,
+for Input~\ref{i:hodge} a classical statement for field coefficients whose formulation here is not located. We
+did not confirm a place in the literature for the other Inputs.
+
+\subhead{How this note was written.} From the reader's dossier of the unit: the statements of all members and
+the structured proofs of the declarations treated here. The three Lean files and the first part of the fourth
+were read in full, together with the Lean definitions of the background that the Settings restate (the chart, the
+Kummer chart, lattice data, periods, the Kisin modules, the frame theorem). The proof of Theorem~A was read line
+by line in the Lean text, because the reader had marked its bookkeeping as least certain; the account above of
+where the three parts of the cost come from is ours, and it agrees with the reader's steps. The proofs of
+Theorem~B, of Lemma~\ref{l:basis} and of Theorem~C were also rebuilt from the Lean terms. The arithmetic at the
+end of the proof of Theorem~D is ours and replaces an automated step of the formal proof. The program check of
+the unit's dossier covered \UnitSteps{} leaf steps of \UnitProofs{} proofs.
+
+\head{Appendix A. Concordance with the Lean artifact}
+{\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}\setlength{\tabcolsep}{0pt}
+\begin{longtable}{@{}p{30mm}p{56mm}p{43mm}r@{}}
+\textbf{In this note} & \textbf{Lean declaration} & \textbf{File} & \textbf{Lines}\\\midrule\endhead
+\ConcordanceRows
+\end{longtable}}
+
+Two statements as the artifact has them:
+\quoted{existsdepthstep}
+\quoted{memwithExponentsstdExponentiff}
+
+\emph{Legend.} The formal names of the objects and the letters of this note: the chart~\texttt{k} is~$\fc$, its
+ring \texttt{k.S} is~$\fS$, \texttt{k.E} is~$\cE$ and \texttt{k.frobE a} is~$\cE_\nu$; \texttt{k.f} is~$h$,
+\texttt{k.e} is~$e_{\fc}$ and \texttt{differentExp} is~$\fd$; \texttt{galMonoid} is~$\Gamma'$ acting through
+\m{(0,g)}; \texttt{zTau} is~\m{z\tau}; \texttt{hodgeFil n} is \m{\Fil^{n}\BdR}; \texttt{valueField a}
+is~$F_\nu$ and \texttt{localFieldOf} is~$F$; \texttt{coord₀} is \m{\operatorname{co}_0}; \texttt{forms} and
+\texttt{formsOfType} are \m{\Per(L)} and \m{\Per_{i,u}(L)}; \texttt{valueAt a μ x} is
+\m{\mu(\varphi^{-\nu}x)}; \texttt{kisinAinf}, \texttt{kisinLocAinf}, \texttt{kisinLoc}, \texttt{kisinModule} are
+\m{\Minf(L)}, \m{\Mlocinf(L)}, \m{\Mloc(L)}, \m{\mathfrak{M}(L)}; \texttt{stepBack i a} is
+\m{i^{p^{-\nu}}}; \texttt{stdExponent l} is~$\std_l$; \texttt{ζ} of the coefficients is~$\omega$.
+
+\head{Notation}
+\begingroup\fontsize{8.6}{10.9}\selectfont\raggedright
+\setlength{\columnsep}{9mm}\setlength{\parskip}{0pt}
+\begin{multicols}{2}
+\nt{$\ell$}{the prime of Chapter~VIII of the handout; it is~$p$ here}
+\nt{$p$}{a prime number; in Definition~\ref{d:win}(iv) and Lemma~\ref{l:count} any natural number}
+\nt{$\Qp$, $\Zp$, $\bar{\mathbb{Q}}_p$, $C$, $\mathcal{O}_C$}{the $p$-adic numbers and integers, an algebraic closure, its completion and the integers of the latter}
+\nt{$\GQp$}{the absolute Galois group of~$\Qp$}
+\nt{$\mathcal{O}_C^\flat$, $C^\flat$, $\Ainf$, $\WC$}{the tilt, its fraction field, their rings of Witt vectors}
+\nt{$\varphi$, $\theta$, $\theta_\nu$, $[\,\cdot\,]$}{Frobenius, Fontaine's map, \m{\theta\circ\varphi^{-\nu}}, the Teichmüller lift}
+\nt{$\varepsilon$, $\tau$, $\xi$}{a system of $p$-power roots of unity in the tilt, \m{[\varepsilon^{1/p}]-1}, a generator of \m{\ker\theta}}
+\nt{$B^{+}_{\mathrm{dR}}$, $\BdR$, $\Fil^{n}\BdR$}{the de Rham period rings and the filtration}
+\nt{$B_{\max}$, $A_{\max}$, $B^{+}$}{Colmez's period rings; \m{B^{+}=A_{\max}[1/p]}}
+\nt{$\Gamma$, $j_\Gamma$, $\chi$}{a group over~$\GQp$, its map, the cyclotomic character}
+\nt{$\fc$, $\Gamma'$}{the Kummer chart and its subgroup}
+\nt{$h$, $\WW$, $\mathbb{F}_{p^h}$, $X$, $\mathsf{A}$}{the residue degree, \m{W(\mathbb{F}_{p^h})}, the field, the variable and the unit series of the chart}
+\nt{$\fS$, $z$, $\cE$, $\cE_\nu$}{the ring of the chart, its coordinate, the Eisenstein element, \m{\varphi^\nu(\cE)}}
+\nt{$e_{\fc}$, $\fd$}{the index of the chart; $0$ or \m{v_p(e_{\fc})+1}}
+\nt{$F$, $F_\nu$, $\fS_B$}{the field fixed by~$\Gamma'$, the value fields, the ring of Setting~\ref{set:rings}}
+\nt{$\operatorname{co}_0$, $\operatorname{co}_a$}{coordinates \m{\Ainf\to\fS}}
+\nt{$\cO$, $\omega$}{the coefficient ring and its root of unity}
+\nt{$i$, $j$}{letters, elements of \m{\mathbb{F}_{p^h}^\times}}
+\nt{$L$, $L'$, $A$, $C$, $T$, $T'$, $T''$}{lattice data and lattices}
+\nt{$U_L(i)$, $h_L$}{the jump set at a letter, the jump bound}
+\nt{$\pr_i$, \m{(\WC\otimes L)_i}}{the projector to the letter~$i$ and its image}
+\nt{$\Per(L)$, $\Per_{i,u}(L)$, $\operatorname{Fun}(L)$}{periods, periods of type~$u$ at~$i$, all $\Ainf$-linear functionals}
+\nt{$\mu$, $\mu'$, $\mu_k$, $\lambda$, $\lambda'$, $\lambda_k$}{periods and functionals; in Setting~\ref{set:lattice} $\lambda$ is a semilinear map}
+\nt{$\Minf(L)$, $\Mlocinf(L)$, $\Mloc(L)$, $\mathfrak{M}(L)$}{Kisin modules over~$\Ainf$, localized, over~$\fS$ localized, over~$\fS$}
+\nt{$\std_l$}{the standard exponents of level~$l$}
+\nt{$o$, $o'$, $o_A$, $o_C$, $o^{\mathrm{lo}}$, $o^{\mathrm{hi}}$}{exponent functions}
+\nt{\m{\cost{\nu}{n}}}{the cost of a step}
+\nt{\m{\wExp{L}{i}{o}}, \m{\locLP{l}{i}(L)}}{elements with exponents; those in \m{\Mloc(L)} with standard exponents}
+\nt{\m{\locKP{Q}}, \m{\invMod{Q}}}{the elements of \m{\Mloc(L)} in~$Q$; the invariants modulo~$Q$}
+\nt{$\impE{o^{\mathrm{lo}}}{o^{\mathrm{hi}}}{\nu}{u}$, \m{\frobX{l}{n}{o}{\nu}{u}}}{improved and shifted exponents}
+\nt{\m{\wPair{b}{y}{x}}}{the extension of a bilinear map}
+\nt{$\ret_L$}{the retraction}
+\nt{$S$, $Y_S$, $C_S$, $\alpha_S$}{a side and its parts}
+\nt{\m{\extL{S}}, \m{\trivL{S}}, \m{\projC{S}}}{the extension, the trivial datum, the projection}
+\nt{\m{Z^{1}_{\mathrm{f}}(T)}}{the crystalline cocycles}
+\nt{$\JumpWin{\eta}{\varsigma}{\beta}{W}{U}$}{the set~$U$ lies in a low and a far window}
+\nt{\m{\raisedE{n}{\nu}{u}}, \m{\twoWin{n}{c}}, \m{\NoMult{p}{n}{\beta}}}{exponents raised at~$\cE$; two windows; no multiple of~$p$ near}
+\nt{\m{\constAt{S}{i}{c}}, \m{\liftId{S}{r}{l}{i}}, \m{\Kills{S}{i}{\kappa}{\rho}}}{constants, the lifting ideal, a cokernel killer}
+\nt{$\nu$, $\nu_0$, $\nu'$, $l$}{indices of Frobenius translates and levels}
+\nt{$u$, $u'$, $v$, $\kappa$, $\kappa_k$}{jumps and types; $\kappa$ is also an exponent of~$p$, $v$ also an element of~$\Ainf$ or of a field}
+\nt{$n$, $m$, $a$, $a'$, $a_1$, $b$, $c$, $d$, $k$, $q$, $r$, $H$, $N$, $W$, $\eta$, $\beta$, $\rho$}{integers; $b$ is also a bilinear map, $c$ also an element, $r$ also a map or an element}
+\nt{$\varsigma$}{a sign}
+\nt{$g$, $\gamma$, $t_k$}{elements of~$\Gamma'$ or of~$\GQp$; $\gamma$ is also a map \m{\cO\to C}}
+\nt{$w$, $w_0$, $\hat w$, $\mathsf{u}$}{units}
+\nt{$x$, $x'$, $x_0$, $x_1$, $y$, $y'$, $y_0$, $X$, $s$, $s'$, $t$, $t_0$, $t'$, $f$, $G$, $P_0$, $\alpha$, $\beta$, $s_1$, $\beta_1$, $a_k$, $b_k$, $b_0$, $c_k$, $v_k$, $w_a$, $e_k$}{elements of rings and modules; $f$ is also a map, $t$ also an element of a lattice}
+\nt{$V$, $V_0$, $\pi_\nu$, $\varrho$, $\sigma_\nu$}{elements of~$\BdR$, a uniformizer, a root of unity, a sum}
+\nt{$D$, $D_k$, $\mathsf{H}$, $\mathsf{R}(g)$}{coordinates in a Hodge basis, the Hodge matrix, the matrix of~$g$}
+\nt{$M$, $M_1$, $M_2$, $Q$, $N_A$, $N_L$, $N_C$, $I$, $J$}{submodules and ideals}
+\nt{$c'$}{an element of~$C_S$ or of~$F$; in the proof of Lemma~\ref{l:down} an integer}
+\end{multicols}
+\endgroup
+
+\end{document}

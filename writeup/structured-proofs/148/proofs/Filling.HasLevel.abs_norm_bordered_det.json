@@ -1,0 +1,214 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Filling.LinkPairing:25:7",
+ "summary": "Reorder the rows and columns of M into a block upper triangular matrix with diagonal blocks A and A*, where A is paddedLeading(j, Z(γ⁻¹)) with its top row replaced by that of Z(γ⁻¹); then [det M] = |N(det A)|². For j = ϱ + 1, A = Z(γ⁻¹) and |N(det A)| = N^{2f}minorNorm by definition; for j ≤ ϱ, Cramer's rule with the shared frame vector of γ⁻¹ at the top gives det A = (unit)·N·D_j, so again |N(det A)| = N^{2f}·minorNorm(S, j, γ).",
+ "intro_lines": [
+  [
+   26,
+   31
+  ]
+ ],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Introduce the lets; A = paddedLeading(j, Z(γ⁻¹)) (rows a < j of Z(γ⁻¹), identity rows elsewhere) with the top row replaced by the top row of Z(γ⁻¹).",
+   "lines": [
+    32,
+    33
+   ],
+   "lean": "  intro r _ _ _ _ P M; let A :=\n    (paddedLeading j (S.frameProducts γ⁻¹)).updateRow 𝔰.top (S.frameProducts γ⁻¹ 𝔰.top)"
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "[det M] = |N_{E/ℚ}(det M)| (det M is rational), and it suffices that |N(det A)| = N^{2f}·minorNorm(S, j, γ) (a side goal, steps 3–9) together with |N(det M)| = |N(det A)|²:",
+   "lines": [
+    34,
+    41
+   ],
+   "lean": "  erw [← RingHom.map_det, ← (?_ : |↑(Algebra.norm ℚ A.det)| = _ * _)]\n  · let g := finSuccEquivLast.trans (r.symm.optionCongr.trans (optionEquivSumPUnit _))\n    have d := M.det_reindex_self ((sumAssoc ..).symm.trans (((sumAssoc ..).sumCongr\n      (.refl _)).trans (sumSumSumComm ..))) ▸ det_permute (sumComm ..) _\n    rw [(Matrix.ext (Sum.rec (Function.swap (Sum.rec ?_ fun _ _ ↦ by rfl)) ?_) : submatrix _ _ _ =\n      fromBlocks (reindex g g A) (of _) 0 (reindex g g Aᴴ))] at d\n    · simpa [sq] using congr(|(Algebra.norm ℚ $d.symm : ℝ)|)\n    all_goals simp +zetaDelta [splitGram, middleGram, frameGram, apply_ite star]; grind",
+   "head_lines": [
+    34,
+    34
+   ]
+  },
+  {
+   "id": "2.1",
+   "parent": "2",
+   "kind": "deduction",
+   "claim": "g: the reindexing of the frame indices (finSuccEquivLast, r, Option ≃ Sum) used for A;",
+   "lines": [
+    35,
+    35
+   ],
+   "lean": "  · let g := finSuccEquivLast.trans (r.symm.optionCongr.trans (optionEquivSumPUnit _))"
+  },
+  {
+   "id": "2.2",
+   "parent": "2",
+   "kind": "deduction",
+   "claim": "d: det M equals the determinant of M with its index sum reassociated and the two halves swapped (det_reindex_self, det_permute);",
+   "lines": [
+    36,
+    37
+   ],
+   "lean": "    have d := M.det_reindex_self ((sumAssoc ..).symm.trans (((sumAssoc ..).sumCongr\n      (.refl _)).trans (sumSumSumComm ..))) ▸ det_permute (sumComm ..) _"
+  },
+  {
+   "id": "2.3",
+   "parent": "2",
+   "kind": "deduction",
+   "claim": "that reindexed matrix is fromBlocks(A', *, 0, A'*) with A' = A reindexed by g (checked entrywise),",
+   "lines": [
+    38,
+    39
+   ],
+   "lean": "    rw [(Matrix.ext (Sum.rec (Function.swap (Sum.rec ?_ fun _ _ ↦ by rfl)) ?_) : submatrix _ _ _ =\n      fromBlocks (reindex g g A) (of _) 0 (reindex g g Aᴴ))] at d"
+  },
+  {
+   "id": "2.4",
+   "parent": "2",
+   "kind": "deduction",
+   "claim": "so |N(det M)| = |N(det A)·N(conj det A)| = |N(det A)|²;",
+   "lines": [
+    40,
+    40
+   ],
+   "lean": "    · simpa [sq] using congr(|(Algebra.norm ℚ $d.symm : ℝ)|)"
+  },
+  {
+   "id": "2.5",
+   "parent": "2",
+   "kind": "deduction",
+   "claim": "the entrywise identities: the Gram entries of the columns f_a, γf_a, e*_a, z, γz under the split Gram matrix (splitGram, middleGram, frameGram; grind).",
+   "lines": [
+    41,
+    41
+   ],
+   "lean": "    all_goals simp +zetaDelta [splitGram, middleGram, frameGram, apply_ite star]; grind"
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Cases j = ϱ + 1 and j = j' ≤ ϱ (Fin.lastCases):",
+   "lines": [
+    42,
+    50
+   ],
+   "lean": "  cases' j using lastCases with j\n  · simp [show A = S.frameProducts γ⁻¹ by simp [A, ← ext_iff], minorNorm, field]\n  choose w e using h.inv.exists_shared_frame_vector j.le_last\n  erw [← cramer_transpose_apply, ← det_smul_inv_vecMul_eq_cramer_transpose _ _\n    (by simpa [↓det_paddedLeading] using h.inv.2.1),\n    Pi.smul_apply, congr($det_paddedLeading • $(frameProducts_mulVec_of_frameImage_eq e) _)]\n  obtain ⟨⟩ := (congr(‖Φ · $(star_mul_last_eq_of_frameImage_eq\n    e)‖)), congr(diag $h.inv.paddedLeading_mul_inv 𝔰.top)\n  simp_all [tsub_eq_zero_of_le, ← sq, minorNorm, ← conjTranspose_submatrix, j.le_last.not_gt]; ring",
+   "head_lines": [
+    42,
+    42
+   ]
+  },
+  {
+   "id": "3.1",
+   "parent": "3",
+   "kind": "case",
+   "claim": "j = ϱ + 1: A = Z(γ⁻¹) (step 5) and the identity is the definition of minorNorm with (j − ϱ)₊ = 1 (field_simp).",
+   "lines": [
+    43,
+    43
+   ],
+   "lean": "  · simp [show A = S.frameProducts γ⁻¹ by simp [A, ← ext_iff], minorNorm, field]",
+   "head_span": [
+    43,
+    3,
+    43,
+    11
+   ],
+   "head_lines": [
+    43,
+    43
+   ]
+  },
+  {
+   "id": "3.1.1",
+   "parent": "3.1",
+   "kind": "deduction",
+   "claim": "A = Z(γ⁻¹): at j = last, paddedLeading keeps all rows below the top, and the top row is replaced by itself.",
+   "lines": [
+    43,
+    43
+   ],
+   "span": [
+    43,
+    11,
+    43,
+    81
+   ],
+   "lean": "show A = S.frameProducts γ⁻¹ by simp [A, ← ext_iff], minorNorm, field]",
+   "typed_fact": "A = S.frameProducts γ⁻¹"
+  },
+  {
+   "id": "3.2",
+   "parent": "3",
+   "kind": "case",
+   "claim": "j ≤ ϱ: the shared frame vector of γ⁻¹ (level j by HasLevel.inv): frameImage(1)·w = frameImage(γ⁻¹)·(top column of paddedLeading(j, Z(γ⁻¹))⁻¹).",
+   "lines": [
+    44,
+    50
+   ],
+   "lean": "  choose w e using h.inv.exists_shared_frame_vector j.le_last\n  erw [← cramer_transpose_apply, ← det_smul_inv_vecMul_eq_cramer_transpose _ _\n    (by simpa [↓det_paddedLeading] using h.inv.2.1),\n    Pi.smul_apply, congr($det_paddedLeading • $(frameProducts_mulVec_of_frameImage_eq e) _)]\n  obtain ⟨⟩ := (congr(‖Φ · $(star_mul_last_eq_of_frameImage_eq\n    e)‖)), congr(diag $h.inv.paddedLeading_mul_inv 𝔰.top)\n  simp_all [tsub_eq_zero_of_le, ← sq, minorNorm, ← conjTranspose_submatrix, j.le_last.not_gt]; ring",
+   "head_lines": [
+    44,
+    44
+   ],
+   "uses": [
+    {
+     "decl": "Filling.HasLevel.exists_shared_frame_vector"
+    },
+    {
+     "decl": "Filling.HasLevel.inv"
+    }
+   ]
+  },
+  {
+   "id": "3.2.1",
+   "parent": "3.2",
+   "kind": "deduction",
+   "claim": "Cramer's rule: det A times the top column of A⁻¹ is the top column of the adjugate, and Z(γ⁻¹) applied to that column is −N·w_top·e_top (frameProducts_mulVec_of_frameImage_eq), with det paddedLeading = D_j(γ⁻¹) ≠ 0;",
+   "lines": [
+    45,
+    47
+   ],
+   "lean": "  erw [← cramer_transpose_apply, ← det_smul_inv_vecMul_eq_cramer_transpose _ _\n    (by simpa [↓det_paddedLeading] using h.inv.2.1),\n    Pi.smul_apply, congr($det_paddedLeading • $(frameProducts_mulVec_of_frameImage_eq e) _)]",
+   "uses": [
+    {
+     "decl": "Filling.frameProducts_mulVec_of_frameImage_eq"
+    }
+   ]
+  },
+  {
+   "id": "3.2.2",
+   "parent": "3.2",
+   "kind": "deduction",
+   "claim": "|w_top| equals the modulus of the top coordinate of the column (star_mul_last_eq_of_frameImage_eq), and the top diagonal entry of paddedLeading·inverse is 1;",
+   "lines": [
+    48,
+    49
+   ],
+   "lean": "  obtain ⟨⟩ := (congr(‖Φ · $(star_mul_last_eq_of_frameImage_eq\n    e)‖)), congr(diag $h.inv.paddedLeading_mul_inv 𝔰.top)",
+   "uses": [
+    {
+     "decl": "Filling.star_mul_last_eq_of_frameImage_eq"
+    }
+   ]
+  },
+  {
+   "id": "3.2.3",
+   "parent": "3.2",
+   "kind": "deduction",
+   "claim": "combining, |N(det A)| = N^{2f}·|N(D_j(γ))| (the conjugate transpose has the same minors) = N^{2f}·minorNorm(S, j, γ) as (j − ϱ)₊ = 0 (simp_all; ring).",
+   "lines": [
+    50,
+    50
+   ],
+   "lean": "  simp_all [tsub_eq_zero_of_le, ← sq, minorNorm, ← conjTranspose_submatrix, j.le_last.not_gt]; ring"
+  }
+ ]
+}

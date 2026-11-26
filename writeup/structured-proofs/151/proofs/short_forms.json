@@ -1,0 +1,404 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Endgame.ShortAndEnough:138:7",
+ "name": "Data.short_forms",
+ "file": "New/Endgame/ShortAndEnough.lean",
+ "file_sha256": "eb7eaf3c1a7a7d91978d4c85e4be3e44526250f69aabf5507b8b0281eff7d6d3",
+ "commit": "72fead102f663d5c7a407964a13dc0cf9d977207",
+ "summary": "q divides out the gains less the allowed losses; the seesaw identity turns lifts of the projected Poincaré series into the chains B_μ, whose size (heightPerRow_le) and local divisibility (exists_indexDvd_Bmu_divisible) give (a) and (b).",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "witness",
+   "claim": "Let U = nonsplit(D) ∪ {N_D} and g(l) = ⌊err(l) − [l ∈ nonsplit(D)]·gain(l)⌋ (err = allowedLoss). By `exists_rat_log_eq_and_padic_norm_eq` (U consists of primes: N_D is prime; g vanishes outside U since err(l) = 0 there) there is a rational q > 0 (q0) with log q = ∑_{l∈U} g(l)·log l (e) and |q|_l = |l|_l^(g(l)) for every prime l (v): q divides out the gains, less the allowed losses.",
+   "lines": [
+    143,
+    145
+   ],
+   "lean": "  obtain ⟨q, q0, e, v⟩ := exists_rat_log_eq_and_padic_norm_eq (D.nonsplitPrimes ∪ {D.N})\n    (fun l ↦ ⌊D.allowedLoss l - ite (l ∈ D.nonsplitPrimes)\n    (D.gain l) 0⌋) (by grind [N_prime]) (by grind [allowedLoss, Int.floor_zero])",
+   "uses": [
+    {
+     "decl": "exists_rat_log_eq_and_padic_norm_eq"
+    },
+    {
+     "decl": "Data.nonsplitPrimes"
+    },
+    {
+     "decl": "Data.N"
+    },
+    {
+     "decl": "Data.allowedLoss"
+    },
+    {
+     "decl": "Data.gain"
+    },
+    {
+     "decl": "Data.N_prime"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "witness",
+   "claim": "From the seesaw identity with its constant c_D (the one in i_N(D)): for every twist ϑ choose a good datum Ψ(ϑ) (G) with ι_ϑ(𝒫_D(c_D·φ)) = B^{Ψ(ϑ)}_μ(φ) for every ramified column φ (S).",
+   "lines": [
+    146,
+    146
+   ],
+   "lean": "  choose Ψ G S using D.seesaw.choose_spec",
+   "uses": [
+    {
+     "decl": "Data.seesaw"
+    },
+    {
+     "decl": "Data.scaledInclusion"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "witness",
+   "claim": "Take q and B := q·P_D (so B = q·P_D by definition); it remains to give (a) and (b).",
+   "lines": [
+    147,
+    168
+   ],
+   "lean": "  refine ⟨q, q0, _, rfl, ⟨_, fun φ k l _ _ ↦ ⟨φ.1.2, k.1 l⟩, D.span_short_ramifiedColumns,\n    fun φ k s σ ↦ (map_smul (D.projectedPoincare s) .. ▸ normSqAt_goodProjTranslate_le\n    (S .. ▸ weylNormSq_Bmu_le (B := 2 * log q + D.budget)\n    (G 1) (by simpa [two_mul, exp_add, exp_log, q0, sq] using k.2 σ ·) ·)).trans (by\n    grw [e, heightPerRow_le, Int.floor_le]\n    simp [sub_mul, -mem_filter, -union_singleton]\n    grw [sum_allowedLoss_mul_log_le]; ring; simpa using D.le_of_hasLogBound)⟩, fun t n y h ↦\n    ⟨fun l ↦ #t * finrank ℂ D.Column * (_ * log l),\n    fun U ↦ by grw [← mul_sum, sum_allowedLoss_mul_log_le], fun l _ ι ϑ c ↦\n    (exists_indexDvd_Bmu_divisible (Int.ceil_lt_add_one _)).elim fun n a ↦ a.2.elim fun _ b ↦\n    (IndexDvd.sup (N' := (integralForms ι).comap ((D.Θ ϑ).restrictScalars embValRing)) (f :=\n    ((q : ℂ) • D.projectedPoincare · |>.restrictScalars embValRing)) (fun s ↦ b.1.comap\n    (D.ramifiedColumns.subtype.restrictScalars _) le_rfl fun φ _ h ↦ congr($((D.Θ ϑ).map_smul ..) ∈\n    integralForms ι).mpr (goodProjTranslate_mem_integralForms ι (fun g ↦ by\n    erw [weylGauge_smul, congr($(S ..).1 g)]\n    simpa [v, weylGauge_smul, ← Int.floor_neg] using (b.2 _ _ (G ϑ) c _ h φ.2).2 g) s)) t _ y\n    fun k ↦ subset_span (.inl (Set.image2_subset_left (by exact fun _ ↦ (· l)) (h k)))).imp\n    fun u ⟨k, h⟩ ↦ ⟨?_, h⟩⟩⟩\n  · apply (Valuation.valuationSubring.integers _).le_of_dvd at k\n    simp [norm_p_eq_inv, ← NNReal.coe_le_coe] at k\n    grw [← k, ← le_log_iff_exp_le] <;> simp [NeZero.pos]\n    linarith [mul_le_mul_of_nonneg_right a.1 (mul_nonneg (#t).cast_nonneg (log_natCast_nonneg l))]",
+   "head_lines": [
+    147,
+    147
+   ],
+   "head_span": [
+    147,
+    3,
+    147,
+    26
+   ],
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "decl": "Data.projectedPoincare"
+    }
+   ]
+  },
+  {
+   "id": "3.1",
+   "parent": "3",
+   "kind": "witness",
+   "claim": "(a), with S := the exp(𝓑(D))-short ramified columns.",
+   "lines": [
+    147,
+    153
+   ],
+   "span": [
+    147,
+    26,
+    153,
+    79
+   ],
+   "lean": "⟨_, fun φ k l _ _ ↦ ⟨φ.1.2, k.1 l⟩, D.span_short_ramifiedColumns,\n    fun φ k s σ ↦ (map_smul (D.projectedPoincare s) .. ▸ normSqAt_goodProjTranslate_le\n    (S .. ▸ weylNormSq_Bmu_le (B := 2 * log q + D.budget)\n    (G 1) (by simpa [two_mul, exp_add, exp_log, q0, sq] using k.2 σ ·) ·)).trans (by\n    grw [e, heightPerRow_le, Int.floor_le]\n    simp [sub_mul, -mem_filter, -union_singleton]\n    grw [sum_allowedLoss_mul_log_le]; ring; simpa using D.le_of_hasLogBound)⟩,",
+   "uses": []
+  },
+  {
+   "id": "3.1.1",
+   "parent": "3.1",
+   "kind": "fact",
+   "claim": "S ⊆ integralRamified(D) (a short column is integral at every place above every prime), and S spans the ramified columns (`Data.span_short_ramifiedColumns`).",
+   "lines": [
+    147,
+    147
+   ],
+   "span": [
+    147,
+    26,
+    147,
+    91
+   ],
+   "lean": "⟨_, fun φ k l _ _ ↦ ⟨φ.1.2, k.1 l⟩, D.span_short_ramifiedColumns,",
+   "uses": [
+    {
+     "decl": "Data.span_short_ramifiedColumns"
+    },
+    {
+     "decl": "Data.integralRamified"
+    }
+   ]
+  },
+  {
+   "id": "3.1.2",
+   "parent": "3.1",
+   "kind": "deduction",
+   "claim": "For φ ∈ S, s ∈ 𝖦_D and σ ∈ Aut ℂ: ‖Θ_D(1)(B_s(φ))‖²_σ ≤ exp(h_main(D) − m_D·rem(D) + log b_D·𝓑(D)).",
+   "lines": [
+    148,
+    153
+   ],
+   "span": [
+    148,
+    5,
+    153,
+    79
+   ],
+   "lean": "fun φ k s σ ↦ (map_smul (D.projectedPoincare s) .. ▸ normSqAt_goodProjTranslate_le\n    (S .. ▸ weylNormSq_Bmu_le (B := 2 * log q + D.budget)\n    (G 1) (by simpa [two_mul, exp_add, exp_log, q0, sq] using k.2 σ ·) ·)).trans (by\n    grw [e, heightPerRow_le, Int.floor_le]\n    simp [sub_mul, -mem_filter, -union_singleton]\n    grw [sum_allowedLoss_mul_log_le]; ring; simpa using D.le_of_hasLogBound)⟩,",
+   "uses": []
+  },
+  {
+   "id": "3.1.2.1",
+   "parent": "3.1.2",
+   "kind": "deduction",
+   "claim": "Θ_D(1)(q·P_{D,s}φ) = |𝖦|e₀s applied to ι_1(𝒫_D(c_D·qφ)) = |𝖦|e₀s applied to B^{Ψ(1)}_μ(qφ) (S). The values of σ(qφ) have squared norm ≤ q²·e^(𝓑) = exp(2 log q + 𝓑(D)) (φ short), so by `Data.weylNormSq_Bmu_le` those of σB^{Ψ(1)}_μ(qφ) are ≤ exp(2 log q + 𝓑 + h₀(D) + 2∑_p gain(p)log p + 𝓑), and by `Data.normSqAt_goodProjTranslate_le` ‖Θ_D(1)(B_s φ)‖²_σ ≤ exp(x_D⁹⁹ + that exponent).",
+   "lines": [
+    148,
+    150
+   ],
+   "span": [
+    148,
+    5,
+    150,
+    81
+   ],
+   "lean": "fun φ k s σ ↦ (map_smul (D.projectedPoincare s) .. ▸ normSqAt_goodProjTranslate_le\n    (S .. ▸ weylNormSq_Bmu_le (B := 2 * log q + D.budget)\n    (G 1) (by simpa [two_mul, exp_add, exp_log, q0, sq] using k.2 σ ·) ·)).trans",
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "decl": "Data.normSqAt_goodProjTranslate_le"
+    },
+    {
+     "decl": "Data.weylNormSq_Bmu_le"
+    },
+    {
+     "decl": "Data.projectedPoincare"
+    }
+   ]
+  },
+  {
+   "id": "3.1.2.2",
+   "parent": "3.1.2",
+   "kind": "deduction",
+   "claim": "The exponent is at most h_main(D) − m_D·rem(D) + log b_D·𝓑(D): 2 log q = 2∑_{l∈U} g(l)log l ≤ 2∑_l err(l)log l − 2∑_{nonsplit} gain(l)log l (e, ⌊t⌋ ≤ t), the gain terms cancel, ∑ err(l)log l ≤ 𝓑(D) (`Data.sum_allowedLoss_mul_log_le`), h₀(D) ≤ h_main(D) − m_D·rem(D) + 𝓑(D) (`Data.heightPerRow_le`), and x_D⁹⁹ + 5𝓑(D) ≤ log b_D·𝓑(D) by the size comparison.",
+   "lines": [
+    150,
+    153
+   ],
+   "span": [
+    150,
+    82,
+    153,
+    79
+   ],
+   "lean": "(by\n    grw [e, heightPerRow_le, Int.floor_le]\n    simp [sub_mul, -mem_filter, -union_singleton]\n    grw [sum_allowedLoss_mul_log_le]; ring; simpa using D.le_of_hasLogBound)⟩,",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "decl": "Data.heightPerRow_le"
+    },
+    {
+     "decl": "Data.sum_allowedLoss_mul_log_le"
+    },
+    {
+     "decl": "Data.le_of_hasLogBound"
+    }
+   ]
+  },
+  {
+   "id": "3.2",
+   "parent": "3",
+   "kind": "deduction",
+   "claim": "(b): for t ⊆ 𝖦_D finite, n, and y : Fin n → rows(D) with each y_i = B_s(φ), s ∈ t, φ ∈ integralRamified(D) (h): IndexLe(D, y, #t·dim Column(D)·𝓑(D)).",
+   "lines": [
+    153,
+    168
+   ],
+   "span": [
+    153,
+    80,
+    168,
+    99
+   ],
+   "lean": "fun t n y h ↦\n    ⟨fun l ↦ #t * finrank ℂ D.Column * (_ * log l),\n    fun U ↦ by grw [← mul_sum, sum_allowedLoss_mul_log_le], fun l _ ι ϑ c ↦\n    (exists_indexDvd_Bmu_divisible (Int.ceil_lt_add_one _)).elim fun n a ↦ a.2.elim fun _ b ↦\n    (IndexDvd.sup (N' := (integralForms ι).comap ((D.Θ ϑ).restrictScalars embValRing)) (f :=\n    ((q : ℂ) • D.projectedPoincare · |>.restrictScalars embValRing)) (fun s ↦ b.1.comap\n    (D.ramifiedColumns.subtype.restrictScalars _) le_rfl fun φ _ h ↦ congr($((D.Θ ϑ).map_smul ..) ∈\n    integralForms ι).mpr (goodProjTranslate_mem_integralForms ι (fun g ↦ by\n    erw [weylGauge_smul, congr($(S ..).1 g)]\n    simpa [v, weylGauge_smul, ← Int.floor_neg] using (b.2 _ _ (G ϑ) c _ h φ.2).2 g) s)) t _ y\n    fun k ↦ subset_span (.inl (Set.image2_subset_left (by exact fun _ ↦ (· l)) (h k)))).imp\n    fun u ⟨k, h⟩ ↦ ⟨?_, h⟩⟩⟩\n  · apply (Valuation.valuationSubring.integers _).le_of_dvd at k\n    simp [norm_p_eq_inv, ← NNReal.coe_le_coe] at k\n    grw [← k, ← le_log_iff_exp_le] <;> simp [NeZero.pos]\n    linarith [mul_le_mul_of_nonneg_right a.1 (mul_nonneg (#t).cast_nonneg (log_natCast_nonneg l))]",
+   "uses": [
+    {
+     "decl": "Data.IndexLe"
+    }
+   ]
+  },
+  {
+   "id": "3.2.1",
+   "parent": "3.2",
+   "kind": "witness",
+   "claim": "Take e(l) := #t·dim Column(D)·err(l)·log l; then ∑_{l∈U} e(l) ≤ #t·dim Column(D)·𝓑(D) for every finite U (`Data.sum_allowedLoss_mul_log_le`).",
+   "lines": [
+    153,
+    155
+   ],
+   "span": [
+    153,
+    80,
+    155,
+    60
+   ],
+   "lean": "fun t n y h ↦\n    ⟨fun l ↦ #t * finrank ℂ D.Column * (_ * log l),\n    fun U ↦ by grw [← mul_sum, sum_allowedLoss_mul_log_le],",
+   "uses": [
+    {
+     "decl": "Data.sum_allowedLoss_mul_log_le"
+    },
+    {
+     "decl": "Data.allowedLoss"
+    }
+   ]
+  },
+  {
+   "id": "3.2.2",
+   "parent": "3.2",
+   "kind": "witness",
+   "claim": "Let l be a prime, ι an l-adic place and ϑ a twist with l coprime to its level (c). By `Data.exists_indexDvd_Bmu_divisible` with β = ⌈[l nonsplit]·gain(l) − err(l)⌉ = −g(l): there are n′ ≤ err(l)·dim Column(D) (a) and a module S′ of columns with IndexDvd(integral columns, S′, l^(n′)) such that l^(−β)·B^Ψ_μ(φ) is ι-integral for every ramified φ ∈ S′, every twist with level prime to l and every good Ψ (b).",
+   "lines": [
+    155,
+    156
+   ],
+   "span": [
+    155,
+    61,
+    156,
+    94
+   ],
+   "lean": "fun l _ ι ϑ c ↦\n    (exists_indexDvd_Bmu_divisible (Int.ceil_lt_add_one _)).elim fun n a ↦ a.2.elim fun _ b ↦",
+   "uses": [
+    {
+     "decl": "Data.exists_indexDvd_Bmu_divisible"
+    }
+   ],
+   "ambient_uses": [
+    "Int.ceil_lt_add_one"
+   ]
+  },
+  {
+   "id": "3.2.3",
+   "parent": "3.2",
+   "kind": "fact",
+   "claim": "For every s ∈ t, q·P_{D,s} pulls the ι-integral lifts back to S′: for a ramified φ ∈ S′, Θ_D(ϑ)(q·P_{D,s}φ) = q·ι_ϑ(|𝖦|e₀s·𝒫_D(c_Dφ)) is ι-integral, because q·ι_ϑ(𝒫_D(c_Dφ)) = q·B^{Ψ(ϑ)}_μ(φ) (S) is (|q|_l = |l|_l^(g(l)) = |l^(−β)|_l by v, and b), and passing to the good part keeps integrality (`Data.goodProjTranslate_mem_integralForms`). This is the hypothesis of `IndexDvd.sup` for the maps q·P_{D,s} over O_ι and N′ = the rows with ι-integral Θ_D(ϑ)-lift.",
+   "lines": [
+    157,
+    162
+   ],
+   "span": [
+    157,
+    5,
+    162,
+    88
+   ],
+   "lean": "(IndexDvd.sup (N' := (integralForms ι).comap ((D.Θ ϑ).restrictScalars embValRing)) (f :=\n    ((q : ℂ) • D.projectedPoincare · |>.restrictScalars embValRing)) (fun s ↦ b.1.comap\n    (D.ramifiedColumns.subtype.restrictScalars _) le_rfl fun φ _ h ↦ congr($((D.Θ ϑ).map_smul ..) ∈\n    integralForms ι).mpr (goodProjTranslate_mem_integralForms ι (fun g ↦ by\n    erw [weylGauge_smul, congr($(S ..).1 g)]\n    simpa [v, weylGauge_smul, ← Int.floor_neg] using (b.2 _ _ (G ϑ) c _ h φ.2).2 g) s))",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "step": "2"
+    },
+    {
+     "step": "3.2.2"
+    },
+    {
+     "decl": "IndexDvd.sup"
+    },
+    {
+     "decl": "IndexDvd"
+    },
+    {
+     "decl": "LevelPlaces.LevelForm.integralForms"
+    },
+    {
+     "decl": "Data.Θ"
+    },
+    {
+     "decl": "embValRing"
+    },
+    {
+     "decl": "Data.goodProjTranslate_mem_integralForms"
+    },
+    {
+     "decl": "weylGauge_smul"
+    }
+   ]
+  },
+  {
+   "id": "3.2.4",
+   "parent": "3.2",
+   "kind": "deduction",
+   "claim": "By `IndexDvd.sup` over s ∈ t, applied to the family y (each y_k lies in the span of the images q·P_{D,s}(integralRamified(D)), s ∈ t, by h): there is a matrix u over O_ι with det u ∣ (l^(n′))^(#t) and Θ_D(ϑ)(∑_k u_{ik}y_k) ι-integral for every i.",
+   "lines": [
+    162,
+    163
+   ],
+   "span": [
+    162,
+    89,
+    163,
+    92
+   ],
+   "lean": "t _ y\n    fun k ↦ subset_span (.inl (Set.image2_subset_left (by exact fun _ ↦ (· l)) (h k)))).imp",
+   "uses": [
+    {
+     "step": "3.2.3"
+    },
+    {
+     "decl": "IndexDvd.sup"
+    }
+   ]
+  },
+  {
+   "id": "3.2.5",
+   "parent": "3.2",
+   "kind": "reduction",
+   "claim": "This u is the matrix asked for; it remains to show exp(−e(l)) ≤ |ι(det u)|_l.",
+   "lines": [
+    164,
+    164
+   ],
+   "lean": "    fun u ⟨k, h⟩ ↦ ⟨?_, h⟩⟩⟩",
+   "uses": [
+    {
+     "step": "3.2.4"
+    }
+   ]
+  },
+  {
+   "id": "3.2.6",
+   "parent": "3.2",
+   "kind": "deduction",
+   "claim": "From det u ∣ l^(n′#t) in the valuation ring: |ι(det u)|_l ≥ |l|_l^(n′#t) = l^(−n′#t) (`norm_p_eq_inv`) ≥ exp(−#t·dim Column(D)·err(l)·log l) = exp(−e(l)), as n′ ≤ err(l)·dim Column(D) (a).",
+   "lines": [
+    165,
+    168
+   ],
+   "lean": "  · apply (Valuation.valuationSubring.integers _).le_of_dvd at k\n    simp [norm_p_eq_inv, ← NNReal.coe_le_coe] at k\n    grw [← k, ← le_log_iff_exp_le] <;> simp [NeZero.pos]\n    linarith [mul_le_mul_of_nonneg_right a.1 (mul_nonneg (#t).cast_nonneg (log_natCast_nonneg l))]",
+   "uses": [
+    {
+     "step": "3.2.4"
+    },
+    {
+     "step": "3.2.2"
+    },
+    {
+     "step": "3.2.1"
+    },
+    {
+     "decl": "norm_p_eq_inv"
+    }
+   ],
+   "ambient_uses": [
+    "Valuation.Integers.le_of_dvd"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,598 @@
+% !TEX program = lualatex
+% ---------------------------------------------------------------------------------------------
+%  Readback note 37: At most one primitive label for a Hecke eigensystem, by attached Galois representations
+%
+%  Build:  python3 tools/rb.py note <slug>
+%
+%  One unit of a Lean artifact, rewritten as ordinary mathematics. The prose is hand-written. Lean names,
+%  line ranges and counts come from data.tex; quoted Lean statements are copied from the artifact by the build.
+%
+%  Rules of the text: standard terminology; every symbol is explained where it first appears and listed again
+%  in the notation at the end; no letter has two meanings; a proof is complete or says what it takes for granted;
+%  Lean names appear only in the LEAN lines and in the concordance.
+%
+%  The signature rule (the build enforces it): a function, relation or predicate that the artifact defines is
+%  written only through its notation macro, which the build makes from the spec (`notation`) with one slot for
+%  each explicit argument of the Lean definition. No argument is fixed and dropped, also not "for brevity" and
+%  not for one section. Every argument and every hypothesis of a stated declaration stands inside its
+%  statement, or in a Setting that the statement cites by number; only implicit and instance arguments (the
+%  ambient objects) may stand in the conventions.
+% ---------------------------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\ifdefined\pdfvariable\pdfvariable suppressoptionalinfo \numexpr 1+2+4+8\relax\fi
+\usepackage[a4paper,hmargin=35mm,top=22mm,bottom=27mm,footskip=12mm,nohead]{geometry}
+
+\usepackage{fontspec}
+\directlua{
+  luaotfload.add_fallback("gfallback", {"STIXTwoMath-Regular.otf:mode=node;", "DejaVuSans.ttf:mode=node;"})
+  luaotfload.add_fallback("gmonofallback", {"DejaVuSansMono.ttf:mode=node;", "STIXTwoMath-Regular.otf:mode=node;"})
+}
+\setmainfont{NewCM10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookItalic,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldItalic,SmallCapsFont=*-Book,SmallCapsFeatures={Letters=SmallCaps},
+  RawFeature={fallback=gfallback}]
+\setsansfont{NewCMSans10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookOblique,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldOblique,RawFeature={fallback=gfallback}]
+\setmonofont{JetBrainsMono}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,Scale=MatchLowercase,
+  RawFeature={-calt;-liga;fallback=gmonofallback}]
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage[math-style=TeX]{unicode-math}
+\setmathfont{NewCMMath-Book.otf}
+\emergencystretch=2.5em\relax
+
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows.meta,positioning,backgrounds}
+\usepackage[protrusion=true,expansion=true]{microtype}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{multicol}
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+
+\definecolor{ink}{HTML}{0F172A}
+\definecolor{inksoft}{HTML}{475569}
+\definecolor{inkfaint}{HTML}{94A3B8}
+\definecolor{rulegrey}{HTML}{CBD5E1}
+\definecolor{arith}{HTML}{C2410C}
+\definecolor{est}{HTML}{7C3AED}
+\definecolor{ana}{HTML}{0891B2}
+\definecolor{ok}{HTML}{047857}
+\definecolor{leancol}{HTML}{3730A3}
+
+\title{At most one primitive label for a Hecke eigensystem, by attached Galois representations}
+\author{grh-compact}
+\date{}
+
+% ------------------------------------------------------------------------------------- macros
+\newcommand{\leanfont}{\ttfamily\fontsize{8.6}{10.5}\selectfont\color{leancol}}
+\newcommand{\lean}[1]{\csname LN@#1\endcsname}
+\newcommand{\fillin}[1]{{\color{arith}\itshape[#1]}}  % a place of the template that is not written yet; the build reports every one that is left
+\newcommand{\leanquote}[1]{\csname LQ@#1\endcsname}
+\input{data.tex}
+
+\linespread{1.08}                       % 11 pt on 14.7 pt
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt plus 1.5pt minus 0.5pt}
+\setlength{\abovedisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\belowdisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\abovedisplayshortskip}{3pt plus 2pt}
+\setlength{\belowdisplayshortskip}{6pt plus 2pt minus 2pt}
+\emergencystretch=1.5em
+\clubpenalty=10000 \widowpenalty=10000 \displaywidowpenalty=10000
+\relpenalty=7000 \binoppenalty=9000
+\raggedbottom
+\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\sffamily\fontsize{7.6}{9}\selectfont\color{inkfaint}\thepage\,/\,\pageref*{LastPage}}
+\setlist{topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=4pt,leftmargin=2.1em,labelsep=0.55em}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\len}{\operatorname{len}}
+\newcommand{\cok}{\operatorname{cok}}
+\newcommand{\End}{\operatorname{End}}
+\newcommand{\Hom}{\operatorname{Hom}}
+\newcommand{\Gal}{\operatorname{Gal}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\kw}[1]{\emph{#1}}
+\newcommand{\m}[1]{\mbox{$#1$}}        % a short formula that must not be broken across lines
+\newcommand{\head}[1]{\par\addvspace{17pt plus 4pt minus 2pt}\Needspace{6\baselineskip}%
+  \noindent{\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\sect}[2]{\refstepcounter{section}\label{#2}\par\addvspace{19pt plus 4pt minus 2pt}\Needspace{7\baselineskip}%
+  \noindent\llap{{\fontsize{13.2}{16}\selectfont\bfseries\color{inkfaint}\thesection}\hspace{9pt}}%
+  {\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\subhead}[1]{\par\addvspace{9pt plus 2pt}\Needspace{4\baselineskip}\noindent\textbf{#1}\enspace\ignorespaces}
+% where a statement lives in the Lean archive
+\newcommand{\leantag}{{\sffamily\bfseries\fontsize{6.3}{8}\selectfont\color{leancol}\addfontfeatures{LetterSpace=7}LEAN}}
+\newcommand{\sep}{\unskip\nobreak\hspace{5pt}{\color{inkfaint}\textperiodcentered}\hspace{5pt plus 2pt}\ignorespaces}
+\newcommand{\leanline}[1]{\par\nopagebreak\vspace{-2.5pt}{\fontsize{8.9}{12.4}\selectfont\color{inksoft}\raggedright
+  \noindent\llap{\leantag\hspace{9pt}}#1\par}\vspace{1pt}}
+% a displayed statement in a tinted box: #1 colour, #2 text
+\newcommand{\statement}[2]{\par\addvspace{7pt}\begingroup\setlength{\fboxsep}{8.5pt}\setlength{\fboxrule}{0.6pt}%
+  \noindent\fcolorbox{#1!30!white}{#1!3!white}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{#2}}%
+  \endgroup\par\addvspace{7pt}}
+\newcommand{\nt}[2]{\par\noindent\hangindent=1.1em\hangafter=1 #1\enspace{\color{inksoft}#2}\par\vspace{1pt}}
+\newcommand{\legdot}[1]{\tikz[baseline=-0.62ex]\fill[#1] (0,0) circle (2.5pt);\hspace{3pt}}
+\newcommand{\crow}[4]{\csname CS@#1\endcsname & #2 & \textcolor{inksoft}{#3} & \textcolor{inksoft}{#4}\\}
+\newcommand{\leanquoteline}[2]{\par\noindent\hangindent=\dimexpr#1\fontdimen2\font+2.2em\relax\hangafter=1
+  \hspace*{#1\fontdimen2\font}#2}
+\newcommand{\quoted}[1]{\par\vspace{3pt}{\ttfamily\fontsize{7.5}{10.4}\selectfont\color{leancol}\raggedright
+  \setlength{\parskip}{0pt}\leanquote{#1}\par}\vspace{4pt}}
+\newcommand{\bx}[3]{{\sffamily\bfseries\fontsize{7.3}{9.2}\selectfont\color{#1!82!black}#2}\\[1.5pt]#3}
+\newcommand{\cs}[2]{\expandafter\newcommand\csname CS@#1\endcsname{#2}}
+
+% theorems
+\newtheoremstyle{plainx}{7pt plus 2pt}{7pt plus 2pt}{\itshape}{}{\bfseries}{.}{0.5em}{}
+\newtheoremstyle{uprightx}{7pt plus 2pt}{7pt plus 2pt}{}{}{\bfseries}{.}{0.5em}{}
+\theoremstyle{plainx}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{uprightx}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{setting}[theorem]{Setting}          % hypotheses shared by several statements; each of them cites it by number
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\renewcommand{\qedsymbol}{{\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.5pt}\fbox{\rule{0pt}{0.46em}\hspace{0.46em}}}}
+% what holds throughout the note: the ambient objects only (implicit and instance arguments), never a hypothesis
+\newenvironment{conventions}{\par\addvspace{5pt}\noindent\textbf{Conventions.}\enspace\ignorespaces}{\par\addvspace{3pt}}
+\makeatletter
+\renewenvironment{proof}[1][Proof]{\par\pushQED{\qed}\normalfont\topsep0pt\partopsep0pt
+  \trivlist\item[\hskip\labelsep\itshape #1.]\ignorespaces}{\popQED\endtrivlist\@endpefalse}
+\makeatother
+
+% where each declaration of the concordance is treated: \cs{key}{place}, the place naming a \label or a lettered item
+\cs{occurringLabelssubsingleton}{Theorem 1}
+\cs{isEigenformofhasHeckePolyAt}{Lemma~\ref{l:eigen}}
+\cs{sphericalCompatstd}{Input 1}
+\cs{isLabelledAt}{Input 2}
+\cs{hasProductLabel}{Input 3}
+\cs{existsisTameExponent}{Input 4}
+\cs{existsheckeSpliteqsmul}{Input 4}
+\cs{isSplitofqprime}{Input 4}
+\cs{scaleRoots}{Input 5}
+\cs{isPrimitiveRootprodroots}{Input 5}
+\newcommand{\cV}{{\mathcal V}}
+\newcommand{\fs}{{\mathfrak s}}
+\newcommand{\GL}{\mathrm{GL}}
+
+\begin{document}
+\color{ink}
+
+{\raggedright
+{\sffamily\bfseries\fontsize{7.2}{9}\selectfont\color{leancol}\addfontfeatures{LetterSpace=8}READBACK NOTE 37\par}
+\vspace{5pt}
+{\fontsize{21.5}{25.5}\selectfont\bfseries At most one primitive label for a Hecke eigensystem, by attached Galois representations\par}
+\vspace{5pt}
+{\fontsize{12.4}{16}\selectfont\itshape\color{inksoft} One unit of the Lean artifact \ArtifactName, read back into
+mathematics\par}}
+\vspace{8pt}
+{\color{rulegrey}\hrule height 0.6pt}
+\vspace{7pt}
+\thispagestyle{empty}
+
+\textbf{Summary.} At a chosen prime the forms of principal level carry a representation of a finite general
+linear group, and a primitive label names a cuspidal type of that group. This note proves that a Hecke
+eigensystem can meet at most one primitive label at a chosen prime, as soon as the forms can be lifted
+injectively to a definite unitary group in a way that respects the Hecke operators away from the level and the
+action of a parabolic subgroup at the prime. The proof passes to Galois representations: a lifted form is an
+eigenform, so a $2$-adic Galois representation is attached to its Hecke polynomials; local-global compatibility at
+tame level reads the label off the action of tame inertia; and two different primitive labels would force the
+eigenvalues of one inertia element to be roots of unity of small order, against the determinant.
+
+\statement{leancol}{\fontsize{9.6}{13.2}\selectfont\textbf{What this note is.} The artifact \ArtifactName{} is a
+body of Lean code: the compact edition of a formal proof, due to L.~Alpöge with the AI system Claude, of the
+Riemann hypothesis and of its generalisation to Dirichlet $L$-functions. That headline is a claim. The authors
+report that every file compiles and that Lean's kernel accepted the proofs; an independent replay is recorded in
+the handout's record of checks when it reports. No mathematician has read the argument through, and nothing here
+says that the Riemann hypothesis is proved. This note treats the unit \emph{At most one primitive label per
+eigensystem at a chosen place}: all \UnitInNote{} of its \UnitMembers{} declarations, a lemma and a theorem. Both
+are proved in full from the inputs. Taken for granted, and stated as Inputs~1 to~5, are: the existence of Galois
+representations attached to eigenforms on definite unitary groups, and local-global compatibility at tame level,
+both in the weak forms in which the artifact's background library proves them; three further facts of that
+library; and facts about the data and about primitive labels from other units. Every statement was compared with
+its Lean text, argument by argument. The Lean text read is \PinText; Appendix~A is the concordance of
+\ConcDecls{} declarations.}
+
+\sect{The statement}{s:intro}
+The setting and the notions are those of the note \emph{Good forms and rows}, recalled in
+Setting~\ref{s:data}; algebraic forms, Hecke polynomials and block triangular matrices are explained in
+§\ref{s:setting}.
+
+\statement{arith}{\phantomsection\label{t:1}\textbf{Theorem 1} (at most one primitive label).\enspace
+\emph{In Setting~\ref{s:data}, let $\fs$ be a family of signs on $I(D)$ and $\cV$ a space over $E(D)$ with index
+set $I(D)$ and signs~$\fs$. Let $I'$ be a non-empty finite set, \m{\nu\colon I(D)\to I'} an injection, and $L$ a
+linear map from \m{\mathrm{Prin}(D,\cV)} to a space of algebraic modular forms on the standard space with index
+set~$I'$, in the library's sense: such a space is given by a weight in two parts, a system of places of $E(D)$, a
+subgroup of the product of the groups \m{\GL_{I'}(\F_w)} over these places, and a character of that subgroup. Let
+$p$ be an eigensystem, \m{(\Upsilon_w)_w} a family of functions \m{\mathbb C\to\mathbb C} indexed by the primes
+of~$E(D)$, $v$ a chosen prime, $n_1$ a natural number, \m{\beta\colon I'\to\{0,\dots,n_1\}} a map,
+\m{\chi=(\chi_1,\dots,\chi_{n_1})} a family of multiplicative characters of~$\F_v$, and $\psi$ a multiplicative
+character of~$\F_v$. Suppose:}
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=1pt]
+\item \emph{$L$ is injective;}
+\item \emph{for every \m{y\in\mathrm{Prin}(D,\cV)[p]} and every split prime $w$ of $E(D)$ such that neither $w$ nor
+$\bar w$ is chosen, the function $L(y)$ is spherical at $w$ with~$\Upsilon_w$: it is fixed by right translation
+by the elements of $K_0(I')$ with component~$1$ at the primes other than $w$ and~$\bar w$, and for every
+\m{X\in\mathbb C}
+\[\sum_{n=0}^{\#I'}(-X)^n\,(\#\F_w)^{n(n-1)/2}\;\mathbb T^{w,n}L(y)=\Upsilon_w(X)\,L(y);\]}
+\item \emph{for every \m{y\in\mathrm{Prin}(D,\cV)}, the function $L(y)$ has parahoric type at~$v$ for
+\m{(\nu,\beta,\psi,\chi)} and the functions \m{x\mapsto L\bigl(\mathrm{rep}_{D,\cV}(x_{(v)})\,y\bigr)}: that is,
+\m{\beta^{-1}(0)=\nu(I(D))}, and for every \m{x\in\GL_{I(D)}(\F_v)} and every \m{k\in\GL_{I'}(O_v)} whose reduction
+$\bar k$ is block upper triangular for $\beta$ with block~$0$ equal to~$x$,
+\[R(k^{(v)})\,L(y)=\prod_{n=1}^{n_1}\chi_n(\det\bar k_{nn})\cdot\psi(\det x)\cdot L\bigl(\mathrm{rep}_{D,\cV}(x_{(v)})\,y\bigr);\]}
+\item \emph{the characters \m{\chi_1,\dots,\chi_{n_1}} are pairwise distinct;}
+\item \emph{\m{\psi^{M_\omega(D)}=1};}
+\item \emph{\m{\chi_n^{M_\omega(D)}=1} for every~$n$.}
+\end{enumerate}
+\emph{Then the set \m{\mathrm{Occ}(D,\cV,p,v)} has at most one element.}}
+\leanline{\lean{occurringLabelssubsingleton}}
+
+The theorem says nothing about existence: if \m{\mathrm{Prin}(D,\cV)[p]} is zero, no label occurs. It is applied
+twice in the note \emph{Good forms and rows}: to the space of the rows, with $L$ the chain of $m(D)$ theta lifts
+to a definite space, and to the source of each single lift, with $L$ that lift. In both cases the lift carries
+the cuspidal type at~$v$ into a type induced from a parabolic subgroup, which is what (iii) expresses.
+
+\sect{The setting}{s:setting}
+\begin{conventions}\phantomsection\label{c:conventions}
+The natural numbers are \m{0,1,2,\dots}. The parameters \m{P=(N_0,d)} of the proof are fixed. For a number field
+$E$: a prime of~$E$ is a non-zero prime ideal of its ring of integers; $\F_w$, $E_w$, $O_w$ are the residue
+field, the completion and its ring of integers at a prime~$w$; for a CM field, \m{z\mapsto\bar z} is complex
+conjugation, and a prime $w$ is split if \m{\bar w\ne w}. For a finite set~$I'$, \m{\GL_{I'}} of a ring is the group
+of invertible matrices over it indexed by~$I'$; \m{G_f(I')} is the group of the matrices $g$ over the finite
+adeles of~$E$, indexed by~$I'$, with \m{g^*g=1}, where $g^*$ is the conjugate transpose; \m{K_0(I')} is its
+subgroup of the matrices with integral entries; for a split prime $w$ and \m{k\in\GL_{I'}(E_w)}, \m{k^{(w)}\in G_f(I')}
+has component $k$ at~$w$ and $1$ at the primes other than $w$ and~$\bar w$; and $R$ is right translation of
+functions on~$G_f(I')$, \m{(R(g)f)(g')=f(g'g)}. $\bar{\mathbb Q}$ is an algebraic closure of~$\mathbb Q$ that
+contains~$E$. Labels, primitive labels, the polynomial \m{c^{[u]}} whose roots are $u$ times those of~$c$, the
+injective character $T$ of the multiplicative group of an algebraic closure $\bar{\F}$ of a finite field~$\F$,
+the unit $x_\chi$ that names a multiplicative character~$\chi$, Green's class functions $\Xi_c$ and their
+induction product~$*$, and the idempotents \m{e_{I,c}} are those of the note \emph{Primitive labels}.
+\end{conventions}
+
+\begin{setting}[the data and its forms]\label{s:data}
+$D$ is admissible data for the parameters~$P$ (Chapter~III of the handout). The following objects are those of
+the setting and of the definitions of the note \emph{Good forms and rows}: the CM field $E(D)$, which
+contains a primitive root of unity of order~$5040$; the chosen primes, none of which is conjugate to a chosen
+prime; the rank \m{r(D)>1}; the row index set $I(D)$ with $r(D)$ elements and the group
+\m{\mathsf G(D)=\prod_v\GL_{I(D)}(\F_v)} over the chosen primes; the integer \m{M_\omega(D)}, for which
+\m{M_\omega(D)^2} divides \m{\#\F_v-1} and \m{0<M_\omega(D)<\#\F_v-1} at every chosen prime~$v$; the fact that
+$\#\F_v$ is an odd prime for chosen~$v$; for signs $\fs$ on $I(D)$ and a space $\cV$ over $E(D)$ with index set
+$I(D)$ and signs~$\fs$, the space \m{\mathrm{Prin}(D,\cV)} of forms of principal level at the chosen primes and the
+representation \m{\mathrm{rep}_{D,\cV}} of \m{\mathsf G(D)} on it; the Hecke operators \m{\mathbb T^{w,n}} at the
+split primes $w$ with neither $w$ nor $\bar w$ chosen; eigensystems $p$ and the eigenparts
+\m{\mathrm{Prin}(D,\cV)[p]}; and, for a chosen prime~$v$, the set \m{\mathrm{Occ}(D,\cV,p,v)} of the primitive
+labels \m{c\in\F_v[X]} of degree $r(D)$ for which \m{e_{I(D),c}}, acting through the factor $v$ of
+\m{\mathsf G(D)}, does not kill \m{\mathrm{Prin}(D,\cV)[p]}. For \m{x\in\GL_{I(D)}(\F_v)}, \m{x_{(v)}\in\mathsf G(D)}
+has component $x$ at $v$ and $1$ elsewhere.
+\end{setting}
+
+\subhead{Functions on $G_f(I')$: Hecke polynomials, eigenforms, types, labels.} These notions belong to the
+background library. Let $E$ be a CM field, $I'$ a finite set, $\mathcal W$ a set, and $f$ a function on $G_f(I')$
+with values in the complex functions on~$\mathcal W$.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item For a split prime~$w$ and a natural number~$n$, \m{\mathbb T^{w,n}f} is the sum of the right translates of
+$f$ by the \m{k^{(w)}}, $k$ running over representatives of the cosets modulo \m{\GL_{I'}(O_w)} in the double coset
+of \m{\mathrm{diag}(\varpi,\dots,\varpi,1,\dots,1)}, with $n$ entries equal to a uniformizer~$\varpi$.
+\item $f$ \emph{has Hecke polynomial $Q$ at a split prime~$w$}, for a complex polynomial~$Q$, if $f$ is fixed by
+right translation by the elements of $K_0(I')$ with component $1$ at the primes other than $w$ and~$\bar w$, and
+there are complex numbers \m{t_0,t_1,\dots} with \m{\mathbb T^{w,n}f=t_nf} for all~$n$ and
+\m{Q=\sum_{n=0}^{\#I'}(-1)^n(\#\F_w)^{n(n-1)/2}\,t_n\,X^{\#I'-n}}.
+\item $f$ \emph{is an eigenform for a family \m{(\mathrm{Hk}_w)_w} of complex polynomials}, indexed by the primes
+of~$E$, if \m{f\ne0} and for all but finitely many primes~$w$: if the norm $\#\F_w$ is a prime number, then $w$ is
+split and $f$ has Hecke polynomial $\mathrm{Hk}_w$ at~$w$.
+\item \emph{Algebraic modular forms} on the standard space with index set $I'$, of a weight~$\kappa$: functions
+$f$ as above, for a finite set $\mathcal W$ fixed by the weight, that are invariant under right translation by an
+open subgroup and satisfy \m{f(\gamma g)=\mathrm{alg}_\kappa(\gamma)f(g)} for all rational points $\gamma$ of the
+definite unitary group, with $\mathrm{alg}_\kappa$ the algebraic representation of the weight.
+\item Let \m{\beta\colon I'\to\{0,\dots,n_1\}} be a map. A matrix $\bar k$ indexed by $I'$ is \emph{block upper
+triangular for~$\beta$} if its entry at \m{(\iota,\iota')} vanishes whenever \m{\beta(\iota')<\beta(\iota)}; its
+$n$-th diagonal block $\bar k_{nn}$ is its part with rows and columns in \m{\beta^{-1}(n)}. With an injection
+$\nu$ of a set $I$ onto \m{\beta^{-1}(0)}, block~$0$ is read as a matrix indexed by~$I$.
+\item Let $w$ be a split prime, \m{c\in\F_w[X]}, \m{\chi_1,\dots,\chi_{n_1}} multiplicative characters of $\F_w$ and
+\m{t_1,\dots,t_{n_1}} natural numbers. Then $f$ \emph{has the product label \m{(c;\chi;t)} of degree $\delta$
+at~$w$} if: $c$ is a label of degree~$\delta$; the polynomial \m{c\cdot\prod_n(X-x_{\chi_n})} is separable;
+\m{\delta+\sum_nt_n=\#I'}; $f$ is fixed by \m{R(k^{(w)})} for the \m{k\in\GL_{I'}(O_w)} that reduce to~$1$; and
+\m{\sum_{x}\overline{\Xi(x)}\,R(\tilde x^{(w)})f\ne0}, the sum over \m{x\in\GL_{I'}(\F_w)} with lifts
+\m{\tilde x\in\GL_{I'}(O_w)}, where $\Xi$ is the induction product of $\Xi_c$ and of the functions
+\m{\chi_n\circ\det} in size~$t_n$.
+\end{enumerate}
+
+\subhead{Galois representations.} Let $E$ be a CM field inside $\bar{\mathbb Q}$, $\ell$ a prime number and
+\m{\iota\colon\mathbb C\to\bar{\mathbb Q}_\ell} an isomorphism of fields. A \emph{place of $\bar{\mathbb Q}$ over
+a prime $w$} of $E$ is a valuation ring $\mathfrak P$ of $\bar{\mathbb Q}$ whose maximal ideal meets the integers
+of $E$ in~$w$; its inertia group consists of the \m{\sigma\in\Gal(\bar{\mathbb Q}/E)} that preserve $\mathfrak P$ and
+act trivially on its residue field, which is an algebraic closure $\bar{\F}_w$ of~$\F_w$.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt,start=7]
+\item \emph{Tame exponents.} Let $a$ and \m{\delta\ne0} be natural numbers and \m{q=(\#\F_w)^\delta}. An element
+$\sigma$ of the inertia group of $\mathfrak P$ \emph{has tame exponent $a$ of level~$\delta$} if there are a
+uniformizer $\varpi$ of $E$ at $w$ and \m{z\in\bar{\mathbb Q}} with \m{z^{q-1}=\varpi} such that the reduction
+\m{\zeta\in\bar{\F}_w} of the root of unity \m{\sigma(z)/z} satisfies \m{T(\zeta)=\exp(2\pi i\,a/(q-1))}.
+\item \emph{Attached representations.} A homomorphism \m{\rho\colon\Gal(\bar{\mathbb Q}/E)\to\GL_{I'}(\bar{\mathbb Q}_\ell)}
+is \emph{attached to} a family \m{(\mathrm{Hk}_w)_w} of complex polynomials if it is continuous, if the trace
+form \m{(a,b)\mapsto\mathrm{tr}(ab)} is non-degenerate on the linear span of its image (so $\rho$ is semisimple),
+and if for every real \m{\eta>0} the following set of Frobenius data is \emph{large}: the triples
+\m{(w,\mathfrak P,\sigma)} of a prime $w$ of prime norm, a place $\mathfrak P$ over it and a geometric Frobenius
+element $\sigma$ at~$\mathfrak P$ such that every coefficient of the characteristic polynomial of
+\m{\rho(\sigma)} differs from the corresponding coefficient of \m{\iota(\mathrm{Hk}_w)} by at most $\eta$ in the
+$\ell$-adic absolute value. A set of Frobenius data is large if every non-empty open subset of the Galois group
+contains a non-empty open subset $U$ such that, for all but finitely many~$w$, all data \m{(w,\mathfrak P,\sigma)}
+with \m{\sigma\in U} belong to the set.
+\end{enumerate}
+So ``attached'' is an approximate notion: it does not say that the characteristic polynomial of a Frobenius
+element is the Hecke polynomial, only that this holds up to every $\ell$-adic precision on a set of Frobenius
+elements that is dense in a strong sense. By the theorem of Chebotarev (which the library proves in its existence
+form) and continuity, this still determines the characteristic polynomial of $\rho$ on the whole group, and
+hence $\rho$ up to isomorphism by the theorem of Brauer and Nesbitt; the proof below needs neither, because
+Input~2 holds for every attached representation.
+
+\sect{Inputs}{s:inputs}
+\statement{inksoft}{\textbf{Inputs from the background library.} $E$ is a CM field inside $\bar{\mathbb Q}$ with
+Weil data in the library's sense (in particular it contains a primitive root of unity of order~$5040$); $I'$ is a
+non-empty finite set; $\ell$ is a prime and \m{\iota\colon\mathbb C\to\bar{\mathbb Q}_\ell} an isomorphism of fields.
+
+\vspace{4pt}\phantomsection\label{i:1}\textbf{Input 1} (attached Galois representations exist).\enspace
+\emph{Let \m{(\mathrm{Hk}_w)_w} be a family of complex polynomials and $f$ an algebraic modular form of some weight
+on the standard space with index set~$I'$ that is an eigenform for \m{(\mathrm{Hk}_w)_w}. Then there is a
+homomorphism \m{\rho\colon\Gal(\bar{\mathbb Q}/E)\to\GL_{I'}(\bar{\mathbb Q}_\ell)} attached to \m{(\mathrm{Hk}_w)_w}.}
+
+\vspace{3pt}\phantomsection\label{i:2}\textbf{Input 2} (local-global compatibility at tame level).\enspace
+\emph{Let $f$ be an algebraic modular form of some weight on the standard space with index set~$I'$ that is an
+eigenform for \m{(\mathrm{Hk}_w)_w}, and let $\rho$ be \emph{any} homomorphism attached to \m{(\mathrm{Hk}_w)_w}.
+Let $w$ be a split prime at which $f$ has the product label \m{(c;\chi;t)} of degree~$\delta$, $\mathfrak P$ a place
+of $\bar{\mathbb Q}$ over~$w$, and $\sigma$ an element of the inertia group of $\mathfrak P$ that has tame
+exponent $a$ of level~$\delta!$. Let
+\m{Q=\prod_x\bigl(X-\iota(T(x)^a)\bigr)}, the product over the roots $x$ in $\bar{\F}_w$, with multiplicity, of
+\m{c\cdot\prod_n(X-x_{\chi_n})^{t_n}}. If $\ell$ is not the residue characteristic of~$w$, then
+\m{Q(\rho(\sigma))=0}, and \m{\det\rho(\sigma)} is the product of the roots of~$Q$.}
+
+\vspace{3pt}\phantomsection\label{i:3}\textbf{Input 3} (type implies label).\enspace \emph{Let $w$ be a split
+prime, $I$ a finite set, and let \m{\GL_I(\F_w)} act linearly on a complex vector space, written
+\m{(x,y)\mapsto x\cdot y}; let $y$ be a vector of it, and $L$ an injective linear map from that space to the
+functions on $G_f(I')$ with values in the functions on a set. Let \m{c\in\F_w[X]} with \m{e_{I,c}\cdot y\ne0}. Let $\nu$, $\beta$, $\psi$, \m{\chi_1,\dots,\chi_{n_1}} be
+as in Theorem~1\textup{(iii)}, with the $\chi_n$ pairwise distinct, and suppose that $L(y)$ has parahoric type
+at~$w$ for \m{(\nu,\beta,\psi,\chi)} and the functions \m{x\mapsto L(x\cdot y)}. If no $x_{\chi_n}$ is a root of
+\m{c^{[x_\psi]}}, then $L(y)$ has the product label \m{(c^{[x_\psi]};\chi;t)} of degree~$\#I$ at~$w$, with
+\m{t_n=\#\beta^{-1}(n)}.}
+
+\vspace{3pt}\phantomsection\label{i:4}\textbf{Input 4} (tame inertia; Hecke polynomials).\enspace
+\emph{\textup{(a)} For every prime $w$ of~$E$, every place $\mathfrak P$ of $\bar{\mathbb Q}$ over $w$ and every
+natural number~$\delta$, some element of the inertia group of $\mathfrak P$ has tame exponent~$1$ of
+level~$\delta!$. \textup{(b)} Let $w$ be a split prime and \m{\Upsilon\colon\mathbb C\to\mathbb C} a function. There
+are complex numbers \m{t_0,t_1,\dots} such that \m{\mathbb T^{w,n}f=t_nf} for all~$n$ and every function $f$ on
+$G_f(I')$ that is spherical at $w$ with~$\Upsilon$ in the sense of Theorem~1\textup{(ii)}. \textup{(c)} A prime
+of~$E$ whose norm is a prime number is split.}}
+\leanline{\lean{sphericalCompatstd}\sep \lean{isLabelledAt}\sep \lean{hasProductLabel}\sep
+\lean{existsisTameExponent}\sep \lean{existsheckeSpliteqsmul}\sep \lean{isSplitofqprime}}
+
+\statement{inksoft}{\phantomsection\label{i:5}\textbf{Input 5} (primitive labels; the two lemmas of the note
+\emph{Primitive labels}).\enspace \emph{Let $\F$ be a finite field, \m{c\in\F[X]} a primitive label of degree~$r$.
+\textup{(a)} If \m{u\in\F^\times} and $M$ is a natural number with \m{u^M=1} and \m{M^2} dividing \m{\#\F-1}, then
+\m{c^{[u]}} is a primitive label of degree~$r$. \textup{(b)} The product of the roots of $c$ in $\bar{\F}$ is a
+primitive root of unity of order \m{\#\F-1}.}}
+\leanline{\lean{scaleRoots}\sep \lean{isPrimitiveRootprodroots}}
+
+\subhead{On Inputs 1 and 2.} These are the two deep inputs. The references and their relation to the formal
+statements are those of the catalogue of this handout and of its second reading, which compared the statements
+with the sources.
+
+\emph{Input 1} is a weaker consequence of the construction of Galois representations for automorphic
+representations of unitary groups: G.~Chenevier and M.~Harris, \emph{Construction of automorphic Galois
+representations,~II}, Camb. J. Math. 1 (2013), Theorem~3.2.3; T.~Barnet-Lamb, T.~Gee, D.~Geraghty and R.~Taylor,
+\emph{Potential automorphy and change of weight}, Ann. of Math. 179 (2014), Theorem~2.1.1; with base change from
+the unitary group by J.-P.~Labesse, \emph{Changement de base CM et séries discrètes}, Corollaire~5.3. It is weaker
+in three ways: only the standard definite hermitian space over a CM field with Weil data is treated; ``attached''
+has the approximate meaning of (h) above, in place of the equality of the characteristic polynomial of Frobenius
+with the Hecke polynomial at almost all places; and the transport between eigenforms on the unitary group,
+automorphic representations of the general linear group and their weights is part of the library's own argument.
+The formal statement has a second half, on the local behaviour of attached representations at places where the
+form is spherical, which is not used in this unit.
+
+\emph{Input 2} goes in the direction of local-global compatibility, for which the library's file names
+M.~Harris and R.~Taylor, \emph{The geometry and cohomology of some simple Shimura varieties} (2001), R.~Taylor and
+T.~Yoshida, \emph{Compatibility of local and global Langlands correspondences}, J. Amer. Math. Soc. 20 (2007),
+Theorem~A, and T.~Barnet-Lamb, T.~Gee, D.~Geraghty and R.~Taylor, \emph{Local-global compatibility for $l=p$,~II},
+Ann. Sci. ENS 47 (2014), Theorem~1.1. Those theorems identify the Weil--Deligne representation of
+$\rho$ at $w$ with the local Langlands parameter of the local component. Input~2 retains much less: only split
+places, only the restriction to tame inertia, only that a polynomial kills $\rho(\sigma)$ together with the value
+of the determinant, and with the local component described by a finite type (Green's character induced with
+characters of the determinant) in place of a parameter. The second reading leaves open the identification of
+this formal statement with a published one; the library derives it from the spherical case by cyclic base
+change. In classical terms it says that tame inertia acts through the sum of the characters $\theta_x$, $x$ the
+roots of the label, composed with the fundamental character of level~$\delta!$, as the depth-zero local Langlands
+correspondence predicts. The formal statement also contains assertions on finite ramification and on
+Hodge--Tate weights, and a clause for $\ell$ equal to the residue characteristic, none of which is used here.
+
+Input~3 is Frobenius reciprocity for the parahoric subgroup together with the orthogonality of Green's
+characters; Input~4(a) is Kummer theory of the tame quotient of inertia; Input~4(b) says that the values of the
+Hecke polynomial determine the eigenvalues; Input~4(c) holds because a prime fixed by complex conjugation has
+square norm when $E$ contains a primitive root of unity of order~$5040$. The library proves these four without a
+named source.
+
+\sect{Proofs}{s:proofs}
+\begin{lemma}[eigenforms from Hecke polynomials off the level]\label{l:eigen}
+In Setting~\ref{s:data}, let $I'$ be a finite set, $\mathcal W$ a set, $f$ a function on $G_f(I')$ with values in
+the complex functions on~$\mathcal W$, and \m{(\mathrm{Hk}_w)_w} a family of complex polynomials indexed by the
+primes of~$E(D)$. Suppose that \m{f\ne0}, and that for every split prime $w$ of $E(D)$ such that neither $w$ nor
+$\bar w$ is chosen, $f$ has Hecke polynomial $\mathrm{Hk}_w$ at~$w$. Then $f$ is an eigenform for
+\m{(\mathrm{Hk}_w)_w}.
+\end{lemma}
+\begin{proof}
+There are finitely many chosen primes, so all but finitely many primes $w$ are such that neither $w$ nor
+$\bar w$ is chosen. If such a $w$ has prime norm, it is split by Input~4(c), and the hypothesis applies to it.
+\end{proof}
+\leanline{\lean{isEigenformofhasHeckePolyAt}}
+
+\begin{proof}[Proof of Theorem 1]
+Let \m{c_1,c_2\in\mathrm{Occ}(D,\cV,p,v)}; we show \m{c_1=c_2}. Write \m{q=\#\F_v} and \m{r=r(D)}, and let $T$ be
+the injective character of \m{\bar{\F}_v^\times}. Take \m{\ell=2}; an isomorphism of fields
+\m{\iota\colon\mathbb C\to\bar{\mathbb Q}_2} exists, because both fields are algebraically closed, of
+characteristic~$0$ and of the cardinality of the continuum. Fix a place $\mathfrak P$ of $\bar{\mathbb Q}$
+over~$v$ and, by Input~4(a), an element $\sigma$ of its inertia group with tame exponent~$1$ of level~$r!$. As $q$
+is odd, $2$ is not the residue characteristic of~$v$.
+
+For \m{j\in\{1,2\}} choose \m{y_j\in\mathrm{Prin}(D,\cV)[p]} such that \m{e_{I(D),c_j}}, acting through the factor
+$v$ of \m{\mathsf G(D)}, does not kill~$y_j$; put \m{f_j=L(y_j)} and \m{c_j'=c_j^{[x_\psi]}}.
+
+\emph{Step 1: $c_j'$ is a primitive label of degree~$r$.} By (v), \m{x_\psi^{M_\omega(D)}=1}, and
+\m{M_\omega(D)^2} divides \m{q-1}; apply Input~5(a).
+
+\emph{Step 2: $f_j$ has the product label \m{(c_j';\chi;t)} of degree $r$ at~$v$, with \m{t_n=\#\beta^{-1}(n)}.}
+This is Input~3 for the representation \m{x\mapsto\mathrm{rep}_{D,\cV}(x_{(v)})} of \m{\GL_{I(D)}(\F_v)}: $L$ is
+injective by (i), \m{e_{I(D),c_j}} does not kill $y_j$, the parahoric type is (iii), the $\chi_n$ are distinct
+by (iv), and no \m{x_{\chi_n}\in\F_v} is a root of $c_j'$, which is irreducible of degree \m{r>1}.
+
+\emph{Step 3: $f_1$ and $f_2$ are eigenforms for one family of polynomials.} By Input~4(b) there are, for every
+split prime $w$ with neither $w$ nor $\bar w$ chosen, numbers \m{t_{w,0},t_{w,1},\dots} that depend only on
+$\Upsilon_w$ such that every function spherical at $w$ with $\Upsilon_w$ is an eigenvector of \m{\mathbb T^{w,n}}
+with eigenvalue~$t_{w,n}$. Let \m{\mathrm{Hk}_w=\sum_n(-1)^n(\#\F_w)^{n(n-1)/2}\,t_{w,n}\,X^{\#I'-n}} for these
+primes, and \m{\mathrm{Hk}_w=0}, say, for the others. By (ii), $f_1$ and $f_2$ have Hecke polynomial
+$\mathrm{Hk}_w$ at every such~$w$. They are not zero, by the last condition of a product label. So both are
+eigenforms for \m{(\mathrm{Hk}_w)_w}, by Lemma~\ref{l:eigen}.
+
+\emph{Step 4: one Galois representation, two labellings.} By Input~1, applied to~$f_1$, there is a homomorphism
+$\rho$ attached to \m{(\mathrm{Hk}_w)_w}. Input~2 applies to $\rho$ with $f_1$ and also with $f_2$, since it
+holds for every attached representation. For \m{j\in\{1,2\}} let
+\[
+Q_j=\prod_{x:\,c_j'(x)=0}\bigl(X-\iota T(x)\bigr)\cdot\prod_{n=1}^{n_1}\bigl(X-\iota T(x_{\chi_n})\bigr)^{t_n},
+\]
+the first product over the roots of $c_j'$ in~$\bar{\F}_v$. Then
+\begin{equation}\label{e:kill}
+Q_1(\rho(\sigma))=0,\qquad Q_2(\rho(\sigma))=0,\qquad
+\det\rho(\sigma)=\prod_{x:\,c_1'(x)=0}\iota T(x)\cdot\prod_{n=1}^{n_1}\iota T(x_{\chi_n})^{t_n}.
+\end{equation}
+
+\emph{Step 5: if \m{c_1'\ne c_2'}, every eigenvalue of \m{\rho(\sigma)} is a root of unity of order dividing
+$M_\omega(D)$.} Let $\lambda$ be an eigenvalue. By \eqref{e:kill} it is a root of $Q_1$ and of~$Q_2$. Suppose
+\m{\lambda=\iota T(x)} with $x$ a root of~$c_1'$. As $\iota$ and $T$ are injective and $\lambda$ is a root
+of~$Q_2$, either $x$ is a root of~$c_2'$, or \m{x=x_{\chi_n}} for some~$n$. The first is impossible: two
+different monic irreducible polynomials have no common root. So in every case \m{\lambda=\iota T(x_{\chi_n})} for
+some~$n$, and \m{\lambda^{M_\omega(D)}=1} by (vi), because \m{\chi\mapsto x_\chi} is a homomorphism.
+
+\emph{Step 6: conclusion.} Suppose \m{c_1'\ne c_2'}. The determinant of \m{\rho(\sigma)} is the product of its
+eigenvalues, so \m{(\det\rho(\sigma))^{M_\omega(D)}=1} by Step~5. In the formula of \eqref{e:kill} the second
+product also has $M_\omega(D)$-th power~$1$. Hence the product $\Pi$ of the roots of $c_1'$ satisfies
+\m{\iota T(\Pi)^{M_\omega(D)}=1}, and \m{\Pi^{M_\omega(D)}=1} because $\iota$ and $T$ are injective and
+multiplicative. But by Step~1 and Input~5(b), $\Pi$ is a primitive root of unity of order \m{q-1}, and
+\m{0<M_\omega(D)<q-1}: a contradiction. So \m{c_1'=c_2'}, and \m{c_1=c_2}, since \m{c\mapsto c^{[x_\psi]}} is a
+bijection.
+\end{proof}
+
+\sect{Where the results are used}{s:use}
+Theorem~1 is an input of the note \emph{Good forms and rows}; it gives there that the space of the rows and the
+sources of the single lifts have rigid labels, which is the hypothesis of the comparison of the traces of Hecke
+operators on good forms. Lemma~\ref{l:eigen} is used once more, in Chapter~VIII, where rows are shown to give
+eigenforms.
+
+\sect{Notes on the formal text}{s:notes}
+\begin{enumerate}[label=\textup{\arabic*.},leftmargin=1.6em,itemsep=5pt]
+\item \emph{Letters.} The formal text writes {\leanfont x} for the chosen prime~$v$, {\leanfont v} for the
+injection~$\nu$, {\leanfont n} for~$I'$, {\leanfont m} and {\leanfont b} for $n_1$ and~$\beta$, {\leanfont F} for
+the family~$\Upsilon$, {\leanfont Q} for the family of Hecke polynomials, {\leanfont M} for the set~$\mathcal W$,
+{\leanfont r} for the Galois representation~$\rho$, {\leanfont s} for the inertia element~$\sigma$, {\leanfont A}
+for the place~$\mathfrak P$, and {\leanfont Ω} for~$\bar{\mathbb Q}$.
+\item \emph{The functions $\Upsilon_w$.} In (ii) the value $\Upsilon_w$ is a function of a complex variable, not a
+list of eigenvalues: the hypothesis prescribes, for every complex~$X$, the scalar by which the Hecke polynomial
+evaluated at $X$ acts. That the family is common to all forms of the eigenpart is what makes Step~3 work.
+\item \emph{The target of $L$.} The weight, the system of places, the subgroup and the character that determine
+the space of algebraic forms are implicit arguments; the proof uses only that its elements are algebraic modular
+forms on the standard space, so that Inputs 1 and~2 apply.
+\item \emph{The prime $2$.} The formal proof fixes \m{\ell=2} and obtains the isomorphism $\iota$ from a lemma of
+the library on algebraically closed fields of the same cardinality (the catalogue names Steinitz; the second
+reading derives it from the existence of transcendence bases and the uniqueness of algebraic closures). Any
+prime other than the residue characteristic of $v$ would do.
+\item \emph{The end of the proof.} The formal text closes Steps 5 and~6 with two automatic tactics after a
+rewriting that turns the claim \m{\Pi^{M_\omega(D)}=1} into the statement that every root of the characteristic
+polynomial of \m{\rho(\sigma)} has $M_\omega(D)$-th power~$1$; the roots of the characteristic polynomial enter as
+the multiset whose product is the determinant, and each of them is shown to be a root of $Q_1$ and of~$Q_2$. I
+read these lines as Steps 5 and~6 and did not replay the goals. The dossier of the unit describes the same lines
+as a statement about the roots of~$c_1'$; what the formal text proves is the statement about the eigenvalues,
+and the roots of $c_1'$ enter only through the determinant. The determinant clause of Input~2 is therefore
+essential: that $Q_1$ and $Q_2$ kill \m{\rho(\sigma)} would not suffice.
+\item \emph{Lemma~\ref{l:eigen}.} In the formal statement the set $\mathcal W$ is an arbitrary type and $I'$ need
+not be non-empty. The family of polynomials is only constrained at the split primes off the level.
+\item \emph{What is not used.} The hypotheses (v) and (vi) enter only through the orders of $x_\psi$ and
+of the~$x_{\chi_n}$. The embedding $\nu$ and the map $\beta$ enter only through Input~3.
+\end{enumerate}
+
+\subhead{How this note was written.} From the dossier of the unit: its two statements and its two structured
+proofs, which a program compared line by line with the source (\UnitSteps{} leaf steps), and the second reading
+of the unit by the other agent of this write-up. I read the Lean file of the unit completely, in particular its
+last thirteen lines term by term, and in the library the definitions of Hecke polynomials, eigenforms, spherical
+vectors, parahoric types, product labels, tame exponents, attached representations and the predicate that a
+polynomial kills an element, and the statements of Inputs 1 to~4. The two statements of this note were compared
+with their Lean statements argument by argument, and the order of the quantifiers is that of the formal text.
+The proof follows the formal one; its division into six steps is mine. The references are those of the
+library's files, of the catalogue of this handout and of its second reading; I did not open the cited works.
+
+\head{Appendix A. Concordance with the Lean artifact}
+{\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}\setlength{\tabcolsep}{0pt}
+\begin{longtable}{@{}p{30mm}p{56mm}p{43mm}r@{}}
+\textbf{In this note} & \textbf{Lean declaration} & \textbf{File} & \textbf{Lines}\\\midrule\endhead
+\ConcordanceRows
+\end{longtable}}
+
+\subhead{The two statements, and the two deep inputs, as they are written in the artifact.}
+\quoted{isEigenformofhasHeckePolyAt}
+\quoted{occurringLabelssubsingleton}
+\quoted{sphericalCompatstd}
+\quoted{isLabelledAt}
+The first two stand after a line that declares the variables {\leanfont D}, {\leanfont s}, {\leanfont V} and the
+finite type {\leanfont n}. In these texts {\leanfont IsSphericalWith}, {\leanfont HasParahoricType},
+{\leanfont HasProductLabel}, {\leanfont IsEigenform}, {\leanfont Attached} are the notions (ii), (iii), (f), (c)
+and (h) above; {\leanfont IsLabelledAt} with {\leanfont PolyKillsAt} is the conclusion of Input~2;
+{\leanfont SphericalCompat}, in its first half, is Input~1; {\leanfont P.Mω D.s} is $M_\omega(D)$.
+
+\head{Notation}
+\begingroup\fontsize{8.6}{10.9}\selectfont\raggedright
+\setlength{\columnsep}{9mm}\setlength{\parskip}{0pt}
+\begin{multicols}{2}
+\nt{$P=(N_0,d)$, $D$}{the parameters; admissible data (Setting~\ref{s:data})}
+\nt{$E$, $E(D)$, $\bar{\mathbb Q}$}{a CM field; the field of the data; an algebraic closure of $\mathbb Q$}
+\nt{$w$, $v$, $\bar w$, $\F_w$, $E_w$, $O_w$}{primes ($v$ a chosen one), the conjugate prime, residue field, completion, its integers}
+\nt{$r(D)$, $m(D)$, $I(D)$, $\mathsf G(D)$, $M_\omega(D)$}{the rank, the number of lifts, the row index set, the finite group and the integer of the data}
+\nt{$\fs$, $\cV$}{a family of signs; a space with a point}
+\nt{$\mathrm{Prin}(D,\cV)$, $\mathrm{rep}_{D,\cV}$, $\mathrm{Prin}(D,\cV)[p]$, $\mathrm{Occ}(D,\cV,p,v)$}{principal forms, the action of $\mathsf G(D)$, eigenparts, occurring primitive labels (note \emph{Good forms and rows})}
+\nt{$p$}{an eigensystem}
+\nt{$I$, $I'$, $\GL_{I'}$, $G_f(I')$, $K_0(I')$, $g^*$}{finite index sets; matrix groups; the unitary group over the finite adeles and its integral points; conjugate transpose}
+\nt{$k^{(w)}$, $\bar k$, $\bar k_{nn}$, $x_{(v)}$, $\tilde x$}{the element with component $k$ at $w$; reduction; its diagonal blocks; the element with component $x$ at $v$; a lift}
+\nt{$R(g)$, $f$, $f_j$, $\mathcal W$}{right translation; functions on $G_f(I')$ with values in functions on $\mathcal W$}
+\nt{$\mathbb T^{w,n}$, $\mathrm{Hk}_w$, $Q$, $t_n$, $t_{w,n}$}{Hecke operators, Hecke polynomials, eigenvalues}
+\nt{$L$, $\nu$, $\beta$, $n_1$, $\Upsilon_w$, $\Upsilon$}{the data of Theorem~1}
+\nt{$\psi$, $\chi$, $\chi_n$, $x_\chi$, $x_\psi$}{multiplicative characters of $\F_v$ and the units that name them}
+\nt{$\F$, $\bar{\F}$, $T$, $\theta_x$, $\Xi_c$, $\Xi$, $e_{I,c}$, $c^{[u]}$}{a finite field, its closure, the injective character, the character named by~$x$, Green's class functions, idempotents, scaled polynomials (note \emph{Primitive labels})}
+\nt{$c$, $c_j$, $c_j'$, $X$, $t=(t_n)$, $\delta$, $M$, $u$}{labels and their twists; the variable; sizes of blocks; a degree or level; an exponent; a unit}
+\nt{$\kappa$, $\mathrm{alg}_\kappa$, $\gamma$}{a weight, its representation, a rational point}
+\nt{$\ell$, $\iota$, $\bar{\mathbb Q}_\ell$}{a prime, an isomorphism \m{\mathbb C\to\bar{\mathbb Q}_\ell}, an algebraic closure of the $\ell$-adic numbers}
+\nt{$\mathfrak P$, $\sigma$, $\varpi$, $z$, $\zeta$, $a$, $q$}{a place of $\bar{\mathbb Q}$, a Galois element, a uniformizer, a root of it, a root of unity; a tame exponent; the order of a finite field}
+\nt{$\rho$, $Q_j$, $\lambda$, $\Pi$, $\eta$, $U$}{a Galois representation, the polynomials of the two labellings, an eigenvalue, the product of the roots of $c_1'$; a precision; an open set}
+\nt{$y$, $y_j$, \m{x\cdot y}}{vectors, forms; the action of a finite group}
+\nt{$n$, $j$, $i$, $x$, $g$, $k$, $b$, $\iota'$, $\pi$}{indices, elements of fields and groups; in \m{2\pi i} the circle constant and the imaginary unit}
+\end{multicols}
+\endgroup
+
+\head{References}
+{\fontsize{9.4}{12.6}\selectfont
+All references are given as the library's files, the catalogue of this handout and its second reading record
+them; I did not open the works.\par
+T.~Barnet-Lamb, T.~Gee, D.~Geraghty, R.~Taylor, \emph{Potential automorphy and change of weight}, Ann. of Math.
+179 (2014); Theorem~2.1.1.\par
+T.~Barnet-Lamb, T.~Gee, D.~Geraghty, R.~Taylor, \emph{Local-global compatibility for $l=p$,~II}, Ann. Sci. ENS 47 (2014); Theorem~1.1 and
+Corollary~1.2.\par
+G.~Chenevier, M.~Harris, \emph{Construction of automorphic Galois representations,~II}, Camb. J. Math. 1 (2013);
+Theorem~3.2.3.\par
+M.~Harris, R.~Taylor, \emph{The geometry and cohomology of some simple Shimura varieties}, 2001.\par
+J.-P.~Labesse, \emph{Changement de base CM et séries discrètes}, 2011; Corollaire~5.3.\par
+J.~S.~Milne, \emph{Class Field Theory}, Chapter~VIII, Theorem~7.4, for the theorem of Chebotarev.\par
+R.~Taylor, T.~Yoshida, \emph{Compatibility of local and global Langlands correspondences}, J. Amer. Math. Soc. 20
+(2007); Theorem~A.\par}
+
+\end{document}

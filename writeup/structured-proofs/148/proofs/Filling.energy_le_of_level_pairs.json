@@ -1,0 +1,507 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Filling.CrudeEnergy:108:7",
+ "summary": "Split each block by the links of its terms; the diagonal part with links in R is the link energy; every other product ‖A_Λ‖‖A_Λ'‖ is bounded by the block bounds (enorm_amplitudeSum_le_classSize) and compared, pair by pair, with C/τ³·ν²·pairWeight via the pair invariants; the pair weights sum to at most 2τ² (sum_pairWeight_le), which gives C/b³⁰/4^{ϱ+1−j}.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Use the elementary size facts (g ≥ 2, τ ≥ 2, b ≥ 1000, b ≥ 2, …).",
+   "lines": [
+    111,
+    160
+   ],
+   "span": [
+    111,
+    60,
+    160,
+    67
+   ],
+   "lean": "S.of_size_bounds fun g t u z v y ↦ by\n  intros; simp_rw [energy, ← Finset.sum_div]; grw [div_le_iff₀, ← ofReal_le_ofReal_iff, add_mul,\n    ofReal_add, ← h, ← (?_ : ∑ c, ∑ c', ∑' (a) (b),\n    .ofReal (C / S.tailScale ^ 3 * S.unipCovolume ^ 2) * (S.pairWeight j c\n    c' b a + S.pairWeight j c c' a b) ≤ .ofReal _), linkEnergy] <;> try positivity\n  simp (disch := intros; positivity) [← Finset.sum_subtype_eq_sum_filter, ofReal_sum_of_nonneg]\n  have m {α β : Type} (f : α → ℝ≥0∞) g : tsum f * tsum g = ∑' p : α × β, f p.1 * g p.2 := by simp\n  have B Λ := enorm_amplitudeSum_le_classSize (T :=\n    T ∩ link ⁻¹' {Λ}) (by grind [IsStable, link_besselU_mul]) (hc · ·.1)\n  simp_rw [amplitudeSum, ← ((summable_amplitude T ..).hasSum.tsum_fiberwise (link ∘ (·.1))).tsum_eq]\n  grw [enorm_tsum_le_tsum_enorm]; simp_rw [← tsum_image _ injOn_subtype_val, tsum_subtype\n    (_ '' _), preimage_comp, Subtype.image_preimage_coe, T.inter_right_comm _ (_ ⁻¹' _),\n    ← tsum_subtype, ← amplitudeSum.eq_1, sq, m, ← ENNReal.summable.tsum_add_tsum_compl\n    (s := Function.diag '' R) (by simp), Finset.sum_add_distrib]\n  gcongr; exact ((Equiv.Set.image _ R fun _ _ ↦ by simp).tsum_eq _).ge\n  grw [ENNReal.sum_le_tsum, B, B]; simp_rw [m, ← ENNReal.tsum_mul_left, ← ENNReal.tsum_sigma]\n  refine (ENNReal.tsum_le_tsum fun ⟨s, π, ⟨γ, ⟨⟨m, e⟩, a⟩, n⟩, γ', ⟨⟨m', e'⟩, a'⟩, _⟩ ↦ ?_).trans\n    (tsum_comp_le_tsum_of_injective (f := fun ⟨_, _, a, b⟩ ↦ ⟨a, b⟩) ?_ _);\n  (iterate 2 rintro ⟨⟨⟩, ⟨⟨⟩⟩, ⟨_, ⟨⟨⟨_, ⟨⟩⟩, ⟨⟩, ⟨⟩, ⟨⟩⟩⟩⟩, _, ⟨⟨⟨_, ⟨⟩⟩⟩⟩⟩); rintro ⟨⟩; rfl; dsimp\n  have k := hc _ m; apply hc at m'; specialize hq _ s.2; obtain ⟨⟨i, r, l, L⟩, ⟨-, ⟨d⟩⟩, ⟨-, ⟨d'⟩⟩,\n    ⟨⟨_, p⟩, -⟩, ⟨⟨-, q⟩⟩⟩ := pairInvariant_mul_le n.1 a k hq a' m',\n    one_le_xRowsIndex_and_saturationIndex a k, one_le_xRowsIndex_and_saturationIndex a' m',\n    exists_link_split_le_classGauge n.1 a k hq γ', exists_link_split_le_classGauge n.1 a' m' hq γ\n  unfold pairWeight termWeight invPowWeight pairInvariant commonLink classSize countWeight at *; set\n    D := ite (𝔰.ϱ < j) S.mainEnergy _\n  have H : S.tailScale ^ 4 * D * (2 * S.tailScale ^ 2) ^ (j - 𝔰.ϱ) * S.codimFactor ^ i / ite\n    (𝔰.ϱ < j ∧ i = 0) X 1 ^ 𝔰.k ≤ C / S.tailScale ^ 3\n  · clear * - t u v y h₂ h₁ l k m a e e' hz\n    induction' j using lastCases with j <;> simp [Nat.sub_eq_zero_of_le, D, is_le, ← not_le]\n    · cases i; · grw [← h₂ (by simp) ⟨π.1.1, by grind⟩, t]; simp [field]; bound\n      grw [pow_le_of_le_one _ codimFactor_le_one, ← hz, ← ok.mainEnergy_le,\n        t] <;> simp [field] <;> bound\n    grw [codimFactor_le_one]; rcases j with ⟨⟨⟩⟩\n    · grw [← h₁ ⟨_, m, _, _, _, s.2, a, k.1⟩]; simp [field]\n    grw [← hz, ← le_self_pow₀] <;> simp [field] <;> bound\n  repeat rw [ite_eq_left (by simp [*]; use s)]\n  rw [inf_comm (link γ')] at *; have M := L; grw [z] at L\n  nth_grw 1 [← show 1 ≤ ite _ X 1 by lia, ← d, ← d', ← g, ← p, ← q] at M; grw [tsub_le_iff_left.2\n    (r.trans_eq (add_assoc ..)), ← H, mul_add, ← (ENNReal.pow_le_pow_left_iff (by simp)).1 (.trans\n    ?_ ((mul_le_mul' le_self_add le_add_self).trans (sq _).ge))]; simp (disch := positivity) only\n    [D, ← ofReal_mul, ← ofReal_pow, ← div_le_iff₀'] at *; nth_grw 2 [pow_succ _ 𝔰.k, ← M]\n  grw +useKAbstract [← L]; simp (disch := positivity) only [mul_pow, div_pow, Real.sq_sqrt,\n    (submoduleIndex ..).cast_mul, submoduleIndex_smul_intVectors S.gIdele_mem, Fintype.card_subtype,\n    card_filter_val_lt, S.gIdele_val ▸\n    genIndex_natCast _]; congr! 1; field; any_goals nlinarith only [t]\n  simp [ENNReal.tsum_add, ← Finset.mul_sum]\n  grw [ENNReal.tsum_comm.le, sum_pairWeight_le]\n  simp (disch := positivity) only [← ofReal_mul, ← ofReal_add, ofReal_le_ofReal_iff, field]\n  ring_nf; grw +useKAbstract [show 4 ≤ S.b by linarith, ← pow_le_tailScale (e := 𝔰.ϱ + 1 - j + 31)\n    (le_mul_of_le_of_one_le (by lia) NeZero.one_le)]; ring_nf; rfl",
+   "head_span": [
+    111,
+    60,
+    111,
+    97
+   ],
+   "head_lines": [
+    111,
+    111
+   ],
+   "uses": [
+    {
+     "decl": "Filling.of_size_bounds"
+    }
+   ]
+  },
+  {
+   "id": "1.1",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Multiply out ν²: it suffices that Σ_{c,c'} Σ_{s∈Ω} ‖A_T(c,s,c')‖² ≤ linkEnergy(T, Ω, R) + Σ_{c,c'} Σ_{γ,γ'} (C/τ³·ν²)(pairWeight(j,c,c',γ',γ) + pairWeight(j,c,c',γ,γ')) and that the latter is ≤ (C/b³⁰/4^{ϱ+1−j})ν² (goal proved in steps 1.20–1.24); h bounds the link energy.",
+   "lines": [
+    112,
+    115
+   ],
+   "lean": "  intros; simp_rw [energy, ← Finset.sum_div]; grw [div_le_iff₀, ← ofReal_le_ofReal_iff, add_mul,\n    ofReal_add, ← h, ← (?_ : ∑ c, ∑ c', ∑' (a) (b),\n    .ofReal (C / S.tailScale ^ 3 * S.unipCovolume ^ 2) * (S.pairWeight j c\n    c' b a + S.pairWeight j c c' a b) ≤ .ofReal _), linkEnergy] <;> try positivity"
+  },
+  {
+   "id": "1.2",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Write the sums over Ω as sums over the subtype.",
+   "lines": [
+    116,
+    116
+   ],
+   "lean": "  simp (disch := intros; positivity) [← Finset.sum_subtype_eq_sum_filter, ofReal_sum_of_nonneg]"
+  },
+  {
+   "id": "1.3",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "(Σ_a f(a))(Σ_b g(b)) = Σ_{(a,b)} f(a)g(b).",
+   "lines": [
+    117,
+    117
+   ],
+   "lean": "  have m {α β : Type} (f : α → ℝ≥0∞) g : tsum f * tsum g = ∑' p : α × β, f p.1 * g p.2 := by simp",
+   "typed_fact": "tsum f * tsum g = ∑' p : α × β, f p.1 * g p.2"
+  },
+  {
+   "id": "1.4",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Block bound B for each link Λ: the set T ∩ {link = Λ} is stable (links are 𝖴-invariant) and of level j, so ‖A_{T,Λ}‖ ≤ Σ ν·classSize(S, j, classGauge(·)) over its agreeing near representatives.",
+   "lines": [
+    118,
+    119
+   ],
+   "lean": "  have B Λ := enorm_amplitudeSum_le_classSize (T :=\n    T ∩ link ⁻¹' {Λ}) (by grind [IsStable, link_besselU_mul]) (hc · ·.1)",
+   "uses": [
+    {
+     "decl": "Filling.enorm_amplitudeSum_le_classSize"
+    },
+    {
+     "decl": "Filling.link_besselU_mul"
+    }
+   ]
+  },
+  {
+   "id": "1.5",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Split each amplitude sum by the link of its terms (fibres of a summable family).",
+   "lines": [
+    120,
+    120
+   ],
+   "lean": "  simp_rw [amplitudeSum, ← ((summable_amplitude T ..).hasSum.tsum_fiberwise (link ∘ (·.1))).tsum_eq]",
+   "uses": [
+    {
+     "decl": "Filling.summable_amplitude"
+    }
+   ],
+   "ambient_uses": [
+    "tsum_fiberwise"
+   ]
+  },
+  {
+   "id": "1.6",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "‖Σ_Λ A_{T,Λ}‖² ≤ (Σ_Λ‖A_{T,Λ}‖)² = Σ_{(Λ,Λ')} ‖A_Λ‖‖A_Λ'‖, split into the diagonal pairs (Λ, Λ) with Λ ∈ R and the rest.",
+   "lines": [
+    121,
+    124
+   ],
+   "lean": "  grw [enorm_tsum_le_tsum_enorm]; simp_rw [← tsum_image _ injOn_subtype_val, tsum_subtype\n    (_ '' _), preimage_comp, Subtype.image_preimage_coe, T.inter_right_comm _ (_ ⁻¹' _),\n    ← tsum_subtype, ← amplitudeSum.eq_1, sq, m, ← ENNReal.summable.tsum_add_tsum_compl\n    (s := Function.diag '' R) (by simp), Finset.sum_add_distrib]"
+  },
+  {
+   "id": "1.7",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "The diagonal part with Λ ∈ R is the link energy.",
+   "lines": [
+    125,
+    125
+   ],
+   "lean": "  gcongr; exact ((Equiv.Set.image _ R fun _ _ ↦ by simp).tsum_eq _).ge"
+  },
+  {
+   "id": "1.8",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "The rest: bound both factors by B and expand into a sum over tuples (s, (Λ,Λ'), γ, γ').",
+   "lines": [
+    126,
+    126
+   ],
+   "lean": "  grw [ENNReal.sum_le_tsum, B, B]; simp_rw [m, ← ENNReal.tsum_mul_left, ← ENNReal.tsum_sigma]"
+  },
+  {
+   "id": "1.9",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Compare termwise with the pair weights through the map (s, π, γ, γ') ↦ (γ, γ'), injective (goal of step 1.10).",
+   "lines": [
+    127,
+    128
+   ],
+   "lean": "  refine (ENNReal.tsum_le_tsum fun ⟨s, π, ⟨γ, ⟨⟨m, e⟩, a⟩, n⟩, γ', ⟨⟨m', e'⟩, a'⟩, _⟩ ↦ ?_).trans\n    (tsum_comp_le_tsum_of_injective (f := fun ⟨_, _, a, b⟩ ↦ ⟨a, b⟩) ?_ _);"
+  },
+  {
+   "id": "1.10",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Injectivity of that map.",
+   "lines": [
+    129,
+    129
+   ],
+   "lean": "  (iterate 2 rintro ⟨⟨⟩, ⟨⟨⟩⟩, ⟨_, ⟨⟨⟨_, ⟨⟩⟩, ⟨⟩, ⟨⟩, ⟨⟩⟩⟩⟩, _, ⟨⟨⟨_, ⟨⟩⟩⟩⟩⟩); rintro ⟨⟩; rfl; dsimp"
+  },
+  {
+   "id": "1.11",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "For the pair: γ, γ' have level j; s fixes norm ≥ X; the pair invariant bound (i the codimension of the common link, r, l, L), the index bounds for γ and γ', and the link splittings bounded by the class gauges.",
+   "lines": [
+    130,
+    133
+   ],
+   "lean": "  have k := hc _ m; apply hc at m'; specialize hq _ s.2; obtain ⟨⟨i, r, l, L⟩, ⟨-, ⟨d⟩⟩, ⟨-, ⟨d'⟩⟩,\n    ⟨⟨_, p⟩, -⟩, ⟨⟨-, q⟩⟩⟩ := pairInvariant_mul_le n.1 a k hq a' m',\n    one_le_xRowsIndex_and_saturationIndex a k, one_le_xRowsIndex_and_saturationIndex a' m',\n    exists_link_split_le_classGauge n.1 a k hq γ', exists_link_split_le_classGauge n.1 a' m' hq γ",
+   "uses": [
+    {
+     "decl": "Filling.pairInvariant_mul_le"
+    },
+    {
+     "decl": "Filling.one_le_xRowsIndex_and_saturationIndex"
+    },
+    {
+     "decl": "Filling.exists_link_split_le_classGauge"
+    }
+   ]
+  },
+  {
+   "id": "1.12",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Unfold the weights; D = 𝖽 if ϱ < j, else τ¹³/(τ³²)^j·𝖽₁.",
+   "lines": [
+    134,
+    135
+   ],
+   "lean": "  unfold pairWeight termWeight invPowWeight pairInvariant commonLink classSize countWeight at *; set\n    D := ite (𝔰.ϱ < j) S.mainEnergy _"
+  },
+  {
+   "id": "1.13",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Numerical heart: τ⁴·D·(2τ²)^{j−ϱ}·codimFactor^i / (X if ϱ < j and i = 0, else 1)^k ≤ C/τ³.",
+   "lines": [
+    136,
+    145
+   ],
+   "lean": "  have H : S.tailScale ^ 4 * D * (2 * S.tailScale ^ 2) ^ (j - 𝔰.ϱ) * S.codimFactor ^ i / ite\n    (𝔰.ϱ < j ∧ i = 0) X 1 ^ 𝔰.k ≤ C / S.tailScale ^ 3\n  · clear * - t u v y h₂ h₁ l k m a e e' hz\n    induction' j using lastCases with j <;> simp [Nat.sub_eq_zero_of_le, D, is_le, ← not_le]\n    · cases i; · grw [← h₂ (by simp) ⟨π.1.1, by grind⟩, t]; simp [field]; bound\n      grw [pow_le_of_le_one _ codimFactor_le_one, ← hz, ← ok.mainEnergy_le,\n        t] <;> simp [field] <;> bound\n    grw [codimFactor_le_one]; rcases j with ⟨⟨⟩⟩\n    · grw [← h₁ ⟨_, m, _, _, _, s.2, a, k.1⟩]; simp [field]\n    grw [← hz, ← le_self_pow₀] <;> simp [field] <;> bound",
+   "head_lines": [
+    136,
+    137
+   ],
+   "typed_fact": "S.tailScale ^ 4 * D * (2 * S.tailScale ^ 2) ^ (j - 𝔰.ϱ) * S.codimFactor ^ i / ite\n    (𝔰.ϱ < j ∧ i = 0) X 1 ^ 𝔰.k ≤ C / S.tailScale ^ 3"
+  },
+  {
+   "id": "1.13.1",
+   "parent": "1.13",
+   "kind": "deduction",
+   "claim": "Keep only the needed hypotheses.",
+   "lines": [
+    138,
+    138
+   ],
+   "lean": "  · clear * - t u v y h₂ h₁ l k m a e e' hz"
+  },
+  {
+   "id": "1.13.2",
+   "parent": "1.13",
+   "kind": "deduction",
+   "claim": "Cases on j: j = ϱ+1 or j ≤ ϱ.",
+   "lines": [
+    139,
+    145
+   ],
+   "lean": "    induction' j using lastCases with j <;> simp [Nat.sub_eq_zero_of_le, D, is_le, ← not_le]\n    · cases i; · grw [← h₂ (by simp) ⟨π.1.1, by grind⟩, t]; simp [field]; bound\n      grw [pow_le_of_le_one _ codimFactor_le_one, ← hz, ← ok.mainEnergy_le,\n        t] <;> simp [field] <;> bound\n    grw [codimFactor_le_one]; rcases j with ⟨⟨⟩⟩\n    · grw [← h₁ ⟨_, m, _, _, _, s.2, a, k.1⟩]; simp [field]\n    grw [← hz, ← le_self_pow₀] <;> simp [field] <;> bound",
+   "head_lines": [
+    139,
+    139
+   ],
+   "ambient_uses": [
+    "Fin.lastCases"
+   ]
+  },
+  {
+   "id": "1.13.2.1",
+   "parent": "1.13.2",
+   "kind": "case",
+   "claim": "j = ϱ+1 (D = 𝖽): if i = 0 the links of the pair differ (an off-diagonal pair), so some link is not in R and h₂ gives τ¹²𝖽/X^k ≤ C; if i ≥ 1, codimFactor^i ≤ codimFactor and τ¹⁸·codimFactor·𝖽 ≤ 𝖽₁ ≤ C (mainEnergy_le, hz).",
+   "lines": [
+    140,
+    142
+   ],
+   "lean": "    · cases i; · grw [← h₂ (by simp) ⟨π.1.1, by grind⟩, t]; simp [field]; bound\n      grw [pow_le_of_le_one _ codimFactor_le_one, ← hz, ← ok.mainEnergy_le,\n        t] <;> simp [field] <;> bound",
+   "uses": [
+    {
+     "decl": "Filling.IsAdmissible"
+    }
+   ]
+  },
+  {
+   "id": "1.13.2.2",
+   "parent": "1.13.2",
+   "kind": "case",
+   "claim": "j ≤ ϱ (D = τ¹³/(τ³²)^j𝖽₁): codimFactor ≤ 1;",
+   "lines": [
+    143,
+    145
+   ],
+   "lean": "    grw [codimFactor_le_one]; rcases j with ⟨⟨⟩⟩\n    · grw [← h₁ ⟨_, m, _, _, _, s.2, a, k.1⟩]; simp [field]\n    grw [← hz, ← le_self_pow₀] <;> simp [field] <;> bound",
+   "head_span": [
+    143,
+    5,
+    143,
+    30
+   ],
+   "head_lines": [
+    143,
+    143
+   ]
+  },
+  {
+   "id": "1.13.2.2.1",
+   "parent": "1.13.2.2",
+   "kind": "deduction",
+   "claim": "cases j = 0 or j ≥ 1:",
+   "lines": [
+    143,
+    144
+   ],
+   "span": [
+    143,
+    31,
+    144,
+    60
+   ],
+   "lean": "rcases j with ⟨⟨⟩⟩\n    · grw [← h₁ ⟨_, m, _, _, _, s.2, a, k.1⟩]; simp [field]",
+   "head_span": [
+    143,
+    31,
+    143,
+    49
+   ],
+   "head_lines": [
+    143,
+    143
+   ]
+  },
+  {
+   "id": "1.13.2.2.1.1",
+   "parent": "1.13.2.2.1",
+   "kind": "case",
+   "claim": "j = 0: the term γ is in normal form of level 0, so τ²⁰𝖽₁ ≤ C by h₁.",
+   "lines": [
+    144,
+    144
+   ],
+   "lean": "    · grw [← h₁ ⟨_, m, _, _, _, s.2, a, k.1⟩]; simp [field]"
+  },
+  {
+   "id": "1.13.2.2.2",
+   "parent": "1.13.2.2",
+   "kind": "deduction",
+   "claim": "j ≥ 1 (remaining case): 𝖽₁ ≤ C (hz) and τ^{…} ≤ τ^{32j} absorb the factors.",
+   "lines": [
+    145,
+    145
+   ],
+   "lean": "    grw [← hz, ← le_self_pow₀] <;> simp [field] <;> bound"
+  },
+  {
+   "id": "1.14",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Both pairWeight conditions hold for the pair (congruent, near representatives of level j).",
+   "lines": [
+    146,
+    146
+   ],
+   "lean": "  repeat rw [ite_eq_left (by simp [*]; use s)]"
+  },
+  {
+   "id": "1.15",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Use the symmetry of the common link; keep a copy M of the pair bound L and rewrite L.",
+   "lines": [
+    147,
+    147
+   ],
+   "lean": "  rw [inf_comm (link γ')] at *; have M := L; grw [z] at L"
+  },
+  {
+   "id": "1.16",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Rewrite the bound M",
+   "lines": [
+    148,
+    148
+   ],
+   "span": [
+    148,
+    3,
+    148,
+    15
+   ],
+   "lean": "nth_grw 1 [←"
+  },
+  {
+   "id": "1.17",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "with 1 ≤ (X or 1) and the index bounds d, d', the class gauge bounds p, q and the g-bound,",
+   "lines": [
+    148,
+    148
+   ],
+   "span": [
+    148,
+    16,
+    148,
+    74
+   ],
+   "lean": "show 1 ≤ ite _ X 1 by lia, ← d, ← d', ← g, ← p, ← q] at M;",
+   "typed_fact": "1 ≤ ite _ X 1"
+  },
+  {
+   "id": "1.18",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "then reduce the product of the two class sizes to H (step 1.13), via (u+v)² ≥ uv-type inequalities and the square root in classSize.",
+   "lines": [
+    148,
+    151
+   ],
+   "span": [
+    148,
+    75,
+    151,
+    90
+   ],
+   "lean": "grw [tsub_le_iff_left.2\n    (r.trans_eq (add_assoc ..)), ← H, mul_add, ← (ENNReal.pow_le_pow_left_iff (by simp)).1 (.trans\n    ?_ ((mul_le_mul' le_self_add le_add_self).trans (sq _).ge))]; simp (disch := positivity) only\n    [D, ← ofReal_mul, ← ofReal_pow, ← div_le_iff₀'] at *; nth_grw 2 [pow_succ _ 𝔰.k, ← M]",
+   "uses": [
+    {
+     "step": "1.13"
+    }
+   ]
+  },
+  {
+   "id": "1.19",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "The remaining identity of real expressions (indices of g-scaled lattices = [Ô : gÔ]^{min(j,ϱ)}, sizes of index sets) holds; numerical side goals by nonlinear arithmetic.",
+   "lines": [
+    152,
+    155
+   ],
+   "lean": "  grw +useKAbstract [← L]; simp (disch := positivity) only [mul_pow, div_pow, Real.sq_sqrt,\n    (submoduleIndex ..).cast_mul, submoduleIndex_smul_intVectors S.gIdele_mem, Fintype.card_subtype,\n    card_filter_val_lt, S.gIdele_val ▸\n    genIndex_natCast _]; congr! 1; field; any_goals nlinarith only [t]",
+   "uses": [
+    {
+     "decl": "Filling.submoduleIndex_smul_intVectors"
+    }
+   ]
+  },
+  {
+   "id": "1.20",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "The goal of step 1.1: split the sum of the two pairWeight terms.",
+   "lines": [
+    156,
+    156
+   ],
+   "lean": "  simp [ENNReal.tsum_add, ← Finset.mul_sum]"
+  },
+  {
+   "id": "1.21",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Swap the sums and bound Σ pairWeight ≤ 2τ² (twice).",
+   "lines": [
+    157,
+    157
+   ],
+   "lean": "  grw [ENNReal.tsum_comm.le, sum_pairWeight_le]",
+   "uses": [
+    {
+     "decl": "Filling.sum_pairWeight_le"
+    }
+   ],
+   "ambient_uses": [
+    "ENNReal.tsum_comm"
+   ]
+  },
+  {
+   "id": "1.22",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Pass to real numbers.",
+   "lines": [
+    158,
+    158
+   ],
+   "lean": "  simp (disch := positivity) only [← ofReal_mul, ← ofReal_add, ofReal_le_ofReal_iff, field]"
+  },
+  {
+   "id": "1.23",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Normalise and use",
+   "lines": [
+    159,
+    159
+   ],
+   "span": [
+    159,
+    3,
+    159,
+    31
+   ],
+   "lean": "ring_nf; grw +useKAbstract ["
+  },
+  {
+   "id": "1.24",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "4 ≤ b and b^{ϱ+1−j+31} ≤ τ (pow_le_tailScale), which give 4τ²·C/τ³ ≤ C/b³⁰/4^{ϱ+1−j}.",
+   "lines": [
+    159,
+    160
+   ],
+   "span": [
+    159,
+    31,
+    160,
+    67
+   ],
+   "lean": "show 4 ≤ S.b by linarith, ← pow_le_tailScale (e := 𝔰.ϱ + 1 - j + 31)\n    (le_mul_of_le_of_one_le (by lia) NeZero.one_le)]; ring_nf; rfl",
+   "uses": [
+    {
+     "decl": "Filling.pow_le_tailScale"
+    }
+   ],
+   "typed_fact": "4 ≤ S.b"
+  }
+ ]
+}

@@ -1,0 +1,241 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Columns.LocalStatement:201:7",
+ "summary": "Restriction to Y_m costs the branching factors; the chain value at h is a sum over tuples of classes (`exists_chain_eq_sum`) of terms bounded by products of single-lift bounds for admissible data (`norm_jet_le_of_isAdmissibleComb`); counting classes (≤ exp(x^30)) and the size of Ψ (≤ exp(x^60)), the exponent is bounded by jetSize terms per stage (`jetSize_le_add`, `diagramWeight_le_by_index`), which assemble into heightPerRow, the gains and the budget. (Line 228 is the next command of the file.)",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "weylNormSq of restrictToY is ≤ the branching factor times that of the chain value; by `exists_chain_eq_sum` with N_j = √weylNormSq∘σ and r_j the single-lift bound for admissible data (`norm_jet_le_of_isAdmissibleComb`), the chain value is ∑_i∑_x Ψ(x)β_i with each term ≤ ∏ r_j·e^{B/2}.",
+   "lines": [
+    204,
+    206
+   ],
+   "lean": "  (D.weylNormSq_restrictToY_le σ ..).trans ((exists_chain_eq_sum H.joint_invariant (fun _ _\n  y ↦ √(weylNormSq (σ ∘ y))) (by bound) (fun _ _ _ _ _ _ ↦ (P.norm_jet_le_of_isAdmissibleComb\n  (.single _ ⟨⟩) ..).2 D.a.succPNat (isLiftWeight_kappa ..)) (by bound) _).elim fun f e ↦ by",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Data.weylNormSq_restrictToY_le"
+    },
+    {
+     "decl": "Data.exists_chain_eq_sum"
+    },
+    {
+     "decl": "Parameters.norm_jet_le_of_isAdmissibleComb"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Write the target through the square of √weylNormSq and substitute the sum.",
+   "lines": [
+    207,
+    207
+   ],
+   "lean": "  erw [← sq_sqrt (weylNormSq_nonneg (σ ∘ _)), ← e.2]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "estimate",
+   "claim": "Triangle inequality for √weylNormSq; branchExp ≥ κ(τ,1) − 2b.",
+   "lines": [
+    208,
+    208
+   ],
+   "lean": "  grw [← le_branchExp, sqrt_weylNormSq_sum_le, sqrt_weylNormSq_sum_le]; simp",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Data.le_branchExp"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Insert the bounds: number of tuples of classes ≤ ∏ exp(x^30) (`card_stdClasses_le_exp`), ∑_x |σΨ(x)| ≤ exp(x^60) (size condition of the good datum for the trivial twist).",
+   "lines": [
+    209,
+    211
+   ],
+   "lean": "  grw [e.1 _ _ ‹_›, ← sum_mul, Fin.sum_const, nsmul_eq_mul, (id (H.size_le rfl σ) : Ψ.1.sum _ ≤ _),\n    Nat.cast_prod, prod_range, prod_range,\n    D.card_stdClasses_le_exp (principalLevel_le_columnLevel ..) (by simp [↓card_X, n])]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Data.card_stdClasses_le_exp"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Collect the exponentials; |σ(π̄_G)|² = g₀g₁ (`norm_map_star_piG_sq`); jetSize.",
+   "lines": [
+    212,
+    214
+   ],
+   "lean": "  simp [-sum_add_distrib, ← exp_sum, ← exp_half, ← exp_add,\n    ← exp_nsmul, ↓card_X, ↓norm_map_star_piG_sq,\n    ← inv_div (P.bigOmega _), -inv_div, ← sub_eq_add_neg, ← add_sub, ← jetSize.eq_1, n]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Data.norm_map_star_piG_sq"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The exponent bound, stage by stage.",
+   "lines": [
+    215,
+    220
+   ],
+   "lean": "  grw [nonsplitPrimes, ← filter_filter, sum_filter_of_ne fun _ _ ↦\n    mt fun h ↦ by simp [gain, forcedPart, localAsk, h],\n    ← tsub_le_iff_left, sum_le_sum fun (j : Fin D.m) _ ↦ have := D.hasLogUpper_of_le j.2.le; by\n    grewrite [jetSize_le_add _ (D.diagramWeight_le_by_index j.2 ..),\n      D.diagramWeight_le_by_index j.2, show ite .. + _ ≤ 2 * D.a by grind [κ,\n      (D.nat_le_of_hasLogBound : D.b₁ + D.b₂ + D.h₂ + D.h₂ ^ 2 ≤ D.a)], (?_ : _ - _ ≤ ↑D.m)]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "6.1",
+   "parent": "6",
+   "kind": "estimate",
+   "claim": "Restrict the gain sum to the non-split primes (gain = 0 when χ_K(p) = 1) and compare per stage j < m: the jetSize of the row lengths is ≤ jetSize(a) + (log(a + excess + 1) − log(Ω/g))·excess by `jetSize_le_add` with `diagramWeight_le_by_index`, using the next fact.",
+   "lines": [
+    215,
+    219
+   ],
+   "span": [
+    215,
+    1,
+    219,
+    40
+   ],
+   "lean": "  grw [nonsplitPrimes, ← filter_filter, sum_filter_of_ne fun _ _ ↦\n    mt fun h ↦ by simp [gain, forcedPart, localAsk, h],\n    ← tsub_le_iff_left, sum_le_sum fun (j : Fin D.m) _ ↦ have := D.hasLogUpper_of_le j.2.le; by\n    grewrite [jetSize_le_add _ (D.diagramWeight_le_by_index j.2 ..),\n      D.diagramWeight_le_by_index j.2, ",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Data.jetSize_le_add"
+    },
+    {
+     "decl": "Data.diagramWeight_le_by_index"
+    }
+   ]
+  },
+  {
+   "id": "6.2",
+   "parent": "6",
+   "kind": "fact",
+   "claim": "The first row length bound plus the excess is ≤ 2a (b₁ + b₂ + h₂ + h₂² ≤ a by size).",
+   "lines": [
+    219,
+    220
+   ],
+   "span": [
+    219,
+    40,
+    220,
+    71
+   ],
+   "lean": "show ite .. + _ ≤ 2 * D.a by grind [κ,\n      (D.nat_le_of_hasLogBound : D.b₁ + D.b₂ + D.h₂ + D.h₂ ^ 2 ≤ D.a)]",
+   "typed_fact": "ite .. + _ ≤ 2 * D.a",
+   "uses": []
+  },
+  {
+   "id": "6.3",
+   "parent": "6",
+   "kind": "estimate",
+   "claim": "The excess is ≤ m.",
+   "lines": [
+    220,
+    220
+   ],
+   "span": [
+    220,
+    71,
+    220,
+    93
+   ],
+   "lean": ", (?_ : _ - _ ≤ ↑D.m)]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Simplify the per-stage sums.",
+   "lines": [
+    221,
+    221
+   ],
+   "lean": "    simp [← mul_sum, ↓apply_ite D.jetSize, jetSize, sum_ite, filter_ne', ← Nat.Ico_zero_eq_range]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "estimate",
+   "claim": "Bound the remaining terms by b and √b.",
+   "lines": [
+    222,
+    222
+   ],
+   "lean": "    grw [(?_ : _ * _ + _ ≤ D.b), (?_ : D.k + _ ≤ √D.b)]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "estimate",
+   "claim": "Size comparisons.",
+   "lines": [
+    223,
+    223
+   ],
+   "lean": "    repeat use D.le_of_hasLogBound]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Conclude: expand heightPerRow, dirCost, gain, forcedPart, κ and primeSum = ∑_p 2·localAsk·log p (`primeSum_eq_sum_localAsk`); ring identity and size comparison.",
+   "lines": [
+    224,
+    226
+   ],
+   "lean": "  simp [heightPerRow, dirCost, jetSize, (D.le_of_hasLogBound : D.nominalWeight _ ≤ D.a), gain,\n    forcedPart, κ, apply_ite, ← mul_sum, sum_mul, add_mul, mul_assoc, (filter ..).sum_comm,\n    D.primeSum_eq_sum_localAsk .refl, -tsub_le_iff_right]; ring; use D.le_of_hasLogBound)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Data.primeSum_eq_sum_localAsk"
+    }
+   ]
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "not-proof",
+   "claim": "(Not proof text: the next command of the file, `seal Space.weightRep Space.embFin`, which the line census counts into this declaration.)",
+   "lines": [
+    228,
+    228
+   ],
+   "lean": "seal Space.weightRep Space.embFin",
+   "typed_fact": null,
+   "uses": []
+  }
+ ]
+}

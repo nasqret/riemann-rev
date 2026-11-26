@@ -1,0 +1,117 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Endgame.LongForms:19:7",
+ "name": "Data.heightLe_volume_ratio_sq",
+ "file": "New/Endgame/LongForms.lean",
+ "file_sha256": "4e40251f0b3ffa1dc4d2f90cbb212d9dc0ed5f6fdf8a0d21d49f157cce04005c",
+ "commit": "72fead102f663d5c7a407964a13dc0cf9d977207",
+ "summary": "𝔷 = |c|^D ∏ λ_j: the lift ratios have height ≤ D(log b𝓑 − h_main), the constants ≤ 2 log b𝓑.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "witness",
+   "claim": "From `Data.volume_iota_eq_prod_liftVolume`: constants c(ϑ) that cost m·m squares (const) with 𝔷_D(ϑ) = |c(ϑ)|^(dim rows(D))·∏_{j=1}^{m} λ_j(ϑ) for every m-fold twist ϑ (vol).",
+   "lines": [
+    22,
+    22
+   ],
+   "lean": "  choose c const _ vol using D.volume_iota_eq_prod_liftVolume",
+   "uses": [
+    {
+     "decl": "Data.volume_iota_eq_prod_liftVolume"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "fact",
+   "claim": "lifts: ι ↦ ∏_{j=1}^{m} λ_j(1)/λ_j(θ_ι) has height at most dim rows(D)·(log b_D·𝓑(D) − h_main(D)): each factor has height ≤ dim rows·k·(log b·B₀ − 𝖴) (`Data.heightLe_liftVolume_ratio`, θ fit), heights add over the m factors (`HeightLe.prod`), and m·k·B₀ = 𝓑(D), m·k·𝖴 = h_main(D).",
+   "lines": [
+    24,
+    27
+   ],
+   "lean": "  have lifts : HeightLe (D.rowDim * (D.logB * D.budget - D.mainHeight))\n      (∏ j ∈ Icc 1 D.m, fun ι ↦ D.liftVolume 1 j / D.liftVolume (θ ι) j) := (HeightLe.prod\n    fun j h ↦ by exact heightLe_liftVolume_ratio o ⟨j, mem_Icc.1 h⟩).mono\n    (by simp [mainHeight]; field_simp [(HasLogBound.pos D).ne']; rfl) fun _ ↦ le_rfl",
+   "typed_fact": "HeightLe (D.rowDim * (D.logB * D.budget - D.mainHeight))\n      (∏ j ∈ Icc 1 D.m, fun ι ↦ D.liftVolume 1 j / D.liftVolume (θ ι) j)",
+   "uses": [
+    {
+     "decl": "Data.heightLe_liftVolume_ratio"
+    },
+    {
+     "decl": "HeightLe.prod"
+    },
+    {
+     "decl": "HeightLe.mono"
+    },
+    {
+     "decl": "Data.mainHeight"
+    },
+    {
+     "decl": "Data.HasLogBound.pos"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "fact",
+   "claim": "consts: ι ↦ |c(θ_ι)/c(1)|^(−2) has height at most 2·log b_D·𝓑(D): c costs m·m squares, i.e. height ≤ m²·2t·x⁹⁹⁹ (`Data.CostsSquares`, θ fit), and m²·2t·x⁹⁹⁹ ≤ 2·log b·𝓑 by the size comparison.",
+   "lines": [
+    29,
+    30
+   ],
+   "lean": "  have consts : HeightLe (2 * (D.logB * D.budget)) fun ι ↦ (‖c (θ ι) / c 1‖ ^ 2 :)⁻¹ :=\n    (const θ o).mono (by simpa using D.le_of_hasLogBound) fun _ ↦ le_rfl",
+   "typed_fact": "HeightLe (2 * (D.logB * D.budget)) fun ι ↦ (‖c (θ ι) / c 1‖ ^ 2 :)⁻¹",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "decl": "Data.CostsSquares"
+    },
+    {
+     "decl": "HeightLe.mono"
+    },
+    {
+     "decl": "Data.le_of_hasLogBound"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "(lifts)²·(consts)^(dim rows) has height ≤ 2·dim rows(log b𝓑 − h_main) + dim rows·2 log b𝓑 = 2·dim rows(D)·(2 log b_D·𝓑(D) − h_main(D)) (`HeightLe.pow`, `HeightLe.mul`), and it is the family 𝔷_D(1)²/𝔷_D(θ_ι)² by vol: 𝔷(1)²/𝔷(θ_ι)² = (∏_j λ_j(1)/λ_j(θ_ι))²·(|c(θ_ι)/c(1)|^(−2))^(dim rows).",
+   "lines": [
+    31,
+    32
+   ],
+   "lean": "  exact ((lifts.pow 2).mul (consts.pow D.rowDim)).mono (by grind) fun ι ↦\n    (congrArg (‖ι.2 ·‖) (by simp [vol, mul_pow, div_pow, ← pow_mul]; ring)).le",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "step": "2"
+    },
+    {
+     "step": "3"
+    },
+    {
+     "decl": "HeightLe.pow"
+    },
+    {
+     "decl": "HeightLe.mul"
+    },
+    {
+     "decl": "HeightLe.mono"
+    },
+    {
+     "decl": "Data.𝔷"
+    }
+   ]
+  }
+ ]
+}

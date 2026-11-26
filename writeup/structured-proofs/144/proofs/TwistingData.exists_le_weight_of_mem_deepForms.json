@@ -1,0 +1,741 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.TwistedHecke.DeepFormCost:21:7",
+ "name": "TwistingData.exists_le_weight_of_mem_deepForms",
+ "summary": "Combinatorial Nullstellensatz with multiplicity over the field of rational functions K(x): substitute constants for the non-deep variables, give a deep variable v the cost 1/κ(v), κ(v) = P^{2r} or P, and use the points z(y), one for each y : I → residue field (I = Fin r × Fin (m+1), k = 2r + m), coming from the unipotent matrices 1 + Σ_t y_t E_{ρ(t),σ(t)}. Frobenius twists make each u^{κ(u)} the value of a cheap polynomial at these points; the image of F vanishes to order τ at each point, because the translate of F by the unipotent matrix is deep; and there are at least Π κ points. So the image of F has a monomial of cost ≥ τ, which comes from a monomial β of F with F(β) ≠ 0.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Choose J: for every letter i and natural b, J i b is a natural number j with j/2 = b and isEven(i − j).",
+   "lines": [
+    24,
+    25
+   ],
+   "lean": "  choose J hJ using fun i b ↦ show ∃ j : ℕ, j / 2 = b ∧ T.isEven (i - j) by by_contra! h; grind\n    [T.isEven_succ (i - 2 * b - 1), sub_add_cancel, sub_sub, h (2 * b), h (2 * b + 1)]",
+   "head_lines": [
+    24,
+    24
+   ],
+   "head_span": [
+    24,
+    3,
+    24,
+    31
+   ],
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "1.1",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "For every i and b such a j exists among 2b and 2b + 1: otherwise isEven(i − 2b) and isEven(i − 2b − 1) would both be false, contradicting the alternation isEven_succ.",
+   "lines": [
+    24,
+    25
+   ],
+   "span": [
+    24,
+    31,
+    25,
+    87
+   ],
+   "lean": "show ∃ j : ℕ, j / 2 = b ∧ T.isEven (i - j) by by_contra! h; grind\n    [T.isEven_succ (i - 2 * b - 1), sub_add_cancel, sub_sub, h (2 * b), h (2 * b + 1)]",
+   "typed_fact": "∃ j : ℕ, j / 2 = b ∧ T.isEven (i - j)",
+   "uses": [
+    {
+     "decl": "TwistingData"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Record 0 < p (named p), a Fintype structure on the finite residue field, the fact that p is prime, and write k = 2r + m (m, e) using hk.",
+   "lines": [
+    26,
+    26
+   ],
+   "lean": "  obtain ⟨p, _, _, m, e⟩ := T.prime.pos, @ofFinite _ T.finite_residueField, Fact.mk T.prime, hk.dest",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "TwistingData.finite_residueField"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let R = K[x_v : v ∈ Fin k × ℤ/N], x : R → Frac(R) the inclusion, and κ(v) = P^{deepIndicator(v)·e(v)}, e(v) = 2r if v.1 ≥ 2r and 1 otherwise; a variable v will cost 1/κ(v).",
+   "lines": [
+    28,
+    30
+   ],
+   "lean": "  let R := MvPolynomial (Fin k × ZMod N) K\n  let x := algebraMap R (FractionRing R)\n  let κ v := T.P ^ (T.deepIndicator (k := k) r v * ite (2 * r ≤ v.1) (2 * r) 1)",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let I = Fin r × Fin (m+1) (lexicographic order), ρ(t) = t.1 < r, σ(t) = t.1 + r if t.2 = 0 and k − t.2 otherwise (both ≥ r); c(v, t) = ±x_{rootVar σ(t) ρ(t) v.2} if v = rootVar ρ(t) σ(t) v.2 and 0 otherwise (sign + for even letters); a(i, y, t) = ι_i(lift of y_t) ∈ K ⊆ Frac(R) for y : I → residue field; and z(y, v) = Σ_t a(v.2, y, t)·c(v, t) ∈ Frac(R): z(y) is the point of the variables attached to y.",
+   "lines": [
+    32,
+    38
+   ],
+   "lean": "  let I := Fin r ×ₗ Fin (m + 1)\n  let ρ (t : I) : Fin k := ⟨t.1, by lia⟩\n  let σ (t : I) : Fin k := ⟨ite (t.2 = 0) (t.1 + r) (k - t.2), by lia⟩\n  let c v t : R := ite (T.rootVar (ρ t) (σ t) v.2 =\n    v) (X (T.rootVar (σ t) (ρ t) v.2)) 0 * ite (T.isEven v.2) 1 (-1)\n  let a i (y : I → IsLocalRing.ResidueField W) t := x (C (T.ι i (y t).out))\n  let z y v := a v.2 y ⬝ᵥ x ∘ c v",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Claim hz: for every variable v, j ∈ ℕ and y: Σ_t c(v, t)^{P^j}·a(v.2 + j, y, t) = z(y, v)^{P^j}: the P^j-th power is additive in characteristic p, and a(s, y, t)^{P^j} = a(s + j, y, t) because ι_{s+j}(x) ≡ ι_s(x)^{P^j} mod p and p = 0 in K.",
+   "lines": [
+    39,
+    41
+   ],
+   "lean": "  have hz v (j : ℕ) y : x ∘ c v ^ T.P ^ j ⬝ᵥ a (v.2 + j) y = z y v ^ T.P ^ j := by\n    erw [dotProduct_comm, ← pow_mul, sum_pow_char_pow]; simp [a, dotProduct, pow_mul, mul_pow,\n      by simpa [CharP.cast_eq_zero] using T.frobenius_pow_congr j v.2]",
+   "typed_fact": "x ∘ c v ^ T.P ^ j ⬝ᵥ a (v.2 + j) y = z y v ^ T.P ^ j",
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "decl": "TwistingData.frobenius_pow_congr"
+    }
+   ],
+   "ambient_uses": [
+    "sum_pow_char_pow",
+    "CharP.cast_eq_zero"
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Claim entry: for every letter i and every coefficient vector u indexed by I there is a polynomial g (over Frac(R)) all of whose monomials α have cost Σ_v α(v)/κ(v) < 1 and with g(z(y)) = Σ_t u_t a(i, y, t) for all y.",
+   "lines": [
+    43,
+    59
+   ],
+   "lean": "  have entry i u : ∃ g, (∀ α ∈ g.support, weight (κ · : _ → ℝ)⁻¹ α < 1) ∧\n      ∀ y, eval (z y) g = u ⬝ᵥ a i y := by\n    let j (t : I) := ite (t.2 = 0) 0 (J i t.1)\n    let v t := T.rootVar (ρ t) (σ t) (i - j t)\n    -- the system is invertible, as a specialisation makes it triangular\n    obtain ⟨w, rfl⟩ := (x.mapMatrix (of fun t ↦ c (v t) ^ T.P ^ j t)).vecMul_surjective_iff_isUnit.2\n      (by clear * - p hJ hN\n          simp [↓isUnit_iff_isUnit_det, ↓← x.map_det, x, R]\n          apply ne_of_apply_ne (eval fun v ↦ 0 ^ ((i - v.2).val / 2 - v.1))\n          rw [RingHom.map_det, det_of_isUpperTriangular fun _ _ ↦ ?_ ∘ Prod.lex_def.1] <;> simp [c,\n            v, rootVar, univ.prod_eq_zero_iff, apply_ite (eval _),\n            @Nat.mod_eq_of_lt (j _) N (by grind)] <;> grind [pow_eq_zero_iff']) u\n    use ∑ t, w t • X (v t) ^ T.P ^ j t, fun α h ↦ ?_, fun y ↦ by\n      simpa [← hz, v, Matrix.map] using! dotProduct_mulVec ..\n    obtain ⟨t, rfl, -⟩ := by simpa [coeff_X_pow] using support_sum h\n    simp [weight_single, field, κ, -mul_ite]; clear * - hJ; gcongr <;> grind [rootVar,\n      deepIndicator, one_lt_P]",
+   "head_lines": [
+    43,
+    44
+   ],
+   "typed_fact": "∃ g, (∀ α ∈ g.support, weight (κ · : _ → ℝ)⁻¹ α < 1) ∧\n      ∀ y, eval (z y) g = u ⬝ᵥ a i y",
+   "uses": []
+  },
+  {
+   "id": "6.1",
+   "parent": "6",
+   "kind": "setup",
+   "claim": "Let j(t) = 0 if t.2 = 0 and J i t.1 otherwise, and v(t) = rootVar ρ(t) σ(t) (i − j(t)).",
+   "lines": [
+    45,
+    46
+   ],
+   "lean": "    let j (t : I) := ite (t.2 = 0) 0 (J i t.1)\n    let v t := T.rootVar (ρ t) (σ t) (i - j t)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1"
+    }
+   ]
+  },
+  {
+   "id": "6.2",
+   "parent": "6",
+   "kind": "fact",
+   "claim": "The I×I matrix (c(v(t), t')^{P^{j(t)}})_{t,t'} over Frac(R) is invertible, so u = w·(that matrix) for some vector w: its determinant is nonzero because evaluating at the point sending v to 0^{((i − v.2) mod N)/2 − v.1} makes the matrix upper triangular (for the lexicographic order of I) with nonzero diagonal (uses 2r < N and the choice of J).",
+   "lines": [
+    48,
+    54
+   ],
+   "lean": "    obtain ⟨w, rfl⟩ := (x.mapMatrix (of fun t ↦ c (v t) ^ T.P ^ j t)).vecMul_surjective_iff_isUnit.2\n      (by clear * - p hJ hN\n          simp [↓isUnit_iff_isUnit_det, ↓← x.map_det, x, R]\n          apply ne_of_apply_ne (eval fun v ↦ 0 ^ ((i - v.2).val / 2 - v.1))\n          rw [RingHom.map_det, det_of_isUpperTriangular fun _ _ ↦ ?_ ∘ Prod.lex_def.1] <;> simp [c,\n            v, rootVar, univ.prod_eq_zero_iff, apply_ite (eval _),\n            @Nat.mod_eq_of_lt (j _) N (by grind)] <;> grind [pow_eq_zero_iff']) u",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "step": "4"
+    },
+    {
+     "step": "6.1"
+    }
+   ],
+   "ambient_uses": [
+    "Matrix.vecMul_surjective_iff_isUnit",
+    "Matrix.det_of_isUpperTriangular",
+    "RingHom.map_det"
+   ]
+  },
+  {
+   "id": "6.3",
+   "parent": "6",
+   "kind": "witness",
+   "claim": "Take g = Σ_t w_t·x_{v(t)}^{P^{j(t)}}; its value at z(y) is Σ_t u_t a(i, y, t) by hz and dotProduct_mulVec.",
+   "lines": [
+    55,
+    56
+   ],
+   "lean": "    use ∑ t, w t • X (v t) ^ T.P ^ j t, fun α h ↦ ?_, fun y ↦ by\n      simpa [← hz, v, Matrix.map] using! dotProduct_mulVec ..",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "5"
+    },
+    {
+     "step": "6.1"
+    },
+    {
+     "step": "6.2"
+    }
+   ],
+   "ambient_uses": [
+    "Matrix.dotProduct_mulVec"
+   ]
+  },
+  {
+   "id": "6.4",
+   "parent": "6",
+   "kind": "setup",
+   "claim": "A monomial α in the support of g is x_{v(t)}^{P^{j(t)}} for some t.",
+   "lines": [
+    57,
+    57
+   ],
+   "lean": "    obtain ⟨t, rfl, -⟩ := by simpa [coeff_X_pow] using support_sum h",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "6.3"
+    }
+   ],
+   "ambient_uses": [
+    "MvPolynomial.support_sum",
+    "MvPolynomial.coeff_X_pow"
+   ]
+  },
+  {
+   "id": "6.5",
+   "parent": "6",
+   "kind": "deduction",
+   "claim": "Its cost P^{j(t)}/κ(v(t)) is < 1: by the choice of J the variable v(t) is deep with κ(v(t)) = P^{e} where e > j(t) (P > 1).",
+   "lines": [
+    58,
+    59
+   ],
+   "lean": "    simp [weight_single, field, κ, -mul_ite]; clear * - hJ; gcongr <;> grind [rootVar,\n      deepIndicator, one_lt_P]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "step": "3"
+    },
+    {
+     "step": "6.1"
+    },
+    {
+     "step": "6.4"
+    },
+    {
+     "decl": "TwistingData.one_lt_P"
+    },
+    {
+     "decl": "TwistingData.rootVar"
+    },
+    {
+     "decl": "TwistingData.deepIndicator"
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let ι : R → Frac(R)[x] be the substitution that keeps the deep variables and replaces each non-deep variable x_v by the constant x(x_v).",
+   "lines": [
+    61,
+    61
+   ],
+   "lean": "  let ι := eval₂Hom (C.comp (x.comp C)) fun v ↦ ite (T.deepIndicator r v = 0) (C (x (X v))) (X v)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "3"
+    }
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Apply exists_le_cost_of_vanishing (Combinatorial Nullstellensatz with multiplicity) with costs κ, the points z(y) and the polynomial f = ι(polyOfCoeffs F), with order τ: it gives α in the support of f with τ ≤ Σ_v α(v)/κ(v) (h, H). Two of its hypotheses remain as goals: the number of points, and the vanishing.",
+   "lines": [
+    62,
+    68
+   ],
+   "lean": "  have ⟨α, h, H⟩ := exists_le_cost_of_vanishing κ (by bound) z (fun y y' h ↦ funext fun t ↦\n    (entry 0 (Pi.single t 1)).elim fun _ hf ↦ (y t).out_eq ▸ (y' t).out_eq ▸ Ideal.Quotient.eq.2\n    (mt (·.map (T.ι 0)) (by simpa [← h, hf, a, x, R] using hf.2 y'))) ?_ (fun _ ↦ by simp only [κ,\n    ← hz, entry]) τ (ι (polyOfCoeffs F)) (fun h ↦\n    F0 (by ext β; simpa [polyOfCoeffs, coeff_sum] using congrArg (·.coeff (exponentOf β)) (by\n           simpa [h, x] using congr(($(show x = .comp (eval (x ∘ X)) ι by\n           ext <;> simp [ι, apply_ite])) (polyOfCoeffs F)) : polyOfCoeffs F = 0))) fun y ↦ ?_",
+   "head_lines": [
+    62,
+    62
+   ],
+   "head_span": [
+    62,
+    3,
+    62,
+    64
+   ],
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "step": "4"
+    },
+    {
+     "step": "7"
+    },
+    {
+     "decl": "exists_le_cost_of_vanishing"
+    }
+   ]
+  },
+  {
+   "id": "8.1",
+   "parent": "8",
+   "kind": "deduction",
+   "claim": "The points are distinct: if z(y) = z(y'), then evaluating the polynomial given by entry for the unit vector at t gives ι_0(lift y_t) = ι_0(lift y'_t), so the lifts agree modulo the maximal ideal (otherwise their difference would be a unit whose image under ι_0 vanishes) and y_t = y'_t.",
+   "lines": [
+    62,
+    64
+   ],
+   "span": [
+    62,
+    64,
+    64,
+    71
+   ],
+   "lean": "(fun y y' h ↦ funext fun t ↦\n    (entry 0 (Pi.single t 1)).elim fun _ hf ↦ (y t).out_eq ▸ (y' t).out_eq ▸ Ideal.Quotient.eq.2\n    (mt (·.map (T.ι 0)) (by simpa [← h, hf, a, x, R] using hf.2 y'))) ",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "6"
+    }
+   ],
+   "ambient_uses": [
+    "Ideal.Quotient.eq",
+    "Quotient.out_eq"
+   ]
+  },
+  {
+   "id": "8.2",
+   "parent": "8",
+   "kind": "deduction",
+   "claim": "The count of points is left as a goal (?_); each u^{κ(u)} agrees at the points with a polynomial of cost < 1, by entry combined with hz.",
+   "lines": [
+    64,
+    65
+   ],
+   "span": [
+    64,
+    71,
+    65,
+    19
+   ],
+   "lean": "?_ (fun _ ↦ by simp only [κ,\n    ← hz, entry]) ",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "5"
+    },
+    {
+     "step": "6"
+    }
+   ]
+  },
+  {
+   "id": "8.3",
+   "parent": "8",
+   "kind": "deduction",
+   "claim": "The order is τ and the polynomial is ι(polyOfCoeffs F); it is nonzero: if it were 0, then comparing the coefficient of exponentOf β in polyOfCoeffs F (recovered from ι by evaluation) would give F(β) = 0 for every β, contradicting F0.",
+   "lines": [
+    65,
+    67
+   ],
+   "span": [
+    65,
+    19,
+    67,
+    40
+   ],
+   "lean": "τ (ι (polyOfCoeffs F)) (fun h ↦\n    F0 (by ext β; simpa [polyOfCoeffs, coeff_sum] using congrArg (·.coeff (exponentOf β)) (by\n           simpa [h, x] using congr(($(",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "7"
+    },
+    {
+     "decl": "polyOfCoeffs"
+    },
+    {
+     "decl": "exponentOf"
+    }
+   ]
+  },
+  {
+   "id": "8.4",
+   "parent": "8",
+   "kind": "fact",
+   "claim": "x = (evaluation at the variables x(x_v)) ∘ ι, an identity of ring homomorphisms R → Frac(R), checked on constants and variables.",
+   "lines": [
+    67,
+    68
+   ],
+   "span": [
+    67,
+    40,
+    68,
+    84
+   ],
+   "lean": "show x = .comp (eval (x ∘ X)) ι by\n           ext <;> simp [ι, apply_ite])) (polyOfCoeffs F)) : polyOfCoeffs F = 0))) ",
+   "typed_fact": "x = .comp (eval (x ∘ X)) ι",
+   "uses": [
+    {
+     "step": "7"
+    }
+   ]
+  },
+  {
+   "id": "8.5",
+   "parent": "8",
+   "kind": "reduction",
+   "claim": "The vanishing of f to order τ at each z(y) is left as a goal.",
+   "lines": [
+    68,
+    68
+   ],
+   "span": [
+    68,
+    84,
+    68,
+    94
+   ],
+   "lean": "fun y ↦ ?_",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Expand the coefficient of α in ι(polyOfCoeffs F) as a sum over β of F(β) times products of constants: only β whose deep part is α contribute.",
+   "lines": [
+    70,
+    71
+   ],
+   "lean": "  simp [polyOfCoeffs, coeff_sum, ι, prod_fintype, prod_ite, ← map_pow, ← map_prod,\n    coeff_prod_X_pow] at h",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "8"
+    },
+    {
+     "decl": "polyOfCoeffs"
+    }
+   ]
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "fact",
+   "claim": "As the sum is nonzero, some β with deep part α has F(β) ≠ 0.",
+   "lines": [
+    72,
+    72
+   ],
+   "lean": "  obtain ⟨β, rfl, h, -⟩ := by simpa [x] using exists_ne_zero_of_sum_ne_zero h",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "9"
+    }
+   ],
+   "ambient_uses": [
+    "Finset.exists_ne_zero_of_sum_ne_zero"
+   ]
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "This β works: its weight Σ β_s(b)·deepIndicator/P^{e(b)} equals the cost of α, which is ≥ τ.",
+   "lines": [
+    73,
+    73
+   ],
+   "lean": "  use β, h, H.trans (by simp [weight_eq_sum, κ, deepIndicator]; bound)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "8"
+    },
+    {
+     "step": "10"
+    },
+    {
+     "decl": "TwistingData.deepIndicator"
+    }
+   ]
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "computation",
+   "claim": "The number of points: there are (P^N)^{|I|} = (P^N)^{r(m+1)} choices of y (card_residueField), and Π_v κ(v) = P^{Σ_v deepIndicator(v)e(v)} = P^{(N/2)(2r + 2rm)} ≤ P^{N r (m+1)}, using that each b is deep for N/2 letters (sum_deepIndicator).",
+   "lines": [
+    75,
+    78
+   ],
+   "lean": "  subst e\n  grw [card_fun, card_eq_nat_card, T.card_residueField, ← pow_mul, ← N.div_mul_le_self 2,\n    prod_pow_eq_pow_sum, pow_le_pow_right₀] <;> simp [I, ↓sum_prod_type, ← univ.sum_mul,\n    sum_deepIndicator, Fin.sum_univ_add, ← Nat.not_lt, -not_lt] <;> lia",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "step": "3"
+    },
+    {
+     "step": "4"
+    },
+    {
+     "decl": "TwistingData.sum_deepIndicator"
+    },
+    {
+     "decl": "TwistingData"
+    }
+   ]
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "setup",
+   "claim": "For the vanishing at z(y): let A = Σ_t y_t·E_{ρ(t),σ(t)} (lifted entries; A² = 0 as ρ(t) < r ≤ σ(t')) and g = 1 + A ∈ GL_k(W), with inverse 1 − A.",
+   "lines": [
+    80,
+    81
+   ],
+   "lean": "  let A := ∑ t, Matrix.single (ρ t) (σ t) (y t).out\n  let g : GL _ W := by use 1 + A, 1 + -A <;> simp (disch := lia) [A, univ.sum_mul_sum]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "4"
+    }
+   ]
+  },
+  {
+   "id": "14",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "Write F = ρ(g⁻¹)ρ(g)F and pass to polynomials: polyOfCoeffs F = polyAction g⁻¹ (polyOfCoeffs(ρ(g)F)).",
+   "lines": [
+    82,
+    83
+   ],
+   "lean": "  rw [show F = T.letterRep n g⁻¹ *ᵥ T.letterRep n g *ᵥ F by simp [← map_mul],\n    ← polyAction_polyOfCoeffs]",
+   "head_lines": [
+    82,
+    82
+   ],
+   "head_span": [
+    82,
+    3,
+    82,
+    7
+   ],
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "13"
+    },
+    {
+     "decl": "TwistingData.polyAction_polyOfCoeffs"
+    }
+   ]
+  },
+  {
+   "id": "14.1",
+   "parent": "14",
+   "kind": "fact",
+   "claim": "F = ρ(g⁻¹)·(ρ(g)·F), as ρ is multiplicative and ρ(1) = 1.",
+   "lines": [
+    82,
+    83
+   ],
+   "span": [
+    82,
+    7,
+    83,
+    31
+   ],
+   "lean": "show F = T.letterRep n g⁻¹ *ᵥ T.letterRep n g *ᵥ F by simp [← map_mul],\n    ← polyAction_polyOfCoeffs]",
+   "typed_fact": "F = T.letterRep n g⁻¹ *ᵥ T.letterRep n g *ᵥ F",
+   "uses": [
+    {
+     "decl": "TwistingData.letterRep"
+    }
+   ]
+  },
+  {
+   "id": "15",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Expand polyOfCoeffs(ρ(g)F) as Σ_β (ρ(g)F)_β·x^β (monomials as products of powers of variables).",
+   "lines": [
+    84,
+    84
+   ],
+   "lean": "  simp [polyOfCoeffs, monomial_eq]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "16",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "It suffices that each term lies in the τ-th power of the vanishing ideal: a term with depth(β) < τ is 0 (hF at g: (ρ(g)F)_β = 0), and for depth(β) ≥ τ it suffices that the image of the product of the deep variables of x^β (depth(β) of them) lies in the depth(β)-th power, which is contained in the τ-th.",
+   "lines": [
+    85,
+    86
+   ],
+   "lean": "  refine sum_mem fun β _ ↦ (le_or_gt ..).elim\n    (pow_le_pow_right · (mul_mem_left _ _ ?_)) (hF g nofun β · ▸ by simp)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "TwistingData.deepForms"
+    }
+   ],
+   "ambient_uses": [
+    "Ideal.pow_le_pow_right",
+    "Ideal.mul_mem_left"
+   ]
+  },
+  {
+   "id": "17",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Write the deep part of x^β as Π_v (image of x_v)^{β(v)·deepIndicator(v)}.",
+   "lines": [
+    87,
+    87
+   ],
+   "lean": "  simp [depth, weight_eq_sum, ← prod_pow_eq_pow_sum, pow_mul']",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "TwistingData.depth"
+    }
+   ]
+  },
+  {
+   "id": "18",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "It suffices that the image under ι∘polyAction(g⁻¹) of each deep variable lies in the vanishing ideal of the point z(y).",
+   "lines": [
+    88,
+    88
+   ],
+   "lean": "  refine prod_mem_prod fun v _ ↦ pow_mem_pow ?_ _",
+   "typed_fact": null,
+   "uses": [],
+   "ambient_uses": [
+    "Ideal.prod_mem_prod",
+    "Ideal.pow_mem_pow"
+   ]
+  },
+  {
+   "id": "19",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Case analysis on the parity of the letter of v and on r ≤ v.1: g⁻¹ = 1 − A sends a deep variable v to x_v minus a combination whose value at z(y) is z(y, v) (the entries of A at (ρ(t), σ(t)) are the y_t), so the image vanishes at z(y).",
+   "lines": [
+    89,
+    92
+   ],
+   "lean": "  by_cases T.isEven v.2 <;> by_cases r ≤ v.1 <;> simp [polyAction_X, letterMatrix_apply, g, A, c,\n    rootVar, ι, z, a, add_mul, univ.sum_mul, Matrix.sum_apply, Matrix.single, ite_and,\n    @Finset.sum_comm I, deepIndicator, *, dotProduct,\n    apply_ite (DFunLike.coe _), -coe_eval₂Hom, show ∀ t, ¬r ≤ ρ t ∧ r ≤ σ t by lia, Prod.ext_iff]",
+   "head_lines": [
+    89,
+    92
+   ],
+   "head_span": [
+    89,
+    3,
+    92,
+    48
+   ],
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "step": "7"
+    },
+    {
+     "step": "13"
+    },
+    {
+     "decl": "TwistingData.polyAction_X"
+    },
+    {
+     "decl": "TwistingData.letterMatrix"
+    },
+    {
+     "decl": "TwistingData.rootVar"
+    },
+    {
+     "decl": "TwistingData.deepIndicator"
+    }
+   ]
+  },
+  {
+   "id": "19.1",
+   "parent": "19",
+   "kind": "fact",
+   "claim": "For every t ∈ I: not (r ≤ ρ(t)) and r ≤ σ(t) (ρ(t) = t.1 < r and σ(t) ≥ r); used in the simplification.",
+   "lines": [
+    92,
+    92
+   ],
+   "span": [
+    92,
+    48,
+    92,
+    98
+   ],
+   "lean": "show ∀ t, ¬r ≤ ρ t ∧ r ≤ σ t by lia, Prod.ext_iff]",
+   "typed_fact": "∀ t, ¬r ≤ ρ t ∧ r ≤ σ t",
+   "uses": [
+    {
+     "step": "4"
+    }
+   ]
+  }
+ ]
+}

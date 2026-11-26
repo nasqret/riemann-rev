@@ -1,0 +1,352 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Filling.TopFloor:275:7",
+ "summary": "Restrict to the positions, decompose by the content ideal of g⁻¹(x − 1) (ideal zeta bound), and on each content class use a finer gauge Γ' (depth c̄c) to bound ∫f by the pairing norm; the pairing norm times unipotentMass is ≤ massRatio(Z); the shell estimate uses the hypothesis he when e < 1 and a contradiction argument with floor values otherwise.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Collect: W_Z cut, ζ-rank bound, card bound, ζ ≤ 2, and the floor mass bound V of the gauge.",
+   "lines": [
+    281,
+    283
+   ],
+   "lean": "  obtain ⟨hk, _, _, ζ, V⟩ := isCut_besselVector Z, h.zeta_rank, F.card_eq,\n    le_two_of_pow_le_ofReal h.zeta_rank.1, by\n    simpa [volume_O] using h.gauge.floorMassLe_one ⟨j, by lia⟩ h.gauge.hasFibreBound_floorQuadric",
+   "uses": [
+    {
+     "decl": "IntegralPlace.IsStdLevel.isCut_besselVector"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "D(x) = the entries of g⁻¹(x − 1) (with 1 at the extra index).",
+   "lines": [
+    284,
+    284
+   ],
+   "lean": "  let D (x : T.G) := (Option.elim · 1 (F.g⁻¹.1 • (x.1.1 - 1)).uncurry)"
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Restrict ∫f to the positions (f vanishes elsewhere, step 26), and bound by the ideal zeta sum times a uniform bound V over content classes (lintegral_le_idealZeta_mul).",
+   "lines": [
+    285,
+    288
+   ],
+   "lean": "  grw [← setLIntegral_eq_of_support_subset fun x hx ↦ ?_, ← withDensity_apply',\n    ← setLIntegral_const F.positions, lintegral_le_idealZeta_mul ζ (V := min 1 e ^ t * Z.massRatio *\n    Γ.Λ ^ (9 * 10 ^ 8 * 𝔰.n ^ 4) * 2 ^ (10 ^ 5 * 𝔰.n ^ 2)) ({x ∈ F.positions | {ε | ∀ i,\n    ε * D x i ∈ R} = R.subtype '' ·}) (.of_forall fun x y ↦ ?_), ζ, Γ.two_le_and_pairs_le.1]",
+   "uses": [
+    {
+     "decl": "lintegral_le_idealZeta_mul"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "For a point x: the content c of D(x) (inverse unit) with c·D(x) integral,",
+   "lines": [
+    289,
+    291
+   ],
+   "lean": "  rotate_left\n  obtain ⟨c, -, -, -, E⟩ :=\n    inv_surjective.exists.1 (exists_content (p := D x) (i := none) isUnit_one)"
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "c ∈ R, and the ideal I with [R : I] = md-index of c,",
+   "lines": [
+    292,
+    293
+   ],
+   "lean": "  have hc := mul_one c.1 ▸ (E c).2 (by simp) none\n  obtain ⟨z, I, i, b, l⟩ := isAdelic.1.1 hc, exists_ideal_cardQuot_eq c hc"
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "x lies in S(I), the positions whose content ideal (the ideal of ε with ε·D(x) integral) is I = the ideal of c, and #(R/I) ≠ 0: the witness asked by lintegral_le_idealZeta_mul.",
+   "lines": [
+    294,
+    294
+   ],
+   "lean": "  use I, i, ⟨y, b ▸ ext E⟩"
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "σ with σ^{400n²} = md(c)·Λ^{(10n+1)99n}.",
+   "lines": [
+    295,
+    296
+   ],
+   "lean": "  let ⟨σ, eσ⟩ : ∃ σ, σ ^ (400 * 𝔰.n ^ 2) = P.md c * Γ.Λ ^ ((10 * 𝔰.n + 1) * (99 * 𝔰.n)) :=\n    ⟨_, rpow_inv_natCast_pow (by lia) _⟩"
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Γ' = gauge of depth c̄c.",
+   "lines": [
+    297,
+    297
+   ],
+   "lean": "  let Γ' := h.gauge (star c * c) (mul_mem z hc)"
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Main chain: md(c) bounds, the positions integral through Γ' (lintegral_positions_le with e' = min(σ,1,e)^s·Λ^{9999n}), exponent comparisons, and pairingNorm·unipotentMass ≤ massRatio(Z).",
+   "lines": [
+    298,
+    305
+   ],
+   "lean": "  grw +useKAbstract [l, b, ← md_inv, Γ'.md_le 1 _ (by simp [Γ', z]), pow_le_pow_right₀\n    (by simp) (by lia : m ≤ 50000 * 𝔰.n ^ 2), withDensity_apply', Γ.lintegral_positions_le Γ'\n    hk hk.1 hj H.2.1 (e := min (min σ 1) e ^ F.volumeExponent * Γ.Λ ^ (9999 * 𝔰.n)) (sq _).ge\n    (fun x k ↦ ⟨k.1, fun _ _ ↦ by simpa [Γ'] using! mul_mem z (k.2.ge (by simp) (some (_, _)))⟩)\n    fun x hx ↦ ?_, min_assoc, pow_le_pow_right_of_le_one' (by simp) (by lia : 400 * 𝔰.n ^ 2 *\n    (200000 * 𝔰.n ^ 2) + t ≤ F.volumeExponent), pow_add, pow_le_pow_left' inf_le_right t,\n    inf_le_left, pow_mul σ, eσ, ← pairingNorm_mul_le_massRatio Z,\n    ← (md_ne_zero_and_ne_top (star c * c)).elim (@ENNReal.mul_div_cancel _ 2)]",
+   "uses": [
+    {
+     "decl": "Gauge.lintegral_positions_le"
+    },
+    {
+     "decl": "IntegralPlace.IsStdLevel.pairingNorm_mul_le_massRatio"
+    }
+   ]
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Simplify the constants of Γ' with the data of the integral place (data_mem: c(P) = 1, τ and the skew unit integral); the remaining goals are reordered.",
+   "lines": [
+    306,
+    306
+   ],
+   "lean": "  simp [Γ', data_mem]; rotate_left"
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Cases e < 1 or not (min):",
+   "lines": [
+    307,
+    307
+   ],
+   "lean": "  rw [min_def_lt']; split"
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "if e < 1: f² ≤ e^{2s}·selfNormProduct (he) and Λ ≥ 1;",
+   "lines": [
+    308,
+    308
+   ],
+   "lean": "  grw [he (by order) x hx.1, ← Γ.one_le_Lambda]; simp"
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "otherwise f ≤ formMajorant and the majorant square bound of Γ (with σ'), leaving a floor-value condition.",
+   "lines": [
+    309,
+    311
+   ],
+   "lean": "  grw [hf, Γ.formMajorant_sq_le (σ := min σ 1 ^ 2) hk hk.1 hj H.1 hx.1 V (by bound)\n    hk.isNear_of_ne_zero fun o _ z N N' ↦ ?_, Γ.two_le_and_pairs_le.1]\n  rotate_left",
+   "uses": [
+    {
+     "decl": "Gauge.formMajorant_sq_le"
+    }
+   ]
+  },
+  {
+   "id": "14",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The floor-value condition, by contradiction: suppose the volume bound fails.",
+   "lines": [
+    312,
+    312
+   ],
+   "lean": "  simp [sq] at o; by_contra! n"
+  },
+  {
+   "id": "15",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Units d_i in the floor values (exists_unit_mem_floorValues); C = ∏_{i ≥ j} d_i.",
+   "lines": [
+    313,
+    313
+   ],
+   "lean": "  choose d hd E V using (exists_unit_mem_floorValues Z · x z); let C := ∏ i with j ≤ i.1, d i",
+   "uses": [
+    {
+     "decl": "IntegralPlace.IsStdLevel.exists_unit_mem_floorValues"
+    }
+   ]
+  },
+  {
+   "id": "16",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "C ∈ R and C/d_i ∈ R for i ≥ j.",
+   "lines": [
+    314,
+    314
+   ],
+   "lean": "  have ⟨hC, u⟩ : C.1 ∈ R ∧ ∀ i, j ≤ i.1 → (C / d i).1 ∈ R := by simp_all [C, ← prod_erase_eq_div]",
+   "typed_fact": "C.1 ∈ R ∧ ∀ i, j ≤ i.1 → (C / d i).1 ∈ R"
+  },
+  {
+   "id": "17",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "α^{10n+1}·C ∈ R.",
+   "lines": [
+    315,
+    315
+   ],
+   "lean": "  have w := mul_mem (pow_mem a (10 * 𝔰.n + 1)) (isAdelic.1.1 hC)"
+  },
+  {
+   "id": "18",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Γ' = gauge of depth α^{…}·C̄C.",
+   "lines": [
+    316,
+    316
+   ],
+   "lean": "  let Γ' := h.gauge (α ^ _ * star C * C) (mul_mem w hC)"
+  },
+  {
+   "id": "19",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The size of g⁻¹(x − 1) for Γ' (hasMatSize_sub_one_of_floorValues with the close elements of exists_close_of_inner_ne_zero).",
+   "lines": [
+    317,
+    321
+   ],
+   "lean": "  have K := hx.2.le (Option.rec (Γ'.zero_one_mem_ofSize _).2\n    (Prod.rec (Γ'.hasMatSize_sub_one_of_floorValues Γ hj H.1 H.2.1 (fun a c m ↦\n    by simpa +arith [Γ', mul_left_comm] using mul_mem hC (mul_mem (isAdelic.1.1 hC)\n    (hΓ ▸ Γ.mul_mem_ofSize (H.2.2 a) m :))) (exists_close_of_inner_ne_zero Z z) N N' fun i l ↦\n    ⟨_, E i, by simpa [Γ'] using! mul_mem w (u i l)⟩)))",
+   "uses": [
+    {
+     "decl": "Gauge.hasMatSize_sub_one_of_floorValues"
+    },
+    {
+     "decl": "IntegralPlace.IsStdLevel.exists_close_of_inner_ne_zero"
+    }
+   ]
+  },
+  {
+   "id": "20",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Compare md of C^{…} with the failing bound,",
+   "lines": [
+    322,
+    322
+   ],
+   "lean": "  apply ((md_ne_zero_and_ne_top (C ^ (99 * 𝔰.n * 2))).elim ENNReal.mul_lt_mul_left o).not_ge"
+  },
+  {
+   "id": "21",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Unfold C = ∏_{i ≥ j} d_i in the comparison.",
+   "lines": [
+    323,
+    323
+   ],
+   "lean": "  simp [C]"
+  },
+  {
+   "id": "22",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "and obtain a contradiction with the md bound of Γ.",
+   "lines": [
+    324,
+    327
+   ],
+   "lean": "  grw [← V, ← n, min_eq_left o.le, prod_const, ← pow_mul, ← pow_mul, ← pow_succ',\n    ← pow_le_pow_right_of_le_one' o.le (by grw [card_finset_fin_le]; lia : _ ≤ 400 * 𝔰.n ^ 2), eσ,\n    ← Γ.md_le _ (c⁻¹ * (star C * C) ^ _) (by simpa [hΓ, ← pow_mul, mul_left_comm] using K),\n    ← map_mul]",
+   "uses": [
+    {
+     "decl": "IntegralPlace.IsStdLevel.gauge"
+    }
+   ]
+  },
+  {
+   "id": "23",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The powers of C and of the md-values match (pow_mul, squares); simp_all closes the goal.",
+   "lines": [
+    328,
+    328
+   ],
+   "lean": "  simp [C, pow_mul, sq]; simp_all"
+  },
+  {
+   "id": "24",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Support: if f(x) ≠ 0 then the majorant is nonzero, giving y, σ",
+   "lines": [
+    329,
+    329
+   ],
+   "lean": "  obtain ⟨y, -, a⟩ := exists_ne_zero_of_ae ae_stackMeasure_mem (ne_bot_of_le_ne_bot hx hf)"
+  },
+  {
+   "id": "25",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "and a nonzero inner product,",
+   "lines": [
+    330,
+    330
+   ],
+   "lean": "  obtain ⟨σ, -, a⟩ := exists_ne_zero_of_pivotModulus (left_ne_zero_of_mul a)",
+   "uses": [
+    {
+     "decl": "Level.exists_of_inner_besselVector_ne_zero"
+    }
+   ]
+  },
+  {
+   "id": "26",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "so x is in the positions.",
+   "lines": [
+    331,
+    332
+   ],
+   "lean": "  obtain ⟨u, _, v, _, -, k⟩ := exists_of_inner_besselVector_ne_zero Z a\n  exact h.box_eq.2.2.2.2 ▸ ⟨_, ⟨σ * y, v⁻¹ * u, by bound, rfl⟩, _, k, by simp⟩"
+  },
+  {
+   "id": "27",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The remaining exponent inequalities are polynomial in n and m (with m ≤ 50000n²): ring normalisation and monotonicity (gcongr).",
+   "lines": [
+    333,
+    333
+   ],
+   "lean": "  all_goals ring_nf; clear * - m; gcongr <;> simp"
+  }
+ ]
+}

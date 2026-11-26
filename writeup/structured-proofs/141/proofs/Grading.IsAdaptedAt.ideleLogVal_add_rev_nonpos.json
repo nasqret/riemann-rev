@@ -1,0 +1,181 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Seesaw.LinesStep:17:7",
+ "summary": "The Gram matrix of an adapted basis gives the bound except at a middle index above P with s odd; there, if the bound failed, a local change of basis at w and Witt's theorem (exists_mem_besselFin) would put the conjugate of K_w(X) inside K_w(V), contradicting hg.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "fact",
+   "claim": "For any adapted basis at a point with diagonal β and any string index i: β̄_i·β_{s−1−i}·J(i, s−1−i) is integral (gram_string_entry: the Gram matrix of a lattice basis in GL(Ô) is integral); J(i, s−1−i) is 1, or −N at the middle index.",
+   "lines": [
+    21,
+    23
+   ],
+   "lean": "  have G {x b β} (h : Y.IsAdaptedAt x b β) i := by simpa [apply_ite, -ite_mul, Y.2, q.1, smul_def,\n             ← log_le_log, ← ideleLogVal.eq_1] using mem_Ô.1 (h.gram_string_entry i _ le_rfl ▸\n    h.2.isIntMatrix_inv.isInt_conjTranspose.mul h.2.isIntMatrix_inv _ _ :)",
+   "uses": [
+    {
+     "decl": "Grading.IsAdaptedAt.gram_string_entry"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "fact",
+   "claim": "ideleLogVal(π)_w = −1 if w ∈ P and 0 otherwise (q).",
+   "lines": [
+    24,
+    24
+   ],
+   "lean": "  have K w : ideleLogVal π w = ite (w ∈ P) (-1) 0 := by simp [ideleLogVal, q.2, apply_ite]",
+   "typed_fact": "ideleLogVal π w = ite (w ∈ P) (-1) 0"
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "It suffices to treat w ∈ P with w̄ ≠ w, s odd and i the middle index: otherwise the Gram entry is a unit at w and step 1 is the bound.",
+   "lines": [
+    25,
+    25
+   ],
+   "lean": "  wlog p : star w ≠ w ∧ Odd s ∧ i.rev = i ∧ w ∈ P generalizing w; grind [star_star, q.2 w]",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "step": "2"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "fact",
+   "claim": "ideleLogVal(conj(β⁻¹)_a)_w = −ideleLogVal(β_a)_{w̄}.",
+   "lines": [
+    26,
+    26
+   ],
+   "lean": "  have L a w : ideleLogVal (star β⁻¹ a) w = -ideleLogVal (β a) (star w) := by simp [ideleLogVal]",
+   "typed_fact": "ideleLogVal (star β⁻¹ a) w = -ideleLogVal (β a) (star w)"
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let γ_a = β_a for a ≤ i and γ_a = conj(β⁻¹)_{s−1−a} for a > i.",
+   "lines": [
+    27,
+    27
+   ],
+   "lean": "  let γ a := ite (a ≤ i) (β a) (star β⁻¹ a.rev)"
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let d be the diagonal matrix with 1 on X and γ on the string.",
+   "lines": [
+    28,
+    28
+   ],
+   "lean": "  let d := diagGL ((1 ⊕ᵥ γ) ∘ Y.indexEquiv.symm)"
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "fact",
+   "claim": "d is an adapted basis of itself with diagonal γ.",
+   "lines": [
+    29,
+    29
+   ],
+   "lean": "  have D : Y.IsAdaptedBasis d d γ := by constructor <;> simp [d]",
+   "typed_fact": "Y.IsAdaptedBasis d d γ"
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "fact",
+   "claim": "There is y ∈ G_f(ι) supported at {w, w̄} with d = x_f·y·x at w (atSplit: the w-component can be prescribed because w̄ ≠ w).",
+   "lines": [
+    30,
+    32
+   ],
+   "lean": "  have ⟨y, o, e⟩ : ∃ y ∈ supportedOn ι {w}, d.map (evalAt w) = (V.xFin * ↑(y * x)).map (evalAt w) :=\n    ⟨atSplit p.1 (.map (evalAt w) (V.xFin⁻¹ * d / x)), by simp +contextual [atSplit,\n    evalAt_star_locGL, p]⟩",
+   "typed_fact": "∃ y ∈ supportedOn ι {w}, d.map (evalAt w) = (V.xFin * ↑(y * x)).map (evalAt w)"
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Choose an adapted basis h′ at y·x, and argue by contraposition: assuming the inequality fails, we show the inclusion of maximal compacts that hg excludes.",
+   "lines": [
+    33,
+    33
+   ],
+   "lean": "  have ⟨_, _, h'⟩ := Y.exists_isAdaptedAt (y * x); contrapose! hg",
+   "uses": [
+    {
+     "decl": "Grading.exists_isAdaptedAt"
+    }
+   ]
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "fact",
+   "claim": "The diagonal of h′ has the valuations of γ at w (ideleLogVal_eq, as y·x and d agree at w), those of β away from w and w̄ (y is supported there), and at w̄ is bounded by those of γ (ideleLogVal_le, an integrality at w̄).",
+   "lines": [
+    34,
+    41
+   ],
+   "lean": "  obtain := D.ideleLogVal_eq h' e, (h.ideleLogVal_eq\n    h' <| by simpa using mem_supportedOn.1 o · · ·), h'.ideleLogVal_le D (w := star w) (by\n    simp_rw [GeneralLinearGroup.val_map_apply, Units.val_mul, coe_units_inv, inv_eq_left_inv\n      (gram_mul_of_gram_eq gram_xFin (y * x).2), Matrix.map_mul,\n      @id (_ᴴ.map _ = _) (evalAt_star_GL rfl _), ← e]\n    simp [d, reindex_equiv Y.indexEquiv, Y.2, apply_ite, -evalAt_apply, q.1, IsIntMatrix,\n      v.mem_integer_iff]\n    simp [← log_le_log, ← ideleLogVal.eq_1]; grind [star_star])",
+   "uses": [
+    {
+     "decl": "Grading.IsAdaptedBasis.ideleLogVal_eq"
+    },
+    {
+     "decl": "Grading.IsAdaptedBasis.ideleLogVal_le"
+    },
+    {
+     "step": "7"
+    },
+    {
+     "step": "8"
+    }
+   ]
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "So the first-half diagonals of h and h′ have equal valuations, and exists_mem_besselFin gives k ∈ K₀ with (y x)k x⁻¹ ∈ B_f; take this element as n and w ∈ P. For a ∈ maxCompactAt(X, w), the conjugate (nx)⁻¹·inclXFin(a)·(nx) is supported at w, w̄ (it is 1 elsewhere).",
+   "lines": [
+    42,
+    46
+   ],
+   "lean": "  refine (h.exists_mem_besselFin h' (by grind [star_star, q.2 w])).elim fun _ ⟨k, r⟩ ↦ ⟨p.2.1, _, r,\n    ⟨w, p.2.2.2⟩, fun A ⟨⟨B, a⟩, l⟩ ↦ (and_congr_left mem_Kf_iff_of_supportedOn).2 ⟨?_,\n    mem_supportedOn.2 fun u b c ↦ by simpa [mul_eq_one_iff_eq_inv] using\n    (Units.ext (congr($(Y.ratCoordMatrixFin_inclXFin A).map _).trans (by simp_all [-evalAt_apply,\n    Units.ext_iff, ← submatrix_map])) : (V.xFin * _ * _).map _ = 1)⟩⟩",
+   "uses": [
+    {
+     "decl": "Grading.IsAdaptedAt.exists_mem_besselFin"
+    }
+   ]
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "and integral at w: it is k⁻¹ times the conjugate of diag(B, 1) by d⁻¹x_f times k, and the lattice of x at w is that of d, which is stable under diag(B, 1) (B ∈ GL(O_w)).",
+   "lines": [
+    47,
+    50
+   ],
+   "lean": "  simpa [e, mul_assoc] using mem_intGL_Ô.1 (mul_mem (inv_mem k) (mul_mem (a := MulAut.conj (d⁻¹ *\n    V.xFin) _) ⟨reindexGL Y.indexEquiv (blockGL (B, 1)), by simp [Units.ext_iff, ← ext_iff, d,\n    reindex_equiv Y.indexEquiv, diagGL, ← ratCoordMatrixFin.eq_1, -Matrix.mul_assoc, -coe_units_inv,\n    ratCoordMatrixFin_inclXFin, ← @id (_ = A.1) a, apply_ite]⟩ k)) w"
+  }
+ ]
+}

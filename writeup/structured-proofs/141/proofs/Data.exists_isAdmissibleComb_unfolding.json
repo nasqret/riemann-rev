@@ -1,0 +1,216 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Seesaw.SeesawTheorem:81:7",
+ "summary": "Induction on k. Stage k + 1 is reached by moving the last lift across the integral (lift and descent are transposes) and unfolding one step (integral_besselGroup_unfold); the period over B(E⁺)\\G is a finite sum over the cut T with weights 1/coverMultiplicity (exists_integral_eq_sum_over_cut), which divide powers of n (exists_stage_cut); so w for k + 1 is built from w for k with S′(y) = ∑_t S(update y k t)/coverMultiplicity(t).",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "induction",
+   "claim": "Substitute s = 2ϱ + 1 − k and induct on k, for all X and a.",
+   "lines": [
+    90,
+    90
+   ],
+   "lean": "  subst hs; induction' k with k ih generalizing X a"
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "case",
+   "claim": "k = 0: κ = a(1) and w = S(trivial cosets), a single admissible term. The period: ∫_{[U(Y₀)]} z·𝒫φ unfolds (integral_poincare for the rational points Γ) to the same sum ∑ φ_a ∫ z·cutBessel as the period over B(E⁺)\\G of the Poincaré series over the rational Bessel points (integral_poincare for that subgroup), which by the hypothesis at ξ = 1, y = 1 is a(1)·L(S(1)).",
+   "lines": [
+    91,
+    94
+   ],
+   "lean": "  · exact ⟨a 1, fun S ↦ ⟨_, .single 1 trivial, by simp +contextual, fun z φ L H ↦ .trans\n      (D.filling_fits.poincareMap.2 _ ▸ (D.filling_fits.integral_poincare _ le_rfl z.2).2 :)\n      ((D.filling_fits.integral_poincare _ inf_le_left\n      z.2).symm.elim (·.symm.trans <| (mul_comm _ z.1 ▸ H 1 1 rfl (one_mem _)) ·))⟩⟩",
+   "uses": [
+    {
+     "decl": "Filling.Fits.integral_poincare"
+    },
+    {
+     "decl": "Data.filling_fits"
+    },
+    {
+     "decl": "IsAdmissibleComb.single"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "setup",
+   "claim": "k → k + 1, with ih for k. From exists_stage_cut at k: the level A (hA), D.columnLevel(k) ≤ inclXFin_Y⁻¹(A) (hA′: the image inclXFin_Y(b) of every b ∈ D.columnLevel(k) lies in A; not D.columnLevel(k) ≤ A), and for each ϑ the cut T(ϑ) with stability under B_f ∩ A (c₁), integrality (c₃) and multiplicities dividing powers of n (c₄).",
+   "lines": [
+    95,
+    95
+   ],
+   "lean": "  choose A hA hA' T c₁ c₃ c₄ using D.exists_stage_cut k (by omega)",
+   "uses": [
+    {
+     "decl": "Data.exists_stage_cut"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let Y = gradingY(k).",
+   "lines": [
+    96,
+    96
+   ],
+   "lean": "  let Y := D.gradingY k"
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "setup",
+   "claim": "For each ξ choose κ(ξ) with the formula of exists_integral_eq_sum_over_cut for Y, the level A and the function a(update ξ k ·) (H₂).",
+   "lines": [
+    97,
+    97
+   ],
+   "lean": "  choose κ H₂ using fun ξ ↦ Y.exists_integral_eq_sum_over_cut A (a <| update ξ k ·)",
+   "uses": [
+    {
+     "decl": "Grading.exists_integral_eq_sum_over_cut"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "Apply ih for k with the function κ, the grading Y and S′(y) = ∑_{t∈T(ϑ)} coverMultiplicity(t)⁻¹·S(update(y, k, t)). It gives w with (i) for S′; binding with the expansion of each S′(y) (of_sum: the coefficients 1/coverMultiplicity(t) are integral away from n because coverMultiplicity divides a power of n, div_mem_integralAway; each term is S of an updated tuple, re-indexed with ζ = 1, its new entry integral by c₃) gives (i) for k + 1 with size multiplied by cutBound. Left: the size of the expansion, the invariance (ii) and the period (iii), where datumY(ϑ, k) is an arrow in both directions (isArrow_datumY, A and B).",
+   "lines": [
+    98,
+    104
+   ],
+   "lean": "  refine (ih (by omega) κ Y).imp fun _ H ϑ _ S ↦ (H fun y ↦ ∑ t ∈ T ϑ,\n    (coverMultiplicity Y.besselFin A (T ϑ) t : ℂ)⁻¹ • S (update y k t)).imp fun w ↦\n    .imp (·.bind 1 D.cutBound (fun y _ ↦ .of_eq_isOfFinOrder_smul (.of_sum (Quot.ind fun t a ↦\n    div_mem_integralAway ((c₄ ϑ t (.inl a)).choose_spec.mul_left 1)) fun e _ ↦ ?_) (Quot.ind fun t\n    a ↦ ⟨1, .one, _, trivial, ((one_smul ..).trans congr(S $(funext (apply_update (fun _ x ↦ ⟦x.1⟧)\n    y k ⟨t, (c₃ ϑ a).1⟩)))).symm⟩)) dvd_rfl (by simp [pow_succ])) (.imp (fun H b ω e ↦ H b ω fun y ↦\n    ?_) fun H z φ L G ↦ (isArrow_datumY ϑ (D.m_eq_two_mul_varrho_add_two ▸ l)).elim fun A B ↦ ?_)",
+   "uses": [
+    {
+     "decl": "IsAdmissibleComb.bind"
+    },
+    {
+     "decl": "IsAdmissibleComb.of_sum"
+    },
+    {
+     "decl": "IsAdmissibleComb.of_eq_isOfFinOrder_smul"
+    },
+    {
+     "decl": "div_mem_integralAway"
+    },
+    {
+     "decl": "Data.isArrow_datumY"
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "identity",
+   "claim": "The period (iii):",
+   "lines": [
+    105,
+    114
+   ],
+   "lean": "  · refine .trans (by erw [mul_comm ?z.1, mul_smul_comm, ← smul_mul_assoc]; exact\n      (A.integral_mul_formLift_swap B _ ((_ : ℂ) • _))) (H ?z φ L fun ξ y y₁ y₀ h ↦ (H₂ ξ (L <| S <|\n      update (y ·) k ·) (isGeneric_unfoldStage ..)\n      ?z.2.1 h (c₁ ϑ) (fun g e ↦ ne_zero_of_dvd_ne_zero (by simp [prod_eq_zero_iff]) (c₄ ϑ _ (.inr\n      ⟨φ, φ.2, ξ, y, _, left_ne_zero_of_mul e, y₀⟩)).choose_spec) fun t i ↦ .trans ?_ (congrArg _\n      ((Grading.integral_besselGroup_unfold _ _ _ (isGeneric_unfoldStage ..) _ z.2.1 (B _).1.2).elim\n      fun j ↦ (·.trans (funext (apply_update (fun _ ↦ (⟦·⟧)) y k t.2) ▸ G _ _\n      (by simp [Nat.ne_of_gt l, y₁]) (by cases k <;> simp [c₃ ϑ i, *]) j))))).trans (by simp))\n    simp [unfoldStage_update]; rw [← integral_const_mul]; congr; ext; erw [mul_left_comm,\n      B.coe_formLift]; rfl"
+  },
+  {
+   "id": "7.1",
+   "parent": "7",
+   "kind": "identity",
+   "claim": "Lift and descent are transposes (integral_mul_formLift_swap for datumY(ϑ, k)), so ∫ z·lift^{k+1}(𝒫φ) = ∫ (descent of z)·lift^k(𝒫φ), and ih applies to the form descent(z). Its hypothesis: for ξ, y the period of stage k times descent(z) is, by H₂ (stage k is generic, T stable, multiplicities non-zero by c₄), κ(ξ)·∑_t coverMultiplicity(t)⁻¹·(the [B]-period at t), and each [B]-period at t is, by one unfolding step (integral_besselGroup_unfold), the period of stage k + 1 times z at the updated tuple, which the hypothesis G evaluates as a(update ξ k ·)·L(S(update y k t)); G is an implication from integrability, and the integrability it needs is the first conclusion of integral_besselGroup_unfold.",
+   "lines": [
+    105,
+    112
+   ],
+   "lean": "  · refine .trans (by erw [mul_comm ?z.1, mul_smul_comm, ← smul_mul_assoc]; exact\n      (A.integral_mul_formLift_swap B _ ((_ : ℂ) • _))) (H ?z φ L fun ξ y y₁ y₀ h ↦ (H₂ ξ (L <| S <|\n      update (y ·) k ·) (isGeneric_unfoldStage ..)\n      ?z.2.1 h (c₁ ϑ) (fun g e ↦ ne_zero_of_dvd_ne_zero (by simp [prod_eq_zero_iff]) (c₄ ϑ _ (.inr\n      ⟨φ, φ.2, ξ, y, _, left_ne_zero_of_mul e, y₀⟩)).choose_spec) fun t i ↦ .trans ?_ (congrArg _\n      ((Grading.integral_besselGroup_unfold _ _ _ (isGeneric_unfoldStage ..) _ z.2.1 (B _).1.2).elim\n      fun j ↦ (·.trans (funext (apply_update (fun _ ↦ (⟦·⟧)) y k t.2) ▸ G _ _\n      (by simp [Nat.ne_of_gt l, y₁]) (by cases k <;> simp [c₃ ϑ i, *]) j))))).trans (by simp))",
+   "uses": [
+    {
+     "decl": "IsArrow.integral_mul_formLift_swap"
+    },
+    {
+     "decl": "Grading.integral_besselGroup_unfold"
+    },
+    {
+     "decl": "Data.isGeneric_unfoldStage"
+    },
+    {
+     "step": "5"
+    }
+   ]
+  },
+  {
+   "id": "7.2",
+   "parent": "7",
+   "kind": "identity",
+   "claim": "The integrands agree: stage k does not see the update at k (unfoldStage_update), constants pass through the integral, and the descent is formLift of the swapped kernel.",
+   "lines": [
+    113,
+    114
+   ],
+   "lean": "    simp [unfoldStage_update]; rw [← integral_const_mul]; congr; ext; erw [mul_left_comm,\n      B.coe_formLift]; rfl",
+   "uses": [
+    {
+     "decl": "Data.unfoldStage_update"
+    }
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "computation",
+   "claim": "The size of the expansion (under Q = ∅): ∑_{t∈T} |σ(1/coverMultiplicity(t))| ≤ |T|, and T injects into K₀/K(π̄_g) (its elements are integral by c₃, and chosenLevel ∩ trivialOn(Q) ≤ levelY: chosenLevel_inf_trivialOn_le), whose order is at most N(π̄_g)^{|Y_k|²} = g^{f·|Y_k|²} ≤ g^{f·n_m²} = cutBound (relIndex_principalLevel_le, absNorm_piGBar, card_Y_le).",
+   "lines": [
+    115,
+    122
+   ],
+   "lean": "  · grw [sum_le_card_nsmul _ _ 1, nsmul_eq_mul, ← Nat.card_eq_finsetCard,\n      (relIndex_principalLevel_le D.piGBar_ne_zero).trans' (Finite.card_le_of_injective' (f :=\n      fun t ↦ ⟦⟨t.1.out, by simpa [e, mem_Kf_iff, localLevel, Ideal.one_notMem] using (c₃ ϑ\n      (by simp)).1⟩⟧) (fun _ _ d ↦ by simpa using QuotientGroup.eq.2 (D.chosenLevel_inf_trivialOn_le\n      ϑ ⟨D.principalLevel_le_chosenLevel dvd_rfl (QuotientGroup.eq.1 d :), by\n      simp [e]⟩)) (absurd · (have := Fact.mk D.piGBar_ne_zero; relIndex_ne_zero_of_isLevel _))),\n      absNorm_piGBar, ← pow_mul, card_Y_le] <;> simp [m_eq_two_mul_varrho_add_two, NeZero.one_le,\n      Nat.cast_inv_le_one, NeZero.pos]; omega",
+   "uses": [
+    {
+     "decl": "relIndex_principalLevel_le"
+    },
+    {
+     "decl": "Data.absNorm_piGBar"
+    },
+    {
+     "decl": "Data.card_Y_le"
+    },
+    {
+     "decl": "Data.chosenLevel_inf_trivialOn_le"
+    }
+   ]
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "computation",
+   "claim": "The invariance (ii): simplify the case k < k + 1.",
+   "lines": [
+    123,
+    123
+   ],
+   "lean": "  simp [e]"
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "ω(S′(y)) = ∑_t coverMultiplicity(t)⁻¹·S(moved update) = S′(moved y): reindex the sum by t ↦ inclXFin_Y(b_k)·t, a permutation of T(ϑ): T is stable under the elements of B_f that lie in A (c₁), and the image inclXFin_Y(b_k) lies in B_f (inclX_mem_besselGroup, snd_mem_besselFin) and in A by hA′ (b_k ∈ D.columnLevel(k) ≤ inclXFin_Y⁻¹(A)); coverMultiplicity is invariant (coverMultiplicity_smul).",
+   "lines": [
+    124,
+    126
+   ],
+   "lean": "  refine sum_equiv (toPerm _) (c₁ ϑ ⟨_, Y.snd_mem_besselFin (Y.inclX_mem_besselGroup _)⟩ (hA' (b\n    k).2)) fun t _ ↦ congr(($(coverMultiplicity_smul _ _ t) : ℂ)⁻¹ • S $(update_eq_iff.2 ?_)).symm\n  simp +contextual [le_iff_lt_or_eq]; rfl",
+   "uses": [
+    {
+     "decl": "coverMultiplicity_smul"
+    }
+   ]
+  }
+ ]
+}

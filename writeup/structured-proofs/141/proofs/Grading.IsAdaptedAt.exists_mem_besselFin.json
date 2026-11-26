@@ -1,0 +1,136 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Seesaw.EqualLinesOrbit:84:7",
+ "summary": "Make the string diagonals of the two adapted bases equal on the first half; then Witt's theorem over Ô moves the first-half string columns of one lattice basis onto those of the other, and the resulting x′kx⁻¹ fixes the string vectors of grade ≥ 0 up to higher grades.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let γ_a = β_a for a ≤ s − 1 − a and γ_a = β′_a otherwise.",
+   "lines": [
+    88,
+    88
+   ],
+   "lean": "  let γ a := ite (a ≤ a.rev) β β' a"
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "fact",
+   "claim": "x′ has an adapted basis with string diagonal γ: rescale b′ by the diagonal matrix (1 on X, β′⁻¹γ on the string), which is integral invertible because γ and β′ have the same valuations (l, and equality on the second half).",
+   "lines": [
+    89,
+    92
+   ],
+   "lean": "  have ⟨b', h'⟩ : ∃ b', Y.IsAdaptedAt x' b' γ :=\n    ⟨b' * diagGL ((1 ⊕ᵥ β'⁻¹ * γ) ∘ Y.indexEquiv.symm), by constructor <;> simp_all [h'.1 _,\n    BlockTriangular, ← map_inv, diagonal_apply, h'.3, mul_assoc, mul_mem, h'.2, γ, mem_intGL,\n    reindex_equiv Y.indexEquiv, mem_Ô, ← log_le_log, v_inv, ideleLogVal, apply_ite, ite_apply]⟩",
+   "typed_fact": "∃ b', Y.IsAdaptedAt x' b' γ"
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let f send the first-half string indices a ≤ s − 1 − a to basis indices.",
+   "lines": [
+    93,
+    93
+   ],
+   "lean": "  let f (a : {a // a ≤ a.rev}) := Y.indexEquiv (.inr a.1)"
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "fact",
+   "claim": "For g ∈ GL_ι(Ô), the columns f of g⁻¹ form a primitive matrix (they have an integral left inverse).",
+   "lines": [
+    94,
+    96
+   ],
+   "lean": "  let P {g} (h : g ∈ intGL ι (Ô E)) : IsPrimitiveMatrix (Ô E) (submatrix (Units.inv g) id f) :=\n    (mem_intGL.1 h).symm.imp (by tauto) fun H ↦ ⟨g.1.submatrix f id, fun i ↦ H (f i),\n      (g.3 ▸ submatrix_one f (by aesop_cat) : (g.1 * g.inv).submatrix f f = 1)⟩"
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "fact",
+   "claim": "The Gram matrices of these columns for x and for x′ agree (gram_string_entry for both, with the same diagonal γ on the first half), so Witt's theorem over Ô (witt_Ô; E stably unramified) gives g ∈ K₀ carrying the first-half string columns of one onto those of the other (e).",
+   "lines": [
+    97,
+    98
+   ],
+   "lean": "  peel witt_Ô (P h.2) (P h'.2) (by ext; erw [h.gram_string_entry,\n    h'.gram_string_entry] <;> grind) with g n e",
+   "uses": [
+    {
+     "decl": "witt_Ô"
+    },
+    {
+     "decl": "Grading.IsAdaptedAt.gram_string_entry"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "To show x′gx⁻¹ ∈ B_f it suffices (mem_besselGroup_iff_sub_one) that the entries (i, k) of ratCoord(x′gx⁻¹) − 1 vanish for string indices k of grade ≥ 0 and grade(i) ≤ grade(k); fix such indices.",
+   "lines": [
+    99,
+    99
+   ],
+   "lean": "  refine Y.mem_besselGroup_iff_sub_one.2 (Y.indexEquiv.surjective.forall₂.2 fun _ _ _ _ ↦ ?_)"
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "fact",
+   "claim": "ratCoord(x′gx⁻¹)·b and b′ agree on the first-half string columns (from e).",
+   "lines": [
+    100,
+    101
+   ],
+   "lean": "  have q {i} c : (V.ratCoordMatrixFin (x' * g * x⁻¹) * b) i (f c) = b' i (f c) := by\n    simpa [submatrix_mul (e₂ := id), ratCoordMatrixFin] using! congr(((V.xFin * x').1 * $e) i _)",
+   "typed_fact": "(V.ratCoordMatrixFin (x' * g * x⁻¹) * b) i (f c) = b' i (f c)"
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "identity",
+   "claim": "Rewrite the entry of ratCoord(x′gx⁻¹) − 1 through b·b⁻¹.",
+   "lines": [
+    102,
+    103
+   ],
+   "lean": "  erw [sub_eq_zero, ratCoordMatrix_inr, ← b.mul_inv_cancel_right (V.ratCoordMatrixFin _), mul_apply,\n    Finset.sum_congr rfl ((reindex_equiv Y.indexEquiv).1.2 _), ← mul_apply, b.mul_inv]"
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "Split according to the cases of the two indices.",
+   "lines": [
+    104,
+    104
+   ],
+   "lean": "  apply apply_ite₂"
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Each case follows from step 7, the triangularity of b⁻¹ and the grades (grind).",
+   "lines": [
+    105,
+    106
+   ],
+   "lean": "  grind (splits := 20) [q ⟨_, _⟩, h.inv, gradeOf_inl, flagOrder, gradeOf_inr, BlockTriangular,\n    IsAdaptedBasis]",
+   "uses": [
+    {
+     "step": "7"
+    },
+    {
+     "decl": "Grading.IsAdaptedBasis.inv"
+    }
+   ]
+  }
+ ]
+}

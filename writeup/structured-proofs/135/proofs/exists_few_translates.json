@@ -1,0 +1,174 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Heights.OneDeterminant:97:7",
+ "name": "exists_few_translates",
+ "summary": "Greedy covering with a logarithmic potential ψ(F) = 5·dim W·log(1 + codim F/(dim W·η)). Among finite t with |t|·dim V + ψ(span of the images) ≤ 5·dim W·log(1 + 1/η) (∅ qualifies) take one whose span T(t) is maximal. If dim T(t) < (1 − 4η)·dim W, the spread index s for F = T(t) lowers ψ by at least dim V when added (log x ≤ x − 1), so t ∪ {s} still qualifies and maximality forces B_s(V) ⊆ T(t), contradicting the spread bound.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let T(t) = Σ_{s∈t} B_s(V) for finite t ⊆ Θ, and ψ(F) = 5·dim W·log(1 + dim(W/F)/dim W/η) for subspaces F ⊆ W.",
+   "lines": [
+    100,
+    101
+   ],
+   "lean": "  let T (t : Finset Θ) := ⨆ s ∈ t, (B s).range\n  let ψ (F : Submodule ℂ W) := 5 * finrank ℂ W * Real.log (1 + finrank ℂ (W ⧸ F) / finrank ℂ W / η)",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "Among finite sets t with |t|·dim V + ψ(T(t)) ≤ 5·dim W·log(1 + 1/η) (the empty set qualifies: dim(W/0)/dim W ≤ 1), choose t with T(t) maximal (subspaces of the finite-dimensional W satisfy the ascending chain condition). The first conclusion follows as ψ ≥ 0. For the second, apply IsSpread to F = T(t), giving s with dim B_s⁻¹(T(t)) ≤ ((1 + φ)/2 + η)·dim V, φ = dim T(t)/dim W, and argue by contradiction from dim T(t) < (1 − 4η)·dim W.",
+   "lines": [
+    102,
+    104
+   ],
+   "lean": "  refine (exists_maximalFor_of_wellFoundedGT (fun t ↦ #t * finrank ℂ V + ψ (T t) ≤ _) T ⟨∅, by\n    simp [ψ]; grw [finrank_quotient_le, div_self_le_one]; simp⟩).imp fun t ⟨ht, m⟩ ↦\n    (h (T t)).rec fun s _ ↦ ⟨ht.trans' (by bound), ?_⟩; by_contra",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "decl": "IsSpread"
+    }
+   ],
+   "ambient_uses": [
+    "exists_maximalFor_of_wellFoundedGT",
+    "Submodule.finrank_quotient_le",
+    "div_self_le_one"
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Split on dim W = 0 (that case is immediate) and specialise maximality to t ∪ {s}; record dim(W/T(t)) + dim T(t) = dim W and rank–nullity for V → W/T(t), v ↦ B_s v mod T(t); and T(t ∪ {s}) = T(t) + B_s(V).",
+   "lines": [
+    105,
+    106
+   ],
+   "lean": "  obtain ⟨_ | _, m⟩ := em (finrank ℂ W = 0), @m (insert s t), (T t).finrank_quotient_add_finrank,\n    ((T t).mkQ ∘ₗ B s).index_eq_of_finiteDimensional <;> simp_all [T, index, t.iSup_insert]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "2"
+    }
+   ],
+   "ambient_uses": [
+    "Submodule.finrank_quotient_add_finrank",
+    "LinearMap.index_eq_of_finiteDimensional",
+    "Finset.iSup_insert"
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "computation",
+   "claim": "The range of V → W/T(t) is the image of B_s(V), its kernel is B_s⁻¹(T(t)), and |t ∪ {s}| ≤ |t| + 1.",
+   "lines": [
+    107,
+    107
+   ],
+   "lean": "  grw [range_comp, ker_comp, ker_mkQ, card_insert_le] at *",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "3"
+    }
+   ],
+   "ambient_uses": [
+    "LinearMap.range_comp",
+    "LinearMap.ker_comp",
+    "Finset.card_insert_le"
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Adding s lowers the potential by at least dim V: ψ(T(t) + B_s(V)) − ψ(T(t)) ≤ −dim V.",
+   "lines": [
+    108,
+    110
+   ],
+   "lean": "  have : ψ (T t ⊔ (B s).range) - ψ (T t) ≤ -finrank ℂ V\n  grw [← mul_sub, ← log_div, log_le_sub_one_of_pos] <;> try positivity\n  rify [field, (quotientQuotientEquivQuotientSup ..).finrank_eq] at *; nlinarith",
+   "head_lines": [
+    108,
+    108
+   ],
+   "typed_fact": "ψ (T t ⊔ (B s).range) - ψ (T t) ≤ -finrank ℂ V",
+   "uses": []
+  },
+  {
+   "id": "5.1",
+   "parent": "5",
+   "kind": "reduction",
+   "claim": "Write the difference as 5·dim W·log of the quotient of the two arguments and use log x ≤ x − 1 (the positivity side conditions are discharged).",
+   "lines": [
+    109,
+    109
+   ],
+   "lean": "  grw [← mul_sub, ← log_div, log_le_sub_one_of_pos] <;> try positivity",
+   "typed_fact": null,
+   "uses": [],
+   "ambient_uses": [
+    "Real.log_div",
+    "Real.log_le_sub_one_of_pos"
+   ]
+  },
+  {
+   "id": "5.2",
+   "parent": "5",
+   "kind": "computation",
+   "claim": "With codim(T(t) + B_s(V)) = codim T(t) − (dim V − dim B_s⁻¹(T(t))) (third isomorphism theorem), the spread bound for s and the assumption codim T(t) > 4η·dim W, the resulting inequality is a nonlinear arithmetic consequence (nlinarith).",
+   "lines": [
+    110,
+    110
+   ],
+   "lean": "  rify [field, (quotientQuotientEquivQuotientSup ..).finrank_eq] at *; nlinarith",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "step": "3"
+    },
+    {
+     "step": "4"
+    }
+   ],
+   "ambient_uses": [
+    "Submodule.quotientQuotientEquivQuotientSup"
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Hence t ∪ {s} also satisfies the potential bound, so by maximality B_s(V) ⊆ T(t) and B_s⁻¹(T(t)) = V; the spread bound then gives dim V ≤ ((1 + φ)/2 + η)·dim V with φ < 1 − 4η, impossible as dim V > 0.",
+   "lines": [
+    111,
+    111
+   ],
+   "lean": "  simpa [T, m (by grind), finrank_pos.ne']",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "step": "5"
+    }
+   ],
+   "ambient_uses": [
+    "Module.finrank_pos"
+   ]
+  }
+ ]
+}

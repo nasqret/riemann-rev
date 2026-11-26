@@ -1,0 +1,591 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.TwistedHecke.InterlacingCone:47:7",
+ "name": "volume_inter_slab_eq_signed_sum",
+ "summary": "Sorting each column ν(·, j) of a point turns the cyclic interlacing conditions into a product over the letters of interlacing-indicator determinants, which expand (Leibniz) into a signed sum over tuples σ of permutations of indicators of the sets S(σ, 1, univ). Integrating this pointwise identity, each set is the image of a part of the slab under an invertible linear map, whose determinant is a constant times det(1 − q⁻¹·(Πσ)*); regrouping the tuples by their product τ gives the formula.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "0",
+   "parent": null,
+   "kind": "setup",
+   "claim": "The value as the line census delimits it: the census cuts the statement at the `:=` of `let Δ τ := …` (line 48), so the rest of the statement (to line 50, the whole statement being lines 47–50: a second-reader message) belongs to the value here; the proof proper starts on line 51.",
+   "lines": [
+    48,
+    106
+   ],
+   "lean": "  permStep v P 1 ν ∈ Ω ↔ ν ∈ pieriCone v P) : let Δ τ := |(1 - (P ^ (m + 1))⁻¹ • funLeft ℝ ℝ τ).det|\n  volume.real (Ω ∩ slab k D) =\n          Δ id / k.factorial * (∑ τ : Perm (Fin k), τ.sign / Δ τ) * volume.real (slab k D) := by\n  let S σ (τ : _ → Perm (Fin k)) (Y : Set _) := {ν | let β := permStep v P σ (ν ∘ prodCongrLeft τ)\n    (∀ j, ∑ b, permStep v P 1 ν (b, j) ∈ Icc (D j - 1) (D j)) ∧ (∀ j b, 0 < β (b, j)) ∧ β ∈ Y}\n  -- the map of `σ` is injective, as `P > 1`\n  have z σ : (@permStep k _ _ _ v P σ).det ≠ 0 := (bot_lt_ker_of_det_eq_zero · |>.not_ge fun ν h ↦\n    norm_le_zero_iff.1 (by nlinarith [(funext fun x ↦ by simpa [ite_eq_iff'] using (mul_eq_zero.1\n    congr($h (_, _ - 1))) : P • ν = ν ∘ _) ▸ pi_norm_comp_le .., norm_smul P ν, P.le_norm_self]))\n  -- change of variables; the walls `β x = 0` are null sets\n  have V σ τ Y : volume (S σ τ Y) = .ofReal |(permStep v P σ * (Perm.permMatrix ℝ\n    (prodCongrLeft τ)).toLin').det⁻¹| * volume (Y ∩ slab k D) := by\n    erw [← measure_inter_conull (ae_all_iff.2 (Measure.ae_eval_ne _ · 0)) (s := Y ∩ _), ←\n      Measure.addHaar_preimage_linearMap _ (by simp [z])]\n    congr with ν\n    simp [S, slab, -Perm.coe_one, ← mul_sum, ← Perm.mul_apply, Pi.le_def, -Perm.coe_mul,\n      fun e j ↦ Equiv.sum_comp e (ν ⟨·, j⟩), permMatrix_mulVec, ↓permStep_apply]\n    grind\n  let B : (_ → ℝ) →ₗ[ℝ] Fin k × Fin m.succ → ℝ := LinearMap.pi fun x ↦ P⁻¹ ^ x.2.1.succ • proj x.1\n  have ⟨c, hc⟩ : ∃ c, ∀ σ, (@permStep k _ _ _ v P σ).det = c * (1 - (P ^ (m + 1))⁻¹ • funLeft ℝ ℝ\n      (List.ofFn σ).prod).det := ⟨_, fun σ ↦ by\n    let G := (Perm.permMatrix ℝ (prodCongrLeft (partialProd σ ∘ castSucc))).toLin'\n    let A := funLeft ℝ ℝ ((last _).partialProd σ ·, last m)\n    rw [show _ • _ = A ∘ₗ B by ext; simp +zetaDelta [partialProd, List.take_of_length_le]]\n    simpa [← det_toMatrix' (_ - _), toMatrix'_comp, det_one_sub_mul_comm B.toMatrix', field, G]\n      using congr(($(show permStep v P σ * G = (permStep v 1 1 - permStep v 0 1) * G * (P • 1 -\n      .pi fun x ↦ x.2.cases 0 (proj ⟨x.1, ·.castSucc⟩)) * (1 - B ∘ₗ A) by\n      ext x ⟨b, j⟩\n      cases j using lastCases <;>\n      simp +zetaDelta [← succ_last, partialProd_succ, permMatrix_mulVec] <;> grind)).det)⟩\n  have e ν : ∑ τ, (S 1 τ Ω).indicator (fun _ ↦ 1) ν =\n      ∑ σ, (S σ 1 univ).indicator (fun _ ↦ ((List.ofFn σ).prod.sign : ℝ)) ν := ?_\n  · simpa [↓integral_finsetSum, integrable_indicator_iff, fun σ ↦\n      (by simp [S, hΩ, pieriCone, -permStep_apply]; use ?_ <;> fun_prop :\n      MeasurableSet (S σ 1 univ) ∧ MeasurableSet (S 1 σ Ω)), ↓(V ..).trans_lt (mul_lt_top coe_lt_top\n      (isBounded_inter_slab ..).measure_lt_top), -enorm_mul, Measure.real, hc, field, card_perm,\n      ↓← ((prodCongrLeft fun g : Fin m → _ ↦ .mulRight (List.ofFn g).prod⁻¹).trans\n        (consEquiv fun _ ↦ Perm\n      (Fin k))).sum_comp, sum_prod_type_right, ← sum_mul, div_eq_inv_mul, abs_unit_intCast, V, by\n      simpa [hc] using z 1, mul_right_comm _ _ (Int.cast _), Nat.cast_comm] using congr(∫ ν, $(e ν))\n  -- the product of the determinants, expanded, and read after sorting\n  let τ j := sort (-ν ⟨·, j⟩)\n  have anti j := (monotone_sort (-ν ⟨·, j⟩)).neg\n  simp_rw [indicator, S, hΩ, pieriCone, mem_ofPred, ite_and (∀ j, _ ∈ _), sum_ite_irrel,\n    ← forall_and]\n  rw [sum_eq_single τ fun σ ne ↦ ite_eq_right fun h ↦ ne (funext fun j ↦ eq_sort_iff'.2\n    ((strictMono_iff_forall_covBy _).2 fun _ _ e ↦ .left _ _ (by\n    simpa using (h ..).1.trans_le ((h ..).2 _ e.coe_fin.succ_eq)))), eq_comm]\n  congr\n  trans ∏ j, ((of fun b' b : Fin k ↦ ite (0 < permStep v P (fun _ ↦ .swap b b') ν (b, j)) 1\n    0).reindex (τ j).symm (τ (j + 1)).symm).det\n  · simp [↓det_reindex, ← Int.cast_prod, ← Units.coe_prod, det_apply', map_list_prod,\n      prod_ofFn, -List.ofFn_succ, (AddGroup.addRight_bijective 1).prod_comp (Perm.sign <| τ ·),\n      prod_univ_sum, Fintype.prod_ite_zero, -Units.val_mul]\n  convert Fintype.prod_boole with j\n  have a := (anti (j + 1)).const_mul (by bound : 0 ≤ P)\n  by_cases v j <;> [convert (det_transpose _).trans (det_interlacing_indicator a (anti j)); convert\n    det_interlacing_indicator (anti j) a using 2] <;> simp [← ext_iff, τ, *, forall_and, sub_add]\n  infer_instance",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "0.1",
+   "parent": "0",
+   "kind": "case",
+   "claim": "Not proof in its head: lines 48–50 of the head are the rest of the statement (Δ(τ) = |det(1 − q⁻¹·τ*)| and the identity vol(Ω ∩ slab k D) = Δ(id)/k!·(Σ_τ sgn(τ)/Δ(τ))·vol(slab k D)); its children are the proof. This is one branch only because the checker reads the absolute-value bar `|` that opens the value as the first arm of a definition by equations; nothing is split here.",
+   "lines": [
+    48,
+    106
+   ],
+   "lean": "  permStep v P 1 ν ∈ Ω ↔ ν ∈ pieriCone v P) : let Δ τ := |(1 - (P ^ (m + 1))⁻¹ • funLeft ℝ ℝ τ).det|\n  volume.real (Ω ∩ slab k D) =\n          Δ id / k.factorial * (∑ τ : Perm (Fin k), τ.sign / Δ τ) * volume.real (slab k D) := by\n  let S σ (τ : _ → Perm (Fin k)) (Y : Set _) := {ν | let β := permStep v P σ (ν ∘ prodCongrLeft τ)\n    (∀ j, ∑ b, permStep v P 1 ν (b, j) ∈ Icc (D j - 1) (D j)) ∧ (∀ j b, 0 < β (b, j)) ∧ β ∈ Y}\n  -- the map of `σ` is injective, as `P > 1`\n  have z σ : (@permStep k _ _ _ v P σ).det ≠ 0 := (bot_lt_ker_of_det_eq_zero · |>.not_ge fun ν h ↦\n    norm_le_zero_iff.1 (by nlinarith [(funext fun x ↦ by simpa [ite_eq_iff'] using (mul_eq_zero.1\n    congr($h (_, _ - 1))) : P • ν = ν ∘ _) ▸ pi_norm_comp_le .., norm_smul P ν, P.le_norm_self]))\n  -- change of variables; the walls `β x = 0` are null sets\n  have V σ τ Y : volume (S σ τ Y) = .ofReal |(permStep v P σ * (Perm.permMatrix ℝ\n    (prodCongrLeft τ)).toLin').det⁻¹| * volume (Y ∩ slab k D) := by\n    erw [← measure_inter_conull (ae_all_iff.2 (Measure.ae_eval_ne _ · 0)) (s := Y ∩ _), ←\n      Measure.addHaar_preimage_linearMap _ (by simp [z])]\n    congr with ν\n    simp [S, slab, -Perm.coe_one, ← mul_sum, ← Perm.mul_apply, Pi.le_def, -Perm.coe_mul,\n      fun e j ↦ Equiv.sum_comp e (ν ⟨·, j⟩), permMatrix_mulVec, ↓permStep_apply]\n    grind\n  let B : (_ → ℝ) →ₗ[ℝ] Fin k × Fin m.succ → ℝ := LinearMap.pi fun x ↦ P⁻¹ ^ x.2.1.succ • proj x.1\n  have ⟨c, hc⟩ : ∃ c, ∀ σ, (@permStep k _ _ _ v P σ).det = c * (1 - (P ^ (m + 1))⁻¹ • funLeft ℝ ℝ\n      (List.ofFn σ).prod).det := ⟨_, fun σ ↦ by\n    let G := (Perm.permMatrix ℝ (prodCongrLeft (partialProd σ ∘ castSucc))).toLin'\n    let A := funLeft ℝ ℝ ((last _).partialProd σ ·, last m)\n    rw [show _ • _ = A ∘ₗ B by ext; simp +zetaDelta [partialProd, List.take_of_length_le]]\n    simpa [← det_toMatrix' (_ - _), toMatrix'_comp, det_one_sub_mul_comm B.toMatrix', field, G]\n      using congr(($(show permStep v P σ * G = (permStep v 1 1 - permStep v 0 1) * G * (P • 1 -\n      .pi fun x ↦ x.2.cases 0 (proj ⟨x.1, ·.castSucc⟩)) * (1 - B ∘ₗ A) by\n      ext x ⟨b, j⟩\n      cases j using lastCases <;>\n      simp +zetaDelta [← succ_last, partialProd_succ, permMatrix_mulVec] <;> grind)).det)⟩\n  have e ν : ∑ τ, (S 1 τ Ω).indicator (fun _ ↦ 1) ν =\n      ∑ σ, (S σ 1 univ).indicator (fun _ ↦ ((List.ofFn σ).prod.sign : ℝ)) ν := ?_\n  · simpa [↓integral_finsetSum, integrable_indicator_iff, fun σ ↦\n      (by simp [S, hΩ, pieriCone, -permStep_apply]; use ?_ <;> fun_prop :\n      MeasurableSet (S σ 1 univ) ∧ MeasurableSet (S 1 σ Ω)), ↓(V ..).trans_lt (mul_lt_top coe_lt_top\n      (isBounded_inter_slab ..).measure_lt_top), -enorm_mul, Measure.real, hc, field, card_perm,\n      ↓← ((prodCongrLeft fun g : Fin m → _ ↦ .mulRight (List.ofFn g).prod⁻¹).trans\n        (consEquiv fun _ ↦ Perm\n      (Fin k))).sum_comp, sum_prod_type_right, ← sum_mul, div_eq_inv_mul, abs_unit_intCast, V, by\n      simpa [hc] using z 1, mul_right_comm _ _ (Int.cast _), Nat.cast_comm] using congr(∫ ν, $(e ν))\n  -- the product of the determinants, expanded, and read after sorting\n  let τ j := sort (-ν ⟨·, j⟩)\n  have anti j := (monotone_sort (-ν ⟨·, j⟩)).neg\n  simp_rw [indicator, S, hΩ, pieriCone, mem_ofPred, ite_and (∀ j, _ ∈ _), sum_ite_irrel,\n    ← forall_and]\n  rw [sum_eq_single τ fun σ ne ↦ ite_eq_right fun h ↦ ne (funext fun j ↦ eq_sort_iff'.2\n    ((strictMono_iff_forall_covBy _).2 fun _ _ e ↦ .left _ _ (by\n    simpa using (h ..).1.trans_le ((h ..).2 _ e.coe_fin.succ_eq)))), eq_comm]\n  congr\n  trans ∏ j, ((of fun b' b : Fin k ↦ ite (0 < permStep v P (fun _ ↦ .swap b b') ν (b, j)) 1\n    0).reindex (τ j).symm (τ (j + 1)).symm).det\n  · simp [↓det_reindex, ← Int.cast_prod, ← Units.coe_prod, det_apply', map_list_prod,\n      prod_ofFn, -List.ofFn_succ, (AddGroup.addRight_bijective 1).prod_comp (Perm.sign <| τ ·),\n      prod_univ_sum, Fintype.prod_ite_zero, -Units.val_mul]\n  convert Fintype.prod_boole with j\n  have a := (anti (j + 1)).const_mul (by bound : 0 ≤ P)\n  by_cases v j <;> [convert (det_transpose _).trans (det_interlacing_indicator a (anti j)); convert\n    det_interlacing_indicator (anti j) a using 2] <;> simp [← ext_iff, τ, *, forall_and, sub_add]\n  infer_instance",
+   "head_lines": [
+    48,
+    50
+   ],
+   "head_span": [
+    48,
+    58,
+    50,
+    97
+   ],
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "1",
+   "parent": "0.1",
+   "kind": "setup",
+   "claim": "For a tuple σ of permutations (one per letter), a tuple τ and a set Y, let S(σ, τ, Y) be the set of ν whose column sums of permStep v P 1 ν lie in [D(j) − 1, D(j)] and for which β = permStep v P σ (ν with rows permuted by τ letterwise) has all coordinates > 0 and lies in Y.",
+   "lines": [
+    51,
+    52
+   ],
+   "lean": "  let S σ (τ : _ → Perm (Fin k)) (Y : Set _) := {ν | let β := permStep v P σ (ν ∘ prodCongrLeft τ)\n    (∀ j, ∑ b, permStep v P 1 ν (b, j) ∈ Icc (D j - 1) (D j)) ∧ (∀ j b, 0 < β (b, j)) ∧ β ∈ Y}",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "2",
+   "parent": "0.1",
+   "kind": "fact",
+   "claim": "Claim z: det(permStep v P σ) ≠ 0 for every σ: if permStep v P σ ν = 0 then P·ν equals ν composed with a bijection of the coordinates, so P·‖ν‖ ≤ ‖ν‖ (sup norm), and P > 1 forces ν = 0.",
+   "lines": [
+    54,
+    56
+   ],
+   "lean": "  have z σ : (@permStep k _ _ _ v P σ).det ≠ 0 := (bot_lt_ker_of_det_eq_zero · |>.not_ge fun ν h ↦\n    norm_le_zero_iff.1 (by nlinarith [(funext fun x ↦ by simpa [ite_eq_iff'] using (mul_eq_zero.1\n    congr($h (_, _ - 1))) : P • ν = ν ∘ _) ▸ pi_norm_comp_le .., norm_smul P ν, P.le_norm_self]))",
+   "typed_fact": "(@permStep k _ _ _ v P σ).det ≠ 0",
+   "uses": [
+    {
+     "decl": "permStep"
+    }
+   ],
+   "ambient_uses": [
+    "LinearMap.bot_lt_ker_of_det_eq_zero",
+    "pi_norm_comp_le"
+   ]
+  },
+  {
+   "id": "3",
+   "parent": "0.1",
+   "kind": "fact",
+   "claim": "Claim V: vol(S(σ, τ, Y)) = |det(permStep v P σ ∘ (rows permuted by τ))|⁻¹·vol(Y ∩ slab k D).",
+   "lines": [
+    58,
+    65
+   ],
+   "lean": "  have V σ τ Y : volume (S σ τ Y) = .ofReal |(permStep v P σ * (Perm.permMatrix ℝ\n    (prodCongrLeft τ)).toLin').det⁻¹| * volume (Y ∩ slab k D) := by\n    erw [← measure_inter_conull (ae_all_iff.2 (Measure.ae_eval_ne _ · 0)) (s := Y ∩ _), ←\n      Measure.addHaar_preimage_linearMap _ (by simp [z])]\n    congr with ν\n    simp [S, slab, -Perm.coe_one, ← mul_sum, ← Perm.mul_apply, Pi.le_def, -Perm.coe_mul,\n      fun e j ↦ Equiv.sum_comp e (ν ⟨·, j⟩), permMatrix_mulVec, ↓permStep_apply]\n    grind",
+   "head_lines": [
+    58,
+    59
+   ],
+   "typed_fact": "volume (S σ τ Y) = .ofReal |(permStep v P σ * (Perm.permMatrix ℝ\n    (prodCongrLeft τ)).toLin').det⁻¹| * volume (Y ∩ slab k D)",
+   "uses": []
+  },
+  {
+   "id": "3.1",
+   "parent": "3",
+   "kind": "reduction",
+   "claim": "Remove the walls {β(x) = 0} (each a null set, so imposing β(x) ≠ 0 almost everywhere changes nothing) and change variables by the invertible linear map (z): the measure of a preimage under a linear map is the measure divided by |det|.",
+   "lines": [
+    60,
+    61
+   ],
+   "lean": "    erw [← measure_inter_conull (ae_all_iff.2 (Measure.ae_eval_ne _ · 0)) (s := Y ∩ _), ←\n      Measure.addHaar_preimage_linearMap _ (by simp [z])]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "2"
+    }
+   ],
+   "ambient_uses": [
+    "MeasureTheory.measure_inter_conull",
+    "MeasureTheory.Measure.addHaar_preimage_linearMap",
+    "MeasureTheory.Measure.ae_eval_ne"
+   ]
+  },
+  {
+   "id": "3.2",
+   "parent": "3",
+   "kind": "reduction",
+   "claim": "It remains to identify the two sets pointwise.",
+   "lines": [
+    62,
+    62
+   ],
+   "lean": "    congr with ν",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "3.3",
+   "parent": "3",
+   "kind": "computation",
+   "claim": "Unfold S and slab: the column sums of β and of permStep v P 1 ν agree, as the permutations only reorder the rows.",
+   "lines": [
+    63,
+    64
+   ],
+   "lean": "    simp [S, slab, -Perm.coe_one, ← mul_sum, ← Perm.mul_apply, Pi.le_def, -Perm.coe_mul,\n      fun e j ↦ Equiv.sum_comp e (ν ⟨·, j⟩), permMatrix_mulVec, ↓permStep_apply]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "decl": "slab"
+    },
+    {
+     "decl": "permStep"
+    }
+   ],
+   "ambient_uses": [
+    "Equiv.sum_comp",
+    "Matrix.permMatrix_mulVec"
+   ]
+  },
+  {
+   "id": "3.4",
+   "parent": "3",
+   "kind": "computation",
+   "claim": "The remaining propositional identity.",
+   "lines": [
+    65,
+    65
+   ],
+   "lean": "    grind",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "4",
+   "parent": "0.1",
+   "kind": "setup",
+   "claim": "Let B : ℝ^{Fin k} → ℝ^{Fin k × Fin (m+1)}, f ↦ ((b, j) ↦ P^{−(j+1)}·f(b)).",
+   "lines": [
+    66,
+    66
+   ],
+   "lean": "  let B : (_ → ℝ) →ₗ[ℝ] Fin k × Fin m.succ → ℝ := LinearMap.pi fun x ↦ P⁻¹ ^ x.2.1.succ • proj x.1",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "5",
+   "parent": "0.1",
+   "kind": "fact",
+   "claim": "There is a constant c with det(permStep v P σ) = c·det(1 − q⁻¹·(σ_0σ_1⋯σ_m)*) for every σ (q = P^{m+1}).",
+   "lines": [
+    67,
+    77
+   ],
+   "lean": "  have ⟨c, hc⟩ : ∃ c, ∀ σ, (@permStep k _ _ _ v P σ).det = c * (1 - (P ^ (m + 1))⁻¹ • funLeft ℝ ℝ\n      (List.ofFn σ).prod).det := ⟨_, fun σ ↦ by\n    let G := (Perm.permMatrix ℝ (prodCongrLeft (partialProd σ ∘ castSucc))).toLin'\n    let A := funLeft ℝ ℝ ((last _).partialProd σ ·, last m)\n    rw [show _ • _ = A ∘ₗ B by ext; simp +zetaDelta [partialProd, List.take_of_length_le]]\n    simpa [← det_toMatrix' (_ - _), toMatrix'_comp, det_one_sub_mul_comm B.toMatrix', field, G]\n      using congr(($(show permStep v P σ * G = (permStep v 1 1 - permStep v 0 1) * G * (P • 1 -\n      .pi fun x ↦ x.2.cases 0 (proj ⟨x.1, ·.castSucc⟩)) * (1 - B ∘ₗ A) by\n      ext x ⟨b, j⟩\n      cases j using lastCases <;>\n      simp +zetaDelta [← succ_last, partialProd_succ, permMatrix_mulVec] <;> grind)).det)⟩",
+   "head_lines": [
+    67,
+    68
+   ],
+   "head_span": [
+    67,
+    3,
+    68,
+    48
+   ],
+   "typed_fact": "∃ c, ∀ σ, (@permStep k _ _ _ v P σ).det = c * (1 - (P ^ (m + 1))⁻¹ • funLeft ℝ ℝ\n      (List.ofFn σ).prod).det",
+   "uses": []
+  },
+  {
+   "id": "5.1",
+   "parent": "5",
+   "kind": "setup",
+   "claim": "Let G be the permutation of coordinates by the partial products σ_0⋯σ_{j−1} at the letter j.",
+   "lines": [
+    69,
+    69
+   ],
+   "lean": "    let G := (Perm.permMatrix ℝ (prodCongrLeft (partialProd σ ∘ castSucc))).toLin'",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "5.2",
+   "parent": "5",
+   "kind": "setup",
+   "claim": "Let A : ℝ^{Fin k × Fin (m+1)} → ℝ^{Fin k}, f ↦ (b ↦ f(Πσ·b, m)) (the last letter, permuted by the full product).",
+   "lines": [
+    70,
+    70
+   ],
+   "lean": "    let A := funLeft ℝ ℝ ((last _).partialProd σ ·, last m)",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "5.3",
+   "parent": "5",
+   "kind": "reduction",
+   "claim": "q⁻¹·(Πσ)* = A∘B.",
+   "lines": [
+    71,
+    71
+   ],
+   "lean": "    rw [show _ • _ = A ∘ₗ B by ext; simp +zetaDelta [partialProd, List.take_of_length_le]]",
+   "head_lines": [
+    71,
+    71
+   ],
+   "head_span": [
+    71,
+    5,
+    71,
+    9
+   ],
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "5.3.1",
+   "parent": "5.3",
+   "kind": "fact",
+   "claim": "q⁻¹·(Πσ)* = A∘B, checked on coordinates.",
+   "lines": [
+    71,
+    71
+   ],
+   "span": [
+    71,
+    9,
+    71,
+    91
+   ],
+   "lean": "show _ • _ = A ∘ₗ B by ext; simp +zetaDelta [partialProd, List.take_of_length_le]]",
+   "typed_fact": "_ • _ = A ∘ₗ B",
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "step": "5.2"
+    }
+   ]
+  },
+  {
+   "id": "5.4",
+   "parent": "5",
+   "kind": "deduction",
+   "claim": "Factor permStep v P σ·G = (permStep v 1 1 − permStep v 0 1)·G·(P·1 − shift)·(1 − B∘A); taking determinants and det(1 − B∘A) = det(1 − A∘B) (Sylvester) gives the claim, c collecting the factors independent of σ.",
+   "lines": [
+    72,
+    77
+   ],
+   "lean": "    simpa [← det_toMatrix' (_ - _), toMatrix'_comp, det_one_sub_mul_comm B.toMatrix', field, G]\n      using congr(($(show permStep v P σ * G = (permStep v 1 1 - permStep v 0 1) * G * (P • 1 -\n      .pi fun x ↦ x.2.cases 0 (proj ⟨x.1, ·.castSucc⟩)) * (1 - B ∘ₗ A) by\n      ext x ⟨b, j⟩\n      cases j using lastCases <;>\n      simp +zetaDelta [← succ_last, partialProd_succ, permMatrix_mulVec] <;> grind)).det)⟩",
+   "head_lines": [
+    72,
+    73
+   ],
+   "head_span": [
+    72,
+    5,
+    73,
+    22
+   ],
+   "typed_fact": null,
+   "uses": [],
+   "ambient_uses": [
+    "Matrix.det_one_sub_mul_comm",
+    "LinearMap.det_toMatrix'"
+   ]
+  },
+  {
+   "id": "5.4.1",
+   "parent": "5.4",
+   "kind": "fact",
+   "claim": "The factorisation identity, checked on coordinates (x, (b, j)) by cases on whether j is the last letter.",
+   "lines": [
+    73,
+    77
+   ],
+   "span": [
+    73,
+    22,
+    77,
+    91
+   ],
+   "lean": "show permStep v P σ * G = (permStep v 1 1 - permStep v 0 1) * G * (P • 1 -\n      .pi fun x ↦ x.2.cases 0 (proj ⟨x.1, ·.castSucc⟩)) * (1 - B ∘ₗ A) by\n      ext x ⟨b, j⟩\n      cases j using lastCases <;>\n      simp +zetaDelta [← succ_last, partialProd_succ, permMatrix_mulVec] <;> grind)).det)⟩",
+   "typed_fact": "permStep v P σ * G = (permStep v 1 1 - permStep v 0 1) * G * (P • 1 -\n      .pi fun x ↦ x.2.cases 0 (proj ⟨x.1, ·.castSucc⟩)) * (1 - B ∘ₗ A)",
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "step": "5.1"
+    },
+    {
+     "step": "5.2"
+    },
+    {
+     "decl": "permStep"
+    }
+   ],
+   "ambient_uses": [
+    "Fin.lastCases",
+    "Fin.partialProd_succ"
+   ]
+  },
+  {
+   "id": "6",
+   "parent": "0.1",
+   "kind": "fact",
+   "claim": "Claim e (proved below): for every ν, Σ_τ 1_{S(1, τ, Ω)}(ν) = Σ_σ sgn(σ_0⋯σ_m)·1_{S(σ, 1, ℝ^…)}(ν).",
+   "lines": [
+    78,
+    79
+   ],
+   "lean": "  have e ν : ∑ τ, (S 1 τ Ω).indicator (fun _ ↦ 1) ν =\n      ∑ σ, (S σ 1 univ).indicator (fun _ ↦ ((List.ofFn σ).prod.sign : ℝ)) ν := ?_",
+   "typed_fact": "∑ τ, (S 1 τ Ω).indicator (fun _ ↦ 1) ν =\n      ∑ σ, (S σ 1 univ).indicator (fun _ ↦ ((List.ofFn σ).prod.sign : ℝ)) ν",
+   "uses": [
+    {
+     "step": "1"
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "parent": "0.1",
+   "kind": "deduction",
+   "claim": "Integrate e over ν. The left side gives Σ_τ vol(S(1, τ, Ω)) = (number of τ)·|det permStep v P 1|⁻¹·vol(Ω ∩ slab) (V; the sets are measurable and of finite measure, the slab being bounded); the right side gives Σ_σ sgn(Πσ)·|c·det(1 − q⁻¹(Πσ)*)|⁻¹·vol(slab) (V and hc). Regrouping the tuples σ by their product τ (each τ has (k!)^m preimages) and dividing by the left coefficient, with det permStep v P 1 = c·Δ(id) (hc at σ = 1, z), gives the formula.",
+   "lines": [
+    80,
+    87
+   ],
+   "lean": "  · simpa [↓integral_finsetSum, integrable_indicator_iff, fun σ ↦\n      (by simp [S, hΩ, pieriCone, -permStep_apply]; use ?_ <;> fun_prop :\n      MeasurableSet (S σ 1 univ) ∧ MeasurableSet (S 1 σ Ω)), ↓(V ..).trans_lt (mul_lt_top coe_lt_top\n      (isBounded_inter_slab ..).measure_lt_top), -enorm_mul, Measure.real, hc, field, card_perm,\n      ↓← ((prodCongrLeft fun g : Fin m → _ ↦ .mulRight (List.ofFn g).prod⁻¹).trans\n        (consEquiv fun _ ↦ Perm\n      (Fin k))).sum_comp, sum_prod_type_right, ← sum_mul, div_eq_inv_mul, abs_unit_intCast, V, by\n      simpa [hc] using z 1, mul_right_comm _ _ (Int.cast _), Nat.cast_comm] using congr(∫ ν, $(e ν))",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "step": "3"
+    },
+    {
+     "step": "5"
+    },
+    {
+     "step": "6"
+    },
+    {
+     "decl": "isBounded_inter_slab"
+    },
+    {
+     "decl": "pieriCone"
+    }
+   ],
+   "ambient_uses": [
+    "MeasureTheory.integral_finsetSum",
+    "MeasureTheory.integral_indicator",
+    "Fintype.card_perm",
+    "Equiv.sum_comp"
+   ]
+  },
+  {
+   "id": "8",
+   "parent": "0.1",
+   "kind": "setup",
+   "claim": "Proof of e, at a fixed ν: let τ_j be the permutation sorting the column −ν(·, j) increasingly.",
+   "lines": [
+    89,
+    89
+   ],
+   "lean": "  let τ j := sort (-ν ⟨·, j⟩)",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "9",
+   "parent": "0.1",
+   "kind": "fact",
+   "claim": "Then ν(τ_j(·), j) is weakly decreasing (anti).",
+   "lines": [
+    90,
+    90
+   ],
+   "lean": "  have anti j := (monotone_sort (-ν ⟨·, j⟩)).neg",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "8"
+    }
+   ],
+   "ambient_uses": [
+    "Tuple.monotone_sort"
+   ]
+  },
+  {
+   "id": "10",
+   "parent": "0.1",
+   "kind": "computation",
+   "claim": "Unfold the indicators, S, hΩ and pieriCone, and pull the common condition on the column sums out of the sums.",
+   "lines": [
+    91,
+    92
+   ],
+   "lean": "  simp_rw [indicator, S, hΩ, pieriCone, mem_ofPred, ite_and (∀ j, _ ∈ _), sum_ite_irrel,\n    ← forall_and]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "decl": "pieriCone"
+    }
+   ]
+  },
+  {
+   "id": "11",
+   "parent": "0.1",
+   "kind": "reduction",
+   "claim": "On the left only τ = (τ_j)_j contributes: if the cone conditions hold for ν with rows permuted by τ, the permuted columns are strictly decreasing, so τ_j is the sorting permutation (eq_sort_iff').",
+   "lines": [
+    93,
+    95
+   ],
+   "lean": "  rw [sum_eq_single τ fun σ ne ↦ ite_eq_right fun h ↦ ne (funext fun j ↦ eq_sort_iff'.2\n    ((strictMono_iff_forall_covBy _).2 fun _ _ e ↦ .left _ _ (by\n    simpa using (h ..).1.trans_le ((h ..).2 _ e.coe_fin.succ_eq)))), eq_comm]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "8"
+    }
+   ],
+   "ambient_uses": [
+    "Finset.sum_eq_single",
+    "Tuple.eq_sort_iff'"
+   ]
+  },
+  {
+   "id": "12",
+   "parent": "0.1",
+   "kind": "reduction",
+   "claim": "Compare the remaining terms.",
+   "lines": [
+    96,
+    96
+   ],
+   "lean": "  congr",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "13",
+   "parent": "0.1",
+   "kind": "reduction",
+   "claim": "Pass through Π_j det of the k×k matrices with (b', b) entry [0 < permStep v P (swap b b') ν (b, j)], reindexed by the sorting permutations of the letters j and j + 1.",
+   "lines": [
+    97,
+    98
+   ],
+   "lean": "  trans ∏ j, ((of fun b' b : Fin k ↦ ite (0 < permStep v P (fun _ ↦ .swap b b') ν (b, j)) 1\n    0).reindex (τ j).symm (τ (j + 1)).symm).det",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "14",
+   "parent": "0.1",
+   "kind": "computation",
+   "claim": "That product of determinants, expanded by the Leibniz formula, is the signed sum over σ of the right side (signs of the reindexings and of the products cancel over the cycle of letters).",
+   "lines": [
+    99,
+    101
+   ],
+   "lean": "  · simp [↓det_reindex, ← Int.cast_prod, ← Units.coe_prod, det_apply', map_list_prod,\n      prod_ofFn, -List.ofFn_succ, (AddGroup.addRight_bijective 1).prod_comp (Perm.sign <| τ ·),\n      prod_univ_sum, Fintype.prod_ite_zero, -Units.val_mul]",
+   "typed_fact": null,
+   "uses": [],
+   "ambient_uses": [
+    "Matrix.det_reindex",
+    "Matrix.det_apply'",
+    "Finset.prod_univ_sum",
+    "Fintype.prod_ite_zero"
+   ]
+  },
+  {
+   "id": "15",
+   "parent": "0.1",
+   "kind": "reduction",
+   "claim": "Compare letter by letter: each determinant is a 0/1 indicator (Fintype.prod_boole).",
+   "lines": [
+    102,
+    102
+   ],
+   "lean": "  convert Fintype.prod_boole with j",
+   "typed_fact": null,
+   "uses": [],
+   "ambient_uses": [
+    "Fintype.prod_boole"
+   ]
+  },
+  {
+   "id": "16",
+   "parent": "0.1",
+   "kind": "fact",
+   "claim": "P·ν(τ_{j+1}(·), j+1) is weakly decreasing too (P ≥ 0).",
+   "lines": [
+    103,
+    103
+   ],
+   "lean": "  have a := (anti (j + 1)).const_mul (by bound : 0 ≤ P)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "9"
+    }
+   ]
+  },
+  {
+   "id": "17",
+   "parent": "0.1",
+   "kind": "deduction",
+   "claim": "By det_interlacing_indicator for the sorted columns ν(·, j) and P·ν(·, j+1) (transposed when v(j) is false), each determinant is the indicator of the interlacing condition, which is the cone condition at the letter j.",
+   "lines": [
+    104,
+    105
+   ],
+   "lean": "  by_cases v j <;> [convert (det_transpose _).trans (det_interlacing_indicator a (anti j)); convert\n    det_interlacing_indicator (anti j) a using 2] <;> simp [← ext_iff, τ, *, forall_and, sub_add]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "9"
+    },
+    {
+     "step": "16"
+    },
+    {
+     "decl": "det_interlacing_indicator"
+    }
+   ],
+   "ambient_uses": [
+    "Matrix.det_transpose"
+   ]
+  },
+  {
+   "id": "18",
+   "parent": "0.1",
+   "kind": "computation",
+   "claim": "A remaining instance argument is found by instance search.",
+   "lines": [
+    106,
+    106
+   ],
+   "lean": "  infer_instance",
+   "typed_fact": null,
+   "uses": []
+  }
+ ]
+}

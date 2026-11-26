@@ -1,0 +1,300 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Exchange.GridFirstColumns:242:7",
+ "name": "Data.exists_isTidy_diagonalPeriodForm_eq",
+ "summary": "Average the level-tidy datum of `Data.exists_isLevelTidy_iotaPlus_eq` (b = 0) over coset representatives t(x) of the node levels, weighted by their edge characters: this makes it equivariant for all admissible families (tidy of order 4m); the identity follows from `Data.diagonalPeriodForm_tupleAction` and the index ratios of `Data.triangleOrder_eq_mul_levelIndex`.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "step",
+   "claim": "Constants κ(j) with triangleOrder(false, ϑ, j) = κ(j)·levelIndex(ϑ, false, 0, j) (`Data.triangleOrder_eq_mul_levelIndex`).",
+   "lines": [
+    245,
+    245
+   ],
+   "lean": "  choose κ K using D.triangleOrder_eq_mul_levelIndex",
+   "uses": [
+    {
+     "decl": "Data.triangleOrder_eq_mul_levelIndex"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "step",
+   "claim": "For every ϑ the level-tidy Φ(ϑ) of order 2m on the legs with the identity e (`Data.exists_isLevelTidy_iotaPlus_eq` at b = 0).",
+   "lines": [
+    246,
+    246
+   ],
+   "lean": "  choose Φ q e using (@exists_isLevelTidy_iotaPlus_eq _ D · 0 zero_le)",
+   "uses": [
+    {
+     "decl": "Data.exists_isLevelTidy_iotaPlus_eq"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "step",
+   "claim": "For a family x of cosets of the node levels at (z, 0, i), i < m, let t′(x) be the family of chosen representatives at these nodes and 1 elsewhere.",
+   "lines": [
+    247,
+    248
+   ],
+   "lean": "  let t' {ϑ} (x : ∀ p : _ × Fin D.m, _ ⧸ D.nodeLevel ϑ (p.1, 0, p.2)) : ∀ p, GL _ _\n    | (z, 0, i) => if h : _ then (x (z, ⟨i, h⟩)).out else 1 | _ => 1"
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "step",
+   "claim": "Let t(x) be t′(x) with its value at (0, 0) of the grid Z replaced by the block extension of that of V.",
+   "lines": [
+    249,
+    249
+   ],
+   "lean": "  let t {ϑ} x := update (@t' ϑ x) (_, 0, 0) (blockInlGL (gridDiagEquiv ..) (t' x (_, 0, 0)))",
+   "uses": [
+    {
+     "step": "3"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "step",
+   "claim": "Take C = κ(m)·∏_{j<m} κ(j) and Λ(ϑ) = bind(Φ(ϑ), weights edgeCharProd(t(x), path(0)), tuples tupleAction(t(x)⁻¹, S)) over the coset families x: a short sum of order 2m + 2m (`Data.IsShortSum.bind`, the number of coset families at most tupleBound^{…}, `Data.card_matrix_le_tupleBound`; the weights are products of character values, roots of unity, and moving by t(x) keeps left inverses); equivariance and the identity remain.",
+   "lines": [
+    250,
+    256
+   ],
+   "lean": "  refine ⟨κ D.m * (range D.m).prod κ, (Φ · |>.bind (fun _ x ↦ edgeCharProd (t x) (D.path 0)) fun S\n    x ↦ tupleAction (t x)⁻¹ S), fun ϑ ↦ ⟨⟨fun g ⟨G, G'⟩ f ↦ ?_, add_mul 2 2 _ ▸ (q ϑ).1.bind (by\n    simp; grw [prod_le_pow_card _ _ (tupleBound ϑ)]; simp; exact fun p _ ↦ (card_le_of_embedding ⟨_,\n    Units.val_injective.comp Quotient.out_injective⟩).trans (by simp [card_matrix_le_tupleBound]))\n    fun S x _ n ↦ ⟨(CommMonoid.torsion ℂ).prod_mem fun _ _ ↦ (edgeChar ..).isOfFinOrder\n    (Units.isUnit _).isOfFinOrder, fun e a b ↦ (n e a b).imp' ((t x e.1).1 * · * (t x e.2)⁻¹.1)\n    fun L h ↦ by simp [tupleAction, ← L.mul_assoc, h]⟩⟩, fun r Ξ φ ↦ ?_⟩⟩",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "step": "2"
+    },
+    {
+     "step": "4"
+    },
+    {
+     "decl": "Data.IsShortSum.bind"
+    },
+    {
+     "decl": "Data.card_matrix_le_tupleBound"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "block",
+   "claim": "Equivariance under an admissible g:",
+   "lines": [
+    257,
+    266
+   ],
+   "lean": "  · simp [LinearMap.pi, ← sum_fn, ← Pi.smul_def, -smul_eq_mul]\n    rw [mul_sum, ← (piCongrRight fun p ↦ toPerm (g (p.1, 0, p.2))).sum_comp, eq_comm]\n    congr with x\n    set y := piCongrRight _ x\n    have E z i (h : i ≤ D.m) : (t' y _)⁻¹ * (g _ * t' x _) ∈ nodeLevel ϑ (z, 0, i) := by\n      obtain rfl | h := h.eq_or_lt <;> simp [t', ← QuotientGroup.eq, y, ← Quotient.mk_smul_out, *]\n    erw [← mul_assoc, ← edgeCharProd_mul, ← mul_inv_cancel_left (t y) (g * _), edgeCharProd_mul,\n      mul_assoc, ← (q ϑ).2]\n    delta tupleAction; simp\n    rintro ⟨⟩ ⟨⟩ _ <;> simp [t, *, ← map_inv, ← map_mul, Subgroup.mem_bot.1 (E false ..)]",
+   "head_span": [
+    257,
+    3,
+    257,
+    4
+   ],
+   "head_lines": [
+    257,
+    257
+   ]
+  },
+  {
+   "id": "6.1",
+   "parent": "6",
+   "kind": "step",
+   "claim": "unfold the bind as a sum over coset families;",
+   "lines": [
+    257,
+    257
+   ],
+   "span": [
+    257,
+    5,
+    257,
+    63
+   ],
+   "lean": "simp [LinearMap.pi, ← sum_fn, ← Pi.smul_def, -smul_eq_mul]"
+  },
+  {
+   "id": "6.2",
+   "parent": "6",
+   "kind": "step",
+   "claim": "re-index the sum by the action of g on the cosets (a permutation);",
+   "lines": [
+    258,
+    258
+   ],
+   "lean": "    rw [mul_sum, ← (piCongrRight fun p ↦ toPerm (g (p.1, 0, p.2))).sum_comp, eq_comm]",
+   "uses": [
+    {
+     "step": "4"
+    }
+   ]
+  },
+  {
+   "id": "6.3",
+   "parent": "6",
+   "kind": "step",
+   "claim": "compare term by term;",
+   "lines": [
+    259,
+    259
+   ],
+   "lean": "    congr with x"
+  },
+  {
+   "id": "6.4",
+   "parent": "6",
+   "kind": "step",
+   "claim": "let y be the re-indexed family;",
+   "lines": [
+    260,
+    260
+   ],
+   "lean": "    set y := piCongrRight _ x"
+  },
+  {
+   "id": "6.5",
+   "parent": "6",
+   "kind": "step",
+   "claim": "t′(y)⁻¹·g·t′(x) lies in the node level at every (z, 0, i), i ≤ m;",
+   "lines": [
+    261,
+    262
+   ],
+   "lean": "    have E z i (h : i ≤ D.m) : (t' y _)⁻¹ * (g _ * t' x _) ∈ nodeLevel ϑ (z, 0, i) := by\n      obtain rfl | h := h.eq_or_lt <;> simp [t', ← QuotientGroup.eq, y, ← Quotient.mk_smul_out, *]",
+   "typed_fact": "(t' y _)⁻¹ * (g _ * t' x _) ∈ nodeLevel ϑ (z, 0, i)",
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "step": "6.4"
+    }
+   ]
+  },
+  {
+   "id": "6.6",
+   "parent": "6",
+   "kind": "step",
+   "claim": "the edge products multiply (`Data.edgeCharProd_mul`) and the level-tidiness of Φ(ϑ) applies to the family t(y)⁻¹·g·t(x) of node-level elements;",
+   "lines": [
+    263,
+    264
+   ],
+   "lean": "    erw [← mul_assoc, ← edgeCharProd_mul, ← mul_inv_cancel_left (t y) (g * _), edgeCharProd_mul,\n      mul_assoc, ← (q ϑ).2]",
+   "uses": [
+    {
+     "step": "6.5"
+    },
+    {
+     "decl": "Data.edgeCharProd_mul"
+    }
+   ]
+  },
+  {
+   "id": "6.7",
+   "parent": "6",
+   "kind": "step",
+   "claim": "unfold tupleAction;",
+   "lines": [
+    265,
+    265
+   ],
+   "lean": "    delta tupleAction; simp"
+  },
+  {
+   "id": "6.8",
+   "parent": "6",
+   "kind": "step",
+   "claim": "the families agree at every node (the value at (0, 0) of V is trivial, being in the trivial level of that node).",
+   "lines": [
+    266,
+    266
+   ],
+   "lean": "    rintro ⟨⟩ ⟨⟩ _ <;> simp [t, *, ← map_inv, ← map_mul, Subgroup.mem_bot.1 (E false ..)]",
+   "uses": [
+    {
+     "step": "6.5"
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "step",
+   "claim": "The identity: unfold gridPeriod and gridPathMap at stage 0, and move each term by its family t(x) with `Data.diagonalPeriodForm_tupleAction` (t(x) is 1 at the end nodes and block-extended at (0, 0)).",
+   "lines": [
+    267,
+    269
+   ],
+   "lean": "  simp +unfoldPartialApp [-diagonalPeriodForm, LinearMap.pi, gridPathMap, ← fun x ↦\n    @diagonalPeriodForm_tupleAction _ D ϑ (t x) (by simp [t, t', m_eq_two_mul_varrho_add_two])\n    (by simp [t]), tupleAction, mul_left_comm _ (levelIndex ..)]",
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "decl": "Data.diagonalPeriodForm_tupleAction"
+    }
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "step",
+   "claim": "Insert the identity e of Φ(ϑ) and pull out the scalars.",
+   "lines": [
+    270,
+    270
+   ],
+   "lean": "  erw [e, (Φ ϑ).map_smul, (Φ ϑ).map_smul]",
+   "uses": [
+    {
+     "step": "2"
+    }
+   ]
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "step",
+   "claim": "The products of the κ's: the triangle orders are κ times level indices (step 1).",
+   "lines": [
+    271,
+    271
+   ],
+   "lean": "  simp [prod_prod_type, prod_range, K]",
+   "uses": [
+    {
+     "step": "1"
+    }
+   ]
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "step",
+   "claim": "The level indices are the numbers of cosets (`Subgroup.index_eq_card`, `Data.levelIndex_eq_untwisted`).",
+   "lines": [
+    272,
+    272
+   ],
+   "lean": "  simp [← Nat.card_eq_fintype_card, ← Subgroup.index_eq_card, levelIndex_eq_untwisted]; ac_rfl"
+  }
+ ]
+}

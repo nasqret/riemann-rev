@@ -1,0 +1,534 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.TwistedHecke.ClassMeans:80:7",
+ "name": "ClassMean.exists_mean",
+ "summary": "Induction on the degree d ≤ D + 1, adding at each step the correction tr_N(ρ(K f)) in degree d. Here g is the d-fold Kronecker power of the generic Levi matrix Y, S sends coefficient vectors on degree-d monomials to matrices (S of the values of a form l is l applied to g), N is the module spanned by the columns of the S(c) whose index weight satisfies P, ρ(c) is S(c) restricted to N (N is stable, by Zariski density), and K multiplies coefficients by the invariant diagonal form q. Invariance follows from the equivariance of S∘K and the cyclicity of the trace; the weight condition from nilpotence; the values from q·multinomial = p^{k²f}; membership in the span from writing the trace in a basis of the free module N.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Replace deg α ≤ D by deg α < D + 1.",
+   "lines": [
+    86,
+    86
+   ],
+   "lean": "  simp_rw [le_iff_lt_add_one]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "induction",
+   "claim": "Induction on d ∈ {0, …, D + 1}: prove the statement with 'deg α < d' in place of 'deg α < D + 1'. For d = 0 the zero form works. For the step, let κ satisfy (a)–(d) for d (with u: the values in degree < d, and w: membership in the span) and construct a form for d + 1.",
+   "lines": [
+    87,
+    87
+   ],
+   "lean": "  refine Fin.val_last (D + 1) ▸ (Fin.last _).induction ⟨0, by simp⟩ fun d ⟨κ, _, _, u, w⟩ ↦ ?_",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let Y be the generic Levi matrix, Y_{ij} = [τ(i) = τ(j)]·x_{(j,i)}, and g = Y^{⊗d} (mapped to O), the Kronecker power indexed by m, t : Fin d → Fin k with entries Π_l Y_{m_l t_l}.",
+   "lines": [
+    88,
+    89
+   ],
+   "lean": "  let Y := of fun i j ↦ C (@ite W (τ i = τ j) _ 1 0) * X (j, i)\n  let g := kroneckerPi fun _ : Fin d ↦ Y.map (·.map ι)",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Claim H: if the coefficient of α in the entry g_{mt} is nonzero, then the weight of α for any w equals Σ_l w(t_l, m_l) (each entry is a constant times one monomial).",
+   "lines": [
+    90,
+    91
+   ],
+   "lean": "  have H m t α w : (g m t).coeff α ≠ 0 → α.weight w = ∑ l, (w (t l, m l) : ℝ) := by simp +contextual\n    [g, Y, kroneckerPi, ↓C_mul_X_eq_monomial, weight, eq_comm]",
+   "typed_fact": "(g m t).coeff α ≠ 0 → α.weight w = ∑ l, (w (t l, m l) : ℝ)",
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "decl": "kroneckerPi"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let S be the O-linear map from O^{Monomials of degree d} to matrices sending c to Σ_γ c_γ·(coefficient of γ in g), entrywise.",
+   "lines": [
+    92,
+    92
+   ],
+   "lean": "  let S := (Pi.basisFun O (Monomials _ d)).constr O fun γ ↦ g.map (·.coeff γ.1)",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Claim E: for every O-linear form l on polynomials, S((l(x^γ))_γ) = l applied entrywise to g (the entries of g are homogeneous of degree d, by H).",
+   "lines": [
+    93,
+    95
+   ],
+   "lean": "  have E (l : Dual ..) : S (l <| monomial · 1) = g.map l := ext fun m t ↦ by simp [Matrix.sum_apply,\n    S, mul_comm,\n    ← congr(l $(sum_monomials_eq_of_isHomogeneous (by simpa [weight_eq_sum] using H m t · 1)))]",
+   "typed_fact": "S (l <| monomial · 1) = g.map l",
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "step": "5"
+    },
+    {
+     "decl": "sum_monomials_eq_of_isHomogeneous"
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Claim hv: for every point b, S((ι(b^γ))_γ) = the Kronecker power of ι(Y(b)) (E for evaluation at ι∘b).",
+   "lines": [
+    96,
+    97
+   ],
+   "lean": "  have hv b : _ = kroneckerPi fun _ ↦ (Y.map (eval b)).map ι :=\n    (E (aeval (ι ∘ b)).toLinearMap).trans (ext (by simp [g, kroneckerPi]))",
+   "typed_fact": "_ = kroneckerPi fun _ ↦ (Y.map (eval b)).map ι",
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "step": "6"
+    },
+    {
+     "decl": "kroneckerPi"
+    }
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Claim L: for a in the Levi subgroup, Y evaluated at the entries of a is a.",
+   "lines": [
+    98,
+    99
+   ],
+   "lean": "  have L (a : levi W τ) : Y.map (eval (vec a.1)) = a.1 :=\n    ext (by simp_all [Y, apply_ite, ite_apply, a.2 _])",
+   "typed_fact": "Y.map (eval (vec a.1)) = a.1",
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "decl": "levi"
+    }
+   ]
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "setup",
+   "claim": "For each Levi element a choose ev(a) in the domain of S with S(ev(a)) = (ι(a))^{⊗d} (he).",
+   "lines": [
+    100,
+    100
+   ],
+   "lean": "  choose ev he using (mem_range.2 ⟨_, L · ▸ hv _⟩)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "7"
+    },
+    {
+     "step": "8"
+    }
+   ]
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Claim sp: an O-submodule of O^{Mon_d} that contains every c with S(c) = S(ev(a)) for some Levi element a is everything — by Zariski density (eq_top_of_eval_monomial) with d = det Y, homogeneous of degree k and a unit at the identity, and degree d + k ≤ |residue field| (hW): a point b with det Y(b) a unit gives the Levi element Y(b).",
+   "lines": [
+    101,
+    105
+   ],
+   "lean": "  have sp p (hp' : ∀ {c} a, S c = S (ev a) → c ∈ p) := eq_top_of_eval_monomial ι d (Y.det_apply' ▸\n    IsHomogeneous.sum _ _ _ fun _ _ ↦ .C_mul\n      (.prod _ _ 1 (by solve_by_elim [isHomogeneous_C_mul_X]))\n    _) (by simp; lia) (by simpa using L 1 ▸ isUnits_det_units 1) (by simpa using! fun b h ↦ (hp' _\n    ((hv b).trans (he ⟨.mk'' _ h, by clear * -; simp_all [Y, levi]⟩).symm)))",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "step": "7"
+    },
+    {
+     "step": "8"
+    },
+    {
+     "step": "9"
+    },
+    {
+     "decl": "ClassMean.eq_top_of_eval_monomial"
+    }
+   ],
+   "ambient_uses": [
+    "Matrix.det_apply'",
+    "MvPolynomial.IsHomogeneous.sum",
+    "isUnits_det_units"
+   ]
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let N be the O-submodule of column vectors spanned by the columns t of the matrices S(c) whose index weight Σ_l x(t_l) satisfies P.",
+   "lines": [
+    106,
+    106
+   ],
+   "lean": "  let N := ⨆ t, (toLin'.1.flip (Pi.single t (ite (P (∑ l, x (t l))) 1 0)) ∘ₗ S).range",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Record that each of these column ranges lies in N (m); N is free (finitely generated and torsion-free over the valuation ring O, a Bézout domain, hence flat by the direction torsion-free ⇒ flat of flat_iff_torsion_eq_bot_of_isBezout, hence free by free_of_flat_of_isLocalRing, which asks N to be finitely generated, not finitely presented); and choose q, the invariant diagonal form for σ = Fin k × Fin k (exists_invariant_diagonal_form), with hq' its transposition identity.",
+   "lines": [
+    107,
+    109
+   ],
+   "lean": "  obtain ⟨m, _, q, _, hq'⟩ := iSup_le_iff.1 (le_refl N), @free_of_flat_of_isLocalRing O N _ _ _ _ _\n    (Flat.flat_iff_torsion_eq_bot_of_isBezout.2 (isTorsionFree_iff_torsion_eq_bot.1 inferInstance)),\n    exists_invariant_diagonal_form (Fin k × Fin k) pp hp f",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "11"
+    },
+    {
+     "decl": "ClassMean.exists_invariant_diagonal_form"
+    }
+   ],
+   "ambient_uses": [
+    "Module.free_of_flat_of_isLocalRing",
+    "Module.Flat.flat_iff_torsion_eq_bot_of_isBezout"
+   ]
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let K send a polynomial f to (q(γ)·coefficient of γ in f)_{γ of degree d}.",
+   "lines": [
+    110,
+    110
+   ],
+   "lean": "  let K := pi fun γ : Monomials _ d ↦ (lcoeff O γ.1).smulRight (q γ.1)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "12"
+    }
+   ]
+  },
+  {
+   "id": "14",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Claim hK: S(K(x^α)) = q(α)·(the coefficient of α in g, entrywise) (E).",
+   "lines": [
+    111,
+    111
+   ],
+   "lean": "  have hK α : S (K (monomial α 1)) = _ := congr(S $(by simp [K]; lia)).trans (E (q α • lcoeff O α))",
+   "typed_fact": "S (K (monomial α 1)) = _",
+   "uses": [
+    {
+     "step": "6"
+    },
+    {
+     "step": "13"
+    }
+   ]
+  },
+  {
+   "id": "15",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Claim adj (equivariance): for a in the Levi subgroup, S∘K∘conjSubst(ι, a) = (M ↦ S(ev a)·M·S(ev a⁻¹))∘S∘K; proved on monomials with the transposition identity hq' of q and E.",
+   "lines": [
+    112,
+    117
+   ],
+   "lean": "  have adj := by simpa using fun a ↦ (linearMap_ext fun α ↦ ext_ring (by\n    erw [congrArg S (funext (hq' _ · α)), E ((q α • lcoeff O α) ∘ₗ (linSubst _).toLinearMap)]\n    simp [*, g, -LinearMap.coe_smul]; congr!\n    simp [← ext_iff, -prod_mul_distrib, univ.sum_mul, Y, linSubst, ← C_mul', kroneckerPi, -ite_mul]\n    congr! 3; grind [a.2 _, inv_mem a.2 _]) :\n    S ∘ₗ K ∘ₗ conjSubst ι a.1 = mulLeftRight O (S (ev a), S (ev a⁻¹)) ∘ₗ S ∘ₗ K)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "step": "6"
+    },
+    {
+     "step": "9"
+    },
+    {
+     "step": "12"
+    },
+    {
+     "step": "13"
+    },
+    {
+     "decl": "ClassMean.conjSubst"
+    },
+    {
+     "decl": "linSubst"
+    },
+    {
+     "decl": "kroneckerPi"
+    }
+   ]
+  },
+  {
+   "id": "16",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let ρ(c) be S(c), acting on column vectors, restricted to N: every S(c) maps N into N, by sp applied to the c that preserve N (the S(ev a) do, as S(ev a)·S(ev b) = S(ev(ab)) by he).",
+   "lines": [
+    118,
+    120
+   ],
+   "lean": "  let ρ : _ →ₗ[O] End O N := ⟨⟨(S · |>.toLin'.restrict (id ((sp ((N.compatibleMaps N).comap\n    (toLin'.1 ∘ₗ S)) fun a _ ↦ iSup_le fun v ↦ range_le_iff_comap.2 (sp _ fun b _ ↦\n    m v ⟨ev (a * b), by simp [*]⟩)).ge ⟨⟩))), by simp⟩, by simp⟩",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "9"
+    },
+    {
+     "step": "10"
+    },
+    {
+     "step": "11"
+    },
+    {
+     "step": "12"
+    }
+   ]
+  },
+  {
+   "id": "17",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let b be a basis of the free module N.",
+   "lines": [
+    121,
+    121
+   ],
+   "lean": "  let b := finBasis O N",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "12"
+    }
+   ]
+  },
+  {
+   "id": "18",
+   "parent": null,
+   "kind": "witness",
+   "claim": "The form κ + tr_N∘ρ∘K works for d + 1.",
+   "lines": [
+    122,
+    130
+   ],
+   "lean": "  use κ + trace O N ∘ₗ ρ ∘ₗ K, fun a h f ↦ by simp [*]; convert ((ρ (ev ⟨a, h⟩)).trace_mul_cycle O\n    (ρ (K f)) (ρ (ev ⟨a, h⟩⁻¹))) <;> simp [*, ρ], fun α h ↦ by simpa [*, ρ] using\n    (LinearMap.isNilpotent_trace_of_isNilpotent (End.isNilpotent.restrict _ (.map ⟨2, (sq _).trans\n    (ext fun _ _ ↦ sum_eq_zero (by simp; grind))⟩ toLinAlgEquiv'))).eq_zero, fun α h ↦\n    congr($(u α h) + $((trace_comp_comm' _ (codRestrict N _ ((range_toLin' _).trans_le (span_le.2\n    (Set.range_subset_iff.2 (m · ⟨K (monomial α 1), by simp [*]; grind⟩))) ⟨·, rfl⟩))).trans\n      (.trans (by simp [*, g, Y, kroneckerPi, sum_pow']; congr!) congr(_ *\n    $(coeff_linearCombination_X_pow_of_fintype\n    (vec 1) α d))))).trans (by simp [sum] at *; grind [degree_apply])",
+   "head_lines": [
+    122,
+    122
+   ],
+   "head_span": [
+    122,
+    3,
+    122,
+    32
+   ],
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "18.1",
+   "parent": "18",
+   "kind": "deduction",
+   "claim": "(a) Invariance: tr ρ(K(conjSubst ι a f)) = tr(ρ(ev a)·ρ(K f)·ρ(ev a⁻¹)) = tr ρ(K f) by adj and the cyclicity of the trace; κ is invariant by the induction hypothesis.",
+   "lines": [
+    122,
+    123
+   ],
+   "span": [
+    122,
+    32,
+    123,
+    51
+   ],
+   "lean": "fun a h f ↦ by simp [*]; convert ((ρ (ev ⟨a, h⟩)).trace_mul_cycle O\n    (ρ (K f)) (ρ (ev ⟨a, h⟩⁻¹))) <;> simp [*, ρ], ",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "15"
+    },
+    {
+     "step": "16"
+    }
+   ],
+   "ambient_uses": [
+    "LinearMap.trace_mul_cycle"
+   ]
+  },
+  {
+   "id": "18.2",
+   "parent": "18",
+   "kind": "deduction",
+   "claim": "(b) If the row and column weights of α differ, ρ(K(x^α)) has square 0 (by H its entries connect index families of different weights), hence is nilpotent and has trace 0; κ(x^α) = 0 by induction.",
+   "lines": [
+    123,
+    125
+   ],
+   "span": [
+    123,
+    51,
+    125,
+    78
+   ],
+   "lean": "fun α h ↦ by simpa [*, ρ] using\n    (LinearMap.isNilpotent_trace_of_isNilpotent (End.isNilpotent.restrict _ (.map ⟨2, (sq _).trans\n    (ext fun _ _ ↦ sum_eq_zero (by simp; grind))⟩ toLinAlgEquiv'))).eq_zero, ",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "step": "14"
+    },
+    {
+     "step": "16"
+    }
+   ],
+   "ambient_uses": [
+    "LinearMap.isNilpotent_trace_of_isNilpotent",
+    "Module.End.isNilpotent.restrict"
+   ]
+  },
+  {
+   "id": "18.3",
+   "parent": "18",
+   "kind": "deduction",
+   "claim": "(c) For α whose row weight satisfies P: the new value is u (the value in degree < d) plus tr ρ(K(x^α)); the trace (computed by cycling with the inclusion of N, hK and the coefficient of α in the expansion of the identity matrix's Kronecker power) is q(α)·multinomial(α)·[α diagonal] = p^{k²f}·eval_1(x^α) when deg α = d, and 0 otherwise, which together with u gives the value for degree < d + 1.",
+   "lines": [
+    125,
+    130
+   ],
+   "span": [
+    125,
+    78,
+    130,
+    70
+   ],
+   "lean": "fun α h ↦\n    congr($(u α h) + $((trace_comp_comm' _ (codRestrict N _ ((range_toLin' _).trans_le (span_le.2\n    (Set.range_subset_iff.2 (m · ⟨K (monomial α 1), by simp [*]; grind⟩))) ⟨·, rfl⟩))).trans\n      (.trans (by simp [*, g, Y, kroneckerPi, sum_pow']; congr!) congr(_ *\n    $(coeff_linearCombination_X_pow_of_fintype\n    (vec 1) α d))))).trans (by simp [sum] at *; grind [degree_apply])",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "11"
+    },
+    {
+     "step": "12"
+    },
+    {
+     "step": "13"
+    },
+    {
+     "step": "14"
+    },
+    {
+     "step": "16"
+    },
+    {
+     "step": "3"
+    }
+   ],
+   "ambient_uses": [
+    "LinearMap.trace_comp_comm'",
+    "MvPolynomial.coeff_linearCombination_X_pow_of_fintype"
+   ]
+  },
+  {
+   "id": "19",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "(d) Membership in the span: κ is in it (w), and tr_N∘ρ∘K is a sum over the basis b of the forms f ↦ coord_j(ρ(K f)(b_j)); each is in the span, by sp applied to the c for which the corresponding form, composed with conjugation, is of the allowed kind (vanishing on monomials whose row weight fails P).",
+   "lines": [
+    131,
+    135
+   ],
+   "lean": "  convert add_mem w (sum_mem (t := univ) fun j ↦ by\n    simpa using (iSup_le fun v ↦ range_le_iff_comap.2 (sp _ fun {c} a _ ↦ by\n      exists ⟨_, m v ⟨c, rfl⟩⟩, subset_span ⟨_, a⁻¹.2, (b.coord j ∘ₗ ρ c) ∘ₗ codRestrict N _\n      (m v ⟨·, rfl⟩) ∘ₗ K, fun α h ↦ ker_le_ker_comp _ _ (by simp [*]; grind), by simp [ρ, *]⟩) :\n      N ≤ (comap ((ρ ∘ₗ K).flip.compr₂ (b.coord j)) _).map N.subtype) (b j).2)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "10"
+    },
+    {
+     "step": "12"
+    },
+    {
+     "step": "16"
+    },
+    {
+     "step": "17"
+    }
+   ],
+   "ambient_uses": [
+    "Submodule.add_mem",
+    "Submodule.sum_mem",
+    "Submodule.subset_span"
+   ]
+  },
+  {
+   "id": "20",
+   "parent": null,
+   "kind": "computation",
+   "claim": "The trace on N equals the matrix trace in the basis b.",
+   "lines": [
+    136,
+    136
+   ],
+   "lean": "  simp [trace_eq_matrix_trace O b, toMatrix_apply]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "17"
+    }
+   ],
+   "ambient_uses": [
+    "LinearMap.trace_eq_matrix_trace"
+   ]
+  }
+ ]
+}

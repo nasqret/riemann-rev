@@ -1,0 +1,537 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Curve.DepthPairs:34:7",
+ "summary": "If k < p (then χ_K(p) = −1): take i ≡ 1 and y_s = min(n_{(−p)s}, ⌊(n_s ∸ c)/p⌋), c = ⌈60b/k⌉ (∸ the truncated subtraction of ℕ); Legendre's formula and the ascending factorial in depthLossInt give the first alternative. If p ≤ k: for a place s such that some odd e < s (the exponent of the data) with p ≠ d has s and (−p)^e·s thick, that e is unique (the three-term condition of the data); take i_s = e and y_s = ⌊n_s/p^e⌋; for every other place, thick places without such a partner included, y_s = 0. Comparing termwise the series of `hasSum_live_inv_pow` with the local ask, the chosen term and a geometric series gives the second alternative.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "statement",
+   "claim": "(Lines 36–38 end the statement: the line census takes the `:=` of `let L :=` for the start of the value, so the rest of the statement is owned here.)",
+   "lines": [
+    36,
+    38
+   ],
+   "lean": "  IsFrobPacking p n i y ∧ let L := D.forcedPart p + ∑ s, (padicValNat p (D.depthLossInt (n s)) : ℝ)\n  chiK P.d p = -1 ∧ i = 1 ∧ ∑ s, (padicValNat p (n s)! - y s : ℝ) ≤ L ∨\n               ∑ s, ((1 / (p - 1) - nonsplitWeight P.d p) * n s + D.b₂ * 4 - y s) ≤ L := by",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "fact",
+   "claim": "p ≥ 13 (χ_K(p) ≠ 1), p is prime (as an instance), and x^42 + 1 ≤ a/x₁ (size bounds of the data).",
+   "lines": [
+    39,
+    40
+   ],
+   "lean": "  rcases P.thirteen_le_of_chiK_ne_one hp h, Fact.mk hp,\n    (D.le_of_hasLogBound : D.x ^ 42 + 1 ≤ D.a / D.x₁)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Parameters.thirteen_le_of_chiK_ne_one"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "fact",
+   "claim": "hl: p = d (χ_K(p) = 0) or χ_K(p) = −1; v: a ∣ b ⟹ v_p(a) ≤ v_p(b); k > 0.",
+   "lines": [
+    41,
+    41
+   ],
+   "lean": "  obtain ⟨hl, v⟩ := chiK_cases P.d p, @factorization_le_factorization_of_dvd_right p, D.k_pos",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "chiK_cases"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Unfold IsFrobPacking, forcedPart, localAsk and depthLossInt; sums of sums are merged.",
+   "lines": [
+    42,
+    43
+   ],
+   "lean": "  simp [IsFrobPacking, forcedPart, localAsk, depthLossInt, ← sum_add_distrib,\n    factorization_def, *] at v hl ⊢",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "setup",
+   "claim": "c := ⌈60b/k⌉.",
+   "lines": [
+    44,
+    44
+   ],
+   "lean": "  set c := ⌈(_ : ℝ)⌉₊",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Legendre recursion: v_p(m!) = ⌊m/p⌋ + v_p(⌊m/p⌋!).",
+   "lines": [
+    45,
+    45
+   ],
+   "lean": "  have w m := @padicValNat_mul_div_factorial p m _ ▸ padicValNat_factorial_mul _",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "case-split",
+   "claim": "Case split: k < p, or p ≤ k.",
+   "lines": [
+    46,
+    46
+   ],
+   "lean": "  by_cases! hk : D.k < p",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "case",
+   "claim": "Case k < p.",
+   "lines": [
+    47,
+    59
+   ],
+   "lean": "  · have ⟨_, g⟩ := hl.resolve_left (hk.not_ge <| ·.1 ▸ D.nat_le_of_hasLogBound)\n    have h0 s : (n s - c) / p ≤ c := by\n      grw [← @cast_le ℝ, cast_div_le, sub_le, ← le_ceil, (hn _).2, nominalWeight_add_le, hk]; bound\n    use 1, fun s ↦ n (D.placeOfInt (-p) * s) ⊓ (n s - c) / p, ?_,\n      .inl ⟨g, rfl, sum_le_sum fun s _ ↦ ?_⟩\n    · simp_all [← eq_inv_mul_iff_mul_eq, filter_eq']\n      grw [min_le_right, mul_div_le]; grind\n    grw [v (factorial_dvd_factorial le_tsub_add), ← factorial_mul_ascFactorial, padicValNat.mul, w,\n      v (by grw [h0, (n s - c).succ.factorial_dvd_ascFactorial]), g,\n      ← (D.summable_localAsk h ..).le_tsum 1 (by bound)]\n    any_goals positivity\n    grind [posPart_def, cast_div_le.trans (by grw [show ↑(n s - c) ≤ D.nominalWeight s by\n      grind [cast_sub, cast_eq_zero, nominalWeight_nonneg, (D.le_of_hasLogBound : D.x ^ 42 ≤ c)]])]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "8.1",
+   "parent": "8",
+   "kind": "fact",
+   "claim": "p ≠ d (d ≤ k < p by the size bounds), so χ_K(p) = −1.",
+   "lines": [
+    47,
+    47
+   ],
+   "lean": "  · have ⟨_, g⟩ := hl.resolve_left (hk.not_ge <| ·.1 ▸ D.nat_le_of_hasLogBound)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "3"
+    }
+   ]
+  },
+  {
+   "id": "8.2",
+   "parent": "8",
+   "kind": "estimate",
+   "claim": "For every s: ⌊(n_s − c)/p⌋ ≤ c, from n_s ≤ w(s) + x^42 and p > k.",
+   "lines": [
+    48,
+    49
+   ],
+   "lean": "    have h0 s : (n s - c) / p ≤ c := by\n      grw [← @cast_le ℝ, cast_div_le, sub_le, ← le_ceil, (hn _).2, nominalWeight_add_le, hk]; bound",
+   "typed_fact": "(n s - c) / p ≤ c",
+   "uses": []
+  },
+  {
+   "id": "8.3",
+   "parent": "8",
+   "kind": "witness",
+   "claim": "Take i ≡ 1 and y_s = min(n_{(−p)·s}, ⌊(n_s ∸ c)/p⌋) (∸ truncated subtraction); the first alternative is claimed: χ_K(p) = −1, i ≡ 1 and the termwise bound; the packing remains.",
+   "lines": [
+    50,
+    51
+   ],
+   "lean": "    use 1, fun s ↦ n (D.placeOfInt (-p) * s) ⊓ (n s - c) / p, ?_,\n      .inl ⟨g, rfl, sum_le_sum fun s _ ↦ ?_⟩",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "8.4",
+   "parent": "8",
+   "kind": "computation",
+   "claim": "Packing: (1) i_s = 1 is odd and χ_K(p) = −1; (2) is vacuous (j < 1 is even); (3) the outgoing count satisfies p·y_t ≤ p·⌊(n_t ∸ c)/p⌋ ≤ n_t ∸ c, and the unique σ with (−p)·σ = t has incoming count y_σ = min(n_t, ⌊(n_σ ∸ c)/p⌋) ≤ min(n_t, c) (its defining minimum and step 8.2). If n_t ≥ c the sum is ≤ (n_t − c) + c = n_t; if n_t < c the outgoing count vanishes (n_t ∸ c = 0) and the sum is y_σ ≤ n_t.",
+   "lines": [
+    52,
+    53
+   ],
+   "lean": "    · simp_all [← eq_inv_mul_iff_mul_eq, filter_eq']\n      grw [min_le_right, mul_div_le]; grind",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "8.2"
+    }
+   ]
+  },
+  {
+   "id": "8.5",
+   "parent": "8",
+   "kind": "estimate",
+   "claim": "Termwise bound, with l = n_s ∸ c: n_s! divides (l + c)! (n_s ≤ l + c) and (l + c)! = l!·(l + 1)⋯(l + c) (`factorial_mul_ascFactorial`), so v_p(n_s!) ≤ v_p(l!) + v_p((l + 1)⋯(l + c)) (an equality only when n_s ≥ c); the second is ≤ v_p(depthLossInt(n_s)); and v_p(l!) = ⌊l/p⌋ + v_p(⌊l/p⌋!), whose factorial divides the ascending factorial (⌊l/p⌋ ≤ c); the remaining ⌊l/p⌋ − y_s is bounded by the e = 1 term of the local ask at w(s).",
+   "lines": [
+    54,
+    56
+   ],
+   "lean": "    grw [v (factorial_dvd_factorial le_tsub_add), ← factorial_mul_ascFactorial, padicValNat.mul, w,\n      v (by grw [h0, (n s - c).succ.factorial_dvd_ascFactorial]), g,\n      ← (D.summable_localAsk h ..).le_tsum 1 (by bound)]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Data.summable_localAsk"
+    },
+    {
+     "step": "6"
+    },
+    {
+     "step": "8.2"
+    }
+   ]
+  },
+  {
+   "id": "8.6",
+   "parent": "8",
+   "kind": "side-condition",
+   "claim": "Non-negativity side conditions.",
+   "lines": [
+    57,
+    57
+   ],
+   "lean": "    any_goals positivity",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "8.7",
+   "parent": "8",
+   "kind": "estimate",
+   "claim": "The e = 1 term: ⌊(n_s − c)/p⌋ − n_{(−p)s} ≤ ((n_s − c)/p − w((−p)s))⁺, using the next fact.",
+   "lines": [
+    58,
+    58
+   ],
+   "span": [
+    58,
+    1,
+    58,
+    52
+   ],
+   "lean": "    grind [posPart_def, cast_div_le.trans (by grw [",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "8.8",
+   "parent": "8",
+   "kind": "fact",
+   "claim": "n_s − c ≤ w(s) (real numbers), from n_s ≤ w(s) + x^42 and x^42 ≤ c.",
+   "lines": [
+    58,
+    59
+   ],
+   "span": [
+    58,
+    52,
+    59,
+    100
+   ],
+   "lean": "show ↑(n s - c) ≤ D.nominalWeight s by\n      grind [cast_sub, cast_eq_zero, nominalWeight_nonneg, (D.le_of_hasLogBound : D.x ^ 42 ≤ c)]])]",
+   "typed_fact": "↑(n s - c) ≤ D.nominalWeight s",
+   "uses": []
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "case",
+   "claim": "Case p ≤ k.",
+   "lines": [
+    60,
+    92
+   ],
+   "lean": "  have hu e h := Odd.neg_pow h (p : ℤ) ▸ (@placeOfInt_pow P D.s _ e).symm\n  have N s := PLift.up fun i j a b c d e f ↦ mt\n    (@two_pow_le_of_pow_eq_one (-p) (by lia) i D.s a ∘ by simp [Units.ext_iff, placeClass_placeOfInt\n    (isCoprime_N₀_of_not_dvd (h ∘ @chiK_eq_one_of_dvd P p 0 hp)).neg_left]) (by\n    simp; grw [b, c, hk]; use D.nat_le_of_hasLogBound) (D.three_term i j a b c s d\n    (D.placeOfInt (-p) ^ i * s) e (D.placeOfInt (-p) ^ j * s) f (by simp [pow_right_comm]))\n  let Q s e := e < D.s ∧ Odd e ∧ p ≠ P.d ∧ s ∈ D.thick ∧ D.placeOfInt (-p) ^ e * s ∈ D.thick\n  choose i y hyn hq H using fun s ↦ @by_cases (Exists (Q s)) (∃ i y, p ^ i * y ≤ n s ∧\n    (y ≠ 0 → Q s i) ∧ ∀ e, Q s e → e = i ∧ y = n s / p ^ e) (.imp fun e h ↦\n      ⟨_, mul_div_le .., (N s).rec (by grind)⟩) (by simp_all)\n  refine have hy s s' β hl _ _ _ e := ?_; ⟨i, y, ⟨by grind, hy, fun t ↦ (forall_or_exists_not\n    _).elim (sum_eq_zero (M := ℕ) · ▸ hyn t) fun ⟨s, h⟩ ↦ ?_⟩, .inr (sum_le_sum fun s _ ↦ ?_)⟩\n  · rw [hu, hu, ← pow_mul_pow_sub _ hl.le, mul_assoc, mul_right_inj] at e <;> cases N s <;> grind\n  · specialize hyn s; grw [← le_pow, ← hp.two_le] at hyn; rw [sum_eq_single s, show y t = 0 by\n      grind [by simpa [pow_add, mul_assoc] using (N s).1 (i s) (i t + i s)]]\n    rify at *; repeat grind [nominalWeight, D.nominalWeight_mem_Icc t, mul_right_inj]\n  have hθ e (h : e ≤ D.s) : (D.b₂ + D.a / D.x₁) * 2 ≤ c / p / 2 / 2 ^ e := by\n    grw [hk, h]; simpa using D.le_of_hasLogBound; simp\n  have := hasSum_le (fun e ↦ ?_) (hasSum_live_inv_pow h (n s))\n    (((D.summable_localAsk h (D.nominalWeight s)\n    s).hasSum.add (hasSum_ite_eq (i s) ↑(y s))).add (hasSum_geometric_two' (c / p)))\n  · nth_grw 1 [← v (factorial_dvd_ascFactorial ..), w, ← le_add_left, ← @floor_div_eq_div ℝ,\n      ← sub_one_lt_floor]\n    any_goals positivity\n    cases hl <;> simp [And.right ‹_›] at * <;> grind [hθ 0 bot_le]\n  clear hy hq hyn; specialize H s e; split <;> try simp; bound\n  have h1 := (@div_le_self ℝ _ _ _ · (p ^ e) _ · (by bound))\n  by_cases! hL : D.s ≤ e\n  · nth_grw 1 [← le_add_of_nonneg_left (by bound), (hn _).2, nominalWeight_add_le,\n      ← (by lia : 2 * 2 ≤ p), hk, cast_mul]; simp [field, mul_pow]\n    grw [← hL]; simpa using D.le_of_hasLogBound; simp\n  grind -ring [=_ @floor_div_eq_div ℝ, posPart_def, sub_one_lt_floor, nominalWeight,\n    ne_d_of_placeClass_eq, h1 _ (sub_nonneg.2 (hn s).1), → placeClass_of_thick]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "9.1",
+   "parent": "9",
+   "kind": "fact",
+   "claim": "hu: for odd e, the place named by −p^e is the e-th power of the place named by −p.",
+   "lines": [
+    60,
+    60
+   ],
+   "lean": "  have hu e h := Odd.neg_pow h (p : ℤ) ▸ (@placeOfInt_pow P D.s _ e).symm",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "9.2",
+   "parent": "9",
+   "kind": "fact",
+   "claim": "N(s): for 0 < i < j with j bounded as required by the three-term condition of the data (j ≤ 324·s, from p ≤ k and the size bounds), the places s, (−p)^i·s, (−p)^j·s are not all thick: `Data.three_term` would give (−p)^i ≡ 1 in the 2-part of (ℤ/N₁)^×, which `two_pow_le_of_pow_eq_one` excludes for such i.",
+   "lines": [
+    61,
+    65
+   ],
+   "lean": "  have N s := PLift.up fun i j a b c d e f ↦ mt\n    (@two_pow_le_of_pow_eq_one (-p) (by lia) i D.s a ∘ by simp [Units.ext_iff, placeClass_placeOfInt\n    (isCoprime_N₀_of_not_dvd (h ∘ @chiK_eq_one_of_dvd P p 0 hp)).neg_left]) (by\n    simp; grw [b, c, hk]; use D.nat_le_of_hasLogBound) (D.three_term i j a b c s d\n    (D.placeOfInt (-p) ^ i * s) e (D.placeOfInt (-p) ^ j * s) f (by simp [pow_right_comm]))",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Data"
+    }
+   ]
+  },
+  {
+   "id": "9.3",
+   "parent": "9",
+   "kind": "setup",
+   "claim": "Q(s, e): e < s (the exponent of the data), e odd, p ≠ d, s thick and (−p)^e·s thick.",
+   "lines": [
+    66,
+    66
+   ],
+   "lean": "  let Q s e := e < D.s ∧ Odd e ∧ p ≠ P.d ∧ s ∈ D.thick ∧ D.placeOfInt (-p) ^ e * s ∈ D.thick",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "9.4",
+   "parent": "9",
+   "kind": "construction",
+   "claim": "For each s choose i_s, y_s: if some e has Q(s, e), it is unique (by N(s)); take i_s = e and y_s = ⌊n_s/p^e⌋; otherwise y_s = 0 (also at a thick place s that has no such partner). So a positive y_s is used only when an admissible exponent exists: p^{i_s}y_s ≤ n_s, y_s ≠ 0 ⟹ Q(s, i_s), and Q(s, e) ⟹ e = i_s ∧ y_s = ⌊n_s/p^e⌋.",
+   "lines": [
+    67,
+    69
+   ],
+   "lean": "  choose i y hyn hq H using fun s ↦ @by_cases (Exists (Q s)) (∃ i y, p ^ i * y ≤ n s ∧\n    (y ≠ 0 → Q s i) ∧ ∀ e, Q s e → e = i ∧ y = n s / p ^ e) (.imp fun e h ↦\n      ⟨_, mul_div_le .., (N s).rec (by grind)⟩) (by simp_all)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "9.2"
+    }
+   ]
+  },
+  {
+   "id": "9.5",
+   "parent": "9",
+   "kind": "witness",
+   "claim": "Claim i, y with the second alternative. Packing (1) follows from Q (odd, p ≠ d so χ_K(p) = −1); (2) is shown next; (3): if no σ with y_σ ≠ 0 has partner t the sum vanishes and p^{i_t}y_t ≤ n_t; otherwise see below; and the termwise bound of the second alternative remains.",
+   "lines": [
+    70,
+    71
+   ],
+   "lean": "  refine have hy s s' β hl _ _ _ e := ?_; ⟨i, y, ⟨by grind, hy, fun t ↦ (forall_or_exists_not\n    _).elim (sum_eq_zero (M := ℕ) · ▸ hyn t) fun ⟨s, h⟩ ↦ ?_⟩, .inr (sum_le_sum fun s _ ↦ ?_)⟩",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "9.6",
+   "parent": "9",
+   "kind": "fact",
+   "claim": "(2): if pr_j(s′) = pr_{i_s}(s) with j < i_s, both odd, and y_s, y_{s′} ≠ 0, then s′ = (−p)^{i_s − j}·s (hu), and s, s′, (−p)^{i_s}·s are thick (Q), against N(s).",
+   "lines": [
+    72,
+    72
+   ],
+   "lean": "  · rw [hu, hu, ← pow_mul_pow_sub _ hl.le, mul_assoc, mul_right_inj] at e <;> cases N s <;> grind",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "9.1"
+    },
+    {
+     "step": "9.2"
+    }
+   ]
+  },
+  {
+   "id": "9.7",
+   "parent": "9",
+   "kind": "computation",
+   "claim": "(3) when some s with y_s ≠ 0 has partner t: the sum ∑_{σ: pr σ = t} y_σ has the single term y_s, and p^{i_t}·y_t + y_s ≤ n_t follows with the next fact (y_t = 0).",
+   "lines": [
+    73,
+    73
+   ],
+   "span": [
+    73,
+    1,
+    73,
+    80
+   ],
+   "lean": "  · specialize hyn s; grw [← le_pow, ← hp.two_le] at hyn; rw [sum_eq_single s, ",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "9.8",
+   "parent": "9",
+   "kind": "fact",
+   "claim": "y_t = 0 (t = (−p)^{i_s}·s cannot itself start a pair: N(s) with exponents i_s and i_t + i_s).",
+   "lines": [
+    73,
+    74
+   ],
+   "span": [
+    73,
+    80,
+    74,
+    77
+   ],
+   "lean": "show y t = 0 by\n      grind [by simpa [pow_add, mul_assoc] using (N s).1 (i s) (i t + i s)]]",
+   "typed_fact": "y t = 0",
+   "uses": [
+    {
+     "step": "9.2"
+    }
+   ]
+  },
+  {
+   "id": "9.9",
+   "parent": "9",
+   "kind": "estimate",
+   "claim": "Then y_s ≤ n_s/p^{i_s} ≤ (weights) ≤ n_t, comparing the nominal weights of s and t (both thick or not).",
+   "lines": [
+    75,
+    75
+   ],
+   "lean": "    rify at *; repeat grind [nominalWeight, D.nominalWeight_mem_Icc t, mul_right_inj]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "9.10",
+   "parent": "9",
+   "kind": "estimate",
+   "claim": "hθ: for e ≤ s (the exponent): (b₂ + a/x₁)·2 ≤ c/p/2/2^e (size bounds, p ≤ k).",
+   "lines": [
+    76,
+    77
+   ],
+   "lean": "  have hθ e (h : e ≤ D.s) : (D.b₂ + D.a / D.x₁) * 2 ≤ c / p / 2 / 2 ^ e := by\n    grw [hk, h]; simpa using D.le_of_hasLogBound; simp",
+   "typed_fact": "(D.b₂ + D.a / D.x₁) * 2 ≤ c / p / 2 / 2 ^ e",
+   "uses": []
+  },
+  {
+   "id": "9.11",
+   "parent": "9",
+   "kind": "deduction",
+   "claim": "Compare, term by term in e, the series ∑_e [e ≥ 1, e odd or p = d]·n_s/p^e (sum (2/(1−χ))·n_s·(1/(p−1) − ρ_p), `hasSum_live_inv_pow`) with the sum of the local-ask series at w(s), the single term y_s at e = i_s, and the geometric series ∑_e (c/p)·2^{−e}.",
+   "lines": [
+    78,
+    80
+   ],
+   "lean": "  have := hasSum_le (fun e ↦ ?_) (hasSum_live_inv_pow h (n s))\n    (((D.summable_localAsk h (D.nominalWeight s)\n    s).hasSum.add (hasSum_ite_eq (i s) ↑(y s))).add (hasSum_geometric_two' (c / p)))",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "hasSum_live_inv_pow"
+    },
+    {
+     "decl": "Data.summable_localAsk"
+    }
+   ]
+  },
+  {
+   "id": "9.12",
+   "parent": "9",
+   "kind": "estimate",
+   "claim": "From this comparison, the termwise bound of the second alternative: Legendre's formula for v_p of the ascending factorial in depthLossInt and floors, in the two cases of χ_K(p).",
+   "lines": [
+    81,
+    84
+   ],
+   "lean": "  · nth_grw 1 [← v (factorial_dvd_ascFactorial ..), w, ← le_add_left, ← @floor_div_eq_div ℝ,\n      ← sub_one_lt_floor]\n    any_goals positivity\n    cases hl <;> simp [And.right ‹_›] at * <;> grind [hθ 0 bot_le]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "6"
+    },
+    {
+     "step": "9.10"
+    }
+   ]
+  },
+  {
+   "id": "9.13",
+   "parent": "9",
+   "kind": "case-split",
+   "claim": "The termwise comparison at a given e: trivial when the indicator is 0.",
+   "lines": [
+    85,
+    85
+   ],
+   "lean": "  clear hy hq hyn; specialize H s e; split <;> try simp; bound",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "9.14",
+   "parent": "9",
+   "kind": "fact",
+   "claim": "x/p^e ≤ x for x ≥ 0.",
+   "lines": [
+    86,
+    86
+   ],
+   "lean": "  have h1 := (@div_le_self ℝ _ _ _ · (p ^ e) _ · (by bound))",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "9.15",
+   "parent": "9",
+   "kind": "case-split",
+   "claim": "Case split: e ≥ s (the exponent of the data) or e < s.",
+   "lines": [
+    87,
+    87
+   ],
+   "lean": "  by_cases! hL : D.s ≤ e",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "9.16",
+   "parent": "9",
+   "kind": "estimate",
+   "claim": "If e ≥ s: n_s/p^e ≤ (w(s) + x^42)/p^e is bounded by the geometric term (p ≥ 4, size bounds).",
+   "lines": [
+    88,
+    90
+   ],
+   "lean": "  · nth_grw 1 [← le_add_of_nonneg_left (by bound), (hn _).2, nominalWeight_add_le,\n      ← (by lia : 2 * 2 ≤ p), hk, cast_mul]; simp [field, mul_pow]\n    grw [← hL]; simpa using D.le_of_hasLogBound; simp",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "9.17",
+   "parent": "9",
+   "kind": "estimate",
+   "claim": "If e < s: the term is at most the local-ask term at w(s), plus y_s when e = i_s, plus the geometric term: by the choice of i, y (Q, H), the class of thick places (`placeClass_of_thick`) and `ne_d_of_placeClass_eq`.",
+   "lines": [
+    91,
+    92
+   ],
+   "lean": "  grind -ring [=_ @floor_div_eq_div ℝ, posPart_def, sub_one_lt_floor, nominalWeight,\n    ne_d_of_placeClass_eq, h1 _ (sub_nonneg.2 (hn s).1), → placeClass_of_thick]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Data.ne_d_of_placeClass_eq"
+    }
+   ]
+  }
+ ]
+}

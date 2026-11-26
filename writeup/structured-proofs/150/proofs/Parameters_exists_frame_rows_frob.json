@@ -1,0 +1,132 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Curve.ThetaProducts:57:7",
+ "summary": "Put x_i = N₁w_i ∈ 𝓞_E and β = N₁α (N₁ is a p-adic unit). Modulo the prime above p, the Frobenius power p^j acts on images of integers of E as σ_{−p^j} composed with complex conjugation (`frob_ext`), so the pairing becomes N₁²·g(α)^{p^j}g(α)·∑_i Φ_{(−p^j)v}(w_i)conj Φ_{v′}(w_i), given by the tight frame.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Abbreviation N = N₁.",
+   "lines": [
+    62,
+    62
+   ],
+   "lean": "  let N := P.N₁ s",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "construction",
+   "claim": "x_i = N·w_i is an integer of E (α⁻¹w_i ∈ Ô and N₁α is integral, `N₁_mul_α_mem`).",
+   "lines": [
+    63,
+    64
+   ],
+   "lean": "  let x i := IsIntegralClosure.mk' (𝓞 (P.E s)) (N * w i) (algebraMap_mem_Ô.1 (by\n    simpa [N, mul_assoc, finiteImage, WeilData.α] using mul_mem N₁_mul_α_mem (hw.1 i)))",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "fact",
+   "claim": "p ∤ N₁ (otherwise χ_K(p) = 1, `chiK_eq_one_of_dvd`).",
+   "lines": [
+    65,
+    65
+   ],
+   "span": [
+    65,
+    1,
+    65,
+    51
+   ],
+   "lean": "  have hd := hp ∘ @chiK_eq_one_of_dvd P p s fp.1; ",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Parameters.chiK_eq_one_of_dvd"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "fact",
+   "claim": "N divides β in 𝔬 (N is a p-adic unit): β = N·α.",
+   "lines": [
+    65,
+    66
+   ],
+   "span": [
+    65,
+    51,
+    66,
+    60
+   ],
+   "lean": "obtain ⟨α, ⟨⟩⟩ : ↑N ∣ β := IsUnit.dvd (by\n    simpa [← residue_ne_zero_iff_isUnit, cast_eq_zero_iff])",
+   "typed_fact": "↑N ∣ β",
+   "uses": []
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "construction",
+   "claim": "For each place v, f_v : 𝓞_E → 𝔬, x ↦ ιₚ(Φ_v(x)) (images of integers are integral).",
+   "lines": [
+    67,
+    68
+   ],
+   "lean": "  let f v := ((ιₚ.comp (Φ v)).comp (algebraMap _ (P.E s))).codRestrict (valRingCp p)\n    (id (norm_ringOfIntegers_le (ιₚ.comp _)))",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "norm_ringOfIntegers_le"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "witness",
+   "claim": "Take z_{v,i} = f_v(x̄_i)·α; then z_{v,i} = β·ιₚ(conj Φ_v(w_i)). Fix Q, g, j, v, v′.",
+   "lines": [
+    69,
+    69
+   ],
+   "lean": "  use fun v i ↦ f v (star (x i)) * α, by simp [f, x, field], fun Q _ _ g h j _ v v' ↦ ?_",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "In Q: g(f_v(σ_{−p^j}(x))) = g(f_v(x̄))^{p^j} for all x (`frob_ext` with complex conjugation and e = −1: it suffices to check it on ζ and on √−d, where for j odd χ_K(p)^j·(−1) = 1, and for p = d, g kills f_v(√−d) since |ιₚ(√−d)| = p^{−1/2} ≤ p^{(χ−1)/2}). Hence ∑_i g(z_{v,i})^{p^j}g(z_{v′,i}) = g(α)^{p^j}g(α)·g(∑_i f_v(σ_{−p^j}x_i)·f_{v′}(x̄_i)), and ∑_i Φ_{(−p^j)v}(x_i)·conj Φ_{v′}(x_i) = N²·M·[(−p^j)v = v′] by the frame identity; with β = Nα this is the claim.",
+   "lines": [
+    70,
+    77
+   ],
+   "lean": "  simpa [by simpa using (frob_ext hd (g.comp (f v)) j (.inr ⟨rfl, rfl⟩)).2 ⟨rfl, by\n    obtain ⟨⟨⟨⟩, _⟩ | _⟩ := chiK_cases P.d p, h (f v (P.sqrtNegDInE s)), congr(√‖(f v (algebraMap _\n      _ $(QuadField.sqrtNegDInt_sq P.d))).1‖) <;> simp_all [sqrtNegDInE, Real.sqrt_eq_rpow P.d,\n      neg_div]⟩, apply_ite, sum_mul, ← iterateFrobenius_def, mul_mul_mul_comm _ (iterateFrobenius Q\n    p j _), mul_right_comm _ (M : Q)] using congrArg (g · * (g α ^ p ^ j * g α)) (show\n    ∑ i, f v (galOfPlaceInt (P.placeOfInt s (-p ^ j)) (x i)) * f v' (star (x i)) = ite (_ = v') (N *\n    N * M) 0 by ext; simpa [f, x, ← phi_mul, mul_comm v, mul_mul_mul_comm _, mul_sum, apply_ite]\n    using congr(N * N * ιₚ $(hw.2 ..)))",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Parameters.frob_ext"
+    },
+    {
+     "step": "2"
+    },
+    {
+     "step": "4"
+    },
+    {
+     "step": "5"
+    }
+   ]
+  }
+ ]
+}

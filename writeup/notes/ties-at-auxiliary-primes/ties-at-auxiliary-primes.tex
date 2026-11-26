@@ -1,0 +1,1435 @@
+% !TEX program = lualatex
+% ---------------------------------------------------------------------------------------------
+%  Readback note 27: A Taylor–Wiles prime at a time: ties of tame inertia to Frobenius and the denominator of the projection
+%
+%  Build:  python3 tools/rb.py note <slug>
+%
+%  One unit of a Lean artifact, rewritten as ordinary mathematics. The prose is hand-written. Lean names,
+%  line ranges and counts come from data.tex; quoted Lean statements are copied from the artifact by the build.
+%
+%  Rules of the text: standard terminology; every symbol is explained where it first appears and listed again
+%  in the notation at the end; no letter has two meanings; a proof is complete or says what it takes for granted;
+%  Lean names appear only in the LEAN lines and in the concordance.
+%
+%  The signature rule (the build enforces it): a function, relation or predicate that the artifact defines is
+%  written only through its notation macro, which the build makes from the spec (`notation`) with one slot for
+%  each explicit argument of the Lean definition. No argument is fixed and dropped, also not "for brevity" and
+%  not for one section. Every argument and every hypothesis of a stated declaration stands inside its
+%  statement, or in a Setting that the statement cites by number; only implicit and instance arguments (the
+%  ambient objects) may stand in the conventions.
+% ---------------------------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\ifdefined\pdfvariable\pdfvariable suppressoptionalinfo \numexpr 1+2+4+8\relax\fi
+\usepackage[a4paper,hmargin=35mm,top=22mm,bottom=27mm,footskip=12mm,nohead]{geometry}
+
+\usepackage{fontspec}
+\directlua{
+  luaotfload.add_fallback("gfallback", {"STIXTwoMath-Regular.otf:mode=node;", "DejaVuSans.ttf:mode=node;"})
+  luaotfload.add_fallback("gmonofallback", {"DejaVuSansMono.ttf:mode=node;", "STIXTwoMath-Regular.otf:mode=node;"})
+}
+\setmainfont{LibertinusSerif}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-Semibold,BoldItalicFont=*-SemiboldItalic,RawFeature={fallback=gfallback}]
+\setsansfont{Inter}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,RawFeature={fallback=gfallback}]
+\setmonofont{JetBrainsMono}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,Scale=MatchLowercase,
+  RawFeature={-calt;-liga;fallback=gmonofallback}]
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage[math-style=TeX]{unicode-math}
+\setmathfont{LibertinusMath-Regular.otf}
+
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows.meta,positioning,backgrounds}
+\usepackage[protrusion=true,expansion=true]{microtype}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{multicol}
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+
+\definecolor{ink}{HTML}{0F172A}
+\definecolor{inksoft}{HTML}{475569}
+\definecolor{inkfaint}{HTML}{94A3B8}
+\definecolor{rulegrey}{HTML}{CBD5E1}
+\definecolor{arith}{HTML}{C2410C}
+\definecolor{est}{HTML}{7C3AED}
+\definecolor{ana}{HTML}{0891B2}
+\definecolor{ok}{HTML}{047857}
+\definecolor{leancol}{HTML}{3730A3}
+
+\title{A Taylor–Wiles prime at a time: ties of tame inertia to Frobenius and the denominator of the projection}
+\author{grh-compact}
+\date{}
+
+% ------------------------------------------------------------------------------------- macros
+\newcommand{\leanfont}{\ttfamily\fontsize{8.6}{10.5}\selectfont\color{leancol}}
+\newcommand{\lean}[1]{\csname LN@#1\endcsname}
+\newcommand{\fillin}[1]{{\color{arith}\itshape[#1]}}  % a place of the template that is not written yet; the build reports every one that is left
+\newcommand{\leanquote}[1]{\csname LQ@#1\endcsname}
+\input{data.tex}
+
+\linespread{1.08}                       % 11 pt on 14.7 pt
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt plus 1.5pt minus 0.5pt}
+\setlength{\abovedisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\belowdisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\abovedisplayshortskip}{3pt plus 2pt}
+\setlength{\belowdisplayshortskip}{6pt plus 2pt minus 2pt}
+\emergencystretch=1.5em
+\clubpenalty=10000 \widowpenalty=10000 \displaywidowpenalty=10000
+\relpenalty=7000 \binoppenalty=9000
+\raggedbottom
+\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\sffamily\fontsize{7.6}{9}\selectfont\color{inkfaint}\thepage\,/\,\pageref*{LastPage}}
+\setlist{topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=4pt,leftmargin=2.1em,labelsep=0.55em}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\len}{\operatorname{len}}
+\newcommand{\cok}{\operatorname{cok}}
+\newcommand{\End}{\operatorname{End}}
+\newcommand{\Hom}{\operatorname{Hom}}
+\newcommand{\Gal}{\operatorname{Gal}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\kw}[1]{\emph{#1}}
+\newcommand{\m}[1]{\mbox{$#1$}}        % a short formula that must not be broken across lines
+\newcommand{\head}[1]{\par\addvspace{17pt plus 4pt minus 2pt}\Needspace{6\baselineskip}%
+  \noindent{\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\sect}[2]{\refstepcounter{section}\label{#2}\par\addvspace{19pt plus 4pt minus 2pt}\Needspace{7\baselineskip}%
+  \noindent\llap{{\fontsize{13.2}{16}\selectfont\bfseries\color{inkfaint}\thesection}\hspace{9pt}}%
+  {\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\subhead}[1]{\par\addvspace{9pt plus 2pt}\Needspace{4\baselineskip}\noindent\textbf{#1}\enspace\ignorespaces}
+% where a statement lives in the Lean archive
+\newcommand{\leantag}{{\sffamily\bfseries\fontsize{6.3}{8}\selectfont\color{leancol}\addfontfeatures{LetterSpace=7}LEAN}}
+\newcommand{\sep}{\unskip\nobreak\hspace{5pt}{\color{inkfaint}\textperiodcentered}\hspace{5pt plus 2pt}\ignorespaces}
+\newcommand{\leanline}[1]{\par\nopagebreak\vspace{-2.5pt}{\fontsize{8.9}{12.4}\selectfont\color{inksoft}\raggedright
+  \noindent\llap{\leantag\hspace{9pt}}#1\par}\vspace{1pt}}
+% a displayed statement in a tinted box: #1 colour, #2 text
+\newcommand{\statement}[2]{\par\addvspace{7pt}\begingroup\setlength{\fboxsep}{8.5pt}\setlength{\fboxrule}{0.6pt}%
+  \noindent\fcolorbox{#1!30!white}{#1!3!white}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{#2}}%
+  \endgroup\par\addvspace{7pt}}
+\newcommand{\nt}[2]{\par\noindent\hangindent=1.1em\hangafter=1 #1\enspace{\color{inksoft}#2}\par\vspace{1pt}}
+\newcommand{\legdot}[1]{\tikz[baseline=-0.62ex]\fill[#1] (0,0) circle (2.5pt);\hspace{3pt}}
+\newcommand{\crow}[4]{\csname CS@#1\endcsname & #2 & \textcolor{inksoft}{#3} & \textcolor{inksoft}{#4}\\}
+\newcommand{\leanquoteline}[2]{\par\noindent\hangindent=\dimexpr#1\fontdimen2\font+2.2em\relax\hangafter=1
+  \hspace*{#1\fontdimen2\font}#2}
+\newcommand{\quoted}[1]{\par\vspace{3pt}{\ttfamily\fontsize{7.5}{10.4}\selectfont\color{leancol}\raggedright
+  \setlength{\parskip}{0pt}\leanquote{#1}\par}\vspace{4pt}}
+\newcommand{\bx}[3]{{\sffamily\bfseries\fontsize{7.3}{9.2}\selectfont\color{#1!82!black}#2}\\[1.5pt]#3}
+\newcommand{\cs}[2]{\expandafter\newcommand\csname CS@#1\endcsname{#2}}
+
+% theorems
+\newtheoremstyle{plainx}{7pt plus 2pt}{7pt plus 2pt}{\itshape}{}{\bfseries}{.}{0.5em}{}
+\newtheoremstyle{uprightx}{7pt plus 2pt}{7pt plus 2pt}{}{}{\bfseries}{.}{0.5em}{}
+\theoremstyle{plainx}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{uprightx}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{setting}[theorem]{Setting}          % hypotheses shared by several statements; each of them cites it by number
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\renewcommand{\qedsymbol}{{\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.5pt}\fbox{\rule{0pt}{0.46em}\hspace{0.46em}}}}
+% what holds throughout the note: the ambient objects only (implicit and instance arguments), never a hypothesis
+\newenvironment{conventions}{\par\addvspace{5pt}\noindent\textbf{Conventions.}\enspace\ignorespaces}{\par\addvspace{3pt}}
+\makeatletter
+\renewenvironment{proof}[1][Proof]{\par\pushQED{\qed}\normalfont\topsep0pt\partopsep0pt
+  \trivlist\item[\hskip\labelsep\itshape #1.]\ignorespaces}{\popQED\endtrivlist\@endpefalse}
+\makeatother
+
+% where each declaration of the concordance is treated: \cs{key}{place}, the place naming a \label or a lettered item
+\cs{lineStab}{Lemma~\ref{l:line}}
+\cs{weightedSum}{Definition~\ref{d:wsum}}
+\cs{mulWeightedSum}{Lemma~\ref{l:shift}}
+\cs{mapEqWeights}{Lemma~\ref{l:modeq}}
+\cs{firstOrder}{Proposition~\ref{p:first}}
+\cs{weightedSumExt}{Lemma~\ref{l:test}}
+\cs{charpolyMem}{Lemma~\ref{l:charpoly}}
+\cs{traceElem}{Definition~\ref{d:trace}}
+\cs{existsTie}{Proposition~\ref{p:tie}}
+\cs{mainThm}{Theorem A}
+\newcommand{\CC}{\mathbb{C}}
+\newcommand{\ZZ}{\mathbb{Z}}
+\newcommand{\NN}{\mathbb{N}}
+\newcommand{\Zl}{\bar{\mathbb{Z}}_\ell}
+\newcommand{\Ql}{\bar{\mathbb{Q}}_\ell}
+\newcommand{\Qbar}{\bar{\mathbb{Q}}}
+\newcommand{\GE}{G_E}
+\newcommand{\Gf}{G_{\mathrm{f}}}
+\newcommand{\Fw}[1]{\mathbb{F}_{#1}}
+\newcommand{\Ew}[1]{E_{#1}}
+\newcommand{\Ow}[1]{\mathcal{O}_{#1}}
+\newcommand{\pw}[1]{\mathfrak{p}_{#1}}
+\newcommand{\GL}{\mathrm{GL}}
+\newcommand{\Par}{\operatorname{Par}}
+\newcommand{\Iw}{\operatorname{Iw}}
+\newcommand{\Tr}{\operatorname{Tr}}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\lgf}{\operatorname{lg}}
+\newcommand{\Forms}{\operatorname{Forms}}
+\newcommand{\AllForms}{\operatorname{Forms}_{\kappa}(V)}
+\newcommand{\Eint}{\operatorname{End}^{\mathrm{int}}}
+\newcommand{\Sys}{\operatorname{Sys}}
+\newcommand{\Loc}{\operatorname{Loc}}
+\newcommand{\res}{\operatorname{res}}
+\newcommand{\Nm}{\operatorname{Nm}}
+\newcommand{\Hk}{\mathbb{T}}
+\newcommand{\dg}[1]{\langle #1\rangle}
+\newcommand{\hp}[2]{\mathsf{h}_{#1,#2}}
+\newcommand{\ordp}{\operatorname{ord}^{+}_{\ell}}
+\newcommand{\fD}{\mathfrak{D}}
+\newcommand{\rr}{\mathfrak{r}}
+\newcommand{\bw}{\mathbf{w}}
+\newcommand{\bd}{\mathbf{d}}
+\newcommand{\one}{\mathbf{1}}
+\newcommand{\Fr}{\operatorname{Fr}}
+\newcommand{\loc}{\operatorname{loc}}
+\newcommand{\Art}{\operatorname{Art}}
+\newcommand{\ev}{\operatorname{ev}}
+\newcommand{\cA}{\mathcal{A}}
+\newcommand{\cS}{\mathcal{S}}
+\newcommand{\cJ}{\mathcal{J}}
+\newcommand{\cX}{\mathcal{X}}
+\newcommand{\cB}{\mathcal{B}}
+\newcommand{\cM}{\mathcal{M}}
+\newcommand{\tie}{\mathfrak{t}}
+\newcommand{\nn}{\mathfrak{n}}
+\newcommand{\dif}[1]{\partial_{#1}}
+\newcommand{\Yp}{Y_{+}}
+\newcommand{\Ym}{Y_{-}}
+\newcommand{\rep}[1]{[#1]}
+\newcommand{\Hpart}[1]{(#1)_{H}}
+\newcommand{\ip}[2]{(#1\mid#2)}
+% the full forms of the objects at the level of the auxiliary places
+\newcommand{\TQ}{\Hk_{\fD}(\bw_Q)}
+\newcommand{\EQ}{\Eint_{\fD}(\bw_Q)}
+\newcommand{\FQ}{\Forms_{\fD}(\bw_Q)}
+\newcommand{\SQ}{\Sys_{\fD}(\bw_Q)}
+\newcommand{\LQ}[1]{\Loc_{\fD}(Q,#1)}
+\newcommand{\rQ}{\res_{\fD,Q}}
+\newcommand{\NQ}{\Nm_{\fD,Q}}
+\newcommand{\inputbox}[1]{\statement{inksoft}{\fontsize{9.8}{13}\selectfont #1}}
+
+\begin{document}
+\color{ink}
+
+{\raggedright
+{\sffamily\bfseries\fontsize{7.2}{9}\selectfont\color{leancol}\addfontfeatures{LetterSpace=8}READBACK NOTE · CHAPTER VIII · UNIT 137\par}
+\vspace{5pt}
+{\fontsize{21.5}{25.5}\selectfont\bfseries A Taylor–Wiles prime at a time: ties of tame inertia to Frobenius and the
+denominator of the projection\par}
+\vspace{5pt}
+{\fontsize{12.4}{16}\selectfont\itshape\color{inksoft} One unit of the Lean artifact \ArtifactName, read back into
+mathematics\par}}
+\vspace{8pt}
+{\color{rulegrey}\hrule height 0.6pt}
+\vspace{7pt}
+\thispagestyle{empty}
+
+\textbf{Summary.} Let $\ell$ be a prime and let $w_j$, \m{j\in J}, be auxiliary (Taylor--Wiles) places of a CM field,
+of prime norms \m{q_j\equiv1} modulo~$\ell^\nu$. The finite group \m{\prod_{j}\GL_n(\Fw{w_j})} acts on the algebraic
+modular forms of principal level at the~$w_j$ on a definite unitary group of rank~$n$. This note proves two things
+about the integral structure of these forms. At one place~$w_j$ there is an integral operator~$F$, supported at
+that place, that \emph{ties} the trace of tame inertia minus one to the trace of a polynomial in Frobenius, in the
+Galois representations of all Hecke eigensystems at once, modulo~$\ell^\nu$ and up to the factor \m{2\cdot n!}; and
+it commutes with the action of \m{\GL_n(\Fw{w_j})} modulo~$\ell^\nu$, up to the factor~$C$ and up to an error that
+vanishes after the trace to the base level followed by a Hecke element supported on the eigensystems whose Hecke
+polynomial contains a full string of roots. Taking one tie at each place, the top coefficient of Ribet's element, a polynomial in one
+variable for each place, gives a Hecke element that carries the projection of an integral form to a chosen set of
+eigensystems back into the integral forms, up to a common multiple~$C$ of the orders of the stabilisers
+(Theorem~A). The argument is algebra in group rings: a transfer computation in $\GL_n$ of a finite field and a
+first-order lemma on weighted sums over a finite group. It rests on Higman's criterion at auxiliary places, on the
+chain lemma and on local--global compatibility at pro-$p$ Iwahori level, which are quoted.
+
+\statement{leancol}{\fontsize{9.6}{13.2}\selectfont\textbf{What this note is.} The artifact \ArtifactName{} is a
+body of Lean code: the compact edition of a formal proof, due to L.~Alpöge with the AI system Claude, of the Riemann
+hypothesis and of its generalisation to Dirichlet $L$-functions. That headline is a claim. The authors report that
+every file compiles with Lean v4.35.0 against a pinned version of Mathlib and that Lean's kernel accepted the
+proofs; an independent build is recorded in the handout's record of checks when it reports. No mathematician has
+read the argument through, and nothing here says that the Riemann hypothesis is proved. This note treats one unit
+of the artifact, the folder on one auxiliary prime at a time: all \UnitInNote{} of its \UnitMembers{} declarations.
+Theorem~A, Propositions \ref{p:first} and~\ref{p:tie} and Lemmas \ref{l:line} to~\ref{l:charpoly} are proved in
+full from the Inputs of Section~\ref{s:setting}: two definitions of another unit of the argument, and results of
+the background library, which are stated in boxes and not proved here. Every statement below was compared with its
+Lean text, argument by argument. The Lean text read is \PinText; Appendix~A is the concordance of \ConcDecls{}
+declarations.}
+
+\sect{The statement}{s:intro}
+The twists of Chapter~VIII are chosen so that certain Selmer groups are short. Ribet's method, which belongs to
+the unit \emph{Selmer}, turns such a bound into an element of a Hecke algebra with one extra variable~$X_j$ for
+each auxiliary place: a relation among traces of Galois representations in which tame inertia at~$w_j$ is
+compared with $X_j$ times a polynomial in Frobenius. The present unit is the bridge from that element to modular
+forms. In the words of the authors' comment at the head of the file, at one deep auxiliary level the trace to the
+old level is deformed in parameters, one for each prime, tying tame inertia to Frobenius, and the top coefficient
+of Ribet's Hecke element, a polynomial in them, clears the denominator of the projection to lifts up to a known
+factor. The objects are those of Settings \ref{set:forms} to~\ref{set:aux} and of Definitions \ref{d:ord}
+to~\ref{d:ribet}.
+
+\statement{arith}{\phantomsection\label{t:A}\textbf{Theorem A} (the top coefficient of Ribet's element clears the
+denominator).\enspace\emph{In Settings \ref{set:forms}, \ref{set:twist} and~\ref{set:aux}, let
+\m{\beta\colon\SQ\to\Ql} be a function, \m{p\in\Zl[X]} a polynomial with constant coefficient~$p_0$, $\cX$ a subset
+of \m{\SQ} and $\pi$ an element of~$\cX$, \m{\varepsilon=(\varepsilon_j)_{j\in J}} a family of polynomials in
+\m{\Zl[X]}, \m{L\ge1} an integer, \m{\mu\in\Ql} and \m{A\in[0,\infty]}. Suppose:
+\begin{enumerate}[label=\textup{(\arabic*)},leftmargin=2.3em,itemsep=2pt]
+\item for every \m{j\in J} and every \m{\xi\in\SQ} that is an eigensystem of base level, has
+\m{p(\beta(\xi))\ne0}, and is such that \m{|T(\pi)|<1} for every \m{T\in\TQ} with \m{T(\xi)=0}: the Hecke
+polynomial \m{\hp{\xi}{w_j}} has a root string of length~$L$ and ratio~$q_j$ at \m{\omega(\Fr_j)^{-1}} with cofactor
+dividing~$\varepsilon_j$ (Definition~\ref{d:string});
+\item the element \m{2\cdot n!\cdot(p_0C^2)^{|J|+1}} divides $\ell^\nu$ in~$\Zl$;
+\item for every $\Zl$-subalgebra~$\cS$ of the ring of functions from \m{\SQ} to \m{\Ql[X_j:j\in J]} and every
+$\cS$-submodule~$\cJ$ of that ring such that \m{(\cS,\cJ)} is a trace ideal for
+\m{(\rr,\ \ell^\nu,\ (\tau_j)_{j\in J},\ (\Fr_j)_{j\in J},\ \mathrm{id}_J,\ \varepsilon)}
+\textup{(Definition~\ref{d:ideal})}, there is \m{\eta\in\Ql} that is a Ribet coefficient of \m{(\cS,\cJ)}
+for~$\beta$ at \m{\pi\in\cX} \textup{(Definition~\ref{d:ribet})} and has \m{\ordp(\mu\eta)\le A}.
+\end{enumerate}
+Then there is a function \m{s\colon\SQ\to\Ql} with \m{\ordp(\mu\,s(\pi))\le A} and the following property. For
+every base-level form \m{\varphi_0\in\Forms_{\fD}(\emptyset)}, every natural number~$\Delta$ such that
+\m{\Delta\varphi_0} is integral, and every base-level form \m{\varphi\in\Forms_{\fD}(\emptyset)} such that
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=2pt]
+\item \m{\dg{s'}\varphi=0} for every function \m{s'\colon\SQ\to\Ql} that vanishes on~$\cX$, and
+\item \m{\dg{s'}\varphi_0=\dg{s'}\varphi} for every function \m{s'\colon\SQ\to\Ql} that vanishes at all~$\xi$ with
+\m{p(\beta(\xi))=0},
+\end{enumerate}
+the form \m{\Delta\cdot C\cdot\dg{s}\varphi} is integral.}}
+\leanline{\lean{mainThm}\sep the formal text has in addition the two hypotheses of Setting~\ref{set:aux}, which
+the census does not list (Section~\ref{s:notes})}
+
+Here \m{\dg{s}} multiplies the forms of each eigensystem~$\xi$ by \m{\iota^{-1}(s(\xi))}, and \m{\ordp} is the
+$\ell$-adic valuation truncated at~$0$. Condition~(i) says that $\varphi$ is supported on the eigensystems
+in~$\cX$, and (ii) that $\varphi$ is the part of~$\varphi_0$ on the eigensystems where \m{p(\beta)} does not
+vanish. So $\varphi$ is a projection of~$\varphi_0$, which has denominators in general, and the theorem bounds the
+denominator at~$\pi$: after multiplication by~$C$, the element~$s$ clears it, and \m{s(\pi)} is as small as Ribet's
+top coefficient~$\eta$ allows. Condition~(1) is the string condition, imposed on the eigensystems~$\xi$ of base
+level that are congruent to~$\pi$ in the sense that every Hecke element vanishing at~$\xi$ has absolute value less
+than~$1$ at~$\pi$; the unit \emph{Selmer} verifies it where it applies the theorem.
+
+\sect{The setting}{s:setting}
+\begin{conventions}\phantomsection\label{c:conventions}
+Rings have a unit and need not be commutative; a homomorphism from a group to a ring is a homomorphism into its
+multiplicative monoid. For a natural number~$M$ the group \m{\ZZ/M} is written additively; the formal text writes
+it multiplicatively. For a finite group and a subgroup~$H$ of it with a homomorphism~$\alpha$ from~$H$ to a
+commutative group, \m{\Tr_\alpha} is the transfer of~$\alpha$ to the whole group; its formula is recalled in the
+proof of Proposition~\ref{p:first}. In Sections \ref{s:line} and~\ref{s:first} the implicit arguments of the
+declarations are introduced in each statement. In the other statements the ambient objects are those of
+Setting~\ref{set:forms}: a prime number~$\ell$ with an isomorphism of fields~$\iota$, a CM field~$E$ with a CM type,
+embedded in~$\Qbar$, an index set of $n$ elements, a hermitian space~$V$, a weight~$\kappa$, a finite set~$J$, a
+natural number~$\nu$, a natural number~$C$ and a base datum~$\fD$; and, where Setting~\ref{set:twist} is cited,
+the condition \m{n\ge1}, that $V$ is standard, the Weil data of~$E$, a homomorphism~$\omega$ and a family~$\rr$.
+Matrices of size~$n$ have rows and columns numbered from~$1$ to~$n$; the formal text numbers them from~$0$.
+\end{conventions}
+
+The three Settings collect the objects of the background library on which the unit is built. They are stated as
+the unit's dossier reads them; the notes on the units of the library that own them (their numbers are given)
+define them in full.
+
+\begin{setting}[forms, levels, Hecke algebra, auxiliary places; from units 57, 102, 122, 123 and 130 of the
+library]\label{set:forms}
+\emph{Coefficients.} $\ell$ is a prime number and \m{\iota\colon\CC\to\Ql} a fixed isomorphism of fields, where
+$\Ql$ is an algebraic closure of~$\mathbb{Q}_\ell$; $\Zl$ is the ring of integers of~$\Ql$, and \m{|\cdot|} is the
+absolute value of~$\Ql$ with \m{|\ell|=\ell^{-1}}. The ring $\Zl$ maps to~$\CC$ by~$\iota^{-1}$, and through this map
+it acts on every complex vector space.
+
+\emph{The group.} $E$ is a CM field with a CM type (a complex embedding chosen for each infinite place), embedded
+in an algebraic closure~$\Qbar$ of~$\mathbb{Q}$, and \m{\GE=\Gal(\Qbar/E)}. For a finite place~$w$ of~$E$, the
+completion is~$\Ew{w}$, its ring of integers~$\Ow{w}$ with maximal ideal~$\pw{w}$, the residue field~$\Fw{w}$ has
+$q_w$ elements, and $\bar w$ is the complex conjugate place. $V$ is a positive definite hermitian space over~$E$
+with coordinates in an index set of $n$ elements, $\kappa$ is a weight, \m{\Gf} is the group of finite adelic points
+of the unitary group of~$V$, which has a standard maximal compact subgroup. \m{\AllForms} is the complex
+vector space of the forms of weight~$\kappa$ on~$V$ (algebraic modular forms), on which \m{\Gf} acts by right translation.
+At a place \m{w\ne\bar w} the group \m{\GL_n(\Ew{w})} embeds in~\m{\Gf}, and \m{\loc_w} is the resulting
+representation of \m{\GL_n(\Ew{w})} on \m{\AllForms}; the \kw{local group algebra} at~$w$ is the $\Zl$-algebra of
+operators on \m{\AllForms} generated by the translations by the elements of~\m{\Gf} supported at $w$ and~$\bar w$.
+
+\emph{Base datum.} $C$ is a natural number and $\fD$ a \kw{base datum} for \m{(V,\kappa,C)}: a finite set of finite
+places of~$E$; a space of forms that is stable under every operator commuting with the translations by the
+components, at these places and their conjugates, of the standard maximal compact subgroup, and on which some open
+subgroup acts through a character by its components there; and such that for every \m{\gamma\in\Gf} the order of
+the finite group of the rational points that lie in the conjugate by~$\gamma$ of the standard maximal compact
+subgroup divides~$C$.
+
+\emph{Levels.} For a family~$\bw$ of finite places of~$E$, \m{\Forms_{\fD}(\bw)} is the space of the forms in the
+space of~$\fD$ that are fixed by the principal congruence subgroup at the places of~$\bw$ of the standard maximal
+compact subgroup, taken in its components outside the places of~$\fD$ and their conjugates; it is
+finite-dimensional. For the empty family this is the space \m{\Forms_{\fD}(\emptyset)} of the \kw{base-level forms},
+which is contained in every \m{\Forms_{\fD}(\bw)}. A form is \kw{integral} if $\iota$ maps the coordinates of its
+values at the points of~\m{\Gf} that are integral above~$\ell$ into~$\Zl$. \m{\Eint_{\fD}(\bw)} is the $\Zl$-algebra
+of the $\CC$-linear endomorphisms of \m{\Forms_{\fD}(\bw)} that map integral forms to integral forms.
+
+\emph{Eigensystems.} An \kw{isotypic space} is a subspace of \m{\AllForms} of the following kind: for some system of
+Hecke eigenvalues at all finite places, it consists of the forms that at almost all split places~$w$ are fixed by
+\m{\GL_n(\Ow{w})} and are eigenvectors of the spherical Hecke operators at~$w$ with the eigenvalues of the system.
+Each isotypic space~$\xi$ has a chosen such system, and \m{\hp{\xi}{w}\in\CC[X]} is the \kw{Hecke polynomial}
+of~$\xi$ at~$w$, of degree~$n$, formed from the chosen eigenvalues \m{\theta_{\xi,w,i}\in\CC} at~$w$:
+\[\hp{\xi}{w}=\sum_{i=0}^{n}(-1)^{i}\,q_w^{\,i(i-1)/2}\,\theta_{\xi,w,i}\,X^{n-i}.\]
+\m{\Sys_{\fD}(\bw)} is the set of the isotypic spaces that contain a non-zero form of \m{\Forms_{\fD}(\bw)}, the
+\kw{eigensystems of level~$\bw$}; it is finite, and \m{\Sys_{\fD}(\emptyset)\subseteq\Sys_{\fD}(\bw)} is the set of
+the \kw{eigensystems of base level}.
+
+\emph{Diagonal operators and the Hecke algebra.} For a function \m{s\colon\Sys_{\fD}(\bw)\to\Ql}, \m{\dg{s}} is a
+chosen endomorphism of \m{\AllForms} that multiplies every form of each \m{\xi\in\Sys_{\fD}(\bw)} by
+\m{\iota^{-1}(s(\xi))}; it preserves \m{\Forms_{\fD}(\bw)}. The \kw{Hecke algebra} \m{\Hk_{\fD}(\bw)} is the
+$\Zl$-algebra of the functions \m{T\colon\Sys_{\fD}(\bw)\to\Ql} for which the restriction of \m{\dg{T}} to
+\m{\Forms_{\fD}(\bw)} lies in \m{\Eint_{\fD}(\bw)}; for such~$T$ the symbol \m{\dg{T}} also denotes this restriction,
+and \m{T\mapsto\dg{T}} is a homomorphism of $\Zl$-algebras from \m{\Hk_{\fD}(\bw)} to \m{\Eint_{\fD}(\bw)}.
+
+\emph{Auxiliary places.} $J$ is a finite set, $\nu$ a natural number, and $Q$ is a family of
+\kw{Taylor--Wiles places} for \m{(E,J,\ell^\nu)}: for each \m{j\in J} a finite place~$w_j$ of~$E$ whose norm~$q_j$
+is a prime number, a place of~$\Qbar$ above~$w_j$, and an element \m{\Fr_j\in\GE} that is a geometric Frobenius
+element at that place; the places~$w_j$ are distinct, no conjugate~$\bar w_i$ is among them, and $\ell^\nu$ divides
+\m{q_j-1} for every~$j$. \m{\tau_j\in\GE} is the chosen generator of tame inertia at the place above~$w_j$, and
+\m{\bw_Q=(w_j)_{j\in J}}. The group \m{\prod_{j\in J}\GL_n(\Fw{w_j})} acts on \m{\FQ} by translation through lifts;
+this is a homomorphism
+\[\rQ\colon\ \prod_{j\in J}\GL_n(\Fw{w_j})\longrightarrow\EQ,\qquad\text{and}\qquad
+\NQ=\sum_{\gamma}\rQ(\gamma)\]
+is the sum over the whole group. For \m{j\in J} and \m{\gamma\in\GL_n(\Fw{w_j})}, \m{\gamma^{(j)}} is the element
+of the product with $\gamma$ at~$j$ and $1$ elsewhere. \m{\LQ{j}} is the $\Zl$-subalgebra of \m{\EQ} of the
+operators that are restrictions of elements of the local group algebra at~$w_j$.
+\end{setting}
+
+\begin{setting}[the twisted family of Galois representations; from units 37, 80, 102 and 106]\label{set:twist}
+In Setting~\ref{set:forms}, suppose \m{n\ge1}, that $V$ is \kw{standard} (all its signs are~$1$ and its adelic
+point is the identity) and that $E$ carries the Weil data of the library. Every isotypic space~$\xi$ has a chosen
+homomorphism \m{\varrho_\xi\colon\GE\to\GL_n(\Ql)}: a representation attached to the Hecke polynomials of~$\xi$ if
+one exists (Input~3), and arbitrary otherwise. Let \m{\omega\colon\GE\to\Zl} be a homomorphism and let
+\m{\rr=(\rr_\xi)_\xi} be a family of homomorphisms \m{\rr_\xi\colon\GE\to\GL_n(\Ql)}, one for each isotypic
+space~$\xi$, such that
+\[\rr_\xi(\gamma)=\omega(\gamma)\cdot\varrho_\xi(\gamma)\qquad\text{for every isotypic space }\xi\text{ and every }\gamma\in\GE.\]
+\end{setting}
+
+\begin{setting}[auxiliary places off level and of trivial character]\label{set:aux}
+In Settings \ref{set:forms} and~\ref{set:twist}, suppose:
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item for every \m{j\in J} the place $w_j$ is \kw{off level} for~$\fD$ at the base level: neither $w_j$
+nor~$\bar w_j$ is a place of~$\fD$, the prime $\ell$ does not lie under~$w_j$, and for every
+\m{\xi\in\Sys_{\fD}(\emptyset)} the base-level forms in~$\xi$ are fixed by \m{\GL_n(\Ow{w_j})} and are eigenvectors
+of the spherical Hecke operators at~$w_j$ with the chosen eigenvalues \m{\theta_{\xi,w_j,i}} of~$\xi$;
+\item \m{\omega(\tau_j)=1} for every \m{j\in J}.
+\end{enumerate}
+\end{setting}
+
+\begin{definition}[the truncated valuation; unit 92]\label{d:ord}
+For \m{z\in\Ql} put \m{\ordp(0)=\infty} and, for \m{z\ne0},
+\[\ordp(z)=\max\bigl(0,\,-\log_\ell|z|\bigr)\in[0,\infty).\]
+So \m{\ordp(\ell)=1}, and \m{\ordp(z)=0} whenever \m{|z|\ge1}: for instance \m{\ordp(1/\ell)=0}. This is not the
+$\ell$-adic valuation, which is negative at~$1/\ell$; the two agree on~$\Zl$. If \m{|z|\le|z'|} then
+\m{\ordp(z')\le\ordp(z)}.
+\end{definition}
+
+\begin{definition}[root strings; unit 33]\label{d:string}
+Let \m{G,G'\in\CC[X]}, let $q$ and~$L$ be natural numbers and \m{\theta\in\CC}. The polynomial~$G$ \kw{has a root
+string of length~$L$ and ratio~$q$ at~$\theta$ with cofactor dividing~$G'$} if there is a polynomial
+\m{G_1\in\CC[X]} that divides~$G'$ and satisfies
+\[G(\theta X)=(X-1)(X-q)\cdots(X-q^{L-1})\cdot G_1.\]
+For \m{\theta\ne0} the numbers \m{\theta,\theta q,\dots,\theta q^{L-1}} are then roots of~$G$. Polynomials over~$\Zl$
+and elements of~$\Zl$ are used here through the map \m{\iota^{-1}\colon\Zl\to\CC}.
+\end{definition}
+
+\begin{definition}[trace ideals; unit 138 of the argument]\label{d:ideal}
+Let $I$ be a set, $\cS$ a $\Zl$-subalgebra of the ring of functions from~$I$ to the polynomial ring
+\m{\Ql[X_j:j\in J]}, and $\cJ$ an $\cS$-submodule of that ring. Let further a group be given, a family
+\m{\rr=(\rr_i)_{i\in I}} of maps from the group to the \m{n\times n} matrices over~$\Ql$, an element \m{y\in\Zl},
+two families \m{(\tau_j)} and \m{(\Fr_j)} of elements of the group, indexed by a set with a map
+\m{j\mapsto j^{\flat}} to~$J$, and a family \m{\varepsilon=(\varepsilon_j)_{j\in J}} of polynomials in \m{\Zl[X]}.
+The pair \m{(\cS,\cJ)} is a \kw{trace ideal for} \m{(\rr,\ y,\ (\tau_j),\ (\Fr_j),\ j\mapsto j^{\flat},\ \varepsilon)} if
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item for every \m{j\in J} the constant function with value~$X_j$ lies in~$\cS$;
+\item for every element~$\gamma$ of the group and every natural number~$e$, the function that sends \m{i\in I} to
+the coefficient of~$X^{e}$ in the characteristic polynomial of \m{\rr_i(\gamma)}, a constant polynomial, lies
+in~$\cS$;
+\item for every element~$\gamma$ of the group, the function \m{i\mapsto y\cdot\tr\rr_i(\gamma)} lies in~$\cJ$, and
+so does, for every index~$j$ of the two families, the function
+\[i\ \longmapsto\ \tr\bigl((\rr_i(\tau_j)-1)\,\rr_i(\gamma)\bigr)-X_{j^{\flat}}\cdot
+\tr\bigl(\bigl((X-1)\,\varepsilon_{j^{\flat}}\bigr)(\rr_i(\Fr_j))\cdot\rr_i(\gamma)\bigr).\]
+\end{enumerate}
+In Theorem~A the set~$I$ is \m{\SQ}, the group is~$\GE$, the family~$\rr$ is that of Setting~\ref{set:twist}
+restricted to \m{\SQ}, the two families are indexed by~$J$ itself and \m{j^{\flat}=j}. The formal definition, and
+that of Definition~\ref{d:ribet}, is made for any commutative ring in the place of~$\Zl$, any commutative algebra
+over it in the place of~$\Ql$ and matrices over a ring between the two; only the case stated here is used.
+\end{definition}
+
+\begin{definition}[Ribet coefficients; unit 138 of the argument]\label{d:ribet}
+Let $I$, $\cS$ and~$\cJ$ be as in Definition~\ref{d:ideal}, let \m{\beta\colon I\to\Ql} be a function, $\cX$ a
+subset of~$I$ and \m{\pi\in\cX}. Write \m{\one\in\NN^J} for the exponent of the monomial \m{\prod_{j\in J}X_j}, and
+\m{\bd<\one} for the exponents \m{\bd\ne\one} of the monomials that divide it. An element \m{\eta\in\Ql} is a
+\kw{Ribet coefficient of \m{(\cS,\cJ)} for~$\beta$ at \m{\pi\in\cX}} if the function~$\beta$, with constant
+polynomials as values, lies in~$\cS$ and there is \m{\Phi\in\cS} such that: the product \m{\Phi\cdot\beta} lies
+in~$\cJ$; for every \m{i\in\cX}, \m{\beta(i)=0} and the coefficient of the polynomial \m{\Phi(i)} at~$X^{\bd}$
+vanishes for every \m{\bd<\one}; and the coefficient of \m{\Phi(\pi)} at \m{\prod_{j\in J}X_j} is~$\eta$.
+\end{definition}
+
+\begin{definition}[two subgroups at a place; units 30 and 122]\label{d:par}
+Let $w$ be a finite place of a number field~$E$ and \m{n\ge1}. Inside \m{\GL_n(\Ow{w})}, the subgroup
+\m{\Par_w} consists of the matrices whose first column lies in~$\pw{w}$ below its first entry, and the
+\kw{pro-$p$ Iwahori subgroup} \m{\Iw_w\subseteq\Par_w} of the matrices whose reduction modulo~$\pw{w}$ is upper
+triangular with $1$ on the diagonal. More generally a function from \m{\{1,\dots,n\}} to~$\NN$ has a \kw{block
+parahoric subgroup}: the matrices in \m{\GL_n(\Ow{w})} whose entry in row~$i$ and column~$i'$ lies in~$\pw{w}$
+whenever the function is smaller at~$i'$ than at~$i$; \m{\Par_w} belongs to the function that is $0$ at~$1$ and
+$1$ elsewhere, and \m{\GL_n(\Ow{w})} to the function~$0$. For \m{\gamma\in\GL_n(\Ew{w})} and a representation
+of \m{\GL_n(\Ew{w})}, \m{U_\gamma} is the Hecke operator of the double coset \m{\Iw_w\gamma\,\Iw_w}: the sum of the
+operators of representatives of the cosets \m{\gamma'\,\Iw_w} contained in it. For a uniformiser~$\varpi$
+of~$\Ew{w}$, \m{U_\varpi} is this operator for the diagonal matrix with entries \m{\varpi,1,\dots,1}.
+\end{definition}
+
+\inputbox{\textbf{Inputs from the background library, 1: the forms.} They are taken for granted, as the dossier
+of this unit reads them. $\bw$ is a family of finite places of~$E$ indexed by a finite set.
+
+\vspace{4pt}\textbf{Input 1} (units 102 and 130; elementary).\enspace In Setting~\ref{set:forms}:
+\textup{(a)} \m{\Forms_{\fD}(\bw)} is the direct sum of the spaces \m{\xi\cap\Forms_{\fD}(\bw)},
+\m{\xi\in\Sys_{\fD}(\bw)}. \textup{(b)} An element of the local group algebra at a place~$w$ maps every isotypic
+space into itself, and it commutes with the translation by every element of~\m{\Gf} that is trivial at $w$
+and~$\bar w$. \textup{(c)} If $\ell$ does not lie under~$w$, the local group algebra at~$w$ maps integral forms to
+integral forms; if \m{w\ne\bar w}, the spherical Hecke operators at~$w$ belong to it. \textup{(d)} The Hecke algebra
+\m{\Hk_{\fD}(\bw)} is closed in the space of all functions from the finite set \m{\Sys_{\fD}(\bw)} to~$\Ql$.
+\textup{(e)} All but finitely many finite places~$w$ of~$E$ are off level for~$\fD$ at~$\bw$: condition~(a) of
+Setting~\ref{set:aux} holds for them, with $\bw$ in the place of the empty family.
+
+\vspace{3pt}\textbf{Input 2} (unit 130; the action at the auxiliary places).\enspace In Setting~\ref{set:forms}:
+\textup{(a)} a form \m{\varphi\in\FQ} is of base level if and only if \m{\rQ(\gamma)\varphi=\varphi} for every
+\m{\gamma\in\prod_{j}\GL_n(\Fw{w_j})}. \textup{(b)} Every element of \m{\LQ{j}} commutes with \m{\dg{T}} for every
+\m{T\in\TQ}. Suppose moreover that the places~$w_j$ are off level (condition~(a) of Setting~\ref{set:aux}) and let
+\m{j\in J}. Then: \textup{(c)} for every \m{\gamma\in\GL_n(\Ow{w_j})} with reduction~$\bar\gamma$ and every
+\m{\varphi\in\FQ}, \m{\rQ(\bar\gamma^{(j)})\varphi=\loc_{w_j}(\gamma)\varphi}; \textup{(d)} \m{\rQ(\gamma^{(j)})\in\LQ{j}}
+for every \m{\gamma\in\GL_n(\Fw{w_j})}; \textup{(e)} if \m{Y\in\LQ{j}} has all its values fixed by \m{\Iw_{w_j}},
+then for every \m{\gamma\in\GL_n(\Ew{w_j})} and every \m{G\in\Zl[X]} there is \m{Y'\in\LQ{j}} with
+\m{Y'(\varphi)=G(U_\gamma)(Y(\varphi))} for all \m{\varphi\in\FQ}, where $U_\gamma$ is taken in~\m{\loc_{w_j}};
+\textup{(f)} \emph{(Higman's criterion up to~$C$)} for every subgroup~$\Gamma$ of \m{\prod_{j}\GL_n(\Fw{w_j})}
+there is \m{\Psi\in\EQ} with
+\[\sum_{\gamma\in\Gamma}\rQ(\gamma^{-1})\cdot\Psi\cdot\rQ(\gamma)=C\]
+(the formal statement is for a finite group with an injective homomorphism to the product, which is the same).
+\emph{Reference for \textup{(f)}}, as the catalogue of the
+handout gives it: R.~Taylor, A.~Wiles, Ann.\ of Math.\ 141 (1995); L.~Clozel, M.~Harris, R.~Taylor, Publ.\ IHÉS 108
+(2008); D.~G.~Higman, Duke Math.\ J.\ 21 (1954); place not confirmed. \emph{Relation} (second reader): classical
+freeness assumes trivial stabilisers; the declaration constructs a trace equal to a stabiliser multiple.}
+
+\inputbox{\textbf{Inputs from the background library, continued.}
+
+\vspace{4pt}\textbf{Input 3} (units 3, 5, 80 and 102; attached Galois representations).\enspace In
+Setting~\ref{set:twist}, let $\xi$ be an isotypic space that contains a non-zero form. Then \m{\varrho_\xi} is
+attached to the Hecke polynomials of~$\xi$ in the sense of the library, and in particular: for every
+\m{\gamma\in\GE} and every natural number~$e$, the coefficient of~$X^e$ in \m{\det(X-\varrho_\xi(\gamma))} is the
+limit of the $\iota$-images of the coefficients of~$X^e$ in the polynomials \m{\hp{\xi}{w}}, along the filter of
+most Frobenius data \m{(w,\cdot,\Fr)} whose Frobenius element tends to~$\gamma$. This filter is proper, its data
+live at places of prime norm, and a property that holds for the data at all but finitely many places holds along
+it. \emph{Reference}: G.~Chenevier, M.~Harris, Construction of automorphic Galois representations~II, Camb.\
+J.\ Math.\ 1 (2013), Theorem~3.2.3. \emph{Relation}: a weaker form (closeness at most Frobenius elements in place
+of equality at all unramified split places); the second reader derives it from exact unramified compatibility
+after base change and a decomposition of the discrete constituents.
+
+\vspace{3pt}\textbf{Input 4} (unit 102; elementary).\enspace In Setting~\ref{set:forms} the space \m{\AllForms}
+carries a positive definite hermitian form \m{\ip{\varphi'}{\varphi}} that is invariant under right translation
+by~\m{\Gf}. In particular the operators \m{\loc_w(\gamma)} and, on \m{\FQ}, the operators \m{\rQ(\gamma)} preserve
+it.}
+
+\inputbox{\textbf{Inputs from the background library, 2: one split place.} Here $w$ is a finite place of~$E$ with
+\m{w\ne\bar w}, $\varpi$ is a uniformiser of~$\Ew{w}$ and \m{u\in\Ew{w}} a unit of~$\Ow{w}$.
+
+\vspace{4pt}\textbf{Input 5} (unit 33; the chain lemma, second part).\enspace In Setting~\ref{set:forms}, let
+\m{\varphi'\in\AllForms} be non-zero, fixed by \m{\GL_n(\Ow{w})} and an eigenvector of the spherical Hecke
+operators at~$w$ with eigenvalues \m{\theta_i}, and let \m{G=\sum_{i=0}^{n}(-1)^iq_w^{\,i(i-1)/2}\theta_iX^{n-i}}.
+Let \m{\theta\in\CC} be non-zero, $e$ a natural number and \m{G'\in\CC[X]}, and put
+\m{G''(X)=(\theta X-q_w^{\,e})\cdot G'(\theta X)}. If $G$ has a root string of length \m{e+1} and ratio~$q_w$
+at~\m{\theta^{-1}} with cofactor dividing~$G'$, then
+\[\ip{\varphi'}{G''(U_\varpi)\,\varphi}=0\qquad\text{for every }\Iw_w\text{-fixed }\varphi\in\AllForms,\]
+where $U_\varpi$ is taken in~\m{\loc_w}. The library proves this for every smooth representation of
+\m{\GL_n(\Ew{w})} with an invariant positive definite hermitian form. \emph{Reference}, as the catalogue gives it:
+M.~Tadić, Ann.\ Sci.\ ENS 19 (1986); J.~Bernstein, Lecture Notes in Math.\ 1041 (1984); place not confirmed, and the
+orthogonality stated here has no cited source.
+
+\vspace{3pt}\textbf{Input 6} (unit 30; elementary).\enspace For every function \m{\theta\colon\Ew{w}\to\CC}, the
+operator $U_\varpi$ of~\m{\loc_w} maps into itself the space of the \m{\Iw_w}-fixed forms on which every
+\m{\gamma\in\Par_w} acts by the scalar \m{\theta(\gamma_{11})}, where \m{\gamma_{11}} is the first entry of~$\gamma$.
+
+\vspace{3pt}\textbf{Input 7} (unit 89; the local Artin map).\enspace Let a place of~$\Qbar$ above a finite
+place~$w$ of~$E$ be given, with its decomposition group in~$\GE$, and let \m{\Art_w} be the local Artin map
+from~\m{\Ew{w}^{\times}} to the abelianisation of that group, normalised so that uniformisers go to geometric
+Frobenius elements. \textup{(a)} If $\tau$ is the chosen generator of tame inertia at that place, there is a unit~$u$
+of~$\Ow{w}$ with \m{\Art_w(u)} the class of~$\tau$ whose reduction generates \m{\Fw{w}^{\times}}. \textup{(b)} If
+\m{\Fr\in\GE} is a geometric Frobenius element at that place, there is a uniformiser~$\varpi$ with \m{\Art_w(\varpi)}
+the class of~$\Fr$. \emph{Reference}: J.-P.~Serre, Local Fields (1979), Chapters XII to~XIV. \emph{Relation}:
+weaker forms (existence statements in the image of local reciprocity).}
+
+\inputbox{\textbf{Inputs from the background library, 2, continued.} The place~$w$, the uniformiser~$\varpi$ and
+the unit~$u$ are as before.
+
+\vspace{4pt}\textbf{Input 8} (unit 32; local--global compatibility at tame level).\enspace In
+Setting~\ref{set:twist}, suppose that $\ell$ does not lie under~$w$, and let a place of~$\Qbar$ above~$w$ be given
+together with elements $\Fr$ and~$\tau$ of its decomposition group such that \m{\Art_w(\varpi)} is the class
+of~$\Fr$, \m{\Art_w(u)} is the class of~$\tau$, $\Fr$ is a geometric Frobenius element and $\tau$ lies in the
+inertia group. Let $\xi$ be an isotypic space and \m{\varphi\in\xi}.
+
+\textup{(a)} Suppose \m{\varphi\ne0} is \m{\Iw_w}-fixed and every~$\gamma$ in the block parahoric subgroup of some
+function acts on~$\varphi$ by a scalar \m{\theta(\gamma)\in\CC}. Let \m{\theta_i} be the value of~$\theta$ at the
+diagonal matrix with $u$ at the place~$i$ and $1$ elsewhere, and suppose that \m{\theta_i=\theta_{i'}} only if the
+function has the same value at $i$ and~$i'$. Then every polynomial over~$\Ql$ that vanishes at all
+\m{\iota(\theta_i)} vanishes at the matrix \m{\varrho_\xi(\tau)}; the matrices \m{\varrho_\xi(\Fr)} and
+\m{\varrho_\xi(\tau)} commute; and there are characters \m{\theta'_1,\dots,\theta'_n} of~\m{\Ew{w}^{\times}}, forming an
+exponent of~\m{\loc_w} with an exponent functional that does not vanish on~$\varphi$, such that for every natural
+number~$e$ the polynomial \m{\prod_{i}(X-\iota(\theta'_i(\varpi)\theta_i^{\,e}))} vanishes at
+\m{\varrho_\xi(\Fr)\varrho_\xi(\tau)^{e}}.
+
+\textup{(b)} Suppose $\varphi$ is \m{\Iw_w}-fixed and every \m{\gamma\in\Par_w} acts on~$\varphi$ by the scalar
+\m{\theta(\gamma_{11})}, for a function \m{\theta\colon\Ew{w}\to\CC} with \m{\theta(u)\ne0} and
+\m{\theta(u)^{n!}\ne1}. Then for every \m{G\in\CC[X]} and every \m{n\times n} matrix~$y$ over~$\Ql$,
+\[\iota^{-1}\tr\bigl((\varrho_\xi(\tau)-1)\,y\bigr)\cdot G(U_\varpi)\varphi
+=\iota^{-1}\tr\bigl(G^{\iota}(\varrho_\xi(\Fr))\,(\varrho_\xi(\tau)-1)\,y\bigr)\cdot\varphi,\]
+where \m{G^{\iota}\in\Ql[X]} is the image of~$G$ under~$\iota$. \emph{Reference}, as the catalogue gives it:
+R.~Taylor, T.~Yoshida, J.\ Amer.\ Math.\ Soc.\ 20 (2007); M.~Harris, R.~Taylor (2001); place not confirmed.
+\emph{Relation} (second reader): for~(a), the published comparison away from~$\ell$ needs a local type and exponent
+calculation to recover these simultaneous matrix identities; for~(b), a matrix-weighted identity for a specific
+Hecke operator requires additional parahoric linear algebra. Both comparisons are open.}
+
+Inputs 1(a) and~4 are used in the following form. Two endomorphisms of \m{\Forms_{\fD}(\bw)} that agree on
+\m{\xi\cap\Forms_{\fD}(\bw)} for every \m{\xi\in\Sys_{\fD}(\bw)} are equal; and since \m{\dg{T}} multiplies the
+forms of~$\xi$ by \m{\iota^{-1}(T(\xi))}, a form \m{\varphi\in\Forms_{\fD}(\bw)} with components
+\m{\varphi_\xi\in\xi} has \m{\dg{T}\varphi=\sum_\xi\iota^{-1}(T(\xi))\varphi_\xi}.
+
+\sect{The line stabiliser in $\GL_n$ of a finite field}{s:line}
+\begin{lemma}[a character of the line stabiliser whose transfer is a function of the determinant]\label{l:line}
+Let $E$ be a number field, $w$ a finite place of~$E$, \m{n\ge1} an integer and $M$ a natural number that divides
+\m{q_w-1}. Let \m{u\in\Ew{w}} be a unit of~$\Ow{w}$ whose reduction~$\bar u$ generates the group
+\m{\Fw{w}^{\times}}. Then there are a subgroup~$H$ of \m{\GL_n(\Fw{w})}, a homomorphism \m{\alpha\colon H\to\ZZ/M},
+two functions \m{\lgf,\delta\colon\Ew{w}\to\ZZ/M} and an element \m{\gamma_0\in\GL_n(\Fw{w})} with the following
+properties, in which \m{\bar\gamma\in\GL_n(\Fw{w})} is the reduction of \m{\gamma\in\GL_n(\Ow{w})}, with first
+entry~\m{\gamma_{11}}.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item For every \m{\gamma\in\GL_n(\Ow{w})}: \m{\bar\gamma\in H} if and only if \m{\gamma\in\Par_w}; if
+\m{\bar\gamma\in H} then \m{\alpha(\bar\gamma)=\lgf(\gamma_{11})}; \m{\Tr_\alpha(\bar\gamma)=\delta(\det\gamma)}; and
+if \m{\gamma\in\Iw_w} then \m{\Tr_\alpha(\bar\gamma)=0} and \m{\alpha(\bar\gamma)=0}.
+\item \m{\lgf(u)=1}, \m{\Tr_\alpha(\gamma_0)=\delta(u)}, and \m{n!\cdot\Tr_\alpha(\gamma_0)=n!} in \m{\ZZ/M}.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+Write \m{\Gamma=\GL_n(\Fw{w})}. Let $H$ be the stabiliser in~$\Gamma$ of the first coordinate line: the matrices~$h$
+whose first column vanishes below its first entry~\m{h_{11}}. For \m{h,h'\in H} the first entry of \m{hh'} is
+\m{h_{11}h'_{11}}, so \m{h\mapsto h_{11}} is a homomorphism from~$H$ to \m{\Fw{w}^{\times}}. This group is cyclic of
+order \m{q_w-1} and generated by~$\bar u$; since $M$ divides \m{q_w-1} there is a homomorphism
+\m{\lgf_0\colon\Fw{w}^{\times}\to\ZZ/M} with \m{\lgf_0(\bar u)=1}. Put \m{\alpha(h)=\lgf_0(h_{11})}, and for
+\m{z\in\Fw{w}^{\times}} let \m{\delta_0(z)=\Tr_\alpha(\diag(z,1,\dots,1))}; this is a homomorphism from
+\m{\Fw{w}^{\times}} to \m{\ZZ/M}.
+
+\emph{The transfer is \m{\delta_0\circ\det}.} Both \m{\Tr_\alpha} and \m{\delta_0\circ\det} are homomorphisms
+from~$\Gamma$ to a commutative group, and $\Gamma$ is generated by the diagonal matrices and the transvections:
+the matrices that differ from the identity matrix by one entry \m{z\in\Fw{w}}, in a row~$i$ and a column \m{i'\ne i}.
+A transvection has determinant~$1$. For fixed \m{i\ne i'} the transvection with entry \m{z+z'} is the product of
+those with entries $z$ and~$z'$, so the transfer of the transvection with entry~$z$ is a homomorphism in~$z$
+from the additive group of~$\Fw{w}$, of order~$q_w$, to \m{\ZZ/M}; so $q_w$ times each of its values
+is~$0$, and since \m{q_w\equiv1} modulo~$M$ the values themselves are~$0$. A diagonal matrix
+\m{\diag(z_1,\dots,z_n)} is the product of the matrices with $z_i$ at the place~$i$ and $1$ elsewhere. Such a matrix
+is conjugate, by a permutation matrix, to \m{\diag(z_i,1,\dots,1)}, and the transfer, a homomorphism to a
+commutative group, is constant on conjugacy classes. So \m{\Tr_\alpha(\diag(z_1,\dots,z_n))=\sum_i\delta_0(z_i)
+=\delta_0(z_1\cdots z_n)}. Hence \m{\Tr_\alpha=\delta_0\circ\det} on~$\Gamma$.
+
+\emph{The functions and the element.} For a unit~$z$ of~$\Ow{w}$ with reduction~$\bar z$ put
+\m{\lgf(z)=\lgf_0(\bar z)} and \m{\delta(z)=\delta_0(\bar z)}; at the other elements of~$\Ew{w}$ the two functions
+take arbitrary values, which play no role. Let \m{\gamma_0=\diag(\bar u,1,\dots,1)}.
+
+\emph{Property (a).} Let \m{\gamma\in\GL_n(\Ow{w})}. Its reduction lies in~$H$ exactly when the first column
+of~$\gamma$ lies in~$\pw{w}$ below the first entry, that is, when \m{\gamma\in\Par_w}. In that case \m{\gamma_{11}} is
+a unit and \m{\alpha(\bar\gamma)=\lgf_0(\bar\gamma_{11})=\lgf(\gamma_{11})}. The determinant commutes with
+reduction, so \m{\Tr_\alpha(\bar\gamma)=\delta_0(\det\bar\gamma)=\delta(\det\gamma)}. If \m{\gamma\in\Iw_w}, then
+$\bar\gamma$ is upper triangular with $1$ on the diagonal: it lies in~$H$, its determinant is~$1$ and its first
+entry is~$1$, whence \m{\Tr_\alpha(\bar\gamma)=\delta_0(1)=0} and \m{\alpha(\bar\gamma)=\lgf_0(1)=0}.
+
+\emph{Property (b).} \m{\lgf(u)=\lgf_0(\bar u)=1} and \m{\Tr_\alpha(\gamma_0)=\delta_0(\bar u)=\delta(u)} by the
+definitions. For the last equation consider the scalar matrix \m{\bar u\cdot1_n}. It is central in~$\Gamma$ and
+lies in~$H$, so for every representative~$\varsigma$ of a coset \m{\varsigma H} one has
+\m{(\bar u\cdot1_n)\varsigma=\varsigma\,(\bar u\cdot1_n)}, and formula~(\ref{e:transfer}) for the transfer, in
+the proof of Proposition~\ref{p:first}, gives \m{\Tr_\alpha(\bar u\cdot1_n)=[\Gamma:H]\cdot\alpha(\bar u\cdot1_n)=[\Gamma:H]}. The
+index of~$H$ is the number of lines in~\m{\Fw{w}^{\,n}}, which is \m{1+q_w+\dots+q_w^{\,n-1}\equiv n} modulo~$M$. On the
+other hand \m{\Tr_\alpha(\bar u\cdot1_n)=\delta_0(\bar u^{\,n})=n\cdot\delta_0(\bar u)}. So
+\m{n\cdot\Tr_\alpha(\gamma_0)=n} in \m{\ZZ/M}, and multiplication by \m{(n-1)!} gives
+\m{n!\cdot\Tr_\alpha(\gamma_0)=n!}.
+\end{proof}
+\leanline{\lean{lineStab}\sep the formal text takes the unit as an element of~\m{\Ew{w}^{\times}} with a proof
+that it lies in the unit group of~$\Ow{w}$}
+
+\sect{Weighted sums over a finite group and the first-order lemma}{s:first}
+\begin{definition}[weighted sums]\label{d:wsum}
+Let $\Gamma$ be a finite group, $R$ a ring and $M$ a natural number. For homomorphisms \m{\rho\colon\Gamma\to R} and
+\m{\chi\colon\Gamma\to\ZZ/M} and a function \m{f\colon\ZZ/M\to\ZZ}, the \kw{weighted sum} is
+\[\weightedSum{\rho}{\chi}{f}=\sum_{\gamma\in\Gamma}f(\chi(\gamma))\cdot\rho(\gamma)\ \in R.\]
+For fixed $\rho$ and~$\chi$ it is additive in~$f$, and \m{\weightedSum{\rho}{\chi}{\,\cdot\,}} is this additive map
+from the group of the functions \m{\ZZ/M\to\ZZ} to~$R$. The constant function with value~$1$ is written~$1$, and
+for \m{z'\in\ZZ/M} or \m{z'\in\NN} the function \m{z\mapsto f(z-z')} is written \m{f(\,\cdot-z')}.
+\end{definition}
+\leanline{\lean{weightedSum}}
+
+\begin{lemma}[translation of the weights]\label{l:shift}
+Let $\Gamma$ be a finite group, $R$ a ring, $M$ a natural number, \m{\rho\colon\Gamma\to R} and
+\m{\chi\colon\Gamma\to\ZZ/M} homomorphisms, \m{f\colon\ZZ/M\to\ZZ} a function and \m{\gamma\in\Gamma}. Then
+\[\rho(\gamma)\cdot\weightedSum{\rho}{\chi}{f}=\weightedSum{\rho}{\chi}{f(\,\cdot-\chi(\gamma))}.\]
+\end{lemma}
+\begin{proof}
+\m{\rho(\gamma)\sum_{\gamma'}f(\chi(\gamma'))\rho(\gamma')=\sum_{\gamma'}f(\chi(\gamma'))\rho(\gamma\gamma')}, and the
+substitution \m{\gamma''=\gamma\gamma'} turns this into
+\m{\sum_{\gamma''}f(\chi(\gamma'')-\chi(\gamma))\rho(\gamma'')}.
+\end{proof}
+\leanline{\lean{mulWeightedSum}}
+
+\begin{lemma}[weights that agree modulo~$M$]\label{l:modeq}
+Let $R$ be a ring, $S$ a ring, $M$ a natural number and \m{\sigma\colon R\to S} a ring homomorphism with
+\m{M\cdot1_S=0}. Let $I$ be a set, $B$ an additive map from the group of the functions \m{I\to\ZZ} to~$R$, and
+\m{f,f'\colon I\to\ZZ} two functions with \m{f'(i)\equiv f(i)} modulo~$M$ for every \m{i\in I}. Then
+\m{\sigma(B(f))=\sigma(B(f'))}.
+\end{lemma}
+\begin{proof}
+There is a function \m{f''\colon I\to\ZZ} with \m{f-f'=M\cdot f''}, so
+\[\sigma(B(f))-\sigma(B(f'))=M\cdot\sigma(B(f''))=0.\]
+\end{proof}
+\leanline{\lean{mapEqWeights}}
+
+In the next statement \m{\dif{e}f=f(\,\cdot-e)-f} is the difference of a function \m{f\colon\ZZ/M\to\ZZ} with
+step~$e$, and \m{\rho|_H} is the restriction of~$\rho$ to a subgroup~$H$.
+
+\begin{proposition}[the first-order lemma]\label{p:first}
+Let $\Gamma$ be a finite group, $R$ a ring, $M$ a natural number, \m{\rho\colon\Gamma\to R} a homomorphism, $H$ a
+subgroup of~$\Gamma$, $S$ a ring and \m{\sigma\colon R\to S} a ring homomorphism with \m{M\cdot1_S=0}. Let
+\m{\alpha\colon H\to\ZZ/M} be a homomorphism and $B$ an additive map from the group of the functions
+\m{\ZZ/M\to\ZZ} to~$R$ such that
+\[B(f)\cdot\rho(h)=B\bigl(f(\,\cdot-\alpha(h))\bigr)\qquad\text{for all }f\text{ and all }h\in H.\]
+Let $\cA$ be a subring of~$R$ that contains \m{\rho(\gamma)} for every \m{\gamma\in\Gamma} and \m{B(f)} for
+every~$f$, and let \m{(c_i)_{i\in I}} be a family of elements of~$R$, indexed by a set~$I$, each of which commutes
+with every element of~$\cA$. Let \m{\Psi,\Pi\in R}, \m{\gamma_0\in\Gamma} and \m{C,e\in\NN} be such that
+\begin{enumerate}[label=\textup{(H\arabic*)},leftmargin=3em,itemsep=2pt]
+\item \m{\sum_{h\in H}\rho(h^{-1})\,\Psi\,\rho(h)=C};
+\item \m{\rho(h)\cdot B(1)=B(1)} for every \m{h\in H};
+\item \m{\Pi\cdot B(1)=0};
+\item \m{\Pi\cdot\rho(\gamma)=\Pi} for every \m{\gamma\in\Gamma};
+\item multiplication by the order \m{|\Gamma|} is injective on~$R$;
+\item \m{e\cdot\Tr_\alpha(\gamma_0)=e} in \m{\ZZ/M}.
+\end{enumerate}
+Then there is \m{F\in\cA} with the following two properties.
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=2pt]
+\item For every \m{\gamma\in\Gamma} there is \m{Z\in R} with
+\[\sigma\bigl(C\cdot F\cdot(\rho(\gamma)-1)\bigr)=\sigma\Bigl(\Bigl(\sum_{\gamma'\in\Gamma}\rho(\gamma')\Bigr)\cdot
+Z\Bigr)\qquad\text{and}\qquad\Pi\cdot Z=0.\]
+\item For all \m{i,i'\in I} and \m{y\in R}: if
+\begin{gather*}
+B(\dif{e}f)\cdot c_i=\weightedSum{\rho|_H}{\alpha}{\dif{e}f}\cdot c_{i'}\quad\text{for every }f,\qquad\text{and}\\
+\weightedSum{\rho}{\Tr_\alpha}{f}\cdot c_{i'}=(\rho(\gamma_0)-1)\cdot\weightedSum{\rho}{\Tr_\alpha}{f}\cdot y
+\quad\text{for every }f,
+\end{gather*}
+then
+\[2e\cdot\sigma(F)\,\sigma(c_i)=2e\cdot\sigma\Bigl(\sum_{\gamma\in\Gamma}\rho(\gamma)\Bigr)\,\sigma(y).\]
+\end{enumerate}
+\end{proposition}
+\begin{proof}
+\emph{Coset sums.} Fix a set \m{\Sigma\subseteq\Gamma} of representatives of the left cosets \m{\gamma H}. For
+\m{\gamma\in\Gamma} let \m{\rep{\gamma}\in\Sigma} be the representative of \m{\gamma H} and
+\m{\Hpart{\gamma}=\rep{\gamma}^{-1}\gamma\in H}, so that \m{\gamma=\rep{\gamma}\cdot\Hpart{\gamma}}. Put
+\[\Yp=\sum_{\varsigma\in\Sigma}\rho(\varsigma),\qquad\Ym=\sum_{\varsigma\in\Sigma}\rho(\varsigma^{-1}),\qquad
+\Nm=\sum_{\gamma\in\Gamma}\rho(\gamma),\]
+and let \m{v\colon\ZZ/M\to\ZZ} send a residue to its representative of least absolute value, so that
+\m{v(z)\equiv z} modulo~$M$. The transfer of~$\alpha$ is, by definition and independently of~$\Sigma$,
+\begin{equation}\label{e:transfer}
+\Tr_\alpha(\gamma)=\sum_{\varsigma\in\Sigma}\alpha\bigl(\Hpart{\gamma\varsigma}\bigr)\qquad(\gamma\in\Gamma).
+\end{equation}
+For a function \m{f_0\colon H\to\ZZ} and \m{\gamma'\in\Gamma},
+\begin{equation}\label{e:key}
+\Yp\cdot\Bigl(\sum_{h\in H}f_0(h)\rho(h)\Bigr)\cdot\rho(\gamma'^{-1})
+=\sum_{\gamma\in\Gamma}f_0\bigl(\Hpart{\gamma\gamma'}\bigr)\,\rho(\gamma).
+\end{equation}
+Indeed the left side is the sum of \m{f_0(h)\rho(\varsigma h\gamma'^{-1})} over \m{(\varsigma,h)\in\Sigma\times H}, and
+\m{(\varsigma,h)\mapsto\varsigma h\gamma'^{-1}} is a bijection from \m{\Sigma\times H} to~$\Gamma$ whose inverse sends
+$\gamma$ to \m{(\rep{\gamma\gamma'},\Hpart{\gamma\gamma'})}. For \m{f_0=1} and \m{\gamma'=1} this reads
+\m{\Yp\sum_{h\in H}\rho(h)=\Nm}. Hence, by (H2) and then (H1) with $h^{-1}$ in the place of~$h$,
+\begin{equation}\label{e:higman}
+\Nm\cdot\Psi\cdot B(1)=\Yp\sum_{h\in H}\rho(h)\,\Psi\,\rho(h^{-1})\,B(1)=C\cdot\Yp\cdot B(1).
+\end{equation}
+
+\emph{The operator.} Let \m{F=\Yp\cdot B(-v)\cdot\Ym}. It lies in~$\cA$, because $\cA$ is a subring that contains
+the \m{\rho(\gamma)} and \m{B(-v)}.
+
+\emph{Property (i).} Let \m{\gamma\in\Gamma}. The map \m{\varsigma\mapsto\rep{\gamma\varsigma}} is a permutation
+of~$\Sigma$, and \m{\rep{\gamma\varsigma}^{-1}\gamma=\Hpart{\gamma\varsigma}\,\varsigma^{-1}}; therefore
+\m{\Ym\,\rho(\gamma)=\sum_{\varsigma}\rho(\Hpart{\gamma\varsigma})\,\rho(\varsigma^{-1})}, and by the hypothesis on~$B$
+\[F\cdot\rho(\gamma)=\Yp\sum_{\varsigma\in\Sigma}B\bigl(-v(\,\cdot-\alpha(\Hpart{\gamma\varsigma}))\bigr)\,\rho(\varsigma^{-1}).\]
+For \m{z'\in\ZZ/M} the functions \m{-v(\,\cdot-z')} and \m{-v+v(z')\cdot1} agree modulo~$M$ at every point, so
+\m{\sigma(B(-v(\,\cdot-z')))=\sigma(B(-v))+v(z')\,\sigma(B(1))} by Lemma~\ref{l:modeq}. Hence
+\[\sigma\bigl(F\cdot(\rho(\gamma)-1)\bigr)=\sigma\Bigl(\Yp\cdot B(1)\cdot\sum_{\varsigma\in\Sigma}
+v\bigl(\alpha(\Hpart{\gamma\varsigma})\bigr)\,\rho(\varsigma^{-1})\Bigr).\]
+Multiply by~$C$ and use~(\ref{e:higman}): property~(i) holds with
+\[Z=\Psi\cdot B(1)\cdot\sum_{\varsigma\in\Sigma}v\bigl(\alpha(\Hpart{\gamma\varsigma})\bigr)\,\rho(\varsigma^{-1}).\]
+It remains to see that \m{\Pi\cdot\Psi\cdot B(1)=0}. By~(H4), \m{\Pi\cdot\Nm=|\Gamma|\cdot\Pi} and
+\m{\Pi\cdot\Yp=[\Gamma:H]\cdot\Pi}. Multiplying (\ref{e:higman}) by~$\Pi$ on the left gives
+\m{|\Gamma|\cdot\Pi\Psi B(1)=C\,[\Gamma:H]\cdot\Pi B(1)=0} by~(H3), and (H5) gives \m{\Pi\Psi B(1)=0}.
+
+\emph{Property (ii).} Let $i$, $i'$ and~$y$ satisfy the two hypotheses of~(ii). First, by (\ref{e:key}) for
+\m{f_0=v\circ\alpha} and \m{\gamma'=\varsigma}, summed over \m{\varsigma\in\Sigma},
+\[\Yp\cdot\weightedSum{\rho|_H}{\alpha}{v}\cdot\Ym=\sum_{\gamma\in\Gamma}\Bigl(\sum_{\varsigma\in\Sigma}
+v\bigl(\alpha(\Hpart{\gamma\varsigma})\bigr)\Bigr)\rho(\gamma),\]
+and by (\ref{e:transfer}) the inner sum is congruent to \m{v(\Tr_\alpha(\gamma))} modulo~$M$. So
+Lemma~\ref{l:modeq}, applied to functions on~$\Gamma$, gives
+\begin{equation}\label{e:conj}
+\sigma\bigl(\Yp\cdot\weightedSum{\rho|_H}{\alpha}{v}\cdot\Ym\bigr)=\sigma\bigl(\weightedSum{\rho}{\Tr_\alpha}{v}\bigr):
+\end{equation}
+conjugating by the representatives sums the weights over the cosets. Secondly, take in the first hypothesis the
+function \m{f=-v\cdot(v+e)}. Since \m{v(z-e)\equiv v(z)-e} modulo~$M$,
+\[\dif{e}f(z)\equiv-(v(z)-e)\,v(z)+v(z)\,(v(z)+e)=2e\cdot v(z)\pmod M\]
+for every~$z$: the function~$f$ is a discrete antiderivative of \m{2e\cdot v}, and this is where the factor~$2$
+of the statement comes from. So, by Lemma~\ref{l:modeq},
+\[\sigma(B(\dif{e}f))=2e\cdot\sigma(B(v))\qquad\text{and}\qquad
+\sigma\bigl(\weightedSum{\rho|_H}{\alpha}{\dif{e}f}\bigr)=2e\cdot\sigma\bigl(\weightedSum{\rho|_H}{\alpha}{v}\bigr).\]
+Multiply the first hypothesis by~$\Yp$ on the left and by~$\Ym$ on the right, apply~$\sigma$,
+and move $c_i$ and~$c_{i'}$ to the right of \m{\Ym\in\cA}, with which they commute. By the definition of~$F$ and
+by~(\ref{e:conj}) this gives
+\[-2e\cdot\sigma(F)\,\sigma(c_i)=2e\cdot\sigma\bigl(\weightedSum{\rho}{\Tr_\alpha}{v}\bigr)\,\sigma(c_{i'})
+=\sigma\bigl(\weightedSum{\rho}{\Tr_\alpha}{2e\cdot v}\cdot c_{i'}\bigr).\]
+Thirdly, by the second hypothesis for the function \m{2e\cdot v} and by Lemma~\ref{l:shift},
+\[\weightedSum{\rho}{\Tr_\alpha}{2e\cdot v}\cdot c_{i'}
+=\weightedSum{\rho}{\Tr_\alpha}{2e\cdot\bigl(v(\,\cdot-\Tr_\alpha(\gamma_0))-v\bigr)}\cdot y,\]
+and \m{2e\,(v(z-\Tr_\alpha(\gamma_0))-v(z))\equiv-2e\cdot\Tr_\alpha(\gamma_0)\equiv-2e} modulo~$M$ by~(H6). By
+Lemma~\ref{l:modeq} once more, $\sigma$ of the right side is
+\m{\sigma(\weightedSum{\rho}{\Tr_\alpha}{-2e\cdot1})\,\sigma(y)=-2e\cdot\sigma(\Nm)\,\sigma(y)}. The two displayed
+equations together give \m{2e\cdot\sigma(F)\sigma(c_i)=2e\cdot\sigma(\Nm)\sigma(y)}.
+\end{proof}
+\leanline{\lean{firstOrder}\sep the formal text writes the family as a map from an index type and takes
+$\Psi$, $\Pi$, $\gamma_0$, $C$ and~$e$ as implicit arguments}
+
+\sect{The tie at one auxiliary place}{s:tie}
+\begin{lemma}[testing on eigenvectors]\label{l:test}
+In Setting~\ref{set:forms}, let \m{j\in J}, let \m{T,T'\in\TQ}, let $\Gamma$ be a finite group,
+\m{\rho\colon\Gamma\to\EQ} a homomorphism with \m{\rho(\gamma)\in\LQ{j}} for every \m{\gamma\in\Gamma},
+\m{\chi\colon\Gamma\to\ZZ/\ell^\nu} a homomorphism, \m{f\colon\ZZ/\ell^\nu\to\ZZ} a function and \m{Y\in\EQ}. Let
+\m{e\in\ZZ/\ell^\nu} and \m{\theta\in\CC}, let $\cB$ be a $\CC$-linear map from \m{\FQ} to \m{\AllForms} such that
+\m{Y(\varphi)=\cB\bigl(\weightedSum{\rho}{\chi}{f}\varphi\bigr)} for every \m{\varphi\in\FQ}, and let
+\m{\tilde f\colon\ZZ/\ell^\nu\to\CC} be a function with \m{\tilde f(z-e)-\theta\cdot\tilde f(z)=f(z)} for
+every~$z$. Suppose that
+\[\iota^{-1}(T(\xi))\cdot\varphi=\iota^{-1}(T'(\xi))\cdot\cB(\varphi)\]
+for every \m{\xi\in\SQ}, every additive character \m{\psi\colon\ZZ/\ell^\nu\to\CC^{\times}} and every non-zero
+\m{\varphi\in\xi\cap\FQ} such that \m{\rho(\gamma)\varphi=\psi(\chi(\gamma))\cdot\varphi} for all
+\m{\gamma\in\Gamma} and \m{\psi(e)\ne\theta}. Then
+\[\weightedSum{\rho}{\chi}{f}\cdot\dg{T}=Y\cdot\dg{T'}\qquad\text{in }\EQ.\]
+\end{lemma}
+\begin{proof}
+By Input~1(a) it suffices to compare the two sides on a form \m{\varphi\in\xi\cap\FQ}, for each \m{\xi\in\SQ}. For
+a function \m{f'\colon\ZZ/\ell^\nu\to\CC} put
+\[\varphi[f']=\sum_{\gamma\in\Gamma}\bigl(f'(\chi(\gamma)-e)-\theta\cdot f'(\chi(\gamma))\bigr)\cdot\rho(\gamma)\varphi.\]
+This is linear in~$f'$, and \m{\varphi[\tilde f]=\weightedSum{\rho}{\chi}{f}\varphi}. The left side of the
+assertion sends $\varphi$ to \m{\iota^{-1}(T(\xi))\cdot\varphi[\tilde f]} and the right side to
+\m{\iota^{-1}(T'(\xi))\cdot Y(\varphi)=\iota^{-1}(T'(\xi))\cdot\cB(\varphi[\tilde f])}. So it suffices to prove
+\[\iota^{-1}(T(\xi))\cdot\varphi[f']=\iota^{-1}(T'(\xi))\cdot\cB(\varphi[f'])\]
+for all~$f'$, and by linearity for the additive characters \m{f'=\psi}, which form a basis of the functions. Now
+\[\varphi[\psi]=\bigl(\psi(-e)-\theta\bigr)\cdot\sum_{\gamma\in\Gamma}\psi(\chi(\gamma))\,\rho(\gamma)\varphi,\qquad
+\rho(\gamma')\,\varphi[\psi]=\psi^{-1}(\chi(\gamma'))\cdot\varphi[\psi]\quad(\gamma'\in\Gamma),\]
+the second by the substitution \m{\gamma\mapsto\gamma'\gamma} in the sum, and \m{\varphi[\psi]\in\xi} by
+Input~1(b), since each \m{\rho(\gamma)} is the restriction of an element of the local group algebra at~$w_j$. If
+\m{\varphi[\psi]=0}, both sides of the equation for \m{f'=\psi} vanish. This is the case whenever
+\m{\psi^{-1}(e)=\theta}; it may also be the case otherwise. If \m{\varphi[\psi]\ne0}, then
+\m{\psi^{-1}(e)=\psi(-e)\ne\theta}, and the hypothesis, applied to $\xi$, to the character~$\psi^{-1}$ and to the
+form \m{\varphi[\psi]}, is the equation.
+\end{proof}
+\leanline{\lean{weightedSumExt}\sep the formal text does not use that $V$ is standard, the Weil data or
+\m{n\ge1}}
+
+\begin{lemma}[coefficients of characteristic polynomials lie in the Hecke algebra]\label{l:charpoly}
+In Settings \ref{set:forms} and~\ref{set:twist}, let $\bw$ be a family of finite places of~$E$ indexed by~$J$, let
+\m{\gamma\in\GE} and let $e$ be a natural number. Then the function on \m{\Sys_{\fD}(\bw)} that sends~$\xi$ to the
+coefficient of~$X^e$ in \m{\det(X-\rr_\xi(\gamma))} belongs to \m{\Hk_{\fD}(\bw)}.
+\end{lemma}
+\begin{proof}
+Since \m{\rr_\xi(\gamma)=\omega(\gamma)\varrho_\xi(\gamma)}, the coefficient is \m{\omega(\gamma)^{n-e}} times the
+coefficient of~$X^e$ in \m{\det(X-\varrho_\xi(\gamma))} for \m{e\le n}, and it is $0$ for \m{e>n}. The Hecke algebra
+is a $\Zl$-algebra and \m{\omega(\gamma)\in\Zl}, so it suffices to treat~\m{\varrho}. Every
+\m{\xi\in\Sys_{\fD}(\bw)} contains a non-zero form, so by Input~3 the function in question is the limit, in the
+space of functions on the finite set \m{\Sys_{\fD}(\bw)}, of the functions
+\m{\xi\mapsto\iota(\text{coefficient of }X^e\text{ in }\hp{\xi}{w})} along a proper filter on Frobenius data at
+places~$w$ of prime norm. The Hecke algebra is closed (Input~1(d)), and all but finitely many places are off level
+for~$\fD$ at~$\bw$ (Input~1(e)). So it suffices to show that the function belongs to \m{\Hk_{\fD}(\bw)} for a
+place~$w$ of prime norm that is off level. Such a place has \m{w\ne\bar w}. The coefficient of~$X^e$ in
+\m{\hp{\xi}{w}} is an integer, depending only on $w$, $n$ and~$e$, times the chosen eigenvalue
+\m{\theta_{\xi,w,n-e}} of the spherical Hecke operator of index \m{n-e} at~$w$. Because $w$ is off level, the forms
+in \m{\xi\cap\Forms_{\fD}(\bw)} are eigenvectors of that operator with this eigenvalue, for every~$\xi$; so by
+Input~1(a) the diagonal operator of the function \m{\xi\mapsto\iota(\theta_{\xi,w,n-e})} agrees on
+\m{\Forms_{\fD}(\bw)} with the spherical Hecke operator. That operator lies in the local group algebra at~$w$ and
+$\ell$ does not lie under~$w$, so it maps integral forms to integral forms (Input~1(c)). Hence the function
+belongs to \m{\Hk_{\fD}(\bw)}, and so does its multiple by an integer.
+\end{proof}
+\leanline{\lean{charpolyMem}}
+
+\begin{definition}[trace elements]\label{d:trace}
+In Settings \ref{set:forms} and~\ref{set:twist}, let $\bw$ be a family of finite places of~$E$ indexed by~$J$. For a
+polynomial \m{G\in\Zl[X]} and elements \m{\gamma',\gamma\in\GE}, the \kw{trace element}
+\m{\traceElem{\rr}{G}{\gamma'}{\gamma}} is the function
+\[\traceElem{\rr}{G}{\gamma'}{\gamma}\colon\ \Sys_{\fD}(\bw)\to\Ql,\qquad
+\xi\longmapsto\tr\bigl(G(\rr_\xi(\gamma'))\cdot\rr_\xi(\gamma)\bigr).\]
+It belongs to \m{\Hk_{\fD}(\bw)}: the matrix \m{G(\rr_\xi(\gamma'))\rr_\xi(\gamma)} is a combination, with the
+coefficients of~$G$, of the matrices \m{\rr_\xi(\gamma'^{\,i}\gamma)}, and the trace of \m{\rr_\xi(\gamma'')} is
+minus the coefficient of~\m{X^{n-1}} in \m{\det(X-\rr_\xi(\gamma''))}, to which Lemma~\ref{l:charpoly} applies. The
+index~$\rr$ stands for the family~$\rr$ together with the relation
+\m{\rr_\xi(\gamma)=\omega(\gamma)\cdot\varrho_\xi(\gamma)} of Setting~\ref{set:twist}, which is the first argument of
+the formal definition. For instance \m{\traceElem{\rr}{X-1}{\tau_j}{\gamma}} sends~$\xi$ to
+\m{\tr((\rr_\xi(\tau_j)-1)\rr_\xi(\gamma))}, and \m{\traceElem{\rr}{1}{1}{\gamma}} sends~$\xi$ to
+\m{\tr\rr_\xi(\gamma)}.
+\end{definition}
+\leanline{\lean{traceElem}}
+
+\begin{proposition}[the tie of tame inertia to Frobenius at one auxiliary place]\label{p:tie}
+In Settings \ref{set:forms}, \ref{set:twist} and~\ref{set:aux}, let \m{j\in J}, let \m{\varepsilon\in\Zl[X]} be a
+polynomial, \m{L\ge1} an integer and \m{T\in\TQ}. Suppose that for every \m{\xi\in\SQ} that is an eigensystem of
+base level and has \m{T(\xi)\ne0}, the Hecke polynomial \m{\hp{\xi}{w_j}} has a root string of length~$L$ and
+ratio~$q_j$ at \m{\omega(\Fr_j)^{-1}} with cofactor dividing~$\varepsilon$ \textup{(Definition~\ref{d:string})}. Let $S$
+be a ring and \m{\sigma\colon\EQ\to S} a ring homomorphism with \m{\ell^\nu\cdot1_S=0}. Put
+\[\rho_j(\gamma)=\rQ(\gamma^{(j)})\quad\text{for }\gamma\in\GL_n(\Fw{w_j}),\qquad\text{and}\qquad
+\Nm_j=\sum_{\gamma\in\GL_n(\Fw{w_j})}\rho_j(\gamma).\]
+Then there is \m{F\in\LQ{j}} with the following two properties.
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=2pt]
+\item For every \m{\gamma\in\GL_n(\Fw{w_j})} there is \m{Z\in\EQ} with
+\[\sigma\bigl(C\cdot F\cdot(\rho_j(\gamma)-1)\bigr)=\sigma(\Nm_j\cdot Z)\qquad\text{and}\qquad
+\dg{T}\cdot\NQ\cdot Z=0\ \text{ in }\EQ.\]
+\item For every \m{\gamma\in\GE}, the element \m{y=\sigma\bigl(\dg{\traceElem{\rr}{X-1}{\tau_j}{\gamma}}\bigr)}
+of~$S$ satisfies
+\[\sigma(\Nm_j)\cdot y=0\qquad\text{and}\qquad
+2\cdot n!\cdot\sigma(F)\cdot y=2\cdot n!\cdot\sigma(\Nm_j)\cdot
+\sigma\bigl(\dg{\traceElem{\rr}{(X-1)\,\varepsilon}{\Fr_j}{\gamma}}\bigr).\]
+\end{enumerate}
+The trace elements are taken at the level~$\bw_Q$.
+\end{proposition}
+\leanline{\lean{existsTie}\sep the formal statement ends at line~103 of its file: the census cuts it at the
+binding of \m{\rho_j}}
+
+In words: modulo~$\ell^\nu$ and up to the factor \m{2\cdot n!}, the operator~$F$ at~$w_j$ times the trace of
+\m{(\tau_j-1)\gamma} is the sum~\m{\Nm_j} over \m{\GL_n(\Fw{w_j})}, the trace to the level without~$w_j$, times the
+trace of \m{(\Fr_j-1)\,\varepsilon(\Fr_j)\,\gamma}. The tame generator and the Frobenius element enter two different
+trace elements: the polynomial \m{X-1} is evaluated at~$\tau_j$, and \m{(X-1)\varepsilon} at~$\Fr_j$. Property~(i)
+measures how far $F$ is from commuting with the action of \m{\GL_n(\Fw{w_j})}: up to the factor~$C$ and
+modulo~$\ell^\nu$, the operator \m{F\cdot(\rho_j(\gamma)-1)} is a multiple of~\m{\Nm_j} by an operator that
+\m{\dg{T}\cdot\NQ} annihilates. This is the form in which the authors' comment, ``ties hold on forms and weak lifts
+do not move'', enters the proof of Theorem~A (Step~8).
+
+\begin{proof}
+Write \m{w=w_j} and \m{q=q_j}. By Input~7 there are a unit~$u$ of~$\Ow{w}$ whose reduction generates
+\m{\Fw{w}^{\times}} and whose image under~\m{\Art_w} is the class of~$\tau_j$, and a uniformiser~$\varpi$ of~$\Ew{w}$
+whose image is the class of~$\Fr_j$. Since $\ell^\nu$ divides \m{q-1}, Lemma~\ref{l:line} applies to
+\m{(E,w,n,\ell^\nu,u)}; it gives a subgroup~$H$ of \m{\GL_n(\Fw{w})}, a homomorphism \m{\alpha\colon H\to\ZZ/\ell^\nu},
+functions $\lgf$ and~$\delta$ and an element~$\gamma_0$. Let
+\[\varepsilon^{+}=(X-q^{L-1})\cdot\varepsilon\qquad\text{and}\qquad
+\varepsilon^{\sharp}(X)=\varepsilon^{+}\bigl(\omega(\Fr_j)\cdot X\bigr),\]
+polynomials over~$\Zl$. By Setting~\ref{set:aux}(a) the place~$w$ is off level, so $\ell$ does not lie under~$w$ and
+Input~2(c) to~(f) are available; and \m{w\ne\bar w}.
+
+\emph{Three remarks on fixed vectors.}
+\begin{itemize}[leftmargin=2.6em,itemsep=2pt]
+\item[\textup{(R1)}] For \m{\gamma\in\GL_n(\Ow{w})} and every form $\varphi$ in \m{\FQ} one has
+\m{\loc_w(\gamma)\varphi=\rho_j(\bar\gamma)\varphi} (Input~2(c)).
+\item[\textup{(R2)}] A form \m{\varphi\in\FQ} that is fixed by \m{\rho_j(h)} for all \m{h\in H} with
+\m{\alpha(h)=0} and \m{\Tr_\alpha(h)=0} is fixed by \m{\Iw_w}: an element of \m{\Iw_w} lies in \m{\Par_w}, its
+reduction~$h$ lies in~$H$ and has \m{\alpha(h)=0=\Tr_\alpha(h)} by Lemma~\ref{l:line}(a), and (R1) applies.
+\item[\textup{(R3)}] For every \m{f\colon\ZZ/\ell^\nu\to\ZZ} and \m{\varphi\in\FQ} the form
+\m{\weightedSum{\rho_j|_H}{\alpha}{f}\varphi} is fixed by \m{\Iw_w}: for \m{h\in H} with \m{\alpha(h)=0},
+Lemma~\ref{l:shift} gives
+\[\rho_j(h)\cdot\weightedSum{\rho_j|_H}{\alpha}{f}=\weightedSum{\rho_j|_H}{\alpha}{f},\]
+and (R2) applies.
+\end{itemize}
+
+\emph{The operators \m{B(f)}.} The operator \m{\weightedSum{\rho_j|_H}{\alpha}{f}} lies in \m{\LQ{j}} by
+Input~2(d), and its values are fixed by \m{\Iw_w} by~(R3). So Input~2(e) gives, for every~$f$, an operator
+\[B(f)\in\LQ{j}\qquad\text{with}\qquad
+B(f)\varphi=\varepsilon^{\sharp}(U_\varpi)\bigl(\weightedSum{\rho_j|_H}{\alpha}{f}\varphi\bigr)\quad(\varphi\in\FQ),\]
+and $B$ is additive in~$f$. We apply Proposition~\ref{p:first} to the group \m{\Gamma=\GL_n(\Fw{w})}, the ring
+\m{R=\EQ}, the modulus \m{M=\ell^\nu}, the homomorphism~\m{\rho_j}, the subgroup~$H$, the ring~$S$ with~$\sigma$,
+the homomorphism~$\alpha$, the map~$B$, the subring \m{\cA=\LQ{j}}, the family \m{(\dg{T'})_{T'\in\TQ}} indexed by
+the Hecke algebra, a Higman operator~$\Psi$ for the subgroup \m{\{h^{(j)}:h\in H\}} (Input~2(f)), the element
+\m{\Pi=\dg{T}\cdot\NQ}, the element~$\gamma_0$, the integer~$C$ and \m{e=n!}. Its hypotheses hold:
+\begin{itemize}[leftmargin=1.4em,itemsep=2pt]
+\item \emph{The hypothesis on~$B$.} For \m{h\in H}, the substitution \m{h'\mapsto h'h} in the sum gives
+\[\weightedSum{\rho_j|_H}{\alpha}{f}\cdot\rho_j(h)=\weightedSum{\rho_j|_H}{\alpha}{f(\,\cdot-\alpha(h))};\]
+apply \m{\varepsilon^{\sharp}(U_\varpi)}.
+\item \emph{The subring and the family.} \m{\rho_j(\gamma)\in\LQ{j}} by Input~2(d), \m{B(f)\in\LQ{j}} by
+construction, and every \m{\dg{T'}} commutes with \m{\LQ{j}} by Input~2(b).
+\item \emph{\textup{(H1)}} is the property of~$\Psi$, and \emph{\textup{(H6)}} is Lemma~\ref{l:line}(b).
+\item \emph{\textup{(H2)}.} Let \m{h\in H}, \m{\varphi\in\FQ} and
+\m{\varphi'=\weightedSum{\rho_j|_H}{\alpha}{1}\varphi}. By (R3) and Lemma~\ref{l:shift} the form~$\varphi'$ is fixed
+by \m{\Iw_w} and by every \m{\rho_j(h')}, \m{h'\in H}; by (R1) and Lemma~\ref{l:line}(a) it is fixed by~\m{\Par_w}.
+By Input~6 for the constant function~$1$, the operator \m{U_\varpi} preserves the space of such forms, hence so does
+\m{\varepsilon^{\sharp}(U_\varpi)}. So \m{B(1)\varphi} is fixed by~\m{\Par_w}; as reduction maps \m{\Par_w} onto~$H$,
+(R1) gives \m{\rho_j(h)B(1)\varphi=B(1)\varphi}.
+\item \emph{\textup{(H4)}.} \m{\NQ\cdot\rQ(\gamma^{(j)})=\NQ}, a sum over a group.
+\item \emph{\textup{(H5)}.} $R$ is a ring of endomorphisms of a complex vector space.
+\end{itemize}
+Hypothesis~(H3), \m{\dg{T}\cdot\NQ\cdot B(1)=0}, is the heart of the matter and is proved next. Granting it, the
+proposition gives \m{F\in\LQ{j}} whose property~(i) is property~(i) above.
+
+\emph{Proof of \textup{(H3)}: the chain lemma.} Let \m{\varphi\in\FQ} and \m{\varphi_1=\dg{T}\,\NQ\,B(1)\varphi}; we
+show \m{\ip{\varphi_1}{\varphi_1}=0} for the invariant form of Input~4. The operator \m{\dg{T}} commutes with
+\m{B(1)} and with every \m{\rQ(\gamma)}, a product of operators in the algebras \m{\LQ{j'}} (Input~2(b)
+and~(d)). So \m{\varphi_1=\NQ\,B(1)\dg{T}\varphi} and also \m{\varphi_1=\dg{T}\varphi_2} with
+\m{\varphi_2=\NQ\,B(1)\varphi}. The form~$\varphi_2$ is fixed by every \m{\rQ(\gamma)}, so it is of base level
+(Input~2(a)), and by Input~1(a) for the empty family it is a sum of forms
+\m{\varphi'\in\xi\cap\Forms_{\fD}(\emptyset)}, \m{\xi\in\Sys_{\fD}(\emptyset)}. For such a form
+\m{\dg{T}\varphi'=\iota^{-1}(T(\xi))\varphi'}. So it suffices to show \m{\ip{\varphi'}{\varphi_1}=0} for every
+\m{\xi\in\Sys_{\fD}(\emptyset)} with \m{T(\xi)\ne0} and every non-zero \m{\varphi'\in\xi\cap\Forms_{\fD}(\emptyset)}.
+Such a~$\varphi'$ is fixed by every \m{\rQ(\gamma)}, and these operators preserve the form, hence
+\begin{gather*}
+\ip{\varphi'}{\varphi_1}=\sum_{\gamma}\ip{\varphi'}{\rQ(\gamma)B(1)\dg{T}\varphi}
+=\Bigl|\prod_{j'\in J}\GL_n(\Fw{w_{j'}})\Bigr|\cdot\ip{\varphi'}{\varepsilon^{\sharp}(U_\varpi)\varphi_3},\\
+\text{where}\qquad\varphi_3=\weightedSum{\rho_j|_H}{\alpha}{1}\dg{T}\varphi,
+\end{gather*}
+and $\varphi_3$ is fixed by \m{\Iw_w} by~(R3). By Setting~\ref{set:aux}(a) the form~$\varphi'$ is fixed by
+\m{\GL_n(\Ow{w})} and is an eigenvector of the spherical Hecke operators at~$w$ with the chosen eigenvalues
+of~$\xi$, so its Hecke polynomial is \m{\hp{\xi}{w}}. By the hypothesis of the proposition, \m{\hp{\xi}{w}} has a
+root string of length \m{L=(L-1)+1} and ratio~$q$ at \m{\omega(\Fr_j)^{-1}} with cofactor dividing~$\varepsilon$, and
+\m{\omega(\Fr_j)} is a unit of~$\Zl$, hence not zero. The chain lemma (Input~5, with \m{\theta=\omega(\Fr_j)},
+\m{e=L-1} and \m{G'=\varepsilon}) gives \m{\ip{\varphi'}{G''(U_\varpi)\varphi_3}=0} for
+\m{G''(X)=(\omega(\Fr_j)X-q^{L-1})\cdot\varepsilon(\omega(\Fr_j)X)=\varepsilon^{\sharp}(X)}. This proves~(H3).
+
+\emph{Property (ii).} Fix \m{\gamma\in\GE}. For \m{G\in\Zl[X]} put
+\[T_G=\traceElem{\rr}{G}{\Fr_j}{\gamma}\qquad\text{and}\qquad
+T^{\tau}_G=\traceElem{\rr}{G}{\Fr_j}{\tau_j\gamma}-\traceElem{\rr}{G}{\Fr_j}{\gamma},\]
+elements of \m{\TQ}; so \m{T^{\tau}_G(\xi)=\tr\bigl(G(\rr_\xi(\Fr_j))\,(\rr_\xi(\tau_j)-1)\,\rr_\xi(\gamma)\bigr)}, and
+\m{T^{\tau}_1=\traceElem{\rr}{X-1}{\tau_j}{\gamma}}. Recall \m{\rr_\xi(\tau_j)=\varrho_\xi(\tau_j)} by
+Setting~\ref{set:aux}(b).
+
+\emph{Claim A: where \m{\GL_n} acts through the determinant, the tame generator acts as a diamond operator.} For
+every \m{G\in\Zl[X]} and every \m{f\colon\ZZ/\ell^\nu\to\ZZ},
+\begin{equation}\label{e:diamond}
+\weightedSum{\rho_j}{\Tr_\alpha}{f}\cdot\dg{T^{\tau}_G}=(\rho_j(\gamma_0)-1)\cdot\weightedSum{\rho_j}{\Tr_\alpha}{f}\cdot\dg{T_G}.
+\end{equation}
+This is Lemma~\ref{l:test} for the group \m{\GL_n(\Fw{w})} with \m{\rho_j} and \m{\chi=\Tr_\alpha}, with \m{e=0},
+\m{\theta=0} and \m{\tilde f=f}, with \m{\cB=\rho_j(\gamma_0)-1} and
+\m{Y=(\rho_j(\gamma_0)-1)\weightedSum{\rho_j}{\Tr_\alpha}{f}}, and with the Hecke elements \m{T^{\tau}_G} and~\m{T_G}.
+Its hypothesis is checked as follows. Let \m{\xi\in\SQ}, let $\psi$ be an additive character and
+\m{\varphi\in\xi\cap\FQ} a non-zero form with \m{\rho_j(\gamma')\varphi=\psi(\Tr_\alpha(\gamma'))\varphi} for all
+\m{\gamma'\in\GL_n(\Fw{w})}; the condition \m{\psi(0)\ne0} is empty. By~(R2) the form~$\varphi$ is fixed by
+\m{\Iw_w}, and by (R1) and Lemma~\ref{l:line}(a) every \m{\gamma'\in\GL_n(\Ow{w})} acts on it by the scalar
+\m{\psi(\delta(\det\gamma'))}, which is \m{\psi(\delta(u))} at each diagonal matrix with one entry~$u$ and the
+others~$1$. Input~8(a), for the function~$0$, whose block parahoric subgroup is \m{\GL_n(\Ow{w})}, shows that the
+polynomial \m{X-\iota(\psi(\delta(u)))} vanishes at \m{\varrho_\xi(\tau_j)}: this matrix is the scalar
+\m{\iota(\psi(\delta(u)))}. Hence \m{T^{\tau}_G(\xi)=\bigl(\iota(\psi(\delta(u)))-1\bigr)\cdot T_G(\xi)}. On the other
+hand \m{(\rho_j(\gamma_0)-1)\varphi=(\psi(\Tr_\alpha(\gamma_0))-1)\varphi=(\psi(\delta(u))-1)\varphi} by
+Lemma~\ref{l:line}(b). So \m{\iota^{-1}(T^{\tau}_G(\xi))\varphi=\iota^{-1}(T_G(\xi))\cdot(\rho_j(\gamma_0)-1)\varphi},
+as required.
+
+\emph{The first assertion of \textup{(ii)}.} Take \m{G=1} and \m{f=1} in~(\ref{e:diamond}). Then
+\m{\weightedSum{\rho_j}{\Tr_\alpha}{1}=\Nm_j} and \m{(\rho_j(\gamma_0)-1)\Nm_j=0}, so \m{\Nm_j\cdot\dg{T^{\tau}_1}=0}
+already in \m{\EQ}, and \m{\sigma(\Nm_j)\cdot y=0}.
+
+\emph{Claim B: on the eigenvectors of the line stabiliser, the trace against \m{\tau_j-1} turns
+\m{U_\varpi} into Frobenius.} For every \m{f\colon\ZZ/\ell^\nu\to\ZZ},
+\begin{equation}\label{e:frob}
+B(\dif{n!}f)\cdot\dg{T^{\tau}_1}=\weightedSum{\rho_j|_H}{\alpha}{\dif{n!}f}\cdot\dg{T^{\tau}_{\varepsilon^{+}}}.
+\end{equation}
+This is Lemma~\ref{l:test} for the group~$H$ with \m{\rho_j|_H} and \m{\chi=\alpha}, with \m{e=n!}, \m{\theta=1},
+the integral function \m{\dif{n!}f} and \m{\tilde f=f}, with $\cB$ the restriction of
+\m{\varepsilon^{\sharp}(U_\varpi)} to \m{\FQ} and \m{Y=B(\dif{n!}f)}, and with the Hecke elements
+\m{T^{\tau}_{\varepsilon^{+}}} and~\m{T^{\tau}_1}. To check its hypothesis let \m{\xi\in\SQ}, let $\psi$ be an additive
+character with \m{\psi(n!)\ne1} and \m{\varphi\in\xi\cap\FQ} a non-zero form with
+\m{\rho_j(h)\varphi=\psi(\alpha(h))\varphi} for all \m{h\in H}. By (R2) the form~$\varphi$ is fixed by \m{\Iw_w}, and
+by (R1) and Lemma~\ref{l:line}(a) every \m{\gamma'\in\Par_w} acts on it by the scalar
+\m{\psi(\lgf(\gamma'_{11}))}. The function \m{\theta=\psi\circ\lgf} on~$\Ew{w}$ has \m{\theta(u)=\psi(1)\ne0} and
+\m{\theta(u)^{n!}=\psi(n!)\ne1}. Input~8(b), for the image of~$\varepsilon^{\sharp}$ in \m{\CC[X]} and the matrix
+\m{\rr_\xi(\gamma)}, gives
+\[\iota^{-1}\tr\bigl((\varrho_\xi(\tau_j)-1)\rr_\xi(\gamma)\bigr)\cdot\varepsilon^{\sharp}(U_\varpi)\varphi
+=\iota^{-1}\tr\bigl(\varepsilon^{\sharp}(\varrho_\xi(\Fr_j))\,(\varrho_\xi(\tau_j)-1)\,\rr_\xi(\gamma)\bigr)\cdot\varphi.\]
+Here
+\[\varepsilon^{\sharp}(\varrho_\xi(\Fr_j))=\varepsilon^{+}\bigl(\omega(\Fr_j)\varrho_\xi(\Fr_j)\bigr)=\varepsilon^{+}(\rr_\xi(\Fr_j)),\]
+so the equation reads
+\[\iota^{-1}(T^{\tau}_1(\xi))\cdot\cB(\varphi)=\iota^{-1}(T^{\tau}_{\varepsilon^{+}}(\xi))\cdot\varphi,\]
+as required.
+
+\emph{The tie.} Apply property~(ii) of Proposition~\ref{p:first} to the indices \m{T^{\tau}_1} and
+\m{T^{\tau}_{\varepsilon^{+}}} of the family and to the element \m{\dg{T_{\varepsilon^{+}}}} of~$R$: its first hypothesis
+is~(\ref{e:frob}) and its second is (\ref{e:diamond}) for \m{G=\varepsilon^{+}}. It gives
+\[2\cdot n!\cdot\sigma(F)\cdot\sigma(\dg{T^{\tau}_1})=2\cdot n!\cdot\sigma(\Nm_j)\cdot\sigma(\dg{T_{\varepsilon^{+}}}).\]
+Finally \m{T_{\varepsilon^{+}}=\traceElem{\rr}{X\varepsilon}{\Fr_j}{\gamma}-q^{L-1}\cdot\traceElem{\rr}{\varepsilon}{\Fr_j}{\gamma}},
+and \m{q^{L-1}\equiv1} modulo~$\ell^\nu$ because $\ell^\nu$ divides \m{q-1}; as $\ell^\nu$ vanishes in~$S$,
+\m{\sigma(\dg{T_{\varepsilon^{+}}})=\sigma(\dg{\traceElem{\rr}{(X-1)\varepsilon}{\Fr_j}{\gamma}})}.
+\end{proof}
+
+\sect{Proof of Theorem A}{s:proofA}
+\begin{proof}[Proof of Theorem A]
+All trace elements are taken at the level~$\bw_Q$. A multi-index is an element $\bd$ of~\m{\NN^J}, with
+components~\m{\bd_j}. Multi-indices are ordered componentwise, \m{|\bd|} is the sum of the components, \m{\one}
+has all components~$1$, \m{\one_j} has the component~$1$ at~$j$ and $0$ elsewhere, and
+\m{X^{\bd}=\prod_jX_j^{\bd_j}}.
+
+\emph{Step 1: separating elements.} Call \m{\xi\in\SQ} \kw{separated from~$\pi$} if there is \m{T\in\TQ} with
+\m{T(\xi)=0} and \m{|T(\pi)|\ge1}; choose such an element~$T_\xi$ for each separated~$\xi$, and let \m{T_{*}} be
+the product of these finitely many elements. Then \m{|T_{*}(\pi)|\ge1}, and if \m{T_{*}(\xi)\ne0} then $\xi$ is not
+separated from~$\pi$: every \m{T\in\TQ} with \m{T(\xi)=0} has \m{|T(\pi)|<1}.
+
+\emph{Step 2: Ribet's element.} Let \m{\ev} be the map from the polynomial ring \m{\TQ[X_j:j\in J]} to the ring of
+functions from \m{\SQ} to \m{\Ql[X_j:j\in J]} that evaluates the coefficients at each eigensystem; it is an
+injective homomorphism of $\Zl$-algebras. Let $\cS$ be its image, let $\tie$ be the ideal of \m{\TQ[X_j:j\in J]}
+generated by the elements
+\[\ell^\nu\cdot\traceElem{\rr}{1}{1}{\gamma}\qquad\text{and}\qquad
+\traceElem{\rr}{X-1}{\tau_j}{\gamma}-X_j\cdot\traceElem{\rr}{(X-1)\,\varepsilon_j}{\Fr_j}{\gamma}
+\qquad(\gamma\in\GE,\ j\in J),\]
+and let \m{\cJ=\ev(\tie)}, an $\cS$-submodule. The pair \m{(\cS,\cJ)} is a trace ideal for
+\[(\rr,\ \ell^\nu,\ (\tau_j)_{j\in J},\ (\Fr_j)_{j\in J},\ \mathrm{id}_J,\ \varepsilon):\]
+the variables lie in~$\cS$, the coefficients of the characteristic polynomials lie in~$\cS$ by Lemma~\ref{l:charpoly} at the
+level~$\bw_Q$, and the functions of Definition~\ref{d:ideal}(c) are the images under~\m{\ev} of the generators
+of~$\tie$. By hypothesis~(3) there is a Ribet coefficient \m{\eta\in\Ql} of \m{(\cS,\cJ)} for~$\beta$ at
+\m{\pi\in\cX} with \m{\ordp(\mu\eta)\le A}. Unfolding Definition~\ref{d:ribet}: the function~$\beta$ is the image
+under~\m{\ev} of a polynomial, hence, comparing constant terms, \m{\beta\in\TQ}; and there is a polynomial
+\m{\Phi=\sum_{\bd}\Phi_{\bd}X^{\bd}} with coefficients \m{\Phi_{\bd}\in\TQ} such that, \m{\ev} being injective,
+\begin{equation}\label{e:ribet}
+\beta\cdot\Phi\in\tie;\qquad\beta(\xi)=0\ \text{ and }\ \Phi_{\bd}(\xi)=0\quad(\xi\in\cX,\ \bd<\one);\qquad
+\Phi_{\one}(\pi)=\eta.
+\end{equation}
+
+\emph{Step 3: the function~$s$.} Put
+\[T_0=T_{*}\cdot p(\beta)\in\TQ\qquad\text{and}\qquad s=T_{*}^{\,|J|+1}\cdot\Phi_{\one}.\]
+Then \m{|\mu\,s(\pi)|\ge|\mu\,\eta|} by Step~1, so \m{\ordp(\mu\,s(\pi))\le\ordp(\mu\eta)\le A}
+(Definition~\ref{d:ord}). It remains to prove the property of~$s$. Fix $\varphi_0$, $\Delta$ and~$\varphi$ as in
+the statement; both forms lie in \m{\FQ}.
+
+\emph{Step 4: constants.} By hypothesis~(2) there is \m{\upsilon\in\Zl} with
+\begin{equation}\label{e:nu}
+\ell^\nu=2\cdot n!\cdot(p_0C^2)^{|J|+1}\cdot\upsilon.
+\end{equation}
+Since \m{p(\beta)-p_0} is a multiple of~$\beta$ in \m{\TQ}, there is \m{T'\in\TQ} with
+\begin{equation}\label{e:power}
+(C^2\,T_0)^{|J|+1}=(p_0C^2)^{|J|+1}\cdot T_{*}^{\,|J|+1}+\beta\cdot T'.
+\end{equation}
+By Input~2(f) for the whole group \m{\prod_{j}\GL_n(\Fw{w_j})} there is \m{\Psi\in\EQ} with
+\[\sum_{\gamma}\rQ(\gamma^{-1})\,\Psi\,\rQ(\gamma)=C.\]
+
+\emph{Step 5: the module that $\varphi_0$ spans over the integral operators, modulo~$\ell^\nu$.} Let
+\[\nn=\bigl\{\Upsilon\in\EQ:\ \Upsilon(\varphi_0)=\ell^\nu\cdot\Upsilon'(\varphi_0)\text{ for some }\Upsilon'\in\EQ\bigr\}.\]
+This is a left ideal of \m{\EQ} that contains \m{\ell^\nu\cdot\EQ}. Let \m{\cM=\EQ/\nn}, a left module over \m{\EQ}
+on which $\ell^\nu$ vanishes, let \m{\sigma\colon\EQ\to S} be the action, with $S$ the ring of the $\Zl$-linear
+endomorphisms of~$\cM$, and write \m{[\Upsilon]\in\cM} for the class of~$\Upsilon$. (The map
+\m{\Upsilon\mapsto\Upsilon(\varphi_0)} identifies $\cM$ with the lattice \m{\EQ\cdot\varphi_0} modulo~$\ell^\nu$.) We
+claim: for every \m{T''\in\TQ} that is a multiple of~$T_0$ in~\m{\TQ},
+\begin{equation}\label{e:crit}
+\sigma(\dg{T''})\,\sigma(\NQ)\,[\Psi]=0\quad\Longleftrightarrow\quad\text{there is }\Upsilon\in\EQ\text{ with }
+\ell^\nu\cdot\Upsilon(\varphi_0)=C\cdot\dg{T''}\varphi.
+\end{equation}
+Indeed the left side says that \m{\dg{T''}\,\NQ\,\Psi\in\nn}, that is,
+\m{\dg{T''}\NQ\Psi(\varphi_0)=\ell^\nu\Upsilon(\varphi_0)} for some~$\Upsilon$. The form~$\varphi_0$ is of base
+level, hence fixed by every \m{\rQ(\gamma)} (Input~2(a)), so
+\m{\NQ\Psi(\varphi_0)=\sum_\gamma\rQ(\gamma)\Psi\rQ(\gamma^{-1})\varphi_0=C\cdot\varphi_0} by the property
+of~$\Psi$. And \m{\dg{T''}\varphi_0=\dg{T''}\varphi} by hypothesis~(ii), because $T''$ is a multiple of
+\m{p(\beta)} and so vanishes wherever \m{p(\beta)} does.
+
+\emph{Step 6: the ties.} Let \m{j\in J}. Proposition~\ref{p:tie} applies to~$j$, to the polynomial~$\varepsilon_j$,
+to~$L$, to the Hecke element~$T_0$ and to \m{\sigma\colon\EQ\to S}: if \m{\xi\in\SQ} is of base level and
+\m{T_0(\xi)\ne0}, then \m{p(\beta(\xi))\ne0} and \m{T_{*}(\xi)\ne0}, so by Step~1 every $T$ with \m{T(\xi)=0} has
+\m{|T(\pi)|<1}, and hypothesis~(1) gives the root string. We obtain \m{F_j\in\LQ{j}} such that, with
+\m{\rho_j} and~\m{\Nm_j} as in the proposition:
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=2pt]
+\item for every \m{\gamma\in\GL_n(\Fw{w_j})} there is \m{Z\in\EQ} with
+\[\sigma\bigl(C\cdot F_j\cdot(\rho_j(\gamma)-1)\bigr)=\sigma(\Nm_j\cdot Z)\qquad\text{and}\qquad
+\dg{T_0}\cdot\NQ\cdot Z=0;\]
+\item for every \m{\gamma\in\GE}, the two Hecke elements
+\[T_1=\traceElem{\rr}{X-1}{\tau_j}{\gamma}\qquad\text{and}\qquad
+T_2=\traceElem{\rr}{(X-1)\,\varepsilon_j}{\Fr_j}{\gamma}\]
+satisfy
+\[\sigma(\Nm_j)\,\sigma(\dg{T_1})=0\qquad\text{and}\qquad
+2\,n!\cdot\sigma(F_j)\,\sigma(\dg{T_1})=2\,n!\cdot\sigma(\Nm_j)\,\sigma(\dg{T_2}).\]
+\end{enumerate}
+
+\emph{Step 7: the operators~\m{\Xi_{\bd}}.} The places~$w_j$ are distinct and none is conjugate to another, so the
+images under~$\sigma$ of \m{\LQ{j}} and \m{\LQ{j'}} commute for \m{j\ne j'} (Input~1(b)). For \m{\bd\in\NN^J} let
+\[\Xi_{\bd}=\prod_{j\in J}\sigma\bigl(S_j(\bd)\bigr)\in S,\qquad\text{where}\quad
+S_j(\bd)=\begin{cases}F_j&\text{if }\bd_j=0,\\ \Nm_j&\text{if }\bd_j=1,\\ 0&\text{if }\bd_j\ge2.\end{cases}\]
+In the authors' words, \m{\Xi_{\bd}} is the coefficient complementary to~$\bd$ of the family
+\m{\prod_j(\Nm_j+X_jF_j)}. Four properties:
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item \m{\Xi_{\bd}} commutes with \m{\sigma(\dg{T})} for every \m{T\in\TQ} (Input~2(b));
+\item \m{\Xi_{\one}=\sigma(\NQ)}, because \m{\rQ} is multiplicative and the product over~$j$ of the sums~\m{\Nm_j}
+is the sum over the product group;
+\item \m{\Xi_{\bd}=0} unless \m{\bd\le\one};
+\item for \m{j\in J} and \m{y,y'\in S}:
+\[\text{if}\quad\sigma(F_j)\,y=\sigma(\Nm_j)\,y'\quad\text{and}\quad\sigma(\Nm_j)\,y=0,\qquad\text{then}\quad
+\Xi_{\bd}\cdot y=\Xi_{\bd+\one_j}\cdot y'.\]
+\end{enumerate}
+For~(d), write \m{\Xi_{\bd}=\Xi'\cdot\sigma(S_j(\bd))}, where $\Xi'$ is the product of the other factors, the same
+for $\bd$ and \m{\bd+\one_j}. If \m{\bd_j=0} then
+\m{\Xi_{\bd}\,y=\Xi'\sigma(F_j)y=\Xi'\sigma(\Nm_j)y'=\Xi_{\bd+\one_j}y'}; if \m{\bd_j=1} then
+\m{\Xi_{\bd}\,y=\Xi'\sigma(\Nm_j)y=0=\Xi_{\bd+\one_j}y'}; if \m{\bd_j\ge2} both sides vanish.
+
+\emph{Step 8: the lifts do not move.} We prove by induction on the integer \m{i\ge0}: for every \m{\bd\in\NN^J}
+with \m{|\bd|+i\ge|J|+1} and every \m{\Upsilon\in\EQ} with \m{\sigma(\NQ)\,\sigma(\dg{T_0})\,[\Upsilon]=0},
+\begin{equation}\label{e:nomove}
+\sigma\bigl(\dg{(C^2\,T_0)^{i}}\bigr)\,\Xi_{\bd}\,[\Upsilon]=0.
+\end{equation}
+For \m{i=0}, \m{|\bd|\ge|J|+1>|\one|}, so $\bd$ is not \m{\le\one} and \m{\Xi_{\bd}=0} by~(c). Suppose the assertion
+holds for~$i$, and let $\bd$ and~$\Upsilon$ be as above with \m{i+1} in the place of~$i$. Put
+\[\Pi_i=\sigma\bigl(\dg{(C^2\,T_0)^{i}}\bigr)\cdot\Xi_{\bd}\cdot C\ \in S.\]
+We claim \m{\Pi_i\cdot\sigma(\rQ(\gamma))=\Pi_i} for every \m{\gamma\in\prod_j\GL_n(\Fw{w_j})}. The elements with
+this property form a subgroup, so it suffices to take \m{\gamma=\gamma_j^{(j)}} with \m{j\in J} and
+\m{\gamma_j\in\GL_n(\Fw{w_j})}, and to show \m{\Pi_i\cdot\sigma(\rho_j(\gamma_j)-1)=0}. Let $Z$ be as in
+Step~6(i) for~$\gamma_j$. By~(d), with \m{y=C\cdot\sigma(\rho_j(\gamma_j)-1)} and \m{y'=\sigma(Z)} (the condition
+\m{\sigma(\Nm_j)y=0} holds because \m{\Nm_j\rho_j(\gamma_j)=\Nm_j}),
+\[\Pi_i\cdot\sigma(\rho_j(\gamma_j)-1)=\sigma\bigl(\dg{(C^2\,T_0)^{i}}\bigr)\cdot\Xi_{\bd+\one_j}\cdot\sigma(Z).\]
+For every \m{\Upsilon'\in\EQ} the operator \m{Z\Upsilon'} satisfies, by Step~6(i),
+\[\sigma(\NQ)\,\sigma(\dg{T_0})\,[Z\Upsilon']=[\dg{T_0}\,\NQ\,Z\,\Upsilon']=0,\]
+and \m{|\bd+\one_j|+i\ge|J|+1}. So the induction hypothesis gives
+\[\sigma\bigl(\dg{(C^2\,T_0)^{i}}\bigr)\,\Xi_{\bd+\one_j}\,[Z\Upsilon']=0\qquad\text{for every }\Upsilon'\in\EQ,\]
+which proves the claim. By the claim and the property of~$\Psi$,
+\[\Pi_i\cdot C=\sum_{\gamma}\Pi_i\,\sigma(\rQ(\gamma^{-1}))\,\sigma(\Psi)\,\sigma(\rQ(\gamma))
+=\Pi_i\cdot\sigma(\Psi)\cdot\Xi_{\one},\]
+using~(b). Therefore, by~(a),
+\[\sigma\bigl(\dg{(C^2\,T_0)^{i+1}}\bigr)\,\Xi_{\bd}\,[\Upsilon]=\Pi_i\cdot C\cdot\sigma(\dg{T_0})\,[\Upsilon]
+=\Pi_i\,\sigma(\Psi)\,\sigma(\NQ)\,\sigma(\dg{T_0})\,[\Upsilon]=0.\]
+
+\emph{Step 9: the family kills the ideal.} Let \m{\Lambda} be the additive map from \m{\TQ[X_j:j\in J]} to~$S$ with
+\[\Lambda\Bigl(\sum_{\bd}T_{\bd}\,X^{\bd}\Bigr)=\sum_{\bd\le\one}\Xi_{\bd}\cdot\sigma(\dg{T_{\bd}}),\qquad\text{so that}
+\quad\Lambda(T\cdot X^{\bd})=\Xi_{\bd}\cdot\sigma(\dg{T})\ \text{ for all }T\text{ and }\bd\]
+by~(c). We claim \m{2\,n!\cdot\Lambda} vanishes on~$\tie$. The ideal~$\tie$ is spanned additively by the products
+of a monomial \m{T\cdot X^{\bd}} with a generator. For a generator \m{\ell^\nu\cdot\traceElem{\rr}{1}{1}{\gamma}} the
+value of~$\Lambda$ is a multiple of~$\ell^\nu$, which vanishes in~$S$. For a generator \m{T_1-X_j\,T_2}, in the
+notation of Step~6(ii),
+\[\Lambda\bigl(T\,X^{\bd}\,(T_1-X_jT_2)\bigr)=\Xi_{\bd}\,\sigma(\dg{T_1})\,\sigma(\dg{T})
+-\Xi_{\bd+\one_j}\,\sigma(\dg{T_2})\,\sigma(\dg{T}),\]
+and \m{2\,n!} times this vanishes by~(d), applied to the elements
+\[y=2\,n!\cdot\sigma(\dg{T_1})\,\sigma(\dg{T})\qquad\text{and}\qquad y'=2\,n!\cdot\sigma(\dg{T_2})\,\sigma(\dg{T}),\]
+whose two conditions are the two assertions of Step~6(ii).
+
+\emph{Step 10: conclusion.} By (\ref{e:ribet}), \m{T'\cdot\beta\cdot\Phi} lies in~$\tie$. In~(\ref{e:nu}) the
+product \m{\upsilon\cdot2\,n!\cdot(p_0C^2)^{|J|+1}} is~$\ell^\nu$, which vanishes in~$S$. So by Step~9
+and~(\ref{e:power}),
+\[0=\upsilon\cdot2\,n!\cdot\Lambda(T'\beta\,\Phi)\,[\Psi]
+=\upsilon\cdot2\,n!\cdot\sum_{\bd\le\one}\sigma\bigl(\dg{(C^2\,T_0)^{|J|+1}}\bigr)\,\Xi_{\bd}\,\sigma(\dg{\Phi_{\bd}})\,[\Psi].\]
+Let \m{\bd<\one}. By (\ref{e:ribet}) the element \m{\Phi_{\bd}} vanishes on~$\cX$, so \m{\dg{\Phi_{\bd}}\varphi=0} by
+hypothesis~(i), and (\ref{e:crit}) for \m{T''=T_0\Phi_{\bd}}, with \m{\Upsilon=0}, gives
+\m{\sigma(\NQ)\,\sigma(\dg{T_0})\,[\dg{\Phi_{\bd}}\Psi]=0}. By Step~8 with \m{i=|J|+1} the term of~$\bd$ in the
+sum vanishes. Only \m{\bd=\one} remains, and by (a) and~(b)
+\[\sigma(\dg{T''})\,\sigma(\NQ)\,[\Psi]=0\qquad\text{for}\quad
+T''=\upsilon\cdot2\,n!\cdot(C^2\,T_0)^{|J|+1}\cdot\Phi_{\one},\]
+a multiple of~$T_0$. By (\ref{e:crit}) there is \m{\Upsilon\in\EQ} with
+\m{\ell^\nu\cdot\Upsilon(\varphi_0)=C\cdot\dg{T''}\varphi}. By (\ref{e:power}) and~(\ref{e:nu}),
+\m{T''=\ell^\nu\cdot s+\upsilon\cdot2\,n!\cdot\beta\,T'\,\Phi_{\one}}, and the second term vanishes on~$\cX$, so
+that its diagonal operator kills~$\varphi$ by hypothesis~(i). Hence
+\m{\ell^\nu\cdot\Upsilon(\varphi_0)=\ell^\nu\cdot C\cdot\dg{s}\varphi}, and \m{\Upsilon(\varphi_0)=C\cdot\dg{s}\varphi}.
+Since $\Upsilon$ maps integral forms to integral forms and \m{\Delta\varphi_0} is integral,
+\m{\Delta\cdot C\cdot\dg{s}\varphi=\Upsilon(\Delta\varphi_0)} is integral.
+\end{proof}
+
+\sect{Where the results are used}{s:use}
+Outside this unit only two of its declarations are named: Theorem~A and Lemma~\ref{l:charpoly}. Both are applied
+once, in the unit \emph{Selmer}, in its bound for the denominator of the projection of integral forms to lifts.
+There the homomorphism~$\omega$ is the inverse of a character with values in~$\Zl$ that is trivial on the tame
+generators, $\rr$ is the family of the normalised Galois representations, the places~$Q$ come from a triangular
+arrangement of Taylor--Wiles primes, hypothesis~(1) comes from the Hecke polynomials of the weak lifts at the
+Frobenius elements of these primes, and hypothesis~(3) is the output of Ribet's method. This is what the text of
+that file shows; the note on the unit \emph{Selmer} states it. The other eight declarations serve Theorem~A only.
+
+\sect{Notes on the formal text}{s:notes}
+\subhead{Hypotheses that the census does not list.} The formal Theorem~A takes the two hypotheses of
+Setting~\ref{set:aux}: the file declares them as section hypotheses and includes them, in line~87, for the
+declarations that follow, and the formal proof uses both, through Proposition~\ref{p:tie}. The census reads the
+arguments from the text and attaches that line to the next declaration only, which is Proposition~\ref{p:tie},
+because two modifier lines stand between the inclusion and that declaration. The statement above therefore has two
+hypotheses more than the census records. Lean's own answer was not obtained: nothing is compiled in this
+workspace. In the same way the census does not list, for Lemma~\ref{l:test}, the natural number~$C$ on which the
+base datum depends, because the lemma binds another variable of the same Lean name, the homomorphism~$\chi$.
+
+\subhead{A statement that the census cuts.} The formal statement of Proposition~\ref{p:tie} binds \m{\rho_j} and
+\m{\Nm_j} inside its type before the existential quantifier. The census ends a statement at the first such
+binding, so its range (lines 96 to~99) stops before the conclusion; the statement was read to its end in line~103.
+
+\subhead{Where the formal statements are stronger or weaker than the ones above.}
+\begin{itemize}[leftmargin=1.4em,itemsep=2pt]
+\item In Proposition~\ref{p:tie}, the first assertion of~(ii) holds before~$\sigma$ is applied, as the proof shows;
+the formal statement asserts it after~$\sigma$, as above. In~(i) the vanishing \m{\dg{T}\cdot\NQ\cdot Z=0} is asserted in
+\m{\EQ} itself, in the formal text and above.
+\item In Theorem~A the function~$s$ that the proof constructs is an element of the Hecke algebra \m{\TQ}; the
+formal statement, like the one above, only asserts a function. Hypothesis~(3) quantifies over all pairs
+\m{(\cS,\cJ)}; the proof uses it for one pair.
+\item Lemma~\ref{l:test} is stated above in Setting~\ref{set:forms} only. The formal lemma indeed does not use
+that $V$ is standard, the Weil data or \m{n\ge1}: the file removes these three from it. Its last hypothesis, the
+relation between $\tilde f$ and~$f$, has a default proof in the formal text and is supplied by automation at both
+uses.
+\item Lemma~\ref{l:charpoly} and Definition~\ref{d:trace} need neither the auxiliary places~$Q$ nor the number~$\nu$
+of Setting~\ref{set:forms}; they are stated for an arbitrary family~$\bw$ indexed by~$J$, an implicit argument of
+the formal text.
+\item Proposition~\ref{p:first} and Lemmas \ref{l:shift} and~\ref{l:modeq} hold for every natural number~$M$,
+also for \m{M=0}. The file declares \m{M\ne0} as a standing instance and removes it from each of these lemmas.
+Whether the formal definition of the weighted sum carries this instance cannot be read off the text, since its
+term does not use it; in every use here \m{M=\ell^\nu\ge1}.
+\item In Lemma~\ref{l:line} the functions $\lgf$ and~$\delta$ are defined on all of~$\Ew{w}$ through a choice;
+only their values at units of~$\Ow{w}$ matter. Hypothesis~(H5) of Proposition~\ref{p:first} is stated in the formal
+text as regularity of the natural number \m{|\Gamma|} on~$R$.
+\item The string length~$L$ is an implicit argument of Proposition~\ref{p:tie} and of Theorem~A, with the
+hypothesis \m{L\ne0}.
+\end{itemize}
+
+\subhead{What is not used.} Of Input~8(a) only the first assertion is used, and only for the function~$0$. The
+first part of the chain lemma, a lower bound for the absolute value of a root at the end of a string, is not used
+in this unit. In Lemma~\ref{l:line} every assertion is used.
+
+\subhead{The valuation.} The function \m{\ordp} of Definition~\ref{d:ord} is truncated: it is $0$ at every element
+of absolute value at least~$1$. The second reader pointed this out against a reading that normalised it
+at~$\ell$ alone; in Theorem~A it is applied to \m{\mu\eta} and \m{\mu\,s(\pi)}, where $\mu$ is an unrestricted
+element of~$\Ql$, and to an upper bound \m{A\ge0}, with which the truncation is compatible.
+
+\subhead{Two corrections of the second reader.} The second reader compared the dossier of this unit with the
+Lean text and corrected two points, both followed here. In the proof of Lemma~\ref{l:test} the form
+\m{\varphi[\psi]} vanishes whenever \m{\psi^{-1}(e)=\theta}, and it may vanish otherwise; the hypothesis is applied
+in the non-zero case, where \m{\psi^{-1}(e)\ne\theta} follows. And the valuation is the truncated one. The second
+reader also asked that the tie keep both the sum over the group and the factor \m{2\cdot n!}, and that the two
+different trace elements be kept apart; Proposition~\ref{p:tie} does so.
+
+\subhead{What the authors' comments name as related work.} The head of the second file says that auxiliary tame
+level and first-order derivatives in diamond operators occur in the literature in other settings and names
+A.~Wiles (1990), E.~Lecouturier (2019) and A.~Dotto and J.~Thorne (2026); for the chain lemma it names M.~Tadić
+(1986), W.~Casselman (1980) and L.~Clozel, M.~Harris and R.~Taylor (2008, Lemma~3.1.3 and §3.4). These attributions
+are the authors'; the references at the end repeat them as the file gives them, and the catalogue of the handout
+says which places were confirmed.
+
+\subhead{How this note was written.} From the unit's dossier: the reader's statements of the \UnitMembers{}
+declarations and of the imports, and the six structured proofs, every step; and from the second reader's message on
+this unit. The two Lean files of the unit were read in full, statements and proofs, and each statement above was
+compared with its Lean text argument by argument. In the library the following were read in the Lean text, as
+statements and definitions only: the base datum, the levels, the integral forms, the eigensystems and the
+Taylor--Wiles places; the diagonal operators and the Hecke algebra; the operators at the auxiliary places with
+Inputs~2(c) to~(f); the root strings and the chain lemma; the two statements of Input~8 to their ends, which the
+census cuts; the two definitions of Definitions \ref{d:ideal} and~\ref{d:ribet}; the valuation; the two statements
+of Input~7; the filter of Input~3. No proof of the library was opened. The reader marked three places as least
+certain. They were derived again from the Lean lines: the linear form in the proof of hypothesis~(H3) of the
+first-order lemma inside Proposition~\ref{p:tie} (lines 132 to~151: the form \m{\varphi'\mapsto\ip{\dg{T}\varphi'}{\varphi_1}},
+tested on base-level eigenforms, as the reader says); the induction of Step~8 (lines 264 to~279); and Steps 9
+and~10 (lines 280 to~304), including the cancellation of the factors \m{(p_0C^2)^{|J|+1}} and~$\upsilon$. The
+reader's claims agree with the Lean text in all three. The arguments above follow the formal ones, with these
+differences: the transfer of a central element is computed from formula~(\ref{e:transfer}) and not quoted; the
+module of Step~5 is presented as a quotient by a left ideal, which is what the formal construction is; and the
+product map through which the formal text defines the operators \m{\Xi_{\bd}} has no name here. The program
+check of the unit's dossier covered \UnitSteps{} leaf steps of \UnitProofs{} proofs. Nothing was compiled for this
+note.
+
+\head{Appendix A. Concordance with the Lean artifact}
+{\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}\setlength{\tabcolsep}{0pt}
+\begin{longtable}{@{}p{30mm}p{56mm}p{43mm}r@{}}
+\textbf{In this note} & \textbf{Lean declaration} & \textbf{File} & \textbf{Lines}\\\midrule\endhead
+\ConcordanceRows
+\end{longtable}}
+
+\subhead{Theorem A and the first-order lemma as they are written in the artifact.}
+\quoted{mainThm}
+\quoted{firstOrder}
+In these texts {\leanfont EllAdicIntegers} is~$\Zl$, {\leanfont PadicAlgCl ℓ} is~$\Ql$ and {\leanfont Ω}
+is~$\Qbar$; {\leanfont D} is the base datum~$\fD$ and {\leanfont c} the number~$C$; {\leanfont Q.w} is the
+family~$\bw_Q$ and {\leanfont ![]} the empty family; {\leanfont D.Eigensystem}, {\leanfont D.heckeAlgebra},
+{\leanfont D.integralEnd}, {\leanfont D.formsOfLevel}, {\leanfont D.localOps} and {\leanfont D.residueRep} are
+\m{\Sys_{\fD}}, \m{\Hk_{\fD}}, \m{\Eint_{\fD}}, \m{\Forms_{\fD}}, \m{\Loc_{\fD}} and \m{\rQ}; {\leanfont diagOp} and
+{\leanfont heckeAction} are both written \m{\dg{\,\cdot\,}}; {\leanfont ellVal} is \m{\ordp}; {\leanfont card n} is the
+rank~$n$; {\leanfont N} is the family~$\rr$ and {\leanfont a} the homomorphism~$\omega$; {\leanfont b}, {\leanfont e},
+{\leanfont t}, {\leanfont m} and {\leanfont γ} of Theorem~A are $\beta$, $\varepsilon$, $L$, $\mu$ and~$A$;
+{\leanfont l}, {\leanfont d} and {\leanfont y} in its conclusion are $\varphi_0$, $\Delta$ and~$\varphi$;
+{\leanfont HasRootString}, {\leanfont IsTraceIdeal} and {\leanfont IsRibetElement} are the notions of Definitions
+\ref{d:string}, \ref{d:ideal} and~\ref{d:ribet}. In the first-order lemma {\leanfont a}, {\leanfont ac},
+{\leanfont L}, {\leanfont γ}, {\leanfont n}, {\leanfont k} and {\leanfont r} are $\alpha$, the family \m{(c_i)},
+$\Pi$, $\gamma_0$, $C$, $e$ and~$y$, and {\leanfont a.transfer} is \m{\Tr_\alpha}. In the formal
+Proposition~\ref{p:tie} the ring called {\leanfont R} is the ring~$S$ above.
+
+\head{Notation}
+\begingroup\fontsize{8.6}{10.9}\selectfont\raggedright
+\setlength{\columnsep}{9mm}\setlength{\parskip}{0pt}
+\begin{multicols}{2}
+\nt{$\ell$, $\iota$, $\Ql$, $\Zl$}{a prime number; the fixed isomorphism \m{\CC\to\Ql}; an algebraic closure
+of~$\mathbb{Q}_\ell$; its ring of integers}
+\nt{$|z|$, $\ordp(z)$}{the absolute value of~$\Ql$ with \m{|\ell|=\ell^{-1}}; the truncated valuation
+(Definition~\ref{d:ord})}
+\nt{$E$, $\Qbar$, $\GE$}{a number field, from Setting~\ref{set:forms} on a CM field; an algebraic closure
+of~$\mathbb{Q}$; the Galois group of~$\Qbar$ over~$E$}
+\nt{$w$, $\bar w$, $\Ew{w}$, $\Ow{w}$, $\pw{w}$, $\Fw{w}$, $q_w$}{a finite place of~$E$; its conjugate; the
+completion; its integers; their maximal ideal; the residue field; its number of elements}
+\nt{$n$, $1_n$}{the rank, the size of the matrices; the identity matrix}
+\nt{$V$, $\kappa$, $\Gf$, $\AllForms$}{the hermitian space; the weight; the finite adelic points of its unitary
+group; the forms}
+\nt{$\loc_w$, $\Par_w$, $\Iw_w$}{the representation of \m{\GL_n(\Ew{w})} on the forms; two subgroups of
+\m{\GL_n(\Ow{w})} (Definition~\ref{d:par})}
+\nt{$\varpi$, $u$, $U_\gamma$, $U_\varpi$}{a uniformiser; a unit of~$\Ow{w}$; Hecke operators of double cosets of
+\m{\Iw_w}}
+\nt{$C$, $\fD$}{a natural number; a base datum for \m{(V,\kappa,C)}; in Proposition~\ref{p:first}, $C$ is any
+natural number}
+\nt{$\bw$, $\emptyset$, $\Forms_{\fD}(\bw)$, $\Eint_{\fD}(\bw)$}{a family of finite places; the empty family; the
+forms of level~$\bw$; their integral endomorphisms}
+\nt{$\xi$, $\pi$, $\Sys_{\fD}(\bw)$, $\cX$}{isotypic spaces, eigensystems; the eigensystems of level~$\bw$; a set
+of eigensystems}
+\nt{$\hp{\xi}{w}$, $\theta_{\xi,w,i}$}{the Hecke polynomial of~$\xi$ at~$w$; the chosen Hecke eigenvalues}
+\nt{$\theta$, $\theta_i$, $\theta'_i$}{a complex number, or a function with complex values; in Input~8,
+characters}
+\nt{$s$, $s'$, $\dg{s}$}{functions from eigensystems to~$\Ql$; the diagonal operator}
+\nt{$T$, $T'$, $T''$, $T_\xi$, $T_{*}$, $T_0$, $T_1$, $T_2$, $T_G$, $T^{\tau}_G$, $T_{\bd}$}{elements of a Hecke
+algebra \m{\Hk_{\fD}(\bw)}}
+\nt{$J$, $j$, $j'$, $\nu$, $Q$, $w_j$, $q_j$, $\bw_Q$}{a finite set; its elements; an exponent of~$\ell$; the
+Taylor--Wiles places; the place of index~$j$; its norm; the family of the places}
+\nt{$\Fr_j$, $\tau_j$, $\Art_w$}{the geometric Frobenius element and the tame generator at~$w_j$; the local Artin
+map}
+\nt{$\rQ$, $\NQ$, $\gamma^{(j)}$, $\LQ{j}$}{the action of \m{\prod_j\GL_n(\Fw{w_j})}; the sum over this group;
+the element with $\gamma$ at~$j$; the operators at~$w_j$}
+\nt{$\rho_j$, $\Nm_j$}{the action of \m{\GL_n(\Fw{w_j})}; the sum over this group}
+\nt{$\varrho_\xi$, $\omega$, $\rr$, $\rr_\xi$, $\rr_i$}{the chosen Galois representation; a homomorphism
+\m{\GE\to\Zl}; the twisted family; its members}
+\nt{$\traceElem{\rr}{G}{\gamma'}{\gamma}$}{the trace element (Definition~\ref{d:trace})}
+\nt{$G$, $G'$, $G''$, $G_1$, $G^{\iota}$, $X$, $X_j$}{polynomials in~$X$; the variable; the variables of Ribet's
+element}
+\nt{$\Gamma$, $\gamma$, $\gamma'$, $\gamma''$, $\gamma_0$, $\gamma_j$, $\bar\gamma$, $\gamma_{11}$}{a finite group;
+elements of a group; the distinguished element of Lemma~\ref{l:line}; a reduction; a first entry}
+\nt{$H$, $h$, $h'$, $h_{11}$, $\alpha$, $\Tr_\alpha$}{a subgroup; its elements; a first entry; a homomorphism
+\m{H\to\ZZ/M}; its transfer}
+\nt{$M$, $z$, $z'$, $z_i$, $\bar z$}{a natural number, the modulus; arguments of functions: residues, elements of
+a field; a reduction}
+\nt{$\lgf$, $\lgf_0$, $\delta$, $\delta_0$}{the functions of Lemma~\ref{l:line} and the homomorphisms that define
+them}
+\nt{$R$, $S$, $\sigma$, $1_S$}{rings; a ring homomorphism \m{R\to S}; the unit of~$S$}
+\nt{$\rho$, $\chi$, $\psi$}{a homomorphism from a group to a ring; a homomorphism to \m{\ZZ/M}; an additive
+character}
+\nt{$f$, $f'$, $f''$, $f_0$, $\tilde f$}{functions with integral or complex values}
+\nt{$\weightedSum{\rho}{\chi}{f}$, $\dif{e}f$}{the weighted sum (Definition~\ref{d:wsum}); the difference
+\m{f(\,\cdot-e)-f}}
+\nt{$B$, $\cA$, $I$, $i$, $i'$, $c_i$}{an additive map on functions; a subring; an index set; indices, also of
+rows and columns; a commuting family}
+\nt{$\Psi$, $\Pi$, $\Pi_i$, $F$, $F_j$, $Z$, $y$, $y'$}{elements of a ring: a Higman operator; an invariant
+element; the operator of the tie; elements}
+\nt{$e$, $L$}{a natural number or its class: a step, an exponent; the length of a root string}
+\nt{$\Sigma$, $\varsigma$, $\rep{\gamma}$, $\Hpart{\gamma}$, $\Yp$, $\Ym$, $\Nm$, $v$}{representatives of cosets;
+one of them; the representative and the $H$-part of~$\gamma$; the two coset sums; the sum over~$\Gamma$; the least
+absolute residue}
+\nt{$Y$, $Y'$, $\cB$}{operators; a linear map (Lemma~\ref{l:test})}
+\nt{$\varphi$, $\varphi'$, $\varphi_0,\dots,\varphi_3$, $\varphi[f']$, $\ip{\varphi'}{\varphi}$}{forms; the
+invariant hermitian form}
+\nt{$\beta$, $p$, $p_0$, $\varepsilon$, $\varepsilon_j$, $\varepsilon^{+}$, $\varepsilon^{\sharp}$}{a function on
+eigensystems; a polynomial; its constant coefficient; polynomials over~$\Zl$}
+\nt{$\mu$, $A$, $\eta$, $\Delta$, $\upsilon$}{an element of~$\Ql$; a bound in \m{[0,\infty]}; a Ribet coefficient;
+a natural number; an element of~$\Zl$}
+\nt{$\cS$, $\cJ$, $\Phi$, $\Phi_{\bd}$, $\tie$, $\ev$}{a subalgebra; a submodule; Ribet's polynomial; its
+coefficients; the ideal of the ties; evaluation}
+\nt{$\bd$, $\bd_j$, $|\bd|$, $\one$, $\one_j$, $X^{\bd}$}{a multi-index; its components; their sum; the
+multi-indices of \m{\prod_jX_j} and of~$X_j$; a monomial}
+\nt{$\nn$, $\cM$, $[\Upsilon]$, $\Upsilon$, $\Upsilon'$}{a left ideal; the quotient module; a class; integral
+operators}
+\nt{$\Xi_{\bd}$, $\Xi'$, $S_j(\bd)$, $\Lambda$}{the operators of Step~7; an additive map (Step~9)}
+\end{multicols}
+\endgroup
+
+\head{References}
+{\fontsize{9.4}{12.6}\selectfont
+The places are those that the catalogue of the handout and the second reader's comparison give; where they say
+that a place is not confirmed, so does the text above. No reference was typed from memory.
+\begin{itemize}[leftmargin=1.4em,itemsep=1pt]
+\item J.~Bernstein, Lecture Notes in Mathematics 1041 (1984).
+\item G.~Chenevier, M.~Harris, Construction of automorphic Galois representations~II, Cambridge J.\ Math.\ 1
+(2013), Theorem~3.2.3.
+\item L.~Clozel, M.~Harris, R.~Taylor, Automorphy for some l-adic lifts of automorphic mod~l Galois
+representations, Publ.\ Math.\ IHÉS 108 (2008); §3.3, Lemma~3.3.1 (second reader, for Input~2(f)); Lemma~3.1.3 and
+§3.4 (the authors, for the chain lemma).
+\item M.~Harris, R.~Taylor, On the geometry and cohomology of some simple Shimura varieties (2001).
+\item D.~G.~Higman, Modules with a group of operators, Duke Math.\ J.\ 21 (1954).
+\item J.-P.~Serre, Local Fields (1979), Chapters XII to~XIV; the second reader gives XIII~§4, Proposition~13 with
+its corollary, and XIV~§6, Theorem~1 and Corollary~2.
+\item M.~Tadić, Ann.\ Sci.\ École Norm.\ Sup.\ 19 (1986).
+\item R.~Taylor, A.~Wiles, Ring-theoretic properties of certain Hecke algebras, Ann.\ of Math.\ 141 (1995).
+\item R.~Taylor, T.~Yoshida, Compatibility of local and global Langlands correspondences, J.\ Amer.\ Math.\
+Soc.\ 20 (2007), Theorem~A.
+\item Named by the authors' comments only, as the file gives them: A.~Wiles, The Iwasawa conjecture for totally
+real fields (1990); E.~Lecouturier, Mazur--Tate conjecture for prime conductor (2019); A.~Dotto, J.~Thorne,
+Residually reducible representations of rank~2 (2026); W.~Casselman, Unramified principal series of $p$-adic
+groups~I (1980).
+\end{itemize}}
+
+\end{document}

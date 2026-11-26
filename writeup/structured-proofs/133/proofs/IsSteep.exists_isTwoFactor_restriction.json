@@ -1,0 +1,345 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.DiscreteSeries.RestrictionLemma:200:7",
+ "summary": "Interpolation: the values x of −Λ(l') (reversed) followed by those of Λ(l) are strictly decreasing and within 6B of each other; Lagrange weights for these nodes give an orthonormal (for ε ⊕ 1) change of basis ω that is the identity on X and moves the last basis vector so that conjugation by ω carries diag(Λ(−l')) back to diag(Λ(l)) on the image of U(ε). The fields of IsTwoFactor are then checked one by one. (intro_lines 203–205 are not proof: they are the rest of the statement, lines 200–205 by the statement-boundary overlay of a second-reader message; the line census takes the `:=` of `let j :=` for the start of the value.)",
+ "intro_lines": [
+  [
+   203,
+   205
+  ]
+ ],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "lines": [
+    206,
+    206
+   ],
+   "lean": "  let x := Fin.append (-l'.lowestKType <| e' <| .inr ·.rev) (l.lowestKType ∘ e ∘ .inr)",
+   "claim": "Let x : {0, …, 2M} → ℤ list −Λ(l')(e'(M − i)) for i = 0, …, M (the steep values of l', negated and reversed) followed by Λ(l)(e(i)) for i = 0, …, M − 1.",
+   "uses": [
+    {
+     "decl": "HCParam.lowestKType"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "fact",
+   "lines": [
+    207,
+    208
+   ],
+   "lean": "  have o : ∀ i j, _ ∧ |(x i - x j : ℝ)| ≤ 6 * B := by simp [x, @Fin.forall_fin_add (_ + 1),\n    H.weight_strictAnti.lt_iff_gt, H'.weight_strictAnti.lt_iff_gt]; rify; grind [IsSteep]",
+   "claim": "o: x is strictly decreasing and |x_i − x_j| ≤ 6B for all i, j: the first block lies in [B, 3B] and decreases, the second lies in [−3B, −B] and decreases (IsSteep for l' and l).",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "decl": "IsSteep"
+    }
+   ],
+   "typed_fact": "∀ i j, _ ∧ |(x i - x j : ℝ)| ≤ 6 * B"
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "fact",
+   "lines": [
+    209,
+    209
+   ],
+   "lean": "  have ⟨c, c1, hc⟩ := @exists_lagrange_weights _ x (o · · |>.1)",
+   "claim": "Lagrange weights for the nodes x: c_k ≥ 1 with c_k² = (−1)^k∏_{j≠k}(x_k − x_j) (c1) and coeff_{2M}(P) = Σ_k (−1)^kP(x_k)/c_k² for every real polynomial P of degree ≤ 2M (hc).",
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "decl": "exists_lagrange_weights"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "setup",
+   "lines": [
+    210,
+    210
+   ],
+   "lean": "  let r {n} (g : Fin n → _) s y := (∏ j ∈ s, (x y - x (g j) : ℝ)) / c y",
+   "claim": "r(g, s, y) = ∏_{j ∈ s}(x_y − x_{g(j)})/c_y.",
+   "uses": [],
+   "typed_fact": null
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "setup",
+   "lines": [
+    211,
+    211
+   ],
+   "lean": "  let d a := r (.natAdd _) Finset.univ (.castAdd _ a) * (-1) ^ a.1",
+   "claim": "d(a) = r(natAdd, all, castAdd a)·(−1)^a for a ∈ {0, …, M}: the product of (x_a − x_{M+1+j}) over the second block, divided by c_a, with sign (−1)^a.",
+   "uses": [],
+   "typed_fact": null
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "setup",
+   "lines": [
+    212,
+    212
+   ],
+   "lean": "  let R y a := d a * r (.castAdd _) (Finset.univ.erase a) y",
+   "claim": "R(y, a) = d(a)·∏_{j ≤ M, j ≠ a}(x_y − x_j)/c_y.",
+   "uses": [],
+   "typed_fact": null
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "fact",
+   "lines": [
+    213,
+    215
+   ],
+   "lean": "  have E a b : R (.castAdd _ b) a = ite (a = b) 1 0 := (c1 (a.castAdd _)).elim (by\n    simp_rw [R, r, ← filter_ne', prod_filter]\n    grind (splits := 20) [prod_eq_zero_iff, Fin.prod_univ_add])",
+   "claim": "E: R(b, a) = δ_ab for a, b ∈ {0, …, M}: for b ≠ a the product contains the factor x_b − x_b = 0; for b = a it is (−1)^a∏_{j ≠ a}(x_a − x_j)/c_a² = 1 by c1.",
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "step": "6"
+    }
+   ],
+   "typed_fact": "R (.castAdd _ b) a = ite (a = b) 1 0"
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "setup",
+   "lines": [
+    216,
+    216
+   ],
+   "lean": "  let f := e.sumCongr 1",
+   "claim": "Let f = e ⊕ id : (X ⊔ {0, …, M−1}) ⊔ {∗} → n ⊔ {∗}.",
+   "uses": [],
+   "typed_fact": null
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "setup",
+   "lines": [
+    217,
+    225
+   ],
+   "lean": "  let ω := U.of IsHermInvolution.isUnit (Matrix.reindex f e' (fromRows (fromBlocks 1 0 0 (Matrix.of\n    fun k a ↦ R (.natAdd _ k) a.rev)) (Matrix.of fun () ↦ 0 ⊕ᵥ (d ·.rev)))) (Matrix.ext (by\n    have k a b := congr(ofReal $((Fin.sum_univ_add fun y ↦ R y a * (-1) ^ y.1 * R y b).symm.trans\n      (.trans (by simp [mul_sum, eval_nodal]; grind) congr(d a * d b * $((hc (nodal (disjSum\n      (Finset.univ.erase a) (Finset.univ.erase b)) (x <| .castAdd _ <| ·.elim id id))\n      (by simp [-Nat.cast_add])).symm.trans (.trans (congrArg _ (by simp)) nodal_monic))))))\n    simp [↓(reindex_equiv e').1, mul_apply, reindex_equiv e, signMatrix, H'.sign_inl, H'.sign_inr,\n      Matrix.diagonal, f,\n      H.sign_inl, H.sign_inr, pow_add, apply_ite, *] at k ⊢; grind [neg_one_pow_eq_ite]))",
+   "head_lines": [
+    217,
+    218
+   ],
+   "claim": "Let ω ∈ U(ε ⊕ 1) be the matrix which, with rows indexed through f and columns through e', is the identity on X, has entries R(M + 1 + k, M − a) in the rows of the steep indices k < M, and the row (0 on X, d(M − a)) for ∗; it lies in U(ε ⊕ 1) by the computation below.",
+   "uses": [
+    {
+     "step": "8"
+    },
+    {
+     "decl": "U.of"
+    },
+    {
+     "decl": "IsHermInvolution.isUnit"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "9.1",
+   "parent": "9",
+   "kind": "computation",
+   "lines": [
+    219,
+    222
+   ],
+   "lean": "    have k a b := congr(ofReal $((Fin.sum_univ_add fun y ↦ R y a * (-1) ^ y.1 * R y b).symm.trans\n      (.trans (by simp [mul_sum, eval_nodal]; grind) congr(d a * d b * $((hc (nodal (disjSum\n      (Finset.univ.erase a) (Finset.univ.erase b)) (x <| .castAdd _ <| ·.elim id id))\n      (by simp [-Nat.cast_add])).symm.trans (.trans (congrArg _ (by simp)) nodal_monic))))))",
+   "claim": "k: for all a, b, Σ_y R(y, a)(−1)^yR(y, b) is computed through hc applied to the nodal polynomial with roots x_j, j ≠ a, b, whose top coefficient is 1 (nodal_monic).",
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "step": "6"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "9.2",
+   "parent": "9",
+   "kind": "computation",
+   "lines": [
+    223,
+    225
+   ],
+   "lean": "    simp [↓(reindex_equiv e').1, mul_apply, reindex_equiv e, signMatrix, H'.sign_inl, H'.sign_inr,\n      Matrix.diagonal, f,\n      H.sign_inl, H.sign_inr, pow_add, apply_ite, *] at k ⊢; grind [neg_one_pow_eq_ite]))",
+   "claim": "From k and the signs of ε ⊕ 1 on e and e' (sign_inl, sign_inr of both IsSteep hypotheses), ωᴴdiag(ε ⊕ 1)ω = diag(ε ⊕ 1) entrywise.",
+   "uses": [
+    {
+     "decl": "IsSteep"
+    },
+    {
+     "decl": "reindex_equiv"
+    },
+    {
+     "decl": "signMatrix"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "witness",
+   "lines": [
+    226,
+    231
+   ],
+   "lean": "  ⟨ω, by\n  refine ⟨sq (_ : ℝ) ▸ l2_opNorm_le_of_apply ((reindex_equiv f).1.2 ?_), have A s := ?_; ⟨⟨H,\n      fun s ↦ ?_, by simp [trace_conj']; simp [trace], by simp, by simp, by simp [H'.sign_inl,\n      H'.weight_eq_zero], by\n              simp [↓reindex_equiv e', H'.weight_eq_zero]; rify; grind [IsSteep], fun u hu ↦\n      (exists_unitary_sub_one_eq_inclMatrix e H.sign_inl hu.1).imp fun s hs ↦ Prod.ext hs ?_⟩, A⟩⟩",
+   "claim": "Take ω. The norm bound is reduced to an entrywise bound (l2_opNorm_le_of_apply, goal 11); with A(s) the claimed form of the second component (goal 12), IsTwoFactor is assembled: IsSteep(l, B, e) is H; phase_eq is goal 13; trace_eq holds as the trace is invariant under conjugation; phase_mul and re_phase hold for φ = 0; sign_weight_right and weight_bounds_right come from IsSteep for l' (on e'(X) the sign is 1 and Λ(−l') = 0; elsewhere −Λ(l') ∈ [B, 3B]); for exists_diagonal, exists_unitary_sub_one_eq_inclMatrix gives the first component and the second is goal 14.",
+   "uses": [
+    {
+     "step": "9"
+    },
+    {
+     "decl": "l2_opNorm_le_of_apply"
+    },
+    {
+     "decl": "IsSteep"
+    },
+    {
+     "decl": "exists_unitary_sub_one_eq_inclMatrix"
+    },
+    {
+     "decl": "reindex_equiv"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "computation",
+   "lines": [
+    232,
+    234
+   ],
+   "lean": "  · simp [↓reindex_equiv e', ω, R, d, apply_ite, pow_add]; split_ands <;>\n      (repeat grw [fun n g s y ↦ (by grw [abs_div, div_le_self, abs_prod, (o ..).2,\n      prod_const, card_finset_fin_le] <;> grind : |@r n g s y| ≤ _)]) <;> bound",
+   "claim": "Entrywise bound: every entry of ω is 0, 1, d(·) or R(·, ·), and |r(g, s, y)| ≤ (6B)^|s| since |x_y − x_j| ≤ 6B (o) and c_y ≥ 1; so all entries are at most (6B)^(M + (M + 1)).",
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "step": "3"
+    },
+    {
+     "step": "4"
+    },
+    {
+     "step": "5"
+    },
+    {
+     "step": "6"
+    },
+    {
+     "step": "9"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "computation",
+   "lines": [
+    235,
+    236
+   ],
+   "lean": "  · erw [mul_assoc, Units.eq_inv_mul_iff_mul_eq]\n    simp [mul_sub, ← sub_one_mul, mul_assoc, ← ext_iff]",
+   "claim": "A: the second component j₂(s) − 1 = ω⁻¹(s ⊕ 1)ω − 1 = ω⁻¹((s − 1) ⊕ 0)ω.",
+   "uses": [
+    {
+     "step": "9"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "computation",
+   "lines": [
+    237,
+    241
+   ],
+   "lean": "  · rw [HCParam.phase, A, trace_mul_cycle', ← mul_assoc, ← fromRows_toRows (ω.1.1 * _),\n      ((Matrix.reindex e e').symm.injective (Matrix.ext ?_) : toRows₁ _ = fromCols (intDiagonal\n      l.lowestKType) (replicateCol Unit (ofReal ∘ (0 ⊕ᵥ -r (.castAdd _) Finset.univ ∘ .natAdd _) ∘\n      e.symm)) * ω.1.1)] <;> simp [Matrix.mul_assoc, trace, mul_apply, Matrix.diagonal]\n    simp +zetaDelta [H.weight_eq_zero, H'.weight_eq_zero]; grind [mul_prod_erase]",
+   "claim": "phase_eq: phase(l, −l', subOnePair(j, s)) = 0. By A and cyclicity of the trace the phase is tr(diag(Λ(l))(s − 1)) − tr(ω·diag(Λ(−l'))·ω⁻¹·((s − 1) ⊕ 0)); the first n rows of ω·diag(Λ(−l')) equal [diag(Λ(l)) | c]·ω for a column c (0 on e(X), −r(…) on the steep rows), so the second trace equals the first. The row identity is checked entrywise, with Λ(l) = 0 on e(X) and Λ(l') = 0 on e'(X); the interpolation identity enters through the product formula mul_prod_erase.",
+   "uses": [
+    {
+     "step": "9"
+    },
+    {
+     "step": "12"
+    },
+    {
+     "decl": "HCParam.phase"
+    },
+    {
+     "decl": "IsSteep"
+    }
+   ],
+   "typed_fact": null
+  },
+  {
+   "id": "14",
+   "parent": null,
+   "kind": "computation",
+   "lines": [
+    242,
+    243
+   ],
+   "lean": "  erw [A, hs, mul_assoc, Units.inv_mul_eq_iff_eq_mul, ← (Matrix.reindex f e').symm.apply_eq_iff_eq]\n  simp [← Matrix.mul_assoc, entrywise, ω, f, inclMatrix, reindex_equiv e]⟩",
+   "claim": "exists_diagonal, second component: ω⁻¹((s − 1) ⊕ 0)ω = ι_ℂ(e'∘inl)(u − 1)ι_ℂ(e'∘inl)ᴴ when s − 1 = ι_ℂ(e∘inl)(u − 1)ι_ℂ(e∘inl)ᴴ, because ω is the identity on the X-block.",
+   "uses": [
+    {
+     "step": "9"
+    },
+    {
+     "step": "12"
+    },
+    {
+     "decl": "inclMatrix"
+    },
+    {
+     "decl": "reindex_equiv"
+    },
+    {
+     "decl": "entrywise"
+    }
+   ],
+   "typed_fact": null
+  }
+ ]
+}

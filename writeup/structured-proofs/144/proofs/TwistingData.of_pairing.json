@@ -1,0 +1,265 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.TwistedHecke.ElementaryDivisors:45:7",
+ "name": "TwistingData.of_pairing",
+ "summary": "Smith normal form of (QRM − M)R = U·diag(t)·G over the valuation ring. The columns of Q together with the columns of U at the indices i with t_i | a·w, t_i ≠ 0, reduce into the residue space (hn) and are recovered by R and V − VQR, which bounds |E| + l. The index statement follows from the determinant criterion (of_det_dvd) for the matrix AGQ + βQRM, whose determinant is a^{|E|} times a unit, combined with the diagonal criterion for z.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Smith normal form over O: (Q·R·M − M)·R = U·diag(t)·G with U, G ∈ GL(O) (U with inverse V).",
+   "lines": [
+    50,
+    50
+   ],
+   "lean": "  obtain ⟨⟨U, V⟩, _, G, _, t, e⟩ := isValuationPair_top.smith_normal_form ((Q * R * M - M) * R)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "IsValuationPair.smith_normal_form"
+    },
+    {
+     "decl": "isValuationPair_top"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Rewrite it as ((QRM − M)R)·G⁻¹ = U·diag(t).",
+   "lines": [
+    51,
+    51
+   ],
+   "lean": "  rw [← G.mul_inv_eq_iff_eq_mul] at e",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "setup",
+   "claim": "For each i choose s_i with a·w·s_i = t_i or t_i·s_i = a·w (in a valuation ring one of a·w, t_i divides the other).",
+   "lines": [
+    52,
+    52
+   ],
+   "lean": "  choose s _ using (ValuationRing.cond (a * w) <| t ·)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1"
+    }
+   ],
+   "ambient_uses": [
+    "ValuationRing.cond"
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Write β·M − a·1 = (a·w)·W entrywise (h).",
+   "lines": [
+    53,
+    53
+   ],
+   "lean": "  choose W _ using h",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let A = β·U·(diag(a·w·s) − diag(t)).",
+   "lines": [
+    54,
+    54
+   ],
+   "lean": "  let A := β * U * (diagonal (a • w • s) - diagonal t)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "step": "3"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "witness",
+   "claim": "Take l = #{i : t_i ∣ a·w and t_i ≠ 0}. (a) |E| + l = |E ⊕ {those i}| ≤ dim by card_le_finrank_translatesIn for [Q | U] and [[R], [V − VQR]] on these columns (the identity condition from hR and e; the memberships are a goal). (b) IndexDvd O^E (image of βQ + zO^E) (a^{|E|}z^l) from of_det_dvd for A·G·Q + β·Q·R·M (determinant and image are goals) followed by the push-forward along A of of_det_dvd for the diagonal of z's on the l indices.",
+   "lines": [
+    55,
+    60
+   ],
+   "lean": "  refine ⟨_, (T.card_le_finrank_translatesIn (Q.fromCols U) (R.fromRows (V - V * Q * R))\n    (by simp_all [V.mul_apply, Q.mul_apply, one_apply, by\n    simpa [← ext_iff, ← Matrix.mul_assoc, hR, or_iff_not_imp_right] using\n      congr(R * $e)]) ?_).trans_eq' (card_disjSum _ {i | t i ∣ a * w ∧ t i ≠ 0}), .trans\n    (.of_det_dvd (A := A * G.1 * Q + β * Q * R * M) ?_ ?_) (.map (.of_det_dvd (by rw [det_diagonal,\n    ← prod_const, prod_filter]) le_rfl) A.mulVecLin le_rfl (le_sup_of_le_right ?_))⟩",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "step": "5"
+    },
+    {
+     "decl": "TwistingData.card_le_finrank_translatesIn"
+    },
+    {
+     "decl": "IndexDvd.of_det_dvd"
+    },
+    {
+     "decl": "IndexDvd.trans"
+    },
+    {
+     "decl": "IndexDvd.map"
+    }
+   ],
+   "ambient_uses": [
+    "Fintype.card_disjSum",
+    "Matrix.det_diagonal"
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The memberships: for the columns of Q apply hn to u = e_j, v = 0; for a column i of U with t_i·c = a·w apply hn to the vectors read off from e at e_i·c.",
+   "lines": [
+    61,
+    63
+   ],
+   "lean": "  simpa using ⟨fun j ↦ hn (Pi.single j _) 0 _ (by aesop), fun _ _ ⟨c, h⟩ _ ↦ hn _ _ _ (by\n    simpa [-mulVec_smul, h, ↓ ← mulVec_mulVec, ↓diagonal_mulVec_single,\n      ↓op_smul_eq_smul] using! congr($e *ᵥ Pi.single (_, _) c))⟩",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "2"
+    }
+   ],
+   "ambient_uses": [
+    "Matrix.mulVec_mulVec",
+    "Matrix.diagonal_mulVec_single"
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "The determinant: A·G·Q + βQRM = a·(1 + w·(W + β·U·diag(s)·G·Q)), whose determinant is a^{|E|} times det(1 + w·(…)); it suffices that the latter divides the rest.",
+   "lines": [
+    64,
+    64
+   ],
+   "lean": "  convert ((1 + w • (of W + β * U * diagonal s * G.1 * Q)).det_smul a).dvd.trans _",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "step": "4"
+    },
+    {
+     "step": "5"
+    }
+   ],
+   "ambient_uses": [
+    "Matrix.det_smul"
+   ]
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Check the matrix identity entrywise.",
+   "lines": [
+    65,
+    65
+   ],
+   "lean": "  ext; simp_all [A, ← e]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "step": "5"
+    }
+   ]
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "computation",
+   "claim": "The remaining arithmetic.",
+   "lines": [
+    66,
+    66
+   ],
+   "lean": "  grind",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "det(1 + w·(…)) is a unit: its residue is 1, as w is not a unit (hw), i.e. lies in 𝔪.",
+   "lines": [
+    67,
+    67
+   ],
+   "lean": "  simp_all [↓det_one_add_smul w, map_mul, ← residue_ne_zero_iff_isUnit, -residue_eq_zero_iff]",
+   "typed_fact": null,
+   "uses": [],
+   "ambient_uses": [
+    "Matrix.det_one_add_smul",
+    "IsLocalRing.residue_ne_zero_iff_isUnit"
+   ]
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "computation",
+   "claim": "The image inclusion: simplify membership in a sum of submodules.",
+   "lines": [
+    68,
+    68
+   ],
+   "lean": "  simp [Submodule.add_mem_sup, -mulVec_mulVec]",
+   "typed_fact": null,
+   "uses": [],
+   "ambient_uses": [
+    "Submodule.add_mem_sup"
+   ]
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The image of A·G·Q + βQRM lies in the image of βQ plus the image of A, as required.",
+   "lines": [
+    69,
+    69
+   ],
+   "lean": "  simpa using (⟨A *ᵥ ·, by simp [-sub_mulVec, A, funext_iff, -Matrix.mul_assoc]; grind⟩)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "5"
+    }
+   ]
+  }
+ ]
+}

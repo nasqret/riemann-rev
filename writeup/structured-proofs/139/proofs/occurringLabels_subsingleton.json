@@ -1,0 +1,369 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.GaloisRep.LabelUniqueness:23:7",
+ "name": "Data.occurringLabels_subsingleton",
+ "summary": "Fix l = 2 and an isomorphism C = algebraic closure of Q_2. The scalars of the Hecke operators at w are chosen from F(w) alone, so one family Q of Hecke polynomials serves every form and every label. For an occurring label c with a form y of the p-part not killed by e_c at x, the twisted label c' = c.scaleRoots(x_psi) is primitive, L(y) has the product label c', chi at x (Frobenius reciprocity), L(y) is an eigenform for Q, so a Galois representation attached to Q exists, and every representation attached to Q is labelled at x by c' prod(X - x_{chi_l})^(t_l) (Attached.isLabelledAt, the authors' local-global compatibility at tame level). For two occurring labels c1, c2, the representation r attached to Q found for c1 is therefore labelled by both (no two independently chosen representations need to be compared). If c1' != c2', at a tame inertia element s of exponent 1 every eigenvalue of r(s) is a common root of the two labelling polynomials; distinct irreducible labels have no common root, so each eigenvalue comes from some x_{chi_l} and is an M_omega-th root of unity; then det r(s), which is the product of the images of the roots of c1' times M_omega-torsion, shows that the product of the roots of c1' has M_omega-th power 1. That product is a primitive (q-1)-th root of unity (an individual root can have order q^r - 1) and 0 < M_omega < q - 1: a contradiction. Hence c1' = c2' and c1 = c2.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let c1 and c2 be occurring labels (J, J'); show c1 = c2.",
+   "lines": [
+    28,
+    59
+   ],
+   "lean": "  = 1) (hM : ∀ l, χ l ^ P.Mω D.s = 1) : (D.occurringLabels V p x).Subsingleton := fun _ J _ J' ↦ by\n  choose! t e using fun w (h : _ ≠ w) ↦ exists_heckeSplit_eq_smul (hw := h) (π :=\n    rightRegular ℂ (Gf _ n) (WeylIndex n κ → ℂ)) (F w)\n  let T := faithfulChar (ResField (D.chosen x))\n  obtain ⟨_ : ThePrime 2, _ : PadicIso 2, s, G⟩ := {},\n    ⟨(exists_ringEquiv_extend mk_complex_eq_mk_padicAlgCl (Rat.castHom _) (algebraMap ..)).choose⟩,\n    (exists_isTameExponent T (D.chosen x).isPlaceOver_placeOver _).1\n  have k {c} (J : c ∈ D.occurringLabels V p x) := J.2.elim fun y a ↦\n    have z := J.1.scaleRoots _ (charName_pow_eq_one hψ) (D.dvd_card_resField_sub_one x).2.1\n    have H := (hk y).hasProductLabel ((AlgForm ..).subtype.domRestrict _ ∘ₗ L) (fun _ _ h ↦\n      hL congr(⟨⟨$h, _⟩, _⟩)) a.2 hχ fun _ ↦\n      z.2.1.not_isRoot_of_natDegree_ne_one (z.1.2.2.1 ▸ D.nat_lt_of_hasLogBound.ne')\n    have E := D.isEigenform_of_hasHeckePolyAt (H.2.2.2.2 <| by simp [·]) (hF y a.1 · · |> fun b ↦\n      ⟨b.1, _, rfl, e _ _ _ b⟩)\n    (⟨z, (sphericalCompat_std x.2 (L y).toSmoothForm.2 E).1, fun {r} h ↦\n      (Attached.isLabelledAt (r := r) (L y).toSmoothForm.2 E h H G.1).2.2 G⟩ : _ ∧ _ ∧ _)\n  obtain ⟨⟨i, ⟨r, h⟩, B⟩, ⟨i', -, B'⟩, l⟩ := k J, k J', G.1.valuation_natCast_eq_one_iff.2\n    (Nat.not_dvd_of_pos_of_lt two_pos D.nat_lt_of_hasLogBound ∘ (FinPlace.natCast_mem_iff_dvd _\n    x.2.2.2).1)\n  have e j := by simpa using congr(ιℓ (T (algebraMap _ _ (charName T $(hM j)).1)))\n  refine (scaleRootsEquiv (charName T ψ)).injective (by_contra fun hN ↦\n    i.isPrimitiveRoot_prod_roots.1.pow_ne_one_of_pos_of_lt NeZero.out (D.dvd_card_resField_sub_one\n    x).2.2.le_pred (IsFaithfulMulChar.injective (ιℓ.injective ?_)))\n  simpa [← det_eq_prod_roots_charpoly, Multiset.nsmul_singleton, roots_multiset_prod, roots_mul, e,\n    Polynomial.map_prod, map_multiset_prod, Multiset.map_bind, prod_eq_zero_iff, roots_prod, aroots,\n    X_ne_C, List.prod_ofFn, i.2.1.ne_zero, ← prod_pow, ← pow_mul, pow_mul', mul_pow, T, (B h).2 l]\n    using (MonoidHom.mker (powMonoidHom (P.Mω D.s))).multiset_prod_mem _ fun _ ↦ by\n    clear * - hN i i' e\n    simp_all [eval_multiset_prod, prod_eq_zero_iff, ← eq_iff_aeval_eq_zero, IsPrimitiveLabel,\n      IsLabel, scaleRootsEquiv]\n    grind [IsFaithfulMulChar] ∘ imp_and.2 ⟨isRoot_of_isRoot_charpoly ((B h).1.1 l),\n    isRoot_of_isRoot_charpoly ((B' h).1.1 l)⟩ ∘ isRoot_of_mem_roots",
+   "head_lines": [
+    28,
+    28
+   ],
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "1.1",
+   "parent": "1",
+   "kind": "setup",
+   "claim": "For every split place w choose scalars t_{w,i} such that every vector on which the Hecke polynomial operator at w acts by F(w) satisfies T_{w,i} y = t_{w,i} y (in the right regular representation on functions on G_f with values in the coordinate vectors). The scalars depend only on w and F(w), so the Hecke polynomials Q(w) built from them form one family, the same for every form and every occurring label.",
+   "lines": [
+    29,
+    30
+   ],
+   "lean": "  choose! t e using fun w (h : _ ≠ w) ↦ exists_heckeSplit_eq_smul (hw := h) (π :=\n    rightRegular ℂ (Gf _ n) (WeylIndex n κ → ℂ)) (F w)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "exists_heckeSplit_eq_smul"
+    }
+   ]
+  },
+  {
+   "id": "1.2",
+   "parent": "1",
+   "kind": "setup",
+   "claim": "Let T = faithfulChar(k_x), an injective character of the algebraic closure of the residue field at x.",
+   "lines": [
+    31,
+    31
+   ],
+   "lean": "  let T := faithfulChar (ResField (D.chosen x))",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "faithfulChar"
+    }
+   ]
+  },
+  {
+   "id": "1.3",
+   "parent": "1",
+   "kind": "setup",
+   "claim": "Fix the prime 2 (ThePrime 2), an isomorphism iota from C to the algebraic closure of Q_2 (PadicIso 2, from exists_ringEquiv_extend: both are algebraically closed of the same cardinality), and an inertia element s above x with tame exponent data G (exists_isTameExponent, some element having exponent 1).",
+   "lines": [
+    32,
+    34
+   ],
+   "lean": "  obtain ⟨_ : ThePrime 2, _ : PadicIso 2, s, G⟩ := {},\n    ⟨(exists_ringEquiv_extend mk_complex_eq_mk_padicAlgCl (Rat.castHom _) (algebraMap ..)).choose⟩,\n    (exists_isTameExponent T (D.chosen x).isPlaceOver_placeOver _).1",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "ThePrime"
+    },
+    {
+     "decl": "PadicIso"
+    },
+    {
+     "decl": "exists_ringEquiv_extend"
+    },
+    {
+     "decl": "exists_isTameExponent"
+    },
+    {
+     "decl": "FinPlace.isPlaceOver_placeOver"
+    }
+   ]
+  },
+  {
+   "id": "1.4",
+   "parent": "1",
+   "kind": "fact",
+   "claim": "k: for every occurring label c, take a form y of the p-part (a.1) not killed by labelIdem(c) at x (a.2); then (i) c' = c.scaleRoots(charName(T, psi)) is a primitive label, (ii) some 2-adic Galois representation is attached to the Hecke polynomials Q of step 1.1, and (iii) every representation r attached to Q is labelled at x (IsLabelledAt, at the tame inertia data G) by c' times prod_l (X - x_{chi_l})^(t_l). Q does not depend on c or y.",
+   "lines": [
+    35,
+    43
+   ],
+   "lean": "  have k {c} (J : c ∈ D.occurringLabels V p x) := J.2.elim fun y a ↦\n    have z := J.1.scaleRoots _ (charName_pow_eq_one hψ) (D.dvd_card_resField_sub_one x).2.1\n    have H := (hk y).hasProductLabel ((AlgForm ..).subtype.domRestrict _ ∘ₗ L) (fun _ _ h ↦\n      hL congr(⟨⟨$h, _⟩, _⟩)) a.2 hχ fun _ ↦\n      z.2.1.not_isRoot_of_natDegree_ne_one (z.1.2.2.1 ▸ D.nat_lt_of_hasLogBound.ne')\n    have E := D.isEigenform_of_hasHeckePolyAt (H.2.2.2.2 <| by simp [·]) (hF y a.1 · · |> fun b ↦\n      ⟨b.1, _, rfl, e _ _ _ b⟩)\n    (⟨z, (sphericalCompat_std x.2 (L y).toSmoothForm.2 E).1, fun {r} h ↦\n      (Attached.isLabelledAt (r := r) (L y).toSmoothForm.2 E h H G.1).2.2 G⟩ : _ ∧ _ ∧ _)",
+   "head_lines": [
+    35,
+    35
+   ],
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1.1"
+    },
+    {
+     "step": "1.2"
+    },
+    {
+     "step": "1.3"
+    }
+   ]
+  },
+  {
+   "id": "1.4.1",
+   "parent": "1.4",
+   "kind": "fact",
+   "claim": "z: c' is a primitive label of degree r: scaling by charName(psi), whose M_omega-th power is 1 (hpsi), with M_omega^2 | q - 1.",
+   "lines": [
+    36,
+    36
+   ],
+   "lean": "    have z := J.1.scaleRoots _ (charName_pow_eq_one hψ) (D.dvd_card_resField_sub_one x).2.1",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "IsPrimitiveLabel.scaleRoots"
+    },
+    {
+     "decl": "charName_pow_eq_one"
+    },
+    {
+     "decl": "Data.dvd_card_resField_sub_one"
+    }
+   ]
+  },
+  {
+   "id": "1.4.2",
+   "parent": "1.4",
+   "kind": "fact",
+   "claim": "H: by Frobenius reciprocity (hasProductLabel), the smooth form of L(y) has the product label c', chi at x: L followed by the inclusion is injective (hL), labelIdem(c) does not kill y, chi is injective (hchi), and no x_{chi_l} is a root of c' (c' is irreducible of degree r > 1).",
+   "lines": [
+    37,
+    39
+   ],
+   "lean": "    have H := (hk y).hasProductLabel ((AlgForm ..).subtype.domRestrict _ ∘ₗ L) (fun _ _ h ↦\n      hL congr(⟨⟨$h, _⟩, _⟩)) a.2 hχ fun _ ↦\n      z.2.1.not_isRoot_of_natDegree_ne_one (z.1.2.2.1 ▸ D.nat_lt_of_hasLogBound.ne')",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1.4.1"
+    },
+    {
+     "decl": "HasParahoricType.hasProductLabel"
+    }
+   ]
+  },
+  {
+   "id": "1.4.3",
+   "parent": "1.4",
+   "kind": "fact",
+   "claim": "E: the smooth form of L(y) is an eigenform for Q: it is nonzero (from H) and, at each split place w off the level, it is spherical and the Hecke polynomial operator acts on it by F(w) (hF), so each T_{w,i} acts by t_{w,i} and its Hecke polynomial at w is Q(w).",
+   "lines": [
+    40,
+    41
+   ],
+   "lean": "    have E := D.isEigenform_of_hasHeckePolyAt (H.2.2.2.2 <| by simp [·]) (hF y a.1 · · |> fun b ↦\n      ⟨b.1, _, rfl, e _ _ _ b⟩)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1.1"
+    },
+    {
+     "step": "1.4.2"
+    },
+    {
+     "decl": "Data.isEigenform_of_hasHeckePolyAt"
+    }
+   ]
+  },
+  {
+   "id": "1.4.4",
+   "parent": "1.4",
+   "kind": "deduction",
+   "claim": "Hence (i) z; (ii) a 2-adic representation attached to Q exists (sphericalCompat_std, applied to the smooth form of L(y) and E); (iii) every r attached to Q is labelled at x by c' prod_l (X - x_{chi_l})^(t_l) (Attached.isLabelledAt with E, H and the tame data G).",
+   "lines": [
+    42,
+    43
+   ],
+   "lean": "    (⟨z, (sphericalCompat_std x.2 (L y).toSmoothForm.2 E).1, fun {r} h ↦\n      (Attached.isLabelledAt (r := r) (L y).toSmoothForm.2 E h H G.1).2.2 G⟩ : _ ∧ _ ∧ _)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1.4.1"
+    },
+    {
+     "step": "1.4.2"
+    },
+    {
+     "step": "1.4.3"
+    },
+    {
+     "decl": "sphericalCompat_std"
+    },
+    {
+     "decl": "Attached.isLabelledAt"
+    }
+   ]
+  },
+  {
+   "id": "1.5",
+   "parent": "1",
+   "kind": "fact",
+   "claim": "Apply k to c1 and c2: c1' and c2' are primitive (i, i'); there is a representation r attached to Q (from c1, h); r is labelled at x by c1' prod(X - x_{chi_l})^(t_l) (B h), and, since Q is the same family for c2, also by c2' prod(X - x_{chi_l})^(t_l) (B' h); and 2 is a unit at x (l), since x lies above g_i > 2.",
+   "lines": [
+    44,
+    46
+   ],
+   "lean": "  obtain ⟨⟨i, ⟨r, h⟩, B⟩, ⟨i', -, B'⟩, l⟩ := k J, k J', G.1.valuation_natCast_eq_one_iff.2\n    (Nat.not_dvd_of_pos_of_lt two_pos D.nat_lt_of_hasLogBound ∘ (FinPlace.natCast_mem_iff_dvd _\n    x.2.2.2).1)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1.3"
+    },
+    {
+     "step": "1.4"
+    },
+    {
+     "decl": "Data.nat_lt_of_hasLogBound"
+    },
+    {
+     "decl": "FinPlace.natCast_mem_iff_dvd"
+    }
+   ]
+  },
+  {
+   "id": "1.6",
+   "parent": "1",
+   "kind": "fact",
+   "claim": "e: for each l, the image under iota of T(x_{chi_l}) has M_omega-th power 1 (hM).",
+   "lines": [
+    47,
+    47
+   ],
+   "lean": "  have e j := by simpa using congr(ιℓ (T (algebraMap _ _ (charName T $(hM j)).1)))",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "charName"
+    }
+   ]
+  },
+  {
+   "id": "1.7",
+   "parent": "1",
+   "kind": "reduction",
+   "claim": "It suffices that c1' = c2' (scaleRootsEquiv(charName psi) is injective). Suppose not (hN). The product of the roots of c1' is a primitive (q-1)-th root of unity (isPrimitiveRoot_prod_roots; it is the product that has order q - 1, an individual root can have order q^r - 1), and 0 < M_omega < q - 1; so it suffices to show that this product has M_omega-th power 1, which after T and iota (both injective) is a statement about iota(T(x)) for the roots x of c1' in Q_2-bar.",
+   "lines": [
+    48,
+    50
+   ],
+   "lean": "  refine (scaleRootsEquiv (charName T ψ)).injective (by_contra fun hN ↦\n    i.isPrimitiveRoot_prod_roots.1.pow_ne_one_of_pos_of_lt NeZero.out (D.dvd_card_resField_sub_one\n    x).2.2.le_pred (IsFaithfulMulChar.injective (ιℓ.injective ?_)))",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1.5"
+    },
+    {
+     "decl": "scaleRootsEquiv"
+    },
+    {
+     "decl": "IsPrimitiveLabel.isPrimitiveRoot_prod_roots"
+    },
+    {
+     "decl": "Data.dvd_card_resField_sub_one"
+    },
+    {
+     "decl": "IsFaithfulMulChar"
+    }
+   ],
+   "ambient_uses": [
+    "IsPrimitiveRoot.pow_ne_one_of_pos_of_lt"
+   ]
+  },
+  {
+   "id": "1.8",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Let s be the tame inertia element of exponent 1 (G). As 2 is a unit at x (l), the labelling B h gives det r(s) = prod_{x root of c1'} iota(T(x)) * prod_l iota(T(x_{chi_l}))^(t_l), and the second factor has M_omega-th power 1 (e). Over the algebraically closed field Q_2-bar, det r(s) is the product of the roots of the characteristic polynomial of r(s), and the M_omega-torsion is closed under products; so it suffices that every root xi of the characteristic polynomial of r(s) satisfies xi^(M_omega) = 1.",
+   "lines": [
+    51,
+    59
+   ],
+   "lean": "  simpa [← det_eq_prod_roots_charpoly, Multiset.nsmul_singleton, roots_multiset_prod, roots_mul, e,\n    Polynomial.map_prod, map_multiset_prod, Multiset.map_bind, prod_eq_zero_iff, roots_prod, aroots,\n    X_ne_C, List.prod_ofFn, i.2.1.ne_zero, ← prod_pow, ← pow_mul, pow_mul', mul_pow, T, (B h).2 l]\n    using (MonoidHom.mker (powMonoidHom (P.Mω D.s))).multiset_prod_mem _ fun _ ↦ by\n    clear * - hN i i' e\n    simp_all [eval_multiset_prod, prod_eq_zero_iff, ← eq_iff_aeval_eq_zero, IsPrimitiveLabel,\n      IsLabel, scaleRootsEquiv]\n    grind [IsFaithfulMulChar] ∘ imp_and.2 ⟨isRoot_of_isRoot_charpoly ((B h).1.1 l),\n    isRoot_of_isRoot_charpoly ((B' h).1.1 l)⟩ ∘ isRoot_of_mem_roots",
+   "head_lines": [
+    51,
+    54
+   ],
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1.3"
+    },
+    {
+     "step": "1.5"
+    },
+    {
+     "step": "1.6"
+    },
+    {
+     "step": "1.7"
+    }
+   ],
+   "ambient_uses": [
+    "MonoidHom.mker / Submonoid.multiset_prod_mem",
+    "Matrix.det_eq_prod_roots_charpoly"
+   ]
+  },
+  {
+   "id": "1.8.1",
+   "parent": "1.8",
+   "kind": "computation",
+   "claim": "With only hN, i, i' and e kept, unfold the labels: c1' and c2' are distinct (hN) monic irreducible polynomials (primitive labels), so they have no common root.",
+   "lines": [
+    55,
+    57
+   ],
+   "lean": "    clear * - hN i i' e\n    simp_all [eval_multiset_prod, prod_eq_zero_iff, ← eq_iff_aeval_eq_zero, IsPrimitiveLabel,\n      IsLabel, scaleRootsEquiv]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1.5"
+    },
+    {
+     "step": "1.6"
+    },
+    {
+     "step": "1.7"
+    }
+   ]
+  },
+  {
+   "id": "1.8.2",
+   "parent": "1.8",
+   "kind": "deduction",
+   "claim": "Let xi be a root of the characteristic polynomial of r(s). The labellings B h and B' h at s (2 a unit at x) say that prod_{x root of c1'}(X - iota(T(x))) prod_l (X - iota(T(x_{chi_l})))^(t_l) and the same polynomial with c2' kill r(s), so xi is a root of both. xi cannot be iota(T(x)) for a root x of c1' and iota(T(x')) for a root x' of c2' at once (T and iota are injective and the roots are disjoint), so on at least one side xi = iota(T(x_{chi_l})) for some l, and xi^(M_omega) = 1 by e.",
+   "lines": [
+    58,
+    59
+   ],
+   "lean": "    grind [IsFaithfulMulChar] ∘ imp_and.2 ⟨isRoot_of_isRoot_charpoly ((B h).1.1 l),\n    isRoot_of_isRoot_charpoly ((B' h).1.1 l)⟩ ∘ isRoot_of_mem_roots",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1.5"
+    },
+    {
+     "step": "1.6"
+    },
+    {
+     "step": "1.8.1"
+    }
+   ],
+   "ambient_uses": [
+    "Polynomial.isRoot_of_isRoot_charpoly / isRoot_of_mem_roots"
+   ]
+  }
+ ]
+}

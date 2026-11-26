@@ -1,0 +1,276 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.TwistedHecke.InterlacingCone:111:7",
+ "name": "prod_mul_volume_inter_slab",
+ "summary": "By volume_inter_slab_eq_signed_sum, vol(Ω ∩ slab k D) = C·vol(slab k D) with a constant C = Δ(id)/k!·Σ_τ sgn(τ)/Δ(τ) that depends only on k and q = P^N; nothing is divided by vol(slab k D), which may be 0, so the identity stays multiplicative. C is evaluated in the special case of one letter with parity true, P := q and D = 1: there the cone is an orthant in the coordinates β_l − qβ_{l+1}, and the linear map F with these coordinates rescaled by d_l = (q^{l+1} − 1)/(q − 1) maps its part of the slab onto the slab (it preserves the coordinate sum), so C·vol(slab k 1) = vol(slab k 1)/det F. The only volume cancelled is that of this one-letter test slab, shown positive and finite; hence C = 1/det F = 1/Π d_l, for every real P > 1.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "fact",
+   "claim": "q := P^N > 1 (N ≠ 0).",
+   "lines": [
+    114,
+    114
+   ],
+   "lean": "  have q := one_lt_pow₀ hP (NeZero.ne N)",
+   "typed_fact": null,
+   "uses": [],
+   "ambient_uses": [
+    "one_lt_pow₀"
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "case",
+   "claim": "N = 0 is excluded (NeZero); write N = m + 1.",
+   "lines": [
+    115,
+    115
+   ],
+   "lean": "  cases N; bound",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Rewrite vol(Ω ∩ slab k D) by volume_inter_slab_eq_signed_sum.",
+   "lines": [
+    116,
+    116
+   ],
+   "lean": "  erw [volume_inter_slab_eq_signed_sum P hP D hΩ]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "volume_inter_slab_eq_signed_sum"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Rename q = P^{m+1} as P.",
+   "lines": [
+    117,
+    117
+   ],
+   "lean": "  set P := P ^ _",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let d(i) = (P^{i+1} − 1)/(P − 1), p_c the coordinate (c, 0) for c < k (0 for c ≥ k), and F(β)(l, 0) = d(l)·(β(l, 0) − P·β(l+1, 0)), an endomorphism of ℝ^{Fin k × Fin 1}.",
+   "lines": [
+    121,
+    123
+   ],
+   "lean": "  let d i := (P ^ (i + 1) - 1) / (P - 1)\n  let p c : (Fin k × Fin 1 → ℝ) →ₗ[ℝ] ℝ := if h : c < k then .proj (⟨c, h⟩, 0) else 0\n  let F : Module.End ℝ _ := LinearMap.pi fun x ↦ d x.1 • (p x.1 - P • p (x.1 + 1))",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "fact",
+   "claim": "det F = Π_{b<k} d(b).",
+   "lines": [
+    124,
+    126
+   ],
+   "lean": "  have det : F.det = ∏ b : Fin k, d b := by\n    rw [← det_toMatrix', ← det_reindex_self (prodUnique ..), det_of_isUpperTriangular]\n      <;> simp [Fin.ext_iff, F, p, DFunLike.dite_apply, BlockTriangular]; lia",
+   "head_lines": [
+    124,
+    124
+   ],
+   "typed_fact": "F.det = ∏ b : Fin k, d b",
+   "uses": []
+  },
+  {
+   "id": "6.1",
+   "parent": "6",
+   "kind": "computation",
+   "claim": "The matrix of F is upper triangular with diagonal d(b).",
+   "lines": [
+    125,
+    126
+   ],
+   "lean": "    rw [← det_toMatrix', ← det_reindex_self (prodUnique ..), det_of_isUpperTriangular]\n      <;> simp [Fin.ext_iff, F, p, DFunLike.dite_apply, BlockTriangular]; lia",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "5"
+    }
+   ],
+   "ambient_uses": [
+    "Matrix.det_of_isUpperTriangular",
+    "Matrix.det_reindex_self"
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Claim deg: Σ_b F(β)(b, 0) = Σ_b β(b, 0): the sum telescopes, since d(c+1) − 1 = P·d(c).",
+   "lines": [
+    127,
+    128
+   ],
+   "lean": "  have deg β : ∑ b, F β (b, 0) = ∑ b, β (b, 0) := sub_eq_zero.1 (by convert (sum_range_sub' (fun c ↦\n    (d c - 1) * p c β) k) <;> simp [sum_range, F, p, ↓← sum_sub_distrib, -smul_dite] <;> grind)",
+   "typed_fact": "∑ b, F β (b, 0) = ∑ b, β (b, 0)",
+   "uses": [
+    {
+     "step": "5"
+    }
+   ],
+   "ambient_uses": [
+    "Finset.sum_range_sub'"
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "fact",
+   "claim": "det F > 0 (each d(b) > 0 as P > 1).",
+   "lines": [
+    129,
+    129
+   ],
+   "lean": "  have D0 : 0 < F.det := by simp [prod_pos, d, one_lt_pow₀, *]",
+   "typed_fact": "0 < F.det",
+   "uses": [
+    {
+     "step": "5"
+    },
+    {
+     "step": "6"
+    }
+   ]
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "fact",
+   "claim": "The formula of volume_inter_slab_eq_signed_sum in the special case k, m = 0, P, v = true, D = 1 and Ω = pieriCone ⊤ P (its hypothesis hΩ holds by unfolding pieriCone).",
+   "lines": [
+    130,
+    130
+   ],
+   "lean": "  have := @volume_inter_slab_eq_signed_sum k 0 P ⊤ q 1 (pieriCone ⊤ P) (by simp [pieriCone, field])",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "volume_inter_slab_eq_signed_sum"
+    },
+    {
+     "decl": "pieriCone"
+    }
+   ]
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "computation",
+   "claim": "In that special formula, rewrite pieriCone ⊤ P ∩ slab k 1 as F⁻¹(slab k 1) (a set identity left as a goal), use vol(F⁻¹(X)) = vol(X)/|det F|, and cancel vol(slab k 1), which is positive (it contains the box [0, 1/k]^{Fin k × Fin 1}, whose coordinate sum is at most 1) and finite (bounded).",
+   "lines": [
+    131,
+    134
+   ],
+   "lean": "  erw [@Set.ext _ (_ ∩ _) (F ⁻¹' slab k 1), Measure.real, volume.addHaar_preimage_linearMap D0.ne',\n    toReal_mul, mul_left_inj' (toReal_pos (mt (measure_mono_null (s := .Icc 0 (↑k)⁻¹) fun β ⟨h, g⟩ ↦\n    ⟨h, by simp; grw [← h _, g _]; simp [mul_inv_le_one]⟩) (by simp [Real.volume_Icc_pi]))\n    (Set.univ_inter _ ▸ isBounded_inter_slab ..).measure_lt_top.ne).ne', pow_one] at this",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "8"
+    },
+    {
+     "step": "9"
+    },
+    {
+     "decl": "isBounded_inter_slab"
+    },
+    {
+     "decl": "slab"
+    }
+   ],
+   "ambient_uses": [
+    "MeasureTheory.Measure.addHaar_preimage_linearMap",
+    "Real.volume_Icc_pi",
+    "MeasureTheory.measure_mono_null"
+   ]
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Hence the signed sum equals 1/det F = 1/Π d(b), and the claim follows: Π_l (P^l − 1)/(P − 1)·(1/Π d)·vol(slab) = vol(slab).",
+   "lines": [
+    135,
+    135
+   ],
+   "lean": "  simp [↓← this, ← det, abs_of_nonneg, D0.le, field, d]; rfl",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "6"
+    },
+    {
+     "step": "8"
+    },
+    {
+     "step": "10"
+    }
+   ]
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "computation",
+   "claim": "The set identity: unfold slab and pieriCone; the column sums agree by deg.",
+   "lines": [
+    136,
+    136
+   ],
+   "lean": "  simp [slab, deg, ← and_assoc, pieriCone, Pi.le_def]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "7"
+    },
+    {
+     "decl": "slab"
+    },
+    {
+     "decl": "pieriCone"
+    }
+   ]
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "F(β) ≥ 0 coordinatewise iff β(l, 0) ≥ P·β(l+1, 0) for all l, and then β ≥ 0 follows by downward induction on the index (well-founded recursion for >).",
+   "lines": [
+    137,
+    138
+   ],
+   "lean": "  simpa [F, p, DFunLike.dite_apply, d, one_lt_pow₀, *] using fun β _ _ ↦ ⟨by bound, fun h ↦\n    ⟨by grind, WellFoundedGT.fix fun b I ↦ (h b).trans' (by grind [mul_nonneg])⟩⟩",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "5"
+    }
+   ],
+   "ambient_uses": [
+    "WellFoundedGT.fix"
+   ]
+  }
+ ]
+}

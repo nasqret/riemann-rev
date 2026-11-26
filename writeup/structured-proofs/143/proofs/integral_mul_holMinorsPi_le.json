@@ -1,0 +1,144 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Rows.SparseThetaSum:30:7",
+ "name": "integral_mul_holMinorsPi_le",
+ "summary": "The holomorphic minors are discrete series coefficients; their L² norms are inverse formal degrees, positive; the tail bounds of the coefficients integrate the polynomial growth of A.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "fact",
+   "claim": "|n| > 0, f ≤ m, |n|² ≤ |n|³ and |n| ≤ |n|².",
+   "lines": [
+    33,
+    34
+   ],
+   "lean": "  obtain ⟨_, _, q, _⟩ := @card_pos n _ _, le_of_mul_le_of_one_le_right hn card_pos,\n    (card n).pow_le_pow_right card_pos (2).le_succ, (card n).le_mul_self",
+   "uses": []
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "witness",
+   "claim": "Let c = 2|n|³·5; the holomorphic minors are discrete series coefficients (dsCoeff_eq_holMinors), with their properties b, e.",
+   "lines": [
+    35,
+    36
+   ],
+   "lean": "  let c := 2 * card n ^ 3 * 5; choose b e using\n    (dsCoeff_eq_holMinors ho (8 * m) (300 * m) · · · (by lia))",
+   "uses": []
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "witness",
+   "claim": "Tail bounds for the integrals of the coefficients of weight k (integral_tail_le, with L = 2⌊B⌋ + |n| and the bound of the parameters by B).",
+   "lines": [
+    37,
+    39
+   ],
+   "lean": "  choose i t using fun τ ↦ integral_tail_le (hg := b _ (hd τ) (hk τ)) (L := 2 * ⌊B⌋₊ + card n)\n    (fun a ↦ by grw [Pi.add_apply, abs_add_le, abs_twoRho_le, ← Nat.le_floor (n := (k τ a).natAbs)]\n    <;> simp [*]) c (by lia)",
+   "uses": []
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "fact",
+   "claim": "mh_w is continuous (isHolOfWeight_holMinorsPi), and the product of the formal degrees is positive (formalDegree_pos).",
+   "lines": [
+    40,
+    41
+   ],
+   "lean": "  obtain ⟨_, P⟩ := (isHolOfWeight_holMinorsPi ho hu).continuous, univ.prod_pos fun τ _ ↦\n    formalDegree_pos (b _ (hd τ) (hk τ))",
+   "uses": []
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "∫|mh_k|² is the inverse of the product of the formal degrees (I), hence positive. For A: integrability and the bound reduce to the pointwise bound |A·mh_w| ≤ C·2^N·∫|mh_k|²·(product of tail integrands), integrable by step 3 (Integrable.fintype_prod).",
+   "lines": [
+    42,
+    47
+   ],
+   "lean": "  refine have I := by simp [holMinorsPi, formalDegree, prod_pow,\n      ← integral_fintype_prod_volume_eq_prod, *]\n    ⟨(inv_pos.2 P).trans_eq I, fun A a C N hN H ↦ have := by simpa using (norm_nonneg _).trans (H 1)\n      have j := (Integrable.fintype_prod i).const_mul (C * 2 ^ N * ∫ h, ‖holMinorsPi s k h‖ ^ 2)\n      (imp_and.2 ⟨j.mono' (by fun_prop), (norm_integral_le_of_norm_le j · |>.trans ?_)⟩) (.of_forall\n      fun h ↦ (IsGreatest.pi_norm (h · |>.1.1)).1.elim fun a z ↦ (norm_mul_le ..).trans ?_)⟩",
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "step": "4"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "computation",
+   "claim": "The integral of the product is the product of the integrals (integral_fintype_prod_eq_prod), each bounded by the tail bound; collect the powers: 8^{…} and (5B)^{…} ≤ B^{7m} by hn, hN.",
+   "lines": [
+    48,
+    51
+   ],
+   "lean": "  grw [integral_const_mul, (integral_fintype_prod_eq_prod _).trans_le (prod_le_prod₀ (by\n    intros; rw [formalDegree]; positivity) fun τ _ ↦ t τ), mul_right_comm, mul_assoc C, prod_const,\n    q, pow_mul' 2, le_self_pow₀ (a := 8), ← mul_pow, ← mul_pow, ← pow_mul', card_univ,\n    hn, hN, pow_mul, ← mul_pow, pow_mul B, (?_ : _ + 1 ≤ 5 * B)] <;> try bound",
+   "uses": [
+    {
+     "step": "3"
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Monotonicity and field arithmetic.",
+   "lines": [
+    52,
+    52
+   ],
+   "lean": "  gcongr; field; bound",
+   "uses": []
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "computation",
+   "claim": "The floor of B bounds the parameters (Nat.floor_le).",
+   "lines": [
+    53,
+    53
+   ],
+   "lean": "  rify at *; grind [Nat.floor_le]",
+   "uses": []
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Pointwise: |A(h)| ≤ C‖h‖^N and |mh_w(h)| is bounded by a power of ‖h‖ through the coefficient bound (norm_dsCoeff_le_pow).",
+   "lines": [
+    54,
+    55
+   ],
+   "lean": "  grw [H, holMinorsPi, norm_prod, fun τ ↦ (e _ (hu τ) (hw τ) _ ▸ norm_dsCoeff_le_pow (by tauto)\n    (c := c + ite (τ = a) N 0) (by rify at *; grind) _ :)]",
+   "uses": [
+    {
+     "step": "2"
+    }
+   ]
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Collect the powers and the formal degrees (I).",
+   "lines": [
+    56,
+    56
+   ],
+   "lean": "  simp [pow_add, ← z, div_pow, field, -mul_ite, ← I]",
+   "uses": []
+  }
+ ]
+}

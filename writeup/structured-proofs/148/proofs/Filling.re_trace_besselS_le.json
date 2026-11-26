@@ -1,0 +1,418 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Filling.Moments:40:7",
+ "summary": "Pass to T = the chosen places and their conjugates, with a filling level F. Lift each s ∈ 𝖦_i to σ(s) ∈ K with reduction ι_i(s). Pointwise on K_T, ∑_s x(s)∑_{(c,a)} amplitudeSum(𝖲, c, ι_i(s)⁻¹, c)(a, a)/ν = columnDim·∑_s x(s)·phase(g, yσ(s)y⁻¹) (if yσ(s)y⁻¹ ∈ 𝖴·K(g) the amplitude sum is ν·unipotentChar·identity, otherwise no term of 𝖲 lies over the class pair and both vanish, by freeness). Integrating over K_T and Cauchy–Schwarz in s give 𝖬(K_T)²·|LHS|² ≤ columnDim²·(∑|x(s)|²)·∑_s |∫_{K_T} phase(yσ(s)y⁻¹)|², with ∑|x(s)|² = Re x(1) ≤ b⁻⁸/2 and, by the bottom-value bound for K_T split over the disjoint translates σ(s)⁻¹K(g), ∑_s |∫ phase|² ≤ 2𝖬(K_T)².",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "T = ⋃_{i, p ∈ chosenPlaces(S, i)} {p, p̄}.",
+   "lines": [
+    44,
+    44
+   ],
+   "lean": "  let T := univ.biUnion fun p : Σ i, S.chosenPlaces i ↦ {p.2.1, star p.2.1}"
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "T is stable under conjugation.",
+   "lines": [
+    45,
+    45
+   ],
+   "lean": "  have : T.StarStable := ⟨by aesop⟩",
+   "typed_fact": "T.StarStable"
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "gIdele(S)⁻¹ is integral outside T: by inv_gIdele_smul_mem_iff applied to the idempotent 1_{Tᶜ} — it vanishes modulo every chosen place and its conjugate, these lying in T.",
+   "lines": [
+    46,
+    48
+   ],
+   "lean": "  have := Fact.mk ((mem_integralOff T).2\n    (idem_mul_mem_Ô.1 ((mul_comm ..).subst ((S.inv_gIdele_smul_mem_iff ⟨idem Tᶜ, idem_mem_Ô _⟩).2\n    (by simp [reduceAboveG, -reduceAt_eq_zero]; grind [reduceAt_idem, star_idem, coe_star_Ô])))))",
+   "uses": [
+    {
+     "decl": "Filling.inv_gIdele_smul_mem_iff"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "An integral place structure P and a filling level F at T.",
+   "lines": [
+    49,
+    49
+   ],
+   "lean": "  have ⟨P, F, hF⟩ := S.exists_isFillingLevel T",
+   "uses": [
+    {
+     "decl": "Filling.exists_isFillingLevel"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "G: reduction(k) = reduction(l) ⟺ toPlaces(k)⁻¹toPlaces(l) ∈ K(g)_T; B: ϰ(K_T) ≤ 𝖬(K_T)𝖬(K(g))(𝖬(K_T) + vol(R∖R^×)·2^{−n}) (floorZeroForm_le_main_term with Z = K_T, t = 0; 10¹⁰n⁴ ≤ k from pow_chain); σ: for each s ∈ 𝖦_i an element σ(s) ∈ K with reduction(σ(s)) = ι_i(s) (reduction is onto).",
+   "lines": [
+    50,
+    52
+   ],
+   "lean": "  obtain ⟨G, B, σ, _⟩ := hF.reduction_eq_iff,\n    hF.floorZeroForm_le_main_term ⟨_, unitaryLevel_le_unitaryLevel_one, le_rfl⟩ 0\n    (by grind [S.pow_chain]), axiomOfChoice (ok.reduction_surjective <| Pi.mulSingle i ·)",
+   "uses": [
+    {
+     "decl": "Filling.IsFillingLevel.reduction_eq_iff"
+    },
+    {
+     "decl": "IntegralPlace.IsStdLevel.floorZeroForm_le_main_term"
+    },
+    {
+     "decl": "Filling.IsAdmissible"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "z: 0 < 𝖬(unitaryLevel(R, g', J_T)) < ∞ for every unit g' (an open compact subgroup).",
+   "lines": [
+    53,
+    54
+   ],
+   "lean": "  have z g := ENNReal.toReal_pos (unitaryLevel_open_compact.1 (g := g).measure_ne_zero _ (by simp))\n    (hF.groupMeasure_ne_top unitaryLevel_le_unitaryLevel_one)"
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Rewrite B: restrict the outer integral of ϰ(K_T) to the disjoint union of the cosets toPlaces(σ(s))⁻¹·K(g)_T (disjoint for distinct s, by G); on each the inner integral is constant, ∫_{K_T} phase(g, y·toPlaces(σ(s))·y⁻¹) (phase_mul_of_mem_unitaryLevel: K_T normalises K(g)); and vol(R∖R^×) ≤ vol(R) = 1, 2^{−n} ≤ 𝖬(K_T) (inv_two_pow_le_groupMeasure with volume_nonunits_le). So 𝖬(K(g))·∑_s |I_s|² ≤ 𝖬(K_T)𝖬(K(g))·2𝖬(K_T), I_s = ∫_{K_T} phase(g, y·σ(s)·y⁻¹).",
+   "lines": [
+    55,
+    61
+   ],
+   "lean": "  grw [Level.floorZeroForm, ← setLIntegral_le_lintegral, lintegral_iUnion (fun s ↦\n    measurable_const_mul (S.toPlaces T (σ s))⁻¹ (measurableSet_unitaryLevel (g := F.g))) fun s t n ↦\n    Set.disjoint_left.2 fun z u ↦ mt (div_mem u.out) (by simp [← G, *]),\n    ← setLIntegral_mono' (measurable_const_mul _ measurableSet_unitaryLevel) fun z e ↦ by\n    rw [setIntegral_congr_fun measurableSet_unitaryLevel fun y a ↦ (phase_mul_of_mem_unitaryLevel\n      (unitaryLevel_one_le_normalizer a (inv_mem e))).symm.trans (by rfl)], sdiff_le,\n    SemilocalField.volume_O, hF.inv_two_pow_le_groupMeasure (volume_nonunits_le le_rfl)] at B",
+   "uses": [
+    {
+     "decl": "IntegralPlace.phase_mul_of_mem_unitaryLevel"
+    },
+    {
+     "decl": "IntegralPlace.IsStdLevel.inv_two_pow_le_groupMeasure"
+    },
+    {
+     "decl": "Filling.volume_nonunits_le"
+    }
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Re(LHS) ≤ |LHS|; multiply by 𝖬(K_T) > 0 and square; 𝖬(K_T)·LHS = ∫_{K_T} LHS = ∫_{K_T} columnDim·∑_s x(s)·phase(g, yσ(s)y⁻¹) dy (the pointwise identity, steps 13–25), = columnDim·∑_s x(s)·I_s.",
+   "lines": [
+    62,
+    66
+   ],
+   "lean": "  grw [re_le_norm, ← mul_le_mul_iff_right₀ (z 1), ← norm_smul_of_nonneg, ← measureReal_def,\n    ← sq_le_sq₀, ← setIntegral_const, ← setIntegral_congr_fun measurableSet_unitaryLevel (f := fun y\n    ↦ S.columnDim * ∑ s, x.coeff s * phase F.g (y * S.toPlaces T (σ s) * y⁻¹)) fun y a ↦ ?_,\n    integral_const_mul, integral_finsetSum _ fun s _ ↦\n    ContinuousOn.integrableOn_compact unitaryLevel_open_compact.2 (by fun_prop)]"
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Expand the square of the product.",
+   "lines": [
+    67,
+    67
+   ],
+   "lean": "  simp [mul_pow]"
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "|∑_s x(s)I_s| ≤ ∑|x(s)||I_s|, and Cauchy–Schwarz (∑|x(s)||I_s|)² ≤ (∑|x(s)|²)(∑|I_s|²); ∑_s |x(s)|² = Re x(1) ≤ b⁻⁸/2 (x is a central idempotent: x(s⁻¹) = conj x(s), so ∑|x(s)|² = (x·x)(1) = x(1)); ∑|I_s|² ≤ 2𝖬(K_T)² from B.",
+   "lines": [
+    68,
+    72
+   ],
+   "lean": "  grw [norm_sum_le, norm_mul_le, sum_mul_sq_le_sq_mul_sq, (by simpa [by simpa [-Fintype.card_pi]\n    using hx.isChar.apply_inv, x.coeff_mul_apply_left, Finsupp.sum_fintype, mul_conj',\n    ← ofReal_pow] using (hx.1.eq ▸ b :) :), (by simpa [← sum_mul, ENNReal.toReal_sum, ← le_div_iff₀,\n    z, ← two_mul] using (ENNReal.toReal_mono (by simp [ENNReal.mul_ne_top,\n    hF.groupMeasure_ne_top unitaryLevel_le_unitaryLevel_one]) B) :)]"
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The resulting inequality columnDim²·(b⁻⁸/2)·2𝖬(K_T)² ≤ (b⁻⁴columnDim·𝖬(K_T))² is an identity after clearing 𝖬(K(g)) ≠ 0 (field_simp).",
+   "lines": [
+    73,
+    73
+   ],
+   "lean": "  have := (z F.g).ne'; simp [field, Measure.real]"
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Positivity side conditions.",
+   "lines": [
+    74,
+    74
+   ],
+   "lean": "  any_goals positivity"
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The pointwise identity at y ∈ K_T: write y = toPlaces(k) with k integral outside T (exists_toPlaces_eq).",
+   "lines": [
+    75,
+    75
+   ],
+   "lean": "  obtain ⟨k, rfl, o, -⟩ := exists_toPlaces_eq y",
+   "uses": [
+    {
+     "decl": "Filling.exists_toPlaces_eq"
+    }
+   ]
+  },
+  {
+   "id": "14",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Then k ∈ K = latStabilizer(S) (mem_latStabilizer_iff).",
+   "lines": [
+    76,
+    76
+   ],
+   "lean": "  lift k to S.latStabilizer using mem_latStabilizer_iff.2 ⟨o, a⟩",
+   "uses": [
+    {
+     "decl": "Filling.mem_latStabilizer_iff"
+    }
+   ]
+  },
+  {
+   "id": "15",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Reindex the sum over s ∈ 𝖦_i by conjugation with reduction(k)_i, and compare termwise.",
+   "lines": [
+    77,
+    77
+   ],
+   "lean": "  rw [← (MulAut.conj (S.reduction k i)).sum_comp]; simp [mul_sum]; congr with s"
+  },
+  {
+   "id": "16",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "l = k·σ(s)·k⁻¹ ∈ K.",
+   "lines": [
+    78,
+    78
+   ],
+   "lean": "  let l := k * σ s * k⁻¹"
+  },
+  {
+   "id": "17",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "x is a class function (hx.2), so x(k_i s k_i⁻¹) = x(s); then rewrite with step 18.",
+   "lines": [
+    79,
+    79
+   ],
+   "span": [
+    79,
+    3,
+    79,
+    13
+   ],
+   "lean": "erw [hx.2,"
+  },
+  {
+   "id": "18",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "y·toPlaces(σ(s))·y⁻¹ = toPlaces(l); reduction(l) = ι_i(k_i s k_i⁻¹) (Function.update_eq_iff); and phase unfolds to a case distinction on whether toPlaces(l) ∈ u·K(g)_T for some u ∈ 𝖴.",
+   "lines": [
+    79,
+    80
+   ],
+   "span": [
+    79,
+    14,
+    80,
+    53
+   ],
+   "lean": "show _ * _ = S.toPlaces T l by simp [l], Pi.mulSingle, Function.update_eq_iff\n    (g := S.reduction l).2 (by simp_all [l]), phase]",
+   "typed_fact": "_ * _ = S.toPlaces T l"
+  },
+  {
+   "id": "19",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Case split on toPlaces(l) ∈ u·K(g)_T for some u ∈ 𝖴:",
+   "lines": [
+    81,
+    100
+   ],
+   "lean": "  split_ifs with hs\n  · obtain ⟨⟨k, r, o⟩, b, e⟩ := exists_toPlaces_eq hs.choose, hs.choose_spec; rw [← r] at *\n    lift k to S.latStabilizer using mem_latStabilizer_iff.2 ⟨o.1, by\n      simpa using div_mem (mem_latStabilizer_iff.1 l.2).2 (unitaryLevel_le_unitaryLevel_one e)⟩\n    simp [↓hF.psi_simpleRootSum_eq_unipotentChar, o, by simpa [(G ..).2 e] using\n      (amplitudeSum_besselU_mul isStable_besselS (u := 1) (one_mem _)\n      (o.2.1 b) · 1), amplitudeSum_besselS_one, S.unipCovolume_pos.ne', columnDim]\n  have {c} : IsEmpty ↥(_ ∩ S.termsOver c (S.reduction l)⁻¹ c) :=\n    ⟨fun ⟨_, a, k, e, f⟩ ↦ have ⟨_, hu, δ, _⟩ := exists_besselU_mul_toBesselH a; hs ?_⟩\n  simp [amplitudeSum, tsum_empty]\n  let y := c.out⁻¹ * stdEmbFin δ * c.out\n  have f : k * (S.inclHFin y)⁻¹ ∈ besselU := by simpa [*, y, termPosition, ratToFin_toBesselH,\n    mul_assoc] using hu.termPosition_mem_besselU _\n  cases eq_one_of_reduceAt_eq_one le_rfl _ _ ((forall_congr'\n    (S.reduction_inclHFin_eq_one_iff (mem_unitaryLevel_of_besselU_mul f (inclHFin_mem_besselH y)\n    (unitaryLevel_one.ge (by simpa [latStabilizer] using k.2))).1 (i + 1))).1\n    fun _ ↦ by ext a b; cases (besselH_apply_eq_or f (inclHFin_mem_besselH y) a b) <;> simp [*, l,\n    reduction_apply_congr k, reduction_apply_congr 1, -Matrix.one_apply])\n  exact ⟨_, (by simpa [y] using f : k⁻¹.1 ∈ besselU).map_mem_unitriangularOn _,\n    (G k⁻¹ _).1 (by simp [*])⟩",
+   "head_lines": [
+    81,
+    81
+   ]
+  },
+  {
+   "id": "19.1",
+   "parent": "19",
+   "kind": "case",
+   "claim": "If so: lift u to k' ∈ 𝖴, integral outside T (exists_toPlaces_eq), with u⁻¹toPlaces(l) ∈ K(g)_T;",
+   "lines": [
+    82,
+    87
+   ],
+   "lean": "  · obtain ⟨⟨k, r, o⟩, b, e⟩ := exists_toPlaces_eq hs.choose, hs.choose_spec; rw [← r] at *\n    lift k to S.latStabilizer using mem_latStabilizer_iff.2 ⟨o.1, by\n      simpa using div_mem (mem_latStabilizer_iff.1 l.2).2 (unitaryLevel_le_unitaryLevel_one e)⟩\n    simp [↓hF.psi_simpleRootSum_eq_unipotentChar, o, by simpa [(G ..).2 e] using\n      (amplitudeSum_besselU_mul isStable_besselS (u := 1) (one_mem _)\n      (o.2.1 b) · 1), amplitudeSum_besselS_one, S.unipCovolume_pos.ne', columnDim]",
+   "head_lines": [
+    82,
+    82
+   ]
+  },
+  {
+   "id": "19.1.1",
+   "parent": "19.1",
+   "kind": "deduction",
+   "claim": "k' ∈ K (integral outside T, and at T it is integral because l ∈ K_T and u⁻¹toPlaces(l) ∈ K(g)_T);",
+   "lines": [
+    83,
+    84
+   ],
+   "lean": "    lift k to S.latStabilizer using mem_latStabilizer_iff.2 ⟨o.1, by\n      simpa using div_mem (mem_latStabilizer_iff.1 l.2).2 (unitaryLevel_le_unitaryLevel_one e)⟩"
+  },
+  {
+   "id": "19.1.2",
+   "parent": "19.1",
+   "kind": "deduction",
+   "claim": "then phase = ψ(g⁻¹σ(u)) = unipotentChar(k') (psi_simpleRootSum_eq_unipotentChar), reduction(l) = reduction(k') (G), and amplitudeSum(𝖲, c, reduction(k')⁻¹, c) = unipotentChar(k')·amplitudeSum(𝖲, c, 1, c) (amplitudeSum_besselU_mul) = unipotentChar(k')·ν·(identity) (amplitudeSum_besselS_one); summing the diagonal over (c, a) gives columnDim·ν·unipotentChar(k'), and after dividing by ν the two sides agree.",
+   "lines": [
+    85,
+    87
+   ],
+   "lean": "    simp [↓hF.psi_simpleRootSum_eq_unipotentChar, o, by simpa [(G ..).2 e] using\n      (amplitudeSum_besselU_mul isStable_besselS (u := 1) (one_mem _)\n      (o.2.1 b) · 1), amplitudeSum_besselS_one, S.unipCovolume_pos.ne', columnDim]",
+   "uses": [
+    {
+     "decl": "Filling.IsFillingLevel.psi_simpleRootSum_eq_unipotentChar"
+    },
+    {
+     "decl": "Filling.amplitudeSum_besselU_mul"
+    },
+    {
+     "decl": "Filling.amplitudeSum_besselS_one"
+    },
+    {
+     "decl": "Filling.isStable_besselS"
+    }
+   ]
+  },
+  {
+   "id": "19.2",
+   "parent": "19",
+   "kind": "case",
+   "claim": "If not: phase = 0, and no rational γ ∈ 𝖲 is a term over (c, reduction(l)⁻¹, c) for any class c — suppose one were; write γ = u·δ (u ∈ 𝖴, δ ∈ 𝖧; exists_besselU_mul_toBesselH) and derive the excluded case:",
+   "lines": [
+    88,
+    100
+   ],
+   "lean": "  have {c} : IsEmpty ↥(_ ∩ S.termsOver c (S.reduction l)⁻¹ c) :=\n    ⟨fun ⟨_, a, k, e, f⟩ ↦ have ⟨_, hu, δ, _⟩ := exists_besselU_mul_toBesselH a; hs ?_⟩\n  simp [amplitudeSum, tsum_empty]\n  let y := c.out⁻¹ * stdEmbFin δ * c.out\n  have f : k * (S.inclHFin y)⁻¹ ∈ besselU := by simpa [*, y, termPosition, ratToFin_toBesselH,\n    mul_assoc] using hu.termPosition_mem_besselU _\n  cases eq_one_of_reduceAt_eq_one le_rfl _ _ ((forall_congr'\n    (S.reduction_inclHFin_eq_one_iff (mem_unitaryLevel_of_besselU_mul f (inclHFin_mem_besselH y)\n    (unitaryLevel_one.ge (by simpa [latStabilizer] using k.2))).1 (i + 1))).1\n    fun _ ↦ by ext a b; cases (besselH_apply_eq_or f (inclHFin_mem_besselH y) a b) <;> simp [*, l,\n    reduction_apply_congr k, reduction_apply_congr 1, -Matrix.one_apply])\n  exact ⟨_, (by simpa [y] using f : k⁻¹.1 ∈ besselU).map_mem_unitriangularOn _,\n    (G k⁻¹ _).1 (by simp [*])⟩",
+   "head_lines": [
+    88,
+    89
+   ],
+   "uses": [
+    {
+     "decl": "exists_besselU_mul_toBesselH"
+    }
+   ],
+   "typed_fact": "IsEmpty ↥(_ ∩ S.termsOver c (S.reduction l)⁻¹ c)"
+  },
+  {
+   "id": "19.2.1",
+   "parent": "19.2",
+   "kind": "deduction",
+   "claim": "(so, once the excluded case is derived, the amplitude sums vanish as empty sums and both sides are 0);",
+   "lines": [
+    90,
+    90
+   ],
+   "lean": "  simp [amplitudeSum, tsum_empty]"
+  },
+  {
+   "id": "19.2.2",
+   "parent": "19.2",
+   "kind": "deduction",
+   "claim": "y' = c.out⁻¹·stdEmbFin(δ)·c.out, the X₀-isometry of δ conjugated by the class representative;",
+   "lines": [
+    91,
+    91
+   ],
+   "lean": "  let y := c.out⁻¹ * stdEmbFin δ * c.out"
+  },
+  {
+   "id": "19.2.3",
+   "parent": "19.2",
+   "kind": "deduction",
+   "claim": "f: k·inclHFin(y')⁻¹ ∈ 𝖴 (termPosition_mem_besselU applied to the term);",
+   "lines": [
+    92,
+    93
+   ],
+   "lean": "  have f : k * (S.inclHFin y)⁻¹ ∈ besselU := by simpa [*, y, termPosition, ratToFin_toBesselH,\n    mul_assoc] using hu.termPosition_mem_besselU _",
+   "uses": [
+    {
+     "decl": "Membership.mem.termPosition_mem_besselU"
+    }
+   ],
+   "typed_fact": "k * (S.inclHFin y)⁻¹ ∈ besselU"
+  },
+  {
+   "id": "19.2.4",
+   "parent": "19.2",
+   "kind": "deduction",
+   "claim": "y' = 1 (freeness, eq_one_of_reduceAt_eq_one with n = κ): its reductions at the chosen places above q_{i+1} are 1, since reduction(l) is trivial at the other prime and the entries of the 𝖴-element and of the X₀-part separate (besselH_apply_eq_or, reduction_inclHFin_eq_one_iff);",
+   "lines": [
+    94,
+    98
+   ],
+   "lean": "  cases eq_one_of_reduceAt_eq_one le_rfl _ _ ((forall_congr'\n    (S.reduction_inclHFin_eq_one_iff (mem_unitaryLevel_of_besselU_mul f (inclHFin_mem_besselH y)\n    (unitaryLevel_one.ge (by simpa [latStabilizer] using k.2))).1 (i + 1))).1\n    fun _ ↦ by ext a b; cases (besselH_apply_eq_or f (inclHFin_mem_besselH y) a b) <;> simp [*, l,\n    reduction_apply_congr k, reduction_apply_congr 1, -Matrix.one_apply])",
+   "uses": [
+    {
+     "decl": "Filling.eq_one_of_reduceAt_eq_one"
+    },
+    {
+     "decl": "Filling.reduction_inclHFin_eq_one_iff"
+    }
+   ]
+  },
+  {
+   "id": "19.2.5",
+   "parent": "19.2",
+   "kind": "deduction",
+   "claim": "hence toPlaces(k⁻¹) ∈ 𝖴 (from f with y' = 1) and toPlaces(k)⁻¹… · toPlaces(l) ∈ K(g)_T by G, i.e. toPlaces(l) ∈ 𝖴·K(g)_T — the excluded case.",
+   "lines": [
+    99,
+    100
+   ],
+   "lean": "  exact ⟨_, (by simpa [y] using f : k⁻¹.1 ∈ besselU).map_mem_unitriangularOn _,\n    (G k⁻¹ _).1 (by simp [*])⟩"
+  }
+ ]
+}

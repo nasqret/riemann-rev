@@ -1,0 +1,412 @@
+% !TEX program = lualatex
+% ---------------------------------------------------------------------------------------------
+%  Readback note 2: The four statements: the Riemann hypothesis and its generalisation to Dirichlet L-functions
+%
+%  Build:  python3 tools/rb.py note <slug>
+%
+%  One unit of a Lean artifact, rewritten as ordinary mathematics. The prose is hand-written. Lean names,
+%  line ranges and counts come from data.tex; quoted Lean statements are copied from the artifact by the build.
+%
+%  Rules of the text: standard terminology; every symbol is explained where it first appears and listed again
+%  in the notation at the end; no letter has two meanings; a proof is complete or says what it takes for granted;
+%  Lean names appear only in the LEAN lines and in the concordance.
+%
+%  The signature rule (the build enforces it): a function, relation or predicate that the artifact defines is
+%  written only through its notation macro, which the build makes from the spec (`notation`) with one slot for
+%  each explicit argument of the Lean definition. No argument is fixed and dropped, also not "for brevity" and
+%  not for one section. Every argument and every hypothesis of a stated declaration stands inside its
+%  statement, or in a Setting that the statement cites by number; only implicit and instance arguments (the
+%  ambient objects) may stand in the conventions.
+% ---------------------------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\ifdefined\pdfvariable\pdfvariable suppressoptionalinfo \numexpr 1+2+4+8\relax\fi
+\usepackage[a4paper,hmargin=35mm,top=22mm,bottom=27mm,footskip=12mm,nohead]{geometry}
+
+\usepackage{fontspec}
+\directlua{
+  luaotfload.add_fallback("gfallback", {"STIXTwoMath-Regular.otf:mode=node;", "DejaVuSans.ttf:mode=node;"})
+  luaotfload.add_fallback("gmonofallback", {"DejaVuSansMono.ttf:mode=node;", "STIXTwoMath-Regular.otf:mode=node;"})
+}
+\setmainfont{NewCM10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookItalic,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldItalic,SmallCapsFont=*-Book,SmallCapsFeatures={Letters=SmallCaps},
+  RawFeature={fallback=gfallback}]
+\setsansfont{NewCMSans10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookOblique,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldOblique,RawFeature={fallback=gfallback}]
+\setmonofont{JetBrainsMono}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,Scale=MatchLowercase,
+  RawFeature={-calt;-liga;fallback=gmonofallback}]
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage[math-style=TeX]{unicode-math}
+\setmathfont{NewCMMath-Book.otf}
+\emergencystretch=2.5em\relax
+
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows.meta,positioning,backgrounds}
+\usepackage[protrusion=true,expansion=true]{microtype}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{multicol}
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+
+\definecolor{ink}{HTML}{0F172A}
+\definecolor{inksoft}{HTML}{475569}
+\definecolor{inkfaint}{HTML}{94A3B8}
+\definecolor{rulegrey}{HTML}{CBD5E1}
+\definecolor{arith}{HTML}{C2410C}
+\definecolor{est}{HTML}{7C3AED}
+\definecolor{ana}{HTML}{0891B2}
+\definecolor{ok}{HTML}{047857}
+\definecolor{leancol}{HTML}{3730A3}
+
+\title{The four statements: the Riemann hypothesis and its generalisation to Dirichlet L-functions}
+\author{grh-compact}
+\date{}
+
+% ------------------------------------------------------------------------------------- macros
+\newcommand{\leanfont}{\ttfamily\fontsize{8.6}{10.5}\selectfont\color{leancol}}
+\newcommand{\lean}[1]{\csname LN@#1\endcsname}
+\newcommand{\fillin}[1]{{\color{arith}\itshape[#1]}}  % a place of the template that is not written yet; the build reports every one that is left
+\newcommand{\leanquote}[1]{\csname LQ@#1\endcsname}
+\input{data.tex}
+
+\linespread{1.08}                       % 11 pt on 14.7 pt
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt plus 1.5pt minus 0.5pt}
+\setlength{\abovedisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\belowdisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\abovedisplayshortskip}{3pt plus 2pt}
+\setlength{\belowdisplayshortskip}{6pt plus 2pt minus 2pt}
+\emergencystretch=1.5em
+\clubpenalty=10000 \widowpenalty=10000 \displaywidowpenalty=10000
+\relpenalty=7000 \binoppenalty=9000
+\raggedbottom
+\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\sffamily\fontsize{7.6}{9}\selectfont\color{inkfaint}\thepage\,/\,\pageref*{LastPage}}
+\setlist{topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=4pt,leftmargin=2.1em,labelsep=0.55em}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\len}{\operatorname{len}}
+\newcommand{\cok}{\operatorname{cok}}
+\newcommand{\End}{\operatorname{End}}
+\newcommand{\Hom}{\operatorname{Hom}}
+\newcommand{\Gal}{\operatorname{Gal}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\kw}[1]{\emph{#1}}
+\newcommand{\m}[1]{\mbox{$#1$}}        % a short formula that must not be broken across lines
+\newcommand{\head}[1]{\par\addvspace{17pt plus 4pt minus 2pt}\Needspace{6\baselineskip}%
+  \noindent{\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\sect}[2]{\refstepcounter{section}\label{#2}\par\addvspace{19pt plus 4pt minus 2pt}\Needspace{7\baselineskip}%
+  \noindent\llap{{\fontsize{13.2}{16}\selectfont\bfseries\color{inkfaint}\thesection}\hspace{9pt}}%
+  {\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\subhead}[1]{\par\addvspace{9pt plus 2pt}\Needspace{4\baselineskip}\noindent\textbf{#1}\enspace\ignorespaces}
+% where a statement lives in the Lean archive
+\newcommand{\leantag}{{\sffamily\bfseries\fontsize{6.3}{8}\selectfont\color{leancol}\addfontfeatures{LetterSpace=7}LEAN}}
+\newcommand{\sep}{\unskip\nobreak\hspace{5pt}{\color{inkfaint}\textperiodcentered}\hspace{5pt plus 2pt}\ignorespaces}
+\newcommand{\leanline}[1]{\par\nopagebreak\vspace{-2.5pt}{\fontsize{8.9}{12.4}\selectfont\color{inksoft}\raggedright
+  \noindent\llap{\leantag\hspace{9pt}}#1\par}\vspace{1pt}}
+% a displayed statement in a tinted box: #1 colour, #2 text
+\newcommand{\statement}[2]{\par\addvspace{7pt}\begingroup\setlength{\fboxsep}{8.5pt}\setlength{\fboxrule}{0.6pt}%
+  \noindent\fcolorbox{#1!30!white}{#1!3!white}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{#2}}%
+  \endgroup\par\addvspace{7pt}}
+\newcommand{\nt}[2]{\par\noindent\hangindent=1.1em\hangafter=1 #1\enspace{\color{inksoft}#2}\par\vspace{1pt}}
+\newcommand{\legdot}[1]{\tikz[baseline=-0.62ex]\fill[#1] (0,0) circle (2.5pt);\hspace{3pt}}
+\newcommand{\crow}[4]{\csname CS@#1\endcsname & #2 & \textcolor{inksoft}{#3} & \textcolor{inksoft}{#4}\\}
+\newcommand{\leanquoteline}[2]{\par\noindent\hangindent=\dimexpr#1\fontdimen2\font+2.2em\relax\hangafter=1
+  \hspace*{#1\fontdimen2\font}#2}
+\newcommand{\quoted}[1]{\par\vspace{3pt}{\ttfamily\fontsize{7.5}{10.4}\selectfont\color{leancol}\raggedright
+  \setlength{\parskip}{0pt}\leanquote{#1}\par}\vspace{4pt}}
+\newcommand{\bx}[3]{{\sffamily\bfseries\fontsize{7.3}{9.2}\selectfont\color{#1!82!black}#2}\\[1.5pt]#3}
+\newcommand{\cs}[2]{\expandafter\newcommand\csname CS@#1\endcsname{#2}}
+
+% theorems
+\newtheoremstyle{plainx}{7pt plus 2pt}{7pt plus 2pt}{\itshape}{}{\bfseries}{.}{0.5em}{}
+\newtheoremstyle{uprightx}{7pt plus 2pt}{7pt plus 2pt}{}{}{\bfseries}{.}{0.5em}{}
+\theoremstyle{plainx}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{uprightx}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{setting}[theorem]{Setting}          % hypotheses shared by several statements; each of them cites it by number
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\renewcommand{\qedsymbol}{{\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.5pt}\fbox{\rule{0pt}{0.46em}\hspace{0.46em}}}}
+% what holds throughout the note: the ambient objects only (implicit and instance arguments), never a hypothesis
+\newenvironment{conventions}{\par\addvspace{5pt}\noindent\textbf{Conventions.}\enspace\ignorespaces}{\par\addvspace{3pt}}
+\makeatletter
+\renewenvironment{proof}[1][Proof]{\par\pushQED{\qed}\normalfont\topsep0pt\partopsep0pt
+  \trivlist\item[\hskip\labelsep\itshape #1.]\ignorespaces}{\popQED\endtrivlist\@endpefalse}
+\makeatother
+
+% where each declaration of the concordance is treated: \cs{key}{place}, the place naming a \label or a lettered item
+\cs{rh}{Statement 1}
+\cs{halfPlane}{Statement 2}
+\cs{strip}{Statement 3}
+\cs{stripPrim}{Statement 4}
+\newcommand{\CC}{\mathbb{C}}
+\newcommand{\ZZ}{\mathbb{Z}}
+\newcommand{\re}{\operatorname{Re}}
+\newcommand{\mlib}[1]{\leavevmode{\leanfont #1}}
+\newcommand{\mrow}[2]{#1 & \mlib{#2}\\[1.5pt]}
+
+\begin{document}
+\color{ink}
+
+{\raggedright
+{\sffamily\bfseries\fontsize{7.2}{9}\selectfont\color{leancol}\addfontfeatures{LetterSpace=8}READBACK NOTE 2\par}
+\vspace{5pt}
+{\fontsize{21.5}{25.5}\selectfont\bfseries The four statements: the Riemann hypothesis and its generalisation to
+Dirichlet $L$-functions\par}
+\vspace{5pt}
+{\fontsize{12.4}{16}\selectfont\itshape\color{inksoft} One unit of the Lean artifact \ArtifactName, read back into
+mathematics\par}}
+\vspace{8pt}
+{\color{rulegrey}\hrule height 0.6pt}
+\vspace{7pt}
+\thispagestyle{empty}
+
+\textbf{Summary.} The headline of the artifact is five theorems. Their statements are four propositions about the
+Riemann zeta function and the Dirichlet $L$-functions, written in one short file that uses nothing but the
+mathematical library of Lean: the Riemann hypothesis for~$\zeta$; the non-vanishing of every Dirichlet $L$-function
+on the half-plane \m{\re s>\tfrac12}; and the statement that the zeros of these functions in the critical strip lie
+on the line \m{\re s=\tfrac12}, for all characters and for primitive ones. This note states the four propositions in
+ordinary language, says which objects of the library they speak of and what determines those objects, and records
+how the four are related: the second implies the other three.
+
+\statement{leancol}{\fontsize{9.6}{13.2}\selectfont\textbf{What this note is.} The artifact \ArtifactName{} is a
+body of Lean code: the compact edition of a formal proof, due to L.~Alpöge with the AI system Claude, whose final
+theorems are the Riemann hypothesis and its generalisation to Dirichlet $L$-functions. That headline is a claim. The
+authors report that every file compiles with Lean v4.35.0 against a pinned version of the library Mathlib and that
+Lean's kernel accepted the proofs; an independent build is recorded in the handout's record of checks when it
+reports. No mathematician has read the argument through, and nothing here says that the Riemann hypothesis is
+proved. This note treats one unit of the artifact: all \UnitInNote{} of its \UnitMembers{} declarations, which are
+definitions of propositions. The unit proves nothing, so there is no proof to read and nothing is taken for granted
+from other units. Each of the four statements was compared with its Lean text, and the objects of the library that
+they use were compared with the library's source at the pinned commit (Appendix~A says exactly what was read). The
+Lean text read is \PinText; Appendix~A is the concordance of \ConcDecls{} declarations.}
+
+\sect{The four statements}{s:intro}
+Throughout, $\zeta$ is the Riemann zeta function and $L(s,\chi)$ is the $L$-function of a Dirichlet
+character~$\chi$, as the library defines them; §\ref{s:setting} says what these functions are. The first statement
+is about~$\zeta$, the other three are about the $L$-functions.
+
+\statement{arith}{\phantomsection\label{st:1}\textbf{Statement 1} (the Riemann hypothesis for $\zeta$).\enspace
+\emph{For every complex number~$s$: if \m{\zeta(s)=0}, if there is no natural number~$n$ with \m{s=-2(n+1)}, and if
+\m{s\ne1}, then \m{\re s=\tfrac12}.}}
+\leanline{\lean{rh}}
+
+\statement{arith}{\phantomsection\label{st:2}\textbf{Statement 2} (the half-plane statement).\enspace
+\emph{For every integer \m{M\ge1}, every Dirichlet character~$\chi$ modulo~$M$ and every complex number~$s$ with
+\m{\re s>\tfrac12}: if $\chi$ is not the principal character modulo~$M$ or \m{s\ne1}, then \m{L(s,\chi)\ne0}.}
+
+\vspace{4pt}\phantomsection\label{st:3}\textbf{Statement 3} (the strip statement).\enspace
+\emph{For every integer \m{M\ge1}, every Dirichlet character~$\chi$ modulo~$M$ and every complex number~$s$: if
+\m{0<\re s}, \m{\re s<1} and \m{L(s,\chi)=0}, then \m{\re s=\tfrac12}.}
+
+\vspace{4pt}\phantomsection\label{st:4}\textbf{Statement 4} (the strip statement for primitive characters).\enspace
+\emph{For every integer \m{M\ge1} and every Dirichlet character~$\chi$ modulo~$M$ that is primitive, and for every
+complex number~$s$: if \m{0<\re s}, \m{\re s<1} and \m{L(s,\chi)=0}, then \m{\re s=\tfrac12}.}}
+\leanline{\lean{halfPlane}\sep \lean{strip}\sep \lean{stripPrim}}
+
+Each of the four is a proposition, not a theorem: the unit defines them and asserts nothing. They are asserted by
+the five final theorems of the artifact, which are the subject of the note \emph{The five final theorems, and what
+one must trust}. The argument is for Statement~2; its last steps, and the passage from Statement~2 to Statements~1
+and~3, are the subject of the note \emph{The main inequality, the bound for the primes, and the zero-free
+half-plane}.
+
+In classical terms, Statement~1 is the Riemann hypothesis, and Statement~3 is the generalised Riemann hypothesis
+for Dirichlet $L$-functions in its usual form, for the zeros in the open critical strip. Statement~2 is the form in
+which the artifact proves it: a zero-free half-plane. It contains the classical non-vanishing on the closed
+half-plane \m{\re s\ge1}, and beyond that it says that there is no zero with \m{\tfrac12<\re s<1}.
+
+\sect{The objects of the statements}{s:setting}
+\begin{conventions}\phantomsection\label{c:conventions}
+The natural numbers are \m{0,1,2,\dots}, and $\re s$ is the real part of a complex number~$s$. The declarations of
+this unit have no arguments, so there is no ambient object to fix. Everything that the four statements speak of is
+defined in Mathlib, the mathematical library of Lean, at the commit that the artifact pins; nothing in them is
+defined by the artifact. Appendix~A gives the library's names for the objects and facts of this section.
+\end{conventions}
+
+\subhead{The zeta function.} The library's zeta function is a function \m{\zeta\colon\CC\to\CC}, defined at
+every complex number. It is constructed from Hurwitz zeta functions, and the library proves the following about it.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item For \m{\re s>1}, \m{\zeta(s)=\sum_{n\ge1}n^{-s}}.
+\item $\zeta$ is complex differentiable at every \m{s\ne1}, and \m{(s-1)\zeta(s)\to1} as \m{s\to1}.
+\item \m{\zeta(-2(n+1))=0} for every natural number~$n$, and \m{\zeta(0)=-\tfrac12}.
+\end{enumerate}
+By (a), (b) and the identity theorem, the restriction of $\zeta$ to \m{\CC\smallsetminus\{1\}} is \emph{the}
+analytic continuation of the series: the two properties determine it. A function of Lean must have a value
+everywhere, so the library also assigns a value to~$\zeta$ at the pole \m{s=1}; that value is a convention, and no
+statement of this note depends on it, because Statement~1 excludes \m{s=1}. The zeros in~(c) are the trivial zeros
+\m{-2,-4,-6,\dots}; they are what the second hypothesis of Statement~1 excludes.
+
+\subhead{Dirichlet characters.} Let \m{M\ge1} be an integer. A \kw{Dirichlet character modulo~$M$} (with complex
+values) is a map \m{\chi\colon\ZZ/M\to\CC} with \m{\chi(1)=1} and \m{\chi(uv)=\chi(u)\chi(v)} for all classes $u$
+and~$v$, and with \m{\chi(u)=0} for every class~$u$ that is not a unit. It is evaluated at an integer through the
+class of the integer. The \kw{principal character} modulo~$M$ takes the value~$1$ at every unit; in the library it
+is the unit element~$1$ of the group of characters. For \m{M=1} the ring \m{\ZZ/1} has one element, which is a
+unit, and the principal character is the only character. If $M_0$ divides~$M$, a character modulo~$M_0$
+\kw{induces} a character modulo~$M$, by composition with the reduction of units. The \kw{conductor} of a
+character~$\chi$ modulo~$M$ is the least divisor~$M_0$ of~$M$ such that $\chi$ is induced by a character
+modulo~$M_0$, and $\chi$ is \kw{primitive} when its conductor is~$M$. Every character modulo~$M$ is induced by
+exactly one primitive character, whose modulus is the conductor.
+
+\subhead{Dirichlet $L$-functions.} For an integer \m{M\ge1} and a Dirichlet character $\chi$ modulo~$M$, the
+library's $L$-function is a function \m{s\mapsto L(s,\chi)} from $\CC$ to~$\CC$, defined at every complex number.
+It is constructed as a linear combination of Hurwitz zeta functions, and the library proves the following.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item For \m{\re s>1}, \m{L(s,\chi)=\sum_{n\ge1}\chi(n)\,n^{-s}}.
+\item \m{s\mapsto L(s,\chi)} is complex differentiable at every~$s$, except possibly at \m{s=1} when $\chi$ is
+principal.
+\item For \m{M=1}, \m{L(s,\chi)=\zeta(s)} for every complex number~$s$.
+\item If $\chi_0$ is a character modulo a divisor $M_0$ of~$M$ and $\chi$ is the character modulo~$M$ that it
+induces, then for every complex number~$s$ such that $\chi_0$ is not principal or \m{s\ne1},
+\[
+L(s,\chi)=L(s,\chi_0)\prod_{p\mid M}\bigl(1-\chi_0(p)\,p^{-s}\bigr),
+\]
+the product over the primes~$p$ that divide~$M$.
+\end{enumerate}
+So for a character that is not principal, \m{L(\,\cdot\,,\chi)} is the entire function that continues the series.
+For a principal character it is the continuation to \m{\CC\smallsetminus\{1\}}, with a simple pole at~$1$, and its
+value at \m{s=1} is again a convention; this is why Statement~2 excepts the point \m{s=1} for a principal
+character, and only that point.
+
+\sect{How the four statements are related}{s:proofs}
+The unit contains no proof. What follows is said for orientation; the proofs are in the notes named.
+
+\subhead{Statement 2 implies the other three.} Statement~2 implies Statement~3: a zero~$s$ with
+\m{0<\re s<\tfrac12} would be reflected by the functional equation to the zero \m{1-s} of the $L$-function of the
+inverse character, which lies in the half-plane of Statement~2. Statement~2 for \m{M=1} implies Statement~1, by
+property~(c) of the $L$-functions and the functional equation of~$\zeta$. These two implications are Theorems~4
+and~5 of the note \emph{The main inequality, the bound for the primes, and the zero-free half-plane}. Statement~3
+implies Statement~4, which is its special case for primitive characters. The artifact proves Statement~2 and
+deduces the other three in this way.
+
+\begin{remark}[what Statements 2 to 4 leave out]\label{r:left}
+Statements 2, 3 and~4 say nothing about zeros with \m{\re s\le0}. There the $L$-function of a character has its
+trivial zeros, and the $L$-function of a character that is not primitive can have further zeros on the line
+\m{\re s=0}: those of the factors \m{1-\chi_0(p)p^{-s}} of property~(d), with $\chi_0$ the primitive character
+that induces it, for the primes~$p$ that divide the modulus but not the conductor. For the other primes~$p$
+dividing the modulus, \m{\chi_0(p)=0} and the factor is~$1$; so a character whose modulus and conductor have the
+same prime divisors, for instance a character modulo~$9$ of conductor~$3$, has no further zero. Statement~1 does
+speak of all zeros
+of~$\zeta$: it says that a zero is a trivial zero or lies on the line \m{\re s=\tfrac12}.
+\end{remark}
+
+\begin{remark}[characters that are not primitive]\label{r:imprimitive}
+The statements are made for all characters, primitive or not. This costs nothing and gains nothing. Let $\chi$ be a
+character modulo~$M$ and $\chi_0$ the primitive character that induces it. A factor \m{1-\chi_0(p)p^{-s}} of
+property~(d) vanishes only if \m{|\chi_0(p)|=p^{\re s}}; the left side is $0$ or~$1$, so this forces
+\m{\re s=0}. Hence for \m{\re s>0}, and \m{s\ne1} when $\chi$ is principal, \m{L(s,\chi)=0} if and only if
+\m{L(s,\chi_0)=0}. So Statement~3 is equivalent to Statement~4, and Statement~2 is equivalent to its restriction
+to primitive characters. For a principal character, $\chi_0$ is the character modulo~$1$, whose $L$-function
+is~$\zeta$: Statements 2 and~3 contain the corresponding statements for~$\zeta$. This remark is ours and is not a
+declaration of the unit; the artifact proves only that Statement~3 implies Statement~4.
+\end{remark}
+
+\sect{Notes on the formal text}{s:notes}
+\begin{enumerate}[label=\textup{\arabic*.},leftmargin=1.6em,itemsep=5pt]
+\item \emph{The file.} The four definitions are the whole content of one file, whose only import is the library.
+So the meaning of the four statements rests on the library alone, not on any definition of the artifact. This is
+by design: it is the file to read in order to know what is claimed.
+\item \emph{The modulus.} The formal text writes the modulus as a natural number~$N$ together with the
+assumption \m{N\ne0}, which Lean passes as an instance argument; this is ``every integer \m{M\ge1}'' above. The
+letter~$N$ is kept in this write-up for the level of the automorphic forms of the proof, and a modulus is
+written~$M$ throughout, as in the weighted prime sums of the argument.
+\item \emph{Statement 1 and the library's own formulation.} The library contains a formulation of the Riemann
+hypothesis as a proposition. Statement~1 is that proposition, written out again in the artifact: the two texts
+differ only in how the number \m{n+1} is read as a complex number. The first of the five final theorems has the
+library's proposition as its statement and the second has Statement~1; the artifact proves the second by citing
+the first, which Lean accepts only if the two propositions agree after unfolding.
+\item \emph{The trivial zeros.} They appear as ``there is no natural number~$n$ with \m{s=-2(n+1)}'', that is,
+\m{s\notin\{-2,-4,-6,\dots\}}.
+\item \emph{The pole.} In Statement~1 the hypothesis \m{s\ne1} excludes the point where the value of~$\zeta$ is a
+convention. In Statement~2 the hypothesis reads ``$\chi$ is not the unit element of the group of characters, or
+\m{s\ne1}''; it excludes exactly the pole of a principal character. Statements 3 and~4 need no such hypothesis,
+because \m{\re s<1} there.
+\item \emph{The strip.} In Statements 3 and~4 the strip is open, and the two inequalities \m{0<\re s} and
+\m{\re s<1} are two separate hypotheses, in this order, before the hypothesis \m{L(s,\chi)=0}.
+\item \emph{Order of the quantifiers.} Statement~4 takes the modulus, the character and the hypothesis that the
+character is primitive before the complex number~$s$; Statements 2 and~3 take the modulus, the character and
+then~$s$. Nothing depends on this order here.
+\item \emph{Real numbers.} The real part is a real number, and \m{\tfrac12} is the real number one half.
+\end{enumerate}
+
+\subhead{How this note was written.} From the dossier of the unit, which has no structured proof because the unit
+has no proof; the program check of the dossier covered \UnitSteps{} leaf steps of \UnitProofs{} proofs and found
+the four statements at their lines. I read the whole file of the unit in the artifact and compared each of the
+four statements above with it, clause by clause. For the objects of the library I read, in the library's public
+repository at the commit that the artifact pins, the declarations listed in the second table of Appendix~A: their
+statements and the comments above them, not their proofs, and not the construction of the Hurwitz zeta functions
+from which $\zeta$ and the $L$-functions are made. The dossier describes the same objects from memory and says so;
+its descriptions agree with what I read. The two remarks of §\ref{s:proofs} are mine.
+
+\head{Appendix A. Concordance with the Lean artifact}
+{\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}\setlength{\tabcolsep}{0pt}
+\begin{longtable}{@{}p{30mm}p{56mm}p{43mm}r@{}}
+\textbf{In this note} & \textbf{Lean declaration} & \textbf{File} & \textbf{Lines}\\\midrule\endhead
+\ConcordanceRows
+\end{longtable}}
+
+\subhead{The four statements as they are written in the artifact.} Statement~1:
+\quoted{rh}
+Statement~2:
+\quoted{halfPlane}
+Statement~3:
+\quoted{strip}
+Statement~4:
+\quoted{stripPrim}
+In these texts the modulus is~$N$, the letter {\leanfont ℂ} stands for the complex numbers and {\leanfont ℕ} for
+the natural numbers, {\leanfont s.re} is \m{\re s}, {\leanfont χ ≠ 1} says that $\chi$ is not the principal
+character, and {\leanfont [NeZero N]} is the assumption \m{N\ne0}.
+
+\subhead{The objects of the library.} The library is Mathlib at the commit that the artifact pins in its manifest.
+The declarations below were read there for this note; the left column says what each one is in §\ref{s:setting}.
+
+{\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}\setlength{\tabcolsep}{0pt}
+\begin{longtable}{@{}p{50mm}@{\hspace{4mm}}>{\raggedright\arraybackslash}p{86mm}@{}}
+\textbf{In this note} & \textbf{Declaration of the library}\\\midrule\endhead
+\mrow{the function $\zeta$}{riemannZeta}
+\mrow{$\zeta$, property (a)}{zeta\_eq\_tsum\_one\_div\_nat\_cpow}
+\mrow{$\zeta$, property (b)}{differentiableAt\_riemannZeta, riemannZeta\_residue\_one}
+\mrow{$\zeta$, property (c)}{riemannZeta\_neg\_two\_mul\_nat\_add\_one, riemannZeta\_zero}
+\mrow{the library's Riemann hypothesis}{RiemannHypothesis}
+\mrow{Dirichlet character modulo $M$}{DirichletCharacter, MulChar}
+\mrow{induced character}{DirichletCharacter.changeLevel}
+\mrow{conductor, primitive character}{DirichletCharacter.conductor, DirichletCharacter.IsPrimitive}
+\mrow{the function $L(s,\chi)$}{DirichletCharacter.LFunction}
+\mrow{$L$, property (a)}{DirichletCharacter.LFunction\_eq\_LSeries}
+\mrow{$L$, property (b)}{DirichletCharacter.differentiableAt\_LFunction}
+\mrow{$L$, property (c)}{DirichletCharacter.LFunction\_modOne\_eq}
+\mrow{$L$, property (d)}{DirichletCharacter.LFunction\_changeLevel}
+\end{longtable}}
+
+\head{Notation}
+\begingroup\fontsize{8.6}{10.9}\selectfont\raggedright
+\setlength{\columnsep}{9mm}\setlength{\parskip}{0pt}
+\begin{multicols}{2}
+\nt{$s$, $\re s$}{a complex number; its real part}
+\nt{$n$}{a natural number, \m{n\ge0}}
+\nt{$\zeta$}{the Riemann zeta function, as the library defines it}
+\nt{$M$, $M_0$}{moduli of Dirichlet characters, integers \m{\ge1}; $M_0$ a divisor of~$M$}
+\nt{$\chi$, $\chi_0$}{Dirichlet characters modulo $M$ and modulo~$M_0$}
+\nt{$u$, $v$}{classes in \m{\ZZ/M}}
+\nt{$L(s,\chi)$}{the $L$-function of the Dirichlet character~$\chi$, as the library defines it}
+\nt{$p$}{a prime number}
+\nt{$N$}{the modulus in the formal text; in this note it is~$M$}
+\end{multicols}
+\endgroup
+
+\end{document}

@@ -1,0 +1,1074 @@
+% !TEX program = lualatex
+% ---------------------------------------------------------------------------------------------
+%  Readback note 10: Vanishing of theta descents: reflection sums at the level, a maximum principle for Hecke polynomials, and adding hyperbolic planes
+%
+%  Build:  python3 tools/rb.py note <slug>
+%
+%  One unit of a Lean artifact, rewritten as ordinary mathematics. The prose is hand-written. Lean names,
+%  line ranges and counts come from data.tex; quoted Lean statements are copied from the artifact by the build.
+%
+%  Rules of the text: standard terminology; every symbol is explained where it first appears and listed again
+%  in the notation at the end; no letter has two meanings; a proof is complete or says what it takes for granted;
+%  Lean names appear only in the LEAN lines and in the concordance.
+%
+%  The signature rule (the build enforces it): a function, relation or predicate that the artifact defines is
+%  written only through its notation macro, which the build makes from the spec (`notation`) with one slot for
+%  each explicit argument of the Lean definition. No argument is fixed and dropped, also not "for brevity" and
+%  not for one section. Every argument and every hypothesis of a stated declaration stands inside its
+%  statement, or in a Setting that the statement cites by number; only implicit and instance arguments (the
+%  ambient objects) may stand in the conventions.
+% ---------------------------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\ifdefined\pdfvariable\pdfvariable suppressoptionalinfo \numexpr 1+2+4+8\relax\fi
+\usepackage[a4paper,hmargin=35mm,top=22mm,bottom=27mm,footskip=12mm,nohead]{geometry}
+
+\usepackage{fontspec}
+\directlua{
+  luaotfload.add_fallback("gfallback", {"STIXTwoMath-Regular.otf:mode=node;", "DejaVuSans.ttf:mode=node;"})
+  luaotfload.add_fallback("gmonofallback", {"DejaVuSansMono.ttf:mode=node;", "STIXTwoMath-Regular.otf:mode=node;"})
+}
+\setmainfont{NewCM10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookItalic,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldItalic,SmallCapsFont=*-Book,SmallCapsFeatures={Letters=SmallCaps},
+  RawFeature={fallback=gfallback}]
+\setsansfont{NewCMSans10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookOblique,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldOblique,RawFeature={fallback=gfallback}]
+\setmonofont{JetBrainsMono}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,Scale=MatchLowercase,
+  RawFeature={-calt;-liga;fallback=gmonofallback}]
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage[math-style=TeX]{unicode-math}
+\setmathfont{NewCMMath-Book.otf}
+\emergencystretch=2.5em\relax
+
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows.meta,positioning,backgrounds}
+\usepackage[protrusion=true,expansion=true]{microtype}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{multicol}
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+
+\definecolor{ink}{HTML}{0F172A}
+\definecolor{inksoft}{HTML}{475569}
+\definecolor{inkfaint}{HTML}{94A3B8}
+\definecolor{rulegrey}{HTML}{CBD5E1}
+\definecolor{arith}{HTML}{C2410C}
+\definecolor{est}{HTML}{7C3AED}
+\definecolor{ana}{HTML}{0891B2}
+\definecolor{ok}{HTML}{047857}
+\definecolor{leancol}{HTML}{3730A3}
+
+\title{Vanishing of theta descents: reflection sums at the level, a maximum principle for Hecke polynomials, and adding hyperbolic planes}
+\author{grh-compact}
+\date{}
+
+% ------------------------------------------------------------------------------------- macros
+\newcommand{\leanfont}{\ttfamily\fontsize{8.6}{10.5}\selectfont\color{leancol}}
+\newcommand{\lean}[1]{\csname LN@#1\endcsname}
+\newcommand{\fillin}[1]{{\color{arith}\itshape[#1]}}  % a place of the template that is not written yet; the build reports every one that is left
+\newcommand{\leanquote}[1]{\csname LQ@#1\endcsname}
+\input{data.tex}
+
+\linespread{1.08}                       % 11 pt on 14.7 pt
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt plus 1.5pt minus 0.5pt}
+\setlength{\abovedisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\belowdisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\abovedisplayshortskip}{3pt plus 2pt}
+\setlength{\belowdisplayshortskip}{6pt plus 2pt minus 2pt}
+\emergencystretch=1.5em
+\clubpenalty=10000 \widowpenalty=10000 \displaywidowpenalty=10000
+\relpenalty=7000 \binoppenalty=9000
+\raggedbottom
+\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\sffamily\fontsize{7.6}{9}\selectfont\color{inkfaint}\thepage\,/\,\pageref*{LastPage}}
+\setlist{topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=4pt,leftmargin=2.1em,labelsep=0.55em}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\len}{\operatorname{len}}
+\newcommand{\cok}{\operatorname{cok}}
+\newcommand{\End}{\operatorname{End}}
+\newcommand{\Hom}{\operatorname{Hom}}
+\newcommand{\Gal}{\operatorname{Gal}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\kw}[1]{\emph{#1}}
+\newcommand{\m}[1]{\mbox{$#1$}}        % a short formula that must not be broken across lines
+\newcommand{\head}[1]{\par\addvspace{17pt plus 4pt minus 2pt}\Needspace{6\baselineskip}%
+  \noindent{\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\sect}[2]{\refstepcounter{section}\label{#2}\par\addvspace{19pt plus 4pt minus 2pt}\Needspace{7\baselineskip}%
+  \noindent\llap{{\fontsize{13.2}{16}\selectfont\bfseries\color{inkfaint}\thesection}\hspace{9pt}}%
+  {\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\subhead}[1]{\par\addvspace{9pt plus 2pt}\Needspace{4\baselineskip}\noindent\textbf{#1}\enspace\ignorespaces}
+% where a statement lives in the Lean archive
+\newcommand{\leantag}{{\sffamily\bfseries\fontsize{6.3}{8}\selectfont\color{leancol}\addfontfeatures{LetterSpace=7}LEAN}}
+\newcommand{\sep}{\unskip\nobreak\hspace{5pt}{\color{inkfaint}\textperiodcentered}\hspace{5pt plus 2pt}\ignorespaces}
+\newcommand{\leanline}[1]{\par\nopagebreak\vspace{-2.5pt}{\fontsize{8.9}{12.4}\selectfont\color{inksoft}\raggedright
+  \noindent\llap{\leantag\hspace{9pt}}#1\par}\vspace{1pt}}
+% a displayed statement in a tinted box: #1 colour, #2 text
+\newcommand{\statement}[2]{\par\addvspace{7pt}\begingroup\setlength{\fboxsep}{8.5pt}\setlength{\fboxrule}{0.6pt}%
+  \noindent\fcolorbox{#1!30!white}{#1!3!white}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{#2}}%
+  \endgroup\par\addvspace{7pt}}
+\newcommand{\nt}[2]{\par\noindent\hangindent=1.1em\hangafter=1 #1\enspace{\color{inksoft}#2}\par\vspace{1pt}}
+\newcommand{\legdot}[1]{\tikz[baseline=-0.62ex]\fill[#1] (0,0) circle (2.5pt);\hspace{3pt}}
+\newcommand{\crow}[4]{\csname CS@#1\endcsname & #2 & \textcolor{inksoft}{#3} & \textcolor{inksoft}{#4}\\}
+\newcommand{\leanquoteline}[2]{\par\noindent\hangindent=\dimexpr#1\fontdimen2\font+2.2em\relax\hangafter=1
+  \hspace*{#1\fontdimen2\font}#2}
+\newcommand{\quoted}[1]{\par\vspace{3pt}{\ttfamily\fontsize{7.5}{10.4}\selectfont\color{leancol}\raggedright
+  \setlength{\parskip}{0pt}\leanquote{#1}\par}\vspace{4pt}}
+\newcommand{\bx}[3]{{\sffamily\bfseries\fontsize{7.3}{9.2}\selectfont\color{#1!82!black}#2}\\[1.5pt]#3}
+\newcommand{\cs}[2]{\expandafter\newcommand\csname CS@#1\endcsname{#2}}
+
+% theorems
+\newtheoremstyle{plainx}{7pt plus 2pt}{7pt plus 2pt}{\itshape}{}{\bfseries}{.}{0.5em}{}
+\newtheoremstyle{uprightx}{7pt plus 2pt}{7pt plus 2pt}{}{}{\bfseries}{.}{0.5em}{}
+\theoremstyle{plainx}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{uprightx}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{setting}[theorem]{Setting}          % hypotheses shared by several statements; each of them cites it by number
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\renewcommand{\qedsymbol}{{\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.5pt}\fbox{\rule{0pt}{0.46em}\hspace{0.46em}}}}
+% what holds throughout the note: the ambient objects only (implicit and instance arguments), never a hypothesis
+\newenvironment{conventions}{\par\addvspace{5pt}\noindent\textbf{Conventions.}\enspace\ignorespaces}{\par\addvspace{3pt}}
+\makeatletter
+\renewenvironment{proof}[1][Proof]{\par\pushQED{\qed}\normalfont\topsep0pt\partopsep0pt
+  \trivlist\item[\hskip\labelsep\itshape #1.]\ignorespaces}{\popQED\endtrivlist\@endpefalse}
+\makeatother
+
+% where each declaration of the concordance is treated: \cs{key}{place}, the place naming a \label or a lettered item
+\cs{existsatPlaceeq}{Lemma~\ref{l:atplace}}
+\cs{existsannihilatororcongrinclMatrix}{Lemma~\ref{l:annihilator}}
+\cs{smulchosenGLRepeq}{Lemma~\ref{l:level}}
+\cs{isAutomorphicstaralgFormCoeff}{Lemma~\ref{l:automorphic}}
+\cs{descentsVanishofreflectionSum}{Theorem 1}
+\cs{eqzeroofheckePolyOpeqzero}{Proposition~\ref{p:max}}
+\cs{integralsourceTermeqzero}{Lemma~\ref{l:zero}}
+\cs{descentsVanishaddplanes}{Theorem 2}
+% notation of this note; objects of other units and of the background library are written with all their arguments
+\newcommand{\CC}{\mathbb{C}}
+\newcommand{\AAf}{\mathbb{A}_{\mathrm{f}}}
+\newcommand{\FF}{\mathbb{F}}
+\newcommand{\oo}{\mathfrak{o}}
+\newcommand{\ohat}{\hat{\mathfrak{o}}}
+\newcommand{\Ginf}[1]{G_{\infty}(#1)}
+\newcommand{\Gfin}[1]{G_{\mathrm{f}}(#1)}
+\newcommand{\Gad}[1]{G(#1)}
+\newcommand{\Kz}[1]{\mathbf{K}_{0}(#1)}
+\newcommand{\std}[2]{\mathrm{I}_{#2}(#1)}
+\newcommand{\one}[1]{1_{#1}}
+\newcommand{\WO}[1]{W(#1)}
+\newcommand{\sgO}[1]{\varepsilon_{#1}}
+\newcommand{\incO}[1]{\operatorname{inc}_{#1}}
+\newcommand{\IncM}[1]{\operatorname{Inc}_{#1}}
+\newcommand{\kap}[1]{\kappa_{#1}}
+\newcommand{\eO}[1]{e_{#1}}
+\newcommand{\psiO}[2]{\psi_{#1,#2}}
+\newcommand{\MO}[1]{M_{#1}}
+\newcommand{\QO}[1]{Q_{#1}}
+\newcommand{\plO}[1]{\operatorname{pl}(#1)}
+\newcommand{\SigO}[1]{\Sigma_{#1}}
+\newcommand{\ChGL}[2]{\mathrm{GL}^{\mathrm{ch}}_{#2}(#1)}
+\newcommand{\chO}[1]{\chi_{#1}}
+\newcommand{\LO}[1]{\mathbf{L}(#1)}
+\newcommand{\KO}[1]{\mathbf{K}(#1)}
+\newcommand{\etaO}[1]{\eta_{#1}}
+\newcommand{\tetaO}[1]{\tilde{\eta}_{#1}}
+\newcommand{\Ups}[1]{\Upsilon(#1)}
+\newcommand{\PsiO}[2]{\Psi_{#1}(#2)}
+\newcommand{\FormO}[1]{\operatorname{Form}(#1)}
+\newcommand{\Vk}[2]{\mathbb{V}_{#1,#2}}
+\newcommand{\rhoW}[2]{\rho_{#1,#2}}
+\newcommand{\Desc}[4]{\operatorname{Desc}^{#1,#2}_{#3,#4}}
+\newcommand{\pvO}[2]{v_{#1,#2}}
+\newcommand{\red}[1]{\operatorname{red}_{#1}}
+\newcommand{\coef}[2]{#2_{#1}}
+\newcommand{\chact}[3]{[#3]_{#1,#2}}
+\newcommand{\Refl}[2]{\operatorname{Refl}(#1,#2)}
+\newcommand{\PS}[1]{\mathrm{P}^{#1}}
+\newcommand{\DV}[5]{\mathrm{DV}(#1,#2;#3;#4;#5)}
+\newcommand{\Hk}[3]{H^{#1}_{#2}(#3)}
+\newcommand{\Rt}[1]{\mathrm{R}_{#1}}
+\newcommand{\ZT}[3]{\operatorname{Z}_{#1,#2}[#3]}
+\newcommand{\hyp}[2]{#1\oplus\mathbb{H}^{#2}}
+\newcommand{\cosI}[2]{\mathbf{1}_{#2+#1\operatorname{Box}}}
+\newcommand{\vacf}{\varphi^{\circ}}
+\newcommand{\thd}{\theta^{\Pi\prime}}
+\newcommand{\lnm}[1]{{\leanfont #1}}
+\newcommand{\conj}[1]{\overline{#1}}
+\newcommand{\dd}{\mathrm{d}}
+\newcommand{\ee}{\mathrm{e}}
+
+\begin{document}
+\color{ink}
+
+{\raggedright
+{\sffamily\bfseries\fontsize{7.2}{9}\selectfont\color{leancol}\addfontfeatures{LetterSpace=8}READBACK NOTE 10\par}
+\vspace{5pt}
+{\fontsize{21.5}{25.5}\selectfont\bfseries Vanishing of theta descents: reflection sums at the level, a maximum principle for Hecke polynomials, and adding hyperbolic planes\par}
+\vspace{5pt}
+{\fontsize{12.4}{16}\selectfont\itshape\color{inksoft} One unit of the Lean artifact \ArtifactName, read back into
+mathematics\par}}
+\vspace{8pt}
+{\color{rulegrey}\hrule height 0.6pt}
+\vspace{7pt}
+\thispagestyle{empty}
+
+\textbf{Summary.} A function~$Y$ on a definite unitary group has \emph{vanishing descents} to a space~$W$ if
+its theta lifts to the unitary group of~$W$ are zero for all data that are unramified at a given set of places.
+The unit proves two transfers of this property. First, for the auxiliary pair of the second note: if the
+descents vanish for the single test datum at the level, with all polynomial vectors at the infinite places,
+then they vanish for all data unramified outside the level, provided the form is killed by the reflection
+sums at the chosen places and the character of the level is non-trivial at the twist places. Second, vanishing
+climbs the theta tower: from~$W$ to~$W$ plus~$\nu$ hyperbolic planes, as long as \m{2r+2\nu+3<n} and $Y$ is
+killed by a Hecke polynomial at one split place at a point that is too small to be a Hecke root of a lift. The
+second transfer rests on a maximum principle: a bounded function killed by a Hecke polynomial with a small
+argument is zero.
+
+\statement{leancol}{\fontsize{9.6}{13.2}\selectfont\textbf{What this note is.} The artifact \ArtifactName{} is a
+body of Lean code: the compact edition of a formal proof, due to L.~Alpöge with the AI system Claude, whose final
+theorems are the Riemann hypothesis and its generalisation to Dirichlet \emph{L}-functions. That headline is a
+claim. The authors report that every file compiles and that Lean's kernel accepted the proofs; an independent
+build is recorded in the handout's record of checks when it reports. No mathematician has read the argument
+through, and nothing here says that the Riemann hypothesis is proved. This note treats one unit of the artifact:
+all \UnitInNote{} of its \UnitMembers{} declarations. The proofs are given in full relative to inputs that are
+stated and not proved: the auxiliary pair and its objects (Setting~\ref{s:aux}, from the unit on the rows), and
+results of the background library on the Weil representation, on Hecke operators at split places and on the
+decay of theta kernels (the facts (Q1) to (Q11)). One step, the bound for the theta kernel near the cusps in the
+proof of Theorem~2, is described through the library's estimate and was not traced in its constants
+(§\ref{s:notes}, note~3). Every statement was compared with its Lean text, argument by argument. The Lean text
+read is \PinText; Appendix~A is the concordance of \ConcDecls{} declarations. This is the third of three notes on
+the theta correspondence behind Theorem~C; it uses the notation of the note \emph{The test datum of an auxiliary
+pair, joint harmonics with staircase weights, and the theta lift as a conjugate descent}.}
+
+\sect{The statements}{s:intro}
+The objects are defined in §\ref{s:setting}. In brief: \m{\Desc{W}{V}{\chi}{1}(f,Y)} is the theta descent of a
+function~$Y$ on the adelic group of a definite space~$V$ to the adelic group of~$W$, with datum~$f$, for the Weil
+representation with characters $\chi$ and~$1$; \m{\DV{W}{V}{\chi}{S}{Y}} says that it vanishes for all data
+unramified at the set of places~$S$; for an auxiliary pair~$O$, \m{\plO{O}} is the set of its chosen and twist
+places, $\Ups{O}$ its finite datum, and \m{\coef{L}{\Xi}} the scalar function of a form \m{\Xi\in\FormO{O}} and a
+linear form~$L$; \m{\Refl{\psi}{y}} is a reflection sum in the group algebra of a general linear group over a
+finite field; and \m{\Hk{\pi}{w}{T}} is the Hecke polynomial at a split place~$w$, evaluated at a complex
+number~$T$.
+
+\statement{arith}{\phantomsection\label{t:1}\textbf{Theorem 1} (from the test datum to all data unramified
+outside the level).\enspace \emph{In Setting~\ref{s:weil}, let $O$ be an auxiliary pair as in
+Setting~\ref{s:aux}, \m{\Xi\in\FormO{O}} and $L$ a linear form on \m{\Vk{n}{\kap{O}}}. Suppose:}
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=1pt,topsep=2pt]
+\item \emph{\m{\psiO{O}{w}\ne1} for every twist place \m{w\in\QO{O}};}
+\item \emph{for every chosen place \m{w_{0}\in\MO{O}} and every family \m{y=(y_{w})_{w\in\MO{O}}} of vectors
+\m{y_{w}\in\FF_{w}^{r}} with \m{y_{w_{0}}\ne0}, the element \m{\bigotimes_{w\in\MO{O}}\Refl{\psiO{O}{w}}{y_{w}}} of the group
+algebra of \m{\ChGL{\SigO{O}}{r}} annihilates~$\Xi$ in the action of Setting~\ref{s:aux}\textup{(c)};}
+\item \emph{for every polynomial~$p$ in the variables \m{X_{\tau,i,c}},
+\m{\Desc{\WO{O}}{\std{E}{n}}{\chO{O}}{1}\bigl(\pvO{O}{p}\otimes\Ups{O},\,\conj{\coef{L}{\Xi}}\bigr)=0}.}
+\end{enumerate}
+\emph{Then \m{\DV{\WO{O}}{\std{E}{n}}{\chO{O}}{S}{\conj{\coef{L}{\Xi}}}} holds for the set~$S$ of all finite places
+of~$E$ that are neither in \m{\plO{O}} nor conjugate to a place of \m{\plO{O}}.}}
+\leanline{\lean{descentsVanishofreflectionSum}}
+
+\statement{arith}{\phantomsection\label{t:2}\textbf{Theorem 2} (climbing the theta tower).\enspace \emph{In
+Setting~\ref{s:weil}, let $W$, $W'$ and~$V$ be hermitian spaces with points, of signs $\varepsilon$ on~$[r]$,
+$\varepsilon'$ on~$[r']$ and \m{\one{n}} on~$[n]$, let $\chi$ be an automorphic character, $S$ a set of finite
+places of~$E$ and $Y$ a complex function on \m{\Gad{\one{n}}}, and suppose \m{\DV{W}{V}{\chi}{S}{Y}}. Let $\Pi$ be an
+adapted splitting of~$W'$ over~$W$ with planes indexed by a finite set~$[\nu]$ of $\nu$ elements
+\textup{(Definition~\ref{d:split})}. Let $w$ be a finite place of~$E$ and $T$ a complex number. Suppose that $Y$
+is automorphic on~$V$; that $w$ is split, \m{w\ne\conj{w}}; that the base change of~$\chi$ is unramified
+at~\m{\conj{w}}; that \m{\conj{w}\in S}; that $Y$ is spherical at~$w$; that
+\m{|T|=\bigl(\sqrt{q_{w}}^{\,r}\,q_{w}^{\,n-r-1}\bigr)^{-1}}; that \m{\Hk{\Rt{\one{n}}}{w}{T}\,Y=0}; and that
+\m{2r+2\nu+3<n}. Then \m{\DV{W'}{V}{\chi\upsilon_{1}^{\nu}}{S}{Y}}.}}
+\leanline{\lean{descentsVanishaddplanes}}
+
+The space $W'$ is $W$ plus $\nu$ hyperbolic planes, and the spaces \m{\hyp{W}{\nu}}, \m{\nu=0,1,2,\dots}, form
+the Witt tower of~$W$; the character changes by~$\upsilon_{1}$ with every plane. The number
+\m{q_{w}^{-(n-1-r/2)}} is the absolute value of the smallest of the points at which the Hecke transfer (Q9) makes
+the Hecke polynomial vanish on theta lifts from a space of rank~$r$ to~$V$; for the spaces of rank \m{r+2\nu},
+\m{\nu\ge1}, the corresponding absolute value is larger by the factor~\m{q_{w}^{\nu}}. So the theorem says that a
+function with this Hecke root and without descent to~$W$ has no descent to the higher spaces of the tower
+either, in the range \m{2r+2\nu+3<n}. In the application (§\ref{s:use}) Theorems 1 and~2 are applied one after
+the other, to \m{Y=\conj{\coef{L}{\Xi}}}.
+
+\sect{The setting}{s:setting}
+\begin{conventions}\phantomsection\label{c:conventions}
+The conventions of the second note of this sequence hold: $E$ is a CM field with a CM type; $\tau$ denotes its
+infinite places and $w$ its finite places, with conjugate~\m{\conj{w}}, completion~$E_{w}$, integers~$\oo_{w}$,
+residue field~$\FF_{w}$ with $q_{w}$ elements, a fixed uniformiser~$\varpi_{w}$ and the absolute value
+\m{|\cdot|_{w}} with \m{|\varpi_{w}|_{w}<1}; \m{\AAf} is the ring of finite adeles and \m{\ohat} the product of
+the~$\oo_{w}$. The index sets $[r]$, $[n]$, $[r']$, $[\nu]$ are finite sets with $r$, $n$, $r'$, $\nu$ elements;
+an \m{n\times r} matrix has rows indexed by~$[n]$ and columns by~$[r]$. For a matrix~$X$, \m{X^{*}} is the
+conjugate transpose and \m{X^{\mathsf{T}}} the transpose. A complex vector space is written~$\mathcal{V}$ when it
+carries a representation. Where a statement says so, $E$ carries Weil data (Setting~\ref{s:weil}).
+\end{conventions}
+
+\begin{setting}[groups, the Weil representation, descents; quoted, as in the second note]\label{s:weil}
+The field~$E$ carries Weil data; of these we use the splitting character and its restriction~$\upsilon_{1}$ to
+the ideles of norm one. For a family of signs~$\varepsilon$ on~$[r]$, \m{\Gad{\varepsilon}=\Ginf{\varepsilon}\times\Gfin{r}}
+is the adelic unitary group: \m{\Ginf{\varepsilon}} is the product over the infinite places of the unitary groups
+of \m{\operatorname{diag}(\varepsilon)}, and \m{\Gfin{r}} the group of \m{u\in\mathrm{GL}_{r}(\AAf)} with \m{u^{*}u=1}.
+The group \m{\Kz{r}=\Gfin{r}\cap\mathrm{GL}_{r}(\ohat)} is open and compact, and for \m{w\ne\conj{w}},
+\m{\red{w}\colon\Kz{r}\to\mathrm{GL}_{r}(\FF_{w})} is the reduction. For a set~$S$ of finite places, an element of
+\m{\Gfin{r}} is \emph{supported on~$S$} if its components at all places outside~$S$ and not conjugate to a place
+of~$S$ are~$1$. A hermitian space with a point, of signs~$\varepsilon$, has a matrix~$J$ over~$E$, a group of
+rational points embedded in \m{\Gad{\varepsilon}}, and a lattice at every point of \m{\Gad{\varepsilon}}; the
+standard definite space \m{\std{E}{n}} has signs~\m{\one{n}}. A function on \m{\Gad{\varepsilon}} is \emph{automorphic}
+on such a space if it is continuous, left invariant under the rational points and right invariant under an
+open subgroup of \m{\Gfin{r}}. An automorphic character is a continuous unitary character of the adeles of norm
+one of~$E$, trivial on the rational ones; its \emph{base change} is the Hecke character \m{z\mapsto\chi(z/\conj{z})}
+of~$E$, and a Hecke character is unramified at~$w$ if it is trivial on the units of~$\oo_{w}$.
+
+For spaces $W$,~$V$ of signs $\varepsilon$ on~$[r]$ and $\varepsilon'$ on~$[n]$ and automorphic characters
+$\chi$,~$\chi'$, the library provides the Banach space \m{\mathcal{S}(W,V)} of data on \m{\operatorname{Hom}(W,V)},
+with the Heisenberg operators \m{\varrho(z)} of adelic vectors~$z$ of \m{\operatorname{Hom}(W,V)}, the Weil
+representation \m{\omega^{W,V}_{\chi,\chi'}} of \m{\Gad{\varepsilon}\times\Gad{\varepsilon'}} on it, and the theta
+functional \m{\theta_{W,V}}, invariant under the rational points of both groups. The vacuum
+\m{\vacf\in\mathcal{S}(W,V)} is the Gaussian at the infinite places times the characteristic function of the
+integral matrices at the finite places. For a Fock vector~$v$ of the pair and a datum~$f$ there is the datum
+\m{v\otimes f}; \m{v^{\varepsilon,\varepsilon'}_{p}} is the Fock vector of a polynomial~$p$ in the variables
+\m{X_{\tau,i,c}}. The theta descent of a function~$Y$ on \m{\Gad{\varepsilon'}} with datum~$f$ is the function
+\[
+\Desc{W}{V}{\chi}{\chi'}(f,Y)(u)=\int_{[V]}\theta_{W,V}\bigl(\omega^{W,V}_{\chi,\chi'}(u,h)f\bigr)\,Y(h)\,\dd h
+\qquad(u\in\Gad{\varepsilon}),
+\]
+the integral over the quotient of \m{\Gad{\varepsilon'}} by the rational points of~$V$. In this note the second
+character is always the trivial character~$1$.
+\end{setting}
+\leanline{in the background library: \lnm{WeilData}, \lnm{WeilData.upsilonU1}, \lnm{G}, \lnm{Gf}, \lnm{Kf},
+\lnm{Gf.supportedOn}, \lnm{Space}, \lnm{stdSpace}, \lnm{Space.IsAutomorphic}, \lnm{AutChar},
+\lnm{AutChar.baseChange}, \lnm{CharUnramifiedAt}, \lnm{pairWeil}, \lnm{pairThetaKer}, \lnm{Space.lift},
+\lnm{Space.integrated}}
+
+\begin{definition}[data unramified at a set of places; vanishing descents; quoted]\label{d:dv}
+Let $W$,~$V$ be as in Setting~\ref{s:weil} and $S$ a set of finite places of~$E$. The operator \m{\PS{S}} on
+\m{\mathcal{S}(W,V)} is the mean of the Heisenberg operators \m{\varrho(z)} over the integral finite vectors~$z$
+whose components vanish at the places that are neither in~$S$ nor conjugate to a place of~$S$; it is a
+projector, and a datum~$f$ with \m{\PS{S}f=f} is called \emph{unramified at~$S$}: at the places of~$S$ and their
+conjugates it behaves as the vacuum. For an automorphic character~$\chi$ and a function~$Y$ on
+\m{\Gad{\varepsilon'}}, the statement \m{\DV{W}{V}{\chi}{S}{Y}} is:
+\[
+\Desc{W}{V}{\chi}{1}(f,Y)=0\qquad\text{for every } f\in\mathcal{S}(W,V)\text{ with }\PS{S}f=f .
+\]
+\end{definition}
+\leanline{in the background library: \lnm{Space.projOn}, \lnm{DescentsVanish}}
+
+\begin{setting}[auxiliary pairs; Input from the unit on the rows]\label{s:aux}
+Let $E$ carry Weil data. An auxiliary pair~$O$ over~$E$ for the index sets $[r]$ and~$[n]$, \m{r<n}, is as in
+the second note. We use: its level system~$\SigO{O}$ with the chosen places~$\MO{O}$ and the twist places~$\QO{O}$,
+and \m{\plO{O}=\MO{O}\cup\QO{O}}, a finite set of places none of which is conjugate to another or to itself; its
+space \m{\WO{O}} of signs~$\sgO{O}$ on~$[r]$; the injection \m{\incO{O}\colon[r]\to[n]} and the \m{n\times r}
+matrix \m{\IncM{O}} with entries~$1$ at the places \m{(\incO{O}(c),c)} and $0$ elsewhere; the multiplicative
+characters \m{\psiO{O}{w}} of the fields~$\FF_{w}$, extended by~$0$, trivial for \m{w\notin\plO{O}}; the weight
+\m{(\kap{O},\eO{O})}, the space \m{\Vk{n}{\kap{O}}} and the representation \m{\rhoW{\kap{O}}{\eO{O}}} of \m{\Ginf{\one{n}}} on
+it; the character \m{\chO{O}}, a power of~$\upsilon_{1}$; the Fock vectors \m{\pvO{O}{p}=v^{\sgO{O},\one{n}}_{p}}; and
+the following.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.2em,itemsep=2pt,topsep=2pt]
+\item \emph{Level.} \m{\LO{O}} is the group of families \m{(j_{w})_{w\in\plO{O}}}, \m{j_{w}\in\mathrm{GL}_{n}(\FF_{w})},
+with \m{j_{w}\IncM{O}=\IncM{O}} for \m{w\in\MO{O}} and, for \m{w\in\QO{O}}, with vanishing entries in the rows of the
+image of~$\incO{O}$ and the columns outside it; \m{\etaO{O}(j)} is the product over \m{w\in\QO{O}} of
+\m{\psiO{O}{w}(\det(\incO{O}\text{-block of }j_{w}))^{-1}}; \m{\KO{O}} is the group of \m{g'\in\Kz{n}} with
+\m{(\red{w}g')_{w}\in\LO{O}}, and \m{\tetaO{O}(g')=\etaO{O}((\red{w}g')_{w})}.
+\item \emph{Forms.} An \emph{algebraic form of weight} \m{(\kap{O},\eO{O})} is a function
+\m{\Xi\colon\Gfin{n}\to\Vk{n}{\kap{O}}} with \m{\Xi(\gamma_{\mathrm{f}}h)=\rhoW{\kap{O}}{\eO{O}}(\gamma)\Xi(h)} for rational
+points~$\gamma$ of \m{\std{E}{n}}, whose stabiliser under right translation is open; \m{\Gfin{n}} acts on these
+forms by right translation, written \m{\mathrm{R}(g')\Xi=\Xi(\,\cdot\,g')}. The space \m{\FormO{O}} consists of the
+algebraic forms with \m{\Xi(hg')=\tetaO{O}(g')\Xi(h)} for \m{g'\in\KO{O}}. For a linear form~$L$ on \m{\Vk{n}{\kap{O}}},
+\m{\coef{L}{\Xi}} is the function \m{h\mapsto L\bigl(\rhoW{\kap{O}}{\eO{O}}(h_{\infty}^{-1})\Xi(h_{\mathrm{f}})\bigr)} on
+\m{\Gad{\one{n}}}.
+\item \emph{The action of the chosen places.} Let $\pi$ be a representation of \m{\Gfin{n}} on a complex vector
+space~$\mathcal{V}$, and let \m{\mathcal{V}^{O}} be the subspace of the~$\phi$ with
+\m{\pi(g')\phi=\tetaO{O}(g')\phi} for all \m{g'\in\KO{O}}. The group
+\m{\ChGL{\SigO{O}}{r}=\prod_{w\in\MO{O}}\mathrm{GL}_{r}(\FF_{w})} acts on \m{\mathcal{V}^{O}}: a family \m{A=(A_{w})} acts
+by
+\[
+\chact{O}{\pi}{A}\,\phi=\prod_{w\in\MO{O}}\psiO{O}{w}(\det A_{w})\cdot\pi(g_{A})\,\phi ,
+\]
+where \m{g_{A}\in\Kz{n}} is the element chosen by the library with \m{\red{w}g_{A}=\operatorname{diag}(A_{w},1)} for
+\m{w\in\MO{O}} and \m{\red{w}g_{A}=1} for \m{w\in\QO{O}}; here \m{\operatorname{diag}(A_{w},1)} acts by~$A_{w}$ on the
+basis vectors with indices in the image of~$\incO{O}$ and fixes the others. For \m{\mathcal{V}} the space of
+algebraic forms of~(b) with \m{\pi=\mathrm{R}}, we have \m{\mathcal{V}^{O}=\FormO{O}}, and
+\m{\chact{O}{\mathrm{R}}{A}} is the action on forms.
+\item \emph{The finite datum.} \m{\PsiO{O}{X}}, for a family \m{X=(X_{w})_{w\in\plO{O}}} of \m{n\times r} matrices
+over the fields~$\FF_{w}$, is \m{\prod_{w\in\QO{O}}\psiO{O}{w}(\det(\incO{O}\text{-rows of }X_{w}))} if \m{X_{w}=\IncM{O}}
+for all \m{w\in\MO{O}}, and $0$ otherwise. The finite datum \m{\Ups{O}\in\mathcal{S}(\WO{O},\std{E}{n})} has, at the
+places of \m{\plO{O}}, the component \m{X\mapsto\PsiO{O}{(X\bmod w)_{w}}} on the integral matrices and $0$ off them, and
+is the vacuum at all other places.
+\end{enumerate}
+\end{setting}
+\leanline{in the unit on the rows: \lnm{AuxPair}, \lnm{auxLevel}, \lnm{AuxPair.auxLevelChar},
+\lnm{AuxPair.levelGroup}, \lnm{AuxPair.levelChar}, \lnm{AuxPair.FormV}, \lnm{AuxPair.chosenGLRep},
+\lnm{AuxPair.formAction}, \lnm{AuxPair.resDetDatum}, \lnm{AuxPair.auxDatum}, \lnm{AuxPair.a}\sep in the
+background library: \lnm{algFormCoeff}, \lnm{levelRep}, \lnm{liftResidue}}
+
+\begin{definition}[reflection sums; quoted]\label{d:refl}
+Let $\FF$ be a finite field, $\psi$ a multiplicative character of~$\FF$ extended by~$0$, and \m{y\in\FF^{r}}. The
+\emph{reflection sum} is the element of the complex group algebra of \m{\mathrm{GL}_{r}(\FF)}
+\[
+\Refl{\psi}{y}=\sum_{A}\psi(\det A)^{-1}\,A ,
+\]
+the sum over the invertible matrices of the form \m{A=1+\xi\,y^{\mathsf{T}}} with a column vector
+\m{\xi\in\FF^{r}}. For finite groups $G_{w}$ and elements \m{a_{w}} of their group algebras, \m{\bigotimes_{w}a_{w}} is
+the element of the group algebra of \m{\prod_{w}G_{w}} whose coefficient at \m{(A_{w})_{w}} is the product of the
+coefficients of the~$a_{w}$ at the~$A_{w}$.
+\end{definition}
+\leanline{in the background library: \lnm{reflectionSum}, \lnm{piTensorElem}}
+
+For \m{y\ne0} the invertible matrices \m{1+\xi y^{\mathsf{T}}} are the elements of \m{\mathrm{GL}_{r}(\FF)} that fix
+every vector of the hyperplane on which the linear form \m{y^{\mathsf{T}}} vanishes: the transvections and the
+pseudo-reflections along it;
+for \m{y=0} the sum is the identity. Hypothesis~(b) of Theorem~1 is a property that the consumers of the
+theorem establish for the forms to which they apply it.
+
+\begin{definition}[Hecke polynomials at a split place; quoted]\label{d:hecke}
+Let $w$ be a finite place of~$E$ with \m{w\ne\conj{w}}, and $\pi$ a representation of \m{\Gfin{r'}} on a complex
+vector space~$\mathcal{V}$. Since $w$ is split, \m{\mathrm{GL}_{r'}(E_{w})} embeds in \m{\Gfin{r'}}: a matrix~$g$ goes
+to the element with component~$g$ at~$w$, \m{(g^{*})^{-1}} at~\m{\conj{w}}, and $1$ elsewhere. A vector is
+\emph{spherical at~$w$} if it is fixed by the elements of \m{\Kz{r'}} supported on~\m{\{w\}}. On such vectors the
+Hecke operators \m{T_{w,a}}, \m{0\le a\le r'}, are those of the double cosets of
+\m{\operatorname{diag}(\varpi_{w}1_{a},1_{r'-a})} in \m{\mathrm{GL}_{r'}(E_{w})}, and the \emph{Hecke polynomial} at a
+complex number~$T$ is the operator
+\[
+\Hk{\pi}{w}{T}=\sum_{a=0}^{r'}(-T)^{a}\,q_{w}^{\,a(a-1)/2}\;T_{w,a}.
+\]
+For signs~$\varepsilon'$ on~$[r']$, \m{\Rt{\varepsilon'}} is the representation of \m{\Gfin{r'}} on the complex
+functions on \m{\Gad{\varepsilon'}} by right translation.
+\end{definition}
+\leanline{in the background library: \lnm{FinPlace.IsSplit}, \lnm{atSplit}, \lnm{sphericalAt},
+\lnm{heckeSplit}, \lnm{heckePolyOp}, \lnm{finRightRep}}
+
+Up to the normalisation of the parameters, \m{\Hk{\pi}{w}{T}} acts on the spherical vector of an unramified
+principal series of \m{\mathrm{GL}_{r'}(E_{w})} by the product of the factors \m{1-\alpha_{i}T} over its Satake
+parameters~$\alpha_{i}$: it is the reciprocal of the standard local Euler factor in the variable~$T$. For the
+trivial representation the factors are \m{1-q_{w}^{a}T}, \m{0\le a<r'}, which is the second part of (Q7) below.
+
+\begin{definition}[splittings and zero terms; quoted]\label{d:split}
+Let $W$ and~$W'$ be hermitian spaces with points, of signs $\varepsilon$ on~$[r]$ and $\varepsilon'$ on~$[r']$,
+with matrices $J$ and~$J'$. A \emph{splitting}~$\Pi$ of~$W'$ over~$W$ with planes indexed by~$[\nu]$ consists of
+matrices \m{k_{\Pi}}, \m{l_{\Pi}} of size \m{r'\times\nu} and \m{i_{\Pi}} of size \m{r'\times r} over~$E$ with
+\m{k_{\Pi}^{*}J'k_{\Pi}=0}, \m{l_{\Pi}^{*}J'l_{\Pi}=0}, \m{l_{\Pi}^{*}J'k_{\Pi}=1}, \m{i_{\Pi}^{*}J'i_{\Pi}=J},
+\m{i_{\Pi}^{*}J'k_{\Pi}=0}, \m{i_{\Pi}^{*}J'l_{\Pi}=0}, and it is required that \m{r'=r+2\nu}. So $W'$ is the
+orthogonal sum of~$W$ and of $\nu$ hyperbolic planes with isotropic bases given by the columns of \m{k_{\Pi}}
+and~\m{l_{\Pi}}; we write \m{W'\cong\hyp{W}{\nu}}. The splitting is \emph{adapted} if, in the coordinates of the
+points of $W$ and~$W'$, the frame \m{(l_{\Pi},k_{\Pi},i_{\Pi})} has orthonormal columns at the infinite places
+and integral entries at the finite places. For a space~$V$ of signs~$\one{n}$, the \emph{zero term} of a datum
+along~$\Pi$ is given by the bounded linear map
+\[
+\ZT{\Pi}{V}{0}\colon\mathcal{S}(W',V)\to\mathcal{S}(W,V),
+\]
+which in a Schrödinger model takes the mean of a function over the adelic translations along the maps that
+vanish on the orthogonal complement of the columns of~\m{k_{\Pi}}, modulo the rational ones, and restricts to
+\m{\operatorname{Hom}(W,V)}.
+\end{definition}
+\leanline{in the background library: \lnm{Space.Splitting}, \lnm{IsBaseAdapted},
+\lnm{Space.Splitting.homSource}, \lnm{Space.Splitting.zeroTerm}, \lnm{Space.Splitting.sourceTerm} (at the
+argument~0)}
+
+\statement{inksoft}{\textbf{Quoted from the background library, I: data and descents.} These facts are taken for
+granted; references and their state are in §\ref{s:notes}, note~6. $W$, $V$, $\varepsilon$, $\varepsilon'$, $\chi$
+are as in Setting~\ref{s:weil}, with \m{\varepsilon'=\one{n}}, and $\omega$ stands for \m{\omega^{W,V}_{\chi,1}}.
+
+\vspace{3pt}\textbf{(Q1)} \emph{The descent as a functional.} Let $Y$ be automorphic on~$V$. Then $Y$ is bounded,
+the quotient~$[V]$ has finite measure, and for every \m{u\in\Gad{\varepsilon}} the map \m{f\mapsto\Desc{W}{V}{\chi}{1}(f,Y)(u)}
+is a continuous linear functional on \m{\mathcal{S}(W,V)}. For \m{u'\in\Gad{\varepsilon}} and \m{h'\in\Gad{\one{n}}},
+\m{\Desc{W}{V}{\chi}{1}(f,Y)(uu')=\Desc{W}{V}{\chi}{1}\bigl(\omega(u',h')f,\,Y(\,\cdot\,h')\bigr)(u)}, and
+\m{\Desc{W}{V}{\chi}{1}(f,Y)(\gamma u)=\Desc{W}{V}{\chi}{1}(f,Y)(u)} for rational points~$\gamma$ of~$W$.
+
+\vspace{3pt}\textbf{(Q2)} \emph{Density.} Let $S$ be a set of finite places and $f$ a datum with \m{\PS{S}f=f}. If
+a continuous linear functional on \m{\mathcal{S}(W,V)} vanishes on all data
+\m{v^{\varepsilon,\one{n}}_{p}\otimes\varrho(z)\vacf}, with $p$ a polynomial and $z$ a finite vector whose components at
+the places of~$S$ and at their conjugates are zero, then it vanishes on~$f$. These data are unramified at~$S$.
+
+\vspace{3pt}\textbf{(Q3)} \emph{Functions at a finite set of places.} Let $P$ be a finite set of finite places,
+none conjugate to another or to itself, and \m{E_{P}=\prod_{w\in P}E_{w}}. A Schwartz--Bruhat function~$\Psi$ on the
+\m{n\times r} matrices over~$E_{P}$ defines a datum \m{\Psi\cdot\vacf} that has the component~$\Psi$ at~$P$ and is the
+vacuum elsewhere; it is linear in~$\Psi$. Let \m{\operatorname{Box}} be the set of matrices with entries in
+\m{\prod_{w\in P}\oo_{w}}; for an idele~$\mathfrak{t}$ with integral components and a matrix~$z$,
+\m{\cosI{\mathfrak{t}}{z}} is the characteristic function of \m{z+\mathfrak{t}\operatorname{Box}}. (a) For a finite vector~$z$
+supported on~$P$ and its conjugates, \m{\varrho(z)\vacf} is a complex multiple of \m{\Psi\cdot\vacf} for a
+Schwartz--Bruhat function~$\Psi$ at~$P$. (b) A linear space of functions that contains all
+\m{\cosI{\mathfrak{t}}{z}} contains every Schwartz--Bruhat function at~$P$. (c) If such a function~$\Psi$ is
+invariant under the translations by \m{\mathfrak{t}\operatorname{Box}}, then
+\m{\Psi=\sum_{z'\in\mathcal{Z}}\Psi(z')\,\cosI{\mathfrak{t}}{z'}} for a finite set~$\mathcal{Z}$ of matrices with
+\m{\Psi(z')\ne0}. (d) A function of the residues of an integral matrix at the places of~$P$, extended by~$0$, is
+Schwartz--Bruhat, and takes the same value at two matrices whose difference has entries of absolute value
+\m{<1} at all \m{w\in P}.
+
+\vspace{3pt}\textbf{(Q4)} \emph{Finite elements acting on such data.} Let $\chi$ be a power of~$\upsilon_{1}$,
+$v$ a Fock vector and $\Psi$ as in (Q3). (a) For \m{g'\in\Kz{n}} supported on~$P$:
+\m{\omega(1,(1,g'))(v\otimes\Psi\cdot\vacf)=v\otimes\Psi'\cdot\vacf} with \m{\Psi'(X)=\Psi(g'^{-1}X)}. (b) For
+\m{\alpha\in\Gfin{r}} supported on~$P$: \m{\omega((1,\alpha),1)(v\otimes\Psi\cdot\vacf)} is a non-zero complex multiple
+of \m{v\otimes\Psi''\cdot\vacf} with \m{\Psi''(X)=\Psi(X\alpha)}.
+
+\vspace{3pt}\textbf{(Q5)} \emph{Scalar functions of forms.} For an auxiliary pair~$O$, an algebraic form~$\Xi$ of
+weight \m{(\kap{O},\eO{O})} and a linear form~$L$ on \m{\Vk{n}{\kap{O}}}: \m{\coef{L}{\Xi}} is automorphic on
+\m{\std{E}{n}}, and \m{\coef{L}{(\mathrm{R}(g')\Xi)}(h)=\coef{L}{\Xi}(hg')} for \m{g'\in\Gfin{n}}.
+
+\vspace{3pt}\textbf{(Q6)} \emph{Primitive matrices.} Let $w$ be a finite place. An \m{n\times r} matrix over~$E_{w}$
+with a left inverse becomes, after multiplication on the right by a suitable element of
+\m{\mathrm{GL}_{r}(E_{w})}, a matrix with entries in~$\oo_{w}$ that has a left inverse with entries in~$\oo_{w}$. A
+square matrix over~$\oo_{w}$ whose reduction is invertible is invertible over~$\oo_{w}$.}
+\leanline{in the background library: (Q1) \lnm{ThetaKernel.exists\_clm\_lift}, \lnm{ThetaKernel.lift\_equivariant},
+\lnm{lift\_mul\_right}, \lnm{ThetaKernel.fixesLeft\_lift}\sep (Q2) \lnm{Space.ext\_integrated}\sep (Q3)
+\lnm{Space.name}, \lnm{cosetIndicator}, \lnm{Space.name\_schrodingerAct\_boxIndicator},
+\lnm{IsSchwartzBruhat.mem\_of\_cosets}, \lnm{IsSchwartzBruhat.eq\_sum\_cosetIndicator},
+\lnm{isSchwartzBruhat\_residueDatum}, \lnm{residueDatum\_congr}\sep (Q4) \lnm{pairWeil\_name\_of\_mem},
+\lnm{pairWeil\_eq\_smul\_of\_projOn\_eq}, \lnm{pairWeil\_name\_on}, \lnm{pairWeil\_integrated\_fin}\sep (Q5)
+\lnm{Space.isAutomorphic\_algFormCoeff}, \lnm{Space.algFormCoeff\_algFormRep}\sep (Q6)
+\lnm{IsValuationPair.exists\_isPrimitiveMatrix\_mul}, \lnm{IsPrimitiveMatrix.exists\_map\_subtype\_eq},
+\lnm{isUnit\_of\_mapMatrix}}
+
+\statement{inksoft}{\textbf{Quoted from the background library, II: Hecke operators, zero terms, growth.}
+Here $W'$ has signs~$\varepsilon'$ on~$[r']$, $V$ has signs~$\one{n}$, $\chi_{1}$ is an automorphic character and
+$\omega'$ stands for \m{\omega^{W',V}_{\chi_{1},1}}.
+
+\vspace{3pt}\textbf{(Q7)} \emph{Hecke polynomials as sums over subspaces.} Let \m{w\ne\conj{w}}. There are elements
+\m{g_{U}\in\Gfin{r'}}, one for each linear subspace~$U$ of \m{\FF_{w}^{r'}}, supported on~\m{\{w\}}, such that for every
+representation~$\pi$ of \m{\Gfin{r'}}, every vector~$\phi$ spherical at~$w$ and every complex~$T$:
+\m{\Hk{\pi}{w}{T}\phi=\sum_{U}(-T)^{\dim U}q_{w}^{\dim U(\dim U-1)/2}\,\pi(g_{U})\phi}. Moreover (the $q$-binomial
+theorem) \m{\sum_{U}(-T)^{\dim U}q_{w}^{\dim U(\dim U-1)/2}=\prod_{0\le a<r'}(1-q_{w}^{a}T)}.
+
+\vspace{3pt}\textbf{(Q8)} \emph{Adjoints.} Let \m{w\ne\conj{w}}, let $\pi$,~$\pi'$ be representations of
+\m{\Gfin{r'}} on $\mathcal{V}$,~$\mathcal{V}'$ and $\beta$ a bilinear map on \m{\mathcal{V}\times\mathcal{V}'} with
+\m{\beta(\pi(g)\phi,\pi'(g)\phi')=\beta(\phi,\phi')}. For vectors spherical at~$w$:
+\m{\beta(\Hk{\pi}{w}{T}\phi,\phi')=\beta(\phi,\Hk{\pi'}{\conj{w}}{T}\phi')}. A linear map that commutes with the elements
+supported on~\m{\{w\}} commutes with the Hecke polynomials at~$w$. Vectors spherical at~$w$ are spherical
+at~\m{\conj{w}}.
+
+\vspace{3pt}\textbf{(Q9)} \emph{Hecke transfer.} Let \m{w\ne\conj{w}} and \m{r'\le n}. Suppose that the base change
+of~$\chi_{1}$ is unramified at~$w$ and that $f$ is unramified at~\m{\{w\}}. Let $\Lambda$ be a linear map from
+\m{\mathcal{S}(W',V)} to a complex vector space with commuting representations $\pi$ of \m{\Gfin{r'}} and $\rho$ of
+\m{\Gfin{n}}, such that \m{\Lambda(\omega'((1,g),(1,h))f)=\pi(g)\rho(h)\Lambda f} for all \m{g\in\Gfin{r'}},
+\m{h\in\Gfin{n}}. Then \m{\Lambda f} is spherical at~$w$ for $\pi$ and for~$\rho$, and for every complex~$T$
+\[
+\Hk{\rho}{w}{T}\,\Lambda f=\prod_{0\le a<n-r'}\bigl(1-q_{w}^{a}\,A\,T\bigr)\cdot\Hk{\pi}{\conj{w}}{q_{w}^{\,n-r'}AB^{-1}T}\,\Lambda f ,
+\]
+with complex numbers $A$,~$B$ that depend on $\chi_{1}$, $w$, $r'$, $n$ and have \m{|A|=q_{w}^{r'/2}},
+\m{|B|=q_{w}^{n/2}}. The character~$\upsilon_{1}$ has unramified base change at every split place.
+
+\vspace{3pt}\textbf{(Q10)} \emph{Zero terms.} Let $\Pi$ be an adapted splitting of~$W'$ over~$W$ with planes indexed
+by~$[\nu]$, and \m{\chi_{1}=\chi\upsilon_{1}^{\nu}}. (a) For every \m{u\in\Gad{\varepsilon'}} there are an element~$g$ of
+the standard maximal compact subgroup of \m{\Gad{\varepsilon'}}, with finite component in \m{\Kz{r'}}, an element
+\m{u_{0}\in\Gad{\varepsilon}} and a complex number~$a$ such that for all \m{h\in\Gad{\one{n}}} and all data~$f$:
+\m{\ZT{\Pi}{V}{0}\bigl(\omega'(u,h)f\bigr)=a\cdot\omega^{W,V}_{\chi,1}(u_{0},h)\,\ZT{\Pi}{V}{0}\bigl(\omega'(g^{-1},1)f\bigr)}. (b) If
+\m{\PS{S}f=f}, then \m{\PS{S}f_{1}=f_{1}} for \m{f_{1}=\ZT{\Pi}{V}{0}(\omega'(g^{-1},1)f)}. (c) If \m{\nu=0}, then
+\m{\theta_{W,V}\circ\ZT{\Pi}{V}{0}=\theta_{W',V}}. (d) If \m{\nu\ge1}, there are a space~$W_{1}$ with an adapted
+splitting over~$W$ with \m{\nu-1} planes, and an adapted splitting~$\Pi'$ of~$W'$ over~$W_{1}$ with one plane.
+
+\vspace{3pt}\textbf{(Q11)} \emph{Growth and decay.} Every point~$u$ of an adelic unitary group has a height
+\m{\operatorname{ht}(u)\ge1}, invariant under rational points on the left; on a definite space it is~$1$. (a) There
+are constants $C$,~$a$ with \m{|\theta_{W',V}(\omega'(u,h)\varphi)|\le C\lVert\varphi\rVert\operatorname{ht}(u)^{a}} for all
+$u$,~$h$,~$\varphi$. (b) If \m{\operatorname{ht}(u)>2}, the lattice of~$W'$ at~$u$ contains a non-zero isotropic
+vector of length at most \m{2/\operatorname{ht}(u)}; rational frames with the same Gram matrix are conjugate
+under the rational points (Witt); and the lattice of~$V$ at every~$h$ has a basis of bounded length. (c) Let
+$\Pi'$ be an adapted splitting of~$W'$ over~$W_{1}$ with one plane and
+\m{\thd=\theta_{W',V}-\theta_{W_{1},V}\circ\ZT{\Pi'}{V}{0}}. Then $\thd$ is invariant under the Heisenberg operators
+of the adelic translations along the isotropic vector~\m{k_{\Pi'}}, and \m{|\thd(\varphi)|} is at most the supremum
+of \m{|\theta_{W',V}(\varphi)-\theta_{W',V}(\varrho(z)\varphi)|} over these translations~$z$. (d) \emph{The decay
+estimate, in the case used.} For data \m{f=v^{\varepsilon',\one{n}}_{p}\otimes\varrho(z)\vacf} there is a constant~$C_{0}$
+with \m{|\thd(\omega'(u,h)f)|\le C_{0}} for all $h$ and all~$u$ such that either \m{\operatorname{ht}(u)\le2}, or
+the isotropic vector~\m{k_{\Pi'}} is, in the lattice of~$W'$ at~$u$, of length at most \m{2/\operatorname{ht}(u)}.}
+\leanline{in the background library: (Q7) \lnm{heckePolyOp\_eq\_sum}, \lnm{q\_binomial\_submodule}\sep (Q8)
+\lnm{heckePolyOp\_adjoint}, \lnm{map\_heckePolyOp}, \lnm{Gf.supportedOn\_star}\sep (Q9)
+\lnm{hecke\_transfer\_of\_equivariant}, \lnm{WeilData.charUnramifiedAt\_upsilon}\sep (Q10)
+\lnm{Space.Splitting.iwasawa}, \lnm{Space.Splitting.sourceTerm\_radicalElt},
+\lnm{Space.Splitting.sourceTerm\_levi}, \lnm{projOn\_pairWeil},
+\lnm{Space.Splitting.IsAdapted.omega\_projOn\_of\_isMixedLaw}, \lnm{exists\_isBaseAdapted\_stage},
+\lnm{removePlanes}\sep (Q11) \lnm{ThetaKernel.moderate\_growth}, \lnm{Space.exists\_short\_isotropic},
+\lnm{Space.witt}, \lnm{Space.exists\_short\_basis\_matrix}, \lnm{Space.Splitting.zeroTerm\_rho\_kAdelic},
+\lnm{norm\_quotMean\_le}, \lnm{exists\_norm\_name\_le}}
+
+\sect{Three lemmas on the level}{s:level}
+\begin{lemma}[prescribed components at the places of the pair]\label{l:atplace}
+Let $O$ be an auxiliary pair (Setting~\ref{s:aux}), $[r']$ a finite index set, and \m{g=(g_{w})_{w\in\plO{O}}} a
+family of matrices \m{g_{w}\in\mathrm{GL}_{r'}(E_{w})}. Then there is an element of \m{\Gfin{r'}}, supported on
+\m{\plO{O}}, whose component at every \m{w\in\plO{O}} is~$g_{w}$.
+\end{lemma}
+\begin{proof}
+For \m{w\in\plO{O}} we have \m{w\ne\conj{w}}, so \m{\mathrm{GL}_{r'}(E_{w})} embeds in \m{\Gfin{r'}}
+(Definition~\ref{d:hecke}): the image of~$g_{w}$ has the component~$g_{w}$ at~$w$ and is supported on~\m{\{w\}}. No place
+of \m{\plO{O}} is conjugate to another, so the image of~$g_{w}$ has the component~$1$ at the other places of
+\m{\plO{O}}, and the product of these images over \m{w\in\plO{O}} is the element sought.
+\end{proof}
+\leanline{\lean{existsatPlaceeq}}
+
+\begin{lemma}[an annihilator, or a congruence to the inclusion matrix]\label{l:annihilator}
+Let \m{\iota\colon[r]\to[n]} be an injective map, $w$ a finite place of~$E$, and $X$ an \m{n\times r} matrix
+over~$E_{w}$ that has a left inverse over~$E_{w}$. Let \m{\operatorname{Inc}_{\iota}} be the \m{n\times r} matrix with
+entries~$1$ at the places \m{(\iota(c),c)} and $0$ elsewhere. Then there is an \m{n\times n} matrix~$\ell$ with
+entries in~$\oo_{w}$ such that \m{\ell X=0} and such that the following holds: if all entries
+\m{\ell_{i,\iota(c)}}, \m{i\in[n]}, \m{c\in[r]}, have absolute value \m{<1}, then there is
+\m{\alpha\in\mathrm{GL}_{r}(E_{w})} such that every entry of \m{X\alpha-\operatorname{Inc}_{\iota}} has absolute value
+\m{<1}.
+\end{lemma}
+\begin{proof}
+By (Q6) there is \m{\beta\in\mathrm{GL}_{r}(E_{w})} such that \m{Z=X\beta} has entries in~$\oo_{w}$ and a left
+inverse~$Z'$ with entries in~$\oo_{w}$: \m{Z'Z=1}. Put \m{\ell=ZZ'-1}. Then
+\m{\ell X=(ZZ'-1)Z\beta^{-1}=0}. Suppose that all \m{\ell_{i,\iota(c)}} have absolute value \m{<1}, and let $\beta'$ be
+the \m{r\times r} matrix with the entries \m{Z'_{c',\iota(c)}}. The entry of \m{Z\beta'} at \m{(i,c)} is
+\m{(ZZ')_{i,\iota(c)}}, which is congruent modulo the maximal ideal to the entry of the identity matrix at
+\m{(i,\iota(c))}, that is, to the entry of \m{\operatorname{Inc}_{\iota}} at \m{(i,c)}. In particular the product of
+the \m{\iota}-rows of~$Z$ with~$\beta'$ reduces to the identity, so $\beta'$ is invertible modulo the maximal
+ideal, hence over~$\oo_{w}$ by (Q6). Then \m{\alpha=\beta\beta'} has \m{X\alpha=Z\beta'}, with the congruence just
+shown.
+\end{proof}
+\leanline{\lean{existsannihilatororcongrinclMatrix}}
+
+\begin{lemma}[an integral element with block reductions acts through the chosen places]\label{l:level}
+Let $O$ be an auxiliary pair (Setting~\ref{s:aux}), $\pi$ a representation of \m{\Gfin{n}} on a complex vector
+space~$\mathcal{V}$, and \m{\phi\in\mathcal{V}^{O}}. Let \m{g\in\Kz{n}}, with reductions \m{\conj{g}_{w}=\red{w}g} for
+\m{w\in\plO{O}}, and let \m{s=(s_{w})_{w\in\plO{O}}} be a family of matrices \m{s_{w}\in\mathrm{GL}_{r}(\FF_{w})}. Suppose
+that \m{\conj{g}_{w}\,\IncM{O}=\IncM{O}\,s_{w}} for every \m{w\in\MO{O}} and
+\m{\conj{g}_{w}^{\mathsf{T}}\,\IncM{O}=\IncM{O}\,s_{w}^{\mathsf{T}}} for every \m{w\in\QO{O}}. Then
+\[
+\pi(g)\,\phi=\Bigl(\prod_{w\in\plO{O}}\psiO{O}{w}(\det s_{w})\Bigr)^{-1}\chact{O}{\pi}{(s_{w})_{w\in\MO{O}}}\,\phi .
+\]
+\end{lemma}
+\begin{proof}
+Let \m{A=(s_{w})_{w\in\MO{O}}} and let \m{g_{A}\in\Kz{n}} be as in Setting~\ref{s:aux}(c). The reductions of
+\m{g_{A}^{-1}g} are \m{j_{w}=\operatorname{diag}(s_{w},1)^{-1}\conj{g}_{w}} at \m{w\in\MO{O}} and \m{j_{w}=\conj{g}_{w}} at
+\m{w\in\QO{O}}. At \m{w\in\MO{O}}:
+\[
+j_{w}\,\IncM{O}=\operatorname{diag}(s_{w},1)^{-1}\,\IncM{O}\,s_{w}=\IncM{O}\,s_{w}^{-1}s_{w}=\IncM{O}.
+\]
+At \m{w\in\QO{O}}: the hypothesis says that the transpose of the rows of~$\conj{g}_{w}$ with indices in the image
+of~$\incO{O}$ is \m{\IncM{O}s_{w}^{\mathsf{T}}}; so these rows vanish in the columns outside the image, and the
+$\incO{O}$-block of~$\conj{g}_{w}$ is~$s_{w}$. Hence \m{j=(j_{w})\in\LO{O}} with
+\m{\etaO{O}(j)=\prod_{w\in\QO{O}}\psiO{O}{w}(\det s_{w})^{-1}}, so \m{g_{A}^{-1}g\in\KO{O}} and
+\[
+\pi(g)\,\phi=\pi(g_{A})\,\pi(g_{A}^{-1}g)\,\phi=\etaO{O}(j)\,\pi(g_{A})\,\phi ,\qquad
+\pi(g_{A})\,\phi=\prod_{w\in\MO{O}}\psiO{O}{w}(\det s_{w})^{-1}\,\chact{O}{\pi}{A}\,\phi ,
+\]
+the second equation by Setting~\ref{s:aux}(c).
+\end{proof}
+\leanline{\lean{smulchosenGLRepeq}}
+
+\begin{lemma}[the conjugate scalar function of a form is automorphic]\label{l:automorphic}
+Let $O$ be an auxiliary pair (Setting~\ref{s:aux}), $L$ a linear form on \m{\Vk{n}{\kap{O}}} and
+\m{\Xi\in\FormO{O}}. Then the function \m{\conj{\coef{L}{\Xi}}} is automorphic on \m{\std{E}{n}}.
+\end{lemma}
+\begin{proof}
+By (Q5), \m{\coef{L}{\Xi}} is automorphic, and the three defining conditions are stable under complex conjugation.
+\end{proof}
+\leanline{\lean{isAutomorphicstaralgFormCoeff}}
+
+\sect{Proof of Theorem 1}{s:refl}
+Throughout this section $O$, $\Xi$, $L$ are as in Theorem~1, \m{W=\WO{O}}, \m{V=\std{E}{n}}, \m{\chi=\chO{O}},
+\m{\omega=\omega^{W,V}_{\chi,1}}, and \m{P=\plO{O}}. Functions at~$P$ are functions on the \m{n\times r} matrices
+over~$E_{P}$, as in (Q3).
+
+\subhead{Step 0: reductions.} Let $f$ be a datum with \m{\PS{S}f=f} and \m{u\in\Gad{\sgO{O}}}. By
+Lemma~\ref{l:automorphic} and (Q1), the descent of \m{\conj{\coef{L}{\Xi}}} at~$u$ is a continuous linear functional of
+the datum. By (Q2) it suffices to show that it vanishes on \m{\pvO{O}{p}\otimes\varrho(z)\vacf} for every
+polynomial~$p$ and every finite vector~$z$ supported on~$P$ and its conjugates; by (Q3)(a), on
+\m{\pvO{O}{p}\otimes\Psi\cdot\vacf} for every Schwartz--Bruhat function~$\Psi$ at~$P$; and by (Q3)(b), since the
+descent is linear in~$\Psi$, for the functions \m{\Psi=\cosI{\mathfrak{t}}{z}}. So fix $p$ and an idele~$\mathfrak{t}$
+with integral components, and put, for a matrix~$z$ over~$E_{P}$ and \m{\Xi'\in\FormO{O}},
+\[
+C_{z}(\Xi')=\Desc{W}{V}{\chi}{1}\bigl(\pvO{O}{p}\otimes\cosI{\mathfrak{t}}{z}\cdot\vacf,\ \conj{\coef{L}{\Xi'}}\bigr)(u).
+\]
+It is conjugate-linear in~$\Xi'$. We have to show \m{C_{z}(\Xi)=0} for every~$z$.
+
+\subhead{Step 1: transport of the centre.}
+\begin{lemma}\label{l:transport}
+For \m{w\in P} let $A_{w}$,~$B_{w}$ be \m{n\times r} matrices over~$\oo_{w}$ and \m{s_{w}\in\mathrm{GL}_{r}(\FF_{w})}, and
+let $z$,~$z'$ be matrices over~$E_{P}$. Suppose that for every \m{w\in P}: \textup{(i)} $s_{w}$ is the reduction
+of \m{1+B_{w}^{\mathsf{T}}A_{w}}; \textup{(ii)} the reduction~$\sigma_{w}$ of the \m{n\times n} matrix
+\m{1+A_{w}B_{w}^{\mathsf{T}}} satisfies \m{\sigma_{w}\IncM{O}=\IncM{O}s_{w}} if \m{w\in\MO{O}} and
+\m{\sigma_{w}^{\mathsf{T}}\IncM{O}=\IncM{O}s_{w}^{\mathsf{T}}} if \m{w\in\QO{O}}; \textup{(iii)} the component at~$w$ of
+\m{\mathfrak{t}^{-1}\bigl(z'-(1+A_{w}B_{w}^{\mathsf{T}})z\bigr)} has entries in~$\oo_{w}$. Then
+\[
+\prod_{w\in P}\psiO{O}{w}(\det s_{w})\cdot C_{z'}\bigl(\chact{O}{\mathrm{R}}{(s_{w})_{w\in\MO{O}}}\,\Xi\bigr)=C_{z}(\Xi),
+\]
+where \m{\chact{O}{\mathrm{R}}{\,\cdot\,}} is the action of Setting~\ref{s:aux}\textup{(c)} on \m{\FormO{O}}.
+\end{lemma}
+\begin{proof}
+The determinant of \m{1+A_{w}B_{w}^{\mathsf{T}}} equals that of \m{1+B_{w}^{\mathsf{T}}A_{w}}, whose reduction is
+\m{\det s_{w}\ne0}; so \m{1+A_{w}B_{w}^{\mathsf{T}}\in\mathrm{GL}_{n}(\oo_{w})} by (Q6). By Lemma~\ref{l:atplace} there is
+\m{g\in\Gfin{n}}, supported on~$P$, with these components; it lies in~\m{\Kz{n}}, and \m{\red{w}g=\sigma_{w}}. By (Q1),
+with \m{u'=1} and \m{h'=(1,g)},
+\[
+C_{z}(\Xi)=\Desc{W}{V}{\chi}{1}\Bigl(\omega\bigl(1,(1,g)\bigr)\bigl(\pvO{O}{p}\otimes\cosI{\mathfrak{t}}{z}\cdot\vacf\bigr),\ \conj{\coef{L}{\Xi}}(\,\cdot\,g)\Bigr)(u).
+\]
+By (Q4)(a) the datum is \m{\pvO{O}{p}\otimes\Psi'\cdot\vacf} with \m{\Psi'(X)=\cosI{\mathfrak{t}}{z}(g^{-1}X)}, the
+characteristic function of \m{gz+\mathfrak{t}\operatorname{Box}}, since $g$ preserves \m{\operatorname{Box}}; by (iii)
+this set is \m{z'+\mathfrak{t}\operatorname{Box}}. By (Q5), \m{\coef{L}{\Xi}(hg)=\coef{L}{(\mathrm{R}(g)\Xi)}(h)}, and by
+Lemma~\ref{l:level} and (ii),
+\[
+\mathrm{R}(g)\,\Xi=\prod_{w\in P}\psiO{O}{w}(\det s_{w})^{-1}\cdot\chact{O}{\mathrm{R}}{(s_{w})_{w\in\MO{O}}}\,\Xi .
+\]
+As $C_{z'}$ is conjugate-linear and the values \m{\psiO{O}{w}(\det s_{w})} have absolute value~$1$, the scalar comes
+out as \m{\prod_{w}\psiO{O}{w}(\det s_{w})}.
+\end{proof}
+
+\subhead{Step 2: annihilators.} Fix~$z$. For \m{w\in P} let $\delta_{w}$ be the diagonal \m{n\times n} matrix with
+the entry~$\varpi_{w}$ at the indices outside the image of~$\incO{O}$ if \m{w\in\QO{O}}, and all other entries~$1$; so
+\m{\delta_{w}=1} for \m{w\in\MO{O}}. Apply Lemma~\ref{l:annihilator} to the matrix with \m{n+r} rows
+\[
+X_{w}=\begin{pmatrix}\delta_{w}z_{w}\\ \mathfrak{t}_{w}1_{r}\end{pmatrix},
+\]
+with the injection of~$[r]$ into the first~$n$ rows by~$\incO{O}$; it has the left inverse
+\m{(0,\ \mathfrak{t}_{w}^{-1}1_{r})}. We get a square matrix~$\ell_{w}$ of size \m{n+r} over~$\oo_{w}$ with
+\m{\ell_{w}X_{w}=0}. For a row index~$i_{0}$ of~$\ell_{w}$ let \m{\conj{\ell}_{w}(i_{0})\in\FF_{w}^{r}} be the vector of the
+residues of the entries \m{(\ell_{w})_{i_{0},\incO{O}(c)}}, \m{c\in[r]}. There are two cases.
+
+\subhead{Step 3: all residues vanish.} Suppose \m{\conj{\ell}_{w}(i_{0})=0} for all~$w$ and~$i_{0}$. Lemma~\ref{l:annihilator}
+gives \m{\alpha_{w}\in\mathrm{GL}_{r}(E_{w})} such that \m{\delta_{w}z_{w}\alpha_{w}-\IncM{O}} and \m{\mathfrak{t}_{w}\alpha_{w}} have
+entries of absolute value \m{<1}. By Lemma~\ref{l:atplace} there is \m{\alpha\in\Gfin{r}}, supported on~$P$, with
+the components~$\alpha_{w}$. Let~$\Psi$ be the function at~$P$ with
+\m{\Psi(X)=\PsiO{O}{((X\alpha)_{w}\bmod w)_{w}}} if \m{X\alpha} has entries in \m{\prod_{w\in P}\oo_{w}}, and \m{\Psi(X)=0}
+otherwise. We collect four facts.
+
+(1) \m{\Psi(z)=1}. At \m{w\in\MO{O}}, \m{z_{w}\alpha_{w}} is congruent to~\m{\IncM{O}}. At \m{w\in\QO{O}}, the rows of
+\m{z_{w}\alpha_{w}} in the image of~$\incO{O}$ are congruent to those of~\m{\IncM{O}}, and the other rows, multiplied
+by~$\varpi_{w}$, have absolute value \m{<1}, so they are integral. Hence \m{z\alpha} is integral, reduces to~\m{\IncM{O}}
+at~$\MO{O}$, and its $\incO{O}$-rows reduce to the identity at~$\QO{O}$.
+
+(2) $\Psi$ is Schwartz--Bruhat and invariant under the translations by \m{\mathfrak{t}\operatorname{Box}}: for~$X'$
+in this set, \m{X'\alpha} has entries of absolute value \m{<1}, and (Q3)(d) applies. By (Q3)(c),
+\m{\Psi=\sum_{z'\in\mathcal{Z}}\Psi(z')\cosI{\mathfrak{t}}{z'}} with a finite set~$\mathcal{Z}$ and all \m{\Psi(z')\ne0}; by~(1),
+$\Psi\ne0$, so $\mathcal{Z}$ is not empty.
+
+(3) For every~$z'$ with \m{\Psi(z')\ne0}: \m{\Psi(z')\,C_{z'}(\Xi)=C_{\IncM{O}\alpha^{-1}}(\Xi)}. Indeed, \m{X=z'\alpha} is
+integral, congruent to~\m{\IncM{O}} at~$\MO{O}$, and its $\incO{O}$-rows have invertible reductions~$s_{w}$ at
+\m{w\in\QO{O}}; put \m{s_{w}=1} for \m{w\in\MO{O}}. Apply Lemma~\ref{l:transport} with \m{A_{w}=X_{w}-\IncM{O}},
+\m{B_{w}=\IncM{O}}, the centres \m{\IncM{O}\alpha^{-1}} and~$z'$. Since \m{\IncM{O}^{\mathsf{T}}\IncM{O}=1}:
+\m{1+B_{w}^{\mathsf{T}}A_{w}} is the matrix of the $\incO{O}$-rows of~$X_{w}$, which gives~(i);
+\m{(1+A_{w}B_{w}^{\mathsf{T}})\IncM{O}=X_{w}}, whose reduction is \m{\IncM{O}} at~$\MO{O}$, and the rows of
+\m{1+A_{w}B_{w}^{\mathsf{T}}} in the image of~$\incO{O}$ are those of \m{X_{w}\IncM{O}^{\mathsf{T}}}, which gives~(ii);
+and \m{(1+A_{w}B_{w}^{\mathsf{T}})\IncM{O}\alpha_{w}^{-1}=X_{w}\alpha_{w}^{-1}=z'_{w}}, which gives~(iii). The lemma yields
+\m{\prod_{w\in\QO{O}}\psiO{O}{w}(\det s_{w})\,C_{z'}(\Xi)=C_{\IncM{O}\alpha^{-1}}(\Xi)}, and the product is \m{\Psi(z')}.
+
+(4) By hypothesis~(c) of the theorem at the point \m{u\alpha}, by (Q1) with \m{u'=(1,\alpha)}, \m{h'=1}, and by (Q4)(b)
+applied to the component \m{X\mapsto\PsiO{O}{(X\bmod w)_{w}}} of~\m{\Ups{O}}:
+\[
+0=\Desc{W}{V}{\chi}{1}\bigl(\pvO{O}{p}\otimes\Ups{O},\,\conj{\coef{L}{\Xi}}\bigr)(u\alpha)
+=a\cdot\Desc{W}{V}{\chi}{1}\bigl(\pvO{O}{p}\otimes\Psi\cdot\vacf,\,\conj{\coef{L}{\Xi}}\bigr)(u)
+=a\sum_{z'\in\mathcal{Z}}\Psi(z')\,C_{z'}(\Xi)
+\]
+with a complex number \m{a\ne0}. By~(3), applied to every \m{z'\in\mathcal{Z}} and to~$z$, each term is
+\m{C_{\IncM{O}\alpha^{-1}}(\Xi)=\Psi(z)C_{z}(\Xi)=C_{z}(\Xi)}. So \m{\#\mathcal{Z}\cdot C_{z}(\Xi)=0}, and
+\m{C_{z}(\Xi)=0}.
+
+\subhead{Step 4: some residue does not vanish.} Suppose \m{\conj{\ell}_{w_{0}}(i_{0})\ne0} for some \m{w_{0}\in P} and
+some row index~$i_{0}$. First, for every family \m{s=(s_{w})_{w\in P}} of invertible matrices of the form
+\m{s_{w}=1+\xi_{w}\conj{\ell}_{w}(i_{0})^{\mathsf{T}}}, \m{\xi_{w}\in\FF_{w}^{r}}:
+\begin{equation}\label{e:same}
+\prod_{w\in P}\psiO{O}{w}(\det s_{w})\cdot C_{z}\bigl(\chact{O}{\mathrm{R}}{(s_{w})_{w\in\MO{O}}}\,\Xi\bigr)=C_{z}(\Xi).
+\end{equation}
+This is Lemma~\ref{l:transport} with \m{z'=z}, \m{A_{w}=\IncM{O}} and \m{B_{w}=\mu_{w}\tilde{\xi}_{w}^{\mathsf{T}}}, where
+\m{\tilde{\xi}_{w}} is a lift of~$\xi_{w}$ to~$\oo_{w}^{r}$ and \m{\mu_{w}\in\oo_{w}^{n}} is the vector with the entries
+\m{(\ell_{w})_{i_{0},i}(\delta_{w})_{ii}}, \m{i\in[n]}. Indeed the matrix
+\[
+1+B_{w}^{\mathsf{T}}A_{w}=1+\tilde{\xi}_{w}\,(\IncM{O}^{\mathsf{T}}\mu_{w})^{\mathsf{T}}
+\]
+reduces to~$s_{w}$, because $\delta_{w}$ is~$1$ at the indices in the image of~$\incO{O}$; this is~(i). The matrix
+\m{1+A_{w}B_{w}^{\mathsf{T}}=1+\IncM{O}\tilde{\xi}_{w}\mu_{w}^{\mathsf{T}}} differs from~$1$ only in the rows of the
+image of~$\incO{O}$; its $\incO{O}$-block reduces to~$s_{w}$, and its entries in these rows and in the columns
+outside the image are multiples of~$\varpi_{w}$ when \m{w\in\QO{O}}; this gives~(ii) at both kinds of places.
+Finally \m{\mu_{w}^{\mathsf{T}}z_{w}} is the part of the row~$i_{0}$ of~$\ell_{w}$ in the first $n$ columns times
+\m{\delta_{w}z_{w}}, which by \m{\ell_{w}X_{w}=0} equals \m{-\mathfrak{t}_{w}} times the part of that row in the last
+$r$ columns; so \m{\mathfrak{t}_{w}^{-1}(z_{w}-(1+A_{w}B_{w}^{\mathsf{T}})z_{w})=-\mathfrak{t}_{w}^{-1}\IncM{O}\tilde{\xi}_{w}\mu_{w}^{\mathsf{T}}z_{w}}
+is integral; this is~(iii).
+
+\emph{If \m{w_{0}\in\MO{O}}.} Sum \eqref{e:same} over the families~$s$ with \m{s_{w}=1} for \m{w\in\QO{O}} and $s_{w}$,
+\m{w\in\MO{O}}, running over all invertible matrices of the form \m{1+\xi\,\conj{\ell}_{w}(i_{0})^{\mathsf{T}}}. By
+Definition~\ref{d:refl} and conjugate-linearity, the left sides add up to the value of~$C_{z}$ at
+\m{\bigotimes_{w\in\MO{O}}\Refl{\psiO{O}{w}}{\conj{\ell}_{w}(i_{0})}} applied to~$\Xi$, which is~$0$ by hypothesis~(b), the vector
+at~$w_{0}$ being non-zero. The right sides add up to the number of families, which is at least~$1$,
+times~$C_{z}(\Xi)$. So \m{C_{z}(\Xi)=0}.
+
+\emph{If \m{w_{0}\in\QO{O}}.} By hypothesis~(a) there is \m{a\in\FF_{w_{0}}} with \m{a\ne0} and
+\m{\psiO{O}{w_{0}}(a)\ne1}. Choose \m{c_{0}\in[r]} with the entry \m{\conj{\ell}_{w_{0}}(i_{0})_{c_{0}}\ne0}, and let
+\m{\xi_{w_{0}}} be \m{(a-1)/\conj{\ell}_{w_{0}}(i_{0})_{c_{0}}} times the basis vector of index~$c_{0}$; then
+\m{s_{w_{0}}=1+\xi_{w_{0}}\conj{\ell}_{w_{0}}(i_{0})^{\mathsf{T}}} has determinant~$a$. With \m{s_{w}=1} for \m{w\ne w_{0}},
+\eqref{e:same} reads \m{\psiO{O}{w_{0}}(a)\,C_{z}(\Xi)=C_{z}(\Xi)}. So \m{C_{z}(\Xi)=0}.
+
+This proves Theorem~1.
+\leanline{\lean{descentsVanishofreflectionSum}}
+
+\sect{A maximum principle}{s:max}
+\begin{proposition}[bounded functions killed by a Hecke polynomial at a small argument]\label{p:max}
+Let $\varepsilon'$ be a family of signs on~$[r']$, $F$ a complex function on \m{\Gad{\varepsilon'}}, $w$ a finite
+place of~$E$ and $T$ a complex number. Suppose that $w$ is split, \m{w\ne\conj{w}}; that $F$ is spherical at~$w$
+for \m{\Rt{\varepsilon'}}; that \m{\Hk{\Rt{\varepsilon'}}{w}{T}\,F=0}; that \m{q_{w}^{\,r'+1}\,|T|\le1}; and that $|F|$ is
+bounded. Then \m{F=0}.
+\end{proposition}
+\begin{proof}
+By (Q7), for every \m{u\in\Gad{\varepsilon'}},
+\m{0=\sum_{U}(-T)^{\dim U}q_{w}^{\dim U(\dim U-1)/2}F(u\,g_{U})}. Replace $u$ by \m{u\,g_{0}^{-1}}, with $g_{0}$ the
+element of the zero subspace: the term of \m{U=0} is~$F(u)$, so
+\m{|F(u)|\le\sum_{U\ne0}|T|^{\dim U}q_{w}^{\dim U(\dim U-1)/2}\,\sup|F|}. By the second part of (Q7) at \m{-|T|}, the
+sum of the coefficients over all~$U$ is \m{\prod_{0\le a<r'}(1+q_{w}^{a}|T|)\le\exp\bigl(|T|\sum_{a<r'}q_{w}^{a}\bigr)}. As
+\m{q_{w}\ge2}, \m{\sum_{a<r'}q_{w}^{a}<q_{w}^{r'}}, so the exponent is less than \m{q_{w}^{r'}|T|\le q_{w}^{-1}\le\tfrac12},
+which is less than \m{\log2}. Hence the sum of the coefficients over \m{U\ne0} is less than~$1$, and the
+inequality forces \m{\sup|F|=0}.
+\end{proof}
+\leanline{\lean{eqzeroofheckePolyOpeqzero}\sep in the background library: \lnm{maximum\_principle}}
+
+\sect{Proof of Theorem 2}{s:tower}
+\begin{lemma}[the zero term has vanishing integral]\label{l:zero}
+In Setting~\ref{s:weil}, let $W$, $W'$ and~$V$ be hermitian spaces with points, of signs $\varepsilon$ on~$[r]$,
+$\varepsilon'$ on~$[r']$ and \m{\one{n}} on~$[n]$, $\chi$ an automorphic character, $S$ a set of finite places
+and $Y$ a complex function on \m{\Gad{\one{n}}} with \m{\DV{W}{V}{\chi}{S}{Y}}. Let $\Pi$ be an adapted splitting
+of~$W'$ over~$W$ with planes indexed by a finite set~$[\nu]$. Let \m{f\in\mathcal{S}(W',V)} with \m{\PS{S}f=f} and
+\m{u\in\Gad{\varepsilon'}}. Then
+\[
+\int_{[V]}\theta_{W,V}\Bigl(\ZT{\Pi}{V}{0}\bigl(\omega^{W',V}_{\chi\upsilon_{1}^{\nu},1}(u,h)f\bigr)\Bigr)\,Y(h)\,\dd h=0 .
+\]
+\end{lemma}
+\begin{proof}
+With $g$, $u_{0}$, $a$ as in (Q10)(a) and \m{f_{1}=\ZT{\Pi}{V}{0}(\omega^{W',V}_{\chi\upsilon_{1}^{\nu},1}(g^{-1},1)f)}, the
+integral is \m{a\int_{[V]}\theta_{W,V}(\omega^{W,V}_{\chi,1}(u_{0},h)f_{1})Y(h)\,\dd h=a\cdot\Desc{W}{V}{\chi}{1}(f_{1},Y)(u_{0})}. By
+(Q10)(b), \m{\PS{S}f_{1}=f_{1}}, so this vanishes by \m{\DV{W}{V}{\chi}{S}{Y}}.
+\end{proof}
+\leanline{\lean{integralsourceTermeqzero}}
+
+\begin{proof}[Proof of Theorem 2]
+By induction on~$\nu$, for all $W'$ and~$\Pi$ at once. Write \m{\chi_{1}=\chi\upsilon_{1}^{\nu}} and
+\m{\omega'=\omega^{W',V}_{\chi_{1},1}}; let $f$ be a datum with \m{\PS{S}f=f} and
+\m{F=\Desc{W'}{V}{\chi_{1}}{1}(f,Y)}. We show \m{F=0}.
+
+\emph{The case \m{\nu=0}.} By (Q10)(c), \m{F(u)} is the integral of Lemma~\ref{l:zero}, which vanishes.
+
+\emph{The case \m{\nu\ge1}.} By (Q1) and (Q2) we may assume \m{f=v^{\varepsilon',\one{n}}_{p}\otimes\varrho(z)\vacf} with a
+polynomial~$p$ and a finite vector~$z$ whose components at~$S$ and its conjugates vanish; such a datum is
+unramified at~$S$, in particular at~\m{\{\conj{w}\}}.
+
+\emph{Step 1: a Hecke relation for~$F$.} Let $\Lambda$ be the map that sends a datum~$f'$ to the linear map
+\m{Y'\mapsto\Desc{W'}{V}{\chi_{1}}{1}(f',Y')} from the automorphic functions on~$V$ to the functions on
+\m{\Gad{\varepsilon'}}. On such linear maps let \m{\Gfin{r'}} act by right translation of the values, and
+\m{\Gfin{n}} by right translation of the argument~$Y'$; by (Q1), $\Lambda$ satisfies the hypothesis of (Q9). The
+base change of~$\chi_{1}$ is unramified at~\m{\conj{w}}, by hypothesis for~$\chi$ and by (Q9) for~$\upsilon_{1}$. So
+(Q9), at the split place~\m{\conj{w}}, shows that \m{\Lambda f} is spherical and gives, for the action on the
+argument on the left and on the values on the right,
+\[
+\bigl(\Lambda f\bigr)\bigl(\Hk{\Rt{\one{n}}}{w}{T}\,Y\bigr)=\prod_{0\le a<n-r'}\bigl(1-q_{w}^{a}A\,T\bigr)\cdot\Hk{\Rt{\varepsilon'}}{w}{T'}\,F,
+\qquad T'=q_{w}^{\,n-r'}AB^{-1}T ;
+\]
+here the left side has been rewritten by the adjunction (Q8) for the pairing \m{(Y',\Lambda')\mapsto\Lambda'(Y')}, which
+moves the Hecke polynomial at~\m{\conj{w}} on linear maps to the Hecke polynomial at~$w$ on~$Y$, and $F$ is
+spherical at~$w$. The left side is~$0$ by hypothesis. On the right, \m{|q_{w}^{a}AT|\le q_{w}^{\,n-r'-1+r'/2}\,|T|=q_{w}^{(r-r')/2}=q_{w}^{-\nu}<1}
+for \m{a<n-r'}, because \m{|T|=q_{w}^{-(n-1-r/2)}} and \m{r'=r+2\nu}; so no factor of the product vanishes, and
+\m{\Hk{\Rt{\varepsilon'}}{w}{T'}F=0}.
+
+\emph{Step 2: the size of~$T'$.} We have \m{|T'|=q_{w}^{(n-r')/2}|T|}, so
+\[
+q_{w}^{\,r'+1}\,|T'|=q_{w}^{\,r'+1+(n-r')/2-(n-1-r/2)}=q_{w}^{(2r+2\nu+4-n)/2}\le1,
+\]
+because \m{2r+2\nu+3<n}.
+
+\emph{Step 3: $F$ is bounded.} By (Q10)(d) there are a space~$W_{1}$ with an adapted splitting over~$W$ with
+\m{\nu-1} planes and an adapted splitting~$\Pi'$ of~$W'$ over~$W_{1}$ with one plane. The induction hypothesis,
+applied to~$W_{1}$, gives \m{\DV{W_{1}}{V}{\chi\upsilon_{1}^{\nu-1}}{S}{Y}}: its hypotheses are those of the theorem,
+with \m{2r+2(\nu-1)+3<n}. By Lemma~\ref{l:zero} for~$\Pi'$ and the character \m{\chi\upsilon_{1}^{\nu-1}},
+\[
+\int_{[V]}\theta_{W_{1},V}\Bigl(\ZT{\Pi'}{V}{0}\bigl(\omega'(u,h)f\bigr)\Bigr)\,Y(h)\,\dd h=0\qquad\text{for every }u.
+\]
+Hence, with
+\m{\thd=\theta_{W',V}-\theta_{W_{1},V}\circ\ZT{\Pi'}{V}{0}} as in (Q11)(c),
+\[
+F(u)=\int_{[V]}\thd\bigl(\omega'(u,h)f\bigr)\,Y(h)\,\dd h\qquad\text{for every }u\in\Gad{\varepsilon'} .
+\]
+Fix~$u$. If \m{\operatorname{ht}(u)>2}, (Q11)(b) gives a non-zero isotropic vector of the lattice at~$u$ of length
+at most \m{2/\operatorname{ht}(u)} and a rational point~$\gamma$ of~$W'$ that carries it to~\m{k_{\Pi'}}; then
+\m{k_{\Pi'}} has this length in the lattice at~\m{\gamma u}. If \m{\operatorname{ht}(u)\le2}, put \m{\gamma=1}. In both
+cases (Q11)(d) gives \m{|\thd(\omega'(\gamma u,h)f)|\le C_{0}} for all~$h$, with a constant~$C_{0}$ that does not depend
+on~$u$. By (Q1), \m{F(u)=F(\gamma u)}, so \m{|F(u)|\le C_{0}\,\sup|Y|} times the measure of~$[V]$.
+
+\emph{Step 4.} By Steps 1 to~3 and Proposition~\ref{p:max}, applied to $F$, $w$ and~$T'$, we get \m{F=0}.
+\end{proof}
+\leanline{\lean{descentsVanishaddplanes}}
+
+\sect{Where the results are used}{s:use}
+\emph{In the unit on the rows.} Let $O$ be an auxiliary pair with a parameter that fits it, as in the second
+note, and let \m{\Xi\in\FormO{O}} be killed by the class-sum lift, by the reflection sums of hypothesis~(b), and by
+the Hecke polynomial at one split place~$w$ outside the level at a point~$T$ of the absolute value of Theorem~2.
+By the first theorem of the second note, the descent of~$\conj{\coef{L}{\Xi}}$ with the test datum at the highest
+vector vanishes; the edge property extends this to all polynomial vectors, and passing from the characters of
+the pair to the characters \m{(\chO{O},1)} only multiplies descents by a character. Then Theorem~1 gives
+\m{\DV{\WO{O}}{\std{E}{n}}{\chO{O}}{S}{\conj{\coef{L}{\Xi}}}} with $S$ the places outside the level, and Theorem~2, applied
+to the sum of~\m{\WO{O}} and of $\nu$ hyperbolic planes with its tautological splitting, gives vanishing descents
+to this sum for the character \m{\chO{O}\upsilon_{1}^{\nu}}, provided \m{2r+2\nu+3<n}. The unit on the rows deduces that
+such forms have vanishing theta periods along a definite subgroup, which makes the test forms of the proof
+orthogonal to them: forms that are not lifts but share one Hecke root with the lifts do not interfere.
+
+\emph{In the unit on traces.} Lemma~\ref{l:level} is used on its own, to identify the action of elements of
+\m{\Kz{n}} with block reductions on vectors of the level of~$O$.
+
+\sect{Notes on the formal text}{s:notes}
+\begin{enumerate}[label=\textup{\arabic*.},leftmargin=1.6em,itemsep=5pt]
+\item \emph{The characters.} In this unit the Weil representation of the pair is taken with the second
+character trivial: the statements use \m{\omega^{W,V}_{\chi,1}}, also in hypothesis~(c) of Theorem~1, whereas the
+second note uses the pair of characters of~$O$. The definition of vanishing descents has only one character as
+an argument.
+\item \emph{Forms and their scalar functions.} In Theorem~1 the function whose descents vanish is the complex
+conjugate of~\m{\coef{L}{\Xi}}, and the source of the descent is the definite group. The formal statement takes~$\Xi$
+as an implicit argument and~$L$ as the first explicit one. Lemma~\ref{l:level} is stated in the formal text for an
+arbitrary representation~$\pi$ of \m{\Gfin{n}} and a vector of the level, with the family of reductions of~$g$ as
+a separate implicit argument tied to~$g$ by an equation; here the reductions are written \m{\conj{g}_{w}}.
+\item \emph{Steps read at the level of their role.} In the proof of Theorem~2, Step~3 follows lines 80 to~107 of
+the formal proof. The formal text applies the library's decay estimate with the exponent of the height equal
+to~$0$; its hypothesis at points of height greater than~$2$ asks for a short isotropic vector in the lattice of
+the indefinite space, carried to the frame of the one-plane splitting by a rational point (Witt's theorem), for
+a basis of bounded length of the lattice of the definite space, for the invariance of the functional~$\thd$
+along the frame, and for the inequality of (Q11)(c); the height of the definite space is~$1$, which makes the
+bound uniform. The reader of the unit described these lines at the level of their role, and so does (Q11)(d),
+which is a summary of the estimate in the case used and not a quotation of its statement. I read the statement
+of the estimate and the lines that supply its hypotheses, and did not trace the constants. The second reader
+points out that the argument which the dossier calls a plane index in these lines is the hypothesis that the
+height exceeds~$2$; the text above follows her reading, which agrees with the Lean text.
+\item \emph{The reflection argument.} In Step~3 of the proof of Theorem~1 the dossier speaks of ``the number of
+coset terms''. In the Lean text the finite set~$\mathcal{Z}$ is a set of centres at which~$\Psi$ does not vanish,
+the coefficient of the indicator at~$z'$ is~$\Psi(z')$, and the identity of fact~(3) makes every term equal to
+\m{\Psi(z)C_{z}(\Xi)}; the set is not empty because \m{\Psi\ne0}. This is the second reader's correction, and it is
+what I find in lines 129 to~139. The matrix to which Lemma~\ref{l:annihilator} is applied in Step~2 has the lower
+block \m{\mathfrak{t}_{w}1_{r}}; its left inverse does not depend on the upper block.
+\item \emph{Automation.} Several steps of both long proofs are closed by the simplifier with long lists of
+lemmas: the verification of the conditions (i) to~(iii) of Lemma~\ref{l:transport} in its three uses, fact~(1), and
+the arithmetic of Steps 1 and~2 in the proof of Theorem~2. The computations given above are mine and are
+complete; that the simplifier performs these computations was not replayed. In Proposition~\ref{p:max} the formal
+proof applies a general maximum principle of the library with the constant~$2$ to the sum over all subspaces;
+the proof above is the same argument with the term of the zero subspace taken out.
+\item \emph{References for the quoted facts.} From the catalogue of the handout and the second reader's
+comparison with the literature; where no place is named, the \emph{reference is to be confirmed}. (Q7), the
+$q$-binomial theorem in the form of a sum over subspaces: the catalogue attributes it to Gauss and Cauchy,
+relation ``the theorem'', place not confirmed. (Q9): the catalogue names S.~Rallis, \emph{Langlands'
+functoriality and the Weil representation}, Amer.~J.~Math.~104 (1982), R.~Howe, \emph{$\theta$-series and
+invariant theory} (Corvallis 1979), and T.~Tamagawa, Ann.~of~Math.~77 (1963), places not confirmed, relation
+\emph{special case} (split places, unramified characters, the unramified vacuum; an identity of Hecke
+polynomials obtained by sums over subspaces of the residue space, without the Satake transform); the second
+reader locates the correspondence of unramified parameters in A.~Mínguez, \emph{Correspondance de Howe
+explicite : paires duales de type~II}, Theorem~1 and Corollary~6.3, and marks the relation as \emph{unresolved}
+for the identity of operators and its normalisation. (Q10)(a), the Iwasawa decomposition: J.~Arthur, \emph{A trace
+formula for reductive groups~I}, §1, p.~917; relation \emph{special case}; the formulas for the zero term are the
+standard formulas of the mixed model (the catalogue compares with Kudla 1994 and Harris--Kudla--Sweet 1996, §1,
+without a confirmed place). (Q11)(b), Witt's theorem: U.~A.~First, \emph{Witt's extension theorem for quadratic
+spaces over semiperfect rings}, J.~Pure Appl.~Algebra 219 (2015), Corollaries 4.9 and~4.11; relation ``the
+theorem''. (Q11)(d): the catalogue compares with the decay of theta kernels on Siegel sets in S.~Kudla,
+S.~Rallis, \emph{A regularized Siegel--Weil formula: the first term identity}, Ann.~of~Math.~140 (1994), place
+not confirmed, and notes that the method of the formal text is different (small shifts along a short isotropic
+vector). (Q1) to (Q6), (Q8), (Q11)(a) and~(c): no reference recorded.
+\end{enumerate}
+
+\subhead{How this note was written.} From the dossier of the unit: eight members and seven structured proofs.
+The program check of the unit's dossier covered \UnitSteps{} leaf steps of \UnitProofs{} proofs, found the
+statements at their lines and compared the quotations of the imported declarations with the source. I read both
+Lean files of the unit in full and compared every statement with the statements above, argument by argument. In
+the background library I read the definitions behind Definitions \ref{d:dv} to~\ref{d:split} and the statements of
+the lemmas behind (Q1) to (Q11); I read none of their proofs. The second reader of the artifact read the unit
+independently; her two corrections to the dossier's words are taken over (notes 3 and~4), and I checked both
+against the Lean lines. The proofs of the three lemmas of §\ref{s:level}, of Proposition~\ref{p:max} and of
+Lemma~\ref{l:zero} follow the structured proofs step by step. The proof of Theorem~1 follows the formal one in its
+four steps; the verifications inside Steps 3 and~4 are written out by me. The proof of Theorem~2 follows the
+formal one; its Step~3 is at the level described in note~3. The remarks after the statements and §\ref{s:use} are
+mine; for §\ref{s:use} I read the statement and the proof of the consuming lemma in the unit on the rows.
+
+\head{Appendix A. Concordance with the Lean artifact}
+{\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}\setlength{\tabcolsep}{0pt}
+\begin{longtable}{@{}p{26mm}p{64mm}p{38mm}r@{}}
+\textbf{In this note} & \textbf{Lean declaration} & \textbf{File} & \textbf{Lines}\\\midrule\endhead
+\ConcordanceRows
+\end{longtable}}
+
+\subhead{The two theorems as they are written in the artifact.}
+\quoted{descentsVanishofreflectionSum}
+\quoted{descentsVanishaddplanes}
+The second statement is to be read with the variable line at the head of its file, which introduces $W$, $W'$,
+$V$, the hypothesis of vanishing descents for~$W$ and the splitting:
+{\leanfont (h0 : DescentsVanish W V a S Y) (D : W'.Splitting W p)}.
+\subhead{Legend.} In the formal text {\leanfont y} is the form~$\Xi$ and {\leanfont u} the linear form~$L$;
+{\leanfont algFormCoeff 1 u y.1} is \m{\coef{L}{\Xi}} and {\leanfont star} is complex conjugation;
+{\leanfont O.places} is \m{\plO{O}} and {\leanfont O.places.conjClosureᶜ} the set~$S$ of Theorem~1;
+{\leanfont O.formAction} is the action of Setting~\ref{s:aux}(c) on forms and {\leanfont O.chosenGLRep π} the
+action \m{\chact{O}{\pi}{\,\cdot\,}}; {\leanfont reflectionSum} and {\leanfont piTensorElem} are
+\m{\Refl{\psi}{y}} and the tensor product; {\leanfont lift (pairThetaKer W V a 1).swap f Y} is the descent
+\m{\Desc{W}{V}{\chi}{1}(f,Y)}, with {\leanfont a} the character~$\chi$; {\leanfont projOn \_ S} is \m{\PS{S}};
+{\leanfont heckePolyOp (finRightRep ..) hw X} is \m{\Hk{\Rt{\varepsilon'}}{w}{T}}, with {\leanfont X} the
+number~$T$; {\leanfont w.q} is~$q_{w}$; the index types {\leanfont m} and {\leanfont p} are $[r']$ and~$[\nu]$, the
+signs {\leanfont s}, {\leanfont t} are $\varepsilon$,~$\varepsilon'$, the splitting {\leanfont D} is~$\Pi$, and
+{\leanfont upsilonU1} is~$\upsilon_{1}$; {\leanfont D.sourceTerm V 0} is \m{\ZT{\Pi}{V}{0}}; the points
+{\leanfont g} of the adelic group of the indefinite space are~$u$, and the elements {\leanfont k} of
+\m{\Kz{n}} are~$g$.
+
+\head{Notation}
+\begingroup\fontsize{8.6}{10.9}\selectfont\raggedright
+\setlength{\columnsep}{9mm}\setlength{\parskip}{0pt}
+\begin{multicols}{2}
+\nt{$E$, $\tau$, $w$, $\conj{w}$, $w_{0}$}{a CM field with a CM type; an infinite place; finite places and conjugates}
+\nt{$E_{w}$, $\oo_{w}$, $\FF_{w}$, $q_{w}$, $\varpi_{w}$, $|\cdot|_{w}$}{completion, integers, residue field, its
+number of elements, a uniformiser, the absolute value}
+\nt{$\AAf$, $\ohat$, $E_{P}$, $P$}{finite adeles, their integers; the product of the~$E_{w}$ over a finite set~$P$
+of places}
+\nt{$[r]$, $[n]$, $[r']$, $[\nu]$; $r$, $n$, $r'$, $\nu$}{finite index sets; their numbers of elements (ranks of
+$W$, $V$, $W'$; number of planes)}
+\nt{$i$, $i_{0}$; $c$, $c'$, $c_{0}$; $a$}{row indices; indices in $[r]$; a natural number, and in the
+proofs also a complex number or an element of a finite field}
+\nt{$X^{*}$, $X^{\mathsf{T}}$, $\conj{z}$}{conjugate transpose, transpose, conjugation}
+\nt{$\upsilon_{1}$, $\chi$, $\chi'$, $\chi_{1}$}{the splitting character on norm one; automorphic characters}
+\nt{$\varepsilon$, $\varepsilon'$, $\one{n}$}{families of signs; the constant family~$1$}
+\nt{$\Ginf{\varepsilon}$, $\Gfin{r}$, $\Gad{\varepsilon}$, $\Kz{r}$, $\red{w}$}{the adelic unitary groups, the integral
+points, reduction modulo~$w$}
+\nt{$u$, $u'$, $u_{0}$; $h$, $h'$; $\gamma$; $g$, $g'$, $g_{A}$, $g_{U}$, $g_{0}$}{points of the adelic groups of the
+indefinite spaces; of the definite space; rational points; elements of the finite adelic groups, mostly
+integral}
+\nt{$W$, $W'$, $W_{1}$, $V$, $J$, $J'$, $\std{E}{n}$, $[V]$}{hermitian spaces with points, their matrices, the standard
+definite space, the automorphic quotient}
+\nt{$\mathcal{S}(W,V)$, $\varrho(z)$, $\omega^{W,V}_{\chi,\chi'}$, $\omega$, $\omega'$, $\theta_{W,V}$}{data, Heisenberg
+operators, the Weil representation of the pair, the theta functional}
+\nt{$f$, $f'$, $f_{1}$, $\varphi$, $\vacf$, $v$, $v^{\varepsilon,\varepsilon'}_{p}$, $p$}{data; the vacuum; a Fock vector;
+the vector of a polynomial~$p$ in the variables \m{X_{\tau,i,c}}}
+\nt{$\Desc{W}{V}{\chi}{\chi'}(f,Y)$, $Y$, $Y'$, $\dd h$}{the theta descent of a function on the definite group;
+the invariant measure}
+\nt{$S$, $\PS{S}$, $\DV{W}{V}{\chi}{S}{Y}$}{a set of finite places; the projector onto data unramified at~$S$;
+vanishing of descents (Definition~\ref{d:dv})}
+\nt{$O$, $\SigO{O}$, $\MO{O}$, $\QO{O}$, $\plO{O}$}{an auxiliary pair, its level system, chosen places, twist places,
+all its places}
+\nt{$\WO{O}$, $\sgO{O}$, $\incO{O}$, $\IncM{O}$, $\psiO{O}{w}$, $\chO{O}$}{its space, signs, embedding of index sets, the
+matrix of the embedding, its residue characters, its character}
+\nt{$\kap{O}$, $\eO{O}$, $\Vk{n}{\kap{O}}$, $\rhoW{\kap{O}}{\eO{O}}$}{the weight on the definite side, its space and
+representation}
+\nt{$\LO{O}$, $j$, $\etaO{O}$, $\KO{O}$, $\tetaO{O}$}{the level in the residue groups, an element, its character; the
+level and its character}
+\nt{$\FormO{O}$, $\Xi$, $\Xi'$, $L$, $\coef{L}{\Xi}$, $\mathrm{R}(g')$}{forms; a linear form; the scalar function; right
+translation}
+\nt{$\pi$, $\pi'$, $\rho$, $\mathcal{V}$, $\mathcal{V}'$, $\mathcal{V}^{O}$, $\phi$, $\phi'$}{representations of finite
+adelic groups, their spaces, the vectors of the level of~$O$, vectors}
+\nt{$\ChGL{\Sigma}{r}$, $A$, $\chact{O}{\pi}{A}$}{the product of the \m{\mathrm{GL}_{r}(\FF_{w})} over the chosen places,
+an element, its action}
+\nt{$\PsiO{O}{X}$, $\Ups{O}$, $\pvO{O}{p}$}{the function of residue matrices, the finite datum, the polynomial
+vectors of~$O$}
+\nt{$\FF$, $\psi$, $y$, $\xi$, $\Refl{\psi}{y}$, $G_{w}$, $a_{w}$}{a finite field, a multiplicative character,
+vectors, the reflection sum; finite groups and elements of their group algebras}
+\nt{$T$, $T'$, $T_{w,a}$, $\Hk{\pi}{w}{T}$, $\Rt{\varepsilon'}$}{complex numbers; Hecke operators; the Hecke
+polynomial; right translation of functions}
+\nt{$U$, $F$, $\alpha_{i}$}{a subspace of \m{\FF_{w}^{r'}}; a function on the adelic group of~$W'$; Satake parameters}
+\nt{$\Pi$, $\Pi'$, $k_{\Pi}$, $l_{\Pi}$, $i_{\Pi}$, $\hyp{W}{\nu}$, $\ZT{\Pi}{V}{0}$}{splittings, their frames, the sum
+with $\nu$ hyperbolic planes, the zero term}
+\nt{$\Psi$, $\Psi'$, $\Psi''$, $\operatorname{Box}$, $\mathfrak{t}$, $\cosI{\mathfrak{t}}{z}$, $\mathcal{Z}$}{functions at
+a finite set of places, the integral matrices, an idele, the indicator of a coset, a finite set of centres}
+\nt{$z$, $z'$, $X$, $X'$, $X_{w}$, $Z$, $Z'$}{vectors and matrices over products of local fields ($z$ also an
+idele in Setting~\ref{s:weil})}
+\nt{$C_{z}(\Xi)$}{the descent with the indicator of the coset of~$z$ (Step~0 of §\ref{s:refl})}
+\nt{$A_{w}$, $B_{w}$, $s_{w}$, $\sigma_{w}$, $\conj{g}_{w}$}{integral matrices; elements of \m{\mathrm{GL}_{r}(\FF_{w})};
+reductions}
+\nt{$\iota$, $\operatorname{Inc}_{\iota}$, $\ell$, $\ell_{w}$, $\conj{\ell}_{w}(i_{0})$}{an injection of index sets, its
+matrix; annihilators; rows of residues}
+\nt{$\alpha$, $\alpha_{w}$, $\beta$, $\beta'$, $\delta_{w}$, $\mu_{w}$, $\xi_{w}$, $\tilde{\xi}_{w}$}{matrices and
+vectors in the proofs of Lemma~\ref{l:annihilator} and Theorem~1 ($\beta$ is a bilinear map in (Q8))}
+\nt{$\Lambda$, $\Lambda'$, $\thd$, $A$, $B$}{linear maps on data; the difference of theta functionals; in (Q9),
+$A$ and~$B$ are complex numbers}
+\nt{$\operatorname{ht}(u)$, $C$, $C_{0}$}{the height; constants}
+\end{multicols}
+\endgroup
+
+\end{document}

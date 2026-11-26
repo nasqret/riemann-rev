@@ -1,0 +1,1430 @@
+% !TEX program = lualatex
+% ---------------------------------------------------------------------------------------------
+%  Readback note 32: Short Selmer groups after one anticyclotomic twist, balanced rows, and Ribet's lemma to first order
+%
+%  Build:  python3 tools/rb.py note <slug>
+%
+%  One unit of a Lean artifact, rewritten as ordinary mathematics. The prose is hand-written. Lean names,
+%  line ranges and counts come from data.tex; quoted Lean statements are copied from the artifact by the build.
+%
+%  Rules of the text: standard terminology; every symbol is explained where it first appears and listed again
+%  in the notation at the end; no letter has two meanings; a proof is complete or says what it takes for granted;
+%  Lean names appear only in the LEAN lines and in the concordance.
+%
+%  The signature rule (the build enforces it): a function, relation or predicate that the artifact defines is
+%  written only through its notation macro, which the build makes from the spec (`notation`) with one slot for
+%  each explicit argument of the Lean definition. No argument is fixed and dropped, also not "for brevity" and
+%  not for one section. Every argument and every hypothesis of a stated declaration stands inside its
+%  statement, or in a Setting that the statement cites by number; only implicit and instance arguments (the
+%  ambient objects) may stand in the conventions.
+% ---------------------------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\ifdefined\pdfvariable\pdfvariable suppressoptionalinfo \numexpr 1+2+4+8\relax\fi
+\usepackage[a4paper,hmargin=35mm,top=22mm,bottom=27mm,footskip=12mm,nohead]{geometry}
+
+\usepackage{fontspec}
+\directlua{
+  luaotfload.add_fallback("gfallback", {"STIXTwoMath-Regular.otf:mode=node;", "DejaVuSans.ttf:mode=node;"})
+  luaotfload.add_fallback("gmonofallback", {"DejaVuSansMono.ttf:mode=node;", "STIXTwoMath-Regular.otf:mode=node;"})
+}
+\setmainfont{NewCM10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookItalic,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldItalic,SmallCapsFont=*-Book,SmallCapsFeatures={Letters=SmallCaps},
+  RawFeature={fallback=gfallback}]
+\setsansfont{NewCMSans10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookOblique,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldOblique,RawFeature={fallback=gfallback}]
+\setmonofont{JetBrainsMono}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,Scale=MatchLowercase,
+  RawFeature={-calt;-liga;fallback=gmonofallback}]
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage[math-style=TeX]{unicode-math}
+\setmathfont{NewCMMath-Book.otf}
+\emergencystretch=2.5em\relax
+
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows.meta,positioning,backgrounds}
+\usepackage[protrusion=true,expansion=true]{microtype}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{multicol}
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+
+\definecolor{ink}{HTML}{0F172A}
+\definecolor{inksoft}{HTML}{475569}
+\definecolor{inkfaint}{HTML}{94A3B8}
+\definecolor{rulegrey}{HTML}{CBD5E1}
+\definecolor{arith}{HTML}{C2410C}
+\definecolor{est}{HTML}{7C3AED}
+\definecolor{ana}{HTML}{0891B2}
+\definecolor{ok}{HTML}{047857}
+\definecolor{leancol}{HTML}{3730A3}
+
+\title{Short Selmer groups after one anticyclotomic twist, balanced rows, and Ribet's lemma to first order}
+\author{grh-compact}
+\date{}
+
+% ------------------------------------------------------------------------------------- macros
+\newcommand{\leanfont}{\ttfamily\fontsize{8.6}{10.5}\selectfont\color{leancol}}
+\newcommand{\lean}[1]{\csname LN@#1\endcsname}
+\newcommand{\fillin}[1]{{\color{arith}\itshape[#1]}}  % a place of the template that is not written yet; the build reports every one that is left
+\newcommand{\leanquote}[1]{\csname LQ@#1\endcsname}
+\input{data.tex}
+
+\linespread{1.08}                       % 11 pt on 14.7 pt
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt plus 1.5pt minus 0.5pt}
+\setlength{\abovedisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\belowdisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\abovedisplayshortskip}{3pt plus 2pt}
+\setlength{\belowdisplayshortskip}{6pt plus 2pt minus 2pt}
+\emergencystretch=1.5em
+\clubpenalty=10000 \widowpenalty=10000 \displaywidowpenalty=10000
+\relpenalty=7000 \binoppenalty=9000
+\raggedbottom
+\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\sffamily\fontsize{7.6}{9}\selectfont\color{inkfaint}\thepage\,/\,\pageref*{LastPage}}
+\setlist{topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=4pt,leftmargin=2.1em,labelsep=0.55em}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\len}{\operatorname{len}}
+\newcommand{\cok}{\operatorname{cok}}
+\newcommand{\End}{\operatorname{End}}
+\newcommand{\Hom}{\operatorname{Hom}}
+\newcommand{\Gal}{\operatorname{Gal}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\kw}[1]{\emph{#1}}
+\newcommand{\m}[1]{\mbox{$#1$}}        % a short formula that must not be broken across lines
+\newcommand{\head}[1]{\par\addvspace{17pt plus 4pt minus 2pt}\Needspace{6\baselineskip}%
+  \noindent{\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\sect}[2]{\refstepcounter{section}\label{#2}\par\addvspace{19pt plus 4pt minus 2pt}\Needspace{7\baselineskip}%
+  \noindent\llap{{\fontsize{13.2}{16}\selectfont\bfseries\color{inkfaint}\thesection}\hspace{9pt}}%
+  {\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\subhead}[1]{\par\addvspace{9pt plus 2pt}\Needspace{4\baselineskip}\noindent\textbf{#1}\enspace\ignorespaces}
+% where a statement lives in the Lean archive
+\newcommand{\leantag}{{\sffamily\bfseries\fontsize{6.3}{8}\selectfont\color{leancol}\addfontfeatures{LetterSpace=7}LEAN}}
+\newcommand{\sep}{\unskip\nobreak\hspace{5pt}{\color{inkfaint}\textperiodcentered}\hspace{5pt plus 2pt}\ignorespaces}
+\newcommand{\leanline}[1]{\par\nopagebreak\vspace{-2.5pt}{\fontsize{8.9}{12.4}\selectfont\color{inksoft}\raggedright
+  \noindent\llap{\leantag\hspace{9pt}}#1\par}\vspace{1pt}}
+% a displayed statement in a tinted box: #1 colour, #2 text
+\newcommand{\statement}[2]{\par\addvspace{7pt}\begingroup\setlength{\fboxsep}{8.5pt}\setlength{\fboxrule}{0.6pt}%
+  \noindent\fcolorbox{#1!30!white}{#1!3!white}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{#2}}%
+  \endgroup\par\addvspace{7pt}}
+\newcommand{\nt}[2]{\par\noindent\hangindent=1.1em\hangafter=1 #1\enspace{\color{inksoft}#2}\par\vspace{1pt}}
+\newcommand{\legdot}[1]{\tikz[baseline=-0.62ex]\fill[#1] (0,0) circle (2.5pt);\hspace{3pt}}
+\newcommand{\crow}[4]{\csname CS@#1\endcsname & #2 & \textcolor{inksoft}{#3} & \textcolor{inksoft}{#4}\\}
+\newcommand{\leanquoteline}[2]{\par\noindent\hangindent=\dimexpr#1\fontdimen2\font+2.2em\relax\hangafter=1
+  \hspace*{#1\fontdimen2\font}#2}
+\newcommand{\quoted}[1]{\par\vspace{3pt}{\ttfamily\fontsize{7.5}{10.4}\selectfont\color{leancol}\raggedright
+  \setlength{\parskip}{0pt}\leanquote{#1}\par}\vspace{4pt}}
+\newcommand{\bx}[3]{{\sffamily\bfseries\fontsize{7.3}{9.2}\selectfont\color{#1!82!black}#2}\\[1.5pt]#3}
+\newcommand{\cs}[2]{\expandafter\newcommand\csname CS@#1\endcsname{#2}}
+
+% theorems
+\newtheoremstyle{plainx}{7pt plus 2pt}{7pt plus 2pt}{\itshape}{}{\bfseries}{.}{0.5em}{}
+\newtheoremstyle{uprightx}{7pt plus 2pt}{7pt plus 2pt}{}{}{\bfseries}{.}{0.5em}{}
+\theoremstyle{plainx}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{uprightx}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{setting}[theorem]{Setting}          % hypotheses shared by several statements; each of them cites it by number
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\renewcommand{\qedsymbol}{{\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.5pt}\fbox{\rule{0pt}{0.46em}\hspace{0.46em}}}}
+% what holds throughout the note: the ambient objects only (implicit and instance arguments), never a hypothesis
+\newenvironment{conventions}{\par\addvspace{5pt}\noindent\textbf{Conventions.}\enspace\ignorespaces}{\par\addvspace{3pt}}
+\makeatletter
+\renewenvironment{proof}[1][Proof]{\par\pushQED{\qed}\normalfont\topsep0pt\partopsep0pt
+  \trivlist\item[\hskip\labelsep\itshape #1.]\ignorespaces}{\popQED\endtrivlist\@endpefalse}
+\makeatother
+
+% ---- macros of the three notes of this unit (background notions; the notions that the unit defines are in data.tex)
+\newcommand{\CC}{\mathbb{C}}
+\newcommand{\NN}{\mathbb{N}}
+\newcommand{\Qb}{\bar{\mathbb{Q}}}
+\newcommand{\Ql}{\mathbb{Q}_\ell}
+\newcommand{\Zl}{\mathbb{Z}_\ell}
+\newcommand{\Qlb}{\bar{\mathbb{Q}}_\ell}
+\newcommand{\Zlb}{\bar{\mathbb{Z}}_\ell}
+\newcommand{\Cl}{\mathbb{C}_\ell}
+\newcommand{\Gl}{G_{\mathbb{Q}_\ell}}
+\newcommand{\GE}[1]{G_{#1}}
+\newcommand{\cyc}{\operatorname{cyc}}
+\newcommand{\vl}{v_\ell}
+\newcommand{\Sel}[4]{\operatorname{Sel}_{#2}^{#3}(#1;\,#4)}
+\newcommand{\Ob}[2]{\operatorname{Ob}(#1;\,#2)}
+\newcommand{\Coc}[1]{\operatorname{Coc}(#1)}
+\newcommand{\Rel}[1]{\operatorname{Rel}(#1)}
+\newcommand{\pd}[2]{\Sigma_{#2}(#1)}
+\newcommand{\inab}[1]{I_{#1}}
+\newcommand{\cj}[1]{\bar{#1}}
+\newcommand{\Nm}{\operatorname{N}}
+\newcommand{\nlen}{\operatorname{nlen}}
+\newcommand{\cO}{\mathcal{O}}
+\newcommand{\fP}{\mathfrak{P}}
+\newcommand{\fq}{\mathfrak{q}}
+\newcommand{\HT}{\mathcal{H}}
+\newcommand{\GL}{\mathrm{GL}}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\rk}{\operatorname{rk}}
+\newcommand{\Art}{\operatorname{Art}}
+\newcommand{\av}{\operatorname{av}}
+\newcommand{\Zf}{Z_{\mathrm{f}}}
+% the data (as in the note on admissible data)
+\newcommand{\Dm}[1]{m(#1)}
+\newcommand{\Dr}[1]{r(#1)}
+\newcommand{\kD}[1]{k(#1)}
+\newcommand{\tD}[1]{t(#1)}
+\newcommand{\fD}[1]{f(#1)}
+\newcommand{\ED}[1]{E(#1)}
+\newcommand{\Dg}[2]{g_{#1}(#2)}
+\newcommand{\gD}[1]{g(#1)}
+\newcommand{\lvl}[1]{N(#1)}
+\newcommand{\hhD}[1]{h_2(#1)}
+\newcommand{\hD}[1]{h(#1)}
+\newcommand{\bone}[1]{b_1(#1)}
+\newcommand{\btwo}[1]{b_2(#1)}
+\newcommand{\wt}[3]{w_{#1,#2}(#3)}
+\newcommand{\ordch}[1]{\operatorname{ord}_{\mathrm{ch}}(#1)}
+\newcommand{\Dmu}[1]{\mu(#1)}
+\newcommand{\ND}[1]{N_1(#1)}
+\newcommand{\thick}[1]{\operatorname{thick}(#1)}
+\newcommand{\inp}[2]{\statement{ana}{\textbf{#1.}\enspace #2}}
+
+\newcommand{\Sha}{\mathrm{Sha}}
+
+% where each declaration of the concordance is treated
+\cs{crudeUnit}{Definition~\ref{d:recall}}
+\cs{IsColumn}{Definition~\ref{d:recall}}
+\cs{IsRow}{Definition~\ref{d:recall}}
+\cs{obeyingCocycles}{Definition~\ref{d:recall}}
+\cs{AuxPrimeData}{Definition~\ref{d:recall}}
+\cs{IsAnticyclotomicAt}{Definition~\ref{d:recall}}
+\cs{IsAuxiliary}{Definition~\ref{d:recall}}
+\cs{IsFamily}{Definition~\ref{d:recall}}
+\cs{evenClasses}{Definition~\ref{d:recall}}
+\cs{IsNewPlaces}{Definition~\ref{d:recall}}
+\cs{withConjInv}{Definition~\ref{d:recall}}
+\cs{IsPrimeTriangle}{Definition~\ref{d:recall}}
+\cs{IsAuxTwist}{Definition~\ref{d:recall}}
+\cs{unionWithConj}{Definition~\ref{d:recall}}
+\cs{pointChar}{Definition~\ref{d:recall}}
+\cs{twistAtPoint}{Definition~\ref{d:recall}}
+\cs{reduceModPow}{Definition~\ref{d:recall}}
+\cs{IsBalanced}{Definition~\ref{d:recall}}
+\cs{IsPencil}{Definition~\ref{d:recall}}
+\cs{tieRelations}{Definition~\ref{d:recall}}
+\cs{matrixLattice}{Definition~\ref{d:recall}}
+\cs{coeffEmb}{Definition~\ref{d:recall}}
+\cs{ZfAt}{Definition~\ref{d:recall}}
+\cs{crysRels}{Definition~\ref{d:recall}}
+\cs{complexEmbOf}{Definition~\ref{d:recall}}
+\cs{AbsGal}{Definition~\ref{d:recall}}
+\cs{placesAboveG}{Definition~\ref{d:recall}}
+\cs{badPlaces}{Definition~\ref{d:recall}}
+\cs{cardletorsionofisotropic}{Lemma~\ref{l:mirror}}
+\cs{existssharpfittingpoly}{Lemma~\ref{l:fitting}}
+\cs{dvdoneaddmulpowsubone}{Lemma~\ref{l:linepoint}}
+\cs{blockFlattenAlgEquiv}{Definition~\ref{d:flat}}
+\cs{amitsurcharpolymemmatrix}{Lemma~\ref{l:amitsur}}
+\cs{existsribetelementcramer}{Lemma~\ref{l:cramer}}
+\cs{ribetNormaliser}{Definition~\ref{d:normaliser}}
+\cs{HasTriangleCost}{Definition~\ref{d:tricost}}
+\cs{existsmemfittingIdealblock}{Lemma~\ref{l:block}}
+\cs{IsTraceIdeal}{Definition~\ref{d:trid}}
+\cs{IsRibetElement}{Definition~\ref{d:rib}}
+\cs{ribetfirstorder}{Theorem D}
+\cs{existsrootofunityevallarge}{Lemma~\ref{l:rootone}}
+\cs{existsrootsofunityellValle}{Lemma~\ref{l:rootmany}}
+\cs{isTameTypeofroots}{Lemma~\ref{l:tametype}}
+\cs{eqoneofmeminertiaAbove}{Theorem C}
+\cs{inClassofisLatticeIn}{Lemma~\ref{l:inclass}}
+\cs{relLengthobeyingCocyclesle}{Lemma~\ref{l:obeycup}}
+\cs{eventuallyisBalanced}{Theorem C}
+\cs{addconjGalmemevenClasses}{Lemma~\ref{l:even}}
+\cs{hasTriangleCosttateTwist}{Theorem E}
+\cs{evalConjPair}{Definition~\ref{d:evpair}}
+\cs{memselmerZofmemselmerModule}{Lemma~\ref{l:selz}}
+\cs{chartamegen}{Lemma~\ref{l:pointchar}}
+\cs{pointCharidOrConjInv}{Lemma~\ref{l:pointchar}}
+\cs{lengthleofdropties}{Lemma~\ref{l:drop}}
+\cs{lengthleofunseenclass}{Lemma~\ref{l:unseen}}
+\cs{tilting}{Lemma~\ref{l:tilting}}
+\cs{existsisPencil}{Theorem B}
+\cs{existsanticyclotomictwist}{Theorem A}
+
+\begin{document}
+\color{ink}
+
+{\raggedright
+{\sffamily\bfseries\fontsize{7.2}{9}\selectfont\color{leancol}\addfontfeatures{LetterSpace=8}READBACK NOTE 32\par}
+\vspace{5pt}
+{\fontsize{21.5}{25.5}\selectfont\bfseries Short Selmer groups after one anticyclotomic twist, balanced rows, and Ribet's lemma to first order\par}
+\vspace{5pt}
+{\fontsize{12.4}{16}\selectfont\itshape\color{inksoft} One unit of the Lean artifact \ArtifactName, read back into
+mathematics\par}}
+\vspace{8pt}
+{\color{rulegrey}\hrule height 0.6pt}
+\vspace{7pt}
+\thispagestyle{empty}
+
+\textbf{Summary.} A good twist must make the Selmer modules of the rows short, for $m$ powers at once, and must
+not make the relevant $L$-values too divisible. This note proves that such a twist exists (Theorem~A): given
+finitely many \emph{balanced} representations and finitely many families of values, one anticyclotomic character
+of $\ell$-power order, ramified at boundedly many new primes, has all its powers \m{\psi,\dots,\psi^{m}} within the
+bounds. The primes come from Theorem~B: boundedly many primes \emph{tied} to Frobenius elements make every
+Selmer module short; the proof plays a mirror lemma against a tilting lemma for pencils. The passage from ties to
+an honest twist is an argument on valuations of polynomials at roots of unity. Theorem~C shows that rows are
+balanced. The second half is Ribet's lemma to first order (Theorem~D): from congruences between a block and a
+string of characters it produces, by Cramer's rule used twice and Fitting ideals, a Hecke-type element whose top
+coefficient has bounded valuation; Theorem~E supplies its hypothesis for the Tate twists from a prime triangle
+and the odd part of a Tate--Shafarevich group.
+
+\statement{leancol}{\fontsize{9.6}{13.2}\selectfont\textbf{What this note is.} The artifact \ArtifactName{} is a
+body of Lean code: the compact edition of a formal proof, due to L.~Alpöge with the AI system Claude, of the
+Riemann hypothesis and of its generalisation to Dirichlet $L$-functions. That headline is a claim. The authors
+report that every file compiles and that Lean's kernel accepted the proofs; an independent replay is recorded in
+the handout's record of checks when it reports. No mathematician has read the argument through, and nothing here
+says that the Riemann hypothesis is proved. This note is the second of three on the unit \emph{The choice of the
+twists}: it treats the declarations of eight files (roots of unity, the mirror and tilting lemmas, the twist
+theorem, balanced rows, Ribet's lemma), and recalls from the first note, \emph{Columns and rows as Galois
+representations}, the definitions it needs; together \UnitInNote{} of the unit's \UnitMembers{} declarations
+appear here. The statements are complete. The proofs of the short lemmas are complete; the proofs of the five
+theorems and of the longer lemmas follow the formal proofs step by step but leave their computations to the
+formal text, and say so. Results of the background library and of other units are quoted as Inputs with their
+owners. Every statement was compared with its Lean text, argument by argument. The Lean text read is \PinText;
+Appendix~A is the concordance of \ConcDecls{} declarations.}
+
+\sect{The statements}{s:intro}
+The conventions and the recalled notions are in §\ref{s:back}, the definitions of this note in §\ref{s:defs}.
+Throughout, $\ell$ is a prime number.
+
+\statement{arith}{\phantomsection\label{t:A}\textbf{Theorem A} (one anticyclotomic twist makes all Selmer modules short).\enspace
+\emph{Let $E$ be a CM field as in the conventions, $\mathcal{I}$ a finite set and \m{(n_i)_{i\in\mathcal{I}}} finite
+sets, \m{S\subseteq S_0} finite sets of finite places of~$E$, \m{z\in\inab{S_0\setminus\pd{E}{\ell}}}, and
+\m{M\in\NN}. Let $\kappa$ and $T$ be finite sets, $\cO$ a coefficient ring, and for \m{i\in\mathcal{I}} let
+\m{\varrho_i\colon\GE{E}\to M_{n_i}(\cO)} be a homomorphism, $L_i$ a set of relations, \m{\gamma_i\in\GE{E}}, and
+\m{\beta_i}, $B_i$ elements of \m{[0,\infty]}. Let \m{\mu=(\mu_{k,t})_{k\in\kappa,t\in T}} be homomorphisms
+\m{\GE{E}\to\Qlb^{\times}} and \m{(\mathrm{val}_k)_{k\in\kappa}} functions as in the definition of a family. Let
+\m{c\ge0} and \m{\eta>0} be real numbers and \m{m\in\NN}. Suppose that}
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=2pt]
+\item \emph{\m{\IsBalanced{\ell}{S}{\varrho_i}{L_i}{\gamma_i}{\beta_i}{M}} for every~$i$, and
+\m{\IsFamily{S_0}{\mu_k}{\mathrm{val}_k}} for every~$k$;}
+\item \emph{\m{B_i\ne\infty} and
+\m{\nlen_{\cO}\bigl(\beta_i+\sum_{b}v_{\cO}(\det(\varrho_i(z^{[b]})-1))\bigr)\le B_i} for every~$i$, the sum over the two
+signs;}
+\item \emph{\m{\vl(\mu_{k,t}(z)-1)\le c} for all $k$ and~$t$.}
+\end{enumerate}
+\emph{Then there are a finite set $I$ of finite places of~$E$ and a multiplicative homomorphism
+\m{\psi\colon\GE{E}\to\Qlb} such that for every \m{1\le d\le m}:}
+\begin{enumerate}[label=\textup{(\arabic*)},leftmargin=2.3em,itemsep=2pt]
+\item \emph{\m{\vl(\mathrm{val}_k(I,\psi^{d}))\le\vl(\mathrm{val}_k(\emptyset,1))+8c+\eta} for every~$k$;}
+\item \emph{\m{\IsAuxTwist{S_0}{I}{\psi^{d}}{\eta}};}
+\item \emph{for every $i$ and all large coefficient rings $\cO'$: \m{\cO\subseteq\cO'}, and there is a
+multiplicative homomorphism \m{\psi'\colon\GE{E}\to\cO'} with \m{\psi'(g)=\psi^{d}(g)} for all~$g$ and}
+\[
+\nlen_{\cO'}\,\Sel{\psi'\cdot\varrho_i}{\unionWithConj{S}{I}}{L_i\cup\{\delta_{\gamma_i}\}}{\cO'/\ell^{M}}\ \le\ B_i+\eta .
+\]
+\end{enumerate}}
+\leanline{\lean{existsanticyclotomictwist}}
+
+\statement{arith}{\phantomsection\label{t:B}\textbf{Theorem B} (tied conditions at new primes shrink Selmer modules).\enspace
+\emph{Let $E$, $\mathcal{I}$, \m{(n_i)_i}, \m{S\subseteq S_0}, \m{z\in\inab{S_0\setminus\pd{E}{\ell}}} and \m{M\in\NN} be
+as in Theorem~A. Let $A$ be the ring of integers of a finite extension of~\m{\Ql}, and for \m{i\in\mathcal{I}} let
+\m{\varrho_i\colon\GE{E}\to M_{n_i}(A)} be a homomorphism, $L_i$ a set of relations, \m{\gamma_i\in\GE{E}} and
+\m{\beta_i\in[0,\infty]} with \m{\IsBalanced{\ell}{S}{\varrho_i}{L_i}{\gamma_i}{\beta_i}{M}}. Let $W$ be a neighbourhood
+of~$z$ in~\m{\GE{E}} and \m{a\in A} with \m{a\mid\ell^{M}}. For \m{i\in\mathcal{I}} let $U_i$ be the property
+\m{\reduceModPow{\ell}{M}{\varrho_i}(g)=1} of \m{g\in\GE{E}}. Then there is \m{J_0\in\NN} such that for every
+\m{N\in\NN} there are a finite place~$\fq_0$, a finite set $J$ of finite places with \m{\#J\le J_0}, and a
+function $x$ with \m{\IsPencil{\ell}{S_0}{U}{W}{N}{\fq_0}{J}{x}} and}
+\[
+\len_A\,\Sel{\varrho_i}{\unionWithConj{S}{J}}{L_i\cup\tieRelations{J}{x}{i}\cup\{\delta_{\gamma_i}\}}{A/a}\ \le\ \beta_i\qquad\text{\emph{for all }}i\in\mathcal{I}.
+\]}
+\leanline{\lean{existsisPencil}}
+
+\statement{arith}{\phantomsection\label{t:C}\textbf{Theorem C} (rows are balanced).\enspace
+\emph{Let $P$ be parameters, $D$ admissible data for~$P$, \m{\iota\colon\CC\to\Qlb} the fixed isomorphism, $n$ a
+finite set, $t$ a natural number, $\HT$ a type and \m{R\colon\AbsGal{D}\to\GL_n(\Qlb)} a homomorphism with
+\m{\IsRow{D}{t}{\HT}{R}}. Let $w$ be a finite place of~\m{\ED{D}} that is chosen and lies in
+\m{\placesAboveG{D}\setminus\pd{\ED{D}}{\ell}}, and \m{M\in\NN}. The set
+\m{\Sigma=\pd{\ED{D}}{\ell}\cup\placesAboveG{D}} is finite. For all large coefficient rings~$\cO$ there are a
+homomorphism \m{u\colon\AbsGal{D}\to M_n(\cO)}, an element \m{\gamma\in\AbsGal{D}} and \m{\beta\in[0,\infty]} such
+that $u$ is a lattice of~$R$, \m{\IsBalanced{\ell}{\Sigma}{u}{\crysRels{u}}{\gamma}{\beta}{M}}, and}
+\[
+\nlen_{\cO}\Bigl(\beta+\sum_{b}v_{\cO}\bigl(\det(u(\tau_w^{[b]})-1)\bigr)\Bigr)\ \le\ 10\,\fD{D}\cdot\#n\cdot\crudeUnit{\ell}{D}.
+\]}
+\leanline{\lean{eventuallyisBalanced}}
+
+\statement{arith}{\phantomsection\label{t:D}\textbf{Theorem D} (Ribet's lemma to first order).\enspace
+\emph{Let $A$ be a discrete valuation ring with valuation~$v_A$, $\mathbb{L}$ a commutative $A$-algebra, $Y$,
+$\sigma$, $W$ and $r$ finite sets, $J$ a finite totally ordered set, $\Gamma$ a group, \m{u=(u_x)_{x\in Y}} a family of
+homomorphisms \m{u_x\colon\Gamma\to M_\sigma(A)}, $\mathcal{S}$ an $A$-subalgebra of the algebra of functions
+\m{Y\to\mathbb{L}[X_j:j\in J]} and $\mathcal{J}$ an $\mathcal{S}$-submodule of that algebra. Let \m{t\ge1},
+\m{\epsilon\colon r\sqcup\{0,\dots,t-1\}\to\sigma} a bijection, \m{\mathcal{X}\subseteq Y}, \m{\pi\in\mathcal{X}}, and for
+\m{x\in\mathcal{X}} let \m{\varrho_x\colon\Gamma\to M_r(A)} be a homomorphism, \m{\gamma_x\in\Gamma} and \m{y_x\in A}; let
+\m{\xi_e\colon\Gamma\to A}, \m{e<t}, be multiplicative homomorphisms. Let \m{p,p_0,C\in A}, let
+\m{\tau,\phi\colon J\times\{+,-\}\to\Gamma} be functions, \m{\varepsilon=(\varepsilon_j)_{j\in J}} polynomials in~\m{A[X]},
+\m{a\in\Gamma}, \m{\mathrm{ty}\colon J\to\{0,\dots,t-1\}} a monotone map, $\theta$ a finitely supported function
+\m{\Gamma\to\NN}, \m{\beta\colon Y\to\mathbb{L}} a function, \m{b_0} and \m{(b_e)_{e<t}} elements of \m{\NN\cup\{\infty\}},
+\m{(\delta_v)_{v\in W}} elements of~$\Gamma$, \m{(o_v)_{v\in W}} polynomials in~\m{A[X]}, and $s$ a finite subset
+of~$\Gamma$. Suppose:}
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item \emph{\m{\xi_0=1}; for \m{x\in\mathcal{X}} and \m{g\in\Gamma}, \m{u_x(g)} is the block sum of \m{\varrho_x(g)} and the
+diagonal matrix of the \m{\xi_e(g)}, transported by~$\epsilon$; and the $A$-span of \m{\varrho_\pi(\Gamma)} is \m{M_r(A)};}
+\item \emph{\m{\varrho_x(\gamma_x)=y_x\cdot1}, \m{y_x-1\in A^{\times}} and \m{\xi_e(\gamma_x)=1} for all
+\m{x\in\mathcal{X}} and \m{e<t};}
+\item \emph{\m{p\ne0}; \m{\IsTraceIdeal{\mathcal{J}}{u}{p}{\tau}{\phi}{\mathrm{pr}_1}{\varepsilon}}, with \m{\mathrm{pr}_1} the
+first projection of \m{J\times\{+,-\}}; and $p$ divides \m{\varepsilon_{j}(\xi_e(\phi_k))-1} for all $e$ and all
+\m{k=(j,b)};}
+\item \emph{for every \m{e<t}, the product \m{\prod_{k<t,\,k\ne e}(\xi_e(a)-\xi_k(a))} divides~$C$;}
+\item \emph{\m{p_0\ne0}; \m{\beta(x)} is the image in~$\mathbb{L}$ of
+\m{\det\bigl(\sum_{g}\ribetNormaliser{\gamma_\pi}{a}{y_\pi}{p_0C}{\theta}{g}\,(u_x(g)-1)\bigr)} for every \m{x\in Y};
+\m{b_0<v_A(p_0)}; and the $A$-module of the \m{c\in\obeyingCocycles{u}{\varrho_\pi}{p_0}} that vanish at all
+\m{\tau_k} and at~\m{\gamma_\pi} has length at most~$b_0$;}
+\item \emph{\m{\xi_e(\delta_v)=1} for all $v$, $e$, and \m{(o_v\cdot(X-1))(u_x(\delta_v))=0} for all \m{v\in W},
+\m{x\in Y};}
+\item \emph{for every \m{e<t} and every $A$-submodule $Z$ of the functions \m{\Gamma\to A/p}: if every \m{c\in Z}
+lies in \m{\obeyingCocycles{u}{\xi_e}{p}}, vanishes at all~$\delta_v$, and satisfies ``for every \m{m\in A/p}, if
+\m{c(g)=(\xi_e(g)-1)m} for all~$g$, then \m{(\xi_e(a)-1)\,c(g)=0} for all~$g$'', then
+\m{\HasTriangleCost{Z}{\tau}{\phi}{\{j:\mathrm{ty}(j)=e\}}{C}{b_e}}, and every \m{c\in Z} that vanishes on~$s$ is zero.}
+\end{enumerate}
+\emph{Then there is \m{c\in A} such that \m{\IsRibetElement{\mathcal{J}}{\beta}{\pi}{c}} (with $c$ read
+in~$\mathbb{L}$) and}
+\[
+v_A(c)\ \le\ b_0+\sum_{e<t}b_e+t\Bigl(\sum_{v\in W}v_A(o_v(1))+2\,\#s\cdot v_A(C)\Bigr)+(\#J+1)\,v_A(C).
+\]}
+\leanline{\lean{ribetfirstorder}}
+
+\statement{arith}{\phantomsection\label{t:E}\textbf{Theorem E} (the cost of a Tate twist).\enspace
+\emph{Let $E$ be a CM field as in the conventions, $J$ a finite totally ordered set, $\cO$ a coefficient ring,
+\m{\nu,t,h,c} natural numbers, \m{w=(w_j)_{j\in J}} finite places of~$E$, \m{\tau=(\tau_j)_j} and
+\m{\phi=(\phi_j)_j} families in~\m{\GE{E}}, \m{\gamma\in\GE{E}}, \m{e<t}, and
+\m{\mathrm{ty}\colon J\to\{e':0<e'<t\}} a monotone map with
+\m{\IsPrimeTriangle{\nu}{w}{\tau}{\phi}{\gamma}{t}{\mathrm{ty}}{h}{c}}. Let $Z$ be an $\cO$-submodule of the functions
+\m{\GE{E}\to\cO/\ell^{\nu}} and \m{b\in\NN\cup\{\infty\}}. Suppose that}
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=2pt]
+\item \emph{\m{Z\subseteq\Sel{\cO(-e)}{\pd{E}{\ell}\cup w(J)\cup\cj{w(J)}}{\emptyset}{\cO/\ell^{\nu}}};}
+\item \emph{for every \m{z\in Z} and \m{m\in\cO/\ell^{\nu}}: if \m{z(g)=(\cyc(g)^{-e}-1)\,m} for all~$g$, then
+\m{(\cyc(\gamma)^{-e}-1)\,z(g)=0} for all~$g$;}
+\item \emph{\m{\len_{\cO}\bigl(Z/Z\cap\Ob{\crysRels{\cO(-e)}}{\cO/\ell^{\nu}}\bigr)+\len_{\cO}\Sha^{\mathrm{odd}}(\ell,E,\cO,e,\nu)\le b}.}
+\end{enumerate}
+\emph{Then \m{\HasTriangleCost{Z}{\withConjInv{\tau}{\cdot}}{\withConjInv{\phi}{\cdot}}{\{j:\mathrm{ty}(j)=e\}}{\ell^{h}}{b}}.}}
+\leanline{\lean{hasTriangleCosttateTwist}}
+
+In Theorem~A the representations $\varrho_i$ are, in the third note, lattices of the rows of the auxiliary pairs,
+balanced by Theorem~C with \m{L_i} the crystalline relations, and the families are those of Theorem~D of the
+first note; the conclusion (3) is then the Selmer length bound of the first note, and (1) bounds the inverse
+ratios of $L$-values. In Theorem~D the points of~$Y$ are Hecke eigensystems, $\mathcal{X}$ the lifts, the
+variables $X_j$ the tie parameters at the auxiliary primes, and the element $f$ of
+\m{\IsRibetElement{\mathcal{J}}{\beta}{\pi}{c}} a Hecke element that kills a determinant vanishing on the lifts
+modulo the ties; its coefficient $c$ at \m{\prod_jX_j} measures the congruence.
+
+\sect{Conventions and recalled notions}{s:back}
+\begin{conventions}\phantomsection\label{c:conventions}
+The conventions are those of the first note of the unit. The natural numbers are \m{0,1,2,\dots}. $\ell$ is a
+prime number; \m{\Ql}, \m{\Zl}, \m{\Qlb}, \m{\Zlb}, \m{\Cl}, \m{\Gl=\Gal(\Qlb/\Ql)} are as usual, with
+\m{|\ell|=1/\ell}; \m{\iota\colon\CC\to\Qlb} is a fixed isomorphism of fields where complex numbers occur. \m{\Qb}
+is a fixed algebraic closure of~$\mathbb{Q}$ with a fixed complex conjugation~$\mathsf{c}$. A \emph{CM field as
+in the conventions} is a CM number field $E$ with a fixed embedding in~\m{\Qb} that contains a primitive root of
+unity of order~$5040$; \m{\GE{E}=\Gal(\Qb/E)}; in Lemmas \ref{l:fitting} and~\ref{l:tilting} only a number field with a
+fixed embedding is needed, or no field at all, as said there. $P$ denotes parameters and $D$ admissible data
+for~$P$. The letters $n$, $r$, $m$, $d$, $\sigma$, $\kappa$, $T$, $N$, $X$, $Y$, $W$, $J$, $\mathcal{I}$, when they
+index matrices or families, denote finite sets (in §\ref{s:ribet} some of them are arbitrary sets, as said there); \m{\#n} is the number of elements, \m{M_n(A)} the matrices over a commutative
+ring indexed by~$n$. A \emph{coefficient ring} is the ring of integers $\cO$ (also $\cO'$) of a finite Galois
+extension of~\m{\Ql} inside~\m{\Qlb}; ``for all large~$\cO$'' means: for all coefficient rings containing a
+suitable one; ``for all large~$N$'' is meant in the same way for natural numbers. $A$, $A_0$, $A'$, $\Lambda$, $\mathbb{L}$ denote commutative rings, $\Gamma$ a group,
+$B$ a module. A \emph{discrete valuation ring} is a domain; \m{v_A} is its valuation with \m{v_A(\varpi)=1}, with
+values in \m{\NN\cup\{\infty\}}.
+\end{conventions}
+
+\subhead{2.1. Background.} The background notions are those of §2 of the first note: finite places $w$, $v$,
+$\fq$ of~$E$, their conjugates \m{\cj{w}}, norms \m{\Nm(w)} and the sets \m{\pd{E}{M}}; places $\fP$ of~\m{\Qb},
+decomposition and inertia groups \m{G_{\fP}}, \m{I_{\fP}}, the inertia \m{\inab{S}} above a set of places, $q$-Frobenius
+elements, the tame generators \m{\tau_{\fP}} and \m{\tau_w}; \m{g^{\mathsf c}=\mathsf{c}g\mathsf{c}}, \m{g^{[+]}=g},
+\m{g^{[-]}=(g^{\mathsf c})^{-1}}; the cyclotomic character \m{\cyc} and \m{\cyc_M}; characters \emph{from
+$\mathrm{U}(1)$ relative to~$S$ with modulus~$I$}; relations $\theta$, the indicator relation $\delta_g$, the
+module \m{\Ob{L}{B}} of the functions that obey a set $L$ of relations, the relations \m{\Rel{Z}} of a module of
+functions, the cocycle relations, the Selmer module \m{\Sel{\varrho}{S}{L}{B}} (locally constant cocycles
+for~$\varrho$ with values in~$B^n$, unramified outside~$S$, obeying~$L$) and the local cocycles; \m{A/a}; the length
+\m{\len_A}; the normalised length \m{\nlen_{\cO}=\vl(\varpi)\cdot\len_{\cO}}, applied to a module or to an element
+of \m{\NN\cup\{\infty\}}; the truncated valuation \m{\vl} on~\m{\Qlb}; the Tate twist \m{\cO(-e)}; lattices of a
+representation \m{R\colon\GE{E}\to\GL_n(\Qlb)}; Galois lattices over~$\cO$ for a group over~\m{\Gl}, their
+crystalline cocycles \m{\Zf(L)}, jumps, twisted duals \m{L^{\vee}(1)}, the classes \m{\mathcal{Q}(F,K,U)}, tame types
+and cup-orthogonals \m{L^{\perp\mathcal{Q}}}. For a representation $\varrho$ and a multiplicative homomorphism
+$\psi'$ with values in the same ring, \m{\psi'\cdot\varrho} is \m{g\mapsto\psi'(g)\varrho(g)}; when $\varrho$ has
+coefficients in a subring, it is read in the larger ring. For \m{e,\nu\in\NN}, \m{\Sha^{\mathrm{odd}}(\ell,E,\cO,e,\nu)}
+is the module of the cocycles in \m{\Sel{\cO(-e)}{\pd{E}{\ell}}{\emptyset}{\cO/\ell^{\nu}}} that vanish on the inertia groups
+above~$\ell$ when \m{e=0}, and, when \m{e\ne0}, vanish at the elements of the decomposition groups above~$\ell$ with
+\m{\cyc=1} and satisfy \m{z(g^{\mathsf c})=-z(g)} (background library; the name ``odd'' is apt for \m{e\ne0} only).
+For a submodule \m{\mathcal{N}} of a free module $\Lambda^{s}$ of finite rank, its \emph{Fitting ideal}
+\m{\operatorname{Fitt}(\mathcal{N})} is the ideal generated by the determinants of the square matrices whose rows
+lie in~\m{\mathcal{N}} (the zeroth Fitting ideal of the quotient).
+
+\begin{definition}[notions recalled from the first note]\label{d:recall}
+The following are defined in the note \emph{Columns and rows as Galois representations}; the numbers are those
+of its definitions.
+\begin{enumerate}[label=\textup{(\arabic*)},leftmargin=2.3em,itemsep=2pt]
+\item (3.1) For a family \m{u=(u_x)_x} of homomorphisms \m{\Gamma\to M_\sigma(A)}, a homomorphism
+\m{\varrho\colon\Gamma\to M_d(A)} and \m{a\in A}, \m{\obeyingCocycles{u}{\varrho}{a}} is the module of the cocycles
+\m{c\colon\Gamma\to(A/a)^d} for~$\varrho$ with \m{\sum_g\theta(g)c(g)=0} for every finitely supported
+\m{\theta\colon\Gamma\to A} such that \m{\sum_g\theta(g)(u_x(g)-1)=0} for all~$x$.
+\item (3.4, 3.5, 3.37) For \m{g\in\Gl}: \m{\coeffEmb{\cO}{g}\colon\cO\to\Cl} is \m{x\mapsto g(x)}, and
+\m{\complexEmbOf{e}{g}=\iota^{-1}g^{-1}e} for a ring homomorphism $e$ into~\m{\Qlb}. For a homomorphism
+\m{u\colon\GE{E}\to M_n(\cO)} and \m{v\in\pd{E}{\ell}}, \m{\ZfAt{v}{u}} is the module of the crystalline cocycles of the
+restriction of~$u$ to the decomposition group of the chosen place over~$v$, and \m{\crysRels{u}} is the set of the
+crystalline relations of~$u$: the relations of the modules \m{\ZfAt{v}{u}}, extended by zero. For a homomorphism
+\m{\varrho\colon\Gamma\to M_n(A)} into matrices over a \m{\Zl}-algebra, \m{\matrixLattice{\varrho}} is $A^n$ with
+$\Gamma$ acting through~$\varrho$.
+\item (3.10, 3.13) For admissible data~$D$: \m{\AbsGal{D}=\Gal(\Qb/\ED{D})}; \m{\placesAboveG{D}} is the set of the finite
+places of~\m{\ED{D}} above the two primes \m{\Dg{0}{D}}, \m{\Dg{1}{D}}; \m{\badPlaces{D}{\ell}} the set of those
+containing \m{\ell\gD{D}\lvl{D}}; and \m{\crudeUnit{\ell}{D}=v_\ell(\ordch{D})+2^{-\ell}}.
+\item (3.15, 3.16) \m{\IsColumn{D}{t}{\HT}{S}{R}}: $R$ is continuous with non-degenerate trace form,
+\m{\tr R(g^{\mathsf c})=\cyc(g)^{-(t-1)}\tr R(g^{-1})}, and at the places outside
+\m{S\setminus(\pd{\ED{D}}{\ell}\cup\placesAboveG{D})} it is of finite type with the jumps~$\HT$, and good outside
+\m{\placesAboveG{D}}. \m{\IsRow{D}{t}{\HT}{R}}: a column of level~$\emptyset$ of row type, with the clauses (W2)--(W4)
+on the inertia above \m{\placesAboveG{D}}, on the lattices (they span all matrices and contain a scalar \m{u(g)}
+with \m{\cyc(g)=\Dg{i}{D}^{\#n}}), and on a scalar inertial element of large residual order.
+\item (3.23--3.25) \m{\AuxPrimeData{E}{q}} is the set of the data \m{l=(\fP,\gamma,\phi,h)} at an auxiliary prime, with
+\m{h\colon\GE{E}\to\mathbb{Z}/q}. \m{\IsAnticyclotomicAt{T}{\fq}{l}}: $h$ is from $\mathrm{U}(1)$ relative to~$T$ with
+modulus~\m{\{\fq\}}, \m{\Nm(\fq)\equiv1\bmod q}, $\fP$ lies over~$\fq$, $\phi$ is an \m{\Nm(\fq)}-Frobenius at~$\fP$,
+\m{\fq\notin T}, and \m{\gamma=\tau_{\fP}} with \m{h(\gamma)=1}. \m{\IsAuxiliary{S}{I}}: every \m{v\in I} has prime norm,
+and \m{v,\cj{v}\notin S}, \m{\cj{v}\notin I}.
+\item (3.26) \m{\IsFamily{S}{\nu}{\mathrm{val}}}: the $\nu_i$ are continuous; for auxiliary~$I$,
+\m{\mathrm{val}(I,\chi)=\sum_ac_a\chi(g_a)} with integral~$c_a$; adding a place $\fq$ to~$I$ raises
+\m{\vl(\mathrm{val}(I,\chi))} by at most~$8a$ when all \m{\vl(1-\nu_i(\phi)\chi(\phi)^{\pm1})\le a} at a Frobenius element
+$\phi$ of~$\fq$; and \m{\mathrm{val}(\emptyset,1)\ne0}.
+\item (3.27, 3.28) \m{\evenClasses{\cO}{S}{\nu}{e}}: the cocycles in
+\m{\Sel{\cO(-e)}{\pd{E}{\ell}\cup S\cup\cj{S}}{\emptyset}{\cO/\ell^\nu}} with \m{c(g^{\mathsf c})=c(g)} that vanish at the
+elements of the decomposition groups above~$\ell$ with \m{\cyc=1}. \m{\IsNewPlaces{\nu}{w}{\tau}{\phi}}: no $w_j$ is
+above~$\ell$, \m{\cyc_{\ell^\nu}(\phi_j)=1}, and $\tau_j$ is the tame generator at a place over~$w_j$.
+\m{\withConjInv{\tau}{k}=\tau_j^{[b]}} for \m{k=(j,b)}.
+\item (3.29) \m{\IsPrimeTriangle{\nu}{w}{\tau}{\phi}{a}{t}{\mathrm{ty}}{h}{c}}: the clauses (T1)--(T5) of the first
+note; (T1) is \m{\IsNewPlaces{\nu}{w}{\tau}{\phi}}, (T4) the step ``\m{\ell^{h}z(\tau_j)=0} for an even class
+of type \m{\mathrm{ty}(j)} that vanishes at the earlier $\tau_i$, and at the earlier $\phi_i$ of the same type'',
+(T5) the clause ``\m{4\delta(a)^2\mid\ell^{h}} and \m{\delta(a)\cdot2z(g)=\delta(g)\cdot2z(a)} for even classes
+unramified outside~$\ell$ that vanish at the $\phi_j$ of type~$e$'', with \m{\delta(g)=\cyc(g)^{-e}-1}.
+\item (3.30, 3.31) \m{\IsAuxTwist{S}{Q}{\psi}{c}}: \m{\IsAuxiliary{S}{Q}}, $\psi$ is from $\mathrm{U}(1)$ relative to
+\m{\pd{E}{\ell}} with modulus~$Q$, no place of~$Q$ is above~$\ell$, and \m{\sum_{\fq\in Q}\vl(\psi(\sigma_{\fq})-1)\le c}
+for tame generators \m{\sigma_{\fq}} at places over the \m{\fq\in Q}. \m{\unionWithConj{S}{J}} is the union of $S$,
+$J$ and the conjugates of~$J$.
+\item (3.32) For homomorphisms \m{h_j\colon\Gamma\to\mathbb{Z}/q} and \m{y_j\in A} (\m{j\in\sigma}) with \m{y_j^{q}=1},
+the \emph{point character} is \m{g\mapsto\prod_jy_j^{h_j(g)}}, written \m{y^{h}}; for a ring homomorphism
+\m{e\colon A'\to A} and \m{\varrho\colon\Gamma\to M_n(A')},
+\m{\twistAtPoint{h}{y}{e}{\varrho}{g}=\prod_jy_j^{h_j(g)}\cdot e(\varrho(g))}; and
+\m{\reduceModPow{l}{M}{\varrho}} is $\varrho$ modulo~$l^M$.
+\item (3.33) \m{\IsBalanced{\ell}{S}{\varrho}{L}{\gamma}{\beta}{M}}: the clauses (B1)--(B5) of the first note: $\varrho$
+modulo~$\ell^M$ is locally constant and unramified outside~$S$; it spans all matrices and the residue field has
+more than \m{4\#n+2} elements; \m{\gamma\in\inab{S\setminus\pd{E}{\ell}}} and \m{\gamma^{[-]}} act by one scalar $s$ with
+\m{s\pm1} units; coboundaries obey~$L$; and for some $g$ with \m{\varrho(g)=\alpha}, \m{\varrho(g^{[-]})=\alpha'} scalars
+and every \m{a\mid\ell^M}: the sum over \m{v\in S} of the least lengths of the local cocycles modulo~$a$, plus
+\m{\#n\cdot v_A(\alpha-\cyc(g^{\mathsf c})\alpha')}, is at most \m{(\#S+f_E)\len_A((A/a)^n)+\beta}.
+\item (3.34, 3.35) \m{\IsPencil{\ell}{S_0}{U}{W}{N}{\fq_0}{J}{x}}: $x$ assigns to each place $v$ a datum
+\m{l_v=(\fP_v,\gamma_v,\phi_v,h_v)\in\AuxPrimeData{E}{\ell^N}} and slopes \m{(s_{v,i})_{i}}; (P1) \m{\IsAuxiliary{S_0}{J}}
+and \m{\fq_0\in J}; (P2) \m{\IsAnticyclotomicAt{\pd{E}{\ell}}{v}{l_v}} for \m{v\in J}; (P3) for \m{v\ne\fq_0} in~$J$,
+\m{h_{v'}(\phi_v)} is $1$ for \m{v'=\fq_0} and $0$ for the other \m{v'\in J}; (P4) \m{\phi_{\fq_0}\in W}; (P5) $U_i$ holds
+at \m{\phi_v^{[\pm]}} when \m{s_{v,i}\ne0}. \m{\tieRelations{J}{x}{i}} is the set of the relations
+\m{\delta_{\gamma_v^{[b]}}-s_{v,i}\delta_{\phi_v^{[b]}}}, \m{v\in J}.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{obeyingCocycles}\sep \lean{coeffEmb}\sep \lean{complexEmbOf}\sep \lean{ZfAt}\sep \lean{crysRels}\sep \lean{matrixLattice}\sep
+\lean{AbsGal}\sep \lean{placesAboveG}\sep \lean{badPlaces}\sep \lean{crudeUnit}\sep \lean{IsColumn}\sep \lean{IsRow}\sep
+\lean{AuxPrimeData}\sep \lean{IsAnticyclotomicAt}\sep \lean{IsAuxiliary}\sep \lean{IsFamily}\sep \lean{evenClasses}\sep
+\lean{IsNewPlaces}\sep \lean{withConjInv}\sep \lean{IsPrimeTriangle}\sep \lean{IsAuxTwist}\sep \lean{unionWithConj}\sep
+\lean{pointChar}\sep \lean{twistAtPoint}\sep \lean{reduceModPow}\sep \lean{IsBalanced}\sep \lean{IsPencil}\sep
+\lean{tieRelations}\sep all defined in the first note of the unit}
+
+\sect{The definitions of this note}{s:defs}
+
+\begin{definition}[evaluation at a conjugate pair]\label{d:evpair}
+Let $E$ be a CM field as in the conventions, $n$ a finite set, $A$ a commutative ring, $B$ a commutative
+$A$-algebra with the discrete topology, and \m{g\in\GE{E}}. Then \m{\evalConjPair{g}} is the $A$-linear map that sends a function
+\m{z\colon\GE{E}\to B^n} to the pair \m{(z(g^{[+]}),z(g^{[-]}))\in B^n\times B^n}.
+\end{definition}
+\leanline{\lean{evalConjPair}}
+
+\begin{definition}[flattening of blocks]\label{d:flat}
+Let $N$ and $\sigma$ be finite sets and $\mathbb{L}$ a commutative algebra over a commutative ring~$\Lambda$. Then
+\m{\blockFlattenAlgEquiv{N}} is the isomorphism of $\Lambda$-algebras from the \m{N\times N} matrices with entries in
+\m{M_\sigma(\mathbb{L})} to the matrices over~$\mathbb{L}$ indexed by \m{N\times\sigma}.
+\end{definition}
+\leanline{\lean{blockFlattenAlgEquiv}}
+
+\begin{definition}[the normaliser]\label{d:normaliser}
+Let $\Gamma$ be a group, $\Lambda$ a commutative ring, \m{\gamma,a\in\Gamma}, \m{y,p\in\Lambda} and $\theta$ a finitely
+supported function \m{\Gamma\to\NN}. Then \m{\ribetNormaliser{\gamma}{a}{y}{p}{\theta}{\cdot}} is the finitely supported
+function \m{\Gamma\to\Lambda} which is the sum of the indicator of~\m{\gamma a}, of $-y$ times the indicator of~$a$, and of
+\m{p\,\theta}; its value at \m{g\in\Gamma} is \m{\ribetNormaliser{\gamma}{a}{y}{p}{\theta}{g}}. Paired with a function
+\m{g\mapsto u(g)-1} it gives \m{(u(\gamma a)-1)-y\,(u(a)-1)+p\sum_g\theta(g)(u(g)-1)}.
+\end{definition}
+\leanline{\lean{ribetNormaliser}}
+
+\begin{definition}[triangle cost]\label{d:tricost}
+Let $A$ be a commutative ring, $\Gamma$ a set, $J$ a totally ordered set, $B$ an $A$-module, $Z$ a submodule of the
+functions \m{\Gamma\to B}, \m{\tau,\phi\colon J\times\{+,-\}\to\Gamma} functions, $I$ a finite subset of~$J$,
+\m{C\in A} and \m{b\in\NN\cup\{\infty\}}. Then \m{\HasTriangleCost{Z}{\tau}{\phi}{I}{C}{b}} holds if there is a subset
+\m{\Gamma_0\subseteq\Gamma} such that
+\begin{enumerate}[label=\textup{(C\arabic*)},leftmargin=3em,itemsep=1pt]
+\item for every \m{j\in I} and every \m{c\in Z} that vanishes on~$\Gamma_0$: if for all \m{i<j},
+\m{c(\tau_{(i,+)})=c(\tau_{(i,-)})}, and \m{c(\phi_{(i,+)})=c(\phi_{(i,-)})} when \m{i\in I}, then
+\m{C\,c(\tau_{(j,+)})=C\,c(\tau_{(j,-)})};
+\item for every submodule $Z'$ of the elements of~$Z$ that vanish on~$\Gamma_0$, if every \m{c\in Z'} vanishes at
+all~$\tau_k$ and has \m{c(\phi_{(j,+)})=c(\phi_{(j,-)})} for \m{j\in I}, then
+\[\len_A\bigl(Z/\{c\in Z:c|_{\Gamma_0}=0\}\bigr)+\len_A\bigl(Z'/Z'[C]\bigr)\le b,\]
+with \m{Z'[C]} the module of the elements of~$Z'$ killed by~$C$.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{HasTriangleCost}}
+
+\begin{definition}[trace ideals]\label{d:trid}
+Let $A$ be a commutative ring, $\mathbb{L}$ a commutative $A$-algebra, $Y$, $J$, $K$ sets ($J$ is totally ordered
+in the formal text, which the definition does not use), $\sigma$ a finite set,
+$\Gamma$ a group, $\mathcal{S}$ an $A$-subalgebra of the functions \m{Y\to\mathbb{L}[X_j:j\in J]} and $\mathcal{J}$ an
+$\mathcal{S}$-submodule of these functions. Let $A_1$ be a commutative $A$-algebra over which $\mathbb{L}$ is an
+algebra, \m{u=(u_x)_{x\in Y}} a family of functions \m{u_x\colon\Gamma\to M_\sigma(A_1)}, \m{p\in A},
+\m{\tau,\phi\colon K\to\Gamma}, \m{k\colon K\to J} and \m{\varepsilon=(\varepsilon_j)_{j\in J}} polynomials in~\m{A[X]}.
+Then \m{\IsTraceIdeal{\mathcal{J}}{u}{p}{\tau}{\phi}{k}{\varepsilon}} holds if
+\begin{enumerate}[label=\textup{(\arabic*)},leftmargin=2.3em,itemsep=1pt]
+\item every constant function $X_j$ lies in~$\mathcal{S}$, and for all \m{g\in\Gamma} and all~$i$ the function
+\m{x\mapsto} (the $i$-th coefficient of the characteristic polynomial of \m{u_x(g)}) lies in~$\mathcal{S}$;
+\item for every \m{g\in\Gamma}, the function \m{x\mapsto p\,\tr u_x(g)} lies in~$\mathcal{J}$, and for every \m{i\in K}
+so does
+\m{x\mapsto\tr\bigl((u_x(\tau_i)-1)u_x(g)\bigr)-X_{k(i)}\,\tr\bigl(((X-1)\varepsilon_{k(i)})(u_x(\phi_i))\,u_x(g)\bigr)}.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{IsTraceIdeal}}
+
+\begin{definition}[Ribet elements]\label{d:rib}
+Let $A$, $\mathbb{L}$, $Y$, $\mathcal{S}$, $\mathcal{J}$ be as in Definition~\ref{d:trid} with $J$ finite (and totally ordered), let
+\m{\beta\colon Y\to\mathbb{L}} be a function, \m{\mathcal{X}\subseteq Y}, \m{\pi\in\mathcal{X}} and \m{c\in\mathbb{L}}.
+Then \m{\IsRibetElement{\mathcal{J}}{\beta}{\pi}{c}} holds if $\beta$, as a function with constant polynomials as
+values, lies in~$\mathcal{S}$, and there is \m{f\in\mathcal{S}} with \m{f\beta\in\mathcal{J}} such that for every
+\m{x\in\mathcal{X}}: \m{\beta(x)=0} and the coefficient in \m{f(x)} of every monomial that properly divides
+\m{\prod_{j\in J}X_j} is zero; and the coefficient of \m{\prod_{j\in J}X_j} in \m{f(\pi)} is~$c$.
+\end{definition}
+\leanline{\lean{IsRibetElement}}
+
+\sect{Roots of unity at which polynomials keep low valuations}{s:roots}
+
+\begin{lemma}[one variable]\label{l:rootone}
+Let $\kappa$ be a finite set, \m{y=(y_k)_{k\in\kappa}} real numbers and $r$ a real number. Suppose \m{y_k>0} for
+all~$k$, \m{0<r}, \m{r<1} and \m{|\ell|<r^{\ell-1}}. Then for all large $N$ and, given~$N$, all large~$\cO$: for every
+family \m{(F_k)_{k\in\kappa}} of polynomials in~\m{\cO[X]} such that for each $k$ some coefficient $a_{k,i}$ of~$X^i$
+in~$F_k$ has \m{y_k\le|a_{k,i}|\,r^{i}}, there is \m{\zeta\in\cO} with \m{\zeta^{\ell^{N}}=1} and
+\m{r\,y_k\le|F_k(\zeta-1)|} for all~$k$.
+\end{lemma}
+\begin{proof}
+For \m{\rho>0} let \m{\|F\|_\rho=\max_i|a_i|\rho^{i}} be the Gauss norm, a multiplicative non-archimedean norm, and
+put \m{\rho_j=r^{1/\ell^{j}}}, an increasing sequence below~$1$. Choose $a$ with \m{r^{a}<|\ell|}, let $N$ be large
+(how large is fixed at the end), and let $\cO$ contain primitive roots of unity $\eta_j$ of order \m{\ell^{j+1}}
+for \m{j<N}. Suppose no $\zeta$ works. Fix \m{j<N} and \m{\eta=\eta_j}; for every \m{i<\ell^{j+1}} some \m{k=k(i)} has
+\m{|F_{k}(\eta^{i}-1)|<r\,y_{k}}. Let \m{\Pi=\prod_kF_k} and \m{\Pi=F_kQ_k}. Differentiating the identity
+\m{(1+X)^{\ell^{j+1}}-1=\prod_i(X-(\eta^{i}-1))} and inserting, at each~$i$, the remainder of \m{F_{k(i)}} on division by
+\m{X-(\eta^{i}-1)}, one writes \m{\ell^{j+1}(1+X)^{\ell^{j+1}-1}\,\Pi^{a(j+1)}} as a sum of terms each divisible by
+\m{(1+X)^{\ell^{j+1}}-1}, plus terms carrying a factor \m{F_{k(i)}(\eta^{i}-1)}. Since
+\m{|\eta^{i}-1|\le\rho_t} for \m{t\ge j} (the absolute value of \m{\eta_j-1} is \m{|\ell|^{1/(\ell^{j}(\ell-1))}<\rho_j}
+by the hypothesis on~$r$), the linear factors have Gauss norm~$\rho_t$ at the radius~$\rho_t$, and the ultrametric
+inequality yields an inequality between the Gauss norms of~$\Pi$ at the radii \m{\rho_j} and \m{\rho_{j+1}}:
+\[
+\log\|\Pi\|_{\rho_{j+1}}-\log\|\Pi\|_{\rho_j}\ \ge\ \frac{-\log r}{a\,(j+1)}\cdot(\text{a positive constant}).
+\]
+Summing over \m{j<N}, the left side telescopes and is bounded (\m{\|\Pi\|_\rho\le1} and
+\m{\|\Pi\|_{\rho_0}\ge\prod_ky_k}), while the right side grows like the harmonic series. This is impossible for
+large~$N$. The estimate of the Gauss norms is a computation of twenty lines in the formal proof, of which this
+is the outline.
+\end{proof}
+\leanline{\lean{existsrootofunityevallarge}}
+
+\begin{lemma}[several variables and all powers up to $m$]\label{l:rootmany}
+Let $\kappa$ be a finite set, \m{\delta>0} a real number, \m{m,L,a,q} natural numbers and
+\m{B=(B_k)_{k\in\kappa}} non-negative real numbers. Then for all large $N$ and, given~$N$, all large~$\cO$ the
+following holds. Let $\sigma$ and $T$ be finite sets with \m{\#\sigma\le q}, \m{(D_n)_{n\in T}} monic polynomials
+in~\m{\cO[X]} with \m{\sum_n\deg D_n\le L}, \m{(F_{k,d})_{k\in\kappa,1\le d\le m}} polynomials over~$\cO$ in the variables
+indexed by~$\sigma$, and \m{(u_{k,d})} points of~$\cO^{\sigma}$ such that $\ell$ divides \m{(u_{k,d,j}-1)^{a}} for every
+coordinate~$j$ and \m{\vl(F_{k,d}(u_{k,d}))\le B_k}. Then there is \m{\zeta\in\cO^{\sigma}} with
+\[
+\vl\bigl(F_{k,d}(\zeta^{d})\bigr)\le\delta+B_k\ \ \text{for all }(k,d),\qquad
+\zeta_j^{\ell^{N}}=1\ \ \text{and}\ \ \vl(D_n(\zeta_j))\le\delta\ \ \text{for all }j,\ n,
+\]
+where \m{\zeta^{d}} is the tuple of the $d$-th powers.
+\end{lemma}
+\begin{proof}
+Choose $r$ with \m{\max(|\ell|,\ell^{-\delta})<r^{\,q+L+\ell+ma+1}<1}. The tuple is built one coordinate at a time:
+suppose the coordinates in a set \m{s\subseteq\sigma} have been replaced by roots of unity so that
+\m{|F_{k,d}|} at the mixed point is at least \m{\ell^{-B_k}r^{\#s}}. For a further coordinate~$j$, restrict each
+\m{F_{k,d}} to the line where only the $j$-th coordinate varies, substituting \m{(1+X)^{d}} for its $d$-th power;
+the hypothesis \m{\ell\mid(u_{k,d,j}-1)^{a}} shows that the value at the old point is, up to the factor
+\m{r^{da}}, a lower bound for the Gauss norm of radius~$r$ of the restriction. Lemma~\ref{l:rootone}, applied to
+these restrictions and to the Taylor shift of \m{\prod_nD_n} (a monic polynomial, of Gauss norm at least
+\m{r^{L}}), gives a root of unity for the $j$-th coordinate that loses at most one more factor~$r$. After
+\m{\#\sigma\le q} steps all coordinates are roots of unity, and the choice of~$r$ turns the accumulated factors into
+the bound~$\delta$.
+\end{proof}
+\leanline{\lean{existsrootsofunityellValle}}
+
+\begin{lemma}[points on a line through a root of unity]\label{l:linepoint}
+Let $A$ be a commutative ring, \m{t,u\in A}, and \m{k,M,N} natural numbers. Suppose \m{u^{\ell^{k}}=1} and
+\m{k+M\le N}. Then $\ell$ divides \m{\bigl((1+t(u-1))-1\bigr)^{\ell^{k}}}, and \m{\ell^{M}} divides
+\m{(1+t(u-1))^{\ell^{N}}-1}.
+\end{lemma}
+\begin{proof}
+Modulo~$\ell$, \m{(x+y)^{\ell^{k}}\equiv x^{\ell^{k}}+y^{\ell^{k}}}; so \m{(u-1)^{\ell^{k}}\equiv u^{\ell^{k}}-1=0} and
+\m{(1+t(u-1))^{\ell^{k}}\equiv1}. If \m{x\equiv1\bmod\ell} then \m{x^{\ell^{M}}\equiv1\bmod\ell^{M}}, and
+\m{\ell^{N}} is a multiple of \m{\ell^{k+M}}.
+\end{proof}
+\leanline{\lean{dvdoneaddmulpowsubone}}
+
+\sect{The mirror lemma and the sharp polynomial}{s:mirror}
+
+\begin{lemma}[mirror lemma]\label{l:mirror}
+Let $A$ be a commutative ring, $\Gamma$ a group, $n$ a finite set, $\mathfrak{a}$ an ideal of~$A$ with
+\m{A/\mathfrak{a}} finite, \m{\varrho\colon\Gamma\to M_n(A)} a homomorphism, \m{\chi\colon\Gamma\to A} a multiplicative
+homomorphism, \m{\mathsf{c}'\colon\Gamma\to\Gamma} a homomorphism, $H$ and $U$ subgroups of~$\Gamma$ with $H$ normal,
+\m{\gamma,g_0,z,g\in\Gamma}, \m{s,\alpha,\alpha'\in A}, \m{y\colon\Gamma\to(A/\mathfrak{a})^n} a function, $i$ an
+index, $W$ a set, and \m{x=(x_w)_{w\in W}} functions that assign to each \m{g'\in\Gamma} an additive map
+\m{x_w(g')\colon(A/\mathfrak{a})^n\to\mathbb{Q}/\mathbb{Z}}. Suppose:
+\begin{enumerate}[label=\textup{(\arabic*)},leftmargin=2.3em,itemsep=1pt]
+\item the $A$-span of \m{\varrho(\Gamma)} is \m{M_n(A)}, and \m{\mathsf{c}'(\mathsf{c}'(g'))=g'} for all~$g'$;
+\item if \m{x_w(g')=x_v(g')} for all \m{g'\in U}, then \m{w=v};
+\item \m{\varrho(g')m=m} for \m{g'\in U} and \m{m\in(A/\mathfrak{a})^n}; \m{\mathsf{c}'(H)\subseteq H\subseteq U}; and
+every commutator \m{[g',\gamma]} lies in~$H$;
+\item \m{s-1} and \m{s+1} are units; \m{\varrho(\mathsf{c}'(\gamma))^{-1}=s}, \m{\varrho(\gamma)=s},
+\m{\chi(\mathsf{c}'(\gamma))=\chi(\gamma)=1} and \m{y(\gamma)=0};
+\item \m{z\in U} and \m{\mathsf{c}'(z)\in U}; $y$ is a cocycle for~$\varrho$; and the coordinate \m{y(g_0)_i} is a
+unit;
+\item \m{x_w(a\cdot g'bg'^{-1})(m)=x_w(a)(m)+x_w(b)\bigl(\chi(g')\varrho(g')^{-1}m\bigr)} for all $w$, \m{g'\in\Gamma},
+\m{a,b\in U} and~$m$;
+\item \emph{(isotropy on the coset \m{zH})} \m{x_w(zh)(t\,y(zh))=x_w(\mathsf{c}'(zh))(t\,y(\mathsf{c}'(zh)))} for all $w$,
+\m{h\in H} and \m{t\in A};
+\item \m{\varrho(g)=\alpha} and \m{\varrho(\mathsf{c}'(g))^{-1}=\alpha'} are scalars.
+\end{enumerate}
+Then \m{\#W} is at most the number of the \m{m\in(A/\mathfrak{a})^n} with \m{(\alpha-\chi(\mathsf{c}'(g))\alpha')\,m=0}.
+\end{lemma}
+\begin{proof}
+Let \m{\tau=[g_0,\gamma]\in H}. By the cocycle identity and (4), \m{y(\tau)=(1-s)\,y(g_0)} up to the action of
+elements that act trivially, so \m{y(\tau)_i} is a unit. Since $\varrho$ spans all matrices, the vectors
+\m{Y\,y(\tau)}, \m{Y\in M_n(A)}, fill \m{(A/\mathfrak{a})^n}. From (6), (7) applied to the elements \m{zh},
+\m{zh\cdot k\tau k^{-1}} and \m{zh\gamma}-conjugates, and from the fact that \m{s^2-1} is a unit, one derives for all
+\m{t\in A}, \m{k\in\Gamma}, \m{b\in H}:
+\[
+x_w(b)\bigl(t\,\varrho(k)y(\tau)\bigr)=x_w(\mathsf{c}'(\tau))\bigl(\chi(\mathsf{c}'(k))\,t\,\varrho(\mathsf{c}'(k))^{-1}y(\mathsf{c}'(b))\bigr).
+\]
+Taking \m{b=\mathsf{c}'(\tau)} and comparing $k$ with \m{kg} shows, by~(8), that \m{x_w(\mathsf{c}'(\tau))} vanishes on
+\m{(\alpha-\chi(\mathsf{c}'(g))\alpha')\cdot(A/\mathfrak{a})^n}; so it factors through the cokernel of that scalar. The
+map \m{w\mapsto x_w(\mathsf{c}'(\tau))} is injective: by (6) with \m{b=[g',\gamma]} the values of $x_w$ on~$U$ are
+determined by \m{x_w(\mathsf{c}'(\tau))}, and then (2) applies. The dual of the cokernel has as many elements as the
+kernel of the scalar. The formal proof is one identity obtained by a linear combination of six instances of
+(6) and~(7); the display is what it yields.
+\end{proof}
+\leanline{\lean{cardletorsionofisotropic}}
+
+\begin{lemma}[one polynomial bounds all twisted Selmer lengths, sharply at one point]\label{l:fitting}
+Let $E$ be a number field with a fixed embedding in~\m{\Qb}, $n$ and $\sigma$ finite sets, \m{M,q} natural
+numbers, $A_0$ a commutative ring, $A$ a discrete valuation ring of characteristic~$0$,
+\m{\varrho\colon\GE{E}\to M_n(A_0)} a homomorphism, \m{e_0\colon A_0\to A} a ring homomorphism, $S$ a finite set of
+finite places of~$E$, \m{h=(h_j)_{j\in\sigma}} homomorphisms \m{\GE{E}\to\mathbb{Z}/q}, $L$ a set of relations with
+values in \m{M_n(A_0)}, and \m{y_0\in A^{\sigma}}. Suppose that every $h_j$ is locally constant and that
+\m{\reduceModPow{\ell}{M}{\varrho}} is locally constant. Then there is a polynomial $F$ over~$A$ in the variables
+indexed by~$\sigma$ such that
+\[
+v_A(F(y_0))\le\len_A\Sel{\twistAtPoint{h}{y_0}{e_0}{\varrho}{\cdot}}{S}{e_0(L)}{A/\ell^{M}},
+\]
+and such that for every discrete valuation ring $A'$, ring homomorphism \m{e\colon A\to A'} and \m{y\in A'^{\sigma}},
+\[
+\len_{A'}\Sel{\twistAtPoint{h}{y}{e\circ e_0}{\varrho}{\cdot}}{S}{(e\circ e_0)(L)}{A'/\ell^{M}}\le v_{A'}\bigl(e(F)(y)\bigr).
+\]
+\end{lemma}
+\begin{proof}
+Work over the polynomial ring \m{\Lambda=A[X_j:j\in\sigma]} with the universal twist
+\m{\twistAtPoint{h}{X}{e_0}{\varrho}{\cdot}}. By Lemma~7.4 of the first note (with \m{m=\ell^{M}} and the
+neighbourhood on which $\varrho$ modulo~$\ell^M$ and all $h_j$ are trivial) there are finitely many coordinates
+and a module $\mathcal{R}$ of relations over~$\Lambda$ such that, for every specialisation \m{X\mapsto y} into a
+ring~$A'$, the Selmer module with values in \m{A'/\ell^{M}} is the module of the vectors killed by the specialised
+relations. For a discrete valuation ring, the length of such a module is at most the valuation of the
+determinant of any square matrix with rows among the relations, and some such matrix attains the length (an
+input of the unit on Fitting ideals). Choose a square matrix over~$\Lambda$ with rows in~$\mathcal{R}$ whose
+specialisation at~$y_0$ attains the length there, and let $F$ be its determinant.
+\end{proof}
+\leanline{\lean{existssharpfittingpoly}}
+
+\sect{Pencils of tied primes: proofs of Theorems B and A}{s:pencils}
+
+\begin{lemma}[Selmer modules cut by relations lie in Selmer groups with local conditions]\label{l:selz}
+Let $E$ be a CM field as in the conventions, $n$ a finite set, $A$ a commutative ring, $B$ a commutative
+$A$-algebra with the discrete topology, \m{\varrho\colon\GE{E}\to M_n(A)} a homomorphism, $S$, $P'$, $Q'$ sets of
+finite places, \m{K\subseteq L} sets of relations, and \m{x\in\Sel{\varrho}{S}{L}{B}}. Suppose
+\m{S\subseteq P'\cup Q'}. Then $x$ is a continuous cocycle of the discrete module $B^n$ that is unramified
+outside \m{P'\cup Q'} and whose restriction to the decomposition group at any chosen place over a place of~$P'$ is
+a local cocycle of $\varrho$ and~$K$ there: an element of the Selmer group, in the sense of the unit on the
+formula of Greenberg and Wiles, with these local conditions at~$P'$ and no condition at~$Q'$.
+\end{lemma}
+\begin{proof}
+Unfold both definitions: the cocycle identity, continuity (local constancy), the vanishing on inertia outside
+\m{S\subseteq P'\cup Q'}, and the local condition, witnessed by $x$ itself since \m{K\subseteq L}. A totally complex
+field has no real places, so there is no condition at infinity.
+\end{proof}
+\leanline{\lean{memselmerZofmemselmerModule}}
+
+\begin{lemma}[the point character of a pencil]\label{l:pointchar}
+Let \m{\IsPencil{\ell}{S_0}{U}{W}{N}{\fq_0}{J}{x}} hold, with \m{x(v)=(l_v,s_v)} and
+\m{l_v=(\fP_v,\gamma_v,\phi_v,h_v)}. \textup{(a)} For \m{v,v'\in J}: \m{h_{v'}(\gamma_v)} is $1$ if \m{v'=v} and $0$
+otherwise. \textup{(b)} Let $\Lambda$ be a commutative ring and \m{y=(y_v)_{v\in J}} elements with
+\m{y_v^{\ell^{N}}=1}. Then the point character \m{y^{h}} takes the value $y_v$ at \m{\gamma_v^{[b]}} for both signs~$b$,
+and, for \m{v\ne\fq_0}, the value \m{y_{\fq_0}} at \m{\phi_v^{[b]}}.
+\end{lemma}
+\begin{proof}
+(a) $h_{v'}$ is from $\mathrm{U}(1)$ with modulus~\m{\{v'\}}, hence trivial on the inertia above the other places
+of~$J$, and \m{h_v(\gamma_v)=1} by (P2). (b) follows from (a), (P3) and the fact that a character from
+$\mathrm{U}(1)$ takes the same value at $g$ and at~\m{g^{[-]}}.
+\end{proof}
+\leanline{\lean{chartamegen}\sep \lean{pointCharidOrConjInv}}
+
+\begin{lemma}[dropping ties costs only determinants]\label{l:drop}
+Let $E$ be a CM field as in the conventions, $A$ a commutative ring, $\mathcal{I}$ a set, and suppose
+\m{\IsPencil{\ell}{S_0}{U}{W}{N}{\fq_0}{J}{x}}, with \m{x(v)=(l_v,s_v)}, \m{l_v=(\fP_v,\gamma_v,\phi_v,h_v)}. Let $n$
+be a finite set, \m{\varrho\colon\GE{E}\to M_n(A)} a homomorphism, \m{i\in\mathcal{I}}, and \m{k,M\in\NN}. Suppose that
+\m{\reduceModPow{\ell}{M}{\varrho}(g)=1} for all \m{g\in\inab{S_0^{\complement}}}, that \m{k+M+M\le N}, and that
+\m{U_i(g)} implies \m{\reduceModPow{\ell}{M}{\varrho}(g)=1}. Let $A'$ be a discrete valuation ring, \m{e\colon A\to A'}
+a ring homomorphism, \m{u\in A'} with \m{u^{\ell^{k}}=1}, $I$ a set of finite places with \m{I\subseteq J}, such that
+\m{u=1} if \m{\fq_0\in I}, and let \m{(w_{v,b})_{v\in I,b}} be elements of~\m{\GE{E}} with
+\m{\reduceModPow{\ell}{M}{\varrho}(\phi_v^{[b]})=\reduceModPow{\ell}{M}{\varrho}(w_{v,b})} for all \m{v\in I} and both
+signs~$b$. Let $S$ be a set of finite places and $L$ a set of relations. Put \m{y_{\fq_0}=u} and
+\m{y_v=1+e(s_{v,i})(u-1)} for \m{v\in J\setminus\{\fq_0\}}, and
+\m{\varrho_y=\twistAtPoint{h}{y}{e}{\varrho}{\cdot}}. Then
+\begin{align*}
+\len_{A'}\Sel{\varrho_y}{S}{e(L)}{A'/\ell^{M}}\ \le{}&\ \len_{A'}\Sel{\varrho_y}{S}{e(L\cup\tieRelations{I}{x}{i})}{A'/\ell^{M}}\\
+&+\sum_{v\in I,\,b}v_{A'}\bigl(\det(u\cdot e(\varrho(w_{v,b}))-1)\bigr).
+\end{align*}
+\end{lemma}
+\begin{proof}
+The module with the ties is cut out of the module without them by the kernels of the maps
+\m{c\mapsto c(\gamma_v^{[b]})-s_{v,i}\,c(\phi_v^{[b]})}, \m{v\in I}; so it suffices to bound, for each \m{(v,b)}, the
+length of the image of this map by \m{v_{A'}(\det(u\,e(\varrho(w_{v,b}))-1))}, which holds as soon as the image is
+killed by the matrix \m{u\,e(\varrho(w_{v,b}))-1} (the length of the kernel of a matrix on \m{(A'/\ell^{M})^n} is at
+most the valuation of its determinant). By Lemma~\ref{l:linepoint} the $y_v$ are \m{\ell^{N}}-th roots of unity
+modulo~\m{\ell^{M}}, so \m{\varrho_y} modulo \m{\ell^{M}} is the twist of~$\varrho$ by the point character. Let $c$ be a
+Selmer cocycle and write \m{g\cdot m=\varrho_y(g)m+c(g)} for the affine action on \m{(A'/\ell^{M})^n} that it
+defines. At the place \m{\fP_v} (and at its conjugate for \m{b=-}) the action is tame, because \m{\ell^{k+2M}} divides
+\m{\ell^{N}} and \m{\Nm(v)\equiv1} modulo~\m{\ell^{N}}: the Frobenius element and the tame generator commute in the
+image (an input of the unit on tame cocycles). Evaluating the commutation at~$0$ gives
+\m{(\varrho_y(\phi_v^{[b]})-1)\,c(\gamma_v^{[b]})=(\varrho_y(\gamma_v^{[b]})-1)\,c(\phi_v^{[b]})}. Now
+\m{\varrho(\gamma_v^{[b]})\equiv1} (inertia outside~$S_0$), \m{\varrho_y(\gamma_v^{[b]})=y_v} and, for \m{v\ne\fq_0},
+\m{\varrho_y(\phi_v^{[b]})=u\,\varrho(\phi_v^{[b]})} by Lemma~\ref{l:pointchar}; with \m{y_v-1=s_{v,i}(u-1)} this gives
+\m{(u\varrho(\phi_v^{[b]})-1)\bigl(c(\gamma_v^{[b]})-s_{v,i}c(\phi_v^{[b]})\bigr)=0}, using (P5) when \m{s_{v,i}\ne0}
+(then \m{\varrho(\phi_v^{[b]})\equiv1}) and the triviality when \m{s_{v,i}=0}. For \m{v=\fq_0} one has \m{u=1} and
+the same identity.
+\end{proof}
+\leanline{\lean{lengthleofdropties}}
+
+\begin{lemma}[mirrors: a Selmer module that no new prime shortens is short]\label{l:unseen}
+Let $E$ be a CM field as in the conventions, $A$ the ring of integers of a finite extension of~\m{\Ql},
+$\mathcal{I}$ a set, and suppose \m{\IsPencil{\ell}{S_0}{U}{W}{N}{\fq_0}{J}{x}}. Let $n$ be a finite set,
+\m{\varrho\colon\GE{E}\to M_n(A)} a homomorphism, \m{i\in\mathcal{I}}, $S$ a finite set of finite places, $L$ a set of
+relations, \m{\gamma\in\GE{E}}, \m{\beta\in[0,\infty]} and \m{M\in\NN}. Suppose
+\m{\IsBalanced{\ell}{S}{\varrho}{L}{\gamma}{\beta}{M}}, that $U_i$ is the property
+\m{\reduceModPow{\ell}{M}{\varrho}(g)=1}, that \m{S\subseteq S_0}, and let \m{a\in A} be non-zero with
+\m{a\mid\ell^{M}}. For a finite set $T$ of finite places put
+\[
+\mathcal{X}(T)=\Sel{\varrho}{\unionWithConj{S}{T}}{L\cup\tieRelations{J}{x}{i}\cup\{\delta_\gamma\}}{A/a}.
+\]
+Suppose that some \m{y\in\mathcal{X}(J)} has a coordinate \m{y(g)_e} that is a unit, and that for every finite place
+\m{\fq\notin J} and every \m{l\in\AuxPrimeData{E}{\ell^{N}}}, with elements \m{\gamma_l,\phi_l}, such that for all
+\m{t\in A} the function $x$ changed at~$\fq$ to \m{(l,t\cdot\mathbf{1}_i)} satisfies
+\m{\IsPencil{\ell}{S_0}{U}{W}{N}{\fq_0}{J\cup\{\fq\}}{\cdot}}, one has
+\[
+\mathcal{X}(J)\subseteq\bigl(\evalConjPair{\phi_l}\bigr)^{-1}\Bigl(\evalConjPair{\gamma_l}\bigl(\mathcal{X}(J\cup\{\fq\})\bigr)\Bigr).
+\]
+Then \m{\len_A\mathcal{X}(J)\le\beta}.
+\end{lemma}
+\begin{proof}
+Let $X$ be the discrete module \m{(A/a)^n} with the action through~$\varrho$, and let $U'$ be the intersection
+of the kernels of \m{\reduceModPow{\ell}{M}{\varrho}} and of \m{\cyc_{\ell^{M+1}}}, an open subgroup acting trivially
+on~$X$. By
+Lemma~\ref{l:selz}, \m{\mathcal{X}(J)} lies in the Selmer group of~$X$ with the local conditions of $\varrho$ and
+\m{L\cup\tieRelations{J}{x}{i}} at the places of \m{\unionWithConj{S}{J}}, and vanishing at~$\gamma$. The formula of
+Greenberg and Wiles in the form with relations at split primes (Input~1) bounds the order of this Selmer group
+by the product of the orders of the local conditions, divided by the orders of the local invariants, times the
+number of the \emph{relation families}: families \m{(x_w)} of homomorphisms from~$U'$ to the dual of~$X$ that
+arise from dual Selmer classes and are detected at Frobenius elements of split primes. As $\gamma$ acts by a
+scalar $s$ with \m{s-1} a unit and is central modulo~$U'$, evaluation at~$\gamma$ maps the Selmer group onto~$X$
+(coboundaries), which accounts for the condition at~$\gamma$.
+
+The number of relation families is bounded by the mirror lemma, Lemma~\ref{l:mirror}, applied with
+\m{\chi=\cyc}, \m{\mathsf{c}'=(\cdot)^{\mathsf c}}, $H$ the intersection with its conjugate of the group of commutators
+with the normal closure of \m{\{\gamma,\gamma^{[-]}\}} inside~$U'$, the cocycle~$y$ with its unit coordinate,
+\m{z=\gamma_{\fq_0}} times a commutator, and the scalars \m{\alpha,\alpha'} of (B5). Its isotropy hypothesis is where
+the hypothesis on new primes enters. Given \m{h\in H}, Theorem~A of the first note provides a prime \m{\fq} of
+prime norm outside all places in play, with a datum $l$ whose Frobenius element is so close to \m{zh} that the
+pairings in question take the same values, and which is anticyclotomic relative to \m{\pd{E}{\ell}\cup J\setminus\{\fq_0\}};
+changing $x$ at~$\fq$ gives pencils for all slopes. By hypothesis the values of $y$ at
+\m{\phi_l^{[\pm]}} are the values at \m{\gamma_l^{[\pm]}} of some \m{x'\in\mathcal{X}(J\cup\{\fq\})}. The values of $x'$ on the
+inertia at~$\fq$ are multiples of its value at a tame generator, and the reciprocity relation of the relation
+family at the pair of split places \m{\fq,\cj{\fq}} then reads exactly as the isotropy identity~(7).
+
+It remains to convert orders into lengths over~$A$ and to sum the local terms. At a place of \m{J\cup\cj{J}} the
+local cocycles that obey the ties are determined by their value at the Frobenius element (the tame generator
+detects ramification on the appropriate side), so the local term is at most \m{\len_A((A/a)^n)}; at the places
+of~$S$ one takes the places of~\m{\Qb} that minimise the local length; the torsion of the mirror lemma has
+length at most \m{\#n\cdot v_A(\alpha-\cyc(g^{\mathsf c})\alpha')}. The inequality (B5) at~$a$ is precisely what makes
+the total at most~$\beta$. The formal proof has a hundred lines; this is its outline, and the bookkeeping of the
+local terms was not re-derived here.
+\end{proof}
+\leanline{\lean{lengthleofunseenclass}}
+
+\inp{Input 1 (relations at split primes; background library, unit of the Greenberg--Wiles formula)}{Let $X$ be a
+finite discrete module of~\m{\GE{E}}, killed by an integer~$m$ and unramified outside a finite set of places that
+carry local conditions, and $U'$ an open normal subgroup that fixes $X$ and the $m$-th roots of unity and
+contains no complex conjugation. Then there are finitely many split places with Frobenius elements $\phi_i$ and
+elements $\gamma_i$, a locally constant map $\varpi'$ from~\m{\GE{E}} to the index set and a finite set of places such
+that: when $X$ has few trivialised cocycles, the order of the Selmer group times a power of~\m{\#X} is at most the
+number of the families \m{(n_i)} of homomorphisms \m{X\to\mathbb{Q}/\mathbb{Z}} with \m{\sum_in_i(x(\gamma_i))=0} on the
+cocycles relaxed at the split places, times \m{\#X} and the orders of the local conditions; and every such family
+satisfies \m{n_{\varpi'(a\,gbg^{-1})}(x)=n_{\varpi'(a)}(x)+n_{\varpi'(b)}(\cyc_m(g)\,g^{-1}x)} for \m{a,b\in U'}, and a
+reciprocity relation \m{\sum_jn_{\varpi'(\phi'_j)}(x(\delta_j))=0} at any further split places with Frobenius elements
+\m{\phi'_j\in U'} and tame generators~\m{\delta_j}, for the cocycles relaxed there. \emph{Reference:} to be confirmed;
+the catalogue of this write-up classes the statement as a substantial result of the library, part of the lower
+bound in the formula of Greenberg and Wiles, without a printed source for this form.}
+
+\begin{lemma}[tilting]\label{l:tilting}
+Let $A$ be a discrete valuation ring, $m$ a finite set, $B$ an $A$-module, $\mathfrak{a}$ an ideal of~$A$ such that
+\m{A/\mathfrak{a}} is artinian, \m{\Phi_0,\Phi_1\colon B\to(A/\mathfrak{a})^m} $A$-linear maps and $Y$ a submodule of~$B$.
+Then there is a list $T$ of at most \m{\#m} elements of the residue field of~$A$ such that for every \m{s\in A}
+whose residue is not in~$T$,
+\[
+\len_A\bigl(Y\cap\ker(s\Phi_0-\Phi_1)\bigr)\ \le\ \len_A\bigl(Y\cap\ker\Phi_0\cap\Phi_1^{-1}(\Phi_0(Y))\bigr).
+\]
+\end{lemma}
+\begin{proof}
+Let \m{Z=\sum_{s}Y\cap\ker(s\Phi_0-\Phi_1)}. On each summand \m{\Phi_1=s\Phi_0}, so \m{\Phi_1(Z)\subseteq\Phi_0(Z)}.
+Choose a free module \m{A^m} over \m{(A/\mathfrak{a})^m}, a lift \m{\sigma'} of~$\Phi_0$ on~$Z$ to the preimage of
+\m{\Phi_0(Z)}, and, by projectivity, an endomorphism $\psi$ of that free module with
+\m{\Phi_1=\bar\psi\circ\Phi_0} on~$Z$. Let $T$ be the list of the roots, in the residue field, of the
+characteristic polynomial of~$\psi$; it has at most \m{\#m} elements. If the residue of~$s$ is not in~$T$, then
+\m{s-\psi} is invertible, so on~$Z$ the kernel of \m{s\Phi_0-\Phi_1=(s-\bar\psi)\Phi_0} is \m{Z\cap\ker\Phi_0}. Hence
+\m{Y\cap\ker(s\Phi_0-\Phi_1)\subseteq Z\cap\ker\Phi_0}, and \m{Z\cap\ker\Phi_0\subseteq Y\cap\ker\Phi_0\cap\Phi_1^{-1}(\Phi_0Y)}
+because \m{\Phi_1(Z)\subseteq\Phi_0(Z)\subseteq\Phi_0(Y)}.
+\end{proof}
+\leanline{\lean{tilting}}
+
+\begin{proof}[Proof of Theorem~B]
+By induction on the factorisation of~$a$ into irreducible elements. If $a$ is a unit, the Selmer modules are
+zero; take \m{J_0=1}, and for given~$N$ one helper prime $\fq_0$ from Theorem~A of the first note (applied with
+\m{R=S_0} and the neighbourhood $W$ of~$z$), with slopes~$0$: this is a pencil. Now suppose the statement holds
+for~$a$ with a bound~$J_1$, let $\varpi$ be a uniformiser with \m{\varpi a\mid\ell^{M}}, and fix~$N$. All Selmer
+modules below are finite (Lemma~7.4 of the first note). Among the pencils \m{(J,x)} with the given helper prime
+whose lengths modulo~$a$ are at most~$\beta_i$ and for which \m{\#J} plus the sum over~$i$ of the lengths
+modulo~\m{\varpi a} is at most a bound \m{J_0} depending on $J_1$ and the ranks only, choose one for which the sum of
+the lengths modulo~\m{\varpi a} is least; the pencil of the induction hypothesis qualifies, because a cocycle
+modulo~\m{\varpi a} that vanishes at the tame generators of~$J$ is unramified there, which bounds the length
+modulo~\m{\varpi a} by the length modulo~$a$ plus \m{2\#n_i\#J}. We claim that the chosen pencil has all lengths
+modulo~\m{\varpi a} at most~$\beta_i$. Fix~$i$. If no element of the module modulo~\m{\varpi a} has a unit
+coordinate, the module is the image of the module modulo~$a$ under multiplication by~$\varpi$, of length at
+most~$\beta_i$. Otherwise, if the inclusion of Lemma~\ref{l:unseen} holds at every admissible new prime, that
+lemma gives the bound. In the remaining case there are a new prime~$\fq$ and a datum~$l$ at which the inclusion
+fails. Apply Lemma~\ref{l:tilting} to \m{\Phi_0=\evalConjPair{\gamma_l}}, \m{\Phi_1=\evalConjPair{\phi_l}} on the
+module for \m{J\cup\{\fq\}} with the old ties, modulo~$a$ and modulo~\m{\varpi a}: the residue field has more than
+\m{4\#n_i+2} elements (B2), so there is a unit slope $t$ whose inverse avoids both lists of bad residues. For the
+pencil \m{(J\cup\{\fq\},x')}, with $x'$ equal to $x$ changed at~$\fq$ to \m{(l,t^{-1}\mathbf{1}_i)}, the tied module is
+contained in \m{\ker(\Phi_0-t^{-1}\Phi_1)}, so its length is at most that of
+\m{\ker\Phi_0\cap\Phi_1^{-1}(\Phi_0(\cdot))}, which is contained in the module for~$J$ (vanishing at the tame generators
+of~$\fq$ makes a cocycle unramified there) and, modulo~\m{\varpi a}, properly so because the inclusion failed. The
+modules of the other rows only shrink, the lengths modulo~$a$ stay at most~$\beta_i$, and the count of primes
+grows by one while the sum of lengths drops by at least one. This contradicts the minimality.
+\end{proof}
+
+\begin{proof}[Proof of Theorem~A]
+\emph{Step 1: a pencil.} Let $W$ be a neighbourhood of~$z$ on which every \m{\mu_{k,t}} stays within~$c$ of its value
+(so that \m{\vl(\mu_{k,t}(\phi)-1)\le c}) and on which the \m{\varrho_i} modulo~\m{\ell^{M}} agree with their values at $z$
+and at~\m{z^{[-]}}. Let $J_0$ be the bound of Theorem~B for \m{a=\ell^{M}}, choose \m{\delta>0} with
+\m{\delta\,(8J_0+2)<\eta}, and choose $k$ and \m{N\ge k+2M} large as required by Lemma~\ref{l:rootmany} in the two
+uses below. Theorem~B gives a pencil \m{(\fq_0,J,x)} for~$N$ with \m{\#J\le J_0} and tied lengths at most~$\beta_i$.
+
+\emph{Step 2: polynomials.} For a tuple \m{y=(y_v)_{v\in J}} of \m{\ell^{N}}-th roots of unity the point character
+\m{y^{h}} is from $\mathrm{U}(1)$ relative to \m{\pd{E}{\ell}} with modulus the set of the $v$ with \m{y_v\ne1}; every
+subset of~$J$ is auxiliary for~$S_0$. By (F2), over a large coefficient ring \m{\cO'\supseteq\cO} each value
+\m{\mathrm{val}_k(I,y^{h})}, \m{I\subseteq J}, is a polynomial \m{V_{k,I}(y)} with integral coefficients. By
+Lemma~\ref{l:fitting} there are polynomials \m{F_i} whose valuations bound the Selmer lengths of the twists
+\m{y^{h}\varrho_i} with the relations \m{L_i\cup\{\delta_{\gamma_i}\}}, and polynomials \m{G_i} that do the same with
+the ties at \m{J\setminus\{\fq_0\}} added and are sharp at the point \m{y=1}.
+
+\emph{Step 3: along a line.} Consider the line \m{y_{\fq_0}=X}, \m{y_v=1+s_v(X-1)}, with $s_v$ the slope of~$v$ in the
+row or family at hand. At \m{X=1} the restricted polynomials have valuations at most $B_i$ (for $G_i$: sharpness,
+the bound~$\beta_i$ of the pencil, Lemma~\ref{l:drop} for \m{I=\{\fq_0\}} with \m{w=z^{[\pm]}}, and hypothesis~(ii)) and
+at most \m{\vl(\mathrm{val}_k(\emptyset,1))+8c} (for \m{V_{k,\{\fq_0\}}}: (F3) at the helper prime, whose Frobenius element
+lies in~$W$). Lemma~\ref{l:rootmany} in one variable gives \m{u\in\cO'} with \m{u^{\ell^{k}}=1} at which these
+valuations grow by at most~$\delta$ and at which the characteristic polynomials of the
+\m{\varrho_i(\phi_v^{[b]})^{-1}} and the polynomials \m{X-\mu_{k,t}(\phi_v)^{\pm1}} have valuation at most~$\delta$.
+
+\emph{Step 4: the point on the line.} Let $y$ be the point of the line at \m{X=u}; by Lemma~\ref{l:linepoint} its
+coordinates are \m{\ell^{N}}-th roots of unity modulo the relevant powers, and $\ell$ divides
+\m{(y_v-1)^{\ell^{k}}}. By Lemma~\ref{l:drop} with \m{I=J\setminus\{\fq_0\}} and \m{w=\phi_v^{[b]}}, the Selmer length of
+\m{y^{h}\varrho_i} is at most the tied length plus at most \m{2J_0} determinant terms, each of valuation at
+most~$\delta$ by Step~3; so \m{\vl(F_i(y))\le B_i+\delta+2J_0\delta} in normalised terms. By (F3), adding the places
+of~\m{J\setminus\{\fq_0\}} one at a time raises \m{\vl(V_{k,\cdot}(y))} by at most~$8\delta$ each: at the Frobenius element
+of~$v$ the point character takes the value \m{y_{\fq_0}=u} (Lemma~\ref{l:pointchar}), and \m{|1-\mu u^{\pm1}|} was
+controlled in Step~3.
+
+\emph{Step 5: roots of unity, for all powers.} Lemma~\ref{l:rootmany} with the variables \m{v\in J}, the powers
+\m{1\le d\le m}, the polynomials \m{F_i} and \m{V_{k,J}}, the points~$y$ of Step~4 and the monic polynomials
+\m{X-1} gives \m{\zeta\in\cO'^{J}} with \m{\zeta_v^{\ell^{N}}=1}, \m{\vl(\zeta_v-1)\le\delta}, and the valuations at
+\m{\zeta^{d}} within~$\delta$ of those at~$y$. Put \m{I=J} and \m{\psi=\zeta^{h}}; then \m{\psi^{d}=(\zeta^{d})^{h}}.
+Conclusion (1) holds because the total loss is at most \m{\delta(8J_0+2)<\eta}; (2) because $J$ is auxiliary,
+\m{\psi^{d}} is from $\mathrm{U}(1)$ with modulus~$J$, and \m{\sum_v\vl(\psi^{d}(\gamma_v)-1)\le\#J\cdot\delta\le\eta}
+(Lemma~\ref{l:pointchar}); (3) by the second property of~\m{F_i} in Lemma~\ref{l:fitting}, for every coefficient
+ring containing~$\cO'$. The same $I$ and $\psi$ serve all $d$ and all~$i$.
+\end{proof}
+
+\sect{Balanced rows: proof of Theorem C}{s:balanced}
+
+\begin{lemma}[classes of polynomials vanishing on roots of unity are tame]\label{l:tametype}
+Let $\cO$ be a coefficient ring, $N$ and $r$ natural numbers, $K$ a property of polynomials over~$\cO$, and
+$\mathfrak{M}$ a finite multiset of elements of~\m{\Zlb}. Suppose that $\mathfrak{M}$ has at most $N$ elements, that
+every \m{y\in\mathfrak{M}} satisfies \m{y^{\ell^{a}-1}=1} for some \m{1\le a\le r}, and that $K$ holds for every
+\m{Q\in\cO[X]} with \m{Q(y)=0} for all \m{y\in\mathfrak{M}}. Then $K$ is of tame type \m{(\ell,r,Nr)}.
+\end{lemma}
+\begin{proof}
+A root of unity of order dividing \m{\ell^{a}-1} lies in the unramified extension of degree~$a$ of~\m{\Ql}; its
+minimal polynomial over~\m{\Zl} is monic of degree at most \m{a\le r}. So the product of the minimal polynomials of
+the elements of~$\mathfrak{M}$ is monic over~\m{\Zl}, of degree at most~\m{Nr}, and vanishes on~$\mathfrak{M}$; and
+\m{X^{M'}-1} vanishes on~$\mathfrak{M}$ for the least common multiple $M'$ of the \m{\ell^{a}-1}, \m{a\le r}.
+\end{proof}
+\leanline{\lean{isTameTypeofroots}}
+
+\begin{lemma}[the local lattices of a column]\label{l:inclass}
+Let $D$ be admissible data, \m{\iota\colon\CC\to\Qlb} the fixed isomorphism, $\cO$ a coefficient ring, $n$ a finite
+set, $\HT$ a type, \m{u\colon\AbsGal{D}\to M_n(\cO)} a homomorphism, \m{R\colon\AbsGal{D}\to\GL_n(\Qlb)} a
+homomorphism, $t$ a natural number, $S$ a set of finite places, \m{w\in\pd{\ED{D}}{\ell}}, and $\mathcal{R}$ a
+property of homomorphisms \m{\AbsGal{D}\to\GL_n(\Qlb)}. Suppose \m{\IsColumn{D}{t}{\HT}{S}{R}} and that $R$ has the
+property~$\mathcal{R}$. Let \m{\fP_w} be the chosen place over~$w$, with its chart \m{e_w}, let
+\m{\Lambda_w=\matrixLattice{u|_{G_{\fP_w}}}}, and \m{\HT_w(g)=\HT(\complexEmbOf{e_w|_{\ED{D}}}{g})} for \m{g\in\Gl}. If
+$u$ is a lattice of~$R$, then for every \m{g\in\Gl} the lattice \m{\Lambda_w} has the jumps \m{\HT_w(g)} at
+\m{\coeffEmb{\cO}{g}}, and \m{\Lambda_w} belongs to the class \m{\mathcal{Q}(F,K,U)}, where: $F$ is the trivial filter
+(no condition) if \m{w\in\placesAboveG{D}} and \m{F=\top} otherwise; \m{K(s,Q)} holds if \m{w\in\placesAboveG{D}} and for
+every $R'$ with the property~$\mathcal{R}$ there is a polynomial that kills $s$ on~$R'$ at~\m{\fP_w} and at all of
+whose roots $Q$ vanishes; and \m{U(g')} is the set of the elements of \m{\HT_w(g)} for a $g$ with
+\m{\coeffEmb{\cO}{g}=g'}.
+\end{lemma}
+\begin{proof}
+Let \m{u(g)=Y^{-1}R(g)Y}. The map \m{x\mapsto Yx} from $\cO^n$ to~\m{\Qlb^n} intertwines \m{\Lambda_w} with the
+restriction of~$R$ to \m{G_{\fP_w}}. By the definition of a column, at the place \m{\fP_w} above~$\ell$ the
+representation $R$ is potentially crystalline with the jumps~$\HT$, and crystalline unless
+\m{w\in\placesAboveG{D}}. These properties and the killing polynomials pass to a lattice along a jointly injective
+family of equivariant maps, and the jumps are compatible with base change from~$\cO$ to~\m{\Qlb} (inputs of the
+unit on crystalline representations).
+\end{proof}
+\leanline{\lean{inClassofisLatticeIn}}
+
+\begin{lemma}[obeying cocycles and the cup-orthogonal]\label{l:obeycup}
+Let $X$, $n$, $d$ be finite sets, $A$ the ring of integers of a finite extension of~\m{\Ql}, $\Gamma$ a
+topological group over~\m{\Gl} with homomorphism~$j$, $\Gamma'$ a group, \m{\eta\colon\Gamma\to\Gamma'} a homomorphism,
+\m{u=(u_x)_{x\in X}} homomorphisms \m{u_x\colon\Gamma'\to M_n(A)}, \m{\varrho\colon\Gamma'\to M_d(A)} a homomorphism,
+\m{(F,K,U)} as in the definition of a class, and \m{m\in\NN}. Suppose that $j$ is an open embedding and that
+\m{\matrixLattice{u_x\circ\eta}} belongs to \m{\mathcal{Q}(F,K,U)} for every~$x$. Let
+\m{L=\matrixLattice{\varrho\circ\eta}}. If $L$ belongs to \m{\mathcal{Q}(F,K,U)}, then
+\begin{align*}
+&\len_A\Bigl(\obeyingCocycles{u}{\varrho}{\ell^{m}}\big/\{c:c\circ\eta\in\Ob{\Rel{\Zf(L)}}{A/\ell^{m}}\}\Bigr)\\
+&\qquad\le\ \len_A\Bigl(\Zf(L^{\vee}(1))\big/\Zf(L^{\vee}(1))\cap(L^{\vee}(1))^{\perp\mathcal{Q}(F,K,U)}\Bigr),
+\end{align*}
+the first quotient being by the intersection with the set shown.
+\end{lemma}
+\begin{proof}
+There is a perfect pairing between \m{L/\ell^{m}} and the reduction of the twisted dual, so that the cocycles
+with values in \m{(A/\ell^{m})^d} which obey the relations of \m{\Zf(L)} are those orthogonal to \m{\Zf(L^{\vee}(1))}
+under the cup product; and for potentially crystalline lattices an index of orthogonal complements on one side
+divides the corresponding index on the other (inputs of the unit on local duality; this is where $j$ must be an
+open embedding). It therefore suffices to show that the cup product of an obeying cocycle~$c$, restricted
+along~$\eta$, with a class of \m{\Zf(L^{\vee}(1))} that lies in the cup-orthogonal of the class is a coboundary. By
+Lemma~4.1 of the first note, $c$ is the value of an equivariant map on a subrepresentation $Y_0$ of
+\m{M_n(A)^{X}\times(A/\ell^{m})^d} that projects injectively to the first factor; \m{Y_0}, restricted along~$\eta$,
+is a Galois lattice which embeds jointly into the lattices \m{\matrixLattice{u_x\circ\eta}}, hence belongs to the
+class, and it carries a crystalline cocycle whose image is~$c$ (the coboundary of a point of the graph, divided
+by a power of~$\ell$). Lifting the map \m{Y_0\to L/\ell^{m}} to~$L$ gives a pairing of $Y_0$ with \m{L^{\vee}(1)}
+modulo~\m{\ell^{m}} in the sense of the definition of the cup-orthogonal, and the definition gives the
+coboundary.
+\end{proof}
+\leanline{\lean{relLengthobeyingCocyclesle}}
+
+\begin{proof}[Proof of Theorem~C]
+The finiteness of~$\Sigma$ is clear. Let $\cO$ be large enough for (W3) and such that $R$ has a lattice
+\m{u\colon\AbsGal{D}\to M_n(\cO)} (a continuous representation has one over every large coefficient ring; an input
+of the background library). Let $F'$ be the algebra map of Lemma~5.6 of the first note. By (W3), \m{u(\AbsGal{D})}
+spans \m{M_n(\cO)} and \m{u(g_1)=\alpha} is a scalar for some $g_1$ with \m{\cyc(g_1)=\Dg{i}{D}^{\#n}}. By (W4) there are
+an inertial \m{g_0} above \m{\placesAboveG{D}\setminus\pd{\ED{D}}{\ell}} and $y$ with \m{R(g_0)=y}, and then
+\m{u(g_0)=y}, \m{y\in\cO}, and \m{y^{j}-1} is a unit of~$\cO$ for \m{1\le j\le4\#n+2}.
+
+\emph{A scalar and its conjugate.} If \m{u(g)=y'} is a scalar, then \m{y'} is a unit and
+\m{u(g^{[-]})=\cyc(g)^{t-1}\,y'} (with \m{t-1} truncated): by the trace identity of a column, for every~$k$ the
+traces of \m{u(k)\,u(g^{[-]})} and of \m{\cyc(g)^{t-1}y'\,u(k)} agree, and \m{u(\AbsGal{D})} spans all matrices, on
+which the trace form is non-degenerate.
+
+\emph{The clauses.} Take \m{\gamma=g_0}. (B1): $u$ is continuous (Lemma~5.7(b) of the first note), and it is trivial
+on the inertia outside~$\Sigma$ because a column of level~$\emptyset$ is good outside \m{\placesAboveG{D}}. (B2): the
+span was shown; the residue of~$y$ has order greater than \m{4\#n+2}. (B3): \m{u(g_0)=y=u(g_0^{[-]})}, because
+\m{\cyc(g_0)=1} on inertia prime to~$\ell$, and \m{y\pm1} are units since \m{y^2-1} is. (B4): coboundaries are
+crystalline cocycles, so they obey \m{\crysRels{u}}. (B5) holds with \m{g=g_1}, \m{\alpha'=\cyc(g_1)^{t-1}\alpha} and
+\[
+\beta=\sum_{v\in\placesAboveG{D}\setminus\pd{\ED{D}}{\ell}}v_{\cO}\bigl(\det(u(\gamma_v)-1)\bigr)+\#n\cdot v_{\cO}\bigl(\alpha-\cyc(g_1^{\mathsf c})\,\alpha'\bigr),
+\]
+where \m{\gamma_v} is the element that (W2) provides at the chosen place of~\m{\Qb} over~$v$. Indeed, let
+\m{a\mid\ell^{M}}. At a place $v$ above~$\ell$ the local cocycles modulo~$a$ that obey \m{\crysRels{u}} obey the
+relations of the crystalline cocycles of the local lattice, and their length is at most
+\m{\rk_{\cO}\ZfAt{v}{u}\cdot\len(\cO/a)} (an input of the unit on Fitting ideals); by Lemma~\ref{l:inclass} and
+Lemma~11.5 of the first note the rank is \m{\#n} plus the number of negative jumps at the embeddings read at~$v$.
+Summing over~$v$, Lemma~4.4 of the first note and (R4) bound the total number of negative jumps by \m{\#n} times
+the number \m{\fD{D}} of infinite places. At a place $v$ of \m{\placesAboveG{D}} prime to~$\ell$, (W2) and an input
+of the unit on tame cocycles bound the local length by \m{\len((\cO/a)^n)} plus the length of the kernel of
+\m{u(\gamma_v)-1}, which is at most the valuation of its determinant. Adding up gives (B5).
+
+\emph{The size of~$\beta$.} \m{\alpha-\cyc(g_1^{\mathsf c})\alpha'=\alpha\,(1-\cyc(g_1)^{t})} up to the sign conventions,
+$\alpha$ is a unit, and \m{\cyc(g_1)^{t}-1=\Dg{i}{D}^{\#n\,t}-1} has valuation at most \m{\crudeUnit{\ell}{D}} by
+Lemma~5.7(a) of the first note (\m{\#n\le\Dr{D}}, \m{t\le\tD{D}}). By (W2) each \m{\vl(\det(u(\gamma_v)-1))} is at most
+\m{\#n\,\crudeUnit{\ell}{D}}, and there are at most \m{4\fD{D}} places~$v$ (Lemma~5.5(b) of the first note). At the
+chosen place~$w$, (W2) gives \m{\gamma_w=\tau_w} and the same bound for \m{\det(u(\tau_w^{[b]})-1)}, for both signs.
+In normalised length the left side of the theorem is therefore at most
+\m{(4\fD{D}+1+2)\,\#n\,\crudeUnit{\ell}{D}\le10\,\fD{D}\,\#n\,\crudeUnit{\ell}{D}}.
+\end{proof}
+
+\leanline{\lean{eqoneofmeminertiaAbove}\sep the triviality of a column on the inertia outside \m{\pd{\ED{D}}{\ell}\cup\placesAboveG{D}} and its level, used for (B1)}
+
+\sect{Ribet's lemma to first order: proof of Theorem D}{s:ribet}
+In this section $\Lambda_0$ is a commutative ring, $\mathbb{L}$ a commutative ring, and index sets may be finite
+sets of any kind.
+
+\begin{lemma}[Amitsur's formula for block matrices]\label{l:amitsur}
+Let $\sigma$ and $N$ be finite sets, $\mathbb{L}$ a commutative algebra over a commutative ring~$\Lambda_0$,
+$\mathfrak{A}$ a $\Lambda_0$-algebra (not necessarily commutative) and \m{\varrho\colon\mathfrak{A}\to M_\sigma(\mathbb{L})} a
+homomorphism of $\Lambda_0$-algebras. Suppose that every coefficient of the characteristic polynomial of every
+\m{\varrho(w)}, \m{w\in\mathfrak{A}}, lies in the image of~$\Lambda_0$. Let \m{P'\in M_N(\mathfrak{A})} and \m{k\in\NN}.
+Then the $k$-th coefficient of the characteristic polynomial of the matrix
+\m{\blockFlattenAlgEquiv{N}\bigl((\varrho(P'_{ij}))_{i,j}\bigr)} lies in the image of~$\Lambda_0$.
+\end{lemma}
+\begin{proof}
+By Input~2 it suffices to check the property on elements that span \m{M_N(\mathfrak{A})}: the matrices with one
+non-zero entry. For such a matrix the block image has, up to a power of~$X$, the characteristic polynomial of
+the image of one entry of~$\mathfrak{A}$ (the trace of a product is insensitive to cyclic rotation), or the
+polynomial \m{X^{\#N\#\sigma}}.
+\end{proof}
+\leanline{\lean{amitsurcharpolymemmatrix}}
+
+\inp{Input 2 (Amitsur's formula, integrality consequence; background library, unit of the linear algebra of pseudocharacters)}{If
+\m{\varrho\colon\mathfrak{A}\to M_\sigma(\mathbb{L})} is a homomorphism of $\Lambda_0$-algebras and $\mathfrak{A}$ is spanned
+over~$\Lambda_0$ by elements whose images have characteristic polynomials with coefficients in the image
+of~$\Lambda_0$, then every \m{\varrho(w)} has this property; and then every $w$ has an ``adjugate'': an element $v$
+and \m{F'} in the image of~$\Lambda_0$ with \m{\det\varrho(w)=F'} and \m{\varrho(v)\varrho(w)=\varrho(w)\varrho(v)=F'}.
+\emph{Reference} (second reading): G.~Chenevier, \emph{The $p$-adic analytic space of pseudocharacters of a
+profinite group and pseudorepresentations over arbitrary rings}, §1, equation (1.5). \emph{Relation:} a weaker
+form: the descent of the coefficients on a spanning family follows from the integral formula; no formula for
+the coefficients is stated.}
+
+\begin{lemma}[Ribet's construction: Cramer's rule twice]\label{l:cramer}
+Let $A$ be a commutative ring, $\Gamma$ a group, $Y$ a set, $\sigma$ a non-empty finite set, $N$ a finite set,
+$\Lambda_0$ a commutative ring, $\mathbb{L}$ a commutative ring that is an algebra over $A$ and over~$\Lambda_0$, and
+$\mathcal{S}$ a $\Lambda_0$-subalgebra of the functions \m{Y\to\mathbb{L}}. Let \m{u=(u_x)_{x\in Y}} be homomorphisms of
+$A$-algebras \m{u_x\colon A[\Gamma]\to M_\sigma(A)}, \m{\kappa\colon A\to\mathcal{S}} a ring homomorphism,
+$\mathcal{J}$ an $\mathcal{S}$-submodule of the functions \m{Y\to\mathbb{L}}, \m{w\in A[\Gamma]^{N}},
+\m{V\colon A[\Gamma]^{N}\to A[\Gamma]} a homomorphism of left \m{A[\Gamma]}-modules, and \m{\beta\colon Y\to\mathbb{L}} a
+function. Suppose that $\kappa$ followed by the inclusion of~$\mathcal{S}$ is the structure map of the $A$-algebra
+of functions; that for all \m{g\in\Gamma} and~$k$ the function \m{x\mapsto} ($k$-th coefficient of the characteristic
+polynomial of \m{u_x(g)}, read in~$\mathbb{L}$) lies in~$\mathcal{S}$; and that \m{\beta(x)} is the image of
+\m{\det u_x(V(w))} for all~$x$. Then \m{\beta\in\mathcal{S}}, and for every \m{h\in A[\Gamma]}, every
+\m{M'\in M_N(A[\Gamma])} and every left ideal $\mathfrak{a}$ of \m{A[\Gamma]} such that each \m{V(M'_p)} (the image of the
+$p$-th row) lies in the sum of \m{\mathfrak{a}\cdot V(w)} and of the left ideal generated by the $r$ with
+\m{(x\mapsto\tr(u_x(r)u_x(g)))\in\mathcal{J}} for all~$g$, there is \m{f\in\mathcal{S}} with \m{f\beta\in\mathcal{J}} and
+\[
+f(x)=\det\bigl(\blockFlattenAlgEquiv{N}(u_x(M'))\bigr)\cdot\tr u_x(h)\qquad\text{for every }x\text{ with }u_x(m\,h)=0\text{ for all }m\in\mathfrak{a}.
+\]
+\end{lemma}
+\begin{proof}
+Let \m{\rho'\colon\mathcal{S}[\Gamma]\to M_\sigma(Y\to\mathbb{L})} be the $\mathcal{S}$-algebra homomorphism with
+\m{\rho'(g)(x)=u_x(g)}. By hypothesis and Input~2, all characteristic polynomials of~$\rho'$ have coefficients
+in~$\mathcal{S}$. The adjugate of \m{V(w)} gives \m{\beta=\det\rho'(V(w))\in\mathcal{S}} and an element $\eta'$ with
+\m{\rho'(\eta')\rho'(V(w))=\beta}. Write \m{V(M'_p)=r_p+m_pV(w)} with $r_p$ in the trace ideal and \m{m_p\in\mathfrak{a}}.
+By Lemma~\ref{l:amitsur} the block matrix of $M'$ has an adjugate \m{W'} with entries in \m{\mathcal{S}[\Gamma]} and
+determinant \m{F''\in\mathcal{S}}. Put \m{a'=F''-\sum_{p,q}w_q\,W'_{qp}\,m_p} and \m{f=\tr\rho'(a'h)}, an element
+of~$\mathcal{S}$ (a coefficient of a characteristic polynomial). Where \m{u_x(mh)=0} for \m{m\in\mathfrak{a}}, the sum
+does not contribute and \m{f(x)=F''(x)\tr u_x(h)}. Finally \m{a'V(w)=\sum_{p,q}w_qW'_{qp}\,r_p} by Cramer's rule for
+\m{W'} and the linearity of~$V$, so \m{f\beta=\tr\rho'(\eta'\,h\,a'\,V(w))}-type sums of traces of multiples of the
+$r_p$, which lie in~$\mathcal{J}$ by the definition of the trace ideal.
+\end{proof}
+\leanline{\lean{existsribetelementcramer}}
+
+In the next lemma, for an $A$-linear map \m{\Phi\colon A^n\to\Lambda^{s}}, a function \m{z\colon\Gamma\to A^n}, a
+submodule $\mathcal{N}$ of~$\Lambda^{s}$ and \m{p\in A}, the \emph{module of forms} \m{\mathfrak{F}(\Phi,z,\mathcal{N},p)}
+consists of the functions \m{g\mapsto\Psi(z(g))} on~$\Gamma$, for the $A$-linear maps \m{\Psi\colon A^n\to A/p} that
+vanish on \m{\Phi^{-1}(\mathcal{N})} (background library).
+
+\begin{lemma}[a Fitting ideal contains a multiple of the product of the tie parameters]\label{l:block}
+Let $A$ be a discrete valuation ring, $\Gamma$ a set, $J$ a finite totally ordered set, $n$ a finite set, $s$ a
+finite subset of~$\Gamma$, \m{\Lambda=A[X_j:j\in J]}, \m{\Phi\colon A^n\to\Lambda^{s}} an $A$-linear map,
+\m{z\colon\Gamma\to A^n} a function, $\mathcal{N}$ a $\Lambda$-submodule of~$\Lambda^{s}$, \m{p,C\in A},
+\m{\tau,\phi\colon J\times\{+,-\}\to\Gamma} functions, $I$ a finite subset of~$J$ and \m{b\in\NN\cup\{\infty\}}.
+Suppose that \m{p\ne0}; that \m{\HasTriangleCost{\mathfrak{F}(\Phi,z,\mathcal{N},p)}{\tau}{\phi}{I}{C}{b}}; that
+\m{\Phi(pv)\in\mathcal{N}} for all~$v$; that \m{\Phi(z(g))-\mathbf{1}_g\in\mathcal{N}} for all \m{g\in s}; that
+\m{\Phi(z(\tau_k))-X_j\,\Phi(z(\phi_k))\in\mathcal{N}} for all \m{k=(j,b')}; and that for all \m{j\in I} and \m{i<j},
+either \m{i\in I} or \m{X_i\Lambda^{s}\subseteq\mathcal{N}}. Then there is \m{G\in\Lambda} with
+\[
+v_A(G(0))\le b+(\#I+\#s)\,v_A(C)\qquad\text{and}\qquad G\cdot\prod_{j\in I}X_j\in\operatorname{Fitt}(\mathcal{N}).
+\]
+\end{lemma}
+\begin{proof}
+Let $\Gamma_0$ be the set of the triangle cost. Three facts on Fitting ideals are used (background library):
+\emph{(cost)} for a module $\mathcal{V}$ of functions \m{\Gamma\to A/p} there are \m{\mathcal{K}\supseteq\mathcal{N}}
+containing \m{\Phi(v)} whenever all forms in~$\mathcal{V}$ kill~$v$, and \m{e\in A} with
+\m{v_A(e)\le\len(\mathfrak{F}/\mathfrak{F}\cap\mathcal{V})} and \m{e\operatorname{Fitt}(\mathcal{K})\subseteq\operatorname{Fitt}(\mathcal{N})};
+\emph{(triangle)} if \m{r_jv_j} lies in a module plus the span of the earlier $v_i$, for all \m{j\in I}, then
+\m{\prod_{j\in I}r_j} multiplies the Fitting ideal of the module with the $v_j$ adjoined into that of the module;
+\emph{(constants)} \m{\operatorname{Fitt}(\mathcal{N}+\mathfrak{b}\Lambda^{s})\subseteq\operatorname{Fitt}(\mathcal{N})+\mathfrak{b}}.
+First apply (cost) to the functions vanishing on~$\Gamma_0$: this gives \m{\mathcal{K}} and $e$. Then (triangle)
+with \m{r_j=CX_j} and \m{v_j=\Phi(z(\phi_{(j,+)}))-\Phi(z(\phi_{(j,-)}))}: by the hypothesis on the ties,
+\m{X_jv_j} is congruent modulo~$\mathcal{N}$ to the difference of the \m{\Phi(z(\tau_{(j,\pm)}))}, and (C1), read
+through the duality between forms and membership (a vector lies in a module containing \m{p\,\Phi(A^n)} if every
+form vanishing on the module kills it), says that $C$ times this difference lies in the module generated by the
+earlier ones; the hypothesis on \m{i\notin I} disposes of the earlier indices outside~$I$. Then (cost) again, for
+the $C$-torsion, with a constant $f'$; by (C2) \m{v_A(e)+v_A(f')\le b}. The matrix \m{C\cdot\mathbf{1}} of size
+\m{\#s} has its rows in the last module, so \m{C^{\#s}} lies in its Fitting ideal, and (constants) for the ideal of
+polynomials without constant term gives an element $d_4$ of the Fitting ideal of the middle module with constant
+term \m{f'C^{\#s}}. Put \m{G=e\,C^{\#I}d_4}.
+\end{proof}
+\leanline{\lean{existsmemfittingIdealblock}}
+
+\begin{proof}[Proof of Theorem~D]
+The formal proof has 150 lines; here is its architecture, with the places where each hypothesis enters. Let
+\m{\Lambda=A[X_j:j\in J]} and work in the group algebra \m{\Lambda[\Gamma]}; let \m{\chi_x}, \m{\psi_x} and \m{\eta_e} be
+the algebra homomorphisms from \m{\Lambda[\Gamma]} to matrices over~$\Lambda$ and to~$\Lambda$ induced by \m{u_x},
+\m{\varrho_x} and \m{\xi_e}. On~$\mathcal{X}$, \m{\chi_x} is the block sum of \m{\psi_x} and the \m{\eta_e}, by~(a).
+
+\emph{Two elements of the group algebra.} By (b) the element \m{k_0=\prod_{x\in\mathcal{X}}(y_x-1)^{-1}(y_x-\gamma_x)}
+has \m{\eta_e(k_0)=1} for all~$e$ and \m{\psi_x(k_0)=0} for all \m{x\in\mathcal{X}}. By (d) there are $q_e$ with
+\m{\eta_{k}(q_e)=C} for \m{k=e} and $0$ otherwise (the interpolation polynomial at the values \m{\xi_k(a)}, evaluated
+at~$a$).
+
+\emph{Coordinates and relations.} Choose a finite set \m{s_0\subseteq\Gamma} such that the \m{u(g)-1}, \m{g\in s_0},
+span all \m{u(g)-1} over~$A$; index coordinates by \m{W\sqcup s_0\sqcup s} (the elements \m{\delta_v}, $s_0$ and~$s$),
+and write each \m{u(g)-1} as a combination \m{z(g)} of the coordinates. Let $V$ be the \m{\Lambda[\Gamma]}-linear map
+sending a coordinate vector to the corresponding combination of the \m{g-1}, and \m{\omega} the vector of the
+normaliser of~(e). Let $\mathcal{N}$ be the module of the coordinate vectors whose image under $V$ lies in the
+sum of the trace ideal of~$\mathcal{J}$ and of \m{\ker(\eta_0)\cdot V(\omega)}. It contains: the cocycle relations
+\m{z(gg')-z(g)-g\,z(g')}; the linear relations among the \m{u(g)-1}; the ties
+\m{z(\tau_k)-X_j\varepsilon_j(\phi_k)z(\phi_k)} and all multiples of~$p$ (by (c)); and \m{(g-1)\omega}.
+
+\emph{The block.} Evaluating the variables at~$0$ and applying \m{\psi_\pi}, a vector killed by~$\mathcal{N}$ becomes
+an element of \m{\obeyingCocycles{u}{\varrho_\pi}{p_0}} that vanishes at the \m{\tau_k} and, by the normaliser
+relation and the unit \m{y_\pi-1}, at~\m{\gamma_\pi}. By (e) these have length at most \m{b_0<v_A(p_0)}, and since
+\m{\varrho_\pi} spans all matrices there is a square matrix $B_0$ with rows in~$\mathcal{N}$ and
+\m{v_A(\det\psi_\pi(B_0)|_{X=0})\le b_0} (an input on Fitting ideals).
+
+\emph{The characters.} Fix~$e$. The forms on the image of~$\mathcal{N}$ under~\m{\eta_e} give cocycles in
+\m{\obeyingCocycles{u}{\xi_e}{p}} that vanish at the \m{\delta_v}; and the third condition of (g) holds for them:
+if such a cocycle were of the form \m{(\xi_e(g)-1)m} without being killed by \m{\xi_e(a)-1}, the relation
+\m{(g-1)\omega\in\mathcal{N}} together with (d) and \m{b_0<v_A(p_0)} would make the unit \m{y_\pi-1} a sum of two
+non-units. So (g) applies: it gives the triangle cost and, by the detection on~$s$, elements of~$\mathcal{N}$
+that eliminate the coordinates of~$s_0$. Lemma~\ref{l:block}, applied modulo the ideal that discards the
+monomials not dividing \m{\prod_jX_j} and with the variables of earlier types inverted away by the monotonicity
+of~\m{\mathrm{ty}}, gives \m{\Gamma_e\in\Lambda} with \m{v_A(\Gamma_e(0))\le b_e+(\ldots)v_A(C)} and
+\m{\Gamma_e\prod_{\mathrm{ty}(j)=e}X_j} in the Fitting ideal of the image of~$\mathcal{N}$, up to that ideal; it is a
+combination of determinants of matrices $B_e$ with rows in the image of~$\mathcal{N}$.
+
+\emph{Assembly.} For each choice of such matrices form the matrix $M'$ with the rows \m{o_v(\delta_v)} at the
+coordinates of~$W$ (in~$\mathcal{N}$ by (f)), the eliminating rows, and \m{\sum_eq_e\cdot}(the rows of $B_e$). On the
+characters its determinant is \m{\prod_vo_v(1)\cdot C^{\#s}} times \m{\det B_e}. Apply Lemma~\ref{l:cramer} to
+\m{h=k_0\cdot(\ldots)\cdot q_0} and \m{B_0+k_0(M'-B_0)}, with the ideal \m{\mathfrak{a}=\ker\eta_0} (for
+\m{x\in\mathcal{X}} one has \m{u_x(mh)=0} for \m{m\in\mathfrak{a}}, because \m{\xi_0=1} is a constituent of~$u_x$ and
+$k_0$ kills the block): it gives $f$ with \m{f\beta\in\mathcal{J}}, and summing over the choices, an $f$ whose
+value at \m{x\in\mathcal{X}} is, modulo monomials not dividing \m{\prod_jX_j},
+\m{\det\psi_x(B_0)\cdot C\cdot(\prod_vo_v(1)C^{\#s})^{t}\cdot\prod_e\Gamma_e\prod_jX_j}. So no monomial properly dividing
+\m{\prod_jX_j} occurs, and the coefficient $c$ at~$\pi$ has
+\m{v_A(c)\le b_0+\sum_e v_A(\Gamma_e(0))+t\,(\sum_vv_A(o_v(1))+\#s\,v_A(C))+v_A(C)}, which is the bound of the
+theorem. That \m{\beta\in\mathcal{S}} is part of Lemma~\ref{l:cramer}, and \m{\beta(x)=0} on~$\mathcal{X}$ because the
+matrix of the normaliser has a zero column at the constituent~\m{\xi_0=1}.
+\end{proof}
+
+\sect{The cost of a Tate twist: proof of Theorem E}{s:tate}
+
+\begin{lemma}[symmetrisation gives even classes]\label{l:even}
+Let $E$ be a CM field as in the conventions, $\cO$ a coefficient ring, \m{e,\nu} natural numbers, $S$ a set of
+finite places of~$E$ and \m{c\colon\GE{E}\to\cO/\ell^{\nu}} a function. Suppose that \m{e\ne0}, that
+\m{c\in\Sel{\cO(-e)}{\pd{E}{\ell}\cup S\cup\cj{S}}{\emptyset}{\cO/\ell^{\nu}}}, and that $c$ vanishes at every element of a
+decomposition group above~$\ell$ with \m{\cyc=1}. Then \m{g\mapsto c(g)+c(g^{\mathsf c})} lies in
+\m{\evenClasses{\cO}{S}{\nu}{e}}.
+\end{lemma}
+\begin{proof}
+Conjugation by~$\mathsf{c}$ preserves the cyclotomic character, the set \m{\pd{E}{\ell}\cup S\cup\cj{S}} and the set of
+the elements of decomposition groups above~$\ell$ with \m{\cyc=1}. So \m{c\circ(\cdot)^{\mathsf c}} is a cocycle of the
+same kind, and the sum is visibly invariant.
+\end{proof}
+\leanline{\lean{addconjGalmemevenClasses}}
+
+\begin{proof}[Proof of Theorem~E]
+Take for $\Gamma_0$ the set of the elements of inertia groups above~$\ell$ if \m{e=0}, and of the elements of
+decomposition groups above~$\ell$ with \m{\cyc=1} otherwise. Write \m{I=\{j:\mathrm{ty}(j)=e\}}; it is empty for
+\m{e=0}.
+
+\emph{(C1).} Let \m{j\in I} and \m{z\in Z} vanish on~$\Gamma_0$, with \m{z(\tau_i)=z(\tau_i^{[-]})} for \m{i<j}, and
+\m{z(\phi_i)=z(\phi_i^{[-]})} for \m{i<j} in~$I$. By Lemma~\ref{l:even}, \m{z^{+}=z+z\circ(\cdot)^{\mathsf c}} is an even
+class of type \m{e=\mathrm{ty}(j)}. For a cocycle of \m{\cO(-e)} and an element $g$ with \m{\cyc(g)\equiv1},
+\m{z(g^{-1})=-z(g)}; with Lemma~7.2 of the first note this turns the hypotheses into \m{z^{+}(\tau_i)=0} and
+\m{z^{+}(\phi_i)=0}. Clause (T4) gives \m{\ell^{h}z^{+}(\tau_j)=0}, that is \m{\ell^{h}z(\tau_j)=\ell^{h}z(\tau_j^{[-]})}.
+
+\emph{(C2), first term.} A function of $Z$ that obeys \m{\crysRels{\cO(-e)}} vanishes on~$\Gamma_0$: an element
+of~$\Gamma_0$ is conjugate to an element of the decomposition group of a chosen place above~$\ell$ on which
+\m{\cO(-e)} is trivial, and a crystalline cocycle of a trivial character vanishes at the inertial elements (an
+input of the unit on the Bloch--Kato condition); the cocycle identity transports this along the conjugation.
+Hence \m{\len(Z/\{z:z|_{\Gamma_0}=0\})\le\len(Z/Z\cap\Ob{\crysRels{\cO(-e)}}{\cO/\ell^{\nu}})}.
+
+\emph{(C2), second term.} Let \m{Z'} be as in (C2). By Lemma~7.3 of the first note its elements, which vanish at
+all \m{\tau_k}, are unramified outside~$\ell$. If \m{e=0} they lie in \m{\Sha^{\mathrm{odd}}(\ell,E,\cO,0,\nu)}, and
+\m{\len(Z'/Z'[\ell^{h}])\le\len Z'}. If \m{e\ne0}, the map \m{z\mapsto z\circ(\cdot)^{\mathsf c}-z} sends $Z'$ into
+\m{\Sha^{\mathrm{odd}}(\ell,E,\cO,e,\nu)}, and its kernel is killed by~\m{\ell^{h}}: for $z$ in the kernel, \m{2z=z^{+}}
+is an even class unramified outside~$\ell$ that vanishes at the $\phi_j$ of type~$e$ (by the hypothesis on the
+$\phi$-pairs), so by (T5) \m{\delta(\gamma)\cdot2z(g)=\delta(g)\cdot2z(\gamma)} for all~$g$: \m{\delta(\gamma)\,2z} is of
+the form \m{(\cyc(g)^{-e}-1)m}; hypothesis (ii) then gives \m{\delta(\gamma)^2\,2z=0}, and \m{4\delta(\gamma)^2}
+divides~\m{\ell^{h}}. So \m{\len(Z'/Z'[\ell^{h}])\le\len\Sha^{\mathrm{odd}}(\ell,E,\cO,e,\nu)}, and (iii) gives the bound~$b$.
+\end{proof}
+
+\sect{Where the results are used}{s:use}
+The results are used in the third note of the unit, \emph{A fit family of twists exists}. Theorem~A, with
+Theorem~C for its hypothesis, gives there the one twist for each pair of a prime and an isomorphism that makes
+all Selmer length bounds hold at once. Theorem~D is the engine of the bound for the denominator of the
+projection to theta lifts: it is applied to the Galois representations of a base level, with the lifts as the
+set~$\mathcal{X}$; its hypothesis (g) is supplied by Theorem~E for the characters \m{\cyc^{-e}} of the string, and
+its hypothesis (e) by Theorem~A of this note through the Selmer length bound. Lemmas \ref{l:tametype},
+\ref{l:inclass} and~\ref{l:obeycup} enter the estimate of the crystalline losses above~$\ell$. Theorem~B and the
+lemmas of §§\ref{s:roots}--\ref{s:pencils} are used only inside this note.
+
+\sect{Notes on the formal text}{s:notes}
+\begin{enumerate}[label=\textup{\arabic*.},leftmargin=1.6em,itemsep=5pt]
+\item \emph{Letters.} Besides the changes of the first note: the formal text writes {\leanfont O} for the rings
+called $A$, $A_0$, $A'$ here, {\leanfont L} for the algebra~$\mathbb{L}$ and for sets of relations, {\leanfont S}
+for the subalgebra~$\mathcal{S}$, {\leanfont 𝒥} for~$\mathcal{J}$, {\leanfont 𝓧} for~$\mathcal{X}$, {\leanfont ι} for the
+index set~$\mathcal{I}$, {\leanfont G} for the group~$\Gamma$, {\leanfont R} for the rings $A$ of
+Lemma~\ref{l:obeycup} and $\Lambda_0$ of Lemma~\ref{l:amitsur}, {\leanfont Λ} for the algebra~$\mathfrak{A}$,
+{\leanfont c} for the involution~$\mathsf{c}'$ of Lemma~\ref{l:mirror}, {\leanfont I} for its ideal~$\mathfrak{a}$,
+{\leanfont n} for the function~$\theta$ of Theorem~D, {\leanfont L} for the set~$\Gamma_0$ of
+Definition~\ref{d:tricost}, and {\leanfont P₀} for the helper prime~$\fq_0$.
+\item \emph{Arguments.} The arguments were read from the text of the files. For seven declarations (the four
+lemmas on pencils, Theorem~D, Theorem~C and Lemma~\ref{l:inclass}) the dossier gives a list reconstructed by hand,
+because the files declare the same variables twice or the statement contains a local definition; none was
+confirmed by Lean's own answer. The program reads the argument of the function of Definition~\ref{d:normaliser}
+(the group element) as an argument, and so do we; in Theorem~C it reads the quantifier ``for all large~$\cO$'' as
+two arguments. The instance ``discrete valuation ring'' is not used by Definition~\ref{d:tricost}, and
+``group'' not by Definition~\ref{d:trid}; they are not listed there.
+\item \emph{Statements with local definitions.} Lemmas \ref{l:pointchar}(b), \ref{l:drop}, \ref{l:unseen},
+\ref{l:inclass}, \ref{l:obeycup} and Theorem~B have a local definition inside their formal statement; they were
+read to their true end in the source.
+\item \emph{Theorem~C.} The finiteness of the set~$\Sigma$ is an argument of the formal statement with a default
+proof; the set enters the conclusion as a finite set made from that proof.
+\item \emph{Theorem~A.} The hypotheses \m{S\subseteq S_0} and \m{z\in\inab{S_0\setminus\pd{E}{\ell}}} stand in a
+declaration of variables before the statement and are included in it. The same $I$ and $\psi$ serve every $d$
+and every~$i$; only the coefficient ring $\cO'$ and \m{\psi'} depend on them. The bounds $B_i$ are extended
+non-negative reals, $c$ and $\eta$ non-negative reals.
+\item \emph{Theorem~D.} The index set of the characters is \m{\{0,\dots,t-1\}} with \m{t\ne0}; the map
+\m{\mathrm{ty}} is a monotone map whose target the formal text leaves to be inferred. Hypothesis (g) quantifies
+over all submodules~$Z$; its conclusion is used for the modules of forms of the proof. The formal bound is
+\m{b_0+(\sum_eb_e+t(\sum_vv_A(o_v(1))+2\#s\,v_A(C))+(\#J+1)v_A(C))}; the outline above does not track the
+multiples of \m{v_A(C)} exactly.
+\item \emph{Leaves of the structured proofs.} Two leaf steps of the dossier quote nine lines (one long
+simultaneous choice in Lemma~\ref{l:rootmany}, one chain of rewritings in Lemma~\ref{l:unseen}); the bound of the
+workspace is eight.
+\item \emph{Outlines.} The proofs of Lemmas \ref{l:rootone}, \ref{l:mirror}, \ref{l:unseen}, \ref{l:obeycup},
+\ref{l:cramer} and of Theorems A, C and~D are outlines of long formal computations, as said in each place. For
+them I compared the hypotheses used at each step with the formal text but did not re-derive the identities; in
+particular the count of the multiples of \m{v_A(C)} in Theorem~D is that of the formal statement, not of an
+independent computation.
+\item \emph{Input~1.} The formal statement of the relations at split primes is long (it has a local definition
+and was read to its end by the second reading); the write-up has not yet read its proof, and no printed source
+for this form is known to the catalogue.
+\end{enumerate}
+
+\subhead{How this note was written.} From the dossier of the unit (its second chunk): the statements in words and
+the structured proofs, which a program compared line by line with the source (\UnitSteps{} leaf steps in the
+\UnitProofs{} proofs of the whole unit). I read the eight Lean files of these declarations completely, and for
+the long proofs the reader's step-by-step rendering beside them. The statements of this note were compared with
+the Lean statements argument by argument, and the order of the quantifiers is that of the formal text (in
+Theorem~A: first $I$ and~$\psi$, then $d$, then~$i$, then the coefficient ring; in Theorem~B: first $J_0$,
+then~$N$). The proofs of Lemmas \ref{l:rootmany}, \ref{l:linepoint}, \ref{l:fitting}, \ref{l:selz}, \ref{l:pointchar},
+\ref{l:drop}, \ref{l:tilting}, \ref{l:tametype}, \ref{l:amitsur}, \ref{l:block}, \ref{l:even} and of Theorems B and~E
+follow the formal ones; the others are outlines (note~8). I did not open the proofs of the inputs. The reference
+of Input~2 and its place are those of the second reading of this write-up; I did not check them in the
+literature.
+
+\head{Appendix A. Concordance with the Lean artifact}
+{\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}\setlength{\tabcolsep}{0pt}
+\begin{longtable}{@{}p{30mm}p{56mm}p{43mm}r@{}}
+\textbf{In this note} & \textbf{Lean declaration} & \textbf{File} & \textbf{Lines}\\\midrule\endhead
+\ConcordanceRows
+\end{longtable}}
+
+\subhead{Two statements as they are written in the artifact.}
+\quoted{existsanticyclotomictwist}
+\quoted{hasTriangleCosttateTwist}
+In these texts {\leanfont IsBalanced}, {\leanfont IsFamily}, {\leanfont IsAuxTwist}, {\leanfont IsPrimeTriangle} and
+{\leanfont HasTriangleCost} are the predicates written above with the macros of the same names; {\leanfont
+idOrConjInv b z} is \m{z^{[b]}}, {\leanfont unionWithConj S I} is \m{\unionWithConj{S}{I}}, {\leanfont twistRep}
+forms \m{\psi'\cdot\varrho_i}, {\leanfont mapRel} carries relations to the larger ring, {\leanfont .single (γ i) 1}
+is \m{\delta_{\gamma_i}}, {\leanfont tateTwist ℓ E O e} is \m{\cO(-e)}, {\leanfont shaOdd} is \m{\Sha^{\mathrm{odd}}}, and
+{\leanfont relLength S T} is the length of \m{S/S\cap T}.
+
+\head{Notation}
+\begingroup\fontsize{8.6}{10.9}\selectfont\raggedright
+\setlength{\columnsep}{9mm}\setlength{\parskip}{0pt}
+\begin{multicols}{2}
+\nt{$\ell$, $\Ql$, $\Zl$, $\Qlb$, $\Zlb$, $\Cl$, $\Gl$, $\iota$}{a prime and the $\ell$-adic objects; the fixed isomorphism \m{\CC\to\Qlb}}
+\nt{$\Qb$, $\mathsf{c}$, $g^{\mathsf c}$, $g^{[b]}$}{an algebraic closure of~$\mathbb{Q}$; complex conjugation; \m{\mathsf{c}g\mathsf{c}}; $g$ or \m{(g^{\mathsf c})^{-1}}}
+\nt{$E$, $\GE{E}$, $f_E$}{a CM field as in the conventions; \m{\Gal(\Qb/E)}; its number of infinite places}
+\nt{$P$, $D$, $\ED{D}$, $\fD{D}$, $\Dg{i}{D}$, $\gD{D}$, $\lvl{D}$, $\Dr{D}$, $\tD{D}$, $\ordch{D}$}{parameters, data and its numbers, as in the first note}
+\nt{$w$, $v$, $\fq$, $\fq_0$, $\cj{w}$, $\Nm(w)$, $\fP$, $\fP_w$, $G_{\fP}$, $I_{\fP}$, $\tau_{\fP}$, $\tau_w$}{places, norms, decomposition and inertia groups, tame generators}
+\nt{$\pd{E}{M}$, $\inab{S}$, $\cyc$, $\cyc_M$}{places containing~$M$; inertia above~$S$; cyclotomic characters}
+\nt{$\cO$, $\cO'$, $\varpi$, $\cO(-e)$, $\vl$, $v_\ell$, $\nlen$, $\len$}{coefficient rings, a uniformiser, Tate twists, valuations and lengths}
+\nt{$A$, $A_0$, $A'$, $A_1$, $\Lambda$, $\Lambda_0$, $\mathbb{L}$, $\mathfrak{A}$, $B$, $v_A$}{rings, algebras, a module, the valuation of a discrete valuation ring}
+\nt{$\Gamma$, $\Gamma'$, $\Gamma_0$, $j$, $\eta$}{groups; a subset; the homomorphism to~\m{\Gl}; a homomorphism (also an idele character and a real number)}
+\nt{$M_n(A)$, $\GL_n$, $\#n$, $\tr$, $\det$, $\rk$}{matrices, cardinality, trace, determinant, rank}
+\nt{$\theta$, $\delta_g$, $\Ob{L}{B}$, $\Rel{Z}$, $\Sel{\varrho}{S}{L}{B}$}{relations, the indicator relation, obeying functions, relations of a module, Selmer modules}
+\nt{$\Zf(L)$, $L^{\vee}(1)$, $L^{\perp\mathcal{Q}}$, $\mathcal{Q}(F,K,U)$, $\Sha^{\mathrm{odd}}$}{crystalline cocycles, twisted dual, cup-orthogonal, classes, the module of §2.1}
+\nt{$\operatorname{Fitt}(\mathcal{N})$, $\mathfrak{F}(\Phi,z,\mathcal{N},p)$}{Fitting ideal; module of forms}
+\nt{\m{\obeyingCocycles{u}{\varrho}{a}}, \m{\crysRels{u}}, \m{\matrixLattice{\varrho}}, \m{\coeffEmb{\cO}{g}}, \m{\complexEmbOf{e}{g}}}{Definition~\ref{d:recall}(1),(2)}
+\nt{\m{\AbsGal{D}}, \m{\placesAboveG{D}}, \m{\badPlaces{D}{\ell}}, \m{\crudeUnit{\ell}{D}}}{Definition~\ref{d:recall}(3)}
+\nt{\m{\IsColumn{D}{t}{\HT}{S}{R}}, \m{\IsRow{D}{t}{\HT}{R}}}{columns and rows (Definition~\ref{d:recall}(4))}
+\nt{\m{\AuxPrimeData{E}{q}}, \m{\IsAnticyclotomicAt{T}{\fq}{l}}, \m{\IsAuxiliary{S}{I}}, \m{\IsFamily{S}{\nu}{\mathrm{val}}}}{Definition~\ref{d:recall}(5),(6)}
+\nt{\m{\evenClasses{\cO}{S}{\nu}{e}}, \m{\IsNewPlaces{\nu}{w}{\tau}{\phi}}, \m{\withConjInv{\tau}{k}}}{Definition~\ref{d:recall}(7)}
+\nt{\m{\IsPrimeTriangle{\nu}{w}{\tau}{\phi}{a}{t}{\mathrm{ty}}{h}{c}}}{prime triangles (Definition~\ref{d:recall}(8))}
+\nt{\m{\IsAuxTwist{S}{Q}{\psi}{c}}, \m{\unionWithConj{S}{J}}, \m{\twistAtPoint{h}{y}{e}{\varrho}{g}}, \m{\reduceModPow{l}{M}{\varrho}}, $y^{h}$}{Definition~\ref{d:recall}(9),(10)}
+\nt{\m{\IsBalanced{\ell}{S}{\varrho}{L}{\gamma}{\beta}{M}}}{balanced representations (Definition~\ref{d:recall}(11))}
+\nt{\m{\IsPencil{\ell}{S_0}{U}{W}{N}{\fq_0}{J}{x}}, \m{\tieRelations{J}{x}{i}}}{pencils and ties (Definition~\ref{d:recall}(12))}
+\nt{\m{\evalConjPair{g}}, \m{\blockFlattenAlgEquiv{N}}, \m{\ribetNormaliser{\gamma}{a}{y}{p}{\theta}{g}}}{Definitions \ref{d:evpair}--\ref{d:normaliser}}
+\nt{\m{\HasTriangleCost{Z}{\tau}{\phi}{I}{C}{b}}, \m{\IsTraceIdeal{\mathcal{J}}{u}{p}{\tau}{\phi}{k}{\varepsilon}}, \m{\IsRibetElement{\mathcal{J}}{\beta}{\pi}{c}}}{Definitions \ref{d:tricost}--\ref{d:rib}}
+\nt{$R$, $R'$, $u$, $\varrho$, $\varrho_i$, $\varrho_x$, $\varrho_y$, $\psi$, $\psi'$, $\chi$, $\xi_e$, $\mu_{k,t}$, $\nu$}{representations, lattices and characters ($\nu$ also a natural number)}
+\nt{$\HT$, $\HT_w$, $\Lambda_w$, $e_w$, $\mathcal{R}$, $\mathfrak{M}$}{types; the local lattice and chart at~$w$; a property; a multiset}
+\nt{$l=(\fP,\gamma,\phi,h)$, $l_v$, $h_v$, $\gamma_v$, $\phi_v$, $\gamma_l$, $\phi_l$, $s_{v,i}$, $\mathbf{1}_i$, $\mathbf{1}_g$}{data at auxiliary primes; slopes; indicator vectors}
+\nt{$I$, $J$, $J_0$, $J_1$, $S$, $S_0$, $T$, $W$, $Q$, $P'$, $Q'$, $\Sigma$, $\mathcal{X}(T)$}{sets of places and index sets; bounds for the number of primes; the Selmer modules of Lemma~\ref{l:unseen}; $W$ also a neighbourhood, $T$ a list of residues, $Q$ a polynomial}
+\nt{$\mathcal{I}$, $\kappa$, $Y$, $X$, $\mathcal{X}$, $\pi$, $\sigma$, $n$, $n_i$, $r$, $d$, $m$, $N$, $M$, $k$, $q$, $t$, $e$, $i$, $b$}{index sets and natural numbers; $X$ also a variable, $\pi$ a point, $\kappa$ also a ring homomorphism, $e$ also a ring homomorphism, $b$ also a bound or a sign}
+\nt{$\beta$, $\beta_i$, $B_i$, $b_0$, $b_e$, $c$, $\eta$, $\delta$, $C$, $p$, $p_0$, $a$, $\alpha$, $\alpha'$, $s$}{bounds, real numbers and ring elements ($a$, $s$ also group elements or a finite set, $c$ also a cocycle or a ring element, $\delta$ also the function of (T5))}
+\nt{$\gamma$, $\gamma_i$, $\gamma_x$, $z$, $g$, $g'$, $g_0$, $g_1$, $h$, $\tau$, $\phi$, $\zeta$, $u$, $y$, $y_v$, $y_x$, $y_0$}{elements of groups, roots of unity and points ($u$ also a lattice, $y$ also a cocycle, $h$ also an element of a group algebra)}
+\nt{$F$, $F_k$, $F_{k,d}$, $F_i$, $G$, $G_i$, $D_n$, $V_{k,I}$, $\mathrm{val}_k$, $a_{k,i}$, $\rho_j$, $\|F\|_\rho$, $\Pi$, $Q_k$, $\eta_j$}{polynomials and Gauss norms of §\ref{s:roots} and of the proof of Theorem~A; $F$ also a filter, $G$ also the element of Lemma~\ref{l:block}}
+\nt{$\mathsf{c}'$, $H$, $U$, $U'$, $U_i$, $\mathfrak{a}$, $x_w$, $\tau=[g_0,\gamma]$, $Y$}{objects of the mirror lemma and its use ($U$ also a function to finite sets, $Y$ also a matrix or a submodule)}
+\nt{$\Phi_0$, $\Phi_1$, $\Phi$, $\Psi$, $\psi$, $\sigma'$, $\bar\psi$, $Z$, $Z'$, $Z'[C]$}{linear maps and modules of §§\ref{s:pencils}, \ref{s:ribet}; the $C$-torsion}
+\nt{$\mathcal{S}$, $\mathcal{J}$, $\varepsilon_j$, $\epsilon$, $\mathrm{pr}_1$, $\mathrm{ty}$, $\delta_v$, $o_v$, $\omega$, $k_0$, $q_e$, $s_0$, $B_0$, $B_e$, $\Gamma_e$, $M'$, $P'$, $W'$, $F'$, $F''$, $a'$, $\eta'$, $\rho'$, $r_p$, $m_p$, $w$, $V$, $f$}{objects of §\ref{s:ribet}: subalgebra and submodule, polynomials, the bijection, maps, group-algebra elements, matrices}
+\nt{$\mathcal{N}$, $\mathcal{K}$, $\mathcal{V}$, $\mathcal{R}$, $\mathfrak{b}$, $e$, $f'$, $d_4$, $r_j$, $v_j$, $L$, $K$, $\Lambda^{s}$}{modules of relations, ideals and constants; $L$ also a set of relations or a lattice, $K$ also a property of polynomials}
+\nt{$z^{+}$, $\delta(g)$, $\chi_x$, $\psi_x$, $\eta_e$}{the symmetrisation; \m{\cyc(g)^{-e}-1}; the algebra homomorphisms of the proof of Theorem~D}
+\nt{$\top$, $\mathbb{Q}/\mathbb{Z}$, $\mathrm{U}(1)$}{the trivial filter; the dualising group; the unitary group of rank one}
+\end{multicols}
+\endgroup
+
+\head{References}
+{\fontsize{9.4}{12.6}\selectfont
+The reference is the one named by the second reading of this write-up, with the place given there; I did not
+open it.\par
+\smallskip
+G.~Chenevier, \emph{The $p$-adic analytic space of pseudocharacters of a profinite group and
+pseudorepresentations over arbitrary rings}.\par}
+
+\end{document}

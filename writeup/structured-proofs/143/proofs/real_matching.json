@@ -1,0 +1,399 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Rows.RealMatching:61:7",
+ "name": "real_matching",
+ "summary": "Q₀ is matchedPoly for the special family η₀ (rows e(p) of the identity). The constant κ for a vector v is found by density of polynomial Fock vectors and closedness: for v = v_P, averaging the torus action over the circle and Fock polarisation give κ. Then the identity for all η follows by evaluating the polynomials at points, writing each stacked determinant as c·det(Z·ηᵀ) (exists_det_fromCols), and polarising in η with the equivariance of ℓ and the hypothesis on ℓ'.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let η₀ be the family with η₀ τ k = the p×m matrix whose rows are the standard basis vectors e_{e(inl i)}, i ∈ p (rows e(inl p) of the identity), for every τ and k.",
+   "lines": [
+    65,
+    65
+   ],
+   "lean": "  let η τ (_ : ι τ) := (1 : Matrix m m ℂ).submatrix (e ∘ inl) id",
+   "uses": []
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "setup",
+   "claim": "For z in the unit circle let t(z) ∈ GInf E 1 be, at every infinite place, the diagonal torus element with entry z⁻² at the indices e(inl p) and z⁻¹ at the indices e(inr a).",
+   "lines": [
+    66,
+    66
+   ],
+   "lean": "  let t z : GInf E 1 := fun _ ↦ diagTorus _ fun i ↦ z⁻¹ ^ ite (e.symm i).isLeft 2 1",
+   "uses": []
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let r = j ∘ inl ∘ e ∘ inr : a → n, the embedding of a into the positive block of n.",
+   "lines": [
+    67,
+    67
+   ],
+   "lean": "  let r := j ∘ inl ∘ e ∘ inr",
+   "uses": []
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "setup",
+   "claim": "For a Fock vector y and z in the circle let Ω(y, z) = (∏_τ det(o)^{|ι τ|})·ω(posBlockEmb j (t z), o)(y), where o is the scalar matrix z⁻¹ of rank |a| at every infinite place: the action of the torus element (t z, o), normalised by the determinant factor.",
+   "lines": [
+    68,
+    69
+   ],
+   "lean": "  let Ω y z := let o := diagTorus 1 (const a z⁻¹)\n    (∏ τ, o.1.1.det ^ card (ι τ)) • realPairWeil γ 0 (posBlockEmb j (t z), fun _ ↦ o) y",
+   "uses": []
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "fact",
+   "claim": "posBlockEmb j is continuous (in matrix coordinates, place by place).",
+   "lines": [
+    70,
+    71
+   ],
+   "lean": "  have : Continuous (posBlockEmb (E :=\n    E) j) := by simp [continuous_pi_iff, continuous_U_iff_matrix]; fun_prop",
+   "typed_fact": "Continuous (posBlockEmb (E :=\n    E) j)",
+   "uses": []
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "witness",
+   "claim": "Take Q₀ = matchedPoly f j η₀. For every v, the existence of κ follows from isClosed_property: the set of vectors y for which the circle average ℓ ↦ (2π)⁻¹∫_0^{2π} ℓ(Ω(y, e^{iθ})) dθ, on the continuous functionals ℓ invariant under ω(1, u), is a multiple κ of ℓ ↦ ℓ(posFockVector j (stackedDetProd e η₀)) is closed (the range of scalar multiples of one vector is closed and the average depends continuously on y, using step 5), and it contains the dense set of polynomial vectors v_P; the κ for v_P is a quotient by the positive number ⟨q̄, q⟩ (fockPairing_star_self_pos), q = ∏_τ det(x_τ)^{|ι τ|}, its numerator computed in steps 6.1–6.4.",
+   "lines": [
+    72,
+    92
+   ],
+   "lean": "  use matchedPoly f j η, (.imp (fun κ hκ ℓ ℓ' m hx ↦ ?_) <| isClosed_property denseRange_polyVector\n    ((isClosedMap_smul_left fun ℓ : {ℓ : _ →L[ℂ] ℂ // ∀ u w, ℓ (realPairWeil γ 0 (1, u) w) = ℓ w} ↦\n    ℓ.1 (posFockVector j (stackedDetProd e η))).isClosed_range.preimage_of_continuous (f :=\n    fun y ℓ ↦ (2 * π)⁻¹ • ∫ θ in 0..2 * π, ℓ.1 (Ω y (.exp θ)))) (fun P ↦ ⟨_, funext fun ⟨ℓ, m⟩ ↦\n    (mul_right_comm ..).trans (div_eq_of_eq_mul (fockPairing_star_self_pos (p := ∏ τ,\n    letterMinor τ id id ^ card (ι τ)) (by simp [-letterMinor])).ne' (by\n    let T (s : ℂ) := ℓ (P.bind₁ fun x ↦ s ^ extend r 0 1 x.2.2 • X x)\n    have h z : ℓ (Ω P z) = T z := by\n      simp [-diagTorus, Ω, *]; congr\n      simp [r, t, extend, reindex_equiv j, reindex_equiv e, inv_diagonal, Ring.inverse,\n        Pi.isUnit_iff, sq]\n    have D τ k : stackedDet τ (η τ k) e = _ * det (of _) := (congrArg det (by\n      ext ⟨⟩ ⟨⟩ <;> simp [η] <;> rfl)).trans (det_fromBlocks_zero₁₂' 1 ..)\n    simpa [map_one, circleAverage, circleMap, *, det_apply, ↓det_one, ← (by\n      simp [T, ← aeval_eq_bind₁, aeval_def, eval₂_eq]\n      fun_prop : Differentiable ℂ T).diffContOnCl.circleAverage (c := 0) (R := 1)] using!\n      fockPairing_polarisation (X ⟨·, ·, r ·⟩) 1 (ℓ.1 ∘ₗ polyVector _) (P.bind₁ fun (τ, i, k) ↦\n      extend r (X ⟨τ, i, ·⟩) 0 k) (T 0 • ∏ τ, letterMinor τ id id ^ card (ι τ)) fun u ↦ by\n     unfold T; rw [← m u]\n     simp [*, field, RingHom.map_det, Matrix.map]; congr; simp [reindex_equiv j, reindex_equiv e, r,\n       extend]))⟩) ·)",
+   "head_lines": [
+    72,
+    77
+   ],
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "step": "5"
+    },
+    {
+     "decl": "fockPairing_star_self_pos"
+    }
+   ],
+   "ambient_uses": [
+    "isClosed_property"
+   ]
+  },
+  {
+   "id": "6.1",
+   "parent": "6",
+   "kind": "setup",
+   "claim": "For an invariant functional ℓ and a polynomial P let T(s) = ℓ(v_{P_s}), where P_s is P with every variable of a column outside r(a) multiplied by s (a polynomial function of s ∈ ℂ).",
+   "lines": [
+    78,
+    78
+   ],
+   "lean": "    let T (s : ℂ) := ℓ (P.bind₁ fun x ↦ s ^ extend r 0 1 x.2.2 • X x)",
+   "uses": []
+  },
+  {
+   "id": "6.2",
+   "parent": "6",
+   "kind": "fact",
+   "claim": "For every z in the circle, ℓ(Ω(v_P, z)) = T(z): the torus element acts on the Fock vector of P by scaling the variables (diagonal action), the determinant factor and the invariance of ℓ under the second group absorb the scalar o.",
+   "lines": [
+    79,
+    82
+   ],
+   "lean": "    have h z : ℓ (Ω P z) = T z := by\n      simp [-diagTorus, Ω, *]; congr\n      simp [r, t, extend, reindex_equiv j, reindex_equiv e, inv_diagonal, Ring.inverse,\n        Pi.isUnit_iff, sq]",
+   "typed_fact": "ℓ (Ω P z) = T z",
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "step": "6.1"
+    }
+   ]
+  },
+  {
+   "id": "6.3",
+   "parent": "6",
+   "kind": "fact",
+   "claim": "For every τ and k, the stacked determinant of η₀ τ k (columns ordered by e) is a sign times the determinant of the a×a block of the variable matrix in the columns e(inr a): the stacked matrix is block triangular (det_fromBlocks_zero₁₂').",
+   "lines": [
+    83,
+    84
+   ],
+   "lean": "    have D τ k : stackedDet τ (η τ k) e = _ * det (of _) := (congrArg det (by\n      ext ⟨⟩ ⟨⟩ <;> simp [η] <;> rfl)).trans (det_fromBlocks_zero₁₂' 1 ..)",
+   "typed_fact": "stackedDet τ (η τ k) e = _ * det (of _)",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "decl": "stackedDet"
+    }
+   ]
+  },
+  {
+   "id": "6.4",
+   "parent": "6",
+   "kind": "deduction",
+   "claim": "The product identity required in step 6 for v = v_P: (circle average of ℓ(Ω(v_P, ·)))·⟨q̄, q⟩ equals the numerator times ℓ(posFockVector j (stackedDetProd e η₀)). It follows from the mean value property of the polynomial (hence differentiable) function T on the unit circle (circleAverage: the average is T(0)), step 6.2, step 6.3, and Fock polarisation (fockPairing_polarisation, with the functional ℓ ∘ v_(·), the variables of the columns r, the part of P in those columns and K = T(0)·∏_τ det(x_τ)^{|ι τ|}), whose hypothesis — the value of ℓ after a unitary substitution u — is checked in the last lines from the invariance of ℓ under u.",
+   "lines": [
+    85,
+    92
+   ],
+   "lean": "    simpa [map_one, circleAverage, circleMap, *, det_apply, ↓det_one, ← (by\n      simp [T, ← aeval_eq_bind₁, aeval_def, eval₂_eq]\n      fun_prop : Differentiable ℂ T).diffContOnCl.circleAverage (c := 0) (R := 1)] using!\n      fockPairing_polarisation (X ⟨·, ·, r ·⟩) 1 (ℓ.1 ∘ₗ polyVector _) (P.bind₁ fun (τ, i, k) ↦\n      extend r (X ⟨τ, i, ·⟩) 0 k) (T 0 • ∏ τ, letterMinor τ id id ^ card (ι τ)) fun u ↦ by\n     unfold T; rw [← m u]\n     simp [*, field, RingHom.map_det, Matrix.map]; congr; simp [reindex_equiv j, reindex_equiv e, r,\n       extend]))⟩) ·)",
+   "uses": [
+    {
+     "step": "6.1"
+    },
+    {
+     "step": "6.2"
+    },
+    {
+     "step": "6.3"
+    },
+    {
+     "decl": "fockPairing_polarisation"
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "witness",
+   "claim": "For every infinite place τ and every point z (values of the variables), apply exists_det_fromCols to e⁻¹ and the transposed block of values of z at τ: there are a matrix Z τ z and a number c τ z with det([X | (values)]) = c τ z·det((Z τ z·X)ᵀ) for all X, and the norm bound.",
+   "lines": [
+    93,
+    94
+   ],
+   "lean": "  choose Z c hc _ using fun (τ : InfinitePlace E) z ↦ exists_det_fromCols e.symm\n    (of (curry (curry z τ)))ᵀ",
+   "uses": [
+    {
+     "decl": "exists_det_fromCols"
+    }
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Hence for every τ, z and every p×m matrix η: the value at z of stackedDet τ η e equals c τ z·det of the product of Z τ z with ηᵀ (transposed), by the definition of stackedDet, invariance of det under transposition and relabelling, and step 7.",
+   "lines": [
+    95,
+    96
+   ],
+   "lean": "  have hc τ z η : (stackedDet τ η e).eval z = _ := .trans (by\n   rw [stackedDet, ← det_transpose]; simp [← det_reindex_self e.symm, det_apply]) (hc τ z ηᵀ)",
+   "typed_fact": "(stackedDet τ η e).eval z = _",
+   "uses": [
+    {
+     "step": "7"
+    },
+    {
+     "decl": "stackedDet"
+    }
+   ]
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let M be the linear functional on pairs (polynomial in the evaluation points, polynomial) given by κ·ℓ_1(posFockVector j (left inverse of evaluation of the first component)) − ℓ'(second component), after multiplication by (∏_τ c τ ·^{|ι τ|}, ·); the claim for all η becomes the vanishing of M on the pairs built from η. The rest runs with all definitions unfoldable.",
+   "lines": [
+    97,
+    113
+   ],
+   "lean": "  let' M := (κ • (ℓ 1).1 ∘ₗ posFockVector j ∘ₗ .leftInverse _ ∘ₗ .fst .. - ℓ' ∘ₗ .snd ..) ∘ₗ\n    .mulLeft ℂ ((∏ τ, c τ · ^ card (ι τ)), _); with_unfolding_all\n    refine have H y : M (pairedDetProd (fun τ i k ↦ ((Z τ · k i),\n        X (τ, j (inl i), f (inl k)))) y) = 0 ↔ _ := ?_\n      (H · |>.1 ((mul_eq_zero_iff_left (fockPairing_star_self_pos (by simp [-letterMinor])).ne').1\n        (fockPairing_polarisation (r := e ∘ inl) _ _ M _ 0 fun k ↦ .trans ?_ ((H _).2\n        (.trans (by simpa [m] using congr(κ * (ℓ (posBlockEmb j k) $(realPairWeil_stackedDetProd j e\n        hγ η k⁻¹ 1)))) (congr($hκ ⟨(_ : ℂ) • _, by simp [m]⟩).trans ?_))))))\n    rw [← (evalₗ ℂ _).leftInverse_apply_of_inj (bot_unique fun _ ↦\n      funext ∘ congrFun) (stackedDetProd ..)]\n    simp [M]; congr!\n    iterate 3 simp [η, hc, det_apply', mul_apply, ← Algebra.smul_def]\n    have {z} := hx (posBlockEmb j (k * t z)) ((_ : ℂ) • matchedPoly f j fun τ i ↦\n      z⁻¹.1 ^ 2 • η τ i * (k τ).1.1ᵀ) (by\n      simp [Matrix.map, reindex_equiv j]; congr!; simp [η, entrywise, t, mul_comm])\n    simp [Ω, m, t, reindex_equiv e, Matrix.map_smul] at *\n    simp [*]; field_simp; simp [field]",
+   "head_lines": [
+    97,
+    98
+   ],
+   "uses": [
+    {
+     "step": "7"
+    }
+   ]
+  },
+  {
+   "id": "9.1",
+   "parent": "9",
+   "kind": "reduction",
+   "claim": "Reduce the goal through the fact H of step 9.1.1 and Fock polarisation in η (rows e ∘ inl).",
+   "lines": [
+    99,
+    104
+   ],
+   "span": [
+    99,
+    5,
+    104,
+    77
+   ],
+   "lean": "refine have H y : M (pairedDetProd (fun τ i k ↦ ((Z τ · k i),\n        X (τ, j (inl i), f (inl k)))) y) = 0 ↔ _ := ?_\n      (H · |>.1 ((mul_eq_zero_iff_left (fockPairing_star_self_pos (by simp [-letterMinor])).ne').1\n        (fockPairing_polarisation (r := e ∘ inl) _ _ M _ 0 fun k ↦ .trans ?_ ((H _).2\n        (.trans (by simpa [m] using congr(κ * (ℓ (posBlockEmb j k) $(realPairWeil_stackedDetProd j e\n        hγ η k⁻¹ 1)))) (congr($hκ ⟨(_ : ℂ) • _, by simp [m]⟩).trans ?_))))))",
+   "head_lines": [
+    99,
+    99
+   ],
+   "head_span": [
+    99,
+    5,
+    99,
+    12
+   ],
+   "uses": [
+    {
+     "step": "8"
+    }
+   ]
+  },
+  {
+   "id": "9.1.1",
+   "parent": "9.1",
+   "kind": "reduction",
+   "claim": "For every y, M applied to the paired determinant product of the matrices (Z τ ·) with the positive block of the variable matrix vanishes iff the identity holds; the factor ⟨q̄, q⟩ ≠ 0 (fockPairing_star_self_pos) is cancelled, Fock polarisation (fockPairing_polarisation with rows e ∘ inl) reduces the vanishing for all η to unitary k, and for unitary k the equivariance realPairWeil_stackedDetProd (with k⁻¹ and 1) and the property hκ of κ (step 6) supply the value, leaving two identities as goals.",
+   "lines": [
+    99,
+    104
+   ],
+   "span": [
+    99,
+    12,
+    104,
+    77
+   ],
+   "lean": "have H y : M (pairedDetProd (fun τ i k ↦ ((Z τ · k i),\n        X (τ, j (inl i), f (inl k)))) y) = 0 ↔ _ := ?_\n      (H · |>.1 ((mul_eq_zero_iff_left (fockPairing_star_self_pos (by simp [-letterMinor])).ne').1\n        (fockPairing_polarisation (r := e ∘ inl) _ _ M _ 0 fun k ↦ .trans ?_ ((H _).2\n        (.trans (by simpa [m] using congr(κ * (ℓ (posBlockEmb j k) $(realPairWeil_stackedDetProd j e\n        hγ η k⁻¹ 1)))) (congr($hκ ⟨(_ : ℂ) • _, by simp [m]⟩).trans ?_))))))",
+   "typed_fact": "M (pairedDetProd (fun τ i k ↦ ((Z τ · k i),\n        X (τ, j (inl i), f (inl k)))) y) = 0 ↔ _",
+   "uses": [
+    {
+     "step": "6"
+    },
+    {
+     "decl": "realPairWeil_stackedDetProd"
+    },
+    {
+     "decl": "fockPairing_polarisation"
+    },
+    {
+     "decl": "fockPairing_star_self_pos"
+    }
+   ]
+  },
+  {
+   "id": "9.2",
+   "parent": "9",
+   "kind": "reduction",
+   "claim": "A polynomial over ℂ is determined by its values (evaluation is injective), so the first component may be replaced by the evaluation of stackedDetProd.",
+   "lines": [
+    105,
+    106
+   ],
+   "lean": "    rw [← (evalₗ ℂ _).leftInverse_apply_of_inj (bot_unique fun _ ↦\n      funext ∘ congrFun) (stackedDetProd ..)]",
+   "uses": [],
+   "ambient_uses": [
+    "MvPolynomial.funext"
+   ]
+  },
+  {
+   "id": "9.3",
+   "parent": "9",
+   "kind": "computation",
+   "claim": "Unfold M and compare the two sides term by term (congr!).",
+   "lines": [
+    107,
+    107
+   ],
+   "lean": "    simp [M]; congr!",
+   "uses": []
+  },
+  {
+   "id": "9.4",
+   "parent": "9",
+   "kind": "computation",
+   "claim": "Expand the determinants and matrix products of the evaluated stacked determinants with η₀ and step 8 (three rounds of simp).",
+   "lines": [
+    108,
+    108
+   ],
+   "lean": "    iterate 3 simp [η, hc, det_apply', mul_apply, ← Algebra.smul_def]",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "step": "8"
+    }
+   ]
+  },
+  {
+   "id": "9.5",
+   "parent": "9",
+   "kind": "fact",
+   "claim": "For every z in the circle, the hypothesis on ℓ' (hx) at x = posBlockEmb j (k·t(z)) with the polynomial Q = (scalar)·matchedPoly f j (τ, i ↦ z⁻²·η τ i·k_τᵀ): the real Weil representation maps v_{Q₀} to v_Q, so ℓ_x(v) = ℓ'(Q).",
+   "lines": [
+    109,
+    111
+   ],
+   "lean": "    have {z} := hx (posBlockEmb j (k * t z)) ((_ : ℂ) • matchedPoly f j fun τ i ↦\n      z⁻¹.1 ^ 2 • η τ i * (k τ).1.1ᵀ) (by\n      simp [Matrix.map, reindex_equiv j]; congr!; simp [η, entrywise, t, mul_comm])",
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "step": "6"
+    }
+   ]
+  },
+  {
+   "id": "9.6",
+   "parent": "9",
+   "kind": "computation",
+   "claim": "Unfold Ω, the invariance, t and the relabelling by e in all hypotheses and the goal.",
+   "lines": [
+    112,
+    112
+   ],
+   "lean": "    simp [Ω, m, t, reindex_equiv e, Matrix.map_smul] at *",
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "step": "2"
+    }
+   ]
+  },
+  {
+   "id": "9.7",
+   "parent": "9",
+   "kind": "computation",
+   "claim": "The remaining identity of scalars and polynomials holds by simp with the hypotheses and field arithmetic.",
+   "lines": [
+    113,
+    113
+   ],
+   "lean": "    simp [*]; field_simp; simp [field]",
+   "uses": [
+    {
+     "step": "9.5"
+    },
+    {
+     "step": "9.6"
+    }
+   ]
+  }
+ ]
+}

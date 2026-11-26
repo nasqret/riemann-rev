@@ -1,0 +1,190 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.TwistedHecke.Counting:210:7",
+ "name": "TwistingData.sum_finrank_deepForms_le",
+ "summary": "A form in V_d is determined by its coefficients at the monomials whose weight (exists_le_weight_of_mem_deepForms) is at least d; summing over d < M counts each monomial at most ⌊weight⌋ + 1 times. Averaging over the rotations b ↦ b − a of the rows, the mean weight of a monomial is bounded through the number of deep variables (N/2 per row), which the size conditions bound by z·m^N.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Exclude k = 0; record P^{max(ℓ, 3r)} = max(P^ℓ, P^{3r}) and unpack big (hk: 2r ≤ k, hy: 1 ≤ h, h2, h3: the last two size conditions).",
+   "lines": [
+    214,
+    215
+   ],
+   "lean": "  obtain ⟨_ | k, _, _, hk, -, hy, _, _, -, -, h2, h3⟩ :=\n    k, (pow_right_mono₀ T.one_lt_P.le).map_sup ℓ (3 * r), big; lia",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "TwistingData.one_lt_P"
+    },
+    {
+     "decl": "HeckeSizes"
+    }
+   ],
+   "ambient_uses": [
+    "pow_right_mono₀"
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "computation",
+   "claim": "In h2 replace h⁻¹ by its upper bound 1 (h ≥ 1).",
+   "lines": [
+    216,
+    216
+   ],
+   "lean": "  grw [← hy, inv_one] at h2",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "dim V_d ≤ #{β : d ≤ ⌊weight(β)⌋}: restricting F ∈ V_d to these β is injective, since a nonzero F ∈ V_d has a nonzero coefficient at some β of weight ≥ d (exists_le_weight_of_mem_deepForms, using 2r ≤ k and 2r < N).",
+   "lines": [
+    218,
+    220
+   ],
+   "lean": "  grw [((LinearMap.funLeft K K Subtype.val).domRestrict _).finrank_le_finrank_of_injective\n    (.of_ker _ fun F e ↦ F.ext (Not.imp_symm (T.exists_le_weight_of_mem_deepForms hk\n    (by norm_cast at *; lia) F.2) fun ⟨β, h, H⟩ ↦ h congr($e ⟨β, lt_succ_of_le (le_floor H)⟩)))]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "decl": "TwistingData.exists_le_weight_of_mem_deepForms"
+    },
+    {
+     "decl": "TwistingData.deepForms"
+    }
+   ],
+   "ambient_uses": [
+    "LinearMap.finrank_le_finrank_of_injective",
+    "Nat.le_floor"
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Exchange the sums: Σ_{d<M} #{β : d ≤ ⌊weight(β)⌋} = Σ_β min(M, ⌊weight(β)⌋ + 1).",
+   "lines": [
+    222,
+    222
+   ],
+   "lean": "  simp [Fintype.card_subtype, ← sum_boole, (range M).sum_comm, ↓← mem_range, weight_eq_sum]",
+   "typed_fact": null,
+   "uses": [],
+   "ambient_uses": [
+    "Finset.sum_comm",
+    "Finset.sum_boole"
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "Bound min(M, ⌊w⌋ + 1) ≤ w + 1, use h3, and replace the sum of weights by its average over the rotations b ↦ b − a of the rows (each rotation permutes the monomials).",
+   "lines": [
+    224,
+    226
+   ],
+   "lean": "  grw [min_le_right, floor_le (by positivity), sum_add_distrib, ← h3, le_expect univ_nonempty\n    fun b ↦ imp_intro ((Equiv.Perm.subtypePerm (equivCongrLeft (.subLeft b)).symm (by\n    simp [↓mem_finsuppAntidiag'])).bijective.comp_left.sum_comp _).ge]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1"
+    }
+   ],
+   "ambient_uses": [
+    "Finset.le_expect",
+    "Equiv.Perm.subtypePerm",
+    "Finset.sum_comp"
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Compute the average: each letter of a monomial has degree n, and each row b is deep for N/2 letters (sum_deepIndicator), with weight 1/P^{2r} or 1/P according as b ≥ 2r or not.",
+   "lines": [
+    227,
+    230
+   ],
+   "lean": "  simp [↓expect_sum_comm, Finset.expect_eq_sum_div_card, ← univ.sum_mul, *, ← univ.mul_sum,\n    exponentOf, field, ↓sum_prod_type, ← cast_sum, sum_deepIndicator, apply_ite, sum_ite,\n    Fin.card_filter_val_lt,\n    ← degree_eq_sum, Monomials.degree_eq, ← translate_apply, sum_translate, div_eq_mul_inv]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "TwistingData.sum_deepIndicator"
+    },
+    {
+     "decl": "exponentOf"
+    },
+    {
+     "decl": "Monomials.degree_eq"
+    }
+   ],
+   "ambient_uses": [
+    "Finset.expect_sum_comm",
+    "Finset.expect_eq_sum_div_card",
+    "Fin.card_filter_val_lt"
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Bound the cardinalities.",
+   "lines": [
+    231,
+    231
+   ],
+   "lean": "  grw [card_finset_fin_le, cast_succ, cast_div_le]",
+   "typed_fact": null,
+   "uses": [],
+   "ambient_uses": [
+    "Finset.card_finset_fin_le",
+    "Nat.cast_div_le"
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Normalise the algebraic expression.",
+   "lines": [
+    232,
+    232
+   ],
+   "lean": "  ring",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Conclude with the size conditions (h3: N·n·(1/P^{2r} + r²/(kP)) ≤ z).",
+   "lines": [
+    233,
+    233
+   ],
+   "lean": "  bound",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1"
+    }
+   ]
+  }
+ ]
+}

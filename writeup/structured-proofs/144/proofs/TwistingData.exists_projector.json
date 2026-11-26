@@ -1,0 +1,585 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.TwistedHecke.ElementaryDivisors:153:7",
+ "name": "TwistingData.exists_projector",
+ "summary": "Average the Frobenius-twisted generic operator over Levi-invariant means: Z(m) applies the tensor product of an N-tuple m of linear forms (exists_tensor_dual) to frobOperator T r ℓ n (frobGenericMatrix). With the mean κ_P (exists_mean, one per letter) and the invariant diagonal form b₀ (exists_invariant_diagonal_form), Z' = Z(−κ_False + κ_True)·diag(b'). Key (step 6): if the tuple m is the conjugate of a tuple l by a Levi element g (m_j = l_j ∘ conjSubst(ι_j, g)) and the coefficient condition H holds — for every row β at which the coefficient of the translate of y is not in w^c·O (the contributing rows; the others are disposed of by `dite` at line 174) and every monomial ν, either the product of the values of l at the letters vanishes or ν satisfies the hypotheses of pow_dvd_coeff_conj_frobOperator (equal row and column indexWeight-weights at every letter j ≠ i, and a gap strictly greater than 2c + 1 at i between the excess of β at i + ℓ and the row weight of ν) — then y·Z(m)F ∈ w^c·O (frobOperator_map, pow_dvd_coeff_conj_frobOperator). Levi invariance of the tuple alone does not give this: evaluation at the identity matrix in every letter is invariant, it sends the generic Frobenius operator to the identity matrix, and then the pairing y·Z(m)F = y·F can be 1. The means κ chosen by exists_mean supply H for the rows needed (their properties h1, h2). Expanding multilinearly over the letters, only the all-κ_True term survives modulo w^c, and it is p^{(k+k²)o₀N·N}·(y·F) by hz; the congruence (ii) is tested on y in the excess condition at θ − (4c + 2).",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Take the multilinear S of exists_tensor_dual (ι = ℤ/N, σ = Fin k × Fin k) with its property hS; record q: (N·n·k(ℓ+2) + n + k + 1)·P^ℓ ≤ P^N (h multiplied by P^ℓ, with ℓ + ℓ = N); and take b₀, the invariant diagonal form of exists_invariant_diagonal_form for σ = Fin k, the prime p and f = o₀N (hb, hx).",
+   "lines": [
+    158,
+    159
+   ],
+   "lean": "  obtain ⟨⟨S, hS⟩, q, b₀, hb, hx⟩ := exists_tensor_dual (ZMod N) (Fin k × Fin k) O, e ▸ Nat.pow_add\n    .. ▸ Nat.mul_le_mul_right _ h, exists_invariant_diagonal_form (Fin k) T.prime hp (T.o₀ * N)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "exists_tensor_dual"
+    },
+    {
+     "decl": "ClassMean.exists_invariant_diagonal_form"
+    },
+    {
+     "decl": "TwistingData"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let b(β) = Π_s b₀(β_s) for families β.",
+   "lines": [
+    160,
+    160
+   ],
+   "lean": "  let b (β : ZMod N → Monomials _ n) := ∏ s, b₀ (β s).1",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Choose b'(β) with b(β)·b'(β) = Π_s p^{k·o₀N} (each b₀(β_s) divides p^{k·o₀N}, as |β_s| = n < q).",
+   "lines": [
+    161,
+    162
+   ],
+   "lean": "  choose b' hb' using fun β ↦ (prod_dvd_prod_of_dvd _ _ fun s _ ↦\n    Dvd.intro_left _ (hb _ (by grind [Monomials.degree_eq])).symm : b β ∣ _)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "step": "2"
+    },
+    {
+     "decl": "Monomials.degree_eq"
+    }
+   ],
+   "ambient_uses": [
+    "Finset.prod_dvd_prod_of_dvd"
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Claim hν: S(l)(f) = Σ_{ν ∈ support f} f_ν·Π_j l_j(x^{ν_j}) (ν_j = ν.curry j).",
+   "lines": [
+    163,
+    164
+   ],
+   "lean": "  have hν l f : S l f = ∑ ν ∈ f.support, f.coeff ν * ∏ j, l j (monomial (ν.curry j) 1) :=\n    (congrArg _ f.as_sum).trans (by simp [← hS, monomial_eq, C_mul'])",
+   "typed_fact": "S l f = ∑ ν ∈ f.support, f.coeff ν * ∏ j, l j (monomial (ν.curry j) 1)",
+   "uses": [
+    {
+     "step": "1"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let Z(m) be the matrix obtained by applying the linear form S(m) entrywise to frobOperator T r ℓ n (frobGenericMatrix T) (a multilinear map in the tuple m).",
+   "lines": [
+    165,
+    166
+   ],
+   "lean": "  let Z := ((LinearMap.mapMatrixLinear O).flip\n    (T.frobOperator r ℓ n T.frobGenericMatrix)).compMultilinearMap S",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "decl": "TwistingData.frobOperator"
+    },
+    {
+     "decl": "TwistingData.frobGenericMatrix"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Claim key: for a letter i, tuples m, l of linear forms with m_j = l_j ∘ conjSubst(ι_j, g) for g in the Levi subgroup (hg, e), and H (for all β and ν: a product of values vanishes, or the hypotheses e, g of pow_dvd_coeff_conj_frobOperator hold): y·(Z(m)·F) ∈ w^c·O for all y, F.",
+   "lines": [
+    167,
+    178
+   ],
+   "lean": "  have key i {m} (l : type_of% m) {g y F} (hg : g ∈ _) (e : ∀ j f, m j f = l j (conjSubst (T.ι j) g\n    f)) (H : ∀ β _ ν, univ.prod _ = (0 : O) ∨ _) : y ⬝ᵥ Z m *ᵥ F ∈ span {T.w ^ c} := (by\n    rw [(congr(.map _ $(show _ = _ ∘ₗ (aeval _).toLinearMap by\n      ext; simp [single_eq_monomial, hν m, e]\n      simp [← hS, monomial_eq])) : Z _ = .map (.map ((T.map C).frobOperator _ _ _ _) (eval₂Hom C\n      fun (j, v) ↦ rename (j, ·) (conjSubst (T.ι j) g (X v)))) (S l)), frobOperator_map _ _ hg]\n    simp_rw [letterRep_map, map_C_mul_mul_C, ← mulVec_mulVec, dotProduct_mulVec y, funext (hν l)]\n    exact sum_mem fun β _ ↦ dite _ (mul_mem_right _ _) fun q ↦ mem_span_singleton.2 (.mul_left\n      (dvd_sum fun _ _ ↦ .mul_right (dvd_sum fun ν _ ↦ (H β q ν).elim (· ▸ by simp) (And.elim\n      (T.pow_dvd_coeff_conj_frobOperator ha i (by lia) (by lia) g (by simp [letterConj, conjSubst,\n      linSubst, ← C_mul', map, map_mul,\n      mul_apply, mul_assoc, mul_comm (X _)])) · |>.mul_right _)) _) _))",
+   "head_lines": [
+    167,
+    168
+   ],
+   "typed_fact": "y ⬝ᵥ Z m *ᵥ F ∈ span {T.w ^ c}",
+   "uses": []
+  },
+  {
+   "id": "6.1",
+   "parent": "6",
+   "kind": "computation",
+   "claim": "Rewrite Z(m) as S(l) applied entrywise to frobOperator of T over O[x] evaluated at the conjugated generic matrices, and apply frobOperator_map (conjugation by the Levi element).",
+   "lines": [
+    169,
+    172
+   ],
+   "lean": "    rw [(congr(.map _ $(show _ = _ ∘ₗ (aeval _).toLinearMap by\n      ext; simp [single_eq_monomial, hν m, e]\n      simp [← hS, monomial_eq])) : Z _ = .map (.map ((T.map C).frobOperator _ _ _ _) (eval₂Hom C\n      fun (j, v) ↦ rename (j, ·) (conjSubst (T.ι j) g (X v)))) (S l)), frobOperator_map _ _ hg]",
+   "head_lines": [
+    169,
+    169
+   ],
+   "head_span": [
+    169,
+    5,
+    169,
+    25
+   ],
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "step": "5"
+    },
+    {
+     "decl": "TwistingData.frobOperator_map"
+    },
+    {
+     "decl": "TwistingData.map"
+    }
+   ]
+  },
+  {
+   "id": "6.1.1",
+   "parent": "6.1",
+   "kind": "fact",
+   "claim": "S(m) = S(l) ∘ (the substitution x_{(j,v)} ↦ conjSubst(ι_j, g)(x_v) in the variables of letter j), checked on monomials with hν and e.",
+   "lines": [
+    169,
+    172
+   ],
+   "span": [
+    169,
+    25,
+    172,
+    96
+   ],
+   "lean": "show _ = _ ∘ₗ (aeval _).toLinearMap by\n      ext; simp [single_eq_monomial, hν m, e]\n      simp [← hS, monomial_eq])) : Z _ = .map (.map ((T.map C).frobOperator _ _ _ _) (eval₂Hom C\n      fun (j, v) ↦ rename (j, ·) (conjSubst (T.ι j) g (X v)))) (S l)), frobOperator_map _ _ hg]",
+   "typed_fact": "_ = _ ∘ₗ (aeval _).toLinearMap",
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "decl": "ClassMean.conjSubst"
+    }
+   ]
+  },
+  {
+   "id": "6.2",
+   "parent": "6",
+   "kind": "computation",
+   "claim": "Pull the constant conjugating matrices out (letterRep_map, map_C_mul_mul_C) and expand with hν.",
+   "lines": [
+    173,
+    173
+   ],
+   "lean": "    simp_rw [letterRep_map, map_C_mul_mul_C, ← mulVec_mulVec, dotProduct_mulVec y, funext (hν l)]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "decl": "TwistingData.letterRep_map"
+    },
+    {
+     "decl": "ClassMean.map_C_mul_mul_C"
+    }
+   ]
+  },
+  {
+   "id": "6.3",
+   "parent": "6",
+   "kind": "deduction",
+   "claim": "Each term is divisible by w^c: either its product of values vanishes (H) or w^c divides the coefficient of the frobOperator entry (pow_dvd_coeff_conj_frobOperator at the letter i, with ha, ℓ ≤ N, N·n·k(ℓ+2) ≤ P^ℓ, and the conjugated generic matrices matching hψ).",
+   "lines": [
+    174,
+    178
+   ],
+   "lean": "    exact sum_mem fun β _ ↦ dite _ (mul_mem_right _ _) fun q ↦ mem_span_singleton.2 (.mul_left\n      (dvd_sum fun _ _ ↦ .mul_right (dvd_sum fun ν _ ↦ (H β q ν).elim (· ▸ by simp) (And.elim\n      (T.pow_dvd_coeff_conj_frobOperator ha i (by lia) (by lia) g (by simp [letterConj, conjSubst,\n      linSubst, ← C_mul', map, map_mul,\n      mul_apply, mul_assoc, mul_comm (X _)])) · |>.mul_right _)) _) _))",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "TwistingData.pow_dvd_coeff_conj_frobOperator"
+    },
+    {
+     "decl": "TwistingData.letterConj"
+    },
+    {
+     "decl": "ClassMean.conjSubst"
+    },
+    {
+     "decl": "linSubst"
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "setup",
+   "claim": "For every proposition P and letter j choose the mean κ(P, j) of exists_mean (τ = twoBlock k r, ι = ι_j, the prime p, f = o₀N, D = N·n·k·(ℓ+2)·P^ℓ, weights indexWeight T ℓ a r, property P ∨ θ − (2c+1) < ·) with its properties h0 (invariance), h2 (unequal weights give 0), h1 (values), h3 (span).",
+   "lines": [
+    179,
+    181
+   ],
+   "lean": "  choose κ h0 h2 h1 h3 using fun P j ↦ exists_mean (twoBlock k r) (T.ι j) T.prime hp (T.o₀ * N)\n    (by grind) (D := N * (n * (k * ((ℓ + 2) * T.P ^ ℓ)))) (by grind [card_residueField])\n    (T.indexWeight ℓ a r) (P ∨ θ - (2 * c + 1) < ·)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "ClassMean.exists_mean"
+    },
+    {
+     "decl": "twoBlock"
+    },
+    {
+     "decl": "TwistingData.indexWeight"
+    },
+    {
+     "decl": "TwistingData"
+    }
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "witness",
+   "claim": "Take b and Z' = Z(−κ_False + κ_True)·diag(b'). (i): for F, g in the Levi subgroup and β with excess > θ at the letter i, key at the letter i − ℓ for the invariant tuple −κ_False + κ_True (h0) gives the divisibility, its hypothesis H coming from h1 and h2. (ii) and (iii) remain.",
+   "lines": [
+    182,
+    185
+   ],
+   "lean": "  use b, Z (-κ False + κ True) * diagonal b', fun F g hg β ⟨i, hi⟩ ↦ mulVec_mulVec F (Z _) _ ▸\n    key (i - ℓ) (-κ False + κ True) hg (by simp [h0 _ _ g hg]) (by\n    simp [one_apply]\n    clear * - h1 h2 hi; grind [zero_mem]), fun y hy F ↦ ?_, ?ρ",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "step": "3"
+    },
+    {
+     "step": "6"
+    },
+    {
+     "step": "7"
+    }
+   ]
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Use (iii) (proved last) as a hypothesis.",
+   "lines": [
+    186,
+    186
+   ],
+   "lean": "  have := ?ρ",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let Y(m) = (b·y)·(Z(m)·(b'·F)), a multilinear form in m.",
+   "lines": [
+    187,
+    187
+   ],
+   "lean": "  let Y := (dotProductBilin O O (b * y) ∘ₗ toLin'.1.flip (b' * F)).compMultilinearMap Z",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "5"
+    }
+   ]
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Claim hz: Z(κ_True) = (a constant)·(frobOperator evaluated at the identity matrix).",
+   "lines": [
+    188,
+    194
+   ],
+   "lean": "  have hz : Z (κ True) = (_ :\n    O) • (T.frobOperator r ℓ n T.frobGenericMatrix).map\n      (eval (vec (1 : Matrix (Fin k) (Fin k) O) ·.2)) :=\n    ext fun _ _ ↦ by\n    simp [Z, hν, eval_eq']; congr! 1\n    simp [h1, T.degree_le_of_coeff_frobOperator (mem_support_iff.1 ‹_›), eval_monomial]\n    rw [mul_left_comm]",
+   "head_lines": [
+    188,
+    190
+   ],
+   "typed_fact": "Z (κ True) = (_ :\n    O) • (T.frobOperator r ℓ n T.frobGenericMatrix).map\n      (eval (vec (1 : Matrix (Fin k) (Fin k) O) ·.2))",
+   "uses": []
+  },
+  {
+   "id": "11.1",
+   "parent": "11",
+   "kind": "computation",
+   "claim": "Entrywise, expand Z with hν and evaluation at the identity.",
+   "lines": [
+    191,
+    192
+   ],
+   "lean": "    ext fun _ _ ↦ by\n    simp [Z, hν, eval_eq']; congr! 1",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "step": "5"
+    }
+   ]
+  },
+  {
+   "id": "11.2",
+   "parent": "11",
+   "kind": "deduction",
+   "claim": "κ_True takes the value p^{k²f}·(value at 1) on every monomial occurring, as all have degree ≤ D (degree_le_of_coeff_frobOperator) (h1).",
+   "lines": [
+    193,
+    193
+   ],
+   "lean": "    simp [h1, T.degree_le_of_coeff_frobOperator (mem_support_iff.1 ‹_›), eval_monomial]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "7"
+    },
+    {
+     "decl": "TwistingData.degree_le_of_coeff_frobOperator"
+    }
+   ]
+  },
+  {
+   "id": "11.3",
+   "parent": "11",
+   "kind": "computation",
+   "claim": "Reorder the product.",
+   "lines": [
+    194,
+    194
+   ],
+   "lean": "    rw [mul_left_comm]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "computation",
+   "claim": "At the identity frobOperator is the identity matrix (frobOperator_map with h = 1), so Z(κ_True) = p^{…}·1; simplify hb' accordingly.",
+   "lines": [
+    195,
+    196
+   ],
+   "lean": "  simp [↓T.frobOperator_map _ (one_mem _), frobOperator, one_apply,\n    T.prime.ne_zero, ite_apply, ← diagonal.eq_1, @eq_comm (Fin k)] at hz hb'",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "11"
+    },
+    {
+     "decl": "TwistingData.frobOperator_map"
+    },
+    {
+     "decl": "TwistingData.frobOperator"
+    }
+   ]
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "(ii): expand Y(−κ_False + κ_True) multilinearly over the subsets of letters (map_add_univ); the term with κ_True at every letter is p^{(k+k²)o₀N·N}·(y·F); it suffices that every other term lies in w^c·O, by induction on the set of letters carrying −κ_False.",
+   "lines": [
+    197,
+    199
+   ],
+   "lean": "  convert (mem_span_singleton.1 (sum_mem (Finset.induction (by simp) fun s t _ _ _ ↦ ?_))).trans\n    (sub_eq_of_eq_add' ((Y.map_add_univ (-κ False) (κ True)).trans\n    (sum_eq_add_sum_compl ∅ _))).symm.dvd",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "10"
+    }
+   ],
+   "ambient_uses": [
+    "MultilinearMap.map_add_univ",
+    "Finset.induction"
+   ]
+  },
+  {
+   "id": "14",
+   "parent": null,
+   "kind": "computation",
+   "claim": "The main term, by hz and hb'; and the base case.",
+   "lines": [
+    200,
+    200
+   ],
+   "lean": "  simp [Y]; ac_rfl; simp [Y, hz, add_mul]; grind",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "10"
+    },
+    {
+     "step": "12"
+    }
+   ]
+  },
+  {
+   "id": "15",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Induction step: insert the letter s.",
+   "lines": [
+    201,
+    201
+   ],
+   "lean": "  rw [piecewise_insert]",
+   "typed_fact": null,
+   "uses": [],
+   "ambient_uses": [
+    "Finset.piecewise_insert"
+   ]
+  },
+  {
+   "id": "16",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "κ_False at s lies in the span of the forms l∘conjSubst(u) (u in the Levi subgroup, l vanishing where the property fails) (h3); so it suffices that key applies to each generator (with the tuple updated at s).",
+   "lines": [
+    202,
+    203
+   ],
+   "lean": "  refine neg_mem (Submodule.mem_span.1 (h3 _ s) (.comap (Y.toLinearMap _ s) (span _)) fun\n    | _, ⟨u, h, γ, e, rfl⟩ => And.elim (key s (update (t.piecewise (-κ False) (κ True)) s γ) h) ?_)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "6"
+    },
+    {
+     "step": "7"
+    }
+   ],
+   "ambient_uses": [
+    "Submodule.mem_span",
+    "Submodule.neg_mem"
+   ]
+  },
+  {
+   "id": "17",
+   "parent": null,
+   "kind": "fact",
+   "claim": "z: for every β, b(β)·(the translate of y by transposeGL(u⁻¹)) lies in w^c·O at β, by hy (u⁻¹ is in the Levi subgroup) for excess > θ − (4c+2).",
+   "lines": [
+    204,
+    205
+   ],
+   "lean": "  have z β := (mul_mem_left _ (b β) <|\n    hy (transposeGL u⁻¹) (swap (inv_mem h · · ·.symm)) β ⟨s + ℓ, ·⟩)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "decl": "transposeGL"
+    }
+   ]
+  },
+  {
+   "id": "18",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Combine z with (iii), h0 and h2 to verify H for key.",
+   "lines": [
+    206,
+    206
+   ],
+   "lean": "  simp [update, piecewise, DFunLike.ite_apply] at z ⊢; clear * - z e h0 h2 h this; grind",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "9"
+    },
+    {
+     "step": "17"
+    },
+    {
+     "step": "7"
+    }
+   ]
+  },
+  {
+   "id": "19",
+   "parent": null,
+   "kind": "computation",
+   "claim": "(iii): unfold ρ = ⊗_s Sym^n(g_s) and b = Π_s b₀; it suffices letter by letter.",
+   "lines": [
+    207,
+    207
+   ],
+   "lean": "  simp [letterRep, kroneckerPi, b, ← prod_mul_distrib]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "decl": "TwistingData.letterRep"
+    },
+    {
+     "decl": "kroneckerPi"
+    }
+   ]
+  },
+  {
+   "id": "20",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Letter by letter this is the transposition identity of b₀ (hx), letterMatrix of γᵀ being the transpose of that of γ.",
+   "lines": [
+    208,
+    208
+   ],
+   "lean": "  congr! 1; erw [mul_comm, letterMatrix]; bound",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "decl": "TwistingData.letterMatrix"
+    }
+   ]
+  }
+ ]
+}

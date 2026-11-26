@@ -1,0 +1,279 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Filling.FixedLines:40:7",
+ "summary": "If o is nothing, Z = K_T works with equality. If o = w, let H be the subgroup of K = latStabilizer(S) of the k whose reduction lies in vectorFixer(S, w, d_w), and Z = toPlaces(H). Its index in K_T is the index of the stabiliser of a nonzero vector in GL_{2ϱ+k+1}(𝔽_w), q₀^{2ϱ+k+1} − 1 ≥ b(S)^{9(t+1)} (t = k − 10¹⁰n⁴); with the bottom value ϰ(Z) ≤ 𝖬(Z)𝖬(K(g))(𝖬(Z) + vol(R∖R^×)^{t+1}2^{−n}), vol(R∖R^×) ≤ b⁻⁹ (T ⊆ {w, w̄}), 2^{−n} ≤ 𝖬(K_T) and ϰ(K_T) ≥ ∫_{K(g)} = 𝖬(K_T)²𝖬(K(g)), the inequality follows.",
+ "intro_lines": [
+  [
+   43,
+   45
+  ]
+ ],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "p = toPlaces(S, T) restricted to K = latStabilizer(S): a homomorphism K → U(J_T).",
+   "lines": [
+    46,
+    46
+   ],
+   "lean": "  let p := (S.toPlaces T).comp S.latStabilizer.subtype"
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "range(p) = K_T = unitaryLevel(R, 1, J_T): y ∈ U(J_T) lies in the image iff y is integral, by exists_toPlaces_eq (y = toPlaces(x) with x integral outside T) and mem_latStabilizer_iff (x ∈ K iff x is integral outside T and toPlaces(x) is integral); aesop assembles the two directions.",
+   "lines": [
+    47,
+    48
+   ],
+   "lean": "  have r : p.range = unitaryLevel R 1 _ :=\n    ext (exists_toPlaces_eq · |>.elim (by simp [p, mem_latStabilizer_iff (T := T)]; aesop))",
+   "uses": [
+    {
+     "decl": "Filling.exists_toPlaces_eq"
+    },
+    {
+     "decl": "Filling.mem_latStabilizer_iff"
+    }
+   ],
+   "typed_fact": "p.range = unitaryLevel R 1 _"
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Case split on o.",
+   "lines": [
+    49,
+    49
+   ],
+   "lean": "  obtain _ | ⟨w, m⟩ := o"
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "case",
+   "claim": "o = nothing: take Z = K_T (K(g)_T ≤ K_T by unitaryLevel_le_unitaryLevel_one, and K_T ≤ K_T); toPlaces(k) ∈ range(p) = K_T for every k ∈ K, and with c_o = 1 the inequality reads ϰ(K_T)𝖬(K_T) ≤ ϰ(K_T)𝖬(K_T).",
+   "lines": [
+    50,
+    50
+   ],
+   "lean": "  use ⟨_, unitaryLevel_le_unitaryLevel_one, le_rfl⟩; simp [← r, p]"
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "case",
+   "claim": "o = w (w ∈ Sg, m : w ∈ Sg). Record the size facts c: 10¹⁰n⁴ ≤ n⁶, 3n⁶ + 12 ≤ n⁷, n⁷ ≤ k (pow_chain), o: 1 ≤ b(S), and B: 2 ≤ b(S)⁹ and vol(R∖R^×) ≤ b(S)⁻⁹ — the latter from volume_nonunits_le, since by f every place of T is w or w̄ (aesop_cat).",
+   "lines": [
+    51,
+    81
+   ],
+   "lean": "  obtain ⟨c, o, B⟩ := S.pow_chain, S.one_le_b, S.volume_nonunits_le (by aesop_cat : T ⊆ _)\n  let H := (vectorFixer w (d w)).comap S.reduction\n  have z r := by simpa [-reduceAt_eq_zero, ← mul_smul_comm, idem_mul_mem_Ô, reduceAboveG] using\n    ((S.inv_gIdele_smul_mem_iff (⟨_, idem_mem_Ô {w.1}⟩ * r)).1 · (⟨0, w⟩, false))\n  have q : F.congGroup.comap p ≤ H :=\n    fun k e ↦ by simp [H, vectorFixer, show S.reduction k .. = 1 from intGL.map_eq_one.2 fun i j ↦\n    z _ (by simpa [h.g_eq, apply_ite, ite_apply] using! e.2 i j ⟨w, by_contra\n    fun _ ↦ by simpa [Units.smul_def, (mem_integralOff _).1 hT w (by aesop)] using z 1⟩ ⟨⟩)]\n  let Z : F.IntermediateGroup := ⟨H.map p, by grw [← q,\n    map_comap_eq_self (r ▸ unitaryLevel_le_unitaryLevel_one)], r ▸ H.map_le_range _⟩\n  use Z, (⟨·, ·.1 w m, rfl⟩)\n  intro K\n  -- Z and the non-units are rare, so the form is small against that of K\n  nth_grw 1 [Option.elim, pow_le_pow_right₀ o (?_ : _ ≤ 9 * _), pow_mul, ofReal_pow (by bound),\n  h.floorZeroForm_le_main_term Z (𝔰.k - 10 ^ 10 * 𝔰.n ^ 4) (by omega), B.2,\n    h.inv_two_pow_le_groupMeasure B, mul_right_comm, mul_assoc _ (_ + _),\n    (?_ : (_ + _) * _ ≤ F.groupMeasure K), Level.floorZeroForm, ← setLIntegral_le_lintegral,\n    h.floorZeroForm_on_congGroup ⟨K, unitaryLevel_le_unitaryLevel_one, le_rfl⟩]\n  ring; rfl\n  grw [← ENNReal.mul_le_mul_iff_left two_ne_zero (by simp), mul_two (F.groupMeasure K), B.1,\n    mul_assoc, ← pow_succ, add_mul, mul_comm, (?_ : _ * _ ≤ F.groupMeasure K), mul_right_comm,\n    ← mul_pow, ENNReal.inv_mul_le_one, one_pow, one_mul]\n  grw [← relIndex_mul_measure_inf unitaryLevel_open_compact.2 Z.isOpen, inf_of_le_left Z.2.2, ← (r ▸\n    index_comap _ p :), comap_map_eq_self (q.trans' (p.ker_le_comap _)), index_comap_of_surjective _\n    IsAdmissible.reduction_surjective, vectorFixer, index_comap_of_surjective _ fun g ↦ ⟨mulSingle 0\n    (mulSingle w ((S.idOrInvAdjoint (d w).1).symm g)), by simp⟩, index_stabilizer_GL_vector\n    (by simpa using (inclMatrix_mulVecLin_injective ⟨_, besselFrame_injective⟩ _).ne (d w).2.2),\n    card_resField_eq_levelPrime, Nat.le_succ 9, le_levelPrime]; gcongr\n  exact_mod_cast\n    (pow_lt_pow_right₀ (S.levelPrime_prime 0).1.one_lt (by simp; clear * - c; lia)).le_pred\n  omega",
+   "head_lines": [
+    51,
+    51
+   ],
+   "uses": [
+    {
+     "decl": "Filling.volume_nonunits_le"
+    }
+   ]
+  },
+  {
+   "id": "5.1",
+   "parent": "5",
+   "kind": "deduction",
+   "claim": "H = reduction(S)⁻¹(vectorFixer(S, w, d_w)): the k ∈ K whose reduction at w (or its inverse adjoint, by the flag of d_w) fixes the nonzero frame vector with coordinates v_w.",
+   "lines": [
+    52,
+    52
+   ],
+   "lean": "  let H := (vectorFixer w (d w)).comap S.reduction"
+  },
+  {
+   "id": "5.2",
+   "parent": "5",
+   "kind": "deduction",
+   "claim": "z: for every integral adele r, if g(S)⁻¹·(1_w r) is integral (1_w the idempotent of the place w) then r reduces to 0 at w — the case x = (0, w) of inv_gIdele_smul_mem_iff.",
+   "lines": [
+    53,
+    54
+   ],
+   "lean": "  have z r := by simpa [-reduceAt_eq_zero, ← mul_smul_comm, idem_mul_mem_Ô, reduceAboveG] using\n    ((S.inv_gIdele_smul_mem_iff (⟨_, idem_mem_Ô {w.1}⟩ * r)).1 · (⟨0, w⟩, false))",
+   "uses": [
+    {
+     "decl": "Filling.inv_gIdele_smul_mem_iff"
+    }
+   ]
+  },
+  {
+   "id": "5.3",
+   "parent": "5",
+   "kind": "deduction",
+   "claim": "q: p⁻¹(K(g)_T) ≤ H. Let k ∈ K with toPlaces(k) ∈ congGroup(F) = unitaryLevel(R, F.g, J_T), F.g = g(S) at T (h.g_eq).",
+   "lines": [
+    55,
+    58
+   ],
+   "lean": "  have q : F.congGroup.comap p ≤ H :=\n    fun k e ↦ by simp [H, vectorFixer, show S.reduction k .. = 1 from intGL.map_eq_one.2 fun i j ↦\n    z _ (by simpa [h.g_eq, apply_ite, ite_apply] using! e.2 i j ⟨w, by_contra\n    fun _ ↦ by simpa [Units.smul_def, (mem_integralOff _).1 hT w (by aesop)] using z 1⟩ ⟨⟩)]",
+   "head_span": [
+    55,
+    3,
+    56,
+    39
+   ],
+   "head_lines": [
+    55,
+    56
+   ],
+   "typed_fact": "F.congGroup.comap p ≤ H"
+  },
+  {
+   "id": "5.3.1",
+   "parent": "5.3",
+   "kind": "deduction",
+   "claim": "The reduction of k at the chosen place w is 1: each entry of g(S)⁻¹(k − 1) is integral at the places of T, and w ∈ T (if w ∉ T then w ∉ T₀ by f, g(S)⁻¹ is integral at w by hT, and z with r = 1 would give 1 ≡ 0 mod w); so by z every entry of k − 1 reduces to 0 at w. Hence the reduction fixes every vector and k ∈ H.",
+   "lines": [
+    56,
+    58
+   ],
+   "span": [
+    56,
+    40,
+    58,
+    93
+   ],
+   "lean": "show S.reduction k .. = 1 from intGL.map_eq_one.2 fun i j ↦\n    z _ (by simpa [h.g_eq, apply_ite, ite_apply] using! e.2 i j ⟨w, by_contra\n    fun _ ↦ by simpa [Units.smul_def, (mem_integralOff _).1 hT w (by aesop)] using z 1⟩ ⟨⟩)]",
+   "uses": [
+    {
+     "decl": "Filling.IsFillingLevel"
+    }
+   ],
+   "typed_fact": "S.reduction k .. = 1"
+  },
+  {
+   "id": "5.4",
+   "parent": "5",
+   "kind": "deduction",
+   "claim": "Z = p(H) is an intermediate group: K(g)_T = p(p⁻¹(K(g)_T)) ≤ p(H) (as K(g)_T ≤ K_T = range p, and by q), and p(H) ≤ range p = K_T.",
+   "lines": [
+    59,
+    60
+   ],
+   "lean": "  let Z : F.IntermediateGroup := ⟨H.map p, by grw [← q,\n    map_comap_eq_self (r ▸ unitaryLevel_le_unitaryLevel_one)], r ▸ H.map_le_range _⟩"
+  },
+  {
+   "id": "5.5",
+   "parent": "5",
+   "kind": "deduction",
+   "claim": "Containment (i): if reduction(k) ∈ fixingSet(S, Sg, d) then, as w ∈ Sg, reduction(k) ∈ vectorFixer(S, w, d_w), so k ∈ H and toPlaces(k) = p(k) ∈ Z.",
+   "lines": [
+    61,
+    61
+   ],
+   "lean": "  use Z, (⟨·, ·.1 w m, rfl⟩)"
+  },
+  {
+   "id": "5.6",
+   "parent": "5",
+   "kind": "deduction",
+   "claim": "For (ii), introduce K_T (the let of the statement).",
+   "lines": [
+    62,
+    63
+   ],
+   "lean": "  intro K\n  -- Z and the non-units are rare, so the form is small against that of K"
+  },
+  {
+   "id": "5.7",
+   "parent": "5",
+   "kind": "deduction",
+   "claim": "Bound the left side ϰ(Z)·𝖬(K_T)·b(S)^{6k}: b^{6k} ≤ (b⁹)^t with t = k − 10¹⁰n⁴ (1 ≤ b; the exponent inequality 6k ≤ 9t is a side goal, closed in step 5.12); ϰ(Z) ≤ 𝖬(Z)𝖬(K(g))(𝖬(Z) + vol(R∖R^×)^{t+1}2^{−n}) (floorZeroForm_le_main_term with this t; t + 10¹⁰n⁴ ≤ k by omega); vol(R∖R^×) ≤ (b⁹)⁻¹ (B.2); 2^{−n} ≤ 𝖬(K_T) (inv_two_pow_le_groupMeasure with B); then the factor (𝖬(Z) + (b⁹)^{−(t+1)}𝖬(K_T))·(b⁹)^t is replaced by the larger 𝖬(K_T) (a side goal, steps 5.9–5.11). On the right, ϰ(K_T) ≥ its integral over K(g) (setLIntegral_le_lintegral) = 𝖬(K_T)²𝖬(K(g)) (floorZeroForm_on_congGroup with Z = K_T).",
+   "lines": [
+    64,
+    68
+   ],
+   "lean": "  nth_grw 1 [Option.elim, pow_le_pow_right₀ o (?_ : _ ≤ 9 * _), pow_mul, ofReal_pow (by bound),\n  h.floorZeroForm_le_main_term Z (𝔰.k - 10 ^ 10 * 𝔰.n ^ 4) (by omega), B.2,\n    h.inv_two_pow_le_groupMeasure B, mul_right_comm, mul_assoc _ (_ + _),\n    (?_ : (_ + _) * _ ≤ F.groupMeasure K), Level.floorZeroForm, ← setLIntegral_le_lintegral,\n    h.floorZeroForm_on_congGroup ⟨K, unitaryLevel_le_unitaryLevel_one, le_rfl⟩]",
+   "uses": [
+    {
+     "decl": "IntegralPlace.IsStdLevel.floorZeroForm_le_main_term"
+    },
+    {
+     "decl": "IntegralPlace.IsStdLevel.inv_two_pow_le_groupMeasure"
+    },
+    {
+     "decl": "IntegralPlace.IsStdLevel.floorZeroForm_on_congGroup"
+    }
+   ]
+  },
+  {
+   "id": "5.8",
+   "parent": "5",
+   "kind": "deduction",
+   "claim": "What remains, 𝖬(Z)𝖬(K(g))·𝖬(K_T)·𝖬(K_T) ≤ 𝖬(K_T)²𝖬(K(g))·𝖬(Z), is an equality of monomials (ring).",
+   "lines": [
+    69,
+    69
+   ],
+   "lean": "  ring; rfl"
+  },
+  {
+   "id": "5.9",
+   "parent": "5",
+   "kind": "deduction",
+   "claim": "The side goal (𝖬(Z) + (b⁹)^{−(t+1)}𝖬(K_T))·(b⁹)^t ≤ 𝖬(K_T): multiply by 2 and use 2 ≤ b⁹ (B.1) to get the factor (b⁹)^{t+1}; split the sum: the second term is ((b⁹)⁻¹b⁹)^{t+1}·𝖬(K_T) ≤ 𝖬(K_T) (inv_mul_le_one), and the first, 𝖬(Z)·(b⁹)^{t+1} ≤ 𝖬(K_T), is a new side goal; then 2𝖬(K_T) = 𝖬(K_T) + 𝖬(K_T).",
+   "lines": [
+    70,
+    72
+   ],
+   "lean": "  grw [← ENNReal.mul_le_mul_iff_left two_ne_zero (by simp), mul_two (F.groupMeasure K), B.1,\n    mul_assoc, ← pow_succ, add_mul, mul_comm, (?_ : _ * _ ≤ F.groupMeasure K), mul_right_comm,\n    ← mul_pow, ENNReal.inv_mul_le_one, one_pow, one_mul]"
+  },
+  {
+   "id": "5.10",
+   "parent": "5",
+   "kind": "deduction",
+   "claim": "𝖬(Z)·(b⁹)^{t+1} ≤ 𝖬(K_T): 𝖬(K_T) = [K_T : Z]·𝖬(Z) (Z open in the open compact K_T); [K_T : Z] = [K : p⁻¹(Z)] = [K : H] (p⁻¹(p(H)) = H since ker p ≤ p⁻¹(K(g)_T) ≤ H) = [𝖦 : vectorFixer(S, w, d_w)] (reduction is onto, IsAdmissible) = [GL(𝔽_w) : stabiliser of the frame vector] (the map s ↦ s_w or its inverse adjoint is onto) = q₀(S)^{2ϱ+k+1} − 1 (index_stabilizer_GL_vector; the vector is nonzero because inclusion of the frame is injective and v_w ≠ 0; #𝔽_w = q₀(S)); with b⁹ ≤ b¹⁰ ≤ q₀(S) (le_levelPrime) gcongr leaves q₀^{t+1} ≤ q₀^{2ϱ+k+1} − 1.",
+   "lines": [
+    73,
+    78
+   ],
+   "lean": "  grw [← relIndex_mul_measure_inf unitaryLevel_open_compact.2 Z.isOpen, inf_of_le_left Z.2.2, ← (r ▸\n    index_comap _ p :), comap_map_eq_self (q.trans' (p.ker_le_comap _)), index_comap_of_surjective _\n    IsAdmissible.reduction_surjective, vectorFixer, index_comap_of_surjective _ fun g ↦ ⟨mulSingle 0\n    (mulSingle w ((S.idOrInvAdjoint (d w).1).symm g)), by simp⟩, index_stabilizer_GL_vector\n    (by simpa using (inclMatrix_mulVecLin_injective ⟨_, besselFrame_injective⟩ _).ne (d w).2.2),\n    card_resField_eq_levelPrime, Nat.le_succ 9, le_levelPrime]; gcongr",
+   "uses": [
+    {
+     "decl": "index_stabilizer_GL_vector"
+    },
+    {
+     "decl": "Filling.card_resField_eq_levelPrime"
+    },
+    {
+     "decl": "Filling.IsAdmissible"
+    }
+   ]
+  },
+  {
+   "id": "5.11",
+   "parent": "5",
+   "kind": "deduction",
+   "claim": "q₀^{t+1} < q₀^{2ϱ+k+1} since q₀ > 1 is prime and t + 1 < 2ϱ + k + 1 (lia from pow_chain), so q₀^{t+1} ≤ q₀^{2ϱ+k+1} − 1.",
+   "lines": [
+    79,
+    80
+   ],
+   "lean": "  exact_mod_cast\n    (pow_lt_pow_right₀ (S.levelPrime_prime 0).1.one_lt (by simp; clear * - c; lia)).le_pred"
+  },
+  {
+   "id": "5.12",
+   "parent": "5",
+   "kind": "deduction",
+   "claim": "The exponent side goal 6k ≤ 9(k − 10¹⁰n⁴): from 10¹⁰n⁴ ≤ n⁶ and 3n⁶ + 12 ≤ n⁷ ≤ k we get 3·10¹⁰n⁴ ≤ k (omega).",
+   "lines": [
+    81,
+    81
+   ],
+   "lean": "  omega"
+  }
+ ]
+}

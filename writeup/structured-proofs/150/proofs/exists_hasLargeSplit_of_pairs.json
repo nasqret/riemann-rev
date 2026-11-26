@@ -1,0 +1,352 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Curve.DepthPairs:101:7",
+ "summary": "Write F = Θ(ϖz) = exp(κΨ)·V (normal form at inert p). Differentiating once along the partner variable (−p^{i_σ})σ for each of the y_σ pairs multiplies by |κ| = p^{1−1/(p−1)} and produces an integral series Q whose reduction has lowest term u·z^{∑ y_σ p^{i_σ}e_σ} (u ≠ 0), because ∂Ψ mod 𝔪 has its unit coefficient at z_σ^{p^{i_σ}} and the packing makes that term minimal. Since Q = Q·F·F⁻¹ has a unit coefficient there, some coefficient of F⁻¹ times one of Q·F is ≥ 1; the carrying hypotheses on Θ⁻¹ (5 copies) and Θ (1 copy) give the six-fold split.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "p > 0; ϖ with |ϖ| = p^{−ρ_p} and the normal form J of `thetaProducts_normal_form`.",
+   "lines": [
+    107,
+    107
+   ],
+   "lean": "  obtain ⟨_, ϖ, _, hϖ, -, J⟩ := hp.1.pos, P.thetaProducts_normal_form s l",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Parameters.thetaProducts_normal_form"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "setup",
+   "claim": "t(σ) := ((−p^{i_σ})·σ, ()), the partner variable of σ.",
+   "lines": [
+    108,
+    108
+   ],
+   "lean": "  let t σ := (P.placeOfInt s (-p ^ i σ) * σ, ())",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "setup",
+   "claim": "F := Θ(ϖz).",
+   "lines": [
+    109,
+    109
+   ],
+   "lean": "  let F := Θ.rescale fun _ ↦ ϖ",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "setup",
+   "claim": "τ(s) := ∑_{x∈s} e_{t(x.1)} for a finite set s of pairs (σ, k < y_σ).",
+   "lines": [
+    110,
+    110
+   ],
+   "lean": "  let τ (s : Finset (Σ σ, Fin (y σ))) := ∑ x ∈ s, fun₀ | t x.1 => 1",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "induction",
+   "claim": "Induction over finite sets s of pairs (base s = ∅ with Q = 1, u = 1; the step is proved at the end): there are an integral series Q and u ≠ 0 such that Q mod 𝔪 has lowest term u·z^{∑_{x∈s} p^{i_{x.1}}e_{(x.1,())}} for the weight giving the variables with y = 0 the weight p^{sup i} and the others 1 (`IsLowestTerm`), and (p^{1−1/(p−1)})^{|τ(s)|}·|jet_P(Q·F)| = |jet_{P·z^{τ(s)}}(F)| for every polynomial P. Apply it to the set of all pairs.",
+   "lines": [
+    111,
+    114
+   ],
+   "lean": "  have ⟨Q, _, u, q, g⟩ := @cons_induction _ (fun s ↦ ∃ Q, ∃ u ≠ 0, IsLowestTerm (if y ·.1 = 0 then\n    p ^ iSup i else 1) (.map (residue (valRingCp p)) Q) (∑ x ∈ s, .single (x.1, ()) (p ^ i x.1)) u ∧\n    ∀ P, (p ^ (1 - 1 / (p - 1) : ℝ)) ^ (τ s).degree * ‖jet _ P (seriesToCp Q * F)‖ =\n    ‖jet _ (P * .monomial (τ s) 1) F‖) ⟨1, 1, by simp [IsLowestTerm, τ]⟩ ?_ ⊤",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "fact",
+   "claim": "The coefficient of Q at the lowest-term exponent has norm ≥ 1 (its residue u is a unit).",
+   "lines": [
+    115,
+    116
+   ],
+   "lean": "  have q : _ ≤ ‖(seriesToCp Q).coeff _‖ := (isUnit_integer_iff_norm_eq_one.1\n    ((residue_ne_zero_iff_isUnit _).1 ((q _ le_rfl).trans_ne (by simpa)))).ge",
+   "typed_fact": "_ ≤ ‖(seriesToCp Q).coeff _‖",
+   "uses": [
+    {
+     "step": "5"
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Write Q = F⁻¹·(Q·F) (F(0) = 1 since Θ(0) = 1); expand that coefficient over the antidiagonal and bound the sum by the largest product.",
+   "lines": [
+    117,
+    118
+   ],
+   "lean": "  grw [← mul_one (seriesToCp Q), ← map_mul_eq_one (rescale fun _ ↦ ϖ) (Θ.inv_mul_cancel\n    (by simp [*])), mul_left_comm, coeff_mul, (nonempty_antidiagonal _).norm_sum_le_sup'_norm] at q",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "fact",
+   "claim": "So some γ, β with γ + β = the lowest-term exponent have 1 ≤ |F⁻¹_γ|·|(Q·F)_β|.",
+   "lines": [
+    119,
+    119
+   ],
+   "lean": "  obtain ⟨γ, β, h, le⟩ := by simpa using q",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "witness",
+   "claim": "Take b = γ + β + τ (τ = τ(all pairs)), so τ ≤ b; it remains b ≤ n, the two degree identities, and the split: HasLargeSplit(N, 5, γ, |Θ⁻¹_γ|) (r) times HasLargeSplit(N, 1, β + τ, |Θ_{β+τ}|) (h0) gives a six-fold split of b with product ≥ |Θ⁻¹_γ|·|Θ_{β+τ}|, which must be compared with the bound.",
+   "lines": [
+    120,
+    120
+   ],
+   "lean": "  refine ⟨_, ?A, _, .trans (le_add_left le_add_self) ?A, ?_, ?_, ((r γ).mul (h0 (β + τ ⊤))).mono ?_⟩",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "computation",
+   "claim": "b ≤ n, |b| = ∑ y_σ(p^{i_σ} + 1) and |τ| = ∑ y_σ, by the packing inequality (3).",
+   "lines": [
+    121,
+    122
+   ],
+   "lean": "  iterate 3 simp +zetaDelta [Fintype.sum_sigma, mul_add, -single_mul, le_def, h,\n    single_apply, ← add_assoc, mul_comm, by simpa [sum_filter, mul_comm] using A.2.2]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "fact",
+   "claim": "From step 5 at P = z^β: (p^{1−1/(p−1)})^{|τ|}·|jet_{z^β}(QF)| = |jet_{z^{β+τ}}(F)|.",
+   "lines": [
+    123,
+    123
+   ],
+   "lean": "  have e := (g (.monomial β 1)).le",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "5"
+    }
+   ]
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Express jets by factorials and coefficients, and the coefficients of F, F⁻¹ by those of Θ, Θ⁻¹ times powers of ϖ (|ϖ| = p^{−ρ_p}); norms of factorials by p-adic valuations.",
+   "lines": [
+    124,
+    126
+   ],
+   "lean": "  simp [prod_fintype, ← add_choose_mul_factorial_mul_factorial, field, F, mul_add,\n    norm_natCast_eq_inv_pow_padicValNat,\n    ← cast_sum, rpow_neg, rpow_add, prod_pow_eq_pow_sum, ← degree_eq_sum, rpow_mul, *] at e le ⊢",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "estimate",
+   "claim": "|β!| ≤ 1; combine the two estimates (linear combination of exponents).",
+   "lines": [
+    127,
+    127
+   ],
+   "lean": "  grw [norm_natCast_le_one, prod_const_one, one_mul] at e; grw [le, ← e]; linear_combination",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "14",
+   "parent": null,
+   "kind": "induction",
+   "claim": "The inductive step: adding a pair (σ, k), y_σ > 0, to s.",
+   "lines": [
+    128,
+    146
+   ],
+   "lean": "  rintro ⟨σ, _, e⟩ z m ⟨Q, _, u, q, g⟩\n  obtain ⟨o, κ, Ψ, V, w, Ψ0, H, D⟩ := (A.1 σ e.ne_bot).imp_right ((J 1 le_rfl Θ H).2 · rfl)\n  have k :=\n    w.trans_gt (by apply one_lt_rpow <;> grw [← P.thirteen_le_of_chiK_ne_one hp.1 l] <;> norm_num)\n  have ⟨G, v⟩ := (V.isUnit_iff_constantCoeff.2 (by\n    simpa [h1, Ψ0] using congr(‖coeff 0 $H‖).symm)).dvd (a := V.pderiv (t σ))\n  let R := Ψ.pderiv (t σ) * Q + C ⟨_, norm_inv κ ▸ inv_le_one_of_one_le₀ k.le⟩ *\n    (Q.pderiv (t σ) + Q * G)\n  refine ⟨R, _, mul_ne_zero ((D ..).2 (by use i σ, (σ, ()))) u, ?_, by simp [τ, ← mul_assoc, m, w,\n    MvPolynomial.monomial_single_add, ← g, jet_mul_X, one_add, pow_succ,\n    show (seriesToCp Q * F).pderiv (t σ) = κ • (seriesToCp R * F) by\n    simp [R, F, *, PowerSeries.subst, add_mul, mul_add, ← map_pderiv, ← smul_eq_C_mul,\n      ← PowerSeries.derivative.eq_def, PowerSeries.derivative_exp, ← norm_pos_iff, rpow_pos_of_pos]\n    ring_nf]⟩\n  simp [m, R, (residue_eq_zero_iff _).2, k.ne', map_pderiv]; refine .mul ?_ q\n  simp +contextual [t, IsLowestTerm, coeff_monomial, eq_ite_iff, (D ..).not_right,\n    or_iff_not_imp_left, weight_single, ← pow_add, @forall_comm (_ ≤ _)]\n  clear * - A e; grind [IsFrobPacking, Finite.le_ciSup i σ, pow_le_pow_iff_right₀ hp.1.one_lt,\n    mul_right_inj]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "14.1",
+   "parent": "14",
+   "kind": "setup",
+   "claim": "Introduce the new pair and the data Q, u for s.",
+   "lines": [
+    128,
+    128
+   ],
+   "lean": "  rintro ⟨σ, _, e⟩ z m ⟨Q, _, u, q, g⟩",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "14.2",
+   "parent": "14",
+   "kind": "deduction",
+   "claim": "i_σ is odd and χ_K(p) = −1 (packing (1)); by the normal form for r = 1: κ, Ψ, V with |κ| = p^{1−1/(p−1)}, Ψ(0) = 0, F = exp(κΨ)·V, and the coefficient criterion D for ∂Ψ mod 𝔪.",
+   "lines": [
+    129,
+    129
+   ],
+   "lean": "  obtain ⟨o, κ, Ψ, V, w, Ψ0, H, D⟩ := (A.1 σ e.ne_bot).imp_right ((J 1 le_rfl Θ H).2 · rfl)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1"
+    }
+   ]
+  },
+  {
+   "id": "14.3",
+   "parent": "14",
+   "kind": "fact",
+   "claim": "1 < |κ| (p ≥ 13).",
+   "lines": [
+    130,
+    131
+   ],
+   "lean": "  have k :=\n    w.trans_gt (by apply one_lt_rpow <;> grw [← P.thirteen_le_of_chiK_ne_one hp.1 l] <;> norm_num)",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "14.4",
+   "parent": "14",
+   "kind": "fact",
+   "claim": "V is a unit (|V(0)| = 1 as Θ(0) = 1, Ψ(0) = 0), so ∂_{t(σ)}V = G·V for an integral G.",
+   "lines": [
+    132,
+    133
+   ],
+   "lean": "  have ⟨G, v⟩ := (V.isUnit_iff_constantCoeff.2 (by\n    simpa [h1, Ψ0] using congr(‖coeff 0 $H‖).symm)).dvd (a := V.pderiv (t σ))",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "14.5",
+   "parent": "14",
+   "kind": "setup",
+   "claim": "R := ∂_{t(σ)}Ψ·Q + κ⁻¹·(∂_{t(σ)}Q + Q·G), integral (|κ⁻¹| ≤ 1).",
+   "lines": [
+    134,
+    135
+   ],
+   "lean": "  let R := Ψ.pderiv (t σ) * Q + C ⟨_, norm_inv κ ▸ inv_le_one_of_one_le₀ k.le⟩ *\n    (Q.pderiv (t σ) + Q * G)",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "14.6",
+   "parent": "14",
+   "kind": "witness",
+   "claim": "Take R and u′ = (the unit coefficient of ∂Ψ at z_σ^{p^{i_σ}})·u ≠ 0; the lowest-term property is left; the jet identity for s ∪ {(σ, k)} follows from that for s and the next identity (jets along P·z_{t(σ)} are jets of the derivative), with |κ| = p^{1−1/(p−1)}.",
+   "lines": [
+    136,
+    138
+   ],
+   "span": [
+    136,
+    1,
+    138,
+    5
+   ],
+   "lean": "  refine ⟨R, _, mul_ne_zero ((D ..).2 (by use i σ, (σ, ()))) u, ?_, by simp [τ, ← mul_assoc, m, w,\n    MvPolynomial.monomial_single_add, ← g, jet_mul_X, one_add, pow_succ,\n    ",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "14.7",
+   "parent": "14",
+   "kind": "computation",
+   "claim": "∂_{t(σ)}(Q·F) = κ·(R·F): differentiate F = exp(κΨ)·V.",
+   "lines": [
+    138,
+    141
+   ],
+   "span": [
+    138,
+    5,
+    141,
+    14
+   ],
+   "lean": "show (seriesToCp Q * F).pderiv (t σ) = κ • (seriesToCp R * F) by\n    simp [R, F, *, PowerSeries.subst, add_mul, mul_add, ← map_pderiv, ← smul_eq_C_mul,\n      ← PowerSeries.derivative.eq_def, PowerSeries.derivative_exp, ← norm_pos_iff, rpow_pos_of_pos]\n    ring_nf]⟩",
+   "typed_fact": "(seriesToCp Q * F).pderiv (t σ) = κ • (seriesToCp R * F)",
+   "uses": []
+  },
+  {
+   "id": "14.8",
+   "parent": "14",
+   "kind": "reduction",
+   "claim": "Modulo 𝔪, R ≡ (∂Ψ)·Q (κ⁻¹ ≡ 0); the lowest term of a product is the product of lowest terms, so it suffices that ∂_{t(σ)}Ψ mod 𝔪 has lowest term (unit)·z_σ^{p^{i_σ}}.",
+   "lines": [
+    142,
+    142
+   ],
+   "lean": "  simp [m, R, (residue_eq_zero_iff _).2, k.ne', map_pderiv]; refine .mul ?_ q",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "14.9",
+   "parent": "14",
+   "kind": "computation",
+   "claim": "By D the nonzero coefficients of ∂_{t(σ)}Ψ mod 𝔪 are at z_y^{p^j} with j odd and (−p^j)·y = t(σ); unfold the lowest-term condition.",
+   "lines": [
+    143,
+    144
+   ],
+   "lean": "  simp +contextual [t, IsLowestTerm, coeff_monomial, eq_ite_iff, (D ..).not_right,\n    or_iff_not_imp_left, weight_single, ← pow_add, @forall_comm (_ ≤ _)]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "14.10",
+   "parent": "14",
+   "kind": "estimate",
+   "claim": "Among them z_σ^{p^{i_σ}} has the least weight, and it is the only one of that weight: for j < i_σ the packing (2) excludes partners, and i ≤ sup i.",
+   "lines": [
+    145,
+    146
+   ],
+   "lean": "  clear * - A e; grind [IsFrobPacking, Finite.le_ciSup i σ, pow_le_pow_iff_right₀ hp.1.one_lt,\n    mul_right_inj]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "14.2"
+    }
+   ]
+  }
+ ]
+}

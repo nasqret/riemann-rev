@@ -1,0 +1,590 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Exchange.RealPair:59:7",
+ "name": "exists_stdExchange_top",
+ "summary": "Build x′ from v by `exists_rapid_with_realSlice` with a bump weight around the frame x₀ = (1; 0) of V′ in V′ ⊕ W₁, and x as a section whose slices are, near x₀, the Weil action of a smooth Witt element k(y) (`exists_contDiff_witt`) on v ⊠ v₁; then the period condition of `stdExchange_of_periods` reduces, by the box product and the constancy of the equal-rank theta integral, to l(𝔠) = the value at 1 of thetaLarge(W₁, W₁, 𝔠, v₁, stdColDatum(χ_𝔠, 1)).",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "step",
+   "claim": "|n| = 2j (hj); and det(diag(t′)) ≠ 0 (d).",
+   "lines": [
+    63,
+    63
+   ],
+   "lean": "  obtain ⟨⟨j, hj⟩, d⟩ := id hn, IsHermInvolution.det_ne_zero (signMatrix t')"
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "step",
+   "claim": "Let M = μ read as natural numbers.",
+   "lines": [
+    64,
+    64
+   ],
+   "lean": "  let M := Int.toNat ∘ μ"
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "step",
+   "claim": "Let J = diag(t′ ⊕ s), the form of V′ ⊕ W₁ at the real places, and x₀ = (1; 0), the frame of V′ in V′ ⊕ W₁.",
+   "lines": [
+    65,
+    65
+   ],
+   "lean": "  let J := signMatrix (t' ⊕ᵥ s); let x₀ := @fromRows ℂ b n b 1 0"
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "step",
+   "claim": "x₀*Jx₀ = diag(t′).",
+   "lines": [
+    66,
+    66
+   ],
+   "lean": "  have g₁ : x₀ᴴ * J * x₀ = signMatrix t' := by simp [x₀, J, ← signMatrix_sum]",
+   "typed_fact": "x₀ᴴ * J * x₀ = signMatrix t'",
+   "uses": [
+    {
+     "step": "3"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "step",
+   "claim": "Matrix inversion agrees near diag(t′) with a smooth function γ (eg; `exists_contDiff_eventuallyEq`, the determinant being non-zero); and the smooth local Witt theorem at x₀ (`exists_contDiff_witt`): a smooth k with values in U(J) such that for y near x₀, k(y)·x₀·c = y for some c (N).",
+   "lines": [
+    67,
+    69
+   ],
+   "lean": "  obtain ⟨⟨γ, _, eg⟩, k, _, N⟩ := exists_contDiff_eventuallyEq (f := (·⁻¹)) (x := signMatrix t')\n    (by simp [Matrix.inv_def, funext₂ (adjugate_apply _), det_apply, updateRow_apply,\n    prod_ite] at *; fun_prop), exists_contDiff_witt isHermitian (g₁ ▸ d)",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "step": "4"
+    },
+    {
+     "decl": "exists_contDiff_witt"
+    },
+    {
+     "decl": "exists_contDiff_eventuallyEq"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "step",
+   "claim": "Write S(y) for k(y) as a matrix.",
+   "lines": [
+    70,
+    70
+   ],
+   "lean": "  set S := (k · |>.1.1) with ← hk",
+   "uses": [
+    {
+     "step": "5"
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "step",
+   "claim": "A smooth bump σ ≥ 0 at x₀ (in the coordinates at every infinite place; rσ) with compact support (kσ) inside the neighbourhood where N holds, inversion agrees with γ and det of the Gram matrix is non-zero (sσ) (`exists_contDiff_tsupport_subset`).",
+   "lines": [
+    71,
+    73
+   ],
+   "lean": "  obtain ⟨σ, sσ, kσ, _, rσ, _⟩ := exists_contDiff_tsupport_subset (nhds_pi.le (eventually_pi fun _ :\n    InfinitePlace E ↦ N.and ((by fun_prop : ContinuousAt (_ * _ * ·) _) (g₁ ▸ eg.and\n    (ContinuousAt.eventually_ne (by fun_prop) d)))))",
+   "uses": [
+    {
+     "step": "5"
+    }
+   ],
+   "ambient_uses": [
+    "exists_contDiff_tsupport_subset"
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "step",
+   "claim": "cuL: the real-linear identification of functions of (infinite place, index) with families of b-column matrices (currying).",
+   "lines": [
+    74,
+    75
+   ],
+   "lean": "  let cuL {a} [Fintype a] : _ ≃L[ℝ] InfinitePlace E → Matrix a b ℂ :=\n    (LinearEquiv.curry .. ≪≫ₗ .piCongrRight fun v ↦ .curry ..).toContinuousLinearEquiv"
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "step",
+   "claim": "Let z(x) = x·γ(x*Jx)·(x*Jx₀); then z(x₀) = x₀.",
+   "lines": [
+    76,
+    76
+   ],
+   "lean": "  let z (x : type_of% x₀) := x * (γ (xᴴ * J * x) * (xᴴ * J * x₀))",
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "step": "5"
+    }
+   ]
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "step",
+   "claim": "Let w(y, x)_v = k(y_v)⁻¹·x_v.",
+   "lines": [
+    77,
+    77
+   ],
+   "lean": "  let w (y x : InfinitePlace E → type_of% x₀) v := (k (y v))⁻¹.1.1 * x v",
+   "uses": [
+    {
+     "step": "5"
+    }
+   ]
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "step",
+   "claim": "Where σ(z∘x) ≠ 0, at every infinite place v: x_v = S(z(x_v))·x₀·c for some c with c*·diag(t′)·c = x_v*·J·x_v (from N at z(x_v), the invertibility of γ(…)(x_v*Jx₀), and the invariance of the Gram matrix under U(J), `U.gram_invariant`).",
+   "lines": [
+    78,
+    82
+   ],
+   "lean": "  have P x (h : σ (z ∘ x) ≠ 0) v : ∃ c, S ((z ∘ x) v) * x₀ * c = x v ∧ cᴴ * signMatrix t' * c =\n    (x v)ᴴ * J * x v := have ⟨⟨_, e⟩, _⟩ := sσ (subset_closure h) v\n    (Matrix.mul_assoc ..).symm.trans (congr($e * _).trans (mul_nonsing_inv_cancel_right _ _ (by\n    simp_all [z, gram_mul (x v), -conjTranspose_mul]))) ▸ ⟨_, rfl, by rw [gram_mul _ J,\n      U.gram_invariant, g₁]⟩",
+   "typed_fact": "∃ c, S ((z ∘ x) v) * x₀ * c = x v ∧ cᴴ * signMatrix t' * c =\n    (x v)ᴴ * J * x v",
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "step": "7"
+    },
+    {
+     "step": "9"
+    }
+   ]
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "step",
+   "claim": "`exists_rapid_with_realSlice` for (D, V′) with the weight x ↦ σ(x₀·x)·|∏_w det(x_w)^{j+M(w)}|² (smooth, non-negative, compactly supported, non-zero at x = 1): κ and a rapid Λ′ (r) whose slice at 0 for the opposite splitting is v (e′) and whose slices are weight(x)·κ·realWeil(1, v) (l′).",
+   "lines": [
+    83,
+    87
+   ],
+   "lean": "  have ⟨κ, Λ', r, e', l'⟩ := exists_rapid_with_realSlice D V' ((fun x ↦ σ (x₀ * x ·) * ‖∏ w,\n    (x w).det ^ (j + M w)‖ ^ 2) ∘ cuL) (.mul (by fun_prop) (.norm_sq ℂ\n    (by simp [det_apply]; fun_prop))) hv ((kσ.image_auto\n    (cuL.symm ∘ (x₀ᴴ * · ·))).closure_of_subset fun x h ↦ ⟨_, subset_closure (left_ne_zero_of_mul\n    h), by simp [x₀]⟩) (fun _ ↦ mul_nonneg (rσ ⟨_, rfl⟩).1 (sq_nonneg _)) (cuL.symm 1) (by simp [*])",
+   "uses": [
+    {
+     "step": "7"
+    },
+    {
+     "decl": "exists_rapid_with_realSlice"
+    }
+   ]
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "step",
+   "claim": "Let τ(y, x) = σ(y)·σ(w(y, x))·∏_v det(first block of w(y, x)_v)*^{2M(v)}·κ · ω(1, k∘y)(v ⊠ v₁): the real Weil action of k(y) (weights j − M) on the box product of v and v₁.",
+   "lines": [
+    88,
+    89
+   ],
+   "lean": "  let τ y x := ((σ y * σ (w y x)) • ((∏ v, (w y x v).toRows₁ᴴ.det ^ (M v * 2)) * κ)) • realPairWeil\n    (j - M ·) 0 (1, k ∘ y) (realBoxProd (realSigns_comp_split homSigns_sum_target) v v₁)",
+   "uses": [
+    {
+     "step": "10"
+    },
+    {
+     "step": "12"
+    }
+   ]
+  },
+  {
+   "id": "14",
+   "parent": null,
+   "kind": "block",
+   "claim": "There is a rapid Φ for (X, V′ ⊕ W₁) whose slice at each x (through cuL) is τ(z∘x, x).",
+   "lines": [
+    90,
+    104
+   ],
+   "lean": "  have ⟨Φ, R, l⟩ : ∃ Φ, IsRapidDatum Φ ∧ ∀ x,\n    (isAdapted_homSource D (V'.sum W₁)).mixedModel.slice (cuL.symm x) Φ = τ (z ∘ x) x := by\n    simp [τ, realPairWeil, ← smul_assoc, -real_smul, zpow_sub₀, division_def, inv_eq_conj,\n      reindex_equiv cuL]\n    exact exists_section _ (by\n      simp [w, ↓U.coe_inv IsHermInvolution.mul_self, congrFun hk, det_apply, -real_smul]\n      fun_prop) (((kσ.prod kσ).image_auto (cuL.symm ∘ fun (p, q) v ↦\n      S (p v) * q v)).closure_of_subset\n      fun x h ↦ ⟨(z ∘ cuL x, _), closure_prod_eq.le (subset_closure (mul_ne_zero_iff.1\n      (left_ne_zero_of_smul h))), by simp [S]⟩) (contDiff_pi' fun _ ↦ contDiff_pi' (by\n      simp_intro _ [pairHomInf, blockDiagonal_apply, pairHom, congrFun hk]; split_ifs <;> fun_prop))\n      fun N ↦ mul_ne_top (mul_ne_top (isRapidDatum_vacVector N) (r₁ N)) (hv N) ∘ eq_top_mono (by\n      (repeat refine (weightedNorm_integral_le _).trans (lintegral_weightedNorm_smul_le fun _ ↦\n        (weightedNorm_realHeisOp_le ..).trans ?_); rw\n        [mul_comm]; gcongr) <;> simp [realCoordSum, enorm, pi_nnnorm_le_iff, nnnorm_le_pi_nnnorm])",
+   "head_lines": [
+    90,
+    91
+   ],
+   "typed_fact": "∃ Φ, IsRapidDatum Φ ∧ ∀ x,\n    (isAdapted_homSource D (V'.sum W₁)).mixedModel.slice (cuL.symm x) Φ = τ (z ∘ x) x",
+   "uses": [
+    {
+     "step": "13"
+    }
+   ]
+  },
+  {
+   "id": "14.1",
+   "parent": "14",
+   "kind": "step",
+   "claim": "Unfold τ and the real Weil action into a smooth coefficient times a fixed vector.",
+   "lines": [
+    92,
+    93
+   ],
+   "lean": "    simp [τ, realPairWeil, ← smul_assoc, -real_smul, zpow_sub₀, division_def, inv_eq_conj,\n      reindex_equiv cuL]"
+  },
+  {
+   "id": "14.2",
+   "parent": "14",
+   "kind": "block",
+   "claim": "By the existence of sections (`exists_section`), once the coefficient is smooth and compactly supported and the vector field is rapid:",
+   "lines": [
+    94,
+    104
+   ],
+   "lean": "    exact exists_section _ (by\n      simp [w, ↓U.coe_inv IsHermInvolution.mul_self, congrFun hk, det_apply, -real_smul]\n      fun_prop) (((kσ.prod kσ).image_auto (cuL.symm ∘ fun (p, q) v ↦\n      S (p v) * q v)).closure_of_subset\n      fun x h ↦ ⟨(z ∘ cuL x, _), closure_prod_eq.le (subset_closure (mul_ne_zero_iff.1\n      (left_ne_zero_of_smul h))), by simp [S]⟩) (contDiff_pi' fun _ ↦ contDiff_pi' (by\n      simp_intro _ [pairHomInf, blockDiagonal_apply, pairHom, congrFun hk]; split_ifs <;> fun_prop))\n      fun N ↦ mul_ne_top (mul_ne_top (isRapidDatum_vacVector N) (r₁ N)) (hv N) ∘ eq_top_mono (by\n      (repeat refine (weightedNorm_integral_le _).trans (lintegral_weightedNorm_smul_le fun _ ↦\n        (weightedNorm_realHeisOp_le ..).trans ?_); rw\n        [mul_comm]; gcongr) <;> simp [realCoordSum, enorm, pi_nnnorm_le_iff, nnnorm_le_pi_nnnorm])",
+   "head_lines": [
+    94,
+    94
+   ],
+   "uses": [
+    {
+     "decl": "MixedModel.exists_section"
+    }
+   ]
+  },
+  {
+   "id": "14.2.1",
+   "parent": "14.2",
+   "kind": "step",
+   "claim": "The coefficient is smooth: k is smooth, the inverse of an element of U(J) is its J-adjoint (`U.coe_inv`), determinants are polynomial.",
+   "lines": [
+    95,
+    95
+   ],
+   "lean": "      simp [w, ↓U.coe_inv IsHermInvolution.mul_self, congrFun hk, det_apply, -real_smul]"
+  },
+  {
+   "id": "14.2.2",
+   "parent": "14.2",
+   "kind": "step",
+   "claim": "Compact support: the support lies in the image of (supp σ) × (supp σ) under (p, q) ↦ (v ↦ S(p_v)·q_v), a compact set;",
+   "lines": [
+    96,
+    97
+   ],
+   "lean": "      fun_prop) (((kσ.prod kσ).image_auto (cuL.symm ∘ fun (p, q) v ↦\n      S (p v) * q v)).closure_of_subset"
+  },
+  {
+   "id": "14.2.3",
+   "parent": "14.2",
+   "kind": "step",
+   "claim": "where the coefficient is non-zero, (z∘x, ·) lies in the closure of the product of the supports; and the Weil action is smooth in y (block-diagonal real points, `contDiff_pi'`).",
+   "lines": [
+    98,
+    101
+   ],
+   "lean": "      fun x h ↦ ⟨(z ∘ cuL x, _), closure_prod_eq.le (subset_closure (mul_ne_zero_iff.1\n      (left_ne_zero_of_smul h))), by simp [S]⟩) (contDiff_pi' fun _ ↦ contDiff_pi' (by\n      simp_intro _ [pairHomInf, blockDiagonal_apply, pairHom, congrFun hk]; split_ifs <;> fun_prop))\n      fun N ↦ mul_ne_top (mul_ne_top (isRapidDatum_vacVector N) (r₁ N)) (hv N) ∘ eq_top_mono (by"
+  },
+  {
+   "id": "14.2.4",
+   "parent": "14.2",
+   "kind": "step",
+   "claim": "The weighted norms are finite: the weighted norm of an integral of Heisenberg-translated vectors is bounded by the weighted norms of the vacuum, of v₁ and of v (`weightedNorm_integral_le`, `lintegral_weightedNorm_smul_le`, `weightedNorm_realHeisOp_le`).",
+   "lines": [
+    102,
+    104
+   ],
+   "lean": "      (repeat refine (weightedNorm_integral_le _).trans (lintegral_weightedNorm_smul_le fun _ ↦\n        (weightedNorm_realHeisOp_le ..).trans ?_); rw\n        [mul_comm]; gcongr) <;> simp [realCoordSum, enorm, pi_nnnorm_le_iff, nnnorm_le_pi_nnnorm])"
+  },
+  {
+   "id": "15",
+   "parent": null,
+   "kind": "step",
+   "claim": "Take x = Φ and x′ = Λ′ (slice v at 0 by e′) and apply `stdExchange_of_periods` with ρ(h) = σ(z∘(h⁻¹·x₀)) (non-negative by rσ; non-zero near 1 by continuity and σ(x₀) ≠ 0), Φ and Λ′ rapid (R, r), and l(𝔠) = the value at 1 of thetaLarge(W₁, W₁, 𝔠, v₁, stdColDatum(χ_𝔠, 1)); the support condition holds in its first alternative (where a real slice of Φ is non-zero its Gram matrix is c*·diag(t′)·c, by step 11). The period condition for each 𝔠 and h remains.",
+   "lines": [
+    105,
+    108
+   ],
+   "lean": "  refine ⟨_, _, e', stdExchange_of_periods _ D D₁ _ _ hn (fun h ↦ (rσ ⟨z ∘ (h⁻¹ · |>.1.1 * x₀),\n    rfl⟩).1) ((Continuous.tendsto (by fun_prop) 1).eventually_ne (by simp_all [comp_def, z,\n    eg.eq_of_nhds])) R r (fun 𝔠 h ↦ ?_) (.inl fun x e w ↦ (P (atRealPlace x) (e <|\n    (l (atRealPlace x)).trans <| by simp [τ, ·]) w).imp (by simp [↓← gram_map_real, J]))⟩",
+   "uses": [
+    {
+     "step": "7"
+    },
+    {
+     "step": "11"
+    },
+    {
+     "step": "12"
+    },
+    {
+     "step": "14"
+    },
+    {
+     "decl": "stdExchange_of_periods"
+    }
+   ]
+  },
+  {
+   "id": "16",
+   "parent": null,
+   "kind": "step",
+   "claim": "μ takes non-negative values (the weights of 𝔠 are positive, `SplitTameChar.weight_pos`), so μ = M.",
+   "lines": [
+    109,
+    109
+   ],
+   "lean": "  lift μ to type_of% M using (𝔠.weight_pos · |>.le)"
+  },
+  {
+   "id": "17",
+   "parent": null,
+   "kind": "step",
+   "claim": "Call y the point z∘(h⁻¹·x₀).",
+   "lines": [
+    110,
+    110
+   ],
+   "lean": "  generalize hy : z ∘ _ = y"
+  },
+  {
+   "id": "18",
+   "parent": null,
+   "kind": "step",
+   "claim": "By step 11 at y: matrices c_v with S(y_v)·x₀·c_v = (h⁻¹x₀)_v (ec) and c_v*·diag(t′)·c_v = diag(t′) (hc).",
+   "lines": [
+    111,
+    111
+   ],
+   "lean": "  choose! c ec hc using hy ▸ P _",
+   "uses": [
+    {
+     "step": "11"
+    },
+    {
+     "step": "17"
+    }
+   ]
+  },
+  {
+   "id": "19",
+   "parent": null,
+   "kind": "step",
+   "claim": "Each c_v preserves diag(t′), so it is an element u_v of U(diag(t′)) (`exists_U_coe_eq`) (hu).",
+   "lines": [
+    112,
+    112
+   ],
+   "lean": "  choose! u hu using (exists_U_coe_eq <| hc · · |>.trans (g₁ ▸ U.gram_invariant ..))",
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "step": "18"
+    }
+   ]
+  },
+  {
+   "id": "20",
+   "parent": null,
+   "kind": "step",
+   "claim": "h_v·k(y_v)·(u_v ⊕ 1) fixes x₀ (by ec and hu), so it lies in the image of U(W₁)(ℝ) in the second factor of the block sum: it is sum(1, q_v) for some q_v (`U.mem_range_sum`) (hq).",
+   "lines": [
+    113,
+    115
+   ],
+   "lean": "  choose! q hq using fun o v ↦ (mem_range_sum (signMatrix_sum ..) (g := h v * k (y v) * U.sum\n    (signMatrix_sum ..) (u v, 1)).2 isUnit).2 (by simpa [hu o, x₀, U.sum,\n             ← fromCols_fromRows_eq_fromBlocks] using congr((h v).1.1 * $(ec o v)))",
+   "uses": [
+    {
+     "step": "18"
+    },
+    {
+     "step": "19"
+    }
+   ]
+  },
+  {
+   "id": "21",
+   "parent": null,
+   "kind": "step",
+   "claim": "Use the point ((u, 1), q⁻¹, 1) in the period condition; introduce B, z, β, f, x, g, y.",
+   "lines": [
+    116,
+    116
+   ],
+   "lean": "  use ((u, 1), q⁻¹, 1); intros",
+   "uses": [
+    {
+     "step": "19"
+    },
+    {
+     "step": "20"
+    }
+   ]
+  },
+  {
+   "id": "22",
+   "parent": null,
+   "kind": "step",
+   "claim": "Let x_v = h_v⁻¹·x₀·u_v⁻¹·B_v.",
+   "lines": [
+    117,
+    117
+   ],
+   "lean": "  let x v := (h⁻¹ v).1.1 * x₀ * (u⁻¹ v).1.1 * (‹GL b _›.map (delta% evalInf v)).1"
+  },
+  {
+   "id": "23",
+   "parent": null,
+   "kind": "block",
+   "claim": "Insert the slices of Φ (step 14) and of Λ′ (l′) at the real components: the argument of the slice is x (23.1) and τ(z∘x, x) = τ(y, x) (23.2).",
+   "lines": [
+    118,
+    124
+   ],
+   "lean": "  erw [l (atRealPlace _), l' (cuL.symm (atRealPlace _)), MonoidHom.prod_apply, show atRealPlace _ =\n    x by ext; simp [x, x₀, ↓mul_apply, Prod.fst_sum, U.sum, blockGL], show τ _ x = τ y x by\n    by_cases! i : ∀ y, σ (w y x) = 0; simp [τ, i]; congr 1\n    simp_rw [← hy, comp_def, z,\n      (by simpa only [w, U.gram_invariant] using sσ (subset_closure i.choose_spec) ·\n      |>.2.1), x, gram_mul (_ * _), U.gram_invariant (J := J), g₁, eg.eq_of_nhds]\n    simp [-val_map_apply]]",
+   "head_span": [
+    118,
+    3,
+    118,
+    79
+   ],
+   "head_lines": [
+    118,
+    118
+   ],
+   "uses": [
+    {
+     "step": "12"
+    },
+    {
+     "step": "14"
+    }
+   ]
+  },
+  {
+   "id": "23.1",
+   "parent": "23",
+   "kind": "step",
+   "claim": "The real component of the moved frame is x (block sum, `Prod.fst_sum`).",
+   "lines": [
+    118,
+    119
+   ],
+   "span": [
+    118,
+    80,
+    119,
+    70
+   ],
+   "lean": "show atRealPlace _ =\n    x by ext; simp [x, x₀, ↓mul_apply, Prod.fst_sum, U.sum, blockGL],",
+   "typed_fact": "atRealPlace _ =",
+   "uses": [
+    {
+     "step": "22"
+    }
+   ]
+  },
+  {
+   "id": "23.2",
+   "parent": "23",
+   "kind": "step",
+   "claim": "τ(z∘x, x) = τ(y, x): if σ(w(·, x)) vanishes everywhere both are 0; otherwise z∘x = y, by the definitions of z, w and x, the Gram invariance of unitary elements, x₀*Jx₀ = diag(t′) and γ = inversion near diag(t′).",
+   "lines": [
+    119,
+    124
+   ],
+   "span": [
+    119,
+    71,
+    124,
+    27
+   ],
+   "lean": "show τ _ x = τ y x by\n    by_cases! i : ∀ y, σ (w y x) = 0; simp [τ, i]; congr 1\n    simp_rw [← hy, comp_def, z,\n      (by simpa only [w, U.gram_invariant] using sσ (subset_closure i.choose_spec) ·\n      |>.2.1), x, gram_mul (_ * _), U.gram_invariant (J := J), g₁, eg.eq_of_nhds]\n    simp [-val_map_apply]]",
+   "typed_fact": "τ _ x = τ y x",
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "step": "7"
+    },
+    {
+     "step": "9"
+    },
+    {
+     "step": "10"
+    },
+    {
+     "step": "22"
+    }
+   ]
+  },
+  {
+   "id": "24",
+   "parent": null,
+   "kind": "step",
+   "claim": "If σ(y) = 0 both sides vanish.",
+   "lines": [
+    125,
+    125
+   ],
+   "lean": "  by_cases o : σ y = 0; simp [τ, o]"
+  },
+  {
+   "id": "25",
+   "parent": null,
+   "kind": "step",
+   "claim": "Otherwise compute: the Weil action of the point on v ⊠ v₁ factors by the box product (`thetaOnRealData_boxProd_eq_mul`), the theta integral of (W₁, W₁) with v₁ is constant, equal to its value at 1 (`thetaLarge_eq_apply_one_of_even_rank`), the character of 𝔠 at the infinite places is read from its weight (`AutChar.HasWeight.baseChange_apply_inf`), the determinants give |det|² (the factor ∏ det^{2M}), and the norms of the ideles are products of local norms (`ideleAbs_eq_prod_of_v_eq_one`).",
+   "lines": [
+    126,
+    131
+   ],
+   "lean": "  simp +zetaDelta [𝔠.hasWeight.baseChange_apply_inf, ideleAbs_eq_prod_of_v_eq_one, ← conj_mul',\n    ← hu o, rep_apply_apply, ← norm_prod, thetaIntegral,\n    ← map_mul, pow_mul, hj, pow_add, ← thetaLarge_eq_apply_one_of_even_rank D₁ 𝔠 hn r₁ ‹_›, congrFun\n    ‹_ = _›, prod_pow, comp_def, -norm_pow, thetaOnRealData_boxProd_eq_mul, _root_.zpow_mul,\n    div_pow, ↓← ec o, mul_pow, pow_right_comm _ 2, Pi.mul_def, mul_assoc, ← map_inv,\n    ← mul_inv_eq_of_eq_mul (hq o _), ← Pi.one_def]",
+   "uses": [
+    {
+     "decl": "thetaOnRealData_boxProd_eq_mul"
+    },
+    {
+     "decl": "thetaLarge_eq_apply_one_of_even_rank"
+    },
+    {
+     "decl": "AutChar.HasWeight.baseChange_apply_inf"
+    }
+   ]
+  },
+  {
+   "id": "26",
+   "parent": null,
+   "kind": "step",
+   "claim": "Clearing the non-zero denominators, the period identity holds.",
+   "lines": [
+    132,
+    132
+   ],
+   "lean": "  field [prod_eq_zero_iff]"
+  }
+ ]
+}

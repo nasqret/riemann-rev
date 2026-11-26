@@ -1,0 +1,2109 @@
+% !TEX program = lualatex
+% ---------------------------------------------------------------------------------------------
+%  Readback note 20: Theta functions of a CM elliptic curve: periods, tight frames, conjugates and divisibility of jets
+%
+%  Build:  python3 tools/rb.py note <slug>
+%
+%  One unit of a Lean artifact, rewritten as ordinary mathematics. The prose is hand-written. Lean names,
+%  line ranges and counts come from data.tex; quoted Lean statements are copied from the artifact by the build.
+%
+%  Rules of the text: standard terminology; every symbol is explained where it first appears and listed again
+%  in the notation at the end; no letter has two meanings; a proof is complete or says what it takes for granted;
+%  Lean names appear only in the LEAN lines and in the concordance.
+%
+%  The signature rule (the build enforces it): a function, relation or predicate that the artifact defines is
+%  written only through its notation macro, which the build makes from the spec (`notation`) with one slot for
+%  each explicit argument of the Lean definition. No argument is fixed and dropped, also not "for brevity" and
+%  not for one section. Every argument and every hypothesis of a stated declaration stands inside its
+%  statement, or in a Setting that the statement cites by number; only implicit and instance arguments (the
+%  ambient objects) may stand in the conventions.
+% ---------------------------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\ifdefined\pdfvariable\pdfvariable suppressoptionalinfo \numexpr 1+2+4+8\relax\fi
+\usepackage[a4paper,hmargin=35mm,top=22mm,bottom=27mm,footskip=12mm,nohead]{geometry}
+
+\usepackage{fontspec}
+\directlua{
+  luaotfload.add_fallback("gfallback", {"STIXTwoMath-Regular.otf:mode=node;", "DejaVuSans.ttf:mode=node;"})
+  luaotfload.add_fallback("gmonofallback", {"DejaVuSansMono.ttf:mode=node;", "STIXTwoMath-Regular.otf:mode=node;"})
+}
+\setmainfont{NewCM10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookItalic,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldItalic,SmallCapsFont=*-Book,SmallCapsFeatures={Letters=SmallCaps},
+  RawFeature={fallback=gfallback}]
+\setsansfont{NewCMSans10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookOblique,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldOblique,RawFeature={fallback=gfallback}]
+\setmonofont{JetBrainsMono}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,Scale=MatchLowercase,
+  RawFeature={-calt;-liga;fallback=gmonofallback}]
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage[math-style=TeX]{unicode-math}
+\setmathfont{NewCMMath-Book.otf}
+\emergencystretch=2.5em\relax
+
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows.meta,positioning,backgrounds}
+\usepackage[protrusion=true,expansion=true]{microtype}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{multicol}
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+
+\definecolor{ink}{HTML}{0F172A}
+\definecolor{inksoft}{HTML}{475569}
+\definecolor{inkfaint}{HTML}{94A3B8}
+\definecolor{rulegrey}{HTML}{CBD5E1}
+\definecolor{arith}{HTML}{C2410C}
+\definecolor{est}{HTML}{7C3AED}
+\definecolor{ana}{HTML}{0891B2}
+\definecolor{ok}{HTML}{047857}
+\definecolor{leancol}{HTML}{3730A3}
+
+\title{Theta functions of a CM elliptic curve: periods, tight frames, conjugates and divisibility of jets}
+\author{grh-compact}
+\date{}
+
+% ------------------------------------------------------------------------------------- macros
+\newcommand{\leanfont}{\ttfamily\fontsize{8.6}{10.5}\selectfont\color{leancol}}
+\newcommand{\lean}[1]{\csname LN@#1\endcsname}
+\newcommand{\fillin}[1]{{\color{arith}\itshape[#1]}}  % a place of the template that is not written yet; the build reports every one that is left
+\newcommand{\leanquote}[1]{\csname LQ@#1\endcsname}
+\input{data.tex}
+
+\linespread{1.08}                       % 11 pt on 14.7 pt
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt plus 1.5pt minus 0.5pt}
+\setlength{\abovedisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\belowdisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\abovedisplayshortskip}{3pt plus 2pt}
+\setlength{\belowdisplayshortskip}{6pt plus 2pt minus 2pt}
+\emergencystretch=1.5em
+\clubpenalty=10000 \widowpenalty=10000 \displaywidowpenalty=10000
+\relpenalty=7000 \binoppenalty=9000
+\raggedbottom
+\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\sffamily\fontsize{7.6}{9}\selectfont\color{inkfaint}\thepage\,/\,\pageref*{LastPage}}
+\setlist{topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=4pt,leftmargin=2.1em,labelsep=0.55em}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\len}{\operatorname{len}}
+\newcommand{\cok}{\operatorname{cok}}
+\newcommand{\End}{\operatorname{End}}
+\newcommand{\Hom}{\operatorname{Hom}}
+\newcommand{\Gal}{\operatorname{Gal}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\kw}[1]{\emph{#1}}
+\newcommand{\m}[1]{\mbox{$#1$}}        % a short formula that must not be broken across lines
+\newcommand{\head}[1]{\par\addvspace{17pt plus 4pt minus 2pt}\Needspace{6\baselineskip}%
+  \noindent{\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\sect}[2]{\refstepcounter{section}\label{#2}\par\addvspace{19pt plus 4pt minus 2pt}\Needspace{7\baselineskip}%
+  \noindent\llap{{\fontsize{13.2}{16}\selectfont\bfseries\color{inkfaint}\thesection}\hspace{9pt}}%
+  {\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\subhead}[1]{\par\addvspace{9pt plus 2pt}\Needspace{4\baselineskip}\noindent\textbf{#1}\enspace\ignorespaces}
+% where a statement lives in the Lean archive
+\newcommand{\leantag}{{\sffamily\bfseries\fontsize{6.3}{8}\selectfont\color{leancol}\addfontfeatures{LetterSpace=7}LEAN}}
+\newcommand{\sep}{\unskip\nobreak\hspace{5pt}{\color{inkfaint}\textperiodcentered}\hspace{5pt plus 2pt}\ignorespaces}
+\newcommand{\leanline}[1]{\par\nopagebreak\vspace{-2.5pt}{\fontsize{8.9}{12.4}\selectfont\color{inksoft}\raggedright
+  \noindent\llap{\leantag\hspace{9pt}}#1\par}\vspace{1pt}}
+% a displayed statement in a tinted box: #1 colour, #2 text
+\newcommand{\statement}[2]{\par\addvspace{7pt}\begingroup\setlength{\fboxsep}{8.5pt}\setlength{\fboxrule}{0.6pt}%
+  \noindent\fcolorbox{#1!30!white}{#1!3!white}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{#2}}%
+  \endgroup\par\addvspace{7pt}}
+\newcommand{\nt}[2]{\par\noindent\hangindent=1.1em\hangafter=1 #1\enspace{\color{inksoft}#2}\par\vspace{1pt}}
+\newcommand{\legdot}[1]{\tikz[baseline=-0.62ex]\fill[#1] (0,0) circle (2.5pt);\hspace{3pt}}
+\newcommand{\crow}[4]{\csname CS@#1\endcsname & #2 & \textcolor{inksoft}{#3} & \textcolor{inksoft}{#4}\\}
+\newcommand{\leanquoteline}[2]{\par\noindent\hangindent=\dimexpr#1\fontdimen2\font+2.2em\relax\hangafter=1
+  \hspace*{#1\fontdimen2\font}#2}
+\newcommand{\quoted}[1]{\par\vspace{3pt}{\ttfamily\fontsize{7.5}{10.4}\selectfont\color{leancol}\raggedright
+  \setlength{\parskip}{0pt}\leanquote{#1}\par}\vspace{4pt}}
+\newcommand{\bx}[3]{{\sffamily\bfseries\fontsize{7.3}{9.2}\selectfont\color{#1!82!black}#2}\\[1.5pt]#3}
+\newcommand{\cs}[2]{\expandafter\newcommand\csname CS@#1\endcsname{#2}}
+
+% theorems
+\newtheoremstyle{plainx}{7pt plus 2pt}{7pt plus 2pt}{\itshape}{}{\bfseries}{.}{0.5em}{}
+\newtheoremstyle{uprightx}{7pt plus 2pt}{7pt plus 2pt}{}{}{\bfseries}{.}{0.5em}{}
+\theoremstyle{plainx}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{uprightx}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{setting}[theorem]{Setting}          % hypotheses shared by several statements; each of them cites it by number
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\renewcommand{\qedsymbol}{{\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.5pt}\fbox{\rule{0pt}{0.46em}\hspace{0.46em}}}}
+% what holds throughout the note: the ambient objects only (implicit and instance arguments), never a hypothesis
+\newenvironment{conventions}{\par\addvspace{5pt}\noindent\textbf{Conventions.}\enspace\ignorespaces}{\par\addvspace{3pt}}
+\makeatletter
+\renewenvironment{proof}[1][Proof]{\par\pushQED{\qed}\normalfont\topsep0pt\partopsep0pt
+  \trivlist\item[\hskip\labelsep\itshape #1.]\ignorespaces}{\popQED\endtrivlist\@endpefalse}
+\makeatother
+
+% ------------------------------------------------------------------------------- macros of this note
+% Notations of the definitions of the unit come from data.tex (made from spec.json). The macros below
+% write objects of other units and of the background library, each with all its arguments.
+\newcommand{\CC}{\mathbb{C}}
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\NN}{\mathbb{N}}
+\newcommand{\Cp}{\CC_p}
+\newcommand{\op}{\mathfrak{o}_p}
+\newcommand{\mxp}{\mathfrak{m}_p}
+\newcommand{\Oj}{O_j}
+\newcommand{\np}[1]{|#1|_p}
+\newcommand{\cj}[1]{\overline{#1}}
+\newcommand{\lnm}[1]{{\leanfont #1}}
+\newcommand{\Aut}{\operatorname{Aut}}
+\newcommand{\Tr}{\operatorname{Tr}}
+\newcommand{\Nm}{\operatorname{N}}
+\newcommand{\Af}{\mathbb{A}_{\mathrm{f}}}
+\newcommand{\Ad}{\mathbb{A}}
+\newcommand{\Ohat}{\widehat{\mathcal{O}}}
+\newcommand{\OO}{\mathcal{O}}
+% the field of the parameters (unit 152; the forms of the note on the CM field)
+\newcommand{\KP}[1]{K(#1)}
+\newcommand{\EP}[2]{E(#1,#2)}
+\newcommand{\Nn}[2]{N_1(#1,#2)}
+\newcommand{\PlP}[2]{\operatorname{Pl}(#1,#2)}
+\newcommand{\emb}[1]{\iota_{#1}}
+\newcommand{\pin}[3]{[#3]_{#1,#2}}
+\newcommand{\chiK}[1]{\chi_{\KP{#1}}}
+\newcommand{\chid}[1]{\chi_{#1}}
+\newcommand{\rdE}[2]{\operatorname{rd}_{\EP{#1}{#2}}}
+\newcommand{\OmP}[2]{\Omega(#1,#2)}
+\newcommand{\alP}[2]{\alpha(#1,#2)}
+\newcommand{\dgen}[2]{\partial(#1,#2)}
+\newcommand{\rtu}[2]{\varsigma(#1,#2)}
+\newcommand{\czE}[2]{c_0(#1,#2)}
+\newcommand{\frl}[2]{\mathfrak{a}(#1,#2)}
+\newcommand{\prm}[2]{\operatorname{perm}_{#1}(#2)}
+\newcommand{\nsw}[2]{\varrho_{#1}(#2)}
+\newcommand{\cP}[1]{\symit{C}(#1)}
+\newcommand{\Cgen}[1]{C_{\mathrm{gen}}(#1)}
+% the data (unit 152)
+\newcommand{\ED}[1]{E(#1)}
+\newcommand{\NoneD}[1]{N_1(#1)}
+\newcommand{\PlD}[1]{\operatorname{Pl}(#1)}
+\newcommand{\fD}[1]{\symit{f}(#1)}
+\newcommand{\kD}[1]{\symit{k}(#1)}
+\newcommand{\tD}[1]{\symit{t}(#1)}
+\newcommand{\aD}[1]{\symit{a}(#1)}
+\newcommand{\muD}[1]{\mu(#1)}
+\newcommand{\tops}[1]{\mathrm{tops}(#1)}
+\newcommand{\thick}[1]{\operatorname{thick}(#1)}
+\newcommand{\nomW}[2]{w_{#1}(#2)}
+\newcommand{\pinD}[2]{[#2]_{#1}}
+\newcommand{\nD}[2]{n_{#2}(#1)}
+\newcommand{\wt}[3]{\mathrm{wt}_{#1}(#2,#3)}
+\newcommand{\gap}[1]{\mathrm{gap}(#1)}
+\newcommand{\btwo}[1]{b_2(#1)}
+% three definitions of the unit whose list of arguments in the census has an entry that Lean does not take
+% (see the notes on the formal text): written here with exactly the explicit arguments of Lean
+\newcommand{\gain}[2]{\mathrm{gain}(#1,#2)}
+\newcommand{\coll}[3]{\mathrm{coll}(#1,#2,#3)}
+\newcommand{\cc}[7]{\mathrm{cc}_{#1}(#2,#3;#4;#5,#6;#7)}
+% the Weil representation (background library)
+\newcommand{\Sw}[1]{\mathcal{S}(#1)}
+\newcommand{\Wf}[1]{\mathcal{W}_{\mathrm{f}}(#1)}
+\newcommand{\vac}[1]{\mathrm{vac}_{#1}}
+\newcommand{\heis}[2]{\mathfrak{h}_{#1}(#2)}
+\newcommand{\fheis}[2]{\mathfrak{h}^{\mathrm{f}}_{#1}(#2)}
+\newcommand{\fv}[1]{#1^{\flat}}
+\newcommand{\Th}[1]{\operatorname{Th}_{#1}}
+\newcommand{\weil}[1]{\omega_{#1}}
+\newcommand{\jet}[3]{T^{#1}_{#2}#3}
+\newcommand{\Thf}[1]{\Theta_{#1}}
+\newcommand{\inn}[3]{\langle #2,#3\rangle_{#1}}
+\newcommand{\name}[3]{\operatorname{name}_{#1,#2}(#3)}
+\newcommand{\fmult}[1]{\Delta_{\mathrm{f}}(#1)}
+\newcommand{\Uf}[1]{\mathrm{U}_{#1}(\Af)}
+\newcommand{\stdsp}[1]{I_{#1}}
+\newcommand{\homsp}[2]{\operatorname{Hom}(\stdsp{#1},\stdsp{#2})}
+% a CM datum and its functions (background library)
+\newcommand{\LamC}[1]{\Lambda_{#1}}
+\newcommand{\thC}[1]{\theta_{#1}}
+\newcommand{\xiC}[1]{\xi_{#1}}
+\newcommand{\phC}[1]{\varphi_{#1}}
+\newcommand{\UC}[3]{U^{#1,#2}_{#3}}
+\newcommand{\tay}[1]{\operatorname{Tay}(#1)}
+\newcommand{\tayj}[1]{\operatorname{Tay}_j(#1)}
+\newcommand{\phiring}[1]{\op[[\phC{#1}]]}
+\newcommand{\area}[1]{\operatorname{area}(#1)}
+\newcommand{\mon}[2]{\operatorname{mon}_{#1}(#2)}
+\newcommand{\cpart}[3]{[#3]_{#2\bmod #1}}
+% forms, gauges, kernels (background library)
+\newcommand{\gauge}[4]{\|#4\|_{#1,#2;#3}}
+\newcommand{\boxes}[2]{\operatorname{box}(#1,#2)}
+\newcommand{\schurjet}[2]{\operatorname{SJ}_{#1}(#2)}
+\newcommand{\jetalong}[2]{\operatorname{jet}_{#1}(#2)}
+\newcommand{\thker}[5]{\mathrm{k}_{#1}(#2;#3,#4;#5)}
+\newcommand{\pairw}[2]{\omega_{#1,#2}}
+
+% where each declaration of the concordance is treated: \cs{key}{place}
+\cs{vacuumRoot}{Definition~\ref{d:period}}
+\cs{cmCurve}{Definition~\ref{d:period}}
+\cs{Omz}{Definition~\ref{d:period}}
+\cs{areaScale}{Definition~\ref{d:period}}
+\cs{periodFactor}{Definition~\ref{d:period}}
+\cs{jetScale}{Definition~\ref{d:period}}
+\cs{vacuumScale}{Definition~\ref{d:vac}}
+\cs{intVacuum}{Definition~\ref{d:vac}}
+\cs{integralAfter}{Definition~\ref{d:vac}}
+\cs{standardData}{Definition~\ref{d:vac}}
+\cs{raises}{Definition~\ref{d:raises}}
+\cs{thetaProducts}{Definition~\ref{d:thprod}}
+\cs{IsIntegralOnNullCone}{Definition~\ref{d:null}}
+\cs{localAsk}{Definition~\ref{d:ask}}
+\cs{forcedPart}{Definition~\ref{d:ask}}
+\cs{gain}{Definition~\ref{d:ask}}
+\cs{loss}{Definition~\ref{d:ask}}
+\cs{IsSmallNonsplit}{Definition~\ref{d:ask}}
+\cs{IsShortPrime}{Definition~\ref{d:ask}}
+\cs{ceilLogM}{Definition~\ref{d:served}}
+\cs{deltaP}{Definition~\ref{d:served}}
+\cs{jetCeil}{Definition~\ref{d:served}}
+\cs{ozero}{Definition~\ref{d:served}}
+\cs{IsServed}{Definition~\ref{d:served}}
+\cs{IsCollision}{Definition~\ref{d:served}}
+\cs{collisionSum}{Definition~\ref{d:served}}
+\cs{couplingCount}{Definition~\ref{d:cc}}
+\cs{kap}{Definition~\ref{d:kappa}}
+\cs{lastEntry}{Definition~\ref{d:kappa}}
+\cs{keptColumns}{Definition~\ref{d:kappa}}
+\cs{columnsY}{Definition~\ref{d:kappa}}
+\cs{IsFrobPacking}{Definition~\ref{d:packing}}
+\cs{depthLossInt}{Definition~\ref{d:packing}}
+\cs{normgalvacuumRoot}{Lemma~\ref{l:period}(a)}
+\cs{bigOmegapos}{Lemma~\ref{l:period}(b)}
+\cs{jetScalenezero}{Lemma~\ref{l:period}(c)}
+\cs{latticeModulecmCurve}{Lemma~\ref{l:period}(d)}
+\cs{omegamemcmCurvelattice}{Lemma~\ref{l:period}(e)}
+\cs{adeleExtensionalpha}{Lemma~\ref{l:padic}(a)}
+\cs{normiotaperiodFactor}{Lemma~\ref{l:padic}(b)}
+\cs{normperiodFactormulconjleone}{Lemma~\ref{l:padic}(c)}
+\cs{normiotaperiodFactoreqone}{Lemma~\ref{l:padic}(d)}
+\cs{coetraceeqsum}{Lemma~\ref{l:trace}(a)}
+\cs{hermmemquadInt}{Lemma~\ref{l:trace}(b)}
+\cs{isTightFramezetapow}{Lemma~\ref{l:zeta}}
+\cs{existscyclotomicdifferentfactor}{Lemma~\ref{l:cyclo}}
+\cs{existsisTightFrame}{Theorem A}
+\cs{taylorlineeqsubstjetSeries}{Lemma~\ref{l:line}(a)}
+\cs{eqzeroofjetSerieseqzero}{Lemma~\ref{l:line}(b)}
+\cs{jetSerieseqprod}{Lemma~\ref{l:line}(c)}
+\cs{existsfinitePartofisTightFrame}{Proposition~\ref{p:F}}
+\cs{kappanezero}{Lemma~\ref{l:vac}(a)}
+\cs{intVacuumfinVeceqprod}{Lemma~\ref{l:vac}(b)}
+\cs{normintVacuumle}{Lemma~\ref{l:vac}(c)}
+\cs{normintVacuumleone}{Lemma~\ref{l:vac}(d)}
+\cs{normdataInnerle}{Lemma~\ref{l:vac}(e)}
+\cs{existsintVacuumnezero}{Lemma~\ref{l:vac}(f)}
+\cs{isAdmissibleCombname}{Lemma~\ref{l:adm}}
+\cs{existsisJetConjugategenerator}{Proposition~\ref{p:gen}}
+\cs{existssemilinearisJetConjugate}{Theorem B}
+\cs{ofintegral}{Lemma~\ref{l:std}(a)}
+\cs{finHeisOpmemstandardData}{Lemma~\ref{l:std}(b)}
+\cs{omegamemstandardData}{Lemma~\ref{l:std}(c)}
+\cs{normmappsi}{Lemma~\ref{l:std}(d)}
+\cs{pairWeilmemstandardData}{Lemma~\ref{l:std}(e)}
+\cs{normjetSeriesle}{Proposition~\ref{p:transfer}}
+\cs{jetthetaprodintegral}{Lemma~\ref{l:jetint}}
+\cs{normjetjetSeriesleone}{Theorem C}
+\cs{smulmemraises}{Proposition~\ref{p:raises}(a)}
+\cs{memraisesofjetbound}{Proposition~\ref{p:raises}(b)}
+\cs{memraisesofstandardData}{Proposition~\ref{p:raises}(c)}
+\cs{memraisesofdvd}{Proposition~\ref{p:raises}(d)}
+\cs{existsnormeqinvpowbounds}{Lemma~\ref{l:val}}
+\cs{coeffsubsttangent}{Lemma~\ref{l:tangent}}
+\cs{normcoeffleofderiv}{Lemma~\ref{l:deriv}}
+\cs{existsformalparameter}{Proposition~\ref{p:formal}}
+\cs{sumpoweqzeroofnull}{Lemma~\ref{l:charp}(a)}
+\cs{coeffsumfrobnezeroiff}{Lemma~\ref{l:charp}(b)}
+\cs{existsframerowsfrob}{Lemma~\ref{l:frob}}
+\cs{thetaProductsnormalform}{Theorem D}
+\cs{existsnullcouplingframes}{Lemma~\ref{l:frames}}
+\cs{normschurJetle}{Theorem E}
+\cs{katzdivisibilitylimit}{Proposition~\ref{p:katz}}
+\cs{hasSumliveinvpow}{Lemma~\ref{l:live}(a)}
+\cs{summablelocalAsk}{Lemma~\ref{l:live}(b)}
+\cs{nedofplaceClasseq}{Lemma~\ref{l:live}(c)}
+\cs{kaple}{Lemma~\ref{l:live}(d)}
+\cs{existsisFrobPacking}{Proposition~\ref{p:packing}}
+\cs{existshasLargeSplitofpairs}{Theorem F}
+
+\begin{document}
+\color{ink}
+
+{\raggedright
+{\sffamily\bfseries\fontsize{7.2}{9}\selectfont\color{leancol}\addfontfeatures{LetterSpace=8}READBACK NOTE 20 \textperiodcentered{} CHAPTER V, THE CURVE\par}
+\vspace{5pt}
+{\fontsize{21.5}{25.5}\selectfont\bfseries Theta functions of a CM elliptic curve: periods, tight frames, conjugates and divisibility of jets\par}
+\vspace{5pt}
+{\fontsize{12.4}{16}\selectfont\itshape\color{inksoft} One unit of the Lean artifact \ArtifactName, read back into
+mathematics\par}}
+\vspace{8pt}
+{\color{rulegrey}\hrule height 0.6pt}
+\vspace{7pt}
+\thispagestyle{empty}
+
+\textbf{Summary.} On the definite unitary groups of Theorem~A of the write-up, a theta lift is a finite sum of
+Taylor coefficients at the origin (\emph{jets}) of theta functions. This unit shows that these theta functions are
+products of translates of one function, the theta function $\thC{C}$ of an elliptic curve with complex multiplication
+by $K=\Q(\sqrt{-d})$, composed with linear forms given by a \emph{tight frame} in the CM field $E$ (Theorem~A,
+Proposition~\ref{p:F}). Everything else is then read off the curve: the conjugates of the jets under
+$\Aut(\CC/K)$ are jets again, of bounded size (Theorem~B); suitably scaled jets are integral at every prime
+(Theorem~C); at a prime $p$ that is inert or ramified in $K$ a product of theta series is, after a change of scale,
+an integral series times one exponential (Theorem~D), which makes jets along products of minors divisible by an
+explicit power of $p$ (Theorem~E), and this power cannot be improved by much (Theorem~F). The unit also defines the
+numbers that the next unit uses to state the divisibility of the whole chain of lifts: the ask, the gain, the loss
+and the column counts.
+
+\statement{leancol}{\fontsize{9.6}{13.2}\selectfont\textbf{What this note is.} The artifact \ArtifactName{} is a
+body of Lean code: the compact edition of a formal proof, attributed to L.~Alpöge with the AI system Claude, whose
+final theorems state the Riemann hypothesis and its analogue for Dirichlet $L$-functions. That headline is a
+\emph{claim}: the authors report that every file compiles and that Lean's kernel accepted the proofs; the record of
+checks of the handout says who replayed what; nothing was compiled for this note; no mathematician has read the
+argument through, and nothing here says that the Riemann hypothesis is proved. This note treats one unit, the
+folder on the CM curve: all \UnitInNote{} of its \UnitMembers{} declarations. Every statement below was compared
+with its Lean text, argument by argument. Proofs are given in full for what the unit itself proves; results of
+other units are stated as \emph{Inputs} with the unit that owns them, and results of the background library of the
+artifact (complex multiplication, the Chowla--Selberg formula, the formal group of the curve, the Weil
+representation) are \emph{quoted}, with a reference where the catalogue of the handout has one. Where a formal
+step is closed by automation that I could not follow without running Lean, §\ref{s:notes} says so. The Lean text
+read is \PinText; Appendix~A is the concordance of \ConcDecls{} declarations.}
+
+\sect{The statements}{s:intro}
+The notation is that of §\ref{s:setting}. $P=(N_0,d)$ are parameters and $\mu$ is a natural number; $\EP{P}{\mu}$
+is the CM field obtained from $\KP{P}=\Q(\sqrt{-d})$ by adjoining a root of unity of order $\Nn{P}{\mu}$,
+$\PlP{P}{\mu}$ is the group of its infinite places, and $\emb{\tau}\colon\EP{P}{\mu}\to\CC$ is the chosen embedding
+at the place $\tau$. A \emph{$p$-adic place} is a prime number $p$ with a ring homomorphism $j\colon\CC\to\Cp$; $\np{\,\cdot\,}$ is the
+absolute value of $\Cp$ and $\op$ its ring of integers. The numbers $\sone{P}{\mu}$ and $\per{P}{\mu}$ are the
+period factor and the scale of the jets (Definition~\ref{d:period}), $\jet{V}{a}{f}$ is the series of jets of a
+vector $f$ of the Weil representation of a hermitian space $V$ at the scale $a$ (Background~4), and $\Std{V}{\delta}$
+is the module of standard data (Definition~\ref{d:vac}).
+
+\statement{arith}{\phantomsection\label{t:A}\textbf{Theorem A (tight frames with a unit vector).}\enspace Let $P=(N_0,d)$
+be parameters, $\mu$ a natural number, $p$ a prime number and $j\colon\CC\to\Cp$ a ring homomorphism. Let $M$ and
+$c_\ast$ be natural numbers with $(d\cdot\Nn{P}{\mu})^6\,(c_\ast+1)\le M$. Then there are a finite set $I$, elements
+$v_i\in\EP{P}{\mu}$ and natural numbers $c_i$, for $i\in I$, such that the family $(v_i)_{i\in I}$ with the
+multiplicities $(c_i)_{i\in I}$ is a tight frame of length $M$ (Background~1), $c_\ast\le c_i$ for every $i\in I$,
+and for some $i\in I$
+\[\np{j\bigl(\sone{P}{\mu}\cdot\cj{\emb{\tau}(v_i)}\bigr)}=1\qquad\text{for every }\tau\in\PlP{P}{\mu}.\]}
+\leanline{\lean{existsisTightFrame}}
+
+\statement{arith}{\phantomsection\label{t:B}\textbf{Theorem B (conjugates of jets).}\enspace Let $P=(N_0,d)$ be
+parameters, $\mu$ a natural number, $n$ a finite set and $V$ a standard hermitian space over $\EP{P}{\mu}$ with
+index set $n$. Let $R$ be a set of finite places of $\EP{P}{\mu}$ that contains the complex conjugate of none of
+its members, and let $\sigma\in\Aut(\CC/\KP{P})$. Then there are $t\in\CC$, $c\in\CC$, a finite adele $z$ of
+$\EP{P}{\mu}$ with $z\cj{z}=1$ and a $\sigma$-semilinear map $L\colon\Sw{V}\to\Sw{V}$ with values in $\Wf{V}$ such
+that:
+\begin{enumerate}[label=(\roman*),itemsep=1pt]
+\item $|t|^2=\OmP{P}{\mu}^{-1}$, and $c\ne0$;
+\item for every $f\in\Wf{V}$, applying $\sigma$ to the coefficients of $\jet{V}{\per{P}{\mu}}{f}$ gives the series
+$\jet{V}{t}{(Lf)}$ with every variable $z_{(\tau,i)}$ replaced by $z_{(\pi^{-1}\tau,i)}$, where
+$\pi=\prm{\mu}{\sigma}$ is the permutation of $\PlP{P}{\mu}$ with $\sigma\circ\emb{\tau}=\emb{\pi(\tau)}$;
+\item for every $f\in\Wf{V}$ and every $g\in\Uf{n}$:
+$L\bigl(\weil{V}(1,g)f\bigr)=\dfrac{\sigma(\fmult{g})}{\fmult{g}}\cdot\weil{V}(1,g)(Lf)$;
+\item for every $x\in\Af^{\,n}$, every $g\in\Uf{n}$ and every adelic vector $y\in\Ad^{n}$:
+\[\bigl|L\bigl(\heis{V}{\fv{x}}\,\weil{V}(1,g)\,\intvac{V}\bigr)(y)\bigr|\ \le\ \exp\bigl(\cP{P}\cdot(\Nn{P}{\mu}\,|n|+1)^2\bigr);\]
+\item for every Schwartz--Bruhat function $\Psi$ above $R$:
+$L\bigl(\name{V}{R}{\Psi}\vac{V}\bigr)=c\cdot\weil{V}(1,z\cdot 1_n)\bigl(\name{V}{R}{\sigma\circ\Psi}\vac{V}\bigr)$.
+\end{enumerate}}
+\leanline{\lean{existssemilinearisJetConjugate}}
+
+\statement{arith}{\phantomsection\label{t:C}\textbf{Theorem C (integrality of jets).}\enspace Let $P=(N_0,d)$ be
+parameters, $\mu$ a natural number, $n$ a finite set, $V$ a standard hermitian space over $\EP{P}{\mu}$ with index
+set $n$, $p$ a prime number and $j\colon\CC\to\Cp$ a ring homomorphism. Let $\delta$ be a nonzero integer of
+$\KP{P}$ and $f\in\Std{V}{\delta}$. Let $Q$ be a polynomial in the variables $z_{(\tau,i)}$,
+$(\tau,i)\in\PlP{P}{\mu}\times n$, with coefficients in $\Oj$, and $Q'$ the same polynomial with its coefficients
+read in $\CC$. Then
+\[\np{j\Bigl(\jetalong{Q'}{\jet{V}{\cj{\delta}\cdot d\cdot\per{P}{\mu}}{f}}\Bigr)}\ \le\ 1 ,\]
+where $\jetalong{Q'}{F}=(Q'(\partial)F)(0)$ is the jet of a power series $F$ along $Q'$.}
+\leanline{\lean{normjetjetSeriesleone}}
+
+\statement{arith}{\phantomsection\label{t:D}\textbf{Theorem D (normal form of theta products at a non-split prime).}\enspace
+Let $P=(N_0,d)$ be parameters, $\mu$ a natural number, $p$ a prime number with $\chiK{P}(p)\ne1$ and
+$j\colon\CC\to\Cp$ a ring homomorphism. Then there are $\varpi\in\Cp$ and $\pi\in\op$ with
+\[\np{\varpi}=p^{-\nsw{d}{p}},\qquad\np{\pi}=p^{(\chiK{P}(p)-1)/2},\]
+such that for every finite set $I$, every real number $r\le1$ and every $\Theta\in\ThProd{P}{\mu}{1}{r}{I}$:
+\begin{enumerate}[label=(\alph*),itemsep=1pt]
+\item for every natural number $B$,
+\[\nullint{\mathrm{pr}}{S_B}{\varpi}{\pi}{B}{\Theta},\]
+where $\mathrm{pr}_e(v)=\pin{P}{\mu}{-p^e}\cdot v$ and $S_B$ is the set of the natural numbers
+$e\le\lfloor\log_pB\rfloor$ such that $e$ is odd or $p=d$;
+\item if $\chiK{P}(p)=-1$ and $r=1$, there are $\kappa\in\Cp$ and power series $\Psi$, $V$ with coefficients in
+$\op$, in the variables $z_x$, $x\in\PlP{P}{\mu}\times I$, such that $\np{\kappa}=p^{1-1/(p-1)}$, $\Psi(0)=0$,
+\[\Theta(\varpi z)=\exp(\kappa\Psi)\cdot V ,\]
+and for every variable $x$ and every exponent $\beta$: the coefficient at $z^\beta$ of the reduction of
+$\partial\Psi/\partial z_x$ modulo $\mxp$ is nonzero if and only if $\beta=p^e\cdot 1_y$ for an odd $e$ and a variable
+$y=(v,i)$ with $(\pin{P}{\mu}{-p^e}\cdot v,\,i)=x$; here $1_y$ is the exponent of $z_y$.
+\end{enumerate}}
+\leanline{\lean{thetaProductsnormalform}}
+
+\statement{arith}{\phantomsection\label{t:E}\textbf{Theorem E (divisibility of Schur jets).}\enspace Let $p$ be a prime
+number, $\Phi$, $n$, $n'$ finite sets, and $\varkappa\colon\Phi\times\NN\to\NN$ a family of column counts that fits
+the ranks $|n|$, $|n'|$ (Background~5). Let $\mathrm{pr}\colon\NN\times\Phi\to\Phi$ be a map, $S\subset\NN$ and
+$\Xi\subset\Phi$ finite sets, $\rho$, $\omega$ real numbers, $\varpi\in\Cp$ with $\np{\varpi}=p^{-\rho}$,
+$\pi\in\op$ with $\np{\pi}=p^{\omega}$, and $\Theta$ a power series over $\Cp$ in the variables $z_{(\tau,b,c)}$,
+$(\tau,b,c)\in\Phi\times n'\times n$. Let $g\colon\Phi\times\NN\times n'\to\NN$ be a function (the \emph{charges})
+such that for all $e\in S$, $\tau\in\Phi$, $h\in\NN$ and $b\in n'$:
+\[\tau\in\Xi\ \text{ or }\ \bigl(h=1\text{ and }\mathrm{pr}_e(\tau)\in\Xi\bigr)\quad\Longrightarrow\quad
+g(\tau,1,b)\ne0\ \text{ or }\ g(\mathrm{pr}_e(\tau),h,b)\ne0 .\]
+Let $i'$ and $i$ be Weyl indices for $\varkappa$ of ranks $|n'|$ and $|n|$, and put $N=|n'|$, $B=\boxes{\varkappa}{N}$
+and $m=\sum_{\tau\in\Phi}\sum_{h<N}\sum_{l<\varkappa(\tau,h)}\sum_{b<h}g\bigl(\tau,h,i'_\tau(h,l,b)\bigr)$, the total charge
+of the boxes of $i'$. Suppose that
+\[\nullint{\mathrm{pr}}{S}{\varpi}{\pi}{B}{\Theta}.\]
+Then
+\[\np{\schurjet{\varkappa}{\Theta}_{i',i}}\ \le\ p^{\,m-\bigl((\frac1{p-1}-\rho)B+\omega\sum_{e\in S}\sum_{\tau\in\Phi}
+\cc{p}{\varkappa}{N}{\Xi}{\tau}{\mathrm{pr}_e(\tau)}{e}-|\Phi|\,N^3(\lfloor\log_pB\rfloor+1)\bigr)} .\]}
+\leanline{\lean{normschurJetle}}
+
+\statement{arith}{\phantomsection\label{t:F}\textbf{Theorem F (a jet that is not more divisible).}\enspace Let $P=(N_0,d)$
+be parameters, $\mu$ a natural number, $p$ a prime number with $\chiK{P}(p)\ne1$ and $j\colon\CC\to\Cp$ a ring
+homomorphism. Let $\mathsf{N}$ be a function from the exponents in the variables $z_\tau$, $\tau\in\PlP{P}{\mu}$,
+to the non-negative real numbers, $\Theta$ a power series over $\Cp$ in these variables, $n$ an exponent, and $i$, $y$
+functions from $\PlP{P}{\mu}$ to $\NN$. Suppose that $\packing{p}{n}{i}{y}$; that $\Theta(0)=1$; that $\Theta$ is
+carried by one copy and $\Theta^{-1}$ by five copies of $\mathsf{N}$ (Background~6); and that
+$\Theta\in\ThProd{P}{\mu}{1}{1}{\{\ast\}}$. Then there are exponents $\beta\le n$ and $\gamma\le n$ with
+$|\beta|=\sum_\tau y_\tau(p^{i_\tau}+1)$ and $|\gamma|=\sum_\tau y_\tau$ such that $\beta$ is a sum of six exponents
+$\alpha_1,\dots,\alpha_6$ with
+\[\prod_{k=1}^{6}\mathsf{N}(\alpha_k)\ \ge\ p^{\,(1-\frac1{p-1})|\gamma|+\nsw{d}{p}\,|\beta|+\sum_{\tau}v_p(\gamma_\tau!)} .\]}
+\leanline{\lean{existshasLargeSplitofpairs}}
+
+\textbf{How the pieces fit} (motivation, read from the comments of the formal text and from the places where later
+units use the results; not statements of this unit). A column on the definite group is lifted by integrating it
+against a theta kernel, and on a definite group this integral is a finite sum of matrices of jets
+$\schurjet{\varkappa}{\jet{V}{c}{f}}$ of data $f$ (Background~5). Theorem~A and Proposition~\ref{p:F} turn the series
+$\jet{V}{c}{f}$ into products of Taylor series of translates of $\thC{C}$; the scale $\per{P}{\mu}$ is chosen so
+that these products have $p$-adic absolute values governed by the period factor $\sone{P}{\mu}$ and archimedean
+conjugates governed by $\OmP{P}{\mu}$. Theorem~C says that one lift cannot lower $p$-adic valuations by more than
+a power of $\cj{\delta}d$ (Proposition~\ref{p:raises}), which is all one needs at the primes that split in $K$. At the
+other primes the formal group of the curve has height two. There the logarithm of $\thC{C}$ keeps a denominator
+only in the degrees $p+1$ and $p+q$ of a good parameter (Proposition~\ref{p:formal}); a derivative of order $a$
+gains about $a/(p-1)$ powers of $p$, and the exponential $\exp(\kappa\Psi)$ takes back what the couplings of a
+variable at $\tau$ with the variables at the partner places $\pin{P}{\mu}{-p^e}\cdot\tau$ allow. The balance is the
+number $\ask{D}{p}{y}{\tau}$ of Definition~\ref{d:ask}, summed in the gain $\gain{D}{p}$; it is the local form, at
+$p$, of the weight $\lambda_{d,1}$ of the prime sum of the main inequality. Theorem~F shows that the count is
+sharp, which the unit on the rows needs for a lower bound.
+
+\sect{The setting}{s:setting}
+\begin{conventions}\phantomsection\label{c:conventions}
+$\NN=\{0,1,2,\dots\}$; subtraction of natural numbers is truncated at $0$ and division of natural numbers is the
+floor, as in the formal text. \emph{Parameters} are a pair $P=(N_0,d)$: a positive multiple $N_0$ of $18480$ and a
+prime number $d\equiv N_0/2-1\bmod N_0$; the \emph{exponent} is a natural number $\mu$. A statement about
+\emph{data} concerns admissible data $D$ for parameters $P$, with components $x$, $x_1$, $b$ (the three scales),
+$m$, $r$ and the exponent $\muD{D}$. Index sets such as $n$, $n'$, $I$, $J$, $\Phi$ are finite sets; a hermitian
+space $V$ has an index set $n$ and signs $\varepsilon\colon n\to\{1,-1\}$. In a statement about a prime number
+$p$ and a ring homomorphism $j\colon\CC\to\Cp$, the absolute value $\np{\,\cdot\,}$ of $\Cp$ is normalised by
+$\np{p}=p^{-1}$, $\op=\{x\in\Cp:\np{x}\le1\}$, $\mxp$ is its maximal ideal, and $\Oj=\{z\in\CC:\np{j(z)}\le1\}$;
+such a pair $(p,j)$ is called a $p$-adic place. In a statement about a field $E$ with a CM type and Weil data,
+about a commutative ring of characteristic $p$, about a normed field, or about an integral domain of
+characteristic $0$, these structures are part of the statement. $v_p$ is the $p$-adic valuation of a natural
+number. For a multi-index (an \emph{exponent}) $\beta$, $|\beta|$ is its degree, $\beta!$ the product of the
+factorials of its entries, and $\beta\le\beta'$ is meant entry by entry.
+\end{conventions}
+
+The unit rests on four bodies of earlier material. They are recalled in six numbered paragraphs, after the
+definitions and the comments of the formal text; the notes of the units that own them give the details.
+
+\subhead{Background 1: the field, its lattice, tight frames} (unit~152, the note on the CM field; the definition of
+a frame is in the background library). For parameters $P=(N_0,d)$ and $\mu\in\NN$: $\KP{P}=\Q(\sqrt{-d})\subset\CC$
+with ring of integers $\OO_{\KP{P}}$; $\chiK{P}$ is its quadratic character, on integers the Legendre symbol
+$\chid{d}$ modulo $d$; $\Nn{P}{\mu}$ is $N_0$ times a power of $3$ and a power of $2$ fixed by $\mu$;
+$\EP{P}{\mu}=\KP{P}(\rtu{P}{\mu})$ with $\rtu{P}{\mu}$ a primitive root of unity of order $\Nn{P}{\mu}$. The set
+$\PlP{P}{\mu}$ of infinite places of $\EP{P}{\mu}$ is a group, identified with $\operatorname{Gal}(\EP{P}{\mu}/\KP{P})$ and with
+$(\Z/\Nn{P}{\mu})^\times$; $\emb{\tau}\colon\EP{P}{\mu}\to\CC$ is the embedding at $\tau$ that is the identity on
+$\KP{P}$, and $\emb{\tau}=\emb{1}\circ\operatorname{gal}(\tau)$ for the automorphism of $\tau$. For an integer $\nu$,
+$\pin{P}{\mu}{\nu}$ is the place of the class of $\nu$ if $\nu$ is prime to $\Nn{P}{\mu}$, and the unit place
+otherwise. Every prime dividing $\Nn{P}{\mu}$ divides $(d+1)/4$ and splits in $\KP{P}$. Further:
+$\czE{P}{\mu}=(1+\sqrt{-d})/2$ as an integer of $\EP{P}{\mu}$; $\dgen{P}{\mu}$, the value at $\rtu{P}{\mu}$ of the
+derivative of the cyclotomic polynomial of order $\Nn{P}{\mu}$, which generates the different of $\EP{P}{\mu}$ over
+$\KP{P}$ and divides $\Nn{P}{\mu}$; the finite idele $\alP{P}{\mu}$ of $\EP{P}{\mu}$ with component
+$\dgen{P}{\mu}^{-1}$ at the primes that contain $\czE{P}{\mu}$ and $1$ elsewhere; the root discriminant
+$\rdE{P}{\mu}$; and $\OmP{P}{\mu}=\exp(\mathrm{cs}(d))\cdot2\pi/\rdE{P}{\mu}$, where $\mathrm{cs}(d)$ is Euler's
+constant minus $\operatorname{Re}(L'/L)(1,\chid{d})$. We write $\Ad$, $\Af$, $\Ohat$ for the adeles, the finite
+adeles and the integral finite adeles of the field in question, and
+\[\frl{P}{\mu}=\{x\in\EP{P}{\mu}:\ \alP{P}{\mu}^{-1}x\in\Ohat\},\]
+a fractional ideal that contains the integers of $\EP{P}{\mu}$. Let $I$ be a finite set, $w_i\in\EP{P}{\mu}$ and
+$m_i\in\NN$ for $i\in I$, and $M\in\NN$. The family $(w_i)$ with multiplicities $(m_i)$ is a \emph{tight frame of
+length $M$} if every $w_i$ lies in $\frl{P}{\mu}$ and
+\[\sum_{i\in I}m_i\,\emb{\tau}(w_i)\,\cj{\emb{\tau'}(w_i)}=\begin{cases}M&\tau=\tau',\\0&\tau\ne\tau'\end{cases}
+\qquad\text{for all }\tau,\tau'\in\PlP{P}{\mu}.\]
+So the vectors $(\emb{\tau}(w_i))_\tau$ of $\CC^{\PlP{P}{\mu}}$, repeated $m_i$ times, resolve $M$ times the
+identity: they replace an orthonormal basis, which the lattice need not have.
+\leanline{in the background library: \lnm{IsTightFrame}, \lnm{finiteImage}\sep the objects of the field are in the
+concordance of the note on the CM field}
+
+\subhead{Background 2: embeddings into $\Cp$.} Let $(p,j)$ be a $p$-adic place and $\psi\colon\EP{P}{\mu}\to\Cp$ a ring
+homomorphism. It induces a prime $\mathfrak{p}_\psi$ of $\EP{P}{\mu}$, the set of integers $x$ with $\np{\psi(x)}<1$,
+and extends continuously to the completion at $\mathfrak{p}_\psi$; composed with the projection of $\Af$ to that
+completion this is a ring homomorphism $\hat\psi\colon\Af\to\Cp$. For $\tau\in\PlP{P}{\mu}$ put
+$j_\tau(x)=j(\emb{\tau}(\cj{x}))$, so that $j(\cj{\emb{\tau}(x)})=j_\tau(x)$. Two facts are quoted: $\np{\psi(x)}\le1$
+for integers $x$, and $\np{\hat\psi(a)}\le1$ for $a\in\Ohat$.
+\leanline{in the background library: \lnm{PadicPlace}, \lnm{placeOfEmb}, \lnm{adeleExtension}, \lnm{weightEmbedding},
+\lnm{norm\_ringOfIntegers\_le}, \lnm{norm\_adeleExtension\_le\_one}}
+
+\subhead{Background 3: a CM datum and its theta function.} Let $d$ be a prime $\equiv7\bmod8$ and $\OO_d$ the
+ring of integers of $\Q(\sqrt{-d})$, embedded in $\CC$. A \emph{CM datum for $d$} is a triple $C$ of a lattice
+$\LamC{C}\subset\CC$ with $\OO_d\LamC{C}\subset\LamC{C}$, a point $t$ with $2t\in\LamC{C}$, $t\notin\LamC{C}$, and a
+number $a_1$, normalised by $\wp''(t)=2$ (written $g_2=12\wp(t)^2-4$) and $a_1^2=12\wp(t)$, with
+$\frac{1+\sqrt{-d}}2t\notin\LamC{C}$ and $\frac{1-\sqrt{-d}}2t\notin\LamC{C}$; $\wp$ and $\sigma_C$ are the Weierstrass functions of
+$\LamC{C}$ and $\area{C}$ is the area of a fundamental parallelogram. For $m\in\NN$ and $y\in\CC$ the \emph{twisted
+translation} of a function $F$ on $\CC$ is
+\[(\UC{C}{m}{y}F)(z)=\exp\bigl(-m\pi(z\cj{y}+|y|^2/2)/\area{C}\bigr)\,F(z+y),\]
+and the \emph{theta function} of $C$ is $\thC{C}(z)=(\UC{C}{1}{t}\sigma_C)(z)/(\UC{C}{1}{t}\sigma_C)(0)$: an entire
+function with $\thC{C}(0)=1$, a section of degree one for the Riemann form of $\LamC{C}$. Further
+$\xiC{C}(z)=\wp(z+t)-\wp(t)$ and $\phC{C}(z)=\tfrac12(\wp'(z+t)-a_1\xiC{C}(z))$, which vanishes at $0$ with
+derivative $1$; for a triple $x=(x_1,x_2,x_3)$ of natural numbers,
+$\mon{C}{x}=\thC{C}^{x_1}\sigma_C^{2x_2}(\phC{C}\thC{C}^3)^{x_3}$ is the \emph{monomial section} of degree
+$x_1+2x_2+3x_3$. An automorphism $\sigma$ of $\CC$ sends $C$ to a conjugate datum $\sigma C$. $\tay{F}$ is the
+Taylor series at $0$ of an entire function $F$, and for a $p$-adic place $(p,j)$, $\tayj{F}\in\Cp[[X]]$ is $\tay{F}$
+with $j$ applied to its coefficients. The ring
+\[\phiring{C}=\{G(\tayj{\phC{C}}):\ G\in\op[[X]]\}\subset\Cp[[X]]\]
+depends on $j$. For a natural number $M\ge1$ and $r\in\NN$, $\cpart{M}{r}{F}$ is the part of a series $F\in\Cp[[X]]$
+in the degrees $\equiv r\bmod M$. The following are quoted.
+\begin{enumerate}[label=\textup{(Q\arabic*)},leftmargin=3.1em,itemsep=2pt]
+\item \emph{Normalisation.} For every nonzero fractional ideal $\mathfrak{c}$ of $\Q(\sqrt{-d})$ there are a CM
+datum $C$ for $d$ and $u\in\CC^\times$ with $\LamC{C}=u\,\mathfrak{c}$; then $\area{C}=|u|^2\Nm(\mathfrak c)\sqrt d/2$.
+(Elementary.)
+\item \emph{Main theorem of complex multiplication, soft form.} Let $C$ be a CM datum for $d$ with
+$\LamC{C}=\Omega_\ast\OO_d$ and $\sigma\in\Aut(\CC)$. There are $\Omega\in\CC^\times$ with
+$\area{\sigma C}=|\Omega|^2\sqrt d/2$, an integer $e\ge1$ with $e\Omega\in\LamC{\sigma C}$, a finite adele $\beta$ of
+$\Q(\sqrt{-d})$ and elements $a_S\in\Q(\sqrt{-d})$, one for each finite set $S\subset\Q(\sqrt{-d})$, with $\beta$ a
+cluster point of the $a_S$ as $S$ grows, such that for every finite $S$ and every $x\in S$
+\[\sigma\bigl(\tay{\UC{C}{1}{x\Omega_\ast}\thC{C}}\bigr)=\tay{\UC{\sigma C}{1}{x\Omega a_S}\thC{\sigma C}} .\]
+Reference: G.~Shimura, \emph{Introduction to the Arithmetic Theory of Automorphic Functions} (1971), Thm.~5.4;
+J.~Milne, \emph{Complex Multiplication} (2020), 9.17. Relation: a \emph{weaker form} (the catalogue calls it the soft
+form: the adele is not identified with the Artin map; places confirmed at second hand).
+\item \emph{Chowla--Selberg formula, logarithmic form.} For a CM datum $C$ for $d$ there is $u\in\CC$ with
+$\np{j(u)}=1$ at every $p$-adic place $(p,j)$ and
+$\area{\sigma C}\cdot|\sigma(u)|^2=\pi\exp(\mathrm{cs}(d))\cdot2\pi/\sqrt d$ for every $\sigma\in\Aut(\CC)$. The
+artifact cites Selberg and Chowla, \emph{On Epstein's zeta-function}; the catalogue has no entry for this
+declaration: \emph{reference to be confirmed}.
+\item \emph{Integrality of $a_1$.} $\np{j(a_1)}\le1$ at every $p$-adic place. Catalogue: a \emph{weaker form} of the
+good reduction everywhere of the normalised CM curve (Milne, \emph{loc.\ cit.}; place not confirmed). Also quoted:
+a complex number whose images under all embeddings into an algebraic closure of $\Q_2$ are bounded is algebraic.
+\item \emph{The parameter $\phC{C}$.} $\tayj{\phC{C}}$ has constant term $0$ and linear coefficient $1$; the ring
+$\phiring{C}$ is stable under $d/dX$ and contains $\tayj{\xiC{C}}$. If $T\in\phiring{C}$ has $T(0)=0$, $T'(0)=1$,
+then $\phiring{C}=\{G(T)\}$, and the inverse series $Z$ of $T$ satisfies: $F\in\phiring{C}$ if and only if $F(Z)$
+has coefficients in $\op$. For every $k$ the largest absolute value of the $k$-th coefficient of an element of
+$\phiring{C}$ is attained at a power of $\tayj{\phC{C}}$; the same holds in two variables for the ring of integral
+series in $\tayj{\phC{C}}(X)$, $\tayj{\phC{C}}(Y)$, and this ring contains $\tayj{\phC{C}}(X+Y)$ (the addition law).
+\item \emph{Logarithm of theta.} There are $L\in\Cp[[X]]$ and $L_2\in\Cp$ with $\tayj{\thC{C}}=\exp(-L)$,
+$L(0)=L'(0)=0$, $L''=L_2+\tayj{\xiC{C}}$, $\np{j(\sqrt{-d})\,L_2}\le1$, and for every pair $(a,N)$ in the closure
+$\mathcal{N}_d\subset\Cp^2$ of the pairs $(j(\delta),j(\delta\cj{\delta}))$, $\delta\in\OO_d$: the series
+$\tayj{\phC{C}}(aX)$, $\exp(NL-L(aX))$ and $(NL-L(aX))'$ lie in $\phiring{C}$. Moreover, with $q$ the norm of a
+prime of $\Q(\sqrt{-d})$ above $p$: $(\zeta,\zeta^{p+1})\in\mathcal{N}_d$ for every $\zeta\in\Cp$ with $\zeta^{q}=\zeta$,
+$\np{\zeta}=1$. (Substantial; the artifact points to Bannai--Kobayashi and to Mazur--Tate for comparable
+statements; reference to be confirmed.)
+\item \emph{Torsion translates.} Let $\delta\in\OO_d$, $\delta\ne0$, and $y\in\CC$ with $\delta y\in\LamC{C}$. Then
+$\tayj{\UC{C}{1}{y}\thC{C}}(j(\cj\delta)X)=\tayj{\thC{C}}^{\delta\cj\delta}\cdot u$ for some $u\in\phiring{C}$. Also:
+if $x$ is a triple of degree $m$ and $My\in\LamC{C}$ for a natural number $M\ne0$, then
+$\np{j\bigl((\UC{C}{m}{y}\mon{C}{x})(0)\bigr)}\le1$. (Substantial; cf.\ Bannai--Kobayashi, Duke Math.~J.~153 (2010),
+2.14--2.16, not compared; Tate's telescoping for local heights.)
+\item \emph{Height of the formal group.} (i) If $\np{(F')_{p-1}}<1$ for every $F\in\phiring{C}$, then
+$\np{(\tayj{\xiC{C}})_{p-1}}\ge1$ and $\chid{d}(p)\ne1$. (ii) Let $Z$ be as in (Q5), $a\in\OO_d$ with $a\cj{a}=q$ odd,
+and $g\in\op[[X]]$ with $g(0)=0$ and $Z(g)=j(a)Z$; then $\np{g_k}=1$ for some $k\le q$. References: Deuring's
+criterion; J.~Silverman, \emph{The Arithmetic of Elliptic Curves}, IV.7 (place confirmed for (ii)); relation:
+\emph{weaker forms} (one direction of the criterion; an upper bound for the height).
+\end{enumerate}
+\leanline{in the background library: \lnm{CMLattice}, \lnm{CMLattice.twistedTranslate}, \lnm{CMLattice.θ},
+\lnm{CMLattice.phiSeriesRing}, \lnm{congruencePart}\sep (Q1) \lnm{QuadField.exists\_latticeModule\_eq\_scaledIdeal},
+\lnm{QuadField.area\_eq\_of\_eq\_scaledIdeal}\sep (Q2) \lnm{CMLattice.complex\_multiplication\_theta}\sep (Q3)
+\lnm{CMLattice.chowla\_selberg}\sep (Q4) \lnm{CMLattice.norm\_a₁\_le\_one}, \lnm{isAlgebraic\_of\_padic}\sep (Q5)
+\lnm{CMLattice.isSeriesGenerator\_translatedWpDeriv}, \lnm{IsSeriesGenerator.exists\_subst\_inverse},
+\lnm{exists\_monomial\_max\_norm\_coeff}, \lnm{CMLattice.translatedWpDeriv\_add\_mem\_multiPhiRing}\sep (Q6)
+\lnm{CMLattice.exists\_log\_theta}, \lnm{mem\_normPairClosure\_of\_pow\_eq}\sep (Q7)
+\lnm{CMLattice.rescale\_translate\_eq\_theta\_pow\_mul}, \lnm{CMLattice.norm\_translate\_le\_naiveHeight\_pow}\sep (Q8)
+\lnm{CMLattice.one\_le\_norm\_coeff\_translatedWp\_nonsplit}, \lnm{CMLattice.exists\_unit\_coeff\_degree\_le}}
+
+\subhead{Background 4: the Weil representation and jets} (background library). Let $E$ be a CM field with a CM
+type, whose embeddings $\emb{\tau}$ are indexed by the infinite places, and with Weil data (a splitting character
+and a finite idele $\alpha$; for $\EP{P}{\mu}$ these are fixed in unit~152, with $\alpha=\alP{P}{\mu}$). A
+\emph{hermitian space} $V$ over $E$ with index set $n$ and signs $\varepsilon$ is a hermitian matrix over $E$ with
+an adelic point that brings it to the diagonal form $\varepsilon$ at the infinite places and to the unit form at
+the finite ones; it is \emph{standard} if all signs are $1$ and the point is $1$. $\stdsp{n}$ is the standard space
+with index set $n$, and $\homsp{n}{n'}$, with index set $n'\times n$, is standard too. The space $\Sw{V}$ is the
+Banach space of the Weil representation: integrable functions on $\Ad^n$ with a reproducing identity. It carries
+the Heisenberg operators $\heis{V}{y}$, $y\in\Ad^n$; the vacuum vector $\vac{V}$; the theta functional
+$\Th{V}\colon\Sw{V}\to\CC$, invariant under the rational vectors; the Weil representation $\weil{V}$ of the adelic
+unitary group, whose elements we write $(g_\infty,g)$ with $g\in\Uf{n}$; and the pairing
+$\inn{V}{f}{f'}=\int\cj{f}f'$. A vector $f\in\Sw{V}$ is a function on $\Ad^n$ through
+$f(y)=\Th{V}(\heis{V}{y}f)$. For a finite adelic vector $x\in\Af^{\,n}$, $\fv{x}\in\Ad^n$ is the vector with real
+part $0$ and finite part $\alpha x$; $\fheis{V}{x}$ is $\heis{V}{\fv{x}}$ times a root of unity, so that
+$\fheis{V}{x}\fheis{V}{x'}=\psi_0(\cdot)\fheis{V}{x+x'}$ with a value of the standard additive character $\psi_0$
+of $\Af$; and
+\[\Wf{V}=\text{the span over }\CC\text{ of the vectors }\fheis{V}{x}\vac{V},\ x\in\Af^{\,n} ,\]
+the \emph{finite part}. $\fmult{g}$ is the multiplier of $g\in\Uf{n}$ in the Weil representation. For a set $R$ of
+finite places and a function $\Psi$ on $\Af^{\,n}$, $\name{V}{R}{\Psi}$ is the operator on $\Sw{V}$ named by $\Psi$
+(a combination of Heisenberg operators at the places of $R$ and their conjugates); $\Psi$ is
+\emph{Schwartz--Bruhat above $R$} if it depends only on the components at the places of $R$, is locally constant,
+and the parts at $R$ of its support lie in a compact set. For a modulus
+$\mathfrak{m}$ (a nonzero ideal divisible by no prime together with its conjugate) $P^{\mathfrak m}$ is the mean
+of the operators $\fheis{V}{x}$ over the integral $x$ supported at the primes dividing $\mathfrak{m}$ and their
+conjugates. For $a\in\CC$ and $f\in\Sw{V}$ the \emph{jet series} is the power series
+\[\jet{V}{a}{f}=\sum_{\beta}\frac{a^{|\beta|}}{\beta!}\,\Th{V}\bigl(v_\beta\otimes f\bigr)\,z^{\beta}\ \in\ \CC[[z_{(\tau,i)}:\tau\text{ an infinite place},\ i\in n]],\]
+where $v_\beta\otimes f$ is the integral of the Heisenberg translates of $f$ against the Fock vector of the monomial
+$z^\beta$. For $f\in\Sw{V}$ and $y\in\CC^{\mathrm{places}\times n}$, $\Thf{f}(y)$ is the value of $f$ at the real
+vector of $y$ divided by the Gaussian; Lemma~\ref{l:line} says that $\jet{V}{a}{f}$ is the Taylor series of
+$z\mapsto\Thf{f}(az)$ when the signs are $1$ and $f\in\Wf{V}$. Quoted facts are cited where they are used; the
+two that carry weight are:
+\begin{enumerate}[label=\textup{(Q\arabic*)},leftmargin=3.1em,itemsep=2pt,start=9]
+\item \emph{Theta functions of a level are Weil translates.} Let $V$ be standard over $\EP{P}{\mu}$, $\delta$ an
+integer with $\delta\cj\delta=N\ne0$, and $S$ an entire function on $\CC^{\mathrm{places}\times n}$ that has the
+transformation law of $\Thf{\,\cdot\,}$ under translation by the real images of the vectors
+$\cj\delta\gamma$, $\gamma\in\frl{P}{\mu}^n$. Then $S=\Thf{F}$ for some $F\in\Wf{V}$, and $F$ has a \emph{vacuum
+expansion for $(\delta,N)$}: a set $A$ of $N^{2|\mathrm{places}||n|}$ indices, $x_a\in\Af^{\,n}$ with $\delta x_a$
+integral, and a natural number $m_0$ with
+$\sum_{a\in A}m_0\,\ell(\heis{V}{\fv{x_a}}\vac{V})\cdot\heis{V}{\fv{(-x_a)}}F=|A|\,\ell(F)\cdot\vac{V}$ for every
+linear form $\ell$ on $\Sw{V}$. (Substantial: Stone--von Neumann for a finite Heisenberg group; no source cited;
+reference to be confirmed.)
+\item \emph{Galois action on the finite Weil representation.} Let $\sigma$ be a ring endomorphism of $\CC$,
+$L\colon\Sw{V}\to\Wf{V}$ a $\sigma$-semilinear map, $B$ a finite adele and $R$ a set of finite places that contains
+the conjugate of none of its members. If $\sigma(\psi_0(z))=\psi_0(B\cj{B}z)$ for all $z\in\Af$ and
+$L(\heis{V}{\fv{x}}f)=\heis{V}{\fv{(Bx)}}(Lf)$ for all $x$ and all $f\in\Wf{V}$, then $B$ is a unit and there are
+$c\in\CC$ and $z\in\Af$, $z\cj z=1$, with $L(\vac{V})=c\,\weil{V}(1,z\cdot1_n)\vac{V}$ and with (iii) and (v) of
+Theorem~B. Reference: G.~Shimura, \emph{Theta functions with complex multiplication}, Duke Math.~J.~43 (1976),
+no place given; \emph{reference to be confirmed}.
+\end{enumerate}
+\leanline{in the background library: \lnm{Space}, \lnm{Space.IsStd}, \lnm{𝒮}, \lnm{Space.ϱ}, \lnm{finVec},
+\lnm{Space.finHeisOp}, \lnm{Space.vacElem}, \lnm{Space.θ}, \lnm{Space.ω}, \lnm{Space.dataInner},
+\lnm{Space.finitePart}, \lnm{finMultiplier}, \lnm{Space.name}, \lnm{Space.projOn}, \lnm{Space.jetSeries},
+\lnm{Space.entireTheta}, \lnm{Space.VacuumExpansion}\sep (Q9) \lnm{Space.exists\_entireTheta\_eq}\sep (Q10)
+\lnm{Space.semilinear\_intertwines\_weil}}
+
+\subhead{Background 5: column counts, Schur jets, gauges, kernels} (background library). A family of \emph{column
+counts} on a finite set $\Phi$ is a function $\varkappa\colon\Phi\times\NN\to\NN$; $\varkappa(\tau,h)$ is the number
+of columns of height $h$ at $\tau$ of a family of Young diagrams, and
+$\boxes{\varkappa}{N}=\sum_{\tau\in\Phi}\sum_{h<N}h\,\varkappa(\tau,h)$ counts the boxes in columns of height below
+$N$. It \emph{fits the ranks} $|n|\le|n'|$ if $\varkappa(\tau,h)=0$ for $|n|<h<|n'|$. A \emph{Weyl index} of rank
+$|n|$ is a family $i=(i_\tau)_\tau$ of standard fillings: $i_\tau(h,l,b)\in n$ is the entry in the box $b<h$ of the
+$l$-th column of height $h<|n|$, $l<\varkappa(\tau,h)$; the Weyl indices index the coordinates of the
+representation of weight $(\varkappa,e)$ of $\prod_\tau\mathrm{GL}_n$, for $e\colon\Phi\to\Z$ the exponents of the
+determinants. The \emph{Schur matrix} $S_\varkappa(z)$ of matrix variables $z_\tau=(z_{(\tau,b,c)})_{b\in n',c\in n}$
+has polynomial entries indexed by a Weyl index $i'$ of rank $|n'|$ and one $i$ of rank $|n|$; its row $i'$ expresses
+the product of minors of $z_\tau y_\tau$ prescribed by $i'$ in the products of minors of $y_\tau$. For a power
+series $F$ in the $z_{(\tau,b,c)}$, $\schurjet{\varkappa}{F}$ is the matrix of the jets of $F$ along the entries of
+$S_\varkappa$. Over $E=\EP{P}{\mu}$ with $\Phi=\PlP{P}{\mu}$: an \emph{algebraic form} of weight $(\varkappa,e)$ on
+$\stdsp{n}$ is a function on $\Uf{n}$ with values in $\CC^{\text{Weyl indices}}$, equivariant under the rational
+points; for a $p$-adic place $(p,j)$, $g\in\Uf{n}$ and a vector $\xi$, the \emph{gauge} $\gauge{\varkappa}{e}{g}{\xi}$ is
+the largest $\np{\,\cdot\,}$ of a coordinate of $g^{-1}\cdot j(\xi)$, where $g^{-1}$ acts in weight $(\varkappa,e)$
+through its images under the $\hat\jmath_\tau$; an element $g\in\Uf{n}$ is \emph{integral above $p$} if its
+components at the primes above $p$ are integral with integral inverse. A \emph{kernel} $k$ from weight
+$(\varkappa,e)$ on $\stdsp{n}$ to weight $(\varkappa,e_a)$ on $\stdsp{n'}$ with data in a complex vector space
+$\mathcal{D}$ consists of a representation $\omega_k$ of $\Uf{n}\times\Uf{n'}$ on $\mathcal{D}$ and a linear map
+$\Phi\mapsto\mathrm{jm}_k(\Phi)$ from $\mathcal{D}$ to matrices (rows: Weyl indices of rank $|n'|$; columns: of rank
+$|n|$), equivariant under the rational points. Let $a$, $b$ be characters of $\mathrm{U}(1)$ over $E$ with weights
+$e_a$, $e_b$ and tame parts $\psi$, $\psi'$, let $K$ be a level, and suppose that $\varkappa$ is a \emph{lift
+weight}: it fits the ranks, $|n|<|n'|$, and $e_\tau=e_{b,\tau}+\varkappa(\tau,|n|)$. For $c\in\CC$ the \emph{theta
+kernel} $\thker{\varkappa}{c}{a}{b}{K}$ has $\mathcal{D}=\Wf{\homsp{n}{n'}}$, $\omega_k=\pairw{a}{b}$ (the Weil
+representation of the pair, twisted by $a$ and $b$) and $\mathrm{jm}_k(f)=\schurjet{\varkappa}{\jet{\homsp{n}{n'}}{c}{f}}$.
+Quoted: $\schurjet{\varkappa}{\jet{\homsp{n}{n'}}{c}{f}}=c^{\boxes{\varkappa}{|n'|}}\schurjet{\varkappa}{\jet{\homsp{n}{n'}}{1}{f}}$;
+the entries of $S_\varkappa$ have integral coefficients; every $g\in\Uf{n}$ is a rational point times an element
+integral above $p$, and the gauge is unchanged by such elements on the right.
+\leanline{in the background library: \lnm{boxes}, \lnm{FitsRanks}, \lnm{WeylIndex}, \lnm{schur}, \lnm{schurJet},
+\lnm{AlgForm}, \lnm{weylGauge}, \lnm{integralAbove}, \lnm{Kernel}, \lnm{IsLiftWeight}, \lnm{thetaKernel},
+\lnm{pairWeil}, \lnm{schurJet\_jetSeries\_eq\_smul}, \lnm{exists\_mul\_mem\_integralAbove}, \lnm{weylGauge\_mul}}
+
+\subhead{Background 6: carried series} (background library). Let $\mathsf{N}$ be a function from exponents to the
+non-negative real numbers and $k\in\NN$. A power series $H$ over $\Cp$ is \emph{carried by $k$ copies of
+$\mathsf{N}$} if every exponent $\beta$ is a sum of $k$ exponents $\alpha_1,\dots,\alpha_k$ with
+$\prod_l\mathsf{N}(\alpha_l)\ge\np{H_\beta}$, $H_\beta$ being the coefficient at $z^\beta$.
+\leanline{in the background library: \lnm{HasLargeSplit}, \lnm{IsCarriedBy}}
+
+\subhead{The definitions of the unit.}
+\begin{definition}[the curve, its period, the scales]\label{d:period}
+Let $P=(N_0,d)$ be parameters and $\mu$ a natural number.
+\begin{enumerate}[label=(\alph*),itemsep=1pt]
+\item $\szero{P}{\mu}=\bigl(\chi_{\mathrm{fin}}(\alP{P}{\mu})^{-1}\bigr)^{1/f}$, the principal value of the root,
+where $f=|\PlP{P}{\mu}|$ and $\chi_{\mathrm{fin}}(a)=\upsilon(a)\,|a|^{-1/2}$ is the character of the finite ideles
+of $\EP{P}{\mu}$ made from the splitting character $\upsilon$ of the Weil data and the idele norm.
+\item $\cmE{P}$ is a CM datum for $d$ and $\Omz{P}\in\CC^\times$ a number with $\LamC{\cmE{P}}=\Omz{P}\,\OO_{\KP{P}}$,
+both chosen by (Q1) for the unit ideal.
+\item $\asc{P}=\sqrt{2\pi/\sqrt d}$, a positive real number.
+\item $\sone{P}{\mu}=\szero{P}{\mu}/u_P$, where $u_P$ is the number chosen by (Q3) for the datum $\cmE{P}$.
+\item $\per{P}{\mu}=\sone{P}{\mu}\cdot\asc{P}/\Omz{P}$.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{vacuumRoot}\sep\lean{cmCurve}\sep\lean{Omz}\sep\lean{areaScale}\sep\lean{periodFactor}\sep\lean{jetScale}}
+
+\begin{definition}[the scaled vacuum and the standard data]\label{d:vac}
+Let $P=(N_0,d)$ be parameters and $\mu$ a natural number.
+\begin{enumerate}[label=(\alph*),itemsep=1pt]
+\item $\vsc{P}{\mu}$ is the nonzero complex number $c$ that Proposition~\ref{p:gen}(i) provides (by choice) for
+$\mu$ and the standard space of rank one.
+\item For a hermitian space $V$ over $\EP{P}{\mu}$ with index set $n$: $\intvac{V}=\vsc{P}{\mu}^{|n|}\cdot\vac{V}$,
+the \emph{scaled vacuum}.
+\item For an integer $\delta$ of $\KP{P}$ and a set $S$ of finite places of $\EP{P}{\mu}$ (a predicate on them),
+$\Lat{\delta}{S}$ is the group of the $x\in\Af^{\,n}$ such that $\delta x_i$ is integral at every place of $S$,
+for all $i\in n$.
+\item For $V$ as in (b), a $p$-adic place $(p,j)$ and an integer $\delta$ of $\KP{P}$, $\Std{V}{\delta}$ is the
+$\Oj$-submodule of $\Sw{V}$ spanned by the vectors $\fheis{V}{x}\intvac{V}$ with
+$x\in\Lat{\delta}{\{w:w\mid p\}}$. It depends on $j$, which is always the place of the statement.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{vacuumScale}\sep\lean{intVacuum}\sep\lean{integralAfter}\sep\lean{standardData}}
+
+\begin{definition}[data that raise gauges]\label{d:raises}
+Let $(p,j)$ be a $p$-adic place, $k$ a kernel from weight $(\varkappa,e)$ on $\stdsp{n}$ to weight $(\varkappa,e_a)$
+on $\stdsp{n'}$ over $\EP{P}{\mu}$ with data in $\mathcal{D}$, $d_1\in\Uf{n}$, $d_2\in\Uf{n'}$ and $c$ a real
+number. Then $\Rais{k}{d_1}{d_2}{c}$ is the set of the $\Phi\in\mathcal{D}$ such that
+\[\gauge{\varkappa}{e_a}{hd_2}{\mathrm{jm}_k(\omega_k(g,h)\Phi)\,\xi}\ \le\ \max(c,0)\cdot\gauge{\varkappa}{e}{gd_1}{\xi}\]
+for all $g\in\Uf{n}$, $h\in\Uf{n'}$ and all vectors $\xi$. It is closed under addition and contains $0$.
+\end{definition}
+\leanline{\lean{raises}}
+
+\begin{definition}[theta products]\label{d:thprod}
+Let $P=(N_0,d)$ be parameters, $\mu$ a natural number, $(p,j)$ a $p$-adic place, $\delta$ an integer of $\KP{P}$,
+$r$ a real number and $c$ a finite set. Then $\ThProd{P}{\mu}{\delta}{r}{c}$ is the set of the power series
+$\Theta$ over $\Cp$ in the variables $z_{(\tau,k)}$, $(\tau,k)\in\PlP{P}{\mu}\times c$, for which there are a finite
+set $J$, elements $w_i\in\EP{P}{\mu}$ ($i\in J$), natural numbers $M$ and $n$, a number $b\in\CC$ and numbers
+$y_{(i,k)}\in\CC$ ($(i,k)\in J\times c$) such that $(w_i)_{i\in J}$ with multiplicities $1$ is a tight frame of
+length $M$;
+\[\Theta=\prod_{(i,k)\in J\times c}\tayj{\UC{\cmE{P}}{1}{y_{(i,k)}}\thC{\cmE{P}}}\Bigl(\sum_{\tau}j\bigl(b\,\cj{\emb{\tau}(w_i)}\bigr)\,z_{(\tau,k)}\Bigr);\]
+$p\nmid M$ and $p\nmid n$; $\np{j(b)}=r$; and $n\,\delta\,y_{(i,k)}\in\LamC{\cmE{P}}$ for all $(i,k)$.
+\end{definition}
+\leanline{\lean{thetaProducts}}
+
+\begin{definition}[integrality on the null cone]\label{d:null}
+Let $p$ be a prime number, $\Phi$ and $c$ finite sets, $\mathrm{pr}\colon\NN\times\Phi\to\Phi$ a map,
+$S\subset\NN$ a finite set, $\varpi\in\Cp$, $\pi\in\op$, $B\in\NN$, and $\Theta$ a power series over $\Cp$ in the
+variables $z_x$, $x\in\Phi\times c$. We say that
+\[\nullint{\mathrm{pr}}{S}{\varpi}{\pi}{B}{\Theta}\]
+if the following holds for every set $T$ of variables and every family $(Z_x)_{x\in\Phi\times c}$ of power series
+$Z_x\in\op[[T]]$ without constant term: if for every commutative ring $Q$ of characteristic $p$, every ring
+homomorphism $\phi\colon\op[[T]]\to Q$ with $\phi(\pi)=0$ and every $e\in S$
+\[\phi\Bigl(\sum_{(\tau,k)\in\Phi\times c}Z_{(\tau,k)}^{\,p^e}\cdot Z_{(\mathrm{pr}_e(\tau),k)}\Bigr)=0 ,\]
+then every coefficient of degree at most $B$ of the series $\Theta\bigl((\varpi Z_x)_x\bigr)$ has absolute value at
+most $1$.
+\end{definition}
+\leanline{\lean{IsIntegralOnNullCone}}
+The sum in the display is the \emph{coupling} of exponent $e$ of the family $Z$. The condition on it says that it
+lies in the ideal generated by $p$ and $\pi$ (take for $Q$ the quotient by this ideal; if the ideal is the whole
+ring there is no such $\phi$): the family is \emph{null} modulo $(p,\pi)$ for the pairings of a variable, raised to
+the power $p^e$, with its partner at $\mathrm{pr}_e$.
+
+\begin{definition}[ask, forced part, gain, loss]\label{d:ask}
+Let $D$ be admissible data for parameters $P=(N_0,d)$, with components $x_1$, $b$, $m$, and let $p$ be a natural
+number. For a real number $y$ and $\tau\in\PlD{D}$ put
+\[\ask{D}{p}{y}{\tau}=\frac{1-\chiK{P}(p)}2\sum_{\substack{e\ge1\\ e\text{ odd or }p=d}}\Bigl(\frac{y}{p^e}-\nomW{D}{\pinD{D}{-p^e}\cdot\tau}\Bigr)_{\!+},\]
+where $(\,\cdot\,)_+$ is the positive part, $\nomW{D}{\,\cdot\,}$ is the nominal weight of unit~152 ($\aD{D}/x$ at
+the thick places, $\aD{D}/x_1$ at the others) and the sum over $e\in\NN$ is $0$ if the family is not summable. Then
+\begin{gather*}
+\forced{D}{p}=\sum_{\tau\in\PlD{D}}\ask{D}{p}{\nomW{D}{\tau}}{\tau},\\
+\gain{D}{p}=m\Bigl(\sum_{\tau\in\tops{D}}\ask{D}{p}{\aD{D}}{\tau}+\kD{D}\,\forced{D}{p}\Bigr),\\
+\loss{D}{p}=\fD{D}\,(\log b)^2\cdot\frac{\aD{D}}{p}\cdot m^{\ast} ,
+\end{gather*}
+where $m^\ast=m$ if $\shortp{D}{p}$ and $m^\ast=1$ otherwise. Here we say that $\shortp{D}{p}$ if $m$ divides $p-1$
+or $m$ divides $p+1$, and that $\smallns{D}{p}$ if $p<x_1$ and $\chiK{P}(p)\ne1$. The sets $\tops{D}$ (the places of class $1$ modulo $N_0$) and the numbers $\aD{D}$, $\kD{D}$,
+$\fD{D}=|\PlD{D}|$ are those of unit~152.
+\end{definition}
+\leanline{\lean{localAsk}\sep\lean{forcedPart}\sep\lean{gain}\sep\lean{loss}\sep\lean{IsShortPrime}\sep\lean{IsSmallNonsplit}}
+
+\begin{definition}[served primes, collisions]\label{d:served}
+Let $D$ be admissible data for parameters $P=(N_0,d)$, with component $m$, and let $p$ be a natural number.
+\begin{enumerate}[label=(\alph*),itemsep=1pt]
+\item $\clm{D}{p}$ is the least natural number $\mathfrak r$ with $m\le p^{\mathfrak r}$ if $p>1$ (the upper
+logarithm of $m$ to the base $p$, which is $0$ for $p\le1$);
+$\deltaP{D}{p}=\clm{D}{p}\cdot\fD{D}\cdot\bigl(\nD{D}{m}+\clm{D}{p}\bigr)$, where $\nD{D}{l}=\kD{D}+l(\tD{D}+1)$;
+and $\jc{D}{p}=\lceil m\cdot2\fD{D}\aD{D}/p\rceil$.
+\item $\ozero{D}{p}$ is the order, in $(\Z/N_0)^\times$, of the class modulo $N_0$ of the place $\pinD{D}{-p}$.
+\item We say that $\served{D}{p}$ if $\chiK{P}(p)=-1$, it is not the case that $\shortp{D}{p}$, $\ozero{D}{p}$ is odd,
+and $\ozero{D}{p}\le\clm{D}{p}$.
+\item For a finite set $\Xi\subset\PlD{D}$, a place $\tau\in\PlD{D}$ and $e\in\NN$ we say that
+\[\collision{D}{p}{\Xi}{\tau}{e}\]
+if $e\ge1$, $e$ is odd or $p=d$, $\tau\in\tops{D}\smallsetminus\Xi$ and
+$\pinD{D}{-p^e}\cdot\tau\in\tops{D}\smallsetminus\Xi$. Then
+\[\coll{D}{p}{\Xi}=\sum_{\tau\in\PlD{D}}\ \sum_{e}\frac{\aD{D}}{p^e} ,\]
+the inner sum being over the $e\in\NN$ for which this holds (it is $0$ if the family is not summable).
+\end{enumerate}
+\end{definition}
+\leanline{\lean{ceilLogM}\sep\lean{deltaP}\sep\lean{jetCeil}\sep\lean{ozero}\sep\lean{IsServed}\sep\lean{IsCollision}\sep\lean{collisionSum}}
+
+\begin{definition}[the coupling count]\label{d:cc}
+Let $\Phi$ be a set, $p$ and $n'$ natural numbers, $\varkappa\colon\Phi\times\NN\to\NN$ a function,
+$\Xi\subset\Phi$ a finite set, $\tau,\tau'\in\Phi$ and $e\in\NN$. For $\sigma\in\Phi$, summing over the heights
+$h<n'$, put
+\[t_\sigma=\sum_{h=1,\ \sigma\notin\Xi}\varkappa(\sigma,h),\qquad r_\sigma=\sum_{h\ne1}\varkappa(\sigma,h),\qquad
+B_\sigma=\sum_{h\ne1}h\,\varkappa(\sigma,h) .\]
+Then
+\[\cc{p}{\varkappa}{n'}{\Xi}{\tau}{\tau'}{e}=\min\Bigl(\frac{t_\tau}{p^e},\,r_{\tau'}+t_{\tau'}\Bigr)+\frac{r_\tau}{p^e}
++\min\Bigl(\frac{B_\tau}{p^e},\,B_{\tau'}\Bigr),\]
+a real number.
+\end{definition}
+\leanline{\lean{couplingCount}}
+
+\begin{definition}[the column counts of the data]\label{d:kappa}
+Let $D$ be admissible data for parameters $P$, with component $r$; write $k=\kD{D}$, $t=\tD{D}=5r$ and
+$\gap{D}=2r^8$, and let $\wt{D}{l}{\tau}$ be the weight of unit~152 at stage $l$. For $\tau\in\PlD{D}$,
+$h\in\NN$ and $l\in\NN$:
+\begin{gather*}
+\kap{D}{\tau}{h}=\begin{cases}
+\aD{D}&h=1,\ \tau\in\tops{D},\\ 0&h=1,\ \tau\notin\tops{D},\\
+\wt{D}{1}{\tau}-\lfloor(k+t+1)/2\rfloor&h=k\ne1,\\
+\gap{D}-(t+1)&h\ne1,\ k<h,\ (t+1)\mid h-k,\\ 0&\text{otherwise;}\end{cases}\\
+\last{D}{l}{\tau}=\begin{cases}0&l=0,\\ \lfloor\nD{D}{l-1}/2\rfloor-\wt{D}{l}{\tau}\in\Z&l\ge1;\end{cases}\\
+\kept{D}{h}=\begin{cases}r^8-\lfloor(t+1)/2\rfloor&k\le h,\ (t+1)\mid h-k,\\0&\text{otherwise;}\end{cases}\\
+\kapY{D}{\tau}{h}=\kept{D}{h}+\bigl(\kap{D}{\tau}{h+1}-\kept{D}{h+1}\bigr).
+\end{gather*}
+All subtractions are truncated, except the one in $\last{D}{l}{\tau}$.
+\end{definition}
+\leanline{\lean{kap}\sep\lean{lastEntry}\sep\lean{keptColumns}\sep\lean{columnsY}}
+
+\begin{definition}[Frobenius packings, the depth loss]\label{d:packing}
+\textup{(a)} Let $P$ be parameters, $\mu$ a natural number, $p$ a natural number and $n$, $i$, $y$ functions from
+$\PlP{P}{\mu}$ to $\NN$; write $\mathrm{pr}_e(\tau)=\pin{P}{\mu}{-p^e}\cdot\tau$. We say that $\packing{p}{n}{i}{y}$ if
+\begin{enumerate}[label=(\arabic*),itemsep=1pt]
+\item for every $\tau$ with $y_\tau\ne0$: $i_\tau$ is odd and $\chiK{P}(p)=-1$;
+\item for all $\tau$, $\tau'$ with $y_\tau\ne0$, $y_{\tau'}\ne0$ and every odd $e<i_\tau$:
+$\mathrm{pr}_e(\tau')\ne\mathrm{pr}_{i_\tau}(\tau)$;
+\item for every $\tau'$:\quad $p^{i_{\tau'}}y_{\tau'}+\sum_{\tau:\ \mathrm{pr}_{i_\tau}(\tau)=\tau'}y_\tau\ \le\ n_{\tau'}$.
+\end{enumerate}
+\textup{(b)} Let $D$ be admissible data, with component $b$, and $n$ a natural number. With
+$c=\lceil60\,b/\kD{D}\rceil$ and $l=n-c$ (truncated),
+\[\dl{D}{n}=\bigl((l+1)(l+2)\cdots(l+c)\bigr)^2 .\]
+\end{definition}
+\leanline{\lean{IsFrobPacking}\sep\lean{depthLossInt}}
+
+\sect{Periods and scales}{s:period}
+\statement{inksoft}{\textbf{Inputs from unit 152} (the data; note on the CM field). For parameters $P=(N_0,d)$ and
+$\mu\in\NN$, with $f=|\PlP{P}{\mu}|$ and $\varpi_E$ the generator of the different of $\EP{P}{\mu}$ over $\Q$ fixed
+there:
+
+\textbf{(I1)} $\alP{P}{\mu}\,\cj{\alP{P}{\mu}}\,\dgen{P}{\mu}$ has valuation $1$ at every finite place;
+$\alP{P}{\mu}^{-1}\in\Ohat$; $\Nn{P}{\mu}\alP{P}{\mu}\in\Ohat$.
+
+\textbf{(I2)} $\prod_\tau|\emb{\tau}(\varpi_E)|=\rdE{P}{\mu}^{\,f}$ and
+$|\emb{\tau}(\varpi_E)|=|\emb{\tau}(\dgen{P}{\mu})|\sqrt d$; $\prod_\tau\emb{\tau}(y)=\Nm_{\EP{P}{\mu}/\KP{P}}(y)$ for
+$y\in\EP{P}{\mu}$; $\emb{\tau}(x)=x$ for $x\in\KP{P}$.
+
+\textbf{(I3)} For every injective ring endomorphism $\phi$ of the integers of $\EP{P}{\mu}$, $\phi(\dgen{P}{\mu})$
+and $\dgen{P}{\mu}$ have the same valuation at every finite place; $\dgen{P}{\mu}$ divides $\Nn{P}{\mu}$ and
+generates the different of $\EP{P}{\mu}$ over $\KP{P}$.
+
+\textbf{(I4)} A prime $p$ with $\chiK{P}(p)\ne1$ is at least $13$ and does not divide $\Nn{P}{\mu}$; $64<d$; every
+prime dividing $\Nn{P}{\mu}$ divides $(d+1)/4$; $\czE{P}{\mu}(1-\czE{P}{\mu})=(d+1)/4$ and
+$\cj{\czE{P}{\mu}}=1-\czE{P}{\mu}$; no power of $d$ is $\equiv-1\bmod N_0$.
+
+\textbf{(I5)} For $\sigma\in\Aut(\CC/\KP{P})$ the permutation $\pi=\prm{\mu}{\sigma}$ of $\PlP{P}{\mu}$ satisfies
+$\sigma\circ\emb{\tau}=\emb{\pi(\tau)}$.
+
+\textbf{(I6)} \emph{Frobenius.} Let $p\nmid\Nn{P}{\mu}$ be a prime, $\phi$ a ring homomorphism from the integers
+of $\EP{P}{\mu}$ to a ring of characteristic $p$, $v\in\PlP{P}{\mu}$ and $e\in\NN$. Then
+$\phi(\operatorname{gal}(v)x)=\phi(\cj{x})^{p^e}$ for all integers $x$ if and only if
+$\phi(\operatorname{gal}(v)\rtu{P}{\mu})=\phi(\operatorname{gal}(u)\rtu{P}{\mu})$ for the place $u=\pin{P}{\mu}{-p^e}$ and
+$-\chiK{P}(p)^e\phi(\sqrt{-d})=\phi(\sqrt{-d})$. (The same holds without the conjugation, with $u=\pin{P}{\mu}{p^e}$ and
+without the sign.)}
+\leanline{unit 152: \lnm{Parameters.v\_alpha\_mul\_relDifferentGen}, \lnm{Parameters.inv\_α\_mem},
+\lnm{Parameters.N₁\_mul\_α\_mem}\sep \lnm{Parameters.prod\_varpi\_eq\_rootDiscr\_pow},
+\lnm{Parameters.infinitePlace\_apply\_varpi}, \lnm{Parameters.prod\_phi\_eq\_norm}, \lnm{Parameters.phi\_algebraMap}\sep
+\lnm{Parameters.valuation\_map\_relDifferentGen}, \lnm{Parameters.relDifferent\_spec}\sep
+\lnm{Parameters.thirteen\_le\_of\_chiK\_ne\_one}, \lnm{Parameters.chiK\_eq\_one\_of\_dvd}, \lnm{Parameters.lt\_d},
+\lnm{Parameters.dvd\_norm\_c₀}, \lnm{Parameters.c₀InE\_mul\_one\_sub}, \lnm{Parameters.star\_c₀InE},
+\lnm{Parameters.pow\_d\_ne\_neg\_one}\sep \lnm{Parameters.placePerm\_spec}\sep \lnm{Parameters.frob\_ext}}
+
+\begin{lemma}[the period]\label{l:period}
+Let $P=(N_0,d)$ be parameters and $\mu$ a natural number.
+\begin{enumerate}[label=(\alph*),itemsep=1pt]
+\item For every $\sigma\in\Aut(\CC/\KP{P})$: $|\sigma(\szero{P}{\mu})|^2=\rdE{P}{\mu}/\sqrt d$.
+\item $\OmP{P}{\mu}>0$.
+\item $\per{P}{\mu}\ne0$.
+\item The lattice of $\cmE{P}$, as a module over $\OO_{\KP{P}}$, is $\Omz{P}\cdot\OO_{\KP{P}}$.
+\item $\Omz{P}\in\LamC{\cmE{P}}$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) Write $\alpha=\alP{P}{\mu}$, $\partial=\dgen{P}{\mu}$, $f=|\PlP{P}{\mu}|$. Quoted from the background library:
+there are $k\ge1$ and $y\in\EP{P}{\mu}^\times$ with $\chi_{\mathrm{fin}}(\alpha)^k=\prod_\tau\emb{\tau}(\cj y)$. By
+(I2) this number is a norm, so it lies in $\KP{P}$ and $\sigma$ fixes it; hence
+$|\sigma(\chi_{\mathrm{fin}}(\alpha))|=|\chi_{\mathrm{fin}}(\alpha)|$. Since
+$\szero{P}{\mu}^f=\chi_{\mathrm{fin}}(\alpha)^{-1}$ and $|\upsilon|=1$,
+\[|\sigma(\szero{P}{\mu})|^{2f}=|\chi_{\mathrm{fin}}(\alpha)|^{-2}=|\alpha| ,\]
+the idele norm of $\alpha$ (with components $1$ at infinity). The idele $\alpha\cj\alpha\cdot\partial$, with
+$\partial$ embedded diagonally, is a unit at every finite place by (I1), so its idele norm is
+$\prod_\tau|\emb{\tau}(\partial)|^2$ (a quoted fact on ideles that are units at the finite places). By the product formula
+$\partial$ has idele norm $1$, and $|\cj\alpha|=|\alpha|$; so $|\alpha|^2=\prod_\tau|\emb{\tau}(\partial)|^2$. By (I2),
+$\prod_\tau|\emb{\tau}(\partial)|=\rdE{P}{\mu}^f/\sqrt d^{\,f}$. Taking $f$-th roots of non-negative numbers gives (a).
+
+(b) All factors of $\OmP{P}{\mu}$ are positive. (c) By (a) with $\sigma=1$, $\szero{P}{\mu}\ne0$; by (Q3) with
+$\sigma=1$, $u_P\ne0$; $\asc{P}\ne0$ and $\Omz{P}\ne0$. (d) is the choice of $\cmE{P}$ and $\Omz{P}$, and (e)
+follows since $1\in\OO_{\KP{P}}$.
+\end{proof}
+\leanline{\lean{normgalvacuumRoot}\sep\lean{bigOmegapos}\sep\lean{jetScalenezero}\sep\lean{latticeModulecmCurve}\sep\lean{omegamemcmCurvelattice}\sep
+quoted: \lnm{WeilData.exists\_chiFin\_pow\_eq\_prod}, \lnm{ideleAbs\_eq\_prod\_of\_v\_eq\_one}}
+
+\begin{lemma}[the period factor at a $p$-adic place]\label{l:padic}
+Let $P=(N_0,d)$ be parameters, $\mu$ a natural number and $p$ a prime number.
+\begin{enumerate}[label=(\alph*),itemsep=1pt]
+\item For every ring homomorphism $\psi\colon\EP{P}{\mu}\to\Cp$: $\hat\psi(\alP{P}{\mu})=\psi(\dgen{P}{\mu})^{-1}$
+if $\czE{P}{\mu}\in\mathfrak{p}_\psi$, and $\hat\psi(\alP{P}{\mu})=1$ otherwise.
+\item For every ring homomorphism $j\colon\CC\to\Cp$ and every $\tau\in\PlP{P}{\mu}$:
+$\np{j(\sone{P}{\mu})}=\np{\hat\jmath_\tau(\alP{P}{\mu})}^{-1}$.
+\item For every ring homomorphism $j\colon\CC\to\Cp$, every $y\in\frl{P}{\mu}$ and every $\tau\in\PlP{P}{\mu}$:
+$\np{j\bigl(\sone{P}{\mu}\cdot\cj{\emb{\tau}(y)}\bigr)}\le1$.
+\item For every ring homomorphism $j\colon\CC\to\Cp$: if $p\nmid\Nn{P}{\mu}$, then $\np{j(\sone{P}{\mu})}=1$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) is the definition of $\alP{P}{\mu}$, read at the prime $\mathfrak{p}_\psi$. (b) Let $f=|\PlP{P}{\mu}|$. By (Q3),
+$\np{j(u_P)}=1$, so $\np{j(\sone{P}{\mu})}^f=\np{j(\szero{P}{\mu})^f}=\np{j(\chi_{\mathrm{fin}}(\alP{P}{\mu}))}^{-1}$. A
+quoted formula gives $\np{j(\chi_{\mathrm{fin}}(a))}=\prod_{v}\np{\hat\jmath_v(a)}$ for finite ideles $a$. By (a)
+the factor at $v$ is $\np{j_v(\dgen{P}{\mu})}^{-1}$ or $1$ according as $\czE{P}{\mu}\in\mathfrak{p}_{j_v}$ or not.
+This factor does not depend on $v$: the condition reads $\np{j(\cj{c})}<1$ for the complex number
+$c=(1+\sqrt{-d})/2$, because $\emb{v}$ is the identity on $\KP{P}$ (I2); and
+$j_v(\dgen{P}{\mu})=j_1(\operatorname{gal}(v)\dgen{P}{\mu})$ has the absolute value of $j_1(\dgen{P}{\mu})$ by (I3).
+So the product is the $f$-th power of the factor at $\tau$.
+
+(c) By (b), $\np{j(\sone{P}{\mu}\cj{\emb{\tau}(y)})}=\np{\hat\jmath_\tau(\alP{P}{\mu})}^{-1}\np{j_\tau(y)}=
+\np{\hat\jmath_\tau(\alP{P}{\mu}^{-1}y)}\le1$, since $\alP{P}{\mu}^{-1}y\in\Ohat$ (Background~2). (d) Use (b) at
+$\tau=1$. If $\czE{P}{\mu}\notin\mathfrak{p}_{j_1}$ the factor is $1$. Otherwise it is
+$\np{j_1(\dgen{P}{\mu})}^{-1}$; here $\dgen{P}{\mu}$ divides $\Nn{P}{\mu}$ (I3), which is a unit at
+$\mathfrak{p}_{j_1}$ because $p\nmid\Nn{P}{\mu}$, so $\np{j_1(\dgen{P}{\mu})}=1$.
+\end{proof}
+\leanline{\lean{adeleExtensionalpha}\sep\lean{normiotaperiodFactor}\sep\lean{normperiodFactormulconjleone}\sep\lean{normiotaperiodFactoreqone}\sep
+quoted: \lnm{WeilData.norm\_map\_chiFin}, \lnm{isEquiv\_placeOfEmb}}
+
+\begin{lemma}[the hermitian lattice]\label{l:trace}
+Let $P=(N_0,d)$ be parameters and $\mu$ a natural number.
+\begin{enumerate}[label=(\alph*),itemsep=1pt]
+\item For every $z\in\EP{P}{\mu}$: $\Tr_{\EP{P}{\mu}/\KP{P}}(z)=\sum_{\tau\in\PlP{P}{\mu}}\emb{\tau}(z)$ in $\CC$.
+\item For all $x,y\in\frl{P}{\mu}$: $\sum_{\tau\in\PlP{P}{\mu}}\emb{\tau}(x)\,\cj{\emb{\tau}(y)}\in\OO_{\KP{P}}$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) The $\emb{\tau}$ are the composites of $\emb{1}$ with the elements of the Galois group, and $\emb1$ is the
+identity on $\KP{P}$. (b) The sum is $\Tr_{\EP{P}{\mu}/\KP{P}}(x\cj y)$ by (a). The finite adele of
+$x\cj y\,\dgen{P}{\mu}$ is the product of $\alP{P}{\mu}\cj{\alP{P}{\mu}}\dgen{P}{\mu}$, a unit everywhere by (I1),
+with the integral adeles $\alP{P}{\mu}^{-1}x$ and $\cj{\alP{P}{\mu}^{-1}y}$. So $x\cj y\,\dgen{P}{\mu}$ is an
+integer, $x\cj y$ lies in the inverse different of $\EP{P}{\mu}$ over $\KP{P}$ by (I3), and its trace is integral.
+\end{proof}
+\leanline{\lean{coetraceeqsum}\sep\lean{hermmemquadInt}}
+In other words, $\frl{P}{\mu}$ with the form $\Tr(x\cj y)$ is a unimodular hermitian lattice over
+$\OO_{\KP{P}}$: $\frl{P}{\mu}\cdot\cj{\frl{P}{\mu}}$ is the inverse different.
+
+\sect{Tight frames}{s:frames}
+\begin{lemma}[the frame of the roots of unity]\label{l:zeta}
+Let $P=(N_0,d)$ be parameters, $\mu$ a natural number and $k$ a natural number. The family
+$(\rtu{P}{\mu}^{\,i})_{0\le i<\Nn{P}{\mu}}$, each member with multiplicity $k$, is a tight frame of length
+$k\cdot\Nn{P}{\mu}$.
+\end{lemma}
+\begin{proof}
+$\rtu{P}{\mu}^i$ is an integer, and integers lie in $\frl{P}{\mu}$ by (I1). For places $\tau,\tau'$ put
+$q=\emb{\tau}(\rtu{P}{\mu})\cj{\emb{\tau'}(\rtu{P}{\mu})}$, a root of unity with $q^{\Nn{P}{\mu}}=1$. The sum of the
+frame identity is $k\sum_{i<\Nn{P}{\mu}}q^i$. If $\tau=\tau'$ then $q=1$. If $q=1$ then $\emb{\tau}$ and $\emb{\tau'}$
+agree on the generator $\rtu{P}{\mu}$ of $\EP{P}{\mu}$ over $\KP{P}$, so $\tau=\tau'$. Hence the sum is
+$k\,\Nn{P}{\mu}$ for $\tau=\tau'$ and $0$ otherwise.
+\end{proof}
+\leanline{\lean{isTightFramezetapow}}
+
+\begin{lemma}[a factor of the cyclotomic different]\label{l:cyclo}
+Let $R$ be an integral domain of characteristic $0$, $N$ a natural number, $\zeta\in R$ a primitive root of unity of
+order $N$, and $l$ a prime factor of $N$. Let $\Psi_N$ be the cyclotomic polynomial of order $N$. Then there are
+natural numbers $r$ and $M\le N$ with $N=l\,r$, such that a prime factor $q$ of $N$ divides $M$ if and only if
+$q\ne l$, and an element $V\in R$ that divides $M$ in $R$ with
+\[\Psi_N'(\zeta)\,(\zeta^{r}-1)\,M=N\,V .\]
+\end{lemma}
+\begin{proof}
+Write $N=l\,r$ and $r=l^aM$ with $l\nmid M$; then $M\le N$ and the prime factors of $N=l^{a+1}M$ other than $l$
+are those of $M$. Since $l\nmid M$, $\Psi_M(X^l)=\Psi_{Ml}(X)\Psi_M(X)$; replacing $X$ by $X^{l^a}$ and using
+$\Psi_{Ml}(X^{l^a})=\Psi_N(X)$ gives $\Psi_M(X^{l^{a+1}})=\Psi_N(X)\,\Psi_M(X^{l^a})$. Differentiate at $\zeta$, a
+root of $\Psi_N$:
+\[l^{a+1}\zeta^{l^{a+1}-1}\,\Psi_M'(\zeta^{l^{a+1}})=\Psi_N'(\zeta)\,\Psi_M(\zeta^{l^a}) .\]
+As $\Psi_M(Y)$ divides $Y^M-1$, the element $\Psi_M(\zeta^{l^a})$ divides $\zeta^{r}-1$. So $l^{a+1}$ divides
+$\Psi_N'(\zeta)(\zeta^r-1)$, and $N=l^{a+1}M$ divides $\Psi_N'(\zeta)(\zeta^r-1)M$; let $V$ be the quotient. Next,
+$r$ is a proper divisor of $N$, so $X^N-1=(X^r-1)\Psi_N(X)Q(X)$ for a polynomial $Q$ over $R$; differentiating at
+$\zeta$ and multiplying by $\zeta$ gives $N=\Psi_N'(\zeta)(\zeta^r-1)\,Q(\zeta)\zeta$. Hence
+$NM=NV\cdot Q(\zeta)\zeta$, and $M=V\,Q(\zeta)\zeta$ because $N$ is not a zero divisor: $V$ divides $M$.
+\end{proof}
+\leanline{\lean{existscyclotomicdifferentfactor}}
+
+\begin{proof}[Proof of Theorem A]
+Write $N=\Nn{P}{\mu}$, $\varsigma=\rtu{P}{\mu}$, $c_0=\czE{P}{\mu}$, $\partial=\dgen{P}{\mu}=\Psi_N'(\varsigma)$ and
+$\nu=(d+1)/4$; so $c_0(1-c_0)=\nu$ and $\cj{c_0}=1-c_0$ (I4). The frame will be the union of the frame of
+Lemma~\ref{l:zeta} with a second family, built to contain a vector that is a unit against $\sone{P}{\mu}$ at the
+primes above $p$.
+
+\emph{Step 1: auxiliary numbers.} For each prime factor $l$ of $N$ let $r_l$, $M_l$, $V_l$ be as in
+Lemma~\ref{l:cyclo} for $\zeta=\varsigma$ in the integers of $\EP{P}{\mu}$, and put $a_l=\varsigma^{r_l}$, a
+primitive $l$-th root of unity. Every prime factor of $N$ divides $\nu$ (I4), so $N$ divides $\nu^N$. The map
+$y\mapsto\nu y^2+y$ of $\Z/N$ is injective: if $\nu y^2+y=\nu y'^2+y'$ then $(y-y')(\nu(y+y')+1)=0$, and
+$\nu(y+y')+1$ is a unit because $\nu(y+y')$ is nilpotent. So the map is surjective, and there are natural
+numbers $z<N$ and $e$ with $\nu z^2+z+1=Ne$. Put $t=1-c_0+\nu z$. Then
+\begin{equation}\label{e:t}
+t+\cj t=1+2\nu z,\qquad t\,\cj t=\nu+\nu z+\nu^2z^2=\nu Ne,\qquad (c_0+\nu z)\,t=\nu Ne .
+\end{equation}
+
+\emph{Step 2: the second family.} For a prime factor $l$ of $N$ and $0\le h<r_l$, $0\le k<l$, $0\le i<l$ put
+\[u_{l,h,k,i}=\varsigma^{h}\Bigl([k=0]\,a_l^{\,i}+\lambda_l\,(a_l^{\,i}-a_l^{\,k})\Bigr),\qquad\lambda_l=\frac{t\,M_l}{N} .\]
+\emph{Claim: for all places $\tau,\tau'$,
+$\sum_{h,k,i}\emb{\tau}(u_{l,h,k,i})\cj{\emb{\tau'}(u_{l,h,k,i})}=[\tau=\tau']\cdot c_l$ with
+$c_l=N+M_l\bigl(1+2\nu(z+l\,M_l\,e)\bigr)$.} Let $A=\emb{\tau}(a_l)$, $A'=\emb{\tau'}(a_l)$ (primitive $l$-th roots of unity),
+$G=\sum_{i<l}(A\cj{A'})^i$, and let $\lambda$, $\lambda'$ be the images of $\lambda_l$ under $\emb{\tau}$, $\emb{\tau'}$.
+Using $\sum_{i<l}A^i=\sum_{i<l}\cj{A'}^{\,i}=0$, the sum over $k$ and $i$ of the products of the two brackets is
+\[G+\cj{\lambda'}G+\lambda G+2l\,\lambda\cj{\lambda'}G=G\,(1+\lambda+\cj{\lambda'}+2l\lambda\cj{\lambda'}) :\]
+the four terms come from $k=0$ with the two first summands, from $k=0$ with one first and one second summand
+(twice), and from the two second summands. The sum over $h$ contributes
+$\sum_{h<r_l}(\emb{\tau}(\varsigma)\cj{\emb{\tau'}(\varsigma)})^h$, and its product with $G$ is
+$\sum_{h<N}(\emb{\tau}(\varsigma)\cj{\emb{\tau'}(\varsigma)})^h=N[\tau=\tau']$ by Lemma~\ref{l:zeta}. For $\tau=\tau'$,
+\eqref{e:t} gives $\lambda+\cj\lambda=M_l(1+2\nu z)/N$ and $\lambda\cj\lambda=M_l^2\nu e/N$, whence the claim.
+(The formal proof establishes this identity by a Gröbner basis computation.)
+
+\emph{Step 3: lengths.} Let $c=\sum_lc_l$. It is prime to $N$: modulo a prime factor $q$ of $N$ the summands with
+$l\ne q$ vanish, because $q$ divides $N$ and $M_l$, and $c_q\equiv M_q\not\equiv0$, because $q$ divides $N$ and
+$\nu$ but not $M_q$. A crude bound, from $M_l,l,z\le N$, $e\le2\nu N$ and at most $N$ prime factors, is
+$c\le8\nu^2N^5$; with $9\nu^2\le d^6$ and the hypothesis,
+\[c_\ast(c+N)+(N-1)(c-1)\ \le\ (c_\ast+1)\,9\nu^2N^6\ \le\ (dN)^6(c_\ast+1)\ \le\ M .\]
+Since $c$ and $N$ are coprime, every integer $\ge(N-1)(c-1)$ is a combination $Ac+BN$ with natural numbers $A$,
+$B$. Choose them with $Ac+BN=M-c_\ast(c+N)$. Take the vectors $u_{l,h,k,i}$ with multiplicity $A+c_\ast$ and the
+vectors $\varsigma^i$, $i<N$, with multiplicity $B+c_\ast$. By the claim and Lemma~\ref{l:zeta} the frame identity
+holds with length $(A+c_\ast)c+(B+c_\ast)N=M$, and all multiplicities are at least $c_\ast$.
+
+\emph{Step 4: the vectors lie in $\frl{P}{\mu}$.} For $\varsigma^i$ this is Lemma~\ref{l:zeta}. For
+$u=u_{l,h,k,i}$ write $a_l^{\,i}-a_l^{\,k}=(a_l-1)g$ with an integer $g$, and let $w$ be a finite place. If
+$c_0\in w$, the component of $\alP{P}{\mu}$ is $\partial^{-1}$ and we need $\partial u$ integral at $w$; indeed
+$\partial\lambda_l(a_l-1)=tV_l$ by Lemma~\ref{l:cyclo}, so $\partial u$ is an integer. If $c_0\notin w$ the
+component is $1$ and $c_0$ is a unit at $w$, so it suffices that $c_0^N\lambda_l$ is an integer, that is, that $N$
+divides $c_0^Nt$. Now $c_0^N-(-\nu z)^N$ is divisible by $c_0+\nu z$, and $(c_0+\nu z)t=\nu Ne$ by \eqref{e:t}; so
+$c_0^Nt\equiv(-z)^N\nu^Nt\equiv0$ modulo $N$, as $N$ divides $\nu^N$.
+
+\emph{Step 5: the unit vector.} If $\np{j(\sone{P}{\mu})}=1$, the vector $\varsigma^0=1$ will do. Otherwise $p$
+divides $N$ by Lemma~\ref{l:padic}(d), and we take $u=u_{p,0,1,0}=\lambda_p(1-a_p)$. Let $\tau$ be a place. By
+Lemma~\ref{l:padic}(b) and (a), $c_0\in\mathfrak{p}_{j_\tau}$ (otherwise $\np{j(\sone{P}{\mu})}=1$), and
+\[\np{j\bigl(\sone{P}{\mu}\,\cj{\emb{\tau}(u)}\bigr)}=\np{j_\tau(\partial u)}=\np{j_\tau(tV_p)} ,\]
+since $\partial u=-tV_p$. This is at most $1$. If it were smaller, $tV_p$ would lie in $\mathfrak{p}_{j_\tau}$;
+but $t\equiv1$ modulo $\mathfrak{p}_{j_\tau}$ (which contains $c_0$ and $p$, and $p$ divides $\nu$), so $V_p$ and
+then $M_p$ would lie in it, and $p$ would divide $M_p$, against Lemma~\ref{l:cyclo}.
+\end{proof}
+\leanline{\lean{existsisTightFrame}\sep the coin lemma is Mathlib's \lnm{Nat.exists\_add\_mul\_eq\_of\_gcd\_dvd\_of\_mul\_pred\_le}}
+
+\sect{Jets are Taylor coefficients of products of curve theta functions}{s:jets}
+\begin{lemma}[jets and Taylor series]\label{l:line}
+Let $E$ be a field with a CM type and Weil data, $n$ a finite set, $V$ a hermitian space over $E$ with index set
+$n$ and all signs $1$, and $f\in\Wf{V}$. Write $\Phi$ for the set of infinite places of $E$.
+\begin{enumerate}[label=(\alph*),itemsep=1pt]
+\item For every $a\in\CC$ and $v\in\CC^{\Phi\times n}$: the Taylor series at $0$ of the function
+$u\mapsto\Thf{f}(u\cdot a\cdot v)$ of one complex variable is obtained from $\jet{V}{a}{f}$ by substituting
+$v_x\,u$ for the variable $z_x$, for all $x\in\Phi\times n$.
+\item If $a\in\CC$, $a\ne0$ and $\jet{V}{a}{f}=0$, then $f=0$.
+\item Let $I$ be a finite set, $G_i$ ($i\in I$) entire functions on $\CC$ and $\lambda_{c,i}\in\CC^{\Phi\times n}$
+for $c\in\CC$, $i\in I$, such that $\Thf{f}(c\,z)=\prod_{i\in I}G_i(\lambda_{c,i}\cdot z)$ for all $c\in\CC$ and
+$z\in\CC^{\Phi\times n}$, where $\lambda\cdot z=\sum_x\lambda_xz_x$. Then $\Th{V}(f)=\prod_iG_i(0)$, and for
+every $c\in\CC$
+\[\jet{V}{c}{f}=\prod_{i\in I}\tay{G_i}\bigl(\textstyle\sum_x\lambda_{c,i,x}z_x\bigr) .\]
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) Quoted from the background library: for $f\in\Wf{V}$ the function $\Thf{f}$ is an integral
+$\Thf{f}(y)=\int f(w)\,\gamma(w)\exp(\langle w,y\rangle)\,dw$ over the real vectors $w$ in Fock coordinates, with a
+Gaussian $\gamma$ and a pairing that is linear in $y$; and the coefficient of $z^\beta$ in $\jet{V}{a}{f}$ is the
+same integral with $\exp$ replaced by the monomial of $\beta$, times $a^{|\beta|}/\beta!$. Put
+$\ell(w)=a\langle w,v\rangle$. Then $\Thf{f}(uav)=\int f\gamma\,e^{u\ell}$; expanding the exponential and exchanging
+sum and integral, which is allowed by dominated convergence because $|\ell(w)|$ is at most a constant times $|w|$ and
+$e^{c|w|}\gamma(w)|f(w)|$ is integrable, shows that the coefficient of $u^k$ is $\int f\gamma\,\ell^k/k!$. This is
+the jet of $\jet{V}{a}{f}$ along $(\sum_xv_xz_x)^k/k!$, which is the coefficient of $u^k$ after the substitution.
+
+(b) By (a), for every $y$ the entire function $u\mapsto\Thf{f}(u\,a\,y)$ has Taylor series $0$, so it vanishes; at
+$u=a^{-1}$ this gives $\Thf{f}(y)=0$. So $f$ vanishes at all real vectors, and such a vector of $\Sw{V}$ is $0$
+(quoted).
+
+(c) At $c=0$, $z=0$ the hypothesis reads $\Th{V}(f)=\Thf{f}(0)=\prod_iG_i(0)$. Fix $c$. Two power series in the
+$z_x$ are equal if for every $v$ they give the same series in $u$ after the substitution $z_x\mapsto v_xu$ (compare
+the homogeneous parts as polynomial functions of $v$). After this substitution the left side is the Taylor series
+of $u\mapsto\Thf{f}(u\,c\,v)=\prod_iG_i(u\,\lambda_{c,i}\cdot v)$ by (a), and the right side is the product of the
+Taylor series of the functions $u\mapsto G_i(u\,\lambda_{c,i}\cdot v)$; the Taylor series of a product of entire
+functions is the product of their Taylor series.
+\end{proof}
+\leanline{\lean{taylorlineeqsubstjetSeries}\sep\lean{eqzeroofjetSerieseqzero}\sep\lean{jetSerieseqprod}\sep quoted:
+\lnm{entireTheta\_eq\_integral}, \lnm{Space.theta\_integrated}, \lnm{jet\_subst\_linearSeries}, \lnm{Space.eq\_zero\_of\_realVec}}
+
+\begin{proposition}[a vector whose theta function is a product over a tight frame]\label{p:F}
+Let $P=(N_0,d)$ be parameters, $\mu$ a natural number, $n$ a finite set and $V$ a standard hermitian space over
+$\EP{P}{\mu}$ with index set $n$. Let $M$ and $N$ be natural numbers with $N\ne0$, $I$ a finite set, $w_i\in\EP{P}{\mu}$
+and $m_i\in\NN$ ($i\in I$) such that $(w_i)$ with multiplicities $(m_i)$ is a tight frame of length $M$, $\delta$ an
+integer of $\KP{P}$ with $\delta\cj\delta=N$, and $x_{(i,k)}$, for $(i,k)\in I\times n$, triples of natural numbers
+of degree $m_i$. Let $C$ be a CM datum for $d$ and $a\in\LamC{C}$ with $\area{C}=|a|^2/N\cdot M\cdot\sqrt d/2$. Then
+there is $F\in\Wf{V}$ with the following properties.
+\begin{enumerate}[label=(\arabic*),itemsep=1pt]
+\item For every $\gamma\in\EP{P}{\mu}^n$, with
+$G_{(i,k)}=\UC{C}{m_i}{y_{(i,k)}}\mon{C}{x_{(i,k)}}$ and
+$y_{(i,k)}=-\dfrac{a}{\cj\delta}\sum_\tau\emb{\tau}(\gamma_k)\,\cj{\emb{\tau}(w_i)}$:
+\begin{gather*}
+\Th{V}\bigl(\heis{V}{\fv{(\alpha^{-1}\gamma)}}F\bigr)=\prod_{(i,k)}G_{(i,k)}(0),\\
+\jet{V}{c}{\bigl(\heis{V}{\fv{(\alpha^{-1}\gamma)}}F\bigr)}=\prod_{(i,k)}\tay{G_{(i,k)}}\Bigl(\sum_\tau\frac{a}{\cj\delta\,\asc{P}}\,c\,\cj{\emb{\tau}(w_i)}\,z_{(\tau,k)}\Bigr)
+\end{gather*}
+for every $c\in\CC$; here $\alpha=\alP{P}{\mu}$, so that $\fv{(\alpha^{-1}\gamma)}$ has finite part $\gamma$.
+\item For every $p$-adic place $(p,j)$ and every $x\in\Af^{\,n}$: $\np{j(F(\fv{x}))}\le1$.
+\item $F$ has a vacuum expansion for $(\delta,N)$ in the sense of \textup{(Q9)}.
+\end{enumerate}
+\end{proposition}
+\begin{proof}
+Put $b=a/\cj\delta$ and, for $(i,k)\in I\times n$, the linear form
+$A_{(i,k)}(z)=\sum_\tau(b/\asc{P})\,\cj{\emb{\tau}(w_i)}\,z_{(\tau,k)}$. The hermitian form of $C$ is
+$H_C(z,z')=\pi\cj zz'/\area{C}$. By the frame identity,
+\[\sum_{(i,k)}m_i\,H_C\bigl(A_{(i,k)}u,A_{(i,k)}v\bigr)=\frac{\pi\,|b|^2M}{\area{C}\,\asc{P}^2}\sum_{(\tau,k)}\cj{u_{(\tau,k)}}v_{(\tau,k)}=\sum_{(\tau,k)}\cj{u_{(\tau,k)}}v_{(\tau,k)},\]
+because $|b|^2=|a|^2/N$, $\asc{P}^2=2\pi/\sqrt d$ and $\area{C}=|a|^2M\sqrt d/(2N)$: the linear forms carry the sum of
+the Riemann forms of the curve to the standard form. Let $S=\prod_{(i,k)}\mon{C}{x_{(i,k)}}\circ A_{(i,k)}$, an
+entire function. For $\gamma\in\frl{P}{\mu}^n$ the form $A_{(i,k)}$ takes at the real image of $\cj\delta\gamma$ the
+value $a\sum_\tau\emb{\tau}(\gamma_k)\cj{\emb{\tau}(w_i)}$, which lies in $\LamC{C}$ by Lemma~\ref{l:trace}(b)
+because $a\in\LamC{C}$ and $\LamC{C}$ is a module over $\OO_{\KP{P}}$. A monomial section of degree $m_i$ is
+invariant under the twisted translations $\UC{C}{m_i}{\lambda}$, $\lambda\in\LamC{C}$, up to the multiplier of
+$\LamC{C}$ (quoted). So $S$ has the transformation law required in (Q9), which gives $F\in\Wf{V}$ with
+$\Thf{F}=S$ and (3). For (1), the theta function of $\heis{V}{\fv{(\alpha^{-1}\gamma)}}F$ is the translate of $S$ by
+the real image of $\gamma$ (quoted), that is the product of the functions
+$G_{(i,k)}\circ A_{(i,k)}$; Lemma~\ref{l:line}(c) with $\lambda_{c,(i,k)}=c$ times the coefficients of $A_{(i,k)}$
+gives both formulas. For (2), a quoted approximation lemma gives $\gamma$ with
+$\heis{V}{\fv{x}}F=\heis{V}{\fv{(\alpha^{-1}\gamma)}}F$, so $F(\fv x)=\prod G_{(i,k)}(0)$ by (1); and some positive
+integer multiple of $\gamma$ lies in $\frl{P}{\mu}^n$, so that a multiple of each $y_{(i,k)}$ lies in $\LamC{C}$ as
+above. Each factor then has $\np{j(\,\cdot\,)}\le1$ by (Q7).
+\end{proof}
+\leanline{\lean{existsfinitePartofisTightFrame}\sep quoted: \lnm{Space.exists\_entireTheta\_eq},
+\lnm{entireTheta\_translate\_finiteImage}, \lnm{exists\_finiteImage\_approx}, \lnm{exists\_forall\_mul\_mem\_Ô},
+\lnm{thetaShift\_of\_mem}, \lnm{CMLattice.norm\_monomialSection\_le}}
+
+\sect{Conjugates of jets}{s:conj}
+\begin{proposition}[a generating vector and its conjugates]\label{p:gen}
+Let $P=(N_0,d)$ be parameters. There is a natural number $C$ such that for every natural number $\mu$ there is a
+family $(B_\sigma)_{\sigma\in\Aut(\CC/\KP{P})}$ of finite adeles of $\EP{P}{\mu}$ with the following properties, for
+every finite set $n$ and every standard hermitian space $V$ over $\EP{P}{\mu}$ with index set $n$.
+\begin{enumerate}[label=(\roman*),itemsep=1pt]
+\item There is $c\in\CC$, $c\ne0$, such that $\np{j(c\cdot\vac{V}(\fv{x}))}\le1$ for every $p$-adic place $(p,j)$ and
+every $x\in\Af^{\,n}$, and $|\sigma(c\cdot\vac{V}(\fv{x}))|\le\exp(C\,\Nn{P}{\mu}^2)^{|n|}$ for every
+$\sigma\in\Aut(\CC/\KP{P})$ and every $x\in\Af^{\,n}$.
+\item There is $F\in\Wf{V}$ with $\Th{V}(F)=1$ such that $\Wf{V}$ is contained in the span over $\CC$ of the vectors
+$\heis{V}{\fv{x}}F$, $x\in\Af^{\,n}$, and such that for every $\sigma\in\Aut(\CC/\KP{P})$ there are $t\in\CC$ and
+$F'\in\Wf{V}$ with $|t|^2=\OmP{P}{\mu}^{-1}$ and, for every $x\in\Af^{\,n}$: applying $\sigma$ to the coefficients
+of $\jet{V}{\per{P}{\mu}}{(\heis{V}{\fv{x}}F)}$ gives $\jet{V}{t}{(\heis{V}{\fv{(B_\sigma x)}}F')}$ with every variable
+$z_{(\tau,i)}$ replaced by $z_{(\pi^{-1}\tau,i)}$, $\pi=\prm{\mu}{\sigma}$.
+\end{enumerate}
+The least such $C$ is not asked for; the formal text fixes one by choice, written $\Cgen{P}$ below.
+\end{proposition}
+\begin{proof}
+\emph{The constant.} By (Q4) the invariant $a_1$ of $\cmE{P}$ is algebraic; let $g$ be its minimal polynomial. For
+each of the finitely many roots of $g$ that are invariants $a_1$ of CM data for $d$, choose such a datum; the
+absolute values of all twisted translates of its theta function form a compact set (quoted: sections of an
+Appell--Humbert datum), so they are bounded by one number $M_0$ for all these data. Put $C=\lceil M_0\rceil+4$.
+For $\sigma\in\Aut(\CC/\KP{P})$ apply (Q2) to $\cmE{P}$, whose lattice is $\Omz{P}\OO_{\KP{P}}$
+(Lemma~\ref{l:period}(d)): it gives $\Omega_\sigma$, $e_\sigma$, $\beta_\sigma$ and the $a_S$. Let $B_\sigma$ be the
+image of $\beta_\sigma$ in the finite adeles of $\EP{P}{\mu}$.
+
+\emph{The vector $F$.} Let $N=\Nn{P}{\mu}$ and take the frame $(\rtu{P}{\mu}^i)_{i<N}$ with multiplicity $N$
+(Lemma~\ref{l:zeta}), written with every vector repeated $N$ times and multiplicity $1$; its length is $N^2$. For
+an integer $e\ge1$, Proposition~\ref{p:F} applies with $\delta=Ne$, $\delta\cj\delta=(Ne)^2$, all triples equal to
+$(1,0,0)$, and any CM datum with a lattice vector of the right area. For $e=1$, the datum $\cmE{P}$ and
+$a=\Omz{P}$ (the area of $\cmE{P}$ is $|\Omz{P}|^2\sqrt d/2$ by (Q1)) it gives $F$ with a vacuum expansion
+$(A,(x_a),m_0)$, $|A|=N^{2f|n|}$, $f=|\PlP{P}{\mu}|$. Formula (1) at $\gamma=0$ gives $\Th{V}(F)=1$. Pairing the
+vacuum expansion for $\ell=\Th{V}$ with $\vac{V}$ shows that
+$\inn{V}{\vac{V}}{\heis{V}{\fv{(-x_a)}}F}\ne0$ for some $a$; the expansion for the linear form
+$\ell=m_0^{-1}\inn{V}{\vac{V}}{\heis{V}{\fv{(-x_a)}}\,\cdot\,}$ then reads $c\cdot\vac{V}=\sum_{a'}\epsilon_{a'}\heis{V}{\fv{(-x_{a'})}}F$
+with $c=|A|\ell(F)\ne0$ and coefficients $\epsilon_{a'}\in\{0,1\}$ (the pairings of two translates of the vacuum are
+$0$ or $1$ here). So $c\cdot\vac{V}$ is a sum of at most $|A|$ translates of $F$. This gives the spanning statement of
+(ii), since $\Wf{V}$ is spanned by translates of $\vac{V}$, and the $p$-adic bound of (i), by
+Proposition~\ref{p:F}(2) and the ultrametric inequality.
+
+\emph{The conjugate vector.} Fix $\sigma$. Apply Proposition~\ref{p:F} with $e=e_\sigma$ to the datum
+$\sigma\cmE{P}$ and $a=e_\sigma\Omega_\sigma$, whose area condition is that of (Q2); this gives $F'$. Put
+$t=\sigma(\sone{P}{\mu})\cdot\asc{P}/\Omega_\sigma$. Then $|t|^2=\OmP{P}{\mu}^{-1}$: by Lemma~\ref{l:period}(a),
+(Q3) and $\area{\sigma\cmE{P}}=|\Omega_\sigma|^2\sqrt d/2$,
+\[|t|^2=\frac{\rdE{P}{\mu}}{\sqrt d}\cdot\frac{\area{\sigma\cmE{P}}}{\pi\,e^{\mathrm{cs}(d)}\,2\pi/\sqrt d}\cdot\frac{2\pi/\sqrt d}{|\Omega_\sigma|^2}
+=\frac{\rdE{P}{\mu}}{2\pi\,e^{\mathrm{cs}(d)}} .\]
+\emph{The jet identity.} Both sides are locally constant in $x$ (quoted: $x\mapsto\heis{V}{\fv{x}}F$ is locally
+constant for $F\in\Wf{V}$), and the vectors $\alpha^{-1}\gamma$, $\gamma\in\EP{P}{\mu}^n$, are dense; so let
+$x=\alpha^{-1}\gamma$. Because $\beta_\sigma$ is a cluster point of the $a_S$, there is a finite $S$ containing the
+numbers $x_{i,k}=-\Tr_{\EP{P}{\mu}/\KP{P}}(\gamma_k\cj{\rtu{P}{\mu}^{i}})/N$ with
+$\heis{V}{\fv{(B_\sigma x)}}F'=\heis{V}{\fv{(a_Sx)}}F'$. By Proposition~\ref{p:F}(1) and Lemma~\ref{l:trace}(a) the two
+jet series are products over $(i,k)$ of
+\begin{gather*}
+\tay{\UC{\cmE{P}}{1}{x_{i,k}\Omz{P}}\thC{\cmE{P}}}\Bigl(\sum_\tau\frac{\per{P}{\mu}\,\Omz{P}}{N\,\asc{P}}\cj{\emb{\tau}(\rtu{P}{\mu}^i)}z_{(\tau,k)}\Bigr)
+\quad\text{and}\\
+\tay{\UC{\sigma\cmE{P}}{1}{x_{i,k}\Omega_\sigma a_S}\thC{\sigma\cmE{P}}}\Bigl(\sum_\tau\frac{t\,\Omega_\sigma}{N\,\asc{P}}\cj{\emb{\tau}(\rtu{P}{\mu}^i)}z_{(\tau,k)}\Bigr).
+\end{gather*}
+The one-variable series correspond under $\sigma$ by (Q2). The linear forms correspond after the renaming of the
+places: $\per{P}{\mu}\Omz{P}/\asc{P}=\sone{P}{\mu}$ and $t\Omega_\sigma/\asc{P}=\sigma(\sone{P}{\mu})$, and
+$\sigma(\cj{\emb{\tau}(w)})=\cj{\emb{\pi(\tau)}(w)}$ by (I5).
+
+\emph{The conjugate bound of \textup{(i)}.} $\sigma(c\vac{V}(\fv x))$ is a sum of at most $N^{2f|n|}$ numbers
+$\sigma\Th{V}(\heis{V}{\fv{x'}}F)$. Each is the constant term of a jet series of a translate of $F$, hence by the jet
+identity the constant term of one of $F'$, which by Proposition~\ref{p:F}(1) is a product of $N^2|n|$ values of
+twisted translates of the theta function of $\sigma\cmE{P}$. The invariant of $\sigma\cmE{P}$ is a root of $g$, so
+each value is at most $M_0\le e^{M_0}$. With $f\le N$ and $\log N\le N$,
+$N^{2f|n|}e^{M_0N^2|n|}\le\exp\bigl((\lceil M_0\rceil+4)N^2\bigr)^{|n|}$.
+\end{proof}
+\leanline{\lean{existsisJetConjugategenerator}\sep quoted: \lnm{IsAppellHumbert.isCompact\_range\_norm\_thetaShift},
+\lnm{Space.isLocallyConstant\_rho\_finVec}, \lnm{denseRange\_finiteImage}}
+
+\begin{lemma}[the scaled vacuum]\label{l:vac}
+Let $P=(N_0,d)$ be parameters and $\mu$ a natural number.
+\begin{enumerate}[label=(\alph*),itemsep=1pt]
+\item $\vsc{P}{\mu}\ne0$.
+\end{enumerate}
+Let further $n$ be a finite set and $V$ a standard hermitian space over $\EP{P}{\mu}$ with index set $n$.
+\begin{enumerate}[label=(\alph*),itemsep=1pt,start=2]
+\item For every $x\in\Af^{\,n}$: $\intvac{V}(\fv x)=\prod_{i\in n}\vsc{P}{\mu}\cdot\vac{V_1}(\fv{(x_i)})$, where $V_1$
+is the standard space of rank one.
+\item For every $x\in\Af^{\,n}$ and every $\sigma\in\Aut(\CC/\KP{P})$:
+$|\sigma(\intvac{V}(\fv x))|\le\exp\bigl(\Cgen{P}\,\Nn{P}{\mu}^2\bigr)^{|n|}$.
+\item For every $x\in\Af^{\,n}$ and every $p$-adic place $(p,j)$: $\np{j(\intvac{V}(\fv x))}\le1$.
+\item Let $f\in\Sw{V}$ and let $M$ be a real number with $|f(\fv x)|\le M$ for every $x\in\Af^{\,n}$. Then
+$|\inn{V}{f}{f}|\le M^2$.
+\item There is $x\in\Af^{\,n}$ with $\intvac{V}(\fv x)\ne0$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) is part of the choice. (b) For a standard space the vacuum is the product of the rank-one vacua of the
+coordinates (quoted). (c) and (d) follow from (b) and Proposition~\ref{p:gen}(i) for rank one, factor by factor.
+(e) Quoted: $\inn{V}{f}{f}$ is the mean of $|f|^2$ over a compact quotient of $\Ad^n$. The set of points where
+$|f|\le M$ is closed, and it contains a dense set: by the translation formula for the values of $f$ and the
+density of $\EP{P}{\mu}$ in its archimedean completion, the value of $f$ at a point of a dense set is a value
+$f(\fv{x})$ ($V$ is standard, so its adelic point is $1$). (f) Otherwise (e) with $M=0$ would give
+$\inn{V}{\vac{V}}{\vac{V}}=0$.
+\end{proof}
+\leanline{\lean{kappanezero}\sep\lean{intVacuumfinVeceqprod}\sep\lean{normintVacuumle}\sep\lean{normintVacuumleone}\sep\lean{normdataInnerle}\sep\lean{existsintVacuumnezero}\sep
+quoted: \lnm{Space.vacElem\_apply\_eq\_prod\_lineTheta}, \lnm{Space.dataInner\_eq\_quotMean}, \lnm{norm\_quotMean\_le},
+\lnm{Space.apply\_vecAtPoint\_add}}
+
+\begin{proof}[Proof of Theorem B]
+Let $F$, $F'$, $t$, $B=B_\sigma$ be as in Proposition~\ref{p:gen}(ii) for $V$ and $\sigma$, and write
+$\Theta\mapsto\Theta^{\pi}$ for the renaming $z_{(\tau,i)}\mapsto z_{(\pi^{-1}\tau,i)}$. The map
+$g\mapsto(\jet{V}{t}{g})^{\pi}$ is injective on $\Wf{V}$ by Lemma~\ref{l:line}(b), as $t\ne0$. Let $L$ be a
+left inverse of it, composed with the $\sigma$-semilinear map $f\mapsto\sigma(\jet{V}{\per{P}{\mu}}{f})$. By the jet
+identity of Proposition~\ref{p:gen},
+\begin{equation}\label{e:key}
+L\bigl(\heis{V}{\fv{x}}F\bigr)=\heis{V}{\fv{(Bx)}}F'\qquad(x\in\Af^{\,n}).
+\end{equation}
+Since $\Wf{V}$ is spanned by the vectors $\heis{V}{\fv x}F$ and Heisenberg operators compose up to roots of unity
+given by $\psi_0$, \eqref{e:key} gives (ii) for all $f\in\Wf{V}$ and the rule
+$L(\heis{V}{\fv x}f)=\heis{V}{\fv{(Bx)}}(Lf)$, provided that $\sigma(\psi_0(z))=\psi_0(B\cj Bz)$ for all $z\in\Af$.
+This identity is read off the rank-one case of the jet identity: choose a natural number $N'\ne0$ such that
+translation by $N'x$ and by $N'Bx$ fixes the rank-one vectors $F$ and $F'$ for $x$ in a compact set (local
+constancy); writing $z=N'x$ and comparing the two sides of the jet identity at $2x$ yields the same nonzero
+series multiplied by $\sigma(\psi_0(z))$ and by $\psi_0(B\cj Bz)$. Now (Q10) applies: it gives $c$, $z$, (iii) and
+(v), and that $B$ is a unit. Taking constant terms in (ii) for $f=\heis{V}{\fv x}\intvac{V}$ shows
+$\Th{V}(L(\heis{V}{\fv{x}}\intvac{V}))=\sigma(\intvac{V}(\fv x))$, which is nonzero for some $x$ by
+Lemma~\ref{l:vac}(f); as $L\intvac{V}$ is a multiple of $c\,\weil{V}(1,z1_n)\vac{V}$, this forces $c\ne0$. (i) is
+Proposition~\ref{p:gen}.
+
+\emph{The bound \textup{(iv)}.} By (iii) and the translation rule,
+$L(\heis{V}{\fv x}\weil{V}(1,g)\intvac{V})$ is a number of absolute value $1$ times
+$\heis{V}{\fv{(Bx)}}\weil{V}(1,g)L\intvac{V}$, and $L\intvac{V}=c'\weil{V}(1,z1_n)\vac{V}$ for a constant $c'$.
+The values of $L\intvac{V}$ at the points $\fv{(Bx)}$ are the numbers $\sigma(\intvac{V}(\fv x))$, bounded by
+$\exp(\Cgen{P}\Nn{P}{\mu}^2)^{|n|}$ (Lemma~\ref{l:vac}(c)); since $B$ is a unit these are all its values at finite
+vectors, and Lemma~\ref{l:vac}(e) bounds $|c'|$ by the same number. It remains to bound a translated vacuum
+$\weil{V}(1,g')\vac{V}$ at an arbitrary adelic point. Its value is an inner product with a translate of the vacuum,
+which a quoted series expresses as a sum of Gaussian terms over the points of a lattice in
+$\CC^{\PlP{P}{\mu}\times n}$ (the lattice moved by $g'$); two of its points have distance at least $1$,
+because $\Nn{P}{\mu}\alP{P}{\mu}$ is integral (I1) and nonzero integral vectors have archimedean norm at least $1$. A
+packing estimate for separated points (quoted) bounds the sum by $\exp$ of a quadratic polynomial in
+$f|n|\le\Nn{P}{\mu}|n|$ with coefficients controlled by $\sqrt d$. The constant $\cP{P}$ of unit~152 is
+$\Cgen{P}+2d+6$ plus non-negative terms, and the product of the two bounds is at most
+$\exp(\cP{P}(\Nn{P}{\mu}|n|+1)^2)$. I did not replay the last estimate line by line; see §\ref{s:notes}.
+\end{proof}
+\leanline{\lean{existssemilinearisJetConjugate}\sep quoted: \lnm{Space.semilinear\_intertwines\_weil},
+\lnm{exists\_natCast\_smul\_mem\_of\_isCompact}, \lnm{Space.hasSum\_dataInner}, \lnm{tsum\_le\_of\_separated}\sep
+unit 152: \lnm{Parameters.c}}
+
+\begin{lemma}[names are admissible combinations]\label{l:adm}
+Let $E$ be a field with a CM type and Weil data, $n$ a finite set, $V$ a hermitian space over $E$ with index set
+$n$, and $\mathfrak m$ a modulus of $E$ with residue ring $\OO_E/\mathfrak m$. Let $\Psi$ be a complex function on
+$(\OO_E/\mathfrak m)^n$, $\mathsf{b}$ a proposition, $B$ a real number, $u,v\in\Sw{V}$, $g$ an integer of $E$
+and $q$ a natural number. Suppose that $g\,q\in\mathfrak m$; that every value $\Psi(x)$ is integral away from $q$
+(that is, $|j'(\Psi(x))|_\ell\le1$ for every prime $\ell\nmid q$ and every ring homomorphism
+$j'\colon\CC\to\CC_\ell$); that, if $\mathsf{b}$ holds, $\sum_x|\sigma(\Psi(x))|\le B$ for every
+$\sigma\in\Aut(\CC)$; and that $P^{\mathfrak m}u=v$. Let $\eta$ be a finite adele of $E$ with $\eta q\equiv0$
+modulo $\mathfrak m$ (by default the image of $g$). Then the vector $\name{V}{\mathfrak m}{\tilde\Psi}\,u$, where
+$\tilde\Psi$ is the function on $\Af^{\,n}$ that is $\Psi$ of the reduction at the vectors integral at the primes
+of $\mathfrak m$ and $0$ elsewhere, is a finite combination $\sum_xr(x)\,\fheis{V}{x}v$ in which every $x$ has
+$\cj\eta\,x_i$ integral at all places not dividing $q$, every $\Nm(g)^{|n|}r(x)$ is integral away from $q$, and, if
+$\mathsf{b}$ holds, $\sum_x|\sigma(r(x))|\le B$ for every $\sigma\in\Aut(\CC)$. (In the terms of unit~141:
+an admissible combination of the $\fheis{V}{x}v$ with support, denominator $\Nm(g)^{|n|}$ and size $B$ as said.)
+\end{lemma}
+\begin{proof}
+By Fourier inversion on the finite group $(\OO_E/\mathfrak m)^n$, with a primitive additive character
+$\psi_{\mathfrak m}$,
+\[\Psi=\sum_a\Psi(a)\sum_b\frac{\psi_{\mathfrak m}(-a\cdot b)}{|\OO_E/\mathfrak m|^{n}}\,\psi_{\mathfrak m}(\,\cdot\,b) .\]
+Quoted: the name of the character $x\mapsto\psi_{\mathfrak m}(x\cdot b)$, applied to $u$, is a root of unity times
+$\fheis{V}{x_b}P^{\mathfrak m}u=\fheis{V}{x_b}v$ for a lift $x_b$ of $b$. The outer coefficients $\Psi(a)$ are
+integral away from $q$ and of size $B$; the inner ones are roots of unity divided by $|\OO_E/\mathfrak m|^n$, and
+$\Nm(g)^{|n|}/|\OO_E/\mathfrak m|^n$ is integral away from $q$ because $\Nm(\mathfrak m)$ divides $\Nm(gq)$. The
+composition rule for admissible combinations (unit~141) gives the result; the lifts $x_b$ can be taken with
+$\cj\eta x_b$ integral away from $q$ since $\eta q\in\mathfrak m\Ohat$ and $q$ is a unit there.
+\end{proof}
+\leanline{\lean{isAdmissibleCombname}\sep unit 141: \lnm{IsAdmissibleComb}, \lnm{IsAdmissibleComb.bind}\sep quoted:
+\lnm{Modulus.name\_char\_eq\_translate\_projOn}}
+
+\sect{Standard data, integral jets, gauges}{s:std}
+\begin{lemma}[stability of the standard data]\label{l:std}
+Let $P=(N_0,d)$ be parameters, $\mu$ a natural number and $n$ a finite set.
+\begin{enumerate}[label=(\alph*),itemsep=1pt]
+\item For every integer $\delta$ of $\KP{P}$ and every set $S$ of finite places: $\Ohat^{\,n}\subset\Lat{\delta}{S}$.
+\end{enumerate}
+Let further $V$ be a hermitian space over $\EP{P}{\mu}$ with index set $n$, $(p,j)$ a $p$-adic place and $\delta$
+an integer of $\KP{P}$.
+\begin{enumerate}[label=(\alph*),itemsep=1pt,start=2]
+\item If $x\in\Lat{\delta}{\{w:w\mid p\}}$ and $f\in\Std{V}{\delta}$, then $\fheis{V}{x}f\in\Std{V}{\delta}$.
+\item If $g\in\Uf{n}$ is integral above $p$ and $f\in\Std{V}{\delta}$, then $\weil{V}(1,g)f\in\Std{V}{\delta}$.
+\item For a normed field $R$, a multiplicative map $\iota\colon\CC\to R$ and $z\in\Af$:
+$|\iota(\psi_0(z))|=1$.
+\item Let $n'$ be a finite set and $a$, $b$ characters of $\mathrm{U}(1)$ over $\EP{P}{\mu}$ that have weights
+$e$, $e_a$ and tame parts $\psi$, $\psi'$. If $f\in\Std{\homsp{n}{n'}}{\delta}$, and $g\in\Uf{n}$, $h\in\Uf{n'}$ are
+integral above $p$, then $\pairw{a}{b}\bigl((1,g),(1,h)\bigr)f\in\Std{\homsp{n}{n'}}{\delta}$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) $\delta$ is integral. (d) $\psi_0(z)$ is a root of unity. (b) It suffices to treat a generator
+$f=\fheis{V}{y}\intvac{V}$; then $\fheis{V}{x}f$ is $\psi_0(\cdot)\fheis{V}{x+y}\intvac{V}$, the scalar lies in $\Oj$
+by (d), and $x+y\in\Lat{\delta}{\{w\mid p\}}$. (c) Multiplication by $g$ preserves $\Lat{\delta}{\{w\mid p\}}$.
+Quoted: $\weil{V}(1,g)\vac{V}$ is $\fmult{g}$, of absolute value $1$ at $j$, times a finite sum of vectors
+$\fheis{V}{y}\vac{V}$ with $y\in\Ohat^{\,n}$; so $\weil{V}(1,g)\fheis{V}{x}\intvac{V}$, which is
+$\fheis{V}{gx}\weil{V}(1,g)\intvac{V}$, lies in $\Std{V}{\delta}$ by (a) and (b). (e) The action is a value of the
+characters, of absolute value $1$ at $j$ on elements integral above $p$ (quoted), times $\weil{\homsp{n}{n'}}$ of an
+element integral above $p$; use (c).
+\end{proof}
+\leanline{\lean{ofintegral}\sep\lean{finHeisOpmemstandardData}\sep\lean{omegamemstandardData}\sep\lean{normmappsi}\sep\lean{pairWeilmemstandardData}\sep
+quoted: \lnm{Space.finHeisOp\_finHeisOp}, \lnm{Space.omega\_vacElem\_sum}, \lnm{AutChar.HasWeight.norm\_padic\_det}}
+
+\begin{proposition}[from theta products to jets of standard data]\label{p:transfer}
+Let $P=(N_0,d)$ be parameters, $\mu$ a natural number, $n$ a finite set, $V$ a standard hermitian space over
+$\EP{P}{\mu}$ with index set $n$, $(p,j)$ a $p$-adic place, $\delta$ an integer of $\KP{P}$ and
+$f\in\Std{V}{\delta}$. Let $c\in\CC$, let $L$ be a $\CC$-linear form on the power series in the variables
+$z_{(\tau,i)}$, $(\tau,i)\in\PlP{P}{\mu}\times n$, and let $r\ge0$ be a real number. Suppose that
+$\np{j(L(\Theta))}\le r$ for every power series $\Theta$ over $\CC$ whose image under $j$ lies in
+$\ThProd{P}{\mu}{\delta}{\np{j(c\cdot\sone{P}{\mu})}}{n}$. Then
+\[\np{j\bigl(L(\jet{V}{c\cdot\per{P}{\mu}}{f})\bigr)}\le r .\]
+\end{proposition}
+\begin{proof}
+The set of $f\in\Sw{V}$ with the asserted bound is an $\Oj$-submodule, so let $f=\fheis{V}{x}\intvac{V}$ with
+$x\in\Lat{\delta}{\{w\mid p\}}$. Put $M=p\,(d\,\Nn{P}{\mu})^6+1$, prime to $p$. By Theorem~A (with $c_\ast=0$) there
+is a tight frame of length $M^2$; repeat its vectors so that the multiplicities are $1$. Proposition~\ref{p:F}
+with $N=M^2$, $\delta_0=M$, triples $(1,0,0)$, the datum $\cmE{P}$ and $a=\Omz{P}$ gives $F$ with $\Th{V}(F)=1$ and
+a vacuum expansion $(A,(y_a),m_0)$ with $My_a$ integral. Applied to the linear form $\vsc{P}{\mu}^{|n|}|A|^{-1}\Th{V}$
+it writes $\intvac{V}$ as a combination of the vectors $\heis{V}{\fv{(-y_a)}}F$ whose coefficients are values of
+$\intvac{V}$, in $\Oj$ by Lemma~\ref{l:vac}(d), times $m_0/|A|$, where $|A|$ is a power of $M$ and so a unit at $j$.
+Hence it suffices to bound $L(\jet{V}{c\per{P}{\mu}}{f'})$ for $f'=\heis{V}{\fv{(x-y_a)}}F$. Approximate:
+$f'=\heis{V}{\fv{(\alpha^{-1}\gamma)}}F$ with $\gamma\in\EP{P}{\mu}^n$. By Proposition~\ref{p:F}(1),
+$\jet{V}{c\per{P}{\mu}}{f'}$ is a product of Taylor series of translates $\UC{\cmE{P}}{1}{y}\thC{\cmE{P}}$ at the
+linear forms with coefficients $b\,\cj{\emb{\tau}(w_i)}$, where
+$b=\Omz{P}\,c\,\per{P}{\mu}/(M\asc{P})=c\,\sone{P}{\mu}/M$, so $\np{j(b)}=\np{j(c\sone{P}{\mu})}$. Its image under
+$j$ lies in $\ThProd{P}{\mu}{\delta}{\np{j(c\sone{P}{\mu})}}{n}$: the frame has length $M^2$, prime to $p$; and for
+the lattice condition choose a positive integer $m'$ with $m'\delta M\gamma\in\frl{P}{\mu}^n$, write $m'=p^km''$
+with $p\nmid m''$, and take the integer $m''M^2$, prime to $p$. Indeed $\delta M\gamma$ is integral at the places
+above $p$ already ($\delta x$ is, $My_a$ is, and the approximation is by an integral vector), so
+$m''\delta M\gamma\in\frl{P}{\mu}^n$, and the translation vectors, $-\Omz{P}/M$ times
+$\sum_\tau\emb{\tau}(\gamma_k)\cj{\emb{\tau}(w_i)}$, are carried into $\Omz{P}\OO_{\KP{P}}=\LamC{\cmE{P}}$ by
+$m''M^2\delta$ (Lemma~\ref{l:trace}(b)). The hypothesis gives the bound.
+\end{proof}
+\leanline{\lean{normjetSeriesle}}
+
+\begin{lemma}[jets of products of torsion translates]\label{l:jetint}
+Let $d$ be a prime number $\equiv7\bmod8$, $C$ a CM datum for $d$, $(p,j)$ a $p$-adic place, $I$ and $S$ finite
+sets, $c_{i,x}\in\Cp$ for $(i,x)\in I\times S$, and $\delta\in\OO_d$ with $\delta\ne0$. Suppose that
+$\np{j(\cj\delta)^{-1}c_{i,x}/d}\le1$ for all $i$, $x$, and let $y_i\in\CC$ with $\delta y_i\in\LamC{C}$ for all
+$i\in I$. Then for every polynomial $Q$ in the variables $z_x$, $x\in S$, with coefficients in $\Oj$, the jet along
+$j(Q)$ of the series
+\[\prod_{i\in I}\tayj{\UC{C}{1}{y_i}\thC{C}}\Bigl(\sum_{x\in S}c_{i,x}z_x\Bigr)\]
+lies in $\op$.
+\end{lemma}
+\begin{proof}
+Let $L$, $L_2$ be as in (Q6) and $\ell_i=j(\cj\delta)^{-1}\sum_xc_{i,x}z_x$. Let $\mathcal{R}$ be the
+$\op$-subalgebra of $\Cp[[z]]$ generated by the series $G(\ell_i)$ with $i\in I$ and
+$G\in\phiring{C}\cup\{L',\exp(-L)\}$. \emph{Every element of $\mathcal{R}$ has constant term in $\op$, and
+$\mathcal{R}$ is stable under the $\partial/\partial z_x$.} By the Leibniz rule it suffices to check the generators. By the chain
+rule $\partial_x(G(\ell_i))=(d\,G')(\ell_i)\cdot c_{i,x}/(j(\cj\delta)d)$, and the last factor lies in $\op$. If
+$G\in\phiring{C}$ then $dG'\in\phiring{C}$ by (Q5). If $G=L'$ then $dL''=dL_2+d\,\tayj{\xiC{C}}\in\phiring{C}$,
+because $dL_2=-j(\sqrt{-d})\cdot j(\sqrt{-d})L_2\in\op$ by (Q6). If $G=\exp(-L)$ then $G'=-L'G$. The constant terms
+are integral ($L'(0)=0$, $\exp(-L)(0)=1$, (Q5)). It follows by induction on the degree of $Q$ that jets of
+elements of $\mathcal{R}$ along $j(Q)$ lie in $\op$: the jet along $z_xQ$ is the jet of $\partial_xF$ along $Q$. Finally
+each factor of the product lies in $\mathcal{R}$: by (Q7),
+$\tayj{\UC{C}{1}{y_i}\thC{C}}(j(\cj\delta)X)=\exp(-L)^{\delta\cj\delta}u_i$ with $u_i\in\phiring{C}$, and the factor is
+this series at $X=\ell_i$.
+\end{proof}
+\leanline{\lean{jetthetaprodintegral}}
+
+\begin{proof}[Proof of Theorem C]
+Apply Proposition~\ref{p:transfer} with $c=\cj\delta d$, $L=\jetalong{Q'}{\,\cdot\,}$ and $r=1$. Let $\Theta$ be a
+series whose image under $j$ lies in $\ThProd{P}{\mu}{\delta}{\np{j(\cj\delta d\,\sone{P}{\mu})}}{n}$, with frame
+$(w_i)$, numbers $n_0$, $b$ and translation vectors $y_{(i,k)}$. Then $j(\jetalong{Q'}{\Theta})$ is the jet along
+$j(Q)$ of a product as in Lemma~\ref{l:jetint}, for the datum $\cmE{P}$, the integer $n_0\delta$ (so that
+$n_0\delta\,y_{(i,k)}\in\LamC{\cmE{P}}$) and the coefficients $c_{(i,k),(\tau,k')}=[k=k']\,j(b\,\cj{\emb{\tau}(w_i)})$.
+The hypothesis of the lemma holds: $\np{j(b)}=\np{j(\cj\delta d\sone{P}{\mu})}$, $n_0$ is a unit at $j$, and
+$\np{j(\sone{P}{\mu}\cj{\emb{\tau}(w_i)})}\le1$ by Lemma~\ref{l:padic}(c), so
+$\np{j(n_0\cj\delta)^{-1}j(b\,\cj{\emb{\tau}(w_i)})/d}\le1$.
+\end{proof}
+\leanline{\lean{normjetjetSeriesleone}}
+
+\begin{proposition}[one theta lift and the gauges]\label{p:raises}
+Let $P=(N_0,d)$ be parameters, $\mu$ a natural number, $n$, $n'$ finite sets and $(p,j)$ a $p$-adic place.
+\begin{enumerate}[label=(\alph*),itemsep=2pt]
+\item Let $k$ be a kernel as in Definition~\ref{d:raises} with data in $\mathcal{D}$, $\Phi\in\mathcal{D}$,
+$d_1\in\Uf{n}$, $d_2\in\Uf{n'}$, $z\in\CC$ and $c,c'$ real numbers. If $\Phi\in\Rais{k}{d_1}{d_2}{c}$ and
+$\np{j(z)}\cdot c\le c'$, then $z\Phi\in\Rais{k}{d_1}{d_2}{c'}$.
+\end{enumerate}
+Let further $\varkappa$ be a lift weight for $n$, $n'$, $e_b$, $e$; $a$, $b$ characters of $\mathrm{U}(1)$ over
+$\EP{P}{\mu}$ with weights $e_a$, $e_b$ and tame parts $\psi$, $\psi'$; $K$ a level; and $c\in\CC$.
+\begin{enumerate}[label=(\alph*),itemsep=2pt,start=2]
+\item Let $k=\thker{\varkappa}{c}{a}{b}{K}$, $\delta$ an integer of $\KP{P}$ and $\Psi\in\Wf{\homsp{n}{n'}}$ with
+$\Psi\in\Std{\homsp{n}{n'}}{\delta}$. Let $x,y\in\Uf{n'}$ be integral above $p$, $d_0\in\Uf{n'}$, and
+$u_\tau\in\Cp^{\,n'}$ ($\tau\in\PlP{P}{\mu}$) such that the image of the matrix of $d_0$ under $\hat\jmath_\tau$ is
+the diagonal matrix of $u_\tau$, for every $\tau$. Let $B$ be a real number such that for every
+$f\in\Std{\homsp{n}{n'}}{\delta}$ and all Weyl indices $i'$, $i$
+\[\prod_\tau\Bigl(\prod_{b\in n'}\np{u_\tau(b)}\Bigr)^{e_{a,\tau}}\prod_{h,l,s}\np{u_\tau(i'_\tau(h,l,s))}\ \cdot\
+\np{j\bigl(\schurjet{\varkappa}{\jet{\homsp{n}{n'}}{c}{f}}_{i',i}\bigr)}\ \le\ B .\]
+Then $\omega_k(1,x\,d_0\,y)\Psi\in\Rais{k}{1}{1}{B}$.
+\item Let $k=\thker{\varkappa}{c\cdot\per{P}{\mu}}{a}{b}{K}$, $\delta$ an integer of $\KP{P}$ with $\delta\ne0$, and
+$\Phi\in\Wf{\homsp{n}{n'}}$ with $\Phi\in\Std{\homsp{n}{n'}}{\delta}$. Then
+\[\Phi\in\Rais{k}{1}{1}{\bigl(\np{j(c)}/\np{j(\cj\delta d)}\bigr)^{\boxes{\varkappa}{|n'|}}} .\]
+\item Let $k=\thker{\varkappa}{c\cdot\per{P}{\mu}}{a}{b}{K}$, let $N\ne0$, $d'$ and $M$ be natural numbers and
+$f\in\Wf{\homsp{n}{n'}}$. If $d'f\in\Std{\homsp{n}{n'}}{N}$, $\np{j(c)}\le1$ and
+$d'\cdot(N\cdot d)^{\boxes{\varkappa}{|n'|}}$ divides $M$, then $Mf\in\Rais{k}{1}{1}{1}$.
+\end{enumerate}
+\end{proposition}
+\begin{proof}
+(a) The gauge is homogeneous: $\gauge{\varkappa}{e_a}{g}{z\xi}=\np{j(z)}\gauge{\varkappa}{e_a}{g}{\xi}$.
+
+(b) Let $g\in\Uf{n}$, $g'\in\Uf{n'}$ and $\xi$ be given. Write $g=\gamma\,g_0$ and $g'xd_0=\varepsilon\,h_0\,d_0$ with
+rational points $\gamma$, $\varepsilon$ and $g_0$, $h_0$ integral above $p$ (Background~5). By the equivariance of
+the kernel under rational points and the invariance of the gauge under elements integral above $p$, it is enough
+to bound the largest coordinate of $j$ applied to
+$\mathrm{jm}_k(\omega_k(g_0,h_0d_0y)\Psi)\,\xi'$, with $d_0^{-1}$ acting in weight $(\varkappa,e_a)$, against the
+largest coordinate of $j(\xi')$. Now $\omega_k(g_0,h_0\,\cdot\,y)$ with integral elements preserves
+$\Std{\homsp{n}{n'}}{\delta}$ by Lemma~\ref{l:std}(e), the remaining $d_0$ acts on the Schur jets through its
+diagonal images $u_\tau$, which multiply the row $i'$ by the product of the $u_\tau$ over the boxes of $i'_\tau$ and
+by the determinants to the power $e_{a,\tau}$, and the entries are bounded by the hypothesis.
+
+(c) Take $x=d_0=y=1$, $u_\tau=1$ in (b). For $f\in\Std{\homsp{n}{n'}}{\delta}$ the homogeneity of the Schur jets
+(Background~5) gives
+\[\schurjet{\varkappa}{\jet{\homsp{n}{n'}}{c\per{P}{\mu}}{f}}=\Bigl(\frac{c}{\cj\delta d}\Bigr)^{\boxes{\varkappa}{|n'|}}\schurjet{\varkappa}{\jet{\homsp{n}{n'}}{\cj\delta d\per{P}{\mu}}{f}} ,\]
+and the entries of the last matrix are jets along polynomials with integral coefficients, so Theorem~C applies to
+the standard space $\homsp{n}{n'}$.
+
+(d) Write $M=d'(Nd)^{\boxes{\varkappa}{|n'|}}s$. By (c) with $\delta=N$,
+\[d'f\in\Rais{k}{1}{1}{(\np{j(c)}/\np{j(Nd)})^{\boxes{\varkappa}{|n'|}}} ,\]
+and by (a), multiplying by the integer $(Nd)^{\boxes{\varkappa}{|n'|}}s$ gives the bound
+$\np{j(c)}^{\boxes{\varkappa}{|n'|}}\le1$.
+\end{proof}
+\leanline{\lean{smulmemraises}\sep\lean{memraisesofjetbound}\sep\lean{memraisesofstandardData}\sep\lean{memraisesofdvd}\sep quoted:
+\lnm{weylGauge\_embFin}, \lnm{weylGauge\_mul}, \lnm{schur\_diagonal\_eq\_prod}, \lnm{map\_schur}}
+
+\sect{The normal form at a prime that does not split}{s:normal}
+In this section $q=p^\nu$ will be the norm of a prime of $\Q(\sqrt{-d})$ above $p$: $\nu=2$ if $p$ is inert and
+$\nu=1$ otherwise.
+
+\begin{lemma}[a valuation bound]\label{l:val}
+Let $p$ be a prime number and $\nu$, $Q$ natural numbers with $p^\nu=Q+1$. Let $x$, $t$, $o$, $J$, $k$ be natural
+numbers with $\nu\ne0$, $o\le1$ and $x+1+QJ=pt+o+Qk$. Then there is a natural number $a$ with
+$\np{x+1}=p^{-a}$ such that: if $a>1$ then $p<x+1$; either $a=0$ or $k\equiv o+J\bmod p$; and $l\,(a-\nu)\le k+t$
+for every natural number $l\le p$.
+\end{lemma}
+\begin{proof}
+Let $a=v_p(x+1)$. If $a>1$ then $x+1\ge p^2>p$. If $a\ge1$, reduce the equation modulo $p$, where $Q\equiv-1$:
+$-J\equiv o-k$. If $a>\nu$ then $p^a\le x+1\le pt+1+Qk\le p^\nu(k+t)+1$, so $k+t>p^{a-\nu}-1$ and therefore
+$k+t\ge p^{a-\nu}\ge p\,(a-\nu)\ge l\,(a-\nu)$.
+\end{proof}
+\leanline{\lean{existsnormeqinvpowbounds}}
+
+\begin{lemma}[substitution tangent to the identity]\label{l:tangent}
+Let $p$ be a prime number, $Z\in\Cp[[X]]$ and $m$ a natural number such that $X^{m+1}$ divides $Z-X$. Then for
+every natural number $k\le m+1$ and every $g\in\Cp[[X]]$ the coefficient of $X^k$ in $g(Z)$ is
+$g_k+g_1\cdot(Z-X)_k$.
+\end{lemma}
+\begin{proof}
+Write $Z=X+X^{m+1}W$. Modulo $X^{m+2}$ we have $Z^i\equiv X^i$ for $i\ne1$ and $Z\equiv X+W_0X^{m+1}$; so
+$g(Z)\equiv g+g_1W_0X^{m+1}$, and $(Z-X)_k$ is $W_0$ for $k=m+1$ and $0$ for $k\le m$.
+\end{proof}
+\leanline{\lean{coeffsubsttangent}}
+
+\begin{lemma}[only two degrees keep a denominator]\label{l:deriv}
+Let $p\ge13$ be a prime number, $\nu\in\{1,2\}$, $Q$ a natural number with $p^\nu=Q+1$, and $\varpi\in\Cp$ with
+$\np{\varpi^Q}^2=p^{-\nu}$ and $\varpi\ne0$. Let $m$, $n$, $Z$, $\mu$ be power series in $\Cp[[X]]$ such that $n'$
+and $Z'$ have coefficients in $\op$; $n(0)=0$; $Z_{l+1}=0$ for every $l$ not divisible by $Q$; $Z_{Q+1}=-\varpi^{-Q}$;
+$m_k=0$ for $k\le2$; $m'=n\,Z'$; and
+\[\mu=\bigl(\varpi^{p+1}/p\bigr)^{-1}\cdot\cpart{Q}{p+1}{m}(\varpi X) .\]
+Then $\np{\mu_{p+1}}\le1$, $\np{\mu_{p+p^\nu}}\le1$, and the series
+$\varpi^{-Q}\bigl(\mu-\mu_{p+1}X^{p+1}-\mu_{p+p^\nu}X^{p+p^\nu}\bigr)$ has coefficients in $\op$.
+\end{lemma}
+\begin{proof}
+Only the degrees $k=p+1+QI$, $I\ge0$, occur in $\mu$, and $\mu_k=p\,\varpi^{QI}m_k$. We show $\np{\mu_k}\le1$ for
+$I\in\{0,1\}$ (the degrees $p+1$ and $p+p^\nu$) and $\np{\mu_k}\le\np{\varpi^Q}=p^{-\nu/2}$ for $I\ge2$. From $m'=nZ'$,
+$n_0=0$ and the vanishing of the coefficients of $Z$,
+\[k\,m_k=\sum_{i+1+QJ=p+QI}n_{i+1}\,(QJ+1)\,Z_{QJ+1},\qquad 0\le J\le I+1 .\]
+Here $\np{n_{i+1}}\le p^{c}$ with $c=v_p(i+1)$, because $n'$ is integral, and $\np{(QJ+1)Z_{QJ+1}}\le1$, because
+$Z'$ is integral. With $a=v_p(k)$ the ultrametric inequality gives
+\[\log_p\np{\mu_k}\ \le\ a-1-\tfrac{\nu}2I+\max_{(i,J)}c .\]
+Lemma~\ref{l:val}, for $x=p+QI$ ($t=o=1$, $J=0$) and for $x=i$ ($t=1$, $o=0$), says: $a=0$ unless
+$I\equiv1\bmod p$; $c=0$ unless $I\equiv J\bmod p$; and $p\,(a-\nu)\le I+1$, $p\,(c-\nu)\le I+1$.
+\emph{$I=0$}: $a=0$; either $J=0$, $i+1=p$, $c=1$, or ($\nu=1$) $J=1$, $c=0$: the exponent is at most $0$.
+\emph{$I=1$}: $k=p+p^\nu$ and $a=1$; the terms are $J=0$ with $i+1\equiv-1\bmod p$, $c=0$; $J=1$ with $i+1=p$,
+$c=1$, where moreover $\np{(Q+1)Z_{Q+1}}=p^{-\nu/2}$; and ($\nu=1$) $J=2$ with $c=0$. The exponent is at most
+$\max(-\nu/2,\,1-\nu,\,-1/2)\le0$. \emph{$2\le I\le4$}: $a=0$ since $I\not\equiv1\bmod p$; and $c\ge1$ forces
+$J=I$, hence $i+1=p$ and $c=1$. The exponent is at most $-\nu I/2\le-\nu/2$. \emph{$I\ge5$}: $a$ and $c$ are at
+most $\nu+(I+1)/p$, so the exponent is at most $2\nu+2(I+1)/13-1-\nu I/2\le-\nu/2$; this is where $p\ge13$ enters.
+\end{proof}
+\leanline{\lean{normcoeffleofderiv}}
+
+\begin{proposition}[the formal parameter and the logarithm of theta]\label{p:formal}
+Let $d$ be a prime number $\equiv7\bmod8$, $C$ a CM datum for $d$ and $(p,j)$ a $p$-adic place. Then there are a
+natural number $\nu$, $\varpi\in\Cp$, $\pi\in\op$ and power series $S$, $E$ in one variable with coefficients in
+$\op$ such that:
+\begin{enumerate}[label=(\Roman*),itemsep=2pt]
+\item $\nu\ne0$; $\np{\varpi}=p^{-\nsw{d}{p}}$; $p^{-1}\le\np{\pi}<1$; $S(0)=0$; $S-S^{p^\nu}=X+\pi E$; and
+$T(\varpi X)=\varpi S$ for some $T\in\phiring{C}$.
+\item If $\chid{d}(p)\ne1$ and $13\le p$, there are $u_0,u_1,u_2\in\op$, a power series $R$ with coefficients in
+$\op$ and $\psi\in\Cp[[X]]$ such that $\np{\pi}=p^{(\chid{d}(p)-1)/2}$; either $\nu=1$ and $p=d$, or $\nu=2$,
+$u_0=0$ and $\np{u_1}=1$; $\psi=u_0X^2+u_1S^{p+1}+u_2S^{p+p^\nu}+\pi R$; $\psi(0)=0$; and for every natural number
+$n$ prime to $p$ there are $N,\kappa\in\Cp$ with $\np{N}=1$ and $\np{\kappa}=p^{(1-\chid{d}(p))/2-1/(p-1)}$ such that
+for every $y\in\CC$ with $ny\in\LamC{C}$ there is a power series $V$ with coefficients in $\op$ with
+\[\tayj{\UC{C}{1}{y}\thC{C}}(\varpi X)=\bigl(\exp(\kappa\psi)\cdot V\bigr)(NX) .\]
+\end{enumerate}
+Here $\nsw{d}{p}$ is $1/(p^2-1)$ if $\chid{d}(p)=-1$, $1/(2(p-1))$ if $p=d$, and $1/(p-1)$ if $\chid{d}(p)=1$.
+\end{proposition}
+\begin{proof}
+\emph{Step 1: the isogeny.} Let $a=\sqrt{-d}$ if $p=d$ and $a=p$ otherwise, and let $q=p^\nu$ be the norm of a
+prime above $p$. Then $\np{j(a)}^2=p^{-s}$ with $s=1$ if $p=d$ and $s=2$ otherwise, $\nsw{d}{p}=s/(2(q-1))$, and
+in the two non-split cases $a\cj a=q$ is odd.
+
+\emph{Step 2: a parameter that commutes with roots of unity.} Let $\hat\varphi=\tayj{\phC{C}}$ and let
+$\zeta\in\Cp$ be a primitive root of unity of order $q-1$. By (Q6), $(\zeta^i,\zeta^{i(p+1)})\in\mathcal{N}_d$, so
+$\hat\varphi(\zeta^iX)\in\phiring{C}$, and $F\mapsto F(\zeta^iX)$ maps $\phiring{C}$ to itself. Hence
+\[T=\cpart{q-1}{1}{\hat\varphi}=\frac1{q-1}\sum_{i<q-1}\zeta^{-i}\hat\varphi(\zeta^iX)\in\phiring{C} ,\]
+$q-1$ being a unit of $\op$. As $T(0)=0$, $T'(0)=1$, (Q5) applies: let $Z$ be the inverse series of $T$. From
+$T(\zeta X)=\zeta T$ we get $Z(\zeta X)=\zeta Z$, so $Z_{l+1}=0$ unless $q-1$ divides $l$; in particular $X^q$
+divides $Z-X$. Also $Z'$ is integral: $T'(Z)$ is integral with constant term $1$ and $T'(Z)Z'=1$.
+
+\emph{Step 3: the scale.} Choose $\varpi\in\Cp$ with $\varpi^{q-1}=-Z_q^{-1}$ and put $\pi=\varpi^{q-1}$. The series
+$g=T(j(a)Z)$ is integral, because $T(j(a)X)\in\phiring{C}$ by (Q6), and $Z(g)=j(a)Z$. By Lemma~\ref{l:tangent},
+$g_k=j(a)^kT_k$ for $k<q$, of absolute value at most $\np{j(a)}<1$, and, using $T_q=-Z_q$ (from $T(Z)=X$),
+\[g_q=j(a)^qT_q+j(a)Z_q=j(a)\bigl(1-j(a)^{q-1}\bigr)Z_q,\qquad\np{g_q}=\np{j(a)}/\np{\pi} .\]
+We claim $\np{g_q}=1$. It is at most $1$. In the non-split cases (Q8)(ii) gives a coefficient of absolute value
+$1$ in a degree $\le q$, which must be $q$. In the split case ($q=p$, $a=p$), if $\np{g_p}<1$ then
+$\np{p\,(Z-X)_p}<1$, and then every $F\in\phiring{C}$ has $\np{(F')_{p-1}}=\np{pF_p}<1$, since by
+Lemma~\ref{l:tangent} $pF_p=p(F(Z))_p-F_1\,p(Z-X)_p$ with $F(Z)$ integral; by (Q8)(i) this gives $\chid{d}(p)\ne1$, a
+contradiction. So $\np{\pi}=\np{j(a)}=p^{-s/2}$, which is $p^{(\chid{d}(p)-1)/2}$ in the non-split cases, and
+$\np{\varpi}=p^{-s/(2(q-1))}=p^{-\nsw{d}{p}}$.
+
+\emph{Step 4: the series $S$.} Let $W=\varpi^{-1}Z(\varpi X)$. Its coefficients vanish except in the degrees
+$1+(q-1)l$; $W_1=1$, $W_q=\pi Z_q=-1$, and for $l\ge2$ the coefficient is $\pi^{l}Z_{1+(q-1)l}$, where
+$\np{Z_{1+(q-1)l}}\le p^{b}$, $b=v_p(1+(q-1)l)$, because $Z'$ is integral. Lemma~\ref{l:val} (with $x=(q-1)l$, $t=0$,
+$o=1$, $J=0$, $k=l$) says that $b=0$ unless $l\equiv1\bmod p$, and that $p\,(b-\nu)\le l$. In each of the three cases
+$(s,\nu)=(2,2)$, $(1,1)$, $(2,1)$ of Step~1 this gives $2b\le s(l-1)$, that is $\np{\pi^{l-1}Z_{1+(q-1)l}}\le1$. So
+$W=X-X^q-\pi E'$ with $E'$ integral. Let $S$ be the inverse series of $W$; it is integral with $S(0)=0$, and
+$S-S^q=X+\pi E$ with $E=E'(S)$. By definition $Z(\varpi X)=\varpi W$; substituting $S$ gives $Z(\varpi S)=\varpi X$,
+and applying $T$ gives $T(\varpi X)=\varpi S$. This proves (I).
+
+\emph{Step 5: the logarithm.} Assume now $\chid{d}(p)\ne1$ and $p\ge13$. Let $L$, $L_2$ be as in (Q6) and
+$L_1=L-\tfrac12L_2X^2$, so that $L_1''=\tayj{\xiC{C}}$ and $L_1=O(X^3)$. Apply Lemma~\ref{l:deriv} with $Q=q-1$
+to $m=L_1(Z)$ and $n=L_1'(Z)$: $m'=nZ'$; $n'=\tayj{\xiC{C}}(Z)\,Z'$ is integral by (Q5); $n(0)=0$; $m_k=0$ for
+$k\le2$ by Lemma~\ref{l:tangent}; and $Z$ has the required coefficients by Steps 2 and 3. With
+$\kappa_0=\varpi^{p+1}/p$ this gives $u_1,u_2\in\op$ and an integral $R_0$ with
+\[\kappa_0^{-1}\cpart{q-1}{p+1}{L_1(Z)}(\varpi X)=u_1X^{p+1}+u_2X^{p+q}+\pi R_0 .\]
+Put $\psi=\kappa_0^{-1}\cpart{q-1}{p+1}{L}(\varpi X)$. Taking the part in a residue class of degrees commutes with
+substituting $T$, because $T(\zeta X)=\zeta T$; and $T(\varpi X)=\varpi S$. Hence
+$\psi=u_0X^2+u_1S^{p+1}+u_2S^{p+q}+\pi R$ with $R=R_0(S)$ and with $u_0=\kappa_0^{-1}\tfrac12L_2\varpi^2$ if
+$2\equiv p+1\bmod q-1$, that is if $\nu=1$, and $u_0=0$ if $\nu=2$. In the case $\nu=1$, $p=d$: $u_0=\tfrac12L_2\,p/\pi$,
+and $\np{u_0}=\np{L_2}p^{-1/2}\le1$ since $\np{j(\sqrt{-d})L_2}\le1$ and $\np{j(\sqrt{-d})}=p^{-1/2}$. In the case
+$\nu=2$: $p+1<q$, so $u_1=p\,(L_1)_{p+1}=(\tayj{\xiC{C}})_{p-1}/(p+1)$, and $\np{u_1}\ge1$ by (Q8)(i), whose hypothesis
+holds because $(Z-X)_p=0$ (argue as in Step 3). So $\np{u_1}=1$.
+
+\emph{Step 6: torsion translates.} Let $n$ be prime to $p$, $\delta=n(q-1)$, $N=\delta^{-1}$ (a unit of $\op$) and
+$\kappa=-\delta^2\kappa_0$; then $\np{\kappa}=p\,\np{\varpi}^{p+1}=p^{(1-\chid{d}(p))/2-1/(p-1)}$ in both non-split
+cases. Let $ny\in\LamC{C}$. By (Q7) for the integer $\delta$,
+$\tayj{\UC{C}{1}{y}\thC{C}}(\delta X)=\exp(-\delta^2L)\cdot u$ with $u\in\phiring{C}$. By (Q6) for the pairs
+$(\zeta^{-i},\zeta^{-i(p+1)})$, rotated by $\zeta^i$, the series
+$\exp\bigl(\zeta^{-i(p+1)}L(\zeta^iX)-L\bigr)$ lie in $\phiring{C}$; their product over $i<q-1$ is
+\begin{gather*}
+\Pi=\exp\bigl((q-1)(\cpart{q-1}{p+1}{L}-L)\bigr)\in\phiring{C},\quad\text{so that}\\
+\exp(-\delta^2L)\,u=\exp\bigl(-\delta^2\cpart{q-1}{p+1}{L}\bigr)\cdot\Pi^{\,n^2(q-1)}u .
+\end{gather*}
+Let $V=(\Pi^{n^2(q-1)}u)(\varpi X)$. It is integral: $(\Pi^{n^2(q-1)}u)(Z)$ is integral by (Q5), and
+$V$ is this series at $T(\varpi X)=\varpi S$. Rescaling by $\varpi$ and by $N$,
+$\tayj{\UC{C}{1}{y}\thC{C}}(\varpi X)=\bigl(\exp(\kappa\psi)V\bigr)(NX)$.
+\end{proof}
+\leanline{\lean{existsformalparameter}}
+
+\begin{lemma}[two computations in characteristic $p$]\label{l:charp}
+Let $p$ be a prime number, $Q$ a commutative ring of characteristic $p$ and $J$ a finite set.
+\begin{enumerate}[label=(\alph*),itemsep=2pt]
+\item Let $B$, $\nu$ be natural numbers and $\mathsf{b}$ a proposition such that $\nu=1$ and $\mathsf{b}$ holds, or
+$\nu=2$. Let $t_i,L_i\in Q$ ($i\in J$) with $t_i-t_i^{p^\nu}=L_i$ and $t_i^{p^l}=0$ for all $l\ge B$. If
+$\sum_iL_i^{p^e}L_i=0$ for every $e$ such that $e$ is odd or $\mathsf{b}$ holds, then $\sum_it_i^{p+1}=0$ and
+$\sum_it_i^{p+p^\nu}=0$.
+\item Let $\Phi$ be a finite set, $I$ a set, $r_{v,i}\in Q$ for $(v,i)\in\Phi\times J$, and $t_i$ ($i\in J$) power
+series over $Q$ in the variables $X_{(v,c)}$, $(v,c)\in\Phi\times I$, with $t_i(0)=0$. Let $x\in\Phi$ and $c\in I$
+with $t_i-t_i^{p^2}=\sum_vr_{v,i}X_{(v,c)}$ for all $i$. Then for every exponent $\beta$: the coefficient at $X^\beta$
+of $\sum_it_i^{\,p}r_{x,i}$ is nonzero if and only if there are $l\in\NN$ and $y\in\Phi$ with
+$\sum_ir_{y,i}^{\,p^{2l+1}}r_{x,i}\ne0$ and $\beta=p^{2l+1}\cdot1_{(y,c)}$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) Telescoping, $t_i=\sum_{l<B}L_i^{p^{\nu l}}$. So $\sum_it_i^pt_i$ and $\sum_it_i^pt_i^{p^\nu}$ are sums of terms
+$\sum_iL_i^{p^{a}}L_i^{p^{b}}$ with $a-b=1+\nu(l-l')$, odd if $\nu=2$. Such a term is the $p^{\min(a,b)}$-th power of
+$\sum_iL_i^{p^{|a-b|}}L_i$, which vanishes. (b) With $\ell_i=\sum_vr_{v,i}X_{(v,c)}$, telescoping gives
+$t_i\equiv\sum_{l<B}\ell_i^{p^{2l}}$ up to terms of order $\ge p^{2B}$, and
+$t_i^p\equiv\sum_{l}\sum_vr_{v,i}^{p^{2l+1}}X_{(v,c)}^{p^{2l+1}}$. So
+$\sum_it_i^pr_{x,i}=\sum_{l,v}\bigl(\sum_ir_{v,i}^{p^{2l+1}}r_{x,i}\bigr)X_{(v,c)}^{p^{2l+1}}$, and distinct pairs
+$(l,v)$ give distinct monomials.
+\end{proof}
+\leanline{\lean{sumpoweqzeroofnull}\sep\lean{coeffsumfrobnezeroiff}\sep quoted: \lnm{eq\_sum\_pow\_of\_sub\_pow\_eq}}
+
+\begin{lemma}[Frobenius pairings of a tight frame]\label{l:frob}
+Let $P=(N_0,d)$ be parameters, $\mu$ a natural number, $p$ a prime number with $\chiK{P}(p)\ne1$ and
+$j\colon\CC\to\Cp$ a ring homomorphism. Let $J$ be a finite set, $w_i\in\EP{P}{\mu}$ ($i\in J$) and $M$ a natural
+number such that $(w_i)$ with multiplicities $1$ is a tight frame of length $M$, and let $\beta\in\op$. Then there
+are $z_{v,i}\in\op$, for $v\in\PlP{P}{\mu}$ and $i\in J$, with $z_{v,i}=\beta\cdot j(\cj{\emb{v}(w_i)})$, such that
+for every commutative ring $Q$ of characteristic $p$, every ring homomorphism $g\colon\op\to Q$ that vanishes on
+the elements of absolute value at most $p^{(\chiK{P}(p)-1)/2}$, every natural number $e$ that is odd or for which
+$p=d$, and all $v,v'\in\PlP{P}{\mu}$:
+\[\sum_{i\in J}g(z_{v,i})^{p^e}\,g(z_{v',i})=\begin{cases}g(\beta)^{p^e}g(\beta)\cdot M&\text{if }\pin{P}{\mu}{-p^e}\cdot v=v',\\0&\text{otherwise.}\end{cases}\]
+\end{lemma}
+\begin{proof}
+Let $N=\Nn{P}{\mu}$; it is prime to $p$ (I4), so $\beta=N\beta'$ with $\beta'\in\op$. The elements $x_i=Nw_i$ are
+integers of $\EP{P}{\mu}$ (I1). Then $z_{v,i}=\beta'j_v(x_i)$ lies in $\op$. Let
+$\phi_v\colon x\mapsto g(j(\emb{v}(x)))$ on the integers of $\EP{P}{\mu}$. By (I6), $\phi_v(\operatorname{gal}(u)x)=\phi_v(\cj x)^{p^e}$
+for $u=\pin{P}{\mu}{-p^e}$ and all $x$: the condition on $\sqrt{-d}$ holds because $-\chiK{P}(p)^e=1$ for $e$ odd
+and $\chiK{P}(p)=-1$, and because for $p=d$ the element $j(\sqrt{-d})$ has absolute value $p^{-1/2}$ and is
+killed by $g$. Hence
+\[\sum_ig(z_{v,i})^{p^e}g(z_{v',i})=g(\beta')^{p^e}g(\beta')\cdot g\Bigl(j\Bigl(\sum_i\emb{u\cdot v}(x_i)\,\cj{\emb{v'}(x_i)}\Bigr)\Bigr),\]
+and the inner sum is $N^2M$ if $u\cdot v=v'$ and $0$ otherwise, by the frame identity.
+\end{proof}
+\leanline{\lean{existsframerowsfrob}}
+
+\begin{proof}[Proof of Theorem D]
+Apply Proposition~\ref{p:formal} to $C=\cmE{P}$; since $\chiK{P}(p)\ne1$ we have $p\ge13$ (I4), so (II) holds. This
+gives $\nu$, $\varpi$, $\pi$, $S$, $E$ and $u_0$, $u_1$, $u_2$, $R$, $\psi$. Let $I$, $r\le1$ and
+$\Theta\in\ThProd{P}{\mu}{1}{r}{I}$ be given, with frame $(w_i)_{i\in J}$ of length $M$, numbers $n$, $b$ and
+translations $y_{(i,k)}$; so $p\nmid M$, $p\nmid n$, $\np{j(b)}=r$, $n\,y_{(i,k)}\in\LamC{\cmE{P}}$. Let $N$, $\kappa$
+and $V_{(i,k)}$ be as in (II) for this $n$. Lemma~\ref{l:frob} with $\beta=Nj(b)$ gives $z_{v,i}$. Put
+\[\ell_{(i,k)}=\sum_vz_{v,i}\,z_{(v,k)},\qquad\Psi=\sum_{(i,k)}\psi(\ell_{(i,k)}),\qquad V=\prod_{(i,k)}V_{(i,k)}(\ell_{(i,k)}) ,\]
+where $z_{(v,k)}$ are the variables. Substituting in the definition of the theta product,
+$\Theta(\varpi z)=\prod_{(i,k)}(\exp(\kappa\psi)V_{(i,k)})(\ell_{(i,k)})=\exp(\kappa\Psi)\,V$, and $\Psi(0)=0$.
+
+(a) Let $B$, a family $Z$ as in Definition~\ref{d:null} with couplings in the ideal $(p,\pi)$ for $e\in S_B$, and
+an exponent $\beta_0$ of degree at most $B$ be given. Let $Q$ be the quotient of $\op[[T]]$ by the ideal of the
+series whose coefficients at the exponents $\le\beta_0$ have absolute value at most $\np\pi$; it has
+characteristic $p$. In $Q$ let $t_{(i,k)}$ and $L_{(i,k)}$ be the classes of $S(\ell_{(i,k)}(Z))$ and of
+$\ell_{(i,k)}(Z)=\sum_vz_{v,i}Z_{(v,k)}$. Then $t-t^{p^\nu}=L$, and $t^{p^l}=0$ for $p^l>B$. By Lemma~\ref{l:frob}
+(for the map $\op\to Q$, which kills the elements of absolute value $\le\np\pi$),
+\[\sum_{(i,k)}L_{(i,k)}^{p^e}L_{(i,k)}=\beta^{p^e+1}M\sum_{(v,k)}Z_{(v,k)}^{p^e}Z_{(\mathrm{pr}_e(v),k)}\]
+for $e$ odd or $p=d$; this is $0$ in $Q$ for $e\in S_B$ by the hypothesis on $Z$, and for $e>\log_pB$ because
+then $L^{p^e}=0$. Lemma~\ref{l:charp}(a), with the proposition $p=d$, gives $\sum t^{p+1}=\sum t^{p+p^\nu}=0$.
+Moreover $u_0\sum L^2=0$: either $u_0=0$, or $p=d$ and this is the coupling with $e=0\in S_B$. So the class of
+$\Psi(Z)$ vanishes: its coefficients at exponents $\le\beta_0$ have absolute value at most $\np\pi$. Then the
+coefficient at $\beta_0$ of $\exp(\kappa\Psi(Z))=\sum_l\kappa^l\Psi(Z)^l/l!$ is integral, since
+$\np{\kappa\pi}^l=p^{-l/(p-1)}\le\np{l!}$; the same holds at every exponent $\le\beta_0$, and $V(Z)$ is integral. So
+the coefficient of $\Theta(\varpi Z)$ at $\beta_0$ is integral.
+
+(b) Now $\chiK{P}(p)=-1$ and $r=1$; so $\nu=2$, $u_0=0$, $\np{u_1}=1$, $\np\kappa=p^{1-1/(p-1)}$, and $\beta$ is a unit.
+Reduce modulo $\mxp$ and let $t_{(i,k)}$ be the reduction of $S(\ell_{(i,k)})$; then
+$t_{(i,k)}-t_{(i,k)}^{p^2}=\sum_v\cj{z}_{v,i}z_{(v,k)}$ with the residues $\cj z_{v,i}$, and for a variable $x=(x_1,x_2)$
+\[\frac{\partial\cj\Psi}{\partial z_x}=\cj u_1\sum_{i\in J}t_{(i,x_2)}^{\,p}\,\cj z_{x_1,i} ,\]
+because $(p+1)t^p\partial t=t^p\partial t$, the derivative of $t^{p^2}$ is $0$, $p+p^2\equiv0$ and $\pi\equiv0$.
+By Lemma~\ref{l:charp}(b) the coefficient at $z^{\beta_0}$ is nonzero exactly for $\beta_0=p^{2l+1}1_{(y,x_2)}$ with
+$\sum_i\cj z_{y,i}^{\,p^{2l+1}}\cj z_{x_1,i}\ne0$, and by Lemma~\ref{l:frob}, with $\beta$ and $M$ units, this means
+$\pin{P}{\mu}{-p^{2l+1}}\cdot y=x_1$.
+\end{proof}
+\leanline{\lean{thetaProductsnormalform}}
+
+\sect{Divisibility of Schur jets}{s:schur}
+\begin{lemma}[frames that kill the couplings]\label{l:frames}
+Let $p$ be a prime number, $\Phi$ and $n$ finite sets, $\mathrm{pr}\colon\NN\times\Phi\to\Phi$ a map, $S\subset\NN$ a
+finite set, $N$ a natural number, $\varkappa\colon\Phi\times\NN\to\NN$ a function, $\Xi\subset\Phi$ a finite set,
+$Y_{\tau,a,k}\in\op$ for $\tau\in\Phi$, $a\in n$, $k\in\NN$, and $\pi\in\op$. Then there are square matrices
+$M_{\tau,h}$ of size $h$ over $\op$, for $\tau\in\Phi$ and $h\in\NN$, such that
+\begin{enumerate}[label=(\roman*),itemsep=2pt]
+\item $\displaystyle\np{\pi}^{\,\sum_{e\in S}\sum_{\tau\in\Phi}\cc{p}{\varkappa}{N}{\Xi}{\tau}{\mathrm{pr}_e(\tau)}{e}}\ \le\
+\prod_{\tau\in\Phi}\prod_{h<N}\np{\det M_{\tau,h}}^{\varkappa(\tau,h)}$;
+\item for every commutative ring $R$ of characteristic $p$, every ring homomorphism $g\colon\op\to R$ with
+$g(\pi)=0$, every $e\in S$, $\tau\in\Phi$, heights $h$, $h'$ and rows $i<h$, $i'<h'$: unless $h=1$ and
+($\tau\in\Xi$, or $h'=1$ and $\mathrm{pr}_e(\tau)\in\Xi$),
+\[g\Bigl(\sum_{a\in n}\Bigl(\sum_{k<h}(M_{\tau,h})_{i,k}Y_{\tau,a,k}\Bigr)^{p^e}\cdot\sum_{k<h'}(M_{\mathrm{pr}_e(\tau),h'})_{i',k}Y_{\mathrm{pr}_e(\tau),a,k}\Bigr)=0 .\]
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+Fix $p^e$-th roots $\pi^{1/p^e}\in\op$. For a coupling $(e,\tau)$ with partner $\tau'=\mathrm{pr}_e(\tau)$ and a pair
+of heights $(h,h')$ the pairing in (ii) can be made divisible by $\pi$ from either end: by a condition on the rows
+of $M_{\tau,h}$ that costs $\pi^{1/p^e}$ (its $p^e$-th power appears), or by one on the rows of $M_{\tau',h'}$ that
+costs $\pi$. Three devices are used. (1) Multiply all of $M_{\tau,h}$ by $\pi^{1/p^e}$, or all of $M_{\tau',h'}$ by
+$\pi$: this kills the couplings with all rows at the other end, and costs $h/p^e$, respectively $h'$, in the
+valuation of the determinant, per column. (2) If $h'=1$, ask only that $\pi^{1/p^e}$ divide the pairings of the rows of
+$M_{\tau,h}Y_\tau$ with the single row of $Y_{\tau'}$: one linear condition on the rows, which by the input below
+costs $1/p^e$ per column. (3) If $h=1$, ask that $\pi$ divide the pairings of the rows of $M_{\tau',h'}Y_{\tau'}$
+with the $p^e$-th power of the single row of $Y_\tau$: cost $1$ per column. For $h,h'\ne1$ use (1) at the cheaper
+end, which costs $\min(B_\tau/p^e,B_{\tau'})$ in all; for $h\ne1$, $h'=1$ use (2), cost $r_\tau/p^e$; for $h=1$ and
+$\tau\notin\Xi$ use (1) on the $1\times1$ matrix $M_{\tau,1}$ or (3) on all $M_{\tau',h'}$, whichever is cheaper,
+cost $\min(t_\tau/p^e,r_{\tau'}+t_{\tau'})$; the couplings exempted in (ii) are not treated. The total is the
+coupling count. All conditions on one matrix $M_{\tau,h}$ are imposed at once by the following input, applied to
+the diagonal matrix of the required roots of $\pi$: \emph{(unit~149) if $A$ is a square matrix over a valuation
+ring and $\Lambda$ a submodule containing the image of $A$, then for vectors $\Phi_1,\dots,\Phi_h$ there is a square
+matrix $M$ of size $h$ with $\det M$ dividing $\det A$ and all $\sum_kM_{i,k}\Phi_k$ in $\Lambda$.} In (ii) one raises
+the divisibility by $\pi^{1/p^e}$ to the power $p^e$, which in characteristic $p$ is additive. The bookkeeping that
+decides which device serves which coupling is a predicate of the formal text; that its costs add up to the
+coupling count is checked there by a case analysis, which I read but did not replay (see §\ref{s:notes}).
+\end{proof}
+\leanline{\lean{existsnullcouplingframes}\sep unit 149: \lnm{IndexDvd.of\_det\_dvd}}
+
+\begin{proof}[Proof of Theorem E]
+\emph{Step 1: from Schur entries to products of minors.} For a matrix $y_\tau$ of size $n\times N$ (rows $a\in n$,
+columns $k<N$) the row $i'$ of the Schur matrix satisfies
+$\sum_iS_\varkappa(z)_{i',i}\,b_i(y)=b'_{i'}(zy)$, where $b_i(y)$ are products of minors of $y$ (times powers of
+determinants) and
+\[b'_{i'}(zy)=\prod_{\tau}\prod_{h<N}\prod_{l<\varkappa(\tau,h)}\det\bigl((z_\tau y_\tau)_{i'_\tau(h,l,s),\,k}\bigr)_{s,k<h}\]
+is the product of minors prescribed by $i'$ (quoted: this is the identity that defines the Schur matrix, and its
+coefficients are integers). A quoted lemma on Gauss norms gives a point $y$ with entries in $\op$
+at which the largest absolute value of the jets of $\Theta$ along the coefficients is attained; so it suffices to
+bound the jet of $\Theta$ along the polynomial $z\mapsto b'_{i'}(zy)$ for this $y$.
+
+\emph{Step 2: the null family.} Let $M_{\tau,h}$ be the matrices of Lemma~\ref{l:frames} for $Y=y$ and $\pi$. Take
+new variables $X_{(h,k),(\tau,b)}$, for $k<h<N$, $\tau\in\Phi$, $b\in n'$, and the linear forms
+\[Z_{(\tau,b,a)}=\sum_{k<h<N}p^{\,g(\tau,h,b)}\Bigl(\sum_{k'<h}(M_{\tau,h})_{k,k'}\,y_{\tau,a,k'}\Bigr)X_{(h,k),(\tau,b)} .\]
+The coupling of exponent $e\in S$ of this family is, modulo $p$, a combination of the pairings of
+Lemma~\ref{l:frames}(ii) with coefficients $p^{\,g(\tau,h,b)p^e+g(\tau',h',b)}$, $\tau'=\mathrm{pr}_e(\tau)$. The pairings that are not exempted
+vanish modulo $\pi$; for the exempted ones the hypothesis on the charges makes the coefficient divisible by $p$.
+So the family is null, and the hypothesis of the theorem says that the coefficients of degree at most $B$ of
+$\Theta(\varpi Z)$ are integral.
+
+\emph{Step 3: the jet.} Multiplying the columns of a minor by $M_{\tau,h}$ and its row at $b$ by
+$\varpi p^{g(\tau,h,b)}$ multiplies it by $\det M_{\tau,h}\prod_b\varpi p^{g(\tau,h,b)}$. So
+\[\prod_{\tau,h}(\det M_{\tau,h})^{\varkappa(\tau,h)}\cdot\varpi^{B}p^{m}\cdot b'_{i'}(zy)=\mathsf{D}\bigl((\varpi Z)\bigr),\qquad
+\mathsf{D}(X)=\prod_{\tau,h,l}\det\bigl(X_{(h,k),(\tau,i'_\tau(h,l,s))}\bigr)_{s,k<h},\]
+where the right side is read through the transpose of the linear substitution; by the chain rule for jets
+(quoted), the jet of $\Theta$ along the left side is the jet of $\Theta(\varpi Z)$ along $\mathsf{D}$. Now
+$\mathsf{D}$ is a sum of monomials $\pm X^\beta$ of degree $B$, and the jet along $X^\beta$ is $\beta!$ times a
+coefficient of degree $B$, which is integral. The exponent $\beta$ has at most $|\Phi|N^3$ entries, each at most
+$B$, and $v_p(l!)\ge l/(p-1)-(\lfloor\log_pB\rfloor+1)$ for $l\le B$ by Legendre's formula; so
+$\np{\beta!}\le p^{-B/(p-1)+|\Phi|N^3(\lfloor\log_pB\rfloor+1)}$. By Lemma~\ref{l:frames}(i), $\np\varpi=p^{-\rho}$ and
+$\np\pi=p^\omega$, the factor on the left has absolute value at least
+$p^{\,\omega\sum\mathrm{cc}-\rho B-m}$. Dividing gives the theorem.
+\end{proof}
+\leanline{\lean{normschurJetle}\sep quoted: \lnm{sum\_schur\_smul\_nablaBasis}, \lnm{exists\_val\_coeff\_le\_val\_eval},
+\lnm{jet\_subst\_linearSeries}}
+
+\sect{Sharpness}{s:sharp}
+\begin{proposition}[a limit to the divisibility of Taylor coefficients]\label{p:katz}
+Let $d$ be a prime number $\equiv7\bmod8$, $C$ a CM datum for $d$, $(p,j)$ a $p$-adic place and $n$ a natural
+number. Then there is $F\in\phiring{C}$ with
+\[\bigl(p^{\,\nsw{d}{p}-1/(p-1)}\bigr)^{n}\ \le\ \np{n!\cdot F_n} .\]
+\end{proposition}
+\begin{proof}
+Let $c_0=p^{\nsw{d}{p}-1/(p-1)}$ and, for $k\in\NN$, let $c(k)$ be the largest value of $\np{k!F_k}/c_0^k$ for
+$F\in\phiring{C}$; by (Q5) it is attained at a power of $\hat\varphi=\tayj{\phC{C}}$. \emph{$c$ is submultiplicative.}
+By (Q5), $\hat\varphi(X+Y)^l$ is an integral series in $\hat\varphi(X)$ and $\hat\varphi(Y)$; its coefficient at
+$X^nY^k$ is $\binom{n+k}{n}(\hat\varphi^l)_{n+k}$, and it is bounded by the largest product of an $n$-th coefficient
+of a power of $\hat\varphi$ with a $k$-th one. Multiplying by $n!\,k!$ gives $c(n+k)\le c(n)c(k)$. Suppose the
+proposition fails for $n$: $c(n)<1$. Then $c(k)\to0$, so there is $l_0$ with $c(k)<\np\varpi$ for $k\ge l_0$,
+where $\varpi$, $\pi$, $S$, $T$, $\nu$ are those of Proposition~\ref{p:formal}(I). From $T(\varpi X)=\varpi S$,
+$\np{T_k}\le c(k)c_0^k/\np{k!}$, $\np{k!}\ge p^{-k/(p-1)}$ and $\np\varpi=p^{-\nsw{d}{p}}$ we get
+$\np{S_k}=\np\varpi^{k-1}\np{T_k}\le c(k)/\np\varpi<1$ for $k\ge l_0$. So the reduction $\cj S$ of $S$ modulo $\mxp$ is
+a polynomial. But $\cj S-\cj S^{\,p^\nu}=X$, because $\np\pi<1$, and no polynomial satisfies this: the degree of the
+left side is $p^\nu\deg\cj S\ne1$.
+\end{proof}
+\leanline{\lean{katzdivisibilitylimit}}
+
+\begin{lemma}[the live sum]\label{l:live}
+\begin{enumerate}[label=(\alph*),itemsep=2pt]
+\item Let $d$ and $p$ be prime numbers with $\chid{d}(p)\ne1$ and $c$ a real number. Then
+\[\sum_{\substack{e\ge1\\ e\text{ odd or }p=d}}\frac{c}{p^e}=\frac{2}{1-\chid{d}(p)}\cdot c\cdot\Bigl(\frac1{p-1}-\nsw{d}{p}\Bigr) ,\]
+the series being convergent.
+\item Let $D$ be admissible data for parameters $P=(N_0,d)$, $p$ a prime number with $\chiK{P}(p)\ne1$, $y$ a real
+number and $\tau\in\PlD{D}$. Then the family of the terms
+$\bigl(y/p^e-\nomW{D}{\pinD{D}{-p^e}\cdot\tau}\bigr)_+$, over the $e\ge1$ that are odd or for which $p=d$ (and $0$
+for the other $e$), is summable; so the sum in $\ask{D}{p}{y}{\tau}$ is an ordinary sum.
+\item Let $D$ be admissible data for parameters $P=(N_0,d)$, $p$ and $e$ natural numbers and $\tau\in\PlD{D}$. If
+$\pinD{D}{-p^e}\cdot\tau$ and $\tau$ have the same class modulo $N_0$, then $p\ne d$.
+\item Let $D$ be admissible data, $\tau\in\PlD{D}$, and $h$, $a$ natural numbers. Then, with $k=\kD{D}$,
+\[\begin{cases}a&h=1\\ \kap{D}{\tau}{h}&h\ne1\end{cases}\ \ \le\ \ \begin{cases}a&h=1\\0&h\ne1\end{cases}
++\begin{cases}\wt{D}{1}{\tau}&h=k\\0&h\ne k\end{cases}+\gap{D} .\]
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) In both cases, $\chid{d}(p)=-1$ and $\chid{d}(p)=0$ (then $p=d$), the term at $e\ge0$ is
+$\frac{c}{1-\chid{d}(p)}\bigl(p^{-e}-(\chid{d}(p)/p)^e\bigr)$; sum the two geometric series. (b) The terms are
+bounded by $|y|/p^e$, since the nominal weight is non-negative; use (a). (c) If $p=d$, then $-d^e$ is prime to
+$\NoneD{D}$, the class of $\pinD{D}{-d^e}\cdot\tau$ is $-d^e$ times that of $\tau$, and equal classes would give
+$d^e\equiv-1\bmod N_0$, against (I4). (d) Unfold Definition~\ref{d:kappa}.
+\end{proof}
+\leanline{\lean{hasSumliveinvpow}\sep\lean{summablelocalAsk}\sep\lean{nedofplaceClasseq}\sep\lean{kaple}}
+
+\statement{inksoft}{\textbf{Inputs from unit 152 on the sizes of the data.} For admissible data $D$ with components
+$x$, $x_1$, $b$ and $c=\lceil60b/\kD{D}\rceil$:
+\textbf{(S1)} $\aD{D}/x_1\le\nomW{D}{\tau}\le\aD{D}/x$ and $\nomW{D}{\tau}+x^{42}\le2b$ for all $\tau$;
+$x^{42}+1\le\aD{D}/x_1$; $x^{42}\le c$; $d\le\kD{D}$ and $0<\kD{D}$.
+\textbf{(S2)} For a prime $p\le\kD{D}$ and $e\le\muD{D}$: $2(\btwo{D}+\aD{D}/x_1)\le c/(p\cdot2\cdot2^e)$; and for
+$e\ge\muD{D}$: $2b/p^e\le c/(p\cdot2\cdot2^e)$. Here $\btwo{D}$ is the least multiple of $\NoneD{D}$ that is at least
+$\aD{D}/x_1$.
+\textbf{(S3)} The thick places have class $-1$ modulo $N_0$. \emph{Three-term condition}: if $0<i<l\le324\,\muD{D}$
+and $\tau$, $\tau_1$, $\tau_2$ are thick places with $\phi(\tau_1/\tau)^l=\phi(\tau_2/\tau)^i$, then
+$\phi(\tau_1/\tau)=1$, where $\phi$ is the class modulo $2^{\muD{D}+1}$.
+\textbf{(S4)} (background library) If $|u|>1$, $o>0$ and $u^o\equiv1\bmod2^{s+1}$ for integers $u$, $o$, $s$, then
+$2^s\le(|u|+1)\,o$.}
+\leanline{unit 152: \lnm{Data.nominalWeight\_mem\_Icc}, \lnm{Data.nominalWeight\_add\_le}, \lnm{Data.le\_of\_hasLogBound},
+\lnm{Data.nat\_le\_of\_hasLogBound}, \lnm{Data.k\_pos}, \lnm{Data.placeClass\_of\_thick}, the field \lnm{three\_term} of
+\lnm{Data}\sep library: \lnm{two\_pow\_le\_of\_pow\_eq\_one}}
+
+\begin{proposition}[a Frobenius packing for the nominal weights]\label{p:packing}
+Let $D$ be admissible data for parameters $P=(N_0,d)$, with component $x$, and let $n\colon\PlD{D}\to\NN$ satisfy
+$\nomW{D}{\tau}\le n_\tau\le\nomW{D}{\tau}+x^{42}$ for every $\tau$. Let $p$ be a prime number with $\chiK{P}(p)\ne1$.
+Then there are functions $i,y\colon\PlD{D}\to\NN$ such that $\packing{p}{n}{i}{y}$ and, with
+\[L=\forced{D}{p}+\sum_{\tau\in\PlD{D}}v_p\bigl(\dl{D}{n_\tau}\bigr) ,\]
+either $\chiK{P}(p)=-1$, $i_\tau=1$ for all $\tau$ and $\sum_\tau\bigl(v_p(n_\tau!)-y_\tau\bigr)\le L$, or
+\[\sum_{\tau\in\PlD{D}}\Bigl(\bigl(\tfrac1{p-1}-\nsw{d}{p}\bigr)n_\tau+4\,\btwo{D}-y_\tau\Bigr)\ \le\ L .\]
+\end{proposition}
+\begin{proof}
+Write $k=\kD{D}$, $c=\lceil60b/k\rceil$, $w=\nomW{D}{\,\cdot\,}$, $[u]=\pinD{D}{u}$, and $A(l)=(l-c+1)\cdots(l-c+c)$
+with truncated $l-c$, so that $\dl{D}{l}=A(l)^2$. Two facts: $l!$ divides $(l-c)!\,A(l)$; and $c!$ divides $A(l)$,
+a product of $c$ consecutive integers.
+
+\emph{Case $k<p$.} Then $p\ne d$ by (S1), so $\chiK{P}(p)=-1$. Take $i_\tau=1$ and
+$y_\tau=\min\bigl(n_{[-p]\tau},\lfloor(n_\tau-c)/p\rfloor\bigr)$. By (S1), $\lfloor(n_\tau-c)/p\rfloor\le2b/k\le c$.
+Packing: (1) holds, (2) is empty, and for (3) the only $\tau$ with $[-p]\tau=\tau'$ has
+$y_\tau\le\min(n_{\tau'},c)$, while $p\,y_{\tau'}\le n_{\tau'}-c$ (truncated); the sum is at most $n_{\tau'}$. For the bound,
+Legendre's formula and the two facts give
+\begin{align*}
+v_p(n_\tau!)&\le v_p\bigl((n_\tau-c)!\bigr)+v_p(A(n_\tau))\\
+&=\lfloor(n_\tau-c)/p\rfloor+v_p\bigl(\lfloor(n_\tau-c)/p\rfloor!\bigr)+v_p(A(n_\tau))
+\ \le\ \lfloor(n_\tau-c)/p\rfloor+v_p(\dl{D}{n_\tau}) ,
+\end{align*}
+and $\lfloor(n_\tau-c)/p\rfloor-y_\tau\le\bigl((n_\tau-c)/p-n_{[-p]\tau}\bigr)_+\le\bigl(w(\tau)/p-w([-p]\tau)\bigr)_+$,
+because $n_\tau-c\le w(\tau)$ by (S1). The last number is the term $e=1$ of $\ask{D}{p}{w(\tau)}{\tau}$ (all terms are
+non-negative, Lemma~\ref{l:live}(b)). Summing over $\tau$ gives the first alternative.
+
+\emph{Case $p\le k$.} For odd $e$, $[-p^e]=[-p]^e$. \emph{Claim: for $0<i<l\le324\muD{D}$ the places $\tau$,
+$[-p]^i\tau$, $[-p]^l\tau$ are not all thick.} Otherwise (S3) gives $(-p)^i\equiv1\bmod2^{\muD{D}+1}$, and (S4) gives
+$2^{\muD{D}}\le(p+1)i$, which the sizes of the data exclude for $p\le k$. Say that $e$ \emph{pairs} $\tau$ if
+$e<\muD{D}$, $e$ is odd, $p\ne d$, and $\tau$ and $[-p]^e\tau$ are thick. By the claim at most one $e$ pairs $\tau$.
+If $e$ pairs $\tau$ put $i_\tau=e$, $y_\tau=\lfloor n_\tau/p^e\rfloor$; otherwise $y_\tau=0$. Packing: (1) holds since
+$p\ne d$ and $\chiK{P}(p)\ne1$. (2): if $[-p]^e\tau'=[-p]^{i_\tau}\tau$ with $e<i_\tau$ odd, then
+$\tau'=[-p]^{i_\tau-e}\tau$, and $\tau$, $\tau'$, $[-p]^{i_\tau}\tau$ would be thick, against the claim. (3): if no
+$\tau$ with $y_\tau\ne0$ has $[-p]^{i_\tau}\tau=\tau'$, the sum is $p^{i_{\tau'}}y_{\tau'}\le n_{\tau'}$. Otherwise there
+is exactly one such $\tau$, and $y_{\tau'}=0$, both by the claim; and $y_\tau\le n_\tau/p\le n_{\tau'}$ since both
+places are thick and $n_\tau\le\aD{D}/x+x^{42}\le2\,n_{\tau'}$ by (S1).
+
+\emph{The bound.} Fix $\tau$. We compare, term by term in $e\ge1$ ($e$ odd or $p=d$),
+\begin{equation}\label{e:term}
+\frac{n_\tau}{p^e}\ \le\ \Bigl(\frac{w(\tau)}{p^e}-w([-p^e]\tau)\Bigr)_++[e=i_\tau]\,y_\tau+\frac{c}{p\cdot2\cdot2^e} .
+\end{equation}
+If $e\ge\muD{D}$, the left side is at most $2b/p^e$ and (S2) applies. Let $e<\muD{D}$. If $e$ pairs $\tau$, then
+$n_\tau/p^e\le y_\tau+1$ and the last term is at least $1$ by (S2). If not, then $\tau$ and $[-p^e]\tau$ are not both
+thick: for $p=d$ this is Lemma~\ref{l:live}(c) with (S3), and for $p\ne d$ it is the definition. If $\tau$ is not
+thick, $n_\tau\le2\aD{D}/x_1$ by (S1), and (S2) applies. If $\tau$ is thick and $[-p^e]\tau$ is not, then
+$w([-p^e]\tau)=\aD{D}/x_1$ and $n_\tau/p^e\le(w(\tau)/p^e-\aD{D}/x_1)_++\aD{D}/x_1+x^{42}$, and (S1), (S2) apply.
+Summing \eqref{e:term} over $e$ with Lemma~\ref{l:live}(a), and multiplying by $(1-\chiK{P}(p))/2\le1$:
+\[\bigl(\tfrac1{p-1}-\nsw{d}{p}\bigr)n_\tau-y_\tau\ \le\ \ask{D}{p}{w(\tau)}{\tau}+\frac cp .\]
+Finally $v_p(\dl{D}{n_\tau})\ge2v_p(c!)\ge2(c/p-1)\ge c/p+4\btwo{D}$, the last step by (S2) at $e=0$. Summing over
+$\tau$ gives the second alternative.
+\end{proof}
+\leanline{\lean{existsisFrobPacking}}
+
+\begin{proof}[Proof of Theorem F]
+We write $z_\tau$ for the variable $z_{(\tau,\ast)}$. By (I4), $p\ge13$. Let $\varpi$ be as in Theorem~D and
+$F=\Theta(\varpi z)$. If $y=0$ the assertion holds with $\beta=\gamma=0$, since
+$\np{(\Theta^{-1})_0}\np{\Theta_0}=1$; so let $y\ne0$. For $\tau$ with $y_\tau\ne0$ let $\tau^\ast=\pin{P}{\mu}{-p^{i_\tau}}\cdot\tau$; by the packing
+$i_\tau$ is odd and $\chiK{P}(p)=-1$, so Theorem~D(b) gives $F=\exp(\kappa\Psi)V$ with $\np\kappa=p^{1-1/(p-1)}>1$.
+As $\Theta(0)=1$ and $\Psi(0)=0$, $V$ is a unit of $\op[[z]]$.
+
+\emph{Step 1: one derivative.} Let $Q$ be an integral series and $\tau$ a place with $y_\tau\ne0$, and put
+$R=\partial_{\tau^\ast}\Psi\cdot Q+\kappa^{-1}(\partial_{\tau^\ast}Q+Q\,V^{-1}\partial_{\tau^\ast}V)$, an integral series.
+Then $\partial_{\tau^\ast}(QF)=\kappa\,RF$, hence for every polynomial $G$:
+$\np{\jetalong{G\cdot z_{\tau^\ast}}{QF}}=\np\kappa\cdot\np{\jetalong{G}{RF}}$. Modulo $\mxp$,
+$\cj R=\partial_{\tau^\ast}\cj\Psi\cdot\cj Q$. Give the variable $z_\sigma$ the weight $1$ if $y_\sigma\ne0$ and
+the weight $p^{\max i}$ otherwise. By Theorem~D(b) the monomials of $\partial_{\tau^\ast}\cj\Psi$ are the
+$z_\sigma^{p^e}$ with $e$ odd and $\pin{P}{\mu}{-p^e}\cdot\sigma=\tau^\ast$; by condition (2) of the packing the one
+of least weight is $z_\tau^{p^{i_\tau}}$, and it is the only one of that weight.
+
+\emph{Step 2: all derivatives.} Starting from $Q=1$ and applying Step~1 $y_\tau$ times for every $\tau$, we get an
+integral $Q$ whose reduction has the lowest term $u\,z^{\lambda}$, $u\ne0$,
+$\lambda=\sum_\tau y_\tau p^{i_\tau}1_\tau$ (lowest terms multiply), and with
+\[\np\kappa^{|\gamma|}\,\np{\jetalong{G}{QF}}=\np{\jetalong{G\cdot z^{\gamma}}{F}}\qquad\text{for all }G,\qquad
+\gamma=\sum_\tau y_\tau1_{\tau^\ast} .\]
+\emph{Step 3: a large coefficient.} The coefficient $Q_\lambda$ is a unit. Since $Q=F^{-1}\cdot(QF)$, there are
+exponents $\gamma_1+\beta_1=\lambda$ with $1\le\np{(F^{-1})_{\gamma_1}}\np{(QF)_{\beta_1}}$. Step~2 with $G=z^{\beta_1}$
+gives $\np\kappa^{|\gamma|}\np{\beta_1!}\np{(QF)_{\beta_1}}=\np{(\beta_1+\gamma)!}\np{F_{\beta_1+\gamma}}$. With
+$F_\alpha=\varpi^{|\alpha|}\Theta_\alpha$, $(F^{-1})_\alpha=\varpi^{|\alpha|}(\Theta^{-1})_\alpha$,
+$\np\varpi=p^{-\nsw{d}{p}}$ and $\np{\beta_1!}/\np{(\beta_1+\gamma)!}\ge\np{\gamma!}^{-1}$, this yields, for
+$\beta=\gamma_1+\beta_1+\gamma$,
+\[\np{(\Theta^{-1})_{\gamma_1}}\cdot\np{\Theta_{\beta_1+\gamma}}\ \ge\ p^{\,(1-\frac1{p-1})|\gamma|+\nsw{d}{p}|\beta|+\sum_\tau v_p(\gamma_\tau!)} .\]
+Split $\gamma_1$ into five exponents by the hypothesis on $\Theta^{-1}$ and keep $\beta_1+\gamma$ as the sixth, by the
+hypothesis on $\Theta$. Finally $|\gamma|=\sum y_\tau$, $|\beta|=|\lambda|+|\gamma|=\sum y_\tau(p^{i_\tau}+1)$, and
+$\gamma\le\beta\le n$ by condition (3) of the packing: the entry of $\beta$ at $\tau'$ is
+$p^{i_{\tau'}}y_{\tau'}+\sum_{\tau^\ast=\tau'}y_\tau$.
+\end{proof}
+\leanline{\lean{existshasLargeSplitofpairs}}
+
+\sect{Where the results are used}{s:use}
+By name, as the dossier of the unit lists the uses (a search over the sources, not a kernel export).
+The unit on the columns (unit~145) uses all the definitions of §\ref{s:setting} on asks, gains, losses, served
+primes, collisions, coupling counts and column counts, Theorems~C, D and E, Proposition~\ref{p:raises} and
+Theorem~A, to prove that the chain of lifts is divisible by $p^{\gain{D}{p}}$ up to the loss. The unit on the rows
+uses Proposition~\ref{p:katz}, Proposition~\ref{p:packing} and Theorem~F for the lower bound of a jet (the glued
+form), and Theorem~B, with Lemma~\ref{l:vac} and Lemma~\ref{l:adm}, where conjugates of lifts are bounded. The unit
+on the data uses Proposition~\ref{p:gen}: its constant $\cP{P}$ contains the chosen number $\Cgen{P}$.
+
+\sect{Notes on the formal text}{s:notes}
+\begin{enumerate}[label=\textup{\arabic*.},leftmargin=1.6em,itemsep=5pt]
+\item \emph{Arguments that the text of the census lists and Lean does not take.} The dossier of the unit was made
+without running Lean, and its lists of arguments are those of a reading of the text. For three definitions the
+reading lists a section variable that only occurs as a bound index: $\tau$ in the gain and in the collision sum,
+and the height $h$ in the coupling count. The source applies them to two, three and seven arguments
+(\lnm{D.gain p}, \lnm{D.collisionSum p ev}, \lnm{couplingCount p κ N ev σ (pr e σ) e}), and this note writes them
+so, $\gain{D}{p}$, $\coll{D}{p}{\Xi}$, $\cc{p}{\varkappa}{n'}{\Xi}{\tau}{\tau'}{e}$, through macros of its own; the
+build accounts for the extra entry by the bound letter in Definition~\ref{d:ask}, \ref{d:served}, \ref{d:cc}. The
+same happens for arguments of theorems and of one more definition: the index set $J$ of a theta product, bound by
+``there are''; a ring $Q$ bound inside Lemma~\ref{l:frob}; the letters $c$ and $K$ in Theorem~B; a field $E$ in
+Lemma~\ref{l:std}(d) and Proposition~\ref{p:F}; the prime and its place in Lemma~\ref{l:cyclo}; a second
+finiteness of $n$ in the parts of Lemma~\ref{l:vac}; and the instance ``$V$ is standard'' in
+Lemma~\ref{l:line}(c), whose space is only assumed to have signs $1$. All of this should be confirmed with
+\lnm{\#check} once a build is at hand.
+\item \emph{Arguments that Lean takes and the reading cannot see.} Four places use the notation of the formal
+text for the $p$-adic place: Lemma~\ref{l:padic}(b)--(d), Theorem~A, Definition~\ref{d:raises} and
+Proposition~\ref{p:raises}. This notation makes the prime $p$ and the homomorphism $j$ arguments (an implicit one
+and two instance arguments). The statements above name them. Likewise the module $\Std{V}{\delta}$ depends on $j$, and so does
+the set $\ThProd{P}{\mu}{\delta}{r}{c}$; the notation does not show it, because $j$ is an instance argument.
+\item \emph{Three statements that the census cuts short.} The statements of Proposition~\ref{p:raises}(b), of
+Proposition~\ref{p:packing} and of Theorem~E contain a \lnm{let}, which the census takes for the end of the
+statement. I read these statements in the source in full; the quotations of Appendix~A avoid them. For the same
+reason three intermediate facts of the dossier are cut short (in the proofs of Lemma~\ref{l:frames}, of
+Lemma~\ref{l:deriv} and of Theorem~A); its claims state them in full, and I read the lines.
+\item \emph{An error in the words of the dossier.} In the structured proof of Proposition~\ref{p:formal} the
+dossier says that the pairs $(\zeta^i,1)$ lie in the closure $\mathcal{N}_d$. The lemma of the library that the
+formal proof applies gives $(\zeta^i,\zeta^{i(p+1)})$, as in (Q6) above, and this is what makes the proof work: the
+exponential factor of the normal form is the part of $\log\thC{C}$ in the degrees $\equiv p+1$ modulo $q-1$
+precisely because of the exponent $p+1$. With the pairs $(\zeta^i,1)$ one would obtain the part in the degrees
+$\equiv0$. The quotations of the dossier are exact; only its words are affected (steps 7 and 35.6).
+\item \emph{Proofs that are shorter here, or differently arranged.} The frame identity of Step~2 of Theorem~A is
+established in the formal text by a Gröbner basis computation; the computation above replaces it. The estimate at
+the end of Lemma~\ref{l:deriv} is closed in the formal text by automation from the bounds of Lemma~\ref{l:val}; the
+division into the cases $I\le4$ and $I\ge5$ is mine. In Proposition~\ref{p:katz} the formal text uses
+$\cj S\circ(X-X^{p^\nu})=X$ where I use $\cj S-\cj S^{\,p^\nu}=X$. In Step~4 of Proposition~\ref{p:formal} the
+arithmetic in the three cases is done by automation in the formal text.
+\item \emph{What I could not settle without Lean.} (a) In Lemma~\ref{l:frames} the formal proof encodes the choice
+of the device for each coupling in one predicate and verifies the equality of exponents by a case analysis with
+automation; I read the construction and checked the three costs against the coupling count, but did not replay the
+case analysis. (b) In Theorem~B(iv) the packing estimate and the final inequality between exponentials are a chain
+of automated steps; the proof above gives their structure and not their constants. (c) In
+Proposition~\ref{p:formal} the final identity of Step~6 is a single simplification in the formal text; the
+computation above is the mathematics that it must carry out, with the pairs of note~4. (d) The inputs (S1)--(S2)
+are not separate declarations: the formal proof of Proposition~\ref{p:packing} obtains each of them in place from
+the lemma of unit~152 that compares logarithmic sizes. I state them as I read them at the places of use; the
+second half of (S2) is my summary of a short chain there.
+\item \emph{Choices.} $\cmE{P}$, $\Omz{P}$, $u_P$, $\vsc{P}{\mu}$ and $\Cgen{P}$ are obtained by choice from existence
+statements, the last two from Proposition~\ref{p:gen} itself; so the definition of the scaled vacuum depends on the
+proof of that proposition having been given, not on its witnesses. The file of unit~152 that defines $\cP{P}$
+imports this unit for the same reason.
+\item \emph{Conventions of the formal text that the statements inherit.} Sums over $e\in\NN$ in
+Definitions~\ref{d:ask} and~\ref{d:served} are unconditional sums with value $0$ when the family is not summable;
+Lemma~\ref{l:live}(b) shows that this does not occur in the ask for primes $p$ with $\chiK{P}(p)\ne1$, and for
+$\chiK{P}(p)=1$ the factor in front is $0$. The definitions take a natural number $p$, not a prime. In
+Lemma~\ref{l:val} the last hypothesis has a default proof (the formal text supplies it by arithmetic automation
+when the numbers are explicit), and in Lemma~\ref{l:adm} the adele $\eta$ has a default value. In
+Lemma~\ref{l:live}(d) the number $a$ is arbitrary. The hypothesis $\nu\ne0$ of Lemma~\ref{l:val} follows from
+$p^\nu=Q+1$ only if $Q\ne0$.
+\item \emph{The catalogue.} The relations stated for (Q2), (Q4) and (Q8) are those of the catalogue of the handout:
+the main theorem of complex multiplication in a soft form, the integrality of $a_1$ as a weaker form of good
+reduction everywhere, and the height of the formal group as one direction and an upper bound. For (Q3), (Q5),
+(Q6), (Q7), (Q9) and (Q10) the catalogue has no confirmed place; the files of the library name Bannai--Kobayashi
+(2010), Bannai--Kobayashi--Yasuda (2017), Katz (1981), Finis (2006), Mumford (1966), Conway--Sloane (1989) and
+Shimura (1976) as related work, and I did not compare the statements with these sources.
+\end{enumerate}
+
+\subhead{How this note was written.} From the dossier of the unit: the texts of its \UnitMembers{} members and its
+\UnitProofs{} structured proofs, which I read in full in a condensed form (every claim, without the quoted lines).
+The program check of the dossier covered \UnitSteps{} leaf steps of \UnitProofs{} proofs and found every statement
+at its lines. I read all twelve Lean files of the unit, statements and proofs, and compared every statement of
+this note with its Lean text, argument by argument, with the list of arguments of the census beside it; for the
+statements named in notes 1 to 3 the source decided. In other units and in the library I read the definitions
+that the statements use (the structure of the data and its functions, tight frames, vacuum expansions, the jet
+series, Schur jets, gauges, kernels and the theta kernel, the CM datum with its functions, the ring
+$\phiring{C}$, carried series, admissible combinations) and the statements of the quoted results (Q2), (Q3),
+(Q6), (Q7), (Q8), of the input of unit~149 and of (I6); the other inputs are stated as the dossier reads them. I
+did not read proofs of the library. No Lean was run.
+
+\head{Appendix A. Concordance with the Lean artifact}
+{\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}\setlength{\tabcolsep}{0pt}
+\begin{longtable}{@{}p{30mm}p{59mm}p{40mm}r@{}}
+\textbf{In this note} & \textbf{Lean declaration} & \textbf{File} & \textbf{Lines}\\\midrule\endhead
+\ConcordanceRows
+\end{longtable}}
+
+\subhead{Four declarations as they are written in the artifact.}
+\quoted{gain}
+\quoted{couplingCount}
+\quoted{thetaProducts}
+\quoted{thetaProductsnormalform}
+In these texts {\leanfont s} is the exponent $\mu$, {\leanfont Φ τ} the embedding $\emb{\tau}$, {\leanfont ιₚ} the
+homomorphism $j$, {\leanfont valRingCp p} the ring $\op$, {\leanfont chiK P.d p} the value $\chiK{P}(p)$,
+{\leanfont nonsplitWeight P.d p} the number $\nsw{d}{p}$, {\leanfont P.placeOfInt s (-p \textasciicircum{} j) * v} the
+place $\pin{P}{\mu}{-p^e}\cdot v$, {\leanfont κ} a family of column counts $\varkappa$, {\leanfont ev} the set
+$\Xi$, {\leanfont taylorVia ιₚ} the series $\tayj{\,\cdot\,}$, {\leanfont P.cmCurve.twistedTranslate 1 y} the
+translation $\UC{\cmE{P}}{1}{y}$, {\leanfont expSubst} the exponential of a series without constant term and
+{\leanfont residue} the reduction modulo $\mxp$. Letters of the formal text were changed where the write-up
+reserves them: the exponent {\leanfont s}, the Frobenius exponents {\leanfont j} (here $e$), the degree
+{\leanfont e} of the residue field (here $\nu$), the element {\leanfont θ} of the null cone (here $\pi$) and the
+column counts {\leanfont κ}.
+
+\head{Notation}
+\begingroup\fontsize{8.6}{10.9}\selectfont\raggedright
+\setlength{\columnsep}{9mm}\setlength{\parskip}{0pt}
+\begin{multicols}{2}
+\nt{$P=(N_0,d)$, $\mu$}{parameters; the exponent}
+\nt{$\KP{P}$, $\OO_{\KP{P}}$, $\chiK{P}$, $\chid{d}$}{$\Q(\sqrt{-d})$, its integers, its quadratic character; the Legendre symbol modulo $d$}
+\nt{$\EP{P}{\mu}$, $\Nn{P}{\mu}$, $\rtu{P}{\mu}$}{the CM field, the order of its root of unity, that root}
+\nt{$\PlP{P}{\mu}$, $\emb{\tau}$, $\pin{P}{\mu}{\nu}$}{the group of infinite places; the embedding at $\tau$; the place of an integer $\nu$}
+\nt{$\tau,\tau',v,v',u,\sigma$}{infinite places; $\sigma$ also an automorphism of $\CC$, $u$ also a unit or a variable}
+\nt{$\czE{P}{\mu}$, $\dgen{P}{\mu}$, $\alP{P}{\mu}$, $\rdE{P}{\mu}$}{$(1+\sqrt{-d})/2$; the generator of the relative different; the idele; the root discriminant}
+\nt{$\OmP{P}{\mu}$, $\mathrm{cs}(d)$}{the period $e^{\mathrm{cs}(d)}2\pi/\rdE{P}{\mu}$; the Chowla--Selberg constant}
+\nt{$\frl{P}{\mu}$}{the lattice $E\cap\alpha\Ohat$}
+\nt{$\Ad$, $\Af$, $\Ohat$}{adeles, finite adeles, integral finite adeles}
+\nt{$\prm{\mu}{\sigma}$, $\pi$}{the permutation of places of $\sigma$; $\pi$ also an element of $\op$, and the circle constant}
+\nt{$(p,j)$, $\Cp$, $\np{\,\cdot\,}$, $\op$, $\mxp$, $\Oj$}{a $p$-adic place and its objects}
+\nt{$\psi$, $\mathfrak{p}_\psi$, $\hat\psi$, $j_\tau$, $\hat\jmath_\tau$}{an embedding into $\Cp$, its prime, its extension to $\Af$; $j\circ\emb{\tau}\circ$ conjugation}
+\nt{$v_p$, $\lfloor\,\rfloor$, $\lceil\,\rceil$, $(\,)_+$}{$p$-adic valuation, floor, ceiling, positive part}
+\nt{$C$, $\LamC{C}$, $\area{C}$, $t$, $a_1$}{a CM datum, its lattice, area, point of order two, invariant}
+\nt{$\wp$, $\sigma_C$, $\thC{C}$, $\xiC{C}$, $\phC{C}$, $\mon{C}{x}$}{Weierstrass functions; theta; $\wp(z+t)-\wp(t)$; the parameter; monomial sections}
+\nt{$\UC{C}{m}{y}$, $H_C$}{twisted translation; the hermitian form of $C$}
+\nt{$\tay{F}$, $\tayj{F}$, $\hat\varphi$}{Taylor series; the same read through $j$; $\tayj{\phC{C}}$}
+\nt{$\phiring{C}$, $\mathcal{N}_d$, $\cpart{M}{r}{F}$}{integral series in the parameter; the closure of norm pairs; part in a residue class of degrees}
+\nt{$\szero{P}{\mu}$, $\sone{P}{\mu}$, $\per{P}{\mu}$, $\asc{P}$}{root of the vacuum; period factor; scale of jets; $\sqrt{2\pi/\sqrt d}$}
+\nt{$\cmE{P}$, $\Omz{P}$, $u_P$}{the chosen CM datum, its period, its Chowla--Selberg number}
+\nt{$\chi_{\mathrm{fin}}$, $\upsilon$, $\psi_0$}{characters of the Weil data; the additive character of $\Af$}
+\nt{$V$, $n$, $\varepsilon$, $\stdsp{n}$, $\homsp{n}{n'}$}{a hermitian space, its index set, its signs; standard spaces}
+\nt{$\Sw{V}$, $\Wf{V}$, $\vac{V}$, $\Th{V}$, $\weil{V}$, $\inn{V}{f}{f'}$}{the Weil space, its finite part, vacuum, theta functional, representation, pairing}
+\nt{$\heis{V}{y}$, $\fheis{V}{x}$, $\fv{x}$}{Heisenberg operators; the adelic vector of a finite vector}
+\nt{$\Uf{n}$, $\fmult{g}$, $1_n$}{the finite adelic unitary group, its multiplier, the unit matrix}
+\nt{$\jet{V}{a}{f}$, $\Thf{f}$, $\jetalong{Q}{F}$}{jet series; theta function of $f$; jet along $Q$}
+\nt{$\name{V}{R}{\Psi}$, $P^{\mathfrak m}$, $\mathfrak m$}{named operators; the mean at a modulus; a modulus}
+\nt{$\vsc{P}{\mu}$, $\intvac{V}$, $\Lat{\delta}{S}$, $\Std{V}{\delta}$}{scale of the vacuum; scaled vacuum; a group of vectors; standard data}
+\nt{$\Cgen{P}$, $\cP{P}$}{the chosen constant of Proposition~\ref{p:gen}; the constant of unit~152}
+\nt{$\varkappa$, $\boxes{\varkappa}{N}$, $S_\varkappa$, $\schurjet{\varkappa}{F}$}{column counts, boxes, Schur matrix, Schur jets}
+\nt{$i,i'$, $i_\tau(h,l,b)$}{Weyl indices and their entries; $i$ also an index or the exponents of a packing}
+\nt{$\gauge{\varkappa}{e}{g}{\xi}$, $k$, $\omega_k$, $\mathrm{jm}_k$, $\mathcal D$}{gauge; a kernel, its representation, its matrices, its data}
+\nt{$\thker{\varkappa}{c}{a}{b}{K}$, $\pairw{a}{b}$, $e_a$, $e_b$}{theta kernel; Weil representation of the pair; weights of the characters $a$, $b$}
+\nt{$\Rais{k}{d_1}{d_2}{c}$}{data that raise gauges by at most $c$}
+\nt{$\ThProd{P}{\mu}{\delta}{r}{c}$}{theta products}
+\nt{$\mathrm{pr}_e$, $S$, $S_B$, $\Xi$}{the partner map; sets of Frobenius exponents; a set of exempted places}
+\nt{$\varpi$, $\kappa$, $\kappa_0$, $\Psi$, $\psi$, $\nu$, $q$}{the scale at $p$; scalars of the exponential; its exponents; the degree and the norm of the prime above $p$}
+\nt{$\nsw{d}{p}$}{$1/(p^2-1)$, $1/(2(p-1))$ or $1/(p-1)$}
+\nt{$D$; $x,x_1,b,m,r$; $\muD{D}$}{admissible data; its components (in Definitions \ref{d:ask}--\ref{d:packing} and §\ref{s:sharp}); its exponent}
+\nt{$\PlD{D}$, $\NoneD{D}$, $\fD{D}$, $\kD{D}$, $\tD{D}$, $\aD{D}$, $\pinD{D}{\nu}$}{objects of the data (unit~152)}
+\nt{$\tops{D}$, $\nomW{D}{\tau}$, $\wt{D}{l}{\tau}$, $\nD{D}{l}$, $\gap{D}$, $\btwo{D}$}{tops; nominal weight; weights; ranks; gap; a rounded weight}
+\nt{$\ask{D}{p}{y}{\tau}$, $\forced{D}{p}$, $\gain{D}{p}$, $\loss{D}{p}$}{ask, forced part, gain, loss}
+\nt{$\clm{D}{p}$, $\deltaP{D}{p}$, $\jc{D}{p}$, $\ozero{D}{p}$, $\coll{D}{p}{\Xi}$}{the numbers of Definition~\ref{d:served}}
+\nt{$\cc{p}{\varkappa}{n'}{\Xi}{\tau}{\tau'}{e}$, $t_\sigma$, $r_\sigma$, $B_\sigma$}{coupling count and its parts}
+\nt{$\kap{D}{\tau}{h}$, $\last{D}{l}{\tau}$, $\kept{D}{h}$, $\kapY{D}{\tau}{h}$}{column counts of the data}
+\nt{$\dl{D}{n}$, $A(l)$, $L$}{depth loss; an ascending factorial; a bound (also a linear form, a semilinear map, $\log$ of theta)}
+\nt{$\mathsf{N}$, $\mathsf{b}$, $\mathsf{D}$}{a weight on exponents; a proposition; a product of determinants}
+\nt{$\alpha,\beta,\gamma,\lambda$, $1_y$, $z^\beta$}{exponents (multi-indices), the exponent of one variable, monomials; $\alpha$ also the idele, $\beta,\gamma,\lambda$ also numbers where said}
+\nt{$z$, $z_x$, $X$, $Y$, $T$, $Z$, $W$}{variables and families of series; $z$ also an adele or an integer, $T$, $Z$, $W$ series in Proposition~\ref{p:formal}}
+\nt{$M$, $N$, $R$, $B$, $I$, $J$, $Q$, $A$, $H$}{lengths, levels, sets, rings, bounds: local to each statement}
+\nt{$a,b,c,e,f,g,h,k,l,m,n,o,s,w,y$}{numbers, indices, elements and functions local to each statement}
+\nt{$E$, $F$, $G$, $S$, $U$, $O$}{series, functions and sets local to each statement; $E$ also a field}
+\nt{$\delta$, $\eta$, $\zeta$, $\theta$, $\rho$, $\omega$, $\phi$, $\xi$, $\ell$, $\iota$, $\varsigma$, $\epsilon$}{an integer of $\KP{P}$; an adele; a root of unity; in $\theta_C$; real exponents; a ring map; a vector; linear forms and primes; in $\iota_\tau$; the root of unity of $E$; coefficients}
+\nt{$\Phi$, $\Theta$, $\Omega$, $\Lambda$, $\Delta$, $\Pi$, $\partial$}{a set of places or a datum; a series; periods; a lattice; a multiplier; a product; derivatives and the different}
+\end{multicols}
+\endgroup
+
+\end{document}

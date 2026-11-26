@@ -1,0 +1,414 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Lift.SparseThickLetters:81:7",
+ "name": "Lift.TameChart.killsCokernel_of_isKilledBy",
+ "summary": "Start from z^ν in the ideal (exists_z_pow_mem_liftIdeal, ν < e) and lower ν one step at a time: when Q = q(X − 1) does not vanish at ζ_E^{ν} modulo p, the tame generator (exists_z_smul_eq_sum_tameGen) lifts the constant after a unit factor; otherwise a factor p^m pays (at most deg Q such ν).",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "choice",
+   "claim": "From exists_z_pow_mem_liftIdeal (jumps ≤ n, κ + 1): ν with z^ν ∈ liftIdeal(S, p^{κ+1}, 0, j) for all j (h₀) and νp ≤ e(n + κ + 1) + ν (hν); Q = q·(X − 1) is monic (M).",
+   "lines": [
+    83,
+    83
+   ],
+   "span": [
+    83,
+    3,
+    83,
+    92
+   ],
+   "lean": "obtain ⟨⟨ν, h₀, hν⟩, M⟩ := exists_z_pow_mem_liftIdeal hn κ.succ, hq.mul (monic_X_sub_C 1)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Lift.KummerChart.PairingSide.exists_z_pow_mem_liftIdeal"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "fact",
+   "claim": "ν < e (as n + κ + 2 < p).",
+   "lines": [
+    84,
+    84
+   ],
+   "span": [
+    84,
+    3,
+    84,
+    56
+   ],
+   "lean": "replace hν : ν < d.e := by nlinarith [NeZero.pos d.e]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "definition",
+   "claim": "Let Q = q·(X − 1).",
+   "lines": [
+    85,
+    85
+   ],
+   "span": [
+    85,
+    3,
+    85,
+    17
+   ],
+   "lean": "set Q := q * _",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Multiply by p^{m·#{k ∈ [ν + 1, e) : Q(ζ_E^k) ≡ 0 mod p}}: this element times z^ν lies in liftIdeal(S, p^{κ+1}, 0, i).",
+   "lines": [
+    86,
+    87
+   ],
+   "span": [
+    86,
+    3,
+    87,
+    88
+   ],
+   "lean": "replace h₀ := smul_mem _\n    (p.cast ^ (m * #{k ∈ Ico ν.succ d.e | (aeval (d.zetaE ^ k) Q).coeff 0 = 0})) (h₀ i)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "induction",
+   "claim": "Induction on ν:",
+   "lines": [
+    88,
+    116
+   ],
+   "span": [
+    88,
+    3,
+    116,
+    40
+   ],
+   "lean": "induction' ν with n ih\n  · apply liftIdeal_le_of_p_pow_mem <;> simpa using mem_liftIdeal_zero_of_mem_one _ _ le_rfl\n      (p_pow_mul_z_pow_mem_liftIdeal_iff.2 h₀) (by grw [← card_image_iff.2\n      (d.primitive.injOn_pow.mono (by grind)), card_le_degree_of_subset_roots (p := Q.map _)\n      (forall_mem_image.2 (by\n      simp [aeval_def, hom_eval₂, eval_map, ← WittVector.constantCoeff_apply, map_monic_ne_zero M]\n      tauto)), natDegree_map_le, natDegree_mul_le, natDegree_X_sub_C, hc])\n  apply ih hν.le\n  rw [card_filter, sum_eq_sum_Ico_succ_bot hν] at *\n  split\n  · exact mem_liftIdeal_zero_of_mem_one _ _ (by lia) (p_pow_mul_z_pow_mem_liftIdeal_iff.2 h₀)\n      (by grind [padicValNat_factorial_mul, padicValNat.mul,\n      Nat.log_lt_of_lt_pow (by omega) (hν.trans_le hm), Nat.factorial, padicValNat_le_nat_log])\n  obtain ⟨u, K⟩ := S.exists_lift_of_mem_liftIdeal (f := p ^ _ * d.z ^ _) h₀\n  obtain ⟨w, t, rfl⟩ := d.exists_z_dvd_sub_const u\n  refine (smul_mem_iff_of_isUnit _ ((isUnit_of_coeff_zero_ne_zero _ ‹_›).map (algebraMap ..))).1\n    (mem_liftIdeal_iff.2 ⟨Q.sum fun k a ↦ a • toGp (d.tameGen ^ k) • t.1 * d.zetaE ^ k, fun c ↦\n    (K _ (constantAt_mem_locLetterPart c)).rec fun x ⟨m, f⟩ ↦\n    have ⟨X, v, b⟩ := exists_z_smul_eq_sum_tameGen (q := Q) (aeval_linearFrob_extLattice_eq_zero hK)\n      ⟨frobKisinAinf_zero.le (mem_withExponents_stdExponent_iff.1 m.2).1, m.1.2⟩\n    ⟨_, letterProj_mem_withExponents (frobKisinAinf_zero.ge v),\n      (isUnit_WittCFlat_of_not_p_dvd d.not_p_dvd_z).smul_left_cancel.1 ?_⟩⟩)\n  linear_combination (norm := simp [f, -map_pow, tameGen_pow_smul_z, fixesLambda_tameGen_pow, smul,\n    smul_letterProj (m := inr _) (fixesLambda_tameGen_pow ..),\n    aeval_eq_sum_range, mem_letterPart_iff_letterProj.1 letterProj_mem_letterPart, sum_over_range,\n    smul_sub, smul_sum, sum_mul, sub_smul, constantAt, ← sum_sub_distrib, sub_add_eq_sub_sub_swap,\n    ← sum_add_distrib, frobGroup_smul_smul, sum_smul]) congr(letterProj i (S.projTriv.wittMap $b) -\n    $(Q.eval_eq_sum_range 1 ▸ eval_mul_X_sub_C _) • p ^ κ.succ • (w : Ainf) • S.constantAt i c)\n  exact sum_eq_zero fun _ _ ↦ by module",
+   "head_lines": [
+    88,
+    88
+   ],
+   "head_span": [
+    88,
+    3,
+    88,
+    25
+   ],
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "5.1",
+   "parent": "5",
+   "kind": "case",
+   "claim": "ν = 0: by Nakayama (liftIdeal_le_of_p_pow_mem) it suffices that p^κ ∈ liftIdeal(S, p^{κ+1}, 0, i), which mem_liftIdeal_zero_of_mem_one gives, since the number of k with Q(ζ_E^k) ≡ 0 is at most deg Q ≤ deg q + 1 (the ζ_E^k are distinct roots, card_le_degree_of_subset_roots), so the exponent m·count ≤ κ (hc).",
+   "lines": [
+    89,
+    94
+   ],
+   "span": [
+    89,
+    3,
+    94,
+    75
+   ],
+   "lean": "· apply liftIdeal_le_of_p_pow_mem <;> simpa using mem_liftIdeal_zero_of_mem_one _ _ le_rfl\n      (p_pow_mul_z_pow_mem_liftIdeal_iff.2 h₀) (by grw [← card_image_iff.2\n      (d.primitive.injOn_pow.mono (by grind)), card_le_degree_of_subset_roots (p := Q.map _)\n      (forall_mem_image.2 (by\n      simp [aeval_def, hom_eval₂, eval_map, ← WittVector.constantCoeff_apply, map_monic_ne_zero M]\n      tauto)), natDegree_map_le, natDegree_mul_le, natDegree_X_sub_C, hc])",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Lift.KummerChart.PairingSide.liftIdeal_le_of_p_pow_mem"
+    },
+    {
+     "decl": "Lift.KummerChart.PairingSide.mem_liftIdeal_zero_of_mem_one"
+    },
+    {
+     "decl": "Lift.KummerChart.PairingSide.p_pow_mul_z_pow_mem_liftIdeal_iff"
+    }
+   ]
+  },
+  {
+   "id": "5.2",
+   "parent": "5",
+   "kind": "case",
+   "claim": "ν + 1, from the hypothesis ih at ν:",
+   "lines": [
+    95,
+    116
+   ],
+   "span": [
+    95,
+    3,
+    116,
+    40
+   ],
+   "lean": "apply ih hν.le\n  rw [card_filter, sum_eq_sum_Ico_succ_bot hν] at *\n  split\n  · exact mem_liftIdeal_zero_of_mem_one _ _ (by lia) (p_pow_mul_z_pow_mem_liftIdeal_iff.2 h₀)\n      (by grind [padicValNat_factorial_mul, padicValNat.mul,\n      Nat.log_lt_of_lt_pow (by omega) (hν.trans_le hm), Nat.factorial, padicValNat_le_nat_log])\n  obtain ⟨u, K⟩ := S.exists_lift_of_mem_liftIdeal (f := p ^ _ * d.z ^ _) h₀\n  obtain ⟨w, t, rfl⟩ := d.exists_z_dvd_sub_const u\n  refine (smul_mem_iff_of_isUnit _ ((isUnit_of_coeff_zero_ne_zero _ ‹_›).map (algebraMap ..))).1\n    (mem_liftIdeal_iff.2 ⟨Q.sum fun k a ↦ a • toGp (d.tameGen ^ k) • t.1 * d.zetaE ^ k, fun c ↦\n    (K _ (constantAt_mem_locLetterPart c)).rec fun x ⟨m, f⟩ ↦\n    have ⟨X, v, b⟩ := exists_z_smul_eq_sum_tameGen (q := Q) (aeval_linearFrob_extLattice_eq_zero hK)\n      ⟨frobKisinAinf_zero.le (mem_withExponents_stdExponent_iff.1 m.2).1, m.1.2⟩\n    ⟨_, letterProj_mem_withExponents (frobKisinAinf_zero.ge v),\n      (isUnit_WittCFlat_of_not_p_dvd d.not_p_dvd_z).smul_left_cancel.1 ?_⟩⟩)\n  linear_combination (norm := simp [f, -map_pow, tameGen_pow_smul_z, fixesLambda_tameGen_pow, smul,\n    smul_letterProj (m := inr _) (fixesLambda_tameGen_pow ..),\n    aeval_eq_sum_range, mem_letterPart_iff_letterProj.1 letterProj_mem_letterPart, sum_over_range,\n    smul_sub, smul_sum, sum_mul, sub_smul, constantAt, ← sum_sub_distrib, sub_add_eq_sub_sub_swap,\n    ← sum_add_distrib, frobGroup_smul_smul, sum_smul]) congr(letterProj i (S.projTriv.wittMap $b) -\n    $(Q.eval_eq_sum_range 1 ▸ eval_mul_X_sub_C _) • p ^ κ.succ • (w : Ainf) • S.constantAt i c)\n  exact sum_eq_zero fun _ _ ↦ by module",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "5.2.1",
+   "parent": "5.2",
+   "kind": "reduction",
+   "claim": "apply ih;",
+   "lines": [
+    95,
+    95
+   ],
+   "span": [
+    95,
+    3,
+    95,
+    17
+   ],
+   "lean": "apply ih hν.le",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "5.2.2",
+   "parent": "5.2",
+   "kind": "computation",
+   "claim": "split off k = ν + 1 from the count;",
+   "lines": [
+    96,
+    96
+   ],
+   "span": [
+    96,
+    3,
+    96,
+    52
+   ],
+   "lean": "rw [card_filter, sum_eq_sum_Ico_succ_bot hν] at *",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "5.2.3",
+   "parent": "5.2",
+   "kind": "split",
+   "claim": "by cases on Q(ζ_E^{ν+1}) ≡ 0 mod p:",
+   "lines": [
+    97,
+    116
+   ],
+   "span": [
+    97,
+    3,
+    116,
+    40
+   ],
+   "lean": "split\n  · exact mem_liftIdeal_zero_of_mem_one _ _ (by lia) (p_pow_mul_z_pow_mem_liftIdeal_iff.2 h₀)\n      (by grind [padicValNat_factorial_mul, padicValNat.mul,\n      Nat.log_lt_of_lt_pow (by omega) (hν.trans_le hm), Nat.factorial, padicValNat_le_nat_log])\n  obtain ⟨u, K⟩ := S.exists_lift_of_mem_liftIdeal (f := p ^ _ * d.z ^ _) h₀\n  obtain ⟨w, t, rfl⟩ := d.exists_z_dvd_sub_const u\n  refine (smul_mem_iff_of_isUnit _ ((isUnit_of_coeff_zero_ne_zero _ ‹_›).map (algebraMap ..))).1\n    (mem_liftIdeal_iff.2 ⟨Q.sum fun k a ↦ a • toGp (d.tameGen ^ k) • t.1 * d.zetaE ^ k, fun c ↦\n    (K _ (constantAt_mem_locLetterPart c)).rec fun x ⟨m, f⟩ ↦\n    have ⟨X, v, b⟩ := exists_z_smul_eq_sum_tameGen (q := Q) (aeval_linearFrob_extLattice_eq_zero hK)\n      ⟨frobKisinAinf_zero.le (mem_withExponents_stdExponent_iff.1 m.2).1, m.1.2⟩\n    ⟨_, letterProj_mem_withExponents (frobKisinAinf_zero.ge v),\n      (isUnit_WittCFlat_of_not_p_dvd d.not_p_dvd_z).smul_left_cancel.1 ?_⟩⟩)\n  linear_combination (norm := simp [f, -map_pow, tameGen_pow_smul_z, fixesLambda_tameGen_pow, smul,\n    smul_letterProj (m := inr _) (fixesLambda_tameGen_pow ..),\n    aeval_eq_sum_range, mem_letterPart_iff_letterProj.1 letterProj_mem_letterPart, sum_over_range,\n    smul_sub, smul_sum, sum_mul, sub_smul, constantAt, ← sum_sub_distrib, sub_add_eq_sub_sub_swap,\n    ← sum_add_distrib, frobGroup_smul_smul, sum_smul]) congr(letterProj i (S.projTriv.wittMap $b) -\n    $(Q.eval_eq_sum_range 1 ▸ eval_mul_X_sub_C _) • p ^ κ.succ • (w : Ainf) • S.constantAt i c)\n  exact sum_eq_zero fun _ _ ↦ by module",
+   "head_lines": [
+    97,
+    97
+   ],
+   "head_span": [
+    97,
+    3,
+    97,
+    8
+   ],
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "5.2.3.1",
+   "parent": "5.2.3",
+   "kind": "case",
+   "claim": "if so, the extra factor p^m pays for lowering z^{ν+1} to z^ν (mem_liftIdeal_zero_of_mem_one; the factorial valuations are bounded since ν < e ≤ p^m).",
+   "lines": [
+    98,
+    100
+   ],
+   "span": [
+    98,
+    3,
+    100,
+    96
+   ],
+   "lean": "· exact mem_liftIdeal_zero_of_mem_one _ _ (by lia) (p_pow_mul_z_pow_mem_liftIdeal_iff.2 h₀)\n      (by grind [padicValNat_factorial_mul, padicValNat.mul,\n      Nat.log_lt_of_lt_pow (by omega) (hν.trans_le hm), Nat.factorial, padicValNat_le_nat_log])",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Lift.KummerChart.PairingSide.mem_liftIdeal_zero_of_mem_one"
+    },
+    {
+     "decl": "Lift.KummerChart.PairingSide.p_pow_mul_z_pow_mem_liftIdeal_iff"
+    }
+   ]
+  },
+  {
+   "id": "5.2.3.2",
+   "parent": "5.2.3",
+   "kind": "case",
+   "claim": "otherwise Q(ζ_E^{ν+1}) is a unit:",
+   "lines": [
+    101,
+    116
+   ],
+   "span": [
+    101,
+    3,
+    116,
+    40
+   ],
+   "lean": "obtain ⟨u, K⟩ := S.exists_lift_of_mem_liftIdeal (f := p ^ _ * d.z ^ _) h₀\n  obtain ⟨w, t, rfl⟩ := d.exists_z_dvd_sub_const u\n  refine (smul_mem_iff_of_isUnit _ ((isUnit_of_coeff_zero_ne_zero _ ‹_›).map (algebraMap ..))).1\n    (mem_liftIdeal_iff.2 ⟨Q.sum fun k a ↦ a • toGp (d.tameGen ^ k) • t.1 * d.zetaE ^ k, fun c ↦\n    (K _ (constantAt_mem_locLetterPart c)).rec fun x ⟨m, f⟩ ↦\n    have ⟨X, v, b⟩ := exists_z_smul_eq_sum_tameGen (q := Q) (aeval_linearFrob_extLattice_eq_zero hK)\n      ⟨frobKisinAinf_zero.le (mem_withExponents_stdExponent_iff.1 m.2).1, m.1.2⟩\n    ⟨_, letterProj_mem_withExponents (frobKisinAinf_zero.ge v),\n      (isUnit_WittCFlat_of_not_p_dvd d.not_p_dvd_z).smul_left_cancel.1 ?_⟩⟩)\n  linear_combination (norm := simp [f, -map_pow, tameGen_pow_smul_z, fixesLambda_tameGen_pow, smul,\n    smul_letterProj (m := inr _) (fixesLambda_tameGen_pow ..),\n    aeval_eq_sum_range, mem_letterPart_iff_letterProj.1 letterProj_mem_letterPart, sum_over_range,\n    smul_sub, smul_sum, sum_mul, sub_smul, constantAt, ← sum_sub_distrib, sub_add_eq_sub_sub_swap,\n    ← sum_add_distrib, frobGroup_smul_smul, sum_smul]) congr(letterProj i (S.projTriv.wittMap $b) -\n    $(Q.eval_eq_sum_range 1 ▸ eval_mul_X_sub_C _) • p ^ κ.succ • (w : Ainf) • S.constantAt i c)\n  exact sum_eq_zero fun _ _ ↦ by module",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "5.2.3.2.1",
+   "parent": "5.2.3.2",
+   "kind": "choice",
+   "claim": "lift: u with (p^{…}z^{ν+1} − p^{κ+1}u)·y lifting for y at level 0 (exists_lift_of_mem_liftIdeal);",
+   "lines": [
+    101,
+    101
+   ],
+   "span": [
+    101,
+    3,
+    101,
+    76
+   ],
+   "lean": "obtain ⟨u, K⟩ := S.exists_lift_of_mem_liftIdeal (f := p ^ _ * d.z ^ _) h₀",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Lift.KummerChart.PairingSide.exists_lift_of_mem_liftIdeal"
+    }
+   ]
+  },
+  {
+   "id": "5.2.3.2.2",
+   "parent": "5.2.3.2",
+   "kind": "choice",
+   "claim": "write u = w + z·t with w ∈ Λ (exists_z_dvd_sub_const);",
+   "lines": [
+    102,
+    102
+   ],
+   "span": [
+    102,
+    3,
+    102,
+    51
+   ],
+   "lean": "obtain ⟨w, t, rfl⟩ := d.exists_z_dvd_sub_const u",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Lift.Chart.exists_z_dvd_sub_const"
+    }
+   ]
+  },
+  {
+   "id": "5.2.3.2.3",
+   "parent": "5.2.3.2",
+   "kind": "fact",
+   "claim": "the element times the unit Q(ζ_E^{ν+1}) lies in liftIdeal(S, p^{κ+1}, 0, i) by mem_liftIdeal_iff: for c take the lift x (K), apply exists_z_smul_eq_sum_tameGen to x with Q, which kills (s, 0) on Ỹ (aeval_linearFrob_extLattice_eq_zero): z·X = Σ_k Q_k s^k x with X ∈ M, and letterProj(X) has the standard exponents (letterProj_mem_withExponents); cancel the unit z of W(C^♭):",
+   "lines": [
+    103,
+    109
+   ],
+   "span": [
+    103,
+    3,
+    109,
+    77
+   ],
+   "lean": "refine (smul_mem_iff_of_isUnit _ ((isUnit_of_coeff_zero_ne_zero _ ‹_›).map (algebraMap ..))).1\n    (mem_liftIdeal_iff.2 ⟨Q.sum fun k a ↦ a • toGp (d.tameGen ^ k) • t.1 * d.zetaE ^ k, fun c ↦\n    (K _ (constantAt_mem_locLetterPart c)).rec fun x ⟨m, f⟩ ↦\n    have ⟨X, v, b⟩ := exists_z_smul_eq_sum_tameGen (q := Q) (aeval_linearFrob_extLattice_eq_zero hK)\n      ⟨frobKisinAinf_zero.le (mem_withExponents_stdExponent_iff.1 m.2).1, m.1.2⟩\n    ⟨_, letterProj_mem_withExponents (frobKisinAinf_zero.ge v),\n      (isUnit_WittCFlat_of_not_p_dvd d.not_p_dvd_z).smul_left_cancel.1 ?_⟩⟩)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Lift.KummerChart.PairingSide.mem_liftIdeal_iff"
+    },
+    {
+     "decl": "Lift.KummerChart.PairingSide.constantAt_mem_locLetterPart"
+    },
+    {
+     "decl": "Lift.TameChart.exists_z_smul_eq_sum_tameGen"
+    },
+    {
+     "decl": "Lift.TameChart.aeval_linearFrob_extLattice_eq_zero"
+    },
+    {
+     "decl": "Lift.KummerChart.JumpLattice.letterProj_mem_withExponents"
+    },
+    {
+     "decl": "Lift.KummerChart.JumpLattice.frobKisinAinf_zero"
+    },
+    {
+     "decl": "Lift.KummerChart.JumpLattice.mem_withExponents_stdExponent_iff"
+    }
+   ]
+  },
+  {
+   "id": "5.2.3.2.4",
+   "parent": "5.2.3.2",
+   "kind": "computation",
+   "claim": "the image identity: s^k z = ζ_E^k z (tameGen_pow_smul_z), s^k fixes Λ and the constants, and Q(1) = 0, so projTriv(z·letterProj(X)) = z·(Q(ζ_E^{ν+1})(…) − p^{κ+1}·t')·constantAt(c);",
+   "lines": [
+    110,
+    115
+   ],
+   "span": [
+    110,
+    3,
+    115,
+    96
+   ],
+   "lean": "linear_combination (norm := simp [f, -map_pow, tameGen_pow_smul_z, fixesLambda_tameGen_pow, smul,\n    smul_letterProj (m := inr _) (fixesLambda_tameGen_pow ..),\n    aeval_eq_sum_range, mem_letterPart_iff_letterProj.1 letterProj_mem_letterPart, sum_over_range,\n    smul_sub, smul_sum, sum_mul, sub_smul, constantAt, ← sum_sub_distrib, sub_add_eq_sub_sub_swap,\n    ← sum_add_distrib, frobGroup_smul_smul, sum_smul]) congr(letterProj i (S.projTriv.wittMap $b) -\n    $(Q.eval_eq_sum_range 1 ▸ eval_mul_X_sub_C _) • p ^ κ.succ • (w : Ainf) • S.constantAt i c)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Lift.KummerChart.JumpLattice.smul_letterProj"
+    },
+    {
+     "decl": "Lift.KummerChart.PairingSide.constantAt"
+    }
+   ]
+  },
+  {
+   "id": "5.2.3.2.5",
+   "parent": "5.2.3.2",
+   "kind": "computation",
+   "claim": "the remaining sum vanishes term by term.",
+   "lines": [
+    116,
+    116
+   ],
+   "span": [
+    116,
+    3,
+    116,
+    40
+   ],
+   "lean": "exact sum_eq_zero fun _ _ ↦ by module",
+   "typed_fact": null,
+   "uses": []
+  }
+ ]
+}

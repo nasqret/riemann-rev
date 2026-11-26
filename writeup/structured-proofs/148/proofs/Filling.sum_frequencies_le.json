@@ -1,0 +1,220 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Filling.GlobalSieve:49:7",
+ "summary": "Each y spans a line in E² whose lattice discriminant d(y) satisfies d(y)·[det a] ≤ ∏_v(1 + |y|_v²)·[det a] and controls [y]_T and den(y); so each term is at most a constant times d(y)^{−3}, and the lines are distinct, so the sum is bounded by the count of lines Σ_L d(L)^{−3} ≤ (400f·rd_E)^{3f} (tsum_sublatticeDisc_inv_le with u = 1, κ = Fin 2, s = 1).",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The line count: Σ over lines L ⊆ E² of d(L ∩ Ô²)^{−3} ≤ (200·2f·rd_E)^{3f}; rd_E > 0; b ≥ 1000.",
+   "lines": [
+    54,
+    55
+   ],
+   "lean": "  obtain ⟨Z, _, b⟩ := by simpa using tsum_sublatticeDisc_inv_le (1 : Gf E (Fin 2)) 1,\n    rootDiscr_pos E, S.thousand_le_b",
+   "uses": [
+    {
+     "decl": "Filling.tsum_sublatticeDisc_inv_le"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Expand dampedPower and the norms; bound the right side from below by",
+   "lines": [
+    56,
+    56
+   ],
+   "span": [
+    56,
+    3,
+    56,
+    56
+   ],
+   "lean": "simp_rw [dampedPower, norm_mul, mul_inv]; grw [← b, ←"
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "400f ≤ b (f ≤ b/1000),",
+   "lines": [
+    56,
+    57
+   ],
+   "span": [
+    56,
+    57,
+    57,
+    22
+   ],
+   "lean": "show 200 * (numInfPlaces E * 2) ≤ S.b by\n    bound [S.f_le_b],",
+   "uses": [
+    {
+     "decl": "Filling"
+    }
+   ],
+   "typed_fact": "200 * (numInfPlaces E * 2) ≤ S.b"
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "pass to [0, ∞], bound the line count from below by the sum over the distinct lines colSpan(1; y), y ∈ X (injective since the lines through (1, y) differ), and compare termwise: for each y ∈ X it suffices to bound its term by (∏_v|x_v|^k(bB²)³)·(…)·d(L_y)^{−3}.",
+   "lines": [
+    57,
+    59
+   ],
+   "span": [
+    57,
+    23,
+    59,
+    80
+   ],
+   "lean": "← ofReal_le_ofReal_iff, ENNReal.ofReal_mul, ← Z, ← ENNReal.sum_le_tsum\n    (X.image (colSpan !![1; ·])), sum_image fun y _ u _ e ↦ (e.le ⟨1, rfl⟩).elim (by\n    simp +contextual), mul_sum, ofReal_sum_of_nonneg, sum_le_sum fun y hy ↦ ?_]"
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "For the column (1; y): a basis a of its preimage lattice with the denominator relation (e, p), den(y) > 0 (u), the norm bound (w) and f;",
+   "lines": [
+    60,
+    61
+   ],
+   "span": [
+    60,
+    3,
+    61,
+    72
+   ],
+   "lean": "obtain ⟨⟨a, e, p, -⟩, u, w, f⟩ := exists_preimageLattice_eq_colLattice (m := finAdeleMat !![1; y])\n    ⟨!![1, 0], by simp [vecMul]⟩, (denomIndex_ne_zero T _).pos, h y hy,",
+   "uses": [
+    {
+     "decl": "exists_preimageLattice_eq_colLattice"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "the rank of (1; y) is 1.",
+   "lines": [
+    61,
+    62
+   ],
+   "span": [
+    61,
+    73,
+    62,
+    59
+   ],
+   "lean": "show 1 = !![1; y].rank by\n    simp [rank_eq_finrank_span_cols, finrank_span_eq_card]",
+   "typed_fact": "1 = !![1; y].rank"
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "[det a] > 0.",
+   "lines": [
+    63,
+    63
+   ],
+   "lean": "  have : 0 < genIndex a.1.det := genIndex_pos a.det",
+   "typed_fact": "0 < genIndex a.1.det"
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "sublatticeDisc_mul_index_sq_le for the line: (d·i)² ≤ (∏_v(1 + |Φ_v y|²)·[det a])².",
+   "lines": [
+    64,
+    67
+   ],
+   "lean": "  obtain ⟨D, _, -⟩ := sublatticeDisc_mul_index_sq_le (one_mul 1) _ !![,,] f le_rfl a (K := ⊤) (D :=\n    ((∏ v, (1 + ‖Φ v y‖ ^ 2)) * genIndex a.1.det) ^ 2)\n    (by erw [det_unique, genIndex_algebraMap]; simp [abs_norm_eq_prod_norm_sq,\n    conj_mul', mul_pow, ← prod_pow]; norm_cast; simp) (by positivity) (.mul .one p) (by simp)",
+   "uses": [
+    {
+     "decl": "Filling.sublatticeDisc_mul_index_sq_le"
+    }
+   ]
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Hence d ≤ ∏_v(1 + |y|_v²)·[det a]; √[y]_T ≤ ∏ (sqrt_genIndex_le_prod_norm); den⁶ ≥ den³ (den ≥ 1); it remains to show [det a] ≤ den(y) and, at each v, min(1, |c_v|⁻¹|y|_v⁻¹)⁶ ≤ (1000B²/(1 + |y|_v²))³, using |c_v|⁻¹ ≤ |x_v|.",
+   "lines": [
+    68,
+    71
+   ],
+   "lean": "  simp [submoduleIndex, -det_unique] at D; grw [ite_eq_left (by tauto), le_of_sq_le_sq D,\n    ← ENNReal.ofReal_mul, sqrt_genIndex_le_prod_norm T w,\n    ← pow_le_pow_right₀ (mod_cast u) (by simp : 3 ≤ 6), ← (?_ : genIndex a.1.det ≤ denomIndex\n    ..), fun v ↦ (?_ : min 1 (‖c v‖⁻¹ * _) ^ 6 ≤ (1000 * B ^ 2 / (1 + ‖Φ v y‖ ^ 2)) ^ 3), (hx _).1]",
+   "uses": [
+    {
+     "decl": "sqrt_genIndex_le_prod_norm"
+    }
+   ]
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Positivity side goals.",
+   "lines": [
+    72,
+    72
+   ],
+   "lean": "  any_goals intros; positivity"
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Collect the products over v.",
+   "lines": [
+    73,
+    73
+   ],
+   "lean": "  · gcongr 1; simp [field, prod_pow, div_pow, mul_pow, *]"
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "At v: min(1, r)⁶ ≤ (1000B²/(1+|y|²))³ with r = |c_v|⁻¹|y|⁻¹ ≤ B/|y|, by cases on the minimum (nonlinear arithmetic).",
+   "lines": [
+    74,
+    75
+   ],
+   "lean": "  · grw [pow_mul _ 2 3, (hx v).1, (hx v).2, min_def]; gcongr\n    clear * - w hB; split <;> simp [*, field] at * <;> nlinarith [norm_nonneg (Φ v y)]"
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "[det a] ≤ den(y): [det a] is an index of column lattices dividing den(y)…",
+   "lines": [
+    76,
+    76
+   ],
+   "lean": "  grw [← submoduleIndex_colLattice_div, div_nat_le_self_of_nonnneg (by simp), ← e, Nat.cast_le]"
+  },
+  {
+   "id": "14",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "…by the divisibility of relative indices of the lattices (local description of the integers at T).",
+   "lines": [
+    77,
+    80
+   ],
+   "lean": "  exact Nat.le_of_dvd u ((relIndex_dvd_of_le_left _ fun z ↦ by simp_all [preimageLattice, mem_Ô_iff\n    T, -e]).trans (dvd_of_eq ((inf_relIndex_right ..).trans ((relIndex_comap _ (.mk' (evalPlaces\n    T <| · 0) (by simp)) _).trans\n    (congrArg _ (by ext; simp [locProd_O_eq_map_evalPlaces, Fin.exists_fin_succ_pi]))))))"
+  }
+ ]
+}

@@ -1,0 +1,110 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Exchange.BlockPartners:94:7",
+ "name": "partner_block",
+ "summary": "Witnesses: x = invLastRows(e, k) for k the block matrix (1 0; x₁ x₂)⁻¹ and y = firstCols(e, k) for k = (y₁ 0; y₂ 1); the identity is Jacobi's complementary minors: det x₂·det k = det of the first block of k.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "statement",
+   "claim": "Not a step of the proof: lines 96–97 are the rest of the statement, which ends before the `:=` on line 97 (a second-reader message). The line census takes the `:=` of `let y :=` on line 96 for the start of the value, so the check requires these lines to be owned here. They state: the second function of the pair, Ψ(y) = χ⁻¹(det y₁)·f(−y₂y₁⁻¹) with y cut by e into row blocks y₁ (b × b) and y₂; the assertion is IsPartner(⊤, e, χ, Φ, Ψ) for this Ψ and Φ(x) = χ⁻¹(det x₂)·f(x₂⁻¹x₁).",
+   "lines": [
+    96,
+    97
+   ],
+   "lean": "  χ⁻¹ x.toCols₂.det * f (x.toCols₂⁻¹ * x.toCols₁)) fun y ↦ let y := y.submatrix e id\n  χ⁻¹ y.toRows₁.det * f (-(y.toRows₂ * y.toRows₁⁻¹)) := by"
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "step",
+   "claim": "Support of Φ: where Φ(x) ≠ 0, x₂ is invertible, and x = invLastRows(e, k) for k the reindexed inverse of the block matrix (1 0; x₁ x₂); support of Ψ: where Ψ(y) ≠ 0, y₁ is invertible, and y = firstCols(e, k) for k the reindexed block matrix (y₁ 0; y₂ 1); for the identity it suffices to treat k ∈ GL_n(R) reindexed by e.",
+   "lines": [
+    98,
+    100
+   ],
+   "lean": "  use fun x h ↦ let x := x.submatrix id e; ⟨reindexGL e (.mk'' (fromBlocks 1 0 x.toCols₁ x.toCols₂)\n    ?_)⁻¹, ?_⟩, fun y h ↦ let y := y.submatrix e id; ⟨reindexGL e (.mk'' (y.toRows₁.fromBlocks 0\n    y.toRows₂ 1) ?_), ?_⟩, (reindex_equiv (reindexGL e)).1.2 fun k ↦ ?_"
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "step",
+   "claim": "The membership and block identities for these witnesses hold by unfolding (χ vanishes on non-units; the inverses of the block matrices).",
+   "lines": [
+    101,
+    102
+   ],
+   "lean": "  any_goals simp_all +zetaDelta [apply_eq_zero_iff, mem_intGL, ← ext_iff, reindex_equiv e,\n    ← comp_assoc]"
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "step",
+   "claim": "For k ∈ GL_n(R): det of the matrix stacking 1 above invLastRows(e, k), times det k, equals det of firstCols(e, k)'s first block (`det_fromRows_invLastRows`, Jacobi's complementary minors), and invLastRows(e, k)·firstCols(e, k) = 0 (`invLastRows_mul_firstCols`).",
+   "lines": [
+    103,
+    104
+   ],
+   "lean": "  rcases (det_fromRows_invLastRows (.refl _) k (fromCols 1 0)).symm,\n    invLastRows_mul_firstCols (.refl _) k",
+   "uses": [
+    {
+     "decl": "det_fromRows_invLastRows"
+    },
+    {
+     "decl": "invLastRows_mul_firstCols"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "step",
+   "claim": "Write invLastRows(e, k) by its column blocks and firstCols(e, k) by its row blocks.",
+   "lines": [
+    105,
+    105
+   ],
+   "lean": "  rw [← (invLastRows _ k).fromCols_toCols, ← (firstCols _ k).fromRows_toRows] at *"
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "step",
+   "claim": "With these blocks, det x₂·det k = det y₁ and x₁y₁ + x₂y₂ = 0, so χ⁻¹(det x₂) = χ(det k)χ⁻¹(det y₁) and x₂⁻¹x₁ = −y₂y₁⁻¹ when the blocks are invertible; both sides vanish otherwise.",
+   "lines": [
+    106,
+    107
+   ],
+   "lean": "  simp_all [-fromCols_toCols, -fromRows_toRows, inv_apply_eq_inv', apply_eq_zero_iff, mul_assoc,\n    or_iff_not_imp_right, invLastRows, firstCols, add_eq_zero_iff_eq_neg']",
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "step": "5"
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "step",
+   "claim": "The last identity x₂⁻¹x₁ = −y₂y₁⁻¹ from x₁y₁ + x₂y₂ = 0, cancelling the invertible x₂.",
+   "lines": [
+    108,
+    108
+   ],
+   "lean": "  exact (nonsing_inv_mul_cancel_left _ (toRows₂ _) · ▸ by simp [*])",
+   "uses": [
+    {
+     "step": "6"
+    }
+   ],
+   "ambient_uses": [
+    "Matrix.nonsing_inv_mul_cancel_left"
+   ]
+  }
+ ]
+}

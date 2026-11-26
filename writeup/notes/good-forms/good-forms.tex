@@ -1,0 +1,1245 @@
+% !TEX program = lualatex
+% ---------------------------------------------------------------------------------------------
+%  Readback note 26: Good forms and rows: equal Hecke traces on unitary groups that differ at the real places
+%
+%  Build:  python3 tools/rb.py note <slug>
+%
+%  One unit of a Lean artifact, rewritten as ordinary mathematics. The prose is hand-written. Lean names,
+%  line ranges and counts come from data.tex; quoted Lean statements are copied from the artifact by the build.
+%
+%  Rules of the text: standard terminology; every symbol is explained where it first appears and listed again
+%  in the notation at the end; no letter has two meanings; a proof is complete or says what it takes for granted;
+%  Lean names appear only in the LEAN lines and in the concordance.
+%
+%  The signature rule (the build enforces it): a function, relation or predicate that the artifact defines is
+%  written only through its notation macro, which the build makes from the spec (`notation`) with one slot for
+%  each explicit argument of the Lean definition. No argument is fixed and dropped, also not "for brevity" and
+%  not for one section. Every argument and every hypothesis of a stated declaration stands inside its
+%  statement, or in a Setting that the statement cites by number; only implicit and instance arguments (the
+%  ambient objects) may stand in the conventions.
+% ---------------------------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\ifdefined\pdfvariable\pdfvariable suppressoptionalinfo \numexpr 1+2+4+8\relax\fi
+\usepackage[a4paper,hmargin=35mm,top=22mm,bottom=27mm,footskip=12mm,nohead]{geometry}
+
+\usepackage{fontspec}
+\directlua{
+  luaotfload.add_fallback("gfallback", {"STIXTwoMath-Regular.otf:mode=node;", "DejaVuSans.ttf:mode=node;"})
+  luaotfload.add_fallback("gmonofallback", {"DejaVuSansMono.ttf:mode=node;", "STIXTwoMath-Regular.otf:mode=node;"})
+}
+\setmainfont{NewCM10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookItalic,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldItalic,SmallCapsFont=*-Book,SmallCapsFeatures={Letters=SmallCaps},
+  RawFeature={fallback=gfallback}]
+\setsansfont{NewCMSans10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookOblique,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldOblique,RawFeature={fallback=gfallback}]
+\setmonofont{JetBrainsMono}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,Scale=MatchLowercase,
+  RawFeature={-calt;-liga;fallback=gmonofallback}]
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage[math-style=TeX]{unicode-math}
+\setmathfont{NewCMMath-Book.otf}
+\emergencystretch=2.5em\relax
+
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows.meta,positioning,backgrounds}
+\usepackage[protrusion=true,expansion=true]{microtype}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{multicol}
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+
+\definecolor{ink}{HTML}{0F172A}
+\definecolor{inksoft}{HTML}{475569}
+\definecolor{inkfaint}{HTML}{94A3B8}
+\definecolor{rulegrey}{HTML}{CBD5E1}
+\definecolor{arith}{HTML}{C2410C}
+\definecolor{est}{HTML}{7C3AED}
+\definecolor{ana}{HTML}{0891B2}
+\definecolor{ok}{HTML}{047857}
+\definecolor{leancol}{HTML}{3730A3}
+
+\title{Good forms and rows: equal Hecke traces on unitary groups that differ at the real places}
+\author{grh-compact}
+\date{}
+
+% ------------------------------------------------------------------------------------- macros
+\newcommand{\leanfont}{\ttfamily\fontsize{8.6}{10.5}\selectfont\color{leancol}}
+\newcommand{\lean}[1]{\csname LN@#1\endcsname}
+\newcommand{\fillin}[1]{{\color{arith}\itshape[#1]}}  % a place of the template that is not written yet; the build reports every one that is left
+\newcommand{\leanquote}[1]{\csname LQ@#1\endcsname}
+\input{data.tex}
+
+\linespread{1.08}                       % 11 pt on 14.7 pt
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt plus 1.5pt minus 0.5pt}
+\setlength{\abovedisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\belowdisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\abovedisplayshortskip}{3pt plus 2pt}
+\setlength{\belowdisplayshortskip}{6pt plus 2pt minus 2pt}
+\emergencystretch=1.5em
+\clubpenalty=10000 \widowpenalty=10000 \displaywidowpenalty=10000
+\relpenalty=7000 \binoppenalty=9000
+\raggedbottom
+\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\sffamily\fontsize{7.6}{9}\selectfont\color{inkfaint}\thepage\,/\,\pageref*{LastPage}}
+\setlist{topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=4pt,leftmargin=2.1em,labelsep=0.55em}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\len}{\operatorname{len}}
+\newcommand{\cok}{\operatorname{cok}}
+\newcommand{\End}{\operatorname{End}}
+\newcommand{\Hom}{\operatorname{Hom}}
+\newcommand{\Gal}{\operatorname{Gal}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\kw}[1]{\emph{#1}}
+\newcommand{\m}[1]{\mbox{$#1$}}        % a short formula that must not be broken across lines
+\newcommand{\head}[1]{\par\addvspace{17pt plus 4pt minus 2pt}\Needspace{6\baselineskip}%
+  \noindent{\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\sect}[2]{\refstepcounter{section}\label{#2}\par\addvspace{19pt plus 4pt minus 2pt}\Needspace{7\baselineskip}%
+  \noindent\llap{{\fontsize{13.2}{16}\selectfont\bfseries\color{inkfaint}\thesection}\hspace{9pt}}%
+  {\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\subhead}[1]{\par\addvspace{9pt plus 2pt}\Needspace{4\baselineskip}\noindent\textbf{#1}\enspace\ignorespaces}
+% where a statement lives in the Lean archive
+\newcommand{\leantag}{{\sffamily\bfseries\fontsize{6.3}{8}\selectfont\color{leancol}\addfontfeatures{LetterSpace=7}LEAN}}
+\newcommand{\sep}{\unskip\nobreak\hspace{5pt}{\color{inkfaint}\textperiodcentered}\hspace{5pt plus 2pt}\ignorespaces}
+\newcommand{\leanline}[1]{\par\nopagebreak\vspace{-2.5pt}{\fontsize{8.9}{12.4}\selectfont\color{inksoft}\raggedright
+  \noindent\llap{\leantag\hspace{9pt}}#1\par}\vspace{1pt}}
+% a displayed statement in a tinted box: #1 colour, #2 text
+\newcommand{\statement}[2]{\par\addvspace{7pt}\begingroup\setlength{\fboxsep}{8.5pt}\setlength{\fboxrule}{0.6pt}%
+  \noindent\fcolorbox{#1!30!white}{#1!3!white}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{#2}}%
+  \endgroup\par\addvspace{7pt}}
+\newcommand{\nt}[2]{\par\noindent\hangindent=1.1em\hangafter=1 #1\enspace{\color{inksoft}#2}\par\vspace{1pt}}
+\newcommand{\legdot}[1]{\tikz[baseline=-0.62ex]\fill[#1] (0,0) circle (2.5pt);\hspace{3pt}}
+\newcommand{\crow}[4]{\csname CS@#1\endcsname & #2 & \textcolor{inksoft}{#3} & \textcolor{inksoft}{#4}\\}
+\newcommand{\leanquoteline}[2]{\par\noindent\hangindent=\dimexpr#1\fontdimen2\font+2.2em\relax\hangafter=1
+  \hspace*{#1\fontdimen2\font}#2}
+\newcommand{\quoted}[1]{\par\vspace{3pt}{\ttfamily\fontsize{7.5}{10.4}\selectfont\color{leancol}\raggedright
+  \setlength{\parskip}{0pt}\leanquote{#1}\par}\vspace{4pt}}
+\newcommand{\bx}[3]{{\sffamily\bfseries\fontsize{7.3}{9.2}\selectfont\color{#1!82!black}#2}\\[1.5pt]#3}
+\newcommand{\cs}[2]{\expandafter\newcommand\csname CS@#1\endcsname{#2}}
+
+% theorems
+\newtheoremstyle{plainx}{7pt plus 2pt}{7pt plus 2pt}{\itshape}{}{\bfseries}{.}{0.5em}{}
+\newtheoremstyle{uprightx}{7pt plus 2pt}{7pt plus 2pt}{}{}{\bfseries}{.}{0.5em}{}
+\theoremstyle{plainx}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{uprightx}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{setting}[theorem]{Setting}          % hypotheses shared by several statements; each of them cites it by number
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\renewcommand{\qedsymbol}{{\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.5pt}\fbox{\rule{0pt}{0.46em}\hspace{0.46em}}}}
+% what holds throughout the note: the ambient objects only (implicit and instance arguments), never a hypothesis
+\newenvironment{conventions}{\par\addvspace{5pt}\noindent\textbf{Conventions.}\enspace\ignorespaces}{\par\addvspace{3pt}}
+\makeatletter
+\renewenvironment{proof}[1][Proof]{\par\pushQED{\qed}\normalfont\topsep0pt\partopsep0pt
+  \trivlist\item[\hskip\labelsep\itshape #1.]\ignorespaces}{\popQED\endtrivlist\@endpefalse}
+\makeatother
+
+% where each declaration of the concordance is treated: \cs{key}{place}, the place naming a \label or a lettered item
+\cs{traceheckeOnGoodeq}{Theorem 1}
+\cs{detheckeOnGoodeq}{Theorem 2}
+\cs{goodFormsinfeigenParteqbot}{Theorem 2}
+\cs{finrankrowseqfinrankgoodForms}{Theorem 2}
+\cs{hasRigidLabelsspaceW}{Theorem 3}
+\cs{hasRigidLabelsspaceYzero}{Theorem 3}
+\cs{besselIndexEquiv}{Definition~\ref{d:index}}
+\cs{indexEquivY}{Definition~\ref{d:index}}
+\cs{meqtwomulvarrhoaddtwo}{Lemma~\ref{l:m}}
+\cs{chosenIdele}{Definition~\ref{d:ideles}}
+\cs{ideleA}{Definition~\ref{d:ideles}}
+\cs{piIdele}{Definition~\ref{d:ideles}}
+\cs{latticeScale}{Definition~\ref{d:ideles}}
+\cs{piIdelespec}{Lemma~\ref{l:pi}}
+\cs{existsspaceY}{Lemma~\ref{l:Y}}
+\cs{spaceY}{Definition~\ref{d:YW}}
+\cs{spaceW}{Definition~\ref{d:YW}}
+\cs{isStdspaceY}{Lemma~\ref{l:std}}
+\cs{principalForms}{Definition~\ref{d:prin}}
+\cs{principalRep}{Definition~\ref{d:prin}}
+\cs{goodForms}{Definition~\ref{d:good}}
+\cs{rows}{Definition~\ref{d:good}}
+\cs{rowDim}{Definition~\ref{d:good}}
+\cs{HasRigidLabels}{Definition~\ref{d:rigid}}
+\cs{varsigmaaddwgap}{Lemma~\ref{l:gap}}
+\cs{hasGapsignsYparamW}{Lemma~\ref{l:hasgap}}
+\cs{hasGapparamW}{Lemma~\ref{l:hasgap}}
+\cs{isCuspKernelparamW}{Lemma~\ref{l:cusp}}
+\cs{levelNormmemandnotMemofmemQ}{Lemma~\ref{l:Q}}
+\cs{levelPlaces}{Definition~\ref{d:levels}}
+\cs{decl}{Definition~\ref{d:levels}}
+\cs{nonemptymodulusplaces}{Lemma~\ref{l:nonempty}}
+\cs{auxPair}{Definition~\ref{d:aux}}
+\cs{isCentralProje}{Lemma~\ref{l:central}}
+\cs{reflectionSummule}{Lemma~\ref{l:refl}}
+\cs{existscommonheckerallis}{Lemma~\ref{l:common}}
+\cs{hasParahoricTypechosenGLRep}{Lemma~\ref{l:type}}
+\cs{ezero}{Definition~\ref{d:good}}
+\cs{heckeAlgebra}{Definition~\ref{d:rigid}}
+\cs{heckeOperator}{Definition~\ref{d:rigid}}
+\cs{eigenPart}{Definition~\ref{d:rigid}}
+\cs{occurringLabels}{Definition~\ref{d:rigid}}
+\cs{heckeOnGood}{Definition~\ref{d:rigid}}
+\cs{traceComparison}{Input 1}
+\cs{isCuspKerneltypeKernel}{Input 2}
+\cs{finitelevelSpace}{Input 2}
+\cs{existsframegradedGram}{Input 3}
+\cs{isUnimodulargradedLatticeBasisgram}{Input 3}
+\cs{existsorthonormal}{Input 3}
+\cs{isCentralProjsumtupleIdem}{Input 4}
+\cs{reflectionSummullabelIdem}{Input 4}
+\cs{piTensorElemapplyeqzero}{Input 4}
+\cs{charpolyeqmuloftracepowadd}{Input 4}
+\cs{commuteprep}{Input 5}
+\cs{iSupeigenPart}{Input 5}
+\cs{finiteeigenPart}{Input 5}
+\cs{existsheckeproj}{Input 5}
+\cs{occurringLabelssubsingleton}{Input 6}
+\cs{auxLift}{Input 7}
+\cs{auxLiftinjective}{Input 7}
+\cs{liftsauxLift}{Input 7}
+\cs{auxLiftprincipalRep}{Input 7}
+\cs{iotaAtLevel}{Input 7}
+\cs{iotaAtLevelinjective}{Input 7}
+\cs{existsisSphericalWithiota}{Input 7}
+\cs{algFormRepiota}{Input 7}
+\cs{smulchosenGLRepeq}{Input 7}
+\cs{hasGapgridParam}{Input 8}
+\cs{cardneggridSigns}{Input 8}
+\cs{omegazpowneone}{Input 8}
+\newcommand{\cV}{{\mathcal V}}
+\newcommand{\fs}{{\mathfrak s}}
+\newcommand{\sG}{{\mathsf G}}
+\newcommand{\cH}{{\mathcal H}}
+\newcommand{\Occ}{\mathrm{Occ}}
+\newcommand{\Ch}{\mathrm{Ch}}
+\newcommand{\GL}{\mathrm{GL}}
+\newcommand{\num}{\mathrm{num}}
+
+\begin{document}
+\color{ink}
+
+{\raggedright
+{\sffamily\bfseries\fontsize{7.2}{9}\selectfont\color{leancol}\addfontfeatures{LetterSpace=8}READBACK NOTE 26\par}
+\vspace{5pt}
+{\fontsize{21.5}{25.5}\selectfont\bfseries Good forms and rows: equal Hecke traces on unitary groups that differ at the real places\par}
+\vspace{5pt}
+{\fontsize{12.4}{16}\selectfont\itshape\color{inksoft} One unit of the Lean artifact \ArtifactName, read back into
+mathematics\par}}
+\vspace{8pt}
+{\color{rulegrey}\hrule height 0.6pt}
+\vspace{7pt}
+\thispagestyle{empty}
+
+\textbf{Summary.} The rows of the proof are cusp forms on an indefinite unitary group, cut out of the forms of
+principal level at the chosen primes by one idempotent of the group algebra of a finite group: the \emph{good
+forms}. This note defines these objects: the hermitian spaces \m{\spaceY{D}{i}} and \m{\spaceW{D}{i}} attached to the data~$D$, the forms of
+principal level on them, the representation of the finite group, the good forms, the rows and their dimension.
+Its theorem is a transfer between unitary groups that differ only at the real places: if on two such spaces every
+Hecke eigensystem meets at most one primitive label at each chosen prime, then every Hecke operator away from
+the chosen primes has the same trace, hence the same determinant, on the good forms of the two spaces. The
+hypothesis holds for \m{\spaceY{D}{0}} and for every \m{\spaceW{D}{i}}, so the rows have the dimension of the good
+forms on each \m{\spaceW{D}{i}}.
+The proof subtracts from the good idempotent its cubic twists, which leaves group elements with an irreducible
+characteristic polynomial at a chosen prime; for those a comparison of trace formulas is available.
+
+\statement{leancol}{\fontsize{9.6}{13.2}\selectfont\textbf{What this note is.} The artifact \ArtifactName{} is a
+body of Lean code: the compact edition of a formal proof, due to L.~Alpöge with the AI system Claude, of the
+Riemann hypothesis and of its generalisation to Dirichlet $L$-functions. That headline is a claim. The authors
+report that every file compiles and that Lean's kernel accepted the proofs; an independent replay is recorded in
+the handout's record of checks when it reports. No mathematician has read the argument through, and nothing here
+says that the Riemann hypothesis is proved. This note treats \UnitInNote{} of the \UnitMembers{} declarations of
+the unit \emph{Good idempotents, labels and the transfer of traces}; the other declarations, on labels over
+finite fields, are the subject of the note \emph{Primitive labels}. Proved in full here, from the inputs: the
+transfer of traces with its three corollaries (Theorems 1 and~2), the reduction of Theorem~3 to its inputs, and
+the lemmas of §§\ref{s:spaces}--\ref{s:hecke}. Taken for granted and stated as Inputs~1 to~8: a comparison of
+trace formulas, finiteness of spaces of cusp forms and facts on lattices and on finite general linear groups from
+the artifact's background library; and results of other units of the argument, among them the uniqueness of
+primitive labels (unit on Galois representations) and the injectivity and equivariance of theta lifts. Every
+statement was compared with its Lean text, argument by argument. The Lean text read is \PinText; Appendix~A is
+the concordance of \ConcDecls{} declarations.}
+
+\sect{The statements}{s:intro}
+The objects are defined in §\ref{s:setting}. In brief: $D$ is admissible data (Setting~\ref{s:data});
+\m{\Prin{D}{\cV}} is the space of forms of principal level at the chosen primes on a hermitian space~$\cV$,
+\m{\Good{D}{\cV}} its subspace of good forms, $\cH(D)$ the algebra of Hecke operators away from the chosen primes,
+and \m{\Prin{D}{\cV}[p]} the part of \m{\Prin{D}{\cV}} with Hecke eigensystem~$p$. Rigidity of labels is
+Definition~\ref{d:rigid}.
+
+\statement{arith}{\phantomsection\label{t:1}\textbf{Theorem 1} (equal traces).\enspace
+\emph{In Setting~\ref{s:data}, let $\fs$, $\fs'$, $\cV$, $\cV'$ be as in Setting~\ref{s:two}. Suppose that
+\Rigid{D}{\cV} and that \Rigid{D}{\cV'}. Then for every \m{T\in\cH(D)}, the trace of $T$ on \m{\Good{D}{\cV}}
+equals the trace of $T$ on \m{\Good{D}{\cV'}}.}}
+\leanline{\lean{traceheckeOnGoodeq}}
+
+\statement{arith}{\phantomsection\label{t:2}\textbf{Theorem 2} (determinants, eigensystems, dimensions).\enspace
+\emph{In Setting~\ref{s:data}, let $\fs$, $\fs'$, $\cV$, $\cV'$ be as in Setting~\ref{s:two}, and suppose that
+\Rigid{D}{\cV} and that \Rigid{D}{\cV'}.}
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item \emph{For every \m{T\in\cH(D)}, the determinant of $T$ on \m{\Good{D}{\cV}} equals the determinant of $T$ on
+\m{\Good{D}{\cV'}}.}
+\item \emph{Let $p$ be an eigensystem. If \m{\Good{D}{\cV'}\cap\Prin{D}{\cV'}[p]=0}, then
+\m{\Good{D}{\cV}\cap\Prin{D}{\cV}[p]=0}.}
+\end{enumerate}
+\emph{Moreover, in Setting~\ref{s:data}, for every integer $i$ with \m{1\le i\le m(D)}:}
+\[\rowDim{D}=\dim_{\mathbb C}\Good{D}{\spaceW{D}{i}} .\]}
+\leanline{\lean{detheckeOnGoodeq}\sep \lean{goodFormsinfeigenParteqbot}\sep \lean{finrankrowseqfinrankgoodForms}}
+
+\statement{arith}{\phantomsection\label{t:3}\textbf{Theorem 3} (rigid labels).\enspace
+\emph{In Setting~\ref{s:data}: \Rigid{D}{\spaceY{D}{0}}; and for every integer $i$ with \m{1\le i\le m(D)},
+\Rigid{D}{\spaceW{D}{i}}.}}
+\leanline{\lean{hasRigidLabelsspaceYzero}\sep \lean{hasRigidLabelsspaceW}}
+
+The space \m{\spaceY{D}{0}} carries the rows, \m{\Row{D}=\Good{D}{\spaceY{D}{0}}}; it has $m(D)/2$ negative signs at
+each infinite place. The space \m{\spaceW{D}{i}} is the source of the $i$-th single theta lift and has \m{m(D)-i}
+negative signs. Both have rank~$r(D)$ and the same finite adelic group, so Theorems 1 and~2 compare them. In
+Chapter~VII the equality of determinants turns the volume of the chain of $m(D)$ lifts on the rows into the product
+of the volumes of the single lifts, and the equality of dimensions lets one count rows on~\m{\spaceW{D}{i}}.
+
+\sect{The setting}{s:setting}
+\begin{conventions}\phantomsection\label{c:conventions}
+The natural numbers are \m{0,1,2,\dots}; differences \m{n-n'} of natural numbers that the formal text truncates at
+zero are marked as such. The parameters \m{P=(N_0,d)} of the proof are fixed: $N_0$ is a positive multiple
+of~$18480$ and $d$ a prime with \m{d\equiv N_0/2-1} modulo~$N_0$. For a number field~$E$ with ring of integers
+$O_E$: a \emph{prime} of~$E$ is a non-zero prime ideal, also called a finite place; $\F_v$ is the residue field
+of a prime~$v$, $E_v$ the completion and $O_v$ its ring of integers; $\mathbb A_E$ and $\mathbb A_{E,f}$ are the
+adeles and the finite adeles, and $\hat O_E$ is the ring of integral finite adeles. For a CM field $E$,
+\m{z\mapsto\bar z} is complex conjugation, on $E$, on its adeles and on its primes; a prime $v$ is \emph{split} if
+\m{\bar v\ne v}. For a finite set $I$ and a commutative ring, \m{\GL_I} of that ring is the group of the invertible matrices
+over it with rows and columns indexed by~$I$, and $g^*$ is the conjugate transpose of a matrix $g$ over a ring
+with conjugation. \m{\mathbb C[G]} is the complex group algebra of a group~$G$, and a complex representation
+of~$G$ is also a module over it. A \emph{Boolean} is one of the two truth values. Labels, primitive labels and
+the idempotents \m{e_{I,c}} and \m{e^{\otimes}_{I,\mathbf c}} of \m{\mathbb C[\GL_I(\F)]} and of the group algebra of
+a product, for a finite field~$\F$, are those of the note \emph{Primitive labels}, and its sets of good
+tuples are written as there.
+\end{conventions}
+
+\begin{setting}[the data]\label{s:data}
+$D$ is admissible data for the parameters~$P$, in the sense of Chapter~III of the handout (Setting~1 of its
+overview). The following objects attached to $D$ are defined in Chapter~III and in the unit on the seesaw; they
+are recalled here and used throughout.
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=2pt]
+\item The CM field \m{E=E(D)}, abelian over~$\mathbb Q$; it contains a primitive root of unity of order~$5040$ and
+has an even number of infinite places. The letter $\tau$ denotes an infinite place of~$E(D)$.
+\item Natural numbers $m(D)$, a power of~$2$, and $r(D)$, a power of~$3$ greater than~$1$, with
+\m{\sqrt{x(D)}\le m(D)\le2\sqrt{x(D)}} and \m{x(D)^5\le r(D)\le3\,x(D)^5}, where the first scale $x(D)$ of the data is
+larger than every absolute constant that occurs in this note; the exponent $\mu(D)$ of the data, with
+\m{m(D)^{22}=2^{\mu(D)}}; the numbers
+\m{k(D)=r(D)+1-m(D)\ge1}, \m{t(D)=5r(D)}, \m{\varrho(D)=m(D)/2-1}, \m{h_2(D)=r(D)^8} and \m{h(D)=2r(D)^8}; the ranks
+\m{n_i(D)=k(D)+i\,(t(D)+1)} for \m{i\ge0}; and the integer \m{M_\omega(D)=(N_0d)^{\mu(D)+6}}.
+\item For every natural number $i$ and every $\tau$, a natural number \m{w_{D,i}(\tau)} (a weight) with
+\m{w_{D,i}(\tau)\ge h(D)}, and \m{w_{D,i'}(\tau)-w_{D,i}(\tau)=(i'-i)\,h(D)}.
+\item The level, a prime number $N(D)$, with an integer $\pi_N(D)$ of~$E(D)$ such that
+\m{\pi_N(D)\,\overline{\pi_N(D)}=N(D)}.
+\item Two distinct primes $g_0(D)$, $g_1(D)$ and an integer $\pi_g(D)$ of \m{K=\mathbb Q(\sqrt{-d})} with
+\m{\pi_g(D)\overline{\pi_g(D)}=g_0(D)g_1(D)}; all three are components of~$D$. The \emph{chosen primes} are the primes of $E(D)$ that divide~$\overline{\pi_g(D)}$; their set is
+\m{\Ch(D)}. No chosen prime is the conjugate of a chosen prime; in particular each is split. A chosen prime $v$
+divides exactly one of $g_0(D)$, $g_1(D)$, and $\F_v$ has $g_0(D)$ or $g_1(D)$ elements accordingly. The number
+\m{\#\F_v-1} is divisible by~$9$ and by \m{M_\omega(D)^2}, and \m{M_\omega(D)+1<\#\F_v}.
+\item The \emph{row index set} $I(D)$, a finite set with $r(D)$ elements, with a bijection $\num_D$ from $I(D)$
+to \m{\{0,\dots,r(D)-1\}}; and the finite group
+\[\sG(D)=\prod_{v\in\Ch(D)}\GL_{I(D)}(\F_v).\]
+\item For every prime $v$ of $E(D)$, a multiplicative character $\omega_{D,v}$ of~$\F_v$: of order
+\m{M_\omega(D)} if $v$ is chosen, trivial otherwise.
+\item The \emph{row parameter}: for an infinite place $\tau$ and a natural number~$n$, the integer
+\m{\varkappa_D(\tau,n)=\lfloor k(D)/2\rfloor-1-n} if \m{n+1<k(D)}, and
+\m{\varkappa_D(\tau,n)=h_2(D)-w_{D,\,n+2-k(D)}(\tau)} otherwise.
+\item \emph{Tame characters.} A tame character $\vartheta$ of~$D$ is a continuous character of the norm-one ideles
+of~$E(D)$, trivial on the norm-one elements of~$E(D)$ and at the infinite places, together with a finite set $Q(\vartheta)$ of primes
+of~$E(D)$ and a family \m{(\psi_{\vartheta,v})_v} of multiplicative characters of the residue fields, its tame
+part, such that \m{\psi_{\vartheta,v}=1} for \m{v\notin Q(\vartheta)}, no conjugate of a member of $Q(\vartheta)$
+lies in $Q(\vartheta)$, and the product of the norms of the members of $Q(\vartheta)$ is prime to
+\m{g_0(D)g_1(D)N(D)}. The trivial character, with \m{Q=\emptyset}, is one.
+\end{enumerate}
+\end{setting}
+
+\subhead{Hermitian spaces with a point, and forms.} These notions belong to the background library; they are
+recalled as the library defines them. Let $E$ be a CM field, $I$ a finite set, and \m{\fs\colon I\to\{1,-1\}} a
+family of signs. Put
+\[
+G_\infty(\fs)=\prod_\tau\mathrm U(\fs),\qquad G_f(I)=\{g\in\GL_I(\mathbb A_{E,f}):g^*g=1\},\qquad K_0(I)=G_f(I)\cap\GL_I(\hat O_E),
+\]
+the product over the infinite places of~$E$, where \m{\mathrm U(\fs)} is the group of the complex matrices $g$
+with \m{g^*\,\mathrm{diag}(\fs)\,g=\mathrm{diag}(\fs)}. For a prime $v$ and \m{g\in G_f(I)}, \m{g_v\in\GL_I(E_v)} is
+the component at~$v$; an element of $K_0(I)$ has a reduction in \m{\GL_I(\F_v)}. For a split prime $v$ and
+\m{k\in\GL_I(E_v)}, the element \m{k^{(v)}\in G_f(I)} has component $k$ at~$v$ and $1$ at the primes other than
+$v$ and~$\bar v$.
+
+A \emph{space over $E$ with index set $I$ and signs~$\fs$} is a pair \m{\cV=(J,\mathbf x)} of a matrix $J$
+over~$E$ and an element \m{\mathbf x\in\GL_I(\mathbb A_E)}, both indexed by~$I$, such that
+\m{\mathbf x^*J\mathbf x} is \m{\mathrm{diag}(\fs)} at every infinite place and~$1$ at the finite places. So $J$
+is a hermitian form whose signature at each infinite place is that of~$\fs$, $\mathbf x$ identifies its unitary
+group over the adeles with \m{G_\infty(\fs)\times G_f(I)}, and the rational points become the discrete subgroup
+\m{\Gamma_\cV=\mathbf x^{-1}\mathrm U(J)(E)\,\mathbf x}. The space is \emph{standard} if all signs are~$1$ and
+\m{\mathbf x=1}. The \emph{diagonal space} of the signs $\fs$ has \m{J=\mathrm{diag}(\fs)} and a diagonal
+point, with entry~$1$ where the sign is~$1$ and, where it is~$-1$, a fixed idele that is $1$ at the infinite
+places and whose product with its conjugate is~$-1$ at the finite places.
+
+Let \m{\epsilon\colon G_\infty(\fs)\to\mathbb C} be a function (a \emph{type}). A \emph{form of type $\epsilon$
+on~$\cV$} is a bounded continuous function \m{F\colon G_\infty(\fs)\times G_f(I)\to\mathbb C} that is invariant
+under left translation by~$\Gamma_\cV$ and under right translation by an open subgroup of~$G_f(I)$, and that
+satisfies \m{\int_{G_\infty(\fs)}\epsilon(u)\,F(g\cdot(u,1))\,du=F(g)} for all~$g$ if $\epsilon$ is integrable. The
+group $G_f(I)$ acts on these forms by right translation, \m{(R(g)F)(g')=F(g'g)}, and they carry the Petersson
+inner product \m{\langle F,F'\rangle=\int_{\Gamma_\cV\backslash G}\overline{F}F'}, for which $R$ is unitary. Note
+that $G_f(I)$ does not depend on the space: it acts on the forms of every space with index set~$I$.
+
+For an integer vector \m{l=(l_\iota)_{\iota\in I}}, the library defines a function $\epsilon_l$ on
+\m{\mathrm U(\fs)}: the formal degree times the complex conjugate of the canonical matrix coefficient of the
+discrete series with Harish-Chandra parameter~$l/2$. The vector $l$ \emph{has gap $H$ for~$\fs$}, for a real
+number~$H$, if its entries are distinct, every \m{l_\iota+\#I-1} is even, and \m{|l_\iota-l_{\iota'}|\ge2H}
+whenever \m{\fs_\iota\ne\fs_{\iota'}}. A function $\epsilon$ on \m{G_\infty(\fs)} is a \emph{cusp kernel of
+order~$B$} if \m{\|u\|^{n}\epsilon(u)} is integrable for \m{n\le B+1}, \m{\|u\|^{B}\epsilon(u)} is bounded, and
+\m{\alpha*\epsilon=\epsilon} for some continuous function $\alpha$ of compact support; here \m{\|u\|} is the
+product of the operator norms of the components of~$u$.
+
+In Setting~\ref{s:data}, for signs $\fs$ on $I(D)$, the \emph{type of the data} is the function on
+\m{G_\infty(\fs)}
+\[
+\epsilon_{D,\fs}(u)=\prod_\tau\epsilon_{l_D(\tau)}(u_\tau),\qquad l_D(\tau)=\bigl(2\,\varkappa_D(\tau,\num_D(\iota))\bigr)_{\iota\in I(D)} .
+\]
+The \emph{principal congruence subgroup at the chosen primes}, \m{K_g(D)\subset K_0(I(D))}, consists of the
+elements whose reduction at every chosen prime is~$1$. For \m{\gamma\in\sG(D)}, \m{\tilde\gamma\in K_0(I(D))} is
+a lift that the library chooses: its reductions at the chosen primes are the components of~$\gamma$, and its
+components at the primes that are neither chosen nor conjugate to a chosen prime are~$1$.
+
+\begin{setting}[two spaces]\label{s:two}
+In Setting~\ref{s:data}: $\fs$ and $\fs'$ are families of signs on~$I(D)$, $\cV$ is a space over $E(D)$ with
+index set $I(D)$ and signs~$\fs$, and $\cV'$ one with signs~$\fs'$; and for every infinite place~$\tau$ the
+vector $l_D(\tau)$ has gap $h(D)$ for~$\fs$ and has gap $h(D)$ for~$\fs'$.
+\end{setting}
+
+\subhead{The spaces.}
+\begin{definition}[index sets and their bijections]\label{d:index}
+\textup{(a)} A \emph{shape} is a triple \m{\Sigma=(\varrho,\mathcal X,o)} of a natural number, a finite set and
+an element of that set; its index set is the disjoint union
+\m{\{e_0,\dots,e_{\varrho-1}\}\sqcup\mathcal X\sqcup\{z\}\sqcup\{e^*_0,\dots,e^*_{\varrho-1}\}}. The bijection
+\m{\besselIx{\Sigma}} from \m{\mathcal X\sqcup\{0,\dots,2\varrho\}} to this index set is the identity on
+$\mathcal X$ and sends $n$ to $e_n$ for \m{n<\varrho}, $\varrho$ to~$z$, and $n$ to \m{e^*_{2\varrho-n}} for
+\m{n>\varrho}.
+
+\textup{(b)} In Setting~\ref{s:data}, let $i$ be a natural number. $\mathcal X_i(D)$ is a set with $n_i(D)$
+elements, one of them marked as the last, and \m{I_i(D)=I(D)\sqcup(\{1,\dots,i\}\times\{0,\dots,t(D)-1\})}; the row
+index set $I(D)=I_0(D)$ is the index set of the shape \m{\Sigma(D)=(\varrho(D),\mathcal X_0(D),\text{last})}.
+Suppose \m{i<m(D)}. Then \m{\indexY{D}{i}{i<m(D)}} is a bijection from
+\m{\mathcal X_i(D)\sqcup\{0,\dots,2\varrho(D)-i\}} to~$I_i(D)$: for \m{i=0} it is \m{\besselIx{\Sigma(D)}}, and for
+\m{i\ge1} it is a bijection that the formal text chooses, the two sets having the same number of elements.
+\end{definition}
+\leanline{\lean{besselIndexEquiv}\sep \lean{indexEquivY}}
+
+\begin{lemma}\label{l:m}
+In Setting~\ref{s:data}: \m{m(D)=2\varrho(D)+2}; and
+\m{e^{-4}\sqrt{x(D)}\le\varrho(D)\le e^{2}\sqrt{x(D)}}.
+\end{lemma}
+\begin{proof}
+$m(D)$ is even and at least~$2$, and \m{\varrho(D)=m(D)/2-1}. As \m{\sqrt{x(D)}\le m(D)\le2\sqrt{x(D)}} and $x(D)$ is large,
+\m{m(D)/4\le\varrho(D)\le m(D)}, which gives the bounds.
+\end{proof}
+\leanline{\lean{meqtwomulvarrhoaddtwo}\sep the bounds are an instance without a name, in the form in which
+the formal text compares magnitudes of the data}
+
+\begin{definition}[ideles]\label{d:ideles}
+In Setting~\ref{s:data}:
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item \m{\chosenIdele{D}} is a finite idele of $E(D)$, chosen by the library, that is integral, has component~$1$
+at every prime not dividing~$\overline{\pi_g(D)}$, and generates the ideal \m{\overline{\pi_g(D)}\hat O_E}.
+\item \m{\ideleA{D}=\alpha(D)\big/\overline{\chosenIdele{D}}}, where $\alpha(D)$ is the finite idele of the Weil
+data of $E(D)$ (Chapter~III).
+\item \m{\piIdele{D}} is the principal finite idele of the element $\pi_N(D)$ of~$E(D)$.
+\item For a natural number~$i$, \m{\latticeScale{D}{i}=\bigl(\ideleA{D}\big/\overline{\ideleA{D}}\bigr)^{\lfloor(m(D)-i+1)/2\rfloor}},
+with \m{m(D)-i} truncated at zero: a finite idele of norm one, equal to~$1$ for \m{i\ge m(D)}.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{chosenIdele}\sep \lean{ideleA}\sep \lean{piIdele}\sep \lean{latticeScale}}
+
+\begin{lemma}\label{l:pi}
+In Setting~\ref{s:data}: \m{N(D)=\piIdele{D}\cdot\overline{\piIdele{D}}} as finite ideles; for every prime $v$
+of~$E(D)$ the component of \m{\piIdele{D}} at $v$ is a uniformizer if $v$ divides $\pi_N(D)$ and a unit otherwise;
+and if $v$ divides $\pi_N(D)$, then $\bar v$ does not.
+\end{lemma}
+\begin{proof}
+The first assertion is \m{\pi_N(D)\overline{\pi_N(D)}=N(D)}. The component of \m{\piIdele{D}} at $v$ is the
+image of~$\pi_N(D)$, so the second and the third assertion are Input~8(e). (They hold because the prime $N(D)$ is
+unramified in~$E(D)$: if $v^2$ or $v\bar v$ divided $\pi_N(D)$, then $v^2$ would divide~$N(D)$.)
+\end{proof}
+\leanline{\lean{piIdelespec}}
+
+Two matrices of the background are needed to state the next lemma. Let $\beta$ be a bijection from
+\m{\mathcal X\sqcup\{0,\dots,s-1\}} to a finite set~$I'$, where $\mathcal X$ is a finite set with a marked last
+element and $s$ a natural number. The \emph{graded Gram matrix}
+\m{\mathrm{Gr}(\beta,N)}, for $N$ in a commutative ring, is the matrix indexed by~$I'$ that is the identity on
+\m{\beta(\mathcal X)}, pairs \m{\beta(n)} with \m{\beta(n')} to~$1$ if \m{n+n'=s-1} and \m{n\ne n'}, to $-N$ if
+\m{n=n'} and \m{2n=s-1}, and has all other entries~$0$. The \emph{graded lattice basis}
+\m{\mathrm{Lb}(\beta,a,\pi,u)}, for units $a$, $\pi$ and an element $u$ of norm one of a ring with conjugation, is
+the matrix indexed by~$I'$ that for even $s$ is diagonal, with entry $1$ on \m{\beta(\mathcal X)}, \m{u\,a^{-1}} at
+\m{\beta(n)} for \m{2n<s} and \m{u\,\bar a} for \m{2n\ge s}; for odd $s$ it is diagonal with entry $1$ on
+\m{\beta(\mathcal X)} except \m{\bar\pi^{-1}} at the marked element, and $u$ on the \m{\beta(n)}, plus the single
+entry \m{u\,(\pi\bar\pi)^{-1}} in the row of the middle index \m{\beta((s-1)/2)} and the column of the marked
+element. The signs \m{\fs^{Y}_{D,i}} on $I_i(D)$ are $-1$ at the \m{\iota\in I(D)} for which
+\m{\num_D(\iota)-k(D)-i} is non-negative and even, and~$1$ elsewhere; the signs \m{\fs^{W}_{D,i}} on $I(D)$ are
+$-1$ at the $\iota$ with \m{\num_D(\iota)\ge k(D)+i-1} (truncated), and $1$ elsewhere.
+
+\begin{lemma}[existence of the spaces of the chain]\label{l:Y}
+In Setting~\ref{s:data}, let $i$ be a natural number. There is a space $\cV$ over $E(D)$ with index set
+$I_i(D)$ and signs \m{\fs^{Y}_{D,i}} such that:
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item if \m{m(D)\le i}, then $\cV$ is standard;
+\item if \m{i<m(D)}, then the matrix of $\cV$ is \m{\mathrm{Gr}(\indexY{D}{i}{i<m(D)},N(D))}, and there is
+\m{k\in\GL_{I_i(D)}(\hat O_E)} whose reduction at every chosen prime is~$1$ such that the finite part of the point
+of $\cV$ is \m{\mathrm{Lb}\bigl(\indexY{D}{i}{i<m(D)},\ideleA{D},\piIdele{D},\latticeScale{D}{i}\bigr)\cdot k}.
+\end{enumerate}
+\end{lemma}
+\leanline{\lean{existsspaceY}}
+
+The proof is given in §\ref{s:spaces}.
+
+\begin{definition}[the two families of spaces]\label{d:YW}
+In Setting~\ref{s:data}, let $i$ be a natural number. \m{\spaceY{D}{i}} is a space as in Lemma~\ref{l:Y}, chosen
+once and for all. \m{\spaceW{D}{i}} is the diagonal space over $E(D)$ of the signs \m{\fs^{W}_{D,i}} on~$I(D)$.
+\end{definition}
+\leanline{\lean{spaceY}\sep \lean{spaceW}}
+
+So \m{\spaceY{D}{i}} has rank \m{r(D)+i\,t(D)} and \m{\lfloor(m(D)-i)/2\rfloor} negative signs (truncated), and
+\m{\spaceW{D}{i}} has rank $r(D)$ and \m{m(D)-i} negative signs (truncated), at every infinite place.
+
+\begin{lemma}\label{l:std}
+In Setting~\ref{s:data}, the spaces \m{\spaceY{D}{m(D)}} and \m{\spaceW{D}{m(D)}} are standard.
+\end{lemma}
+\begin{proof}
+The first is Lemma~\ref{l:Y}(a). For the second, \m{k(D)+m(D)-1=r(D)}, so no \m{\iota\in I(D)} has
+\m{\num_D(\iota)\ge k(D)+m(D)-1}: all signs are~$1$, and the diagonal space of these signs is standard.
+\end{proof}
+\leanline{\lean{isStdspaceY}\sep for \m{\spaceW{D}{m(D)}}, an instance without a name}
+
+\subhead{Forms of principal level, good forms, rows.}
+\begin{definition}[principal forms and the action of $\sG(D)$]\label{d:prin}
+In Setting~\ref{s:data}, let $\fs$ be a family of signs on $I(D)$ and $\cV$ a space over $E(D)$ with index set
+$I(D)$ and signs~$\fs$.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item \m{\Prin{D}{\cV}} is the space of the forms of type \m{\epsilon_{D,\fs}} on~$\cV$ that are fixed by
+\m{R(k)} for all \m{k\in K_g(D)}.
+\item \m{\prep{D}{\cV}} is the representation of $\sG(D)$ on \m{\Prin{D}{\cV}} given by
+\m{\prep{D}{\cV}(\gamma)=R(\tilde\gamma)}.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{principalForms}\sep \lean{principalRep}}
+
+\begin{definition}[the good idempotent, good forms, rows]\label{d:good}
+In Setting~\ref{s:data}, the \emph{good idempotent} is the element of \m{\mathbb C[\sG(D)]}
+\[
+e_0(D)=\sum_{\mathbf c}e^{\otimes}_{I(D),\mathbf c},
+\]
+the sum over the families \m{\mathbf c=(c_v)_{v\in\Ch(D)}} of monic polynomials \m{c_v\in\F_v[X]} of degree~$r(D)$ such
+that, for each of the two primes $g_0(D)$ and~$g_1(D)$, the family of the $c_v$ with $v$ above that prime belongs to
+\m{\mathrm{Good}_{M_\omega(D),r(D)}}. (This definition belongs to the unit on the seesaw.) Let $\fs$ be a family
+of signs on $I(D)$ and $\cV$ a space over $E(D)$ with index set $I(D)$ and signs~$\fs$. Then
+\[
+\Good{D}{\cV}=\prep{D}{\cV}\bigl(e_0(D)\bigr)\,\Prin{D}{\cV},
+\]
+the space of \emph{good forms} on~$\cV$. The space of \emph{rows} is \m{\Row{D}=\Good{D}{\spaceY{D}{0}}}, and
+\m{\rowDim{D}} is its complex dimension.
+\end{definition}
+\leanline{\lean{goodForms}\sep \lean{rows}\sep \lean{rowDim}\sep the good idempotent: \lean{ezero}}
+
+So a good family has, above each of $g_0(D)$ and~$g_1(D)$, a label without a root of order dividing $M_\omega(D)$ at
+every chosen prime and a primitive label at one chosen prime at least. The rows of the overview of this handout
+are \m{\Row{D}}.
+
+\subhead{Hecke operators and labels (definitions of the unit on fit twists).}
+In Setting~\ref{s:data}, $\cH(D)$ is the algebra of the families \m{T=(T_\cV)}, indexed by all spaces $\cV$ over
+$E(D)$ with index set $I(D)$ and any signs, of endomorphisms $T_\cV$ of \m{\Prin{D}{\cV}} for which there is one
+element \m{\sum_gc_g\,g} of the group algebra of the subgroup of the \m{g\in G_f(I(D))} with \m{g_v=1} at every
+chosen prime~$v$, such that \m{T_\cV=\sum_gc_g\,R(g)} on \m{\Prin{D}{\cV}} for every~$\cV$. Every $T_\cV$
+commutes with \m{\prep{D}{\cV}}, so it preserves \m{\Good{D}{\cV}}; the trace and the determinant of $T$ on
+\m{\Good{D}{\cV}} are those of this restriction. For a prime $v$ of~$E(D)$ that is split, with neither $v$ nor
+$\bar v$ chosen, and a natural number~$n$, the Hecke operator \m{\mathbb T^{v,n}\in\cH(D)} is the operator of the double
+coset of \m{\mathrm{diag}(\varpi,\dots,\varpi,1,\dots,1)} with $n$ entries~$\varpi$, a uniformizer, in
+\m{\GL_{I(D)}(E_v)} acting through \m{k\mapsto k^{(v)}} (it is zero if $n$ exceeds the rank); for the other pairs
+\m{(v,n)} put \m{\mathbb T^{v,n}=0}. An
+\emph{eigensystem} is a complex function $p$ on the pairs \m{(v,n)} of a prime of $E(D)$ and a natural number,
+and
+\[
+\Prin{D}{\cV}[p]=\{y\in\Prin{D}{\cV}:\ \mathbb T^{v,n}_\cV\,y=p(v,n)\,y\ \text{for all }(v,n)\}.
+\]
+For an eigensystem $p$ and a chosen prime~$v$, \m{\Occ(D,\cV,p,v)} is the set of the polynomials \m{c\in\F_v[X]}
+that are primitive labels of degree~$r(D)$ and for which \m{e_{I(D),c}}, acting through \m{\prep{D}{\cV}}
+restricted to the factor \m{\GL_{I(D)}(\F_v)} of~$\sG(D)$, does not kill \m{\Prin{D}{\cV}[p]}.
+
+\begin{definition}[rigid labels]\label{d:rigid}
+In Setting~\ref{s:data}, let $\fs$ be a family of signs on $I(D)$ and $\cV$ a space over $E(D)$ with index set
+$I(D)$ and signs~$\fs$. Then \Rigid{D}{\cV} if for every eigensystem $p$ and every chosen prime~$v$ the set
+\m{\Occ(D,\cV,p,v)} has at most one element.
+\end{definition}
+\leanline{\lean{HasRigidLabels}\sep the notions it rests on: \lean{heckeAlgebra}\sep \lean{heckeOperator}\sep
+\lean{eigenPart}\sep \lean{occurringLabels}\sep \lean{heckeOnGood}}
+
+\sect{Inputs}{s:inputs}
+\statement{inksoft}{\textbf{Inputs from the background library.} In Inputs 1 to~3, $E$ is a CM field that
+contains a primitive root of unity of order~$5040$, $I$ is a non-empty finite set, and spaces, forms and types are
+those recalled in §\ref{s:setting}.
+
+\vspace{4pt}\phantomsection\label{i:1}\textbf{Input 1} (comparison of traces on unitary groups that differ at the
+real places).\enspace \emph{Suppose that $E$ has an even number of infinite places. Let $K$ be an open subgroup of
+$K_0(I)$ and \m{g\in G_f(I)} an element such that every element of the coset $gK$ has, at some prime $v$ of~$E$, a
+component in \m{\GL_I(E_v)} whose characteristic polynomial is irreducible. Let $B$ be a natural number with
+\m{B\ge16\,[E:\mathbb Q]\,(\#I+1)^3}, let \m{l=(l(\tau))_\tau} be a family of integer vectors indexed by~$I$, one for
+each infinite place, and let $H$ be a real number with \m{H\ge500\,(\#I)^3+10\,(\#I)^5}. Then there is a complex
+number $t$ with the following property. For every family of signs $\fs$ on~$I$, every space $\cV$ over $E$ with
+index set $I$ and signs~$\fs$, and every finite orthonormal basis \m{(b_n)_n} of the space of the forms of type
+\m{\epsilon=\prod_\tau\epsilon_{l(\tau)}} on $\cV$ that are fixed by~$K$: if $\epsilon$ is a cusp kernel of
+order~$B$ and every $l(\tau)$ has gap $H$ for~$\fs$, then \m{\sum_n\langle b_n,R(g)\,b_n\rangle=t}.}
+
+\vspace{3pt}\phantomsection\label{i:2}\textbf{Input 2} (cusp kernels; finiteness).\enspace
+\emph{\textup{(a)} Let $\fs$ be signs on~$I$, $B$ a natural number and \m{(l(\tau))_\tau} integer vectors such that
+every $l(\tau)$ has gap \m{500\,(\#I)^3+B} for~$\fs$. Then \m{\prod_\tau\epsilon_{l(\tau)}} is a cusp kernel of
+order~$B$. \textup{(b)} If $\epsilon$ is a cusp kernel of some order on \m{G_\infty(\fs)}, $\cV$ a space with signs
+$\fs$ and $K$ an open subgroup of~$G_f(I)$, then the space of the forms of type $\epsilon$ on $\cV$ fixed by $K$
+has finite dimension.}
+
+}
+
+\statement{inksoft}{\textbf{Inputs from the background library, continued.}
+
+\vspace{4pt}\phantomsection\label{i:3}\textbf{Input 3} (frames and lattices).\enspace \emph{Let $\beta$ be a
+bijection from \m{\mathcal X\sqcup\{0,\dots,s-1\}} to a finite set~$I'$, as before Lemma~\ref{l:Y}.
+\textup{(a)} Let \m{N>0} be an integer and $\fs$ a family of signs on $I'$ with exactly \m{\lfloor(s+1)/2\rfloor}
+signs~$-1$. Then there is a complex matrix $y$ with \m{y^*\,\mathrm{Gr}(\beta,N)\,y=\mathrm{diag}(\fs)}.
+\textup{(b)} Let $a$, $\pi$ be finite ideles of $E$, $u$ a finite idele of norm one, and $N$ an integer with
+\m{N=\pi\bar\pi}. Then for \m{B=\mathrm{Lb}(\beta,a,\pi,u)} the matrix \m{B^*\,\mathrm{Gr}(\beta,N)\,B} has entries
+in $\hat O_E$ and an inverse with entries in~$\hat O_E$. \textup{(c)} Every hermitian matrix $b$ over $\hat O_E$
+with an inverse over $\hat O_E$ has the form \m{k^*bk=1} for some \m{k\in\GL_{I'}(\hat O_E)}.}
+
+\vspace{3pt}\phantomsection\label{i:4}\textbf{Input 4} (finite general linear groups).\enspace \emph{Let
+\m{(\F_v)_{v}} be a finite family of finite fields and $I$ a finite set. \textup{(a)} For every finite set
+$\mathcal C$ of families \m{\mathbf c=(c_v)_{v}} of polynomials, \m{\sum_{\mathbf c\in\mathcal C}e^{\otimes}_{I,\mathbf c}}
+is an idempotent of the group algebra of \m{\prod_v\GL_I(\F_v)} whose coefficients are constant on conjugacy
+classes. \textup{(b)} Let $\chi$ be a multiplicative character of a finite field~$\F$, \m{x_\chi\in\F^\times} the
+unit that names it, \m{c\in\F[X]} a polynomial of which $x_\chi$ is not a root, and \m{l\in\F^I} a non-zero vector.
+Then \m{\bigl(\sum_h\chi(\det h)^{-1}h\bigr)\cdot e_{I,c}=0}, the sum over the \m{h\in\GL_I(\F)} of the form
+\m{h=1+u\,l^{\mathsf T}} with \m{u\in\F^I}. \textup{(c)} If \m{\rho} is a representation of \m{\prod_v\GL_I(\F_v)},
+\m{y_v\in\mathbb C[\GL_I(\F_v)]} for all~$v$, and for one index $v_0$ the element $y_{v_0}$, acting through the
+factor $v_0$, kills a vector, then \m{\bigotimes_vy_v} kills that vector.
+\textup{(d)} Over an algebraically closed field of characteristic~$0$, two square matrices $S$, $S'$, possibly of
+different sizes, with \m{\mathrm{tr}(S^n)=\mathrm{tr}(S'^n)} for all \m{n\ge0} have the same characteristic
+polynomial.}}
+\leanline{\lean{traceComparison}\sep \lean{isCuspKerneltypeKernel}\sep \lean{finitelevelSpace}\sep
+\lean{existsframegradedGram}\sep \lean{isUnimodulargradedLatticeBasisgram}\sep \lean{existsorthonormal}\sep
+\lean{isCentralProjsumtupleIdem}\sep \lean{reflectionSummullabelIdem}\sep \lean{piTensorElemapplyeqzero}\sep
+\lean{charpolyeqmuloftracepowadd}}
+
+\subhead{On Input 1.} It is the one deep input of this note, and its relation to the literature needs care. The
+library's file names as sources J.-P.~Labesse, \emph{Changement de base CM et séries discrètes} (2011),
+Théorème~5.4 and its proof, and J.~Arthur and L.~Clozel, \emph{Simple algebras, base change, and the advanced theory
+of the trace formula} (1989), Chapter~1, Lemmas 2.4 to~2.6; the catalogue of this handout first classed Input~1 as
+a special case of these. The second reading of this write-up compared the statements and left the identification
+open: Labesse's Théorème~5.1 is an identity of stabilized trace formulas and his Théorème~5.4 gives weak cuspidal
+base change and multiplicity one, with pseudo-coefficients as test functions; the lemmas of Arthur and Clozel are
+simple trace formulas for general linear groups. None of them states the equality of this trace for a fixed coset
+$gK$, for integrable kernels with an explicit gap, and for all spaces at once. What Input~1 uses of the trace
+formula is its simple form: the test function is elliptic at a finite place, because of the irreducible
+characteristic polynomial, and at the real places it is the idempotent kernel of a very regular discrete series
+in place of a pseudo-coefficient; the two sides are compared orbit by orbit, the groups being the same at all
+finite places. The library proves the statement in this form by an argument of its own, with convergence obtained
+by a packing estimate, without truncation and without endoscopy. So Input~1 is a statement of the formal library
+in the direction of known results, not yet a quotation of a published theorem. Input~2(b) is the finiteness of
+spaces of cusp forms in a special case (Harish-Chandra; the catalogue gives A.~Borel's Park City lectures, 8.3
+and~8.4, as the place, at second hand); Input~3(c) is a special case of the classification of unimodular hermitian
+lattices, with R.~Jacobowitz, \emph{Hermitian forms over local fields}, Amer. J. Math. 84 (1962), named by the
+catalogue and the place to be confirmed; Input~4(a) is a weaker consequence of Green's theorems, as in the note
+\emph{Primitive labels}; Inputs 2(a), 3(a), 3(b), 4(b), 4(c), 4(d) are proved in the library without a named
+source.
+
+\statement{inksoft}{\textbf{Inputs from other units of the argument.} In Setting~\ref{s:data} throughout.
+
+\vspace{4pt}\phantomsection\label{i:5}\textbf{Input 5} (the Hecke algebra; unit on fit twists).\enspace \emph{Let
+$\cV$ be a space over $E(D)$ with index set $I(D)$. \textup{(a)} Every $T_\cV$, \m{T\in\cH(D)}, commutes with
+\m{\prep{D}{\cV}(y)} for all \m{y\in\mathbb C[\sG(D)]}; so \m{\prep{D}{\cV}} preserves every \m{\Prin{D}{\cV}[p]}.
+\textup{(b)} If \m{\Prin{D}{\cV}} has finite dimension, it is the sum of the subspaces \m{\Prin{D}{\cV}[p]}, and
+only finitely many of them are non-zero. \textup{(c)} For every eigensystem $p$ and every finite set
+$\mathcal F$ of eigensystems there is \m{\Pi\in\cH(D)} such that, for every space $\cV$ and every
+\m{p'\in\mathcal F\cup\{p\}}, $\Pi_\cV$ is the identity on \m{\Prin{D}{\cV}[p']} if \m{p'=p} and zero on it if
+\m{p'\ne p}.}
+
+\vspace{3pt}\phantomsection\label{i:6}\textbf{Input 6} (at most one primitive label; unit on Galois
+representations).\enspace \emph{Let $\fs$ be signs on $I(D)$ and $\cV$ a space over $E(D)$ with index set $I(D)$
+and signs~$\fs$. Let $I'$ be a non-empty finite set, \m{\nu\colon I(D)\to I'} an injection, and $L$ a linear map
+from \m{\Prin{D}{\cV}} to a space of algebraic modular forms, of some weight, level and level character, on the
+standard space with index set~$I'$. Let $p$ be an eigensystem, \m{(\Upsilon_w)_w} a family of functions
+\m{\mathbb C\to\mathbb C} indexed by the primes of~$E(D)$, $v$ a chosen prime, $n_1$ a natural number,
+\m{\beta\colon I'\to\{0,\dots,n_1\}} a map, \m{\chi_1,\dots,\chi_{n_1}} and $\psi$ multiplicative characters
+of~$\F_v$. Suppose:}
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=1pt]
+\item \emph{$L$ is injective;}
+\item \emph{for every \m{y\in\Prin{D}{\cV}[p]} and every split prime $w$ with neither $w$ nor $\bar w$ chosen,
+$L(y)$ is fixed by the elements of $K_0(I')$ with component~$1$ off $w$ and~$\bar w$, and for every
+\m{X\in\mathbb C} the operator \m{\sum_{n}(-X)^n(\#\F_w)^{n(n-1)/2}\,\mathbb T^{w,n}} sends $L(y)$ to
+\m{\Upsilon_w(X)\,L(y)};}
+\item \emph{\m{\beta^{-1}(0)=\nu(I(D))}, and for every \m{y\in\Prin{D}{\cV}}, every \m{x\in\GL_{I(D)}(\F_v)} and
+every \m{k\in\GL_{I'}(O_v)} whose reduction $\bar k$ is block upper triangular for $\beta$ with block~$0$ equal
+to~$x$:
+\m{R(k^{(v)})\,L(y)=\prod_{n=1}^{n_1}\chi_n(\det\bar k_{nn})\cdot\psi(\det x)\cdot L\bigl(\prep{D}{\cV}(x_{(v)})\,y\bigr)},
+where $\bar k_{nn}$ is the $n$-th diagonal block of~$\bar k$ and \m{x_{(v)}\in\sG(D)} has component $x$ at $v$
+and~$1$ elsewhere;}
+\item \emph{the characters \m{\chi_1,\dots,\chi_{n_1}} are distinct, and \m{\psi^{M_\omega(D)}=1} and
+\m{\chi_n^{M_\omega(D)}=1} for all~$n$.}
+\end{enumerate}
+\emph{Then \m{\Occ(D,\cV,p,v)} has at most one element.}
+
+}
+
+\statement{inksoft}{\textbf{Inputs from other units of the argument, continued.} In Setting~\ref{s:data}
+throughout.
+
+\vspace{4pt}\phantomsection\label{i:7}\textbf{Input 7} (theta lifts; units on the seesaw, on the exchange and on
+the Siegel--Weil formula).\enspace \emph{Write $1$ for the trivial tame character.
+\textup{(a)} For \m{1\le i\le m(D)} there is a linear map $\Lambda_i$, a theta lift, from
+\m{\Prin{D}{\spaceW{D}{i}}} to the algebraic forms on the standard space with index set
+\m{I(D)\sqcup\{0,\dots,t(D)-1\}} that have the weight, level and level character of the pair \m{\auxPair{D}{1}{i}}.
+It is injective; it satisfies Input~6\textup{(ii)} for every eigensystem~$p$, with functions $\Upsilon_w$ that depend
+on $p$ only; and \m{\Lambda_i(\prep{D}{\spaceW{D}{i}}(\gamma)\,y)=\rho_i(\gamma)\,\Lambda_i(y)} for
+\m{\gamma\in\sG(D)}, where $\rho_i$ is the action of $\sG(D)$ on vectors of that level described in
+Lemma~\ref{l:type}. \textup{(b)} There is a linear map $\Lambda_{\mathrm{ch}}$, the composite of the $m(D)$ theta lifts for the
+trivial twist, from \m{\Prin{D}{\spaceY{D}{0}}} to algebraic forms on the standard space \m{\spaceY{D}{m(D)}}. It is
+injective; it satisfies Input~6\textup{(ii)} for every~$p$, with some functions~$\Upsilon_w$; and for every
+\m{k\in K_0(I_{m(D)}(D))} whose reduction $\bar k_v$ at every chosen prime $v$ is block upper triangular for the blocks
+\m{I(D)}, \m{\{1\}\times\{0,\dots,t(D)-1\}}, \dots, \m{\{m(D)\}\times\{0,\dots,t(D)-1\}} of $I_{m(D)}(D)$, with block~$0$ equal
+to~$\gamma_v$,
+\m{R(k)\,\Lambda_{\mathrm{ch}}(y)=\prod_{v\in\Ch(D)}\prod_{n=1}^{m(D)}\omega_{D,v}^{\,n}(\det\bar k_{v,nn})\cdot\Lambda_{\mathrm{ch}}\bigl(\prep{D}{\spaceY{D}{0}}(\gamma)\,y\bigr)}.
+\textup{(c)} Let $O$ be an auxiliary pair, $\pi$ a representation of $G_f(I')$, $y$ a vector of the level and
+level character of~$O$, and \m{k\in K_0(I')} with reductions $\bar k_w$ at the places $w$ of~$O$. Suppose that
+at each chosen place $w$ of $O$ the columns of $\bar k_w$ indexed by the image of the embedding of~$O$ vanish
+outside the rows of that image, where they form a matrix~$s_w$, and that at each twist place the same holds for
+the transpose. Then \m{\pi(k)\,y=\prod_w\psi_{O,w}(\det s_w)^{-1}\cdot\rho_O\bigl((s_w)_{w\ \mathrm{chosen}}\bigr)\,y},
+with $\psi_{O}$ the tame part of the character of~$O$ and $\rho_O$ as in Lemma~\ref{l:type}.}
+
+\vspace{3pt}\phantomsection\label{i:8}\textbf{Input 8} (the data; Chapter III and the unit on the exchange).\enspace
+\emph{\textup{(a)} For every infinite place~$\tau$, the vector $l_D(\tau)$ has gap $h(D)$ for the signs
+\m{\fs^{Y}_{D,0}}. \textup{(b)} If \m{m(D)\le i}, all signs \m{\fs^{Y}_{D,i}} are~$1$; if \m{i<m(D)}, exactly
+\m{\lfloor(m(D)-i)/2\rfloor} of them are~$-1$. \textup{(c)} \m{500\,r(D)^3+10\,r(D)^5\le h(D)}, \m{500\,r(D)^3\le h_2(D)}
+and \m{16\,[E(D):\mathbb Q]\,(r(D)+1)^3\le h_2(D)}. \textup{(d)} For a chosen prime $v$ and an
+integer $n$ with \m{0<|n|\le8m(D)}: \m{\omega_{D,v}^{\,n}\ne1}. \textup{(e)} The set of the primes dividing
+$\pi_N(D)$ contains no conjugate of a member, and $\pi_N(D)$ has valuation~$1$ at each of them.}}
+\leanline{\lean{commuteprep}\sep \lean{iSupeigenPart}\sep \lean{finiteeigenPart}\sep \lean{existsheckeproj}\sep
+\lean{occurringLabelssubsingleton}\sep \lean{auxLift}\sep \lean{auxLiftinjective}\sep \lean{liftsauxLift}\sep
+\lean{auxLiftprincipalRep}\sep \lean{iotaAtLevel}\sep \lean{iotaAtLevelinjective}\sep
+\lean{existsisSphericalWithiota}\sep \lean{algFormRepiota}\sep \lean{smulchosenGLRepeq}\sep
+\lean{hasGapgridParam}\sep \lean{cardneggridSigns}\sep \lean{omegazpowneone}}
+
+Input~6 is the theorem of the note \emph{At most one primitive label for a Hecke eigensystem}, where it is
+proved from two results on Galois representations. Further, the theorem on the cubic twist of the note \emph{Primitive labels}, the
+cubic twist, is used in §\ref{s:hecke}; it belongs to this unit.
+
+\sect{The spaces and their forms}{s:spaces}
+\begin{proof}[Proof of Lemma~\ref{l:Y}]
+If \m{m(D)\le i}, the signs \m{\fs^{Y}_{D,i}} are all~$1$ by Input~8(b), and the diagonal space of these signs is
+standard. Let \m{i<m(D)}, and put \m{\beta=\indexY{D}{i}{i<m(D)}}, \m{J=\mathrm{Gr}(\beta,N(D))} and
+\m{s=2\varrho(D)+1-i=m(D)-1-i}, the length of the string. By Input~8(b) the signs have
+\m{\lfloor(s+1)/2\rfloor} entries~$-1$, so by Input~3(a) there is, for every infinite place~$\tau$, a complex
+matrix $y_\tau$ with \m{y_\tau^*\,\tau(J)\,y_\tau=\mathrm{diag}(\fs^{Y}_{D,i})}; it is invertible. Let
+\m{B=\mathrm{Lb}(\beta,\ideleA{D},\piIdele{D},\latticeScale{D}{i})}. By Lemma~\ref{l:pi} and Input~3(b) the matrix
+\m{B^*JB} is hermitian with entries and inverse over~$\hat O_E$, so by Input~3(c) there is
+\m{k_1\in\GL_{I_i(D)}(\hat O_E)} with \m{(Bk_1)^*J(Bk_1)=1}. Let \m{k_2\in K_0(I_i(D))} be the library's lift of the
+family of the inverses of the reductions of $k_1$ at the chosen primes, and \m{k=k_1k_2}. Then $k$ has
+reduction~$1$ at every chosen prime, and \m{(Bk)^*J(Bk)=k_2^*k_2=1}. The pair of $J$ and the adelic matrix with
+components $y_\tau$ and finite part $Bk$ is the space required.
+\end{proof}
+
+\begin{lemma}[the weights are far from the row parameter]\label{l:gap}
+In Setting~\ref{s:data}, let $i$ and $n$ be natural numbers and $\tau$ an infinite place of~$E(D)$. Then
+\[
+\varkappa_D(\tau,n)+w_{D,i}(\tau)\ge h_2(D)\ \ \text{if }n<k(D)+i-1,\qquad
+\varkappa_D(\tau,n)+w_{D,i}(\tau)\le-h_2(D)\ \ \text{otherwise.}
+\]
+\end{lemma}
+\begin{proof}
+If \m{n+1<k(D)}, then \m{n<k(D)+i-1}, and, since \m{k(D)\le r(D)\le r(D)^8},
+\[\varkappa_D(\tau,n)=\lfloor k(D)/2\rfloor-1-n\ \ge\ -k(D)\ \ge\ -h_2(D);\]
+as \m{w_{D,i}(\tau)\ge h(D)=2h_2(D)}, the sum is at least~$h_2(D)$.
+
+Let now \m{n+1\ge k(D)}, and put \m{i'=n+2-k(D)}, so that \m{i'\ge1}. Then
+\[\varkappa_D(\tau,n)+w_{D,i}(\tau)=h_2(D)+w_{D,i}(\tau)-w_{D,i'}(\tau)=h_2(D)+(i-i')\,h(D).\]
+The condition \m{n<k(D)+i-1} means \m{i'\le i}, and then the sum is at least $h_2(D)$; otherwise \m{i'\ge i+1} and
+it is at most \m{h_2(D)-h(D)=-h_2(D)}.
+\end{proof}
+\leanline{\lean{varsigmaaddwgap}}
+
+\begin{lemma}[gaps]\label{l:hasgap}
+In Setting~\ref{s:data}, let $\tau$ be an infinite place of~$E(D)$. Then the vector $l_D(\tau)$ has gap $h(D)$
+for the signs \m{\fs^{Y}_{D,0}} of \m{\spaceY{D}{0}}; and for every natural number~$i$ it has gap $h(D)$ for the
+signs \m{\fs^{W}_{D,i}} of \m{\spaceW{D}{i}}.
+\end{lemma}
+\begin{proof}
+The first assertion is Input~8(a). That the entries of $l_D(\tau)$ are distinct and of the right parity does
+not involve the signs. Let \m{\iota,\iota'\in I(D)} have different signs in \m{\fs^{W}_{D,i}}, say
+\m{\num_D(\iota)<k(D)+i-1\le\num_D(\iota')}. By Lemma~\ref{l:gap} the two values of
+\m{\varkappa_D(\tau,\cdot)+w_{D,i}(\tau)} are \m{\ge h_2(D)} and \m{\le-h_2(D)}, so the two entries of $l_D(\tau)$
+differ by at least \m{4h_2(D)=2h(D)}.
+\end{proof}
+\leanline{\lean{hasGapsignsYparamW}\sep \lean{hasGapparamW}}
+
+\begin{lemma}[cusp kernel, finite dimension]\label{l:cusp}
+In Setting~\ref{s:data}, let $\fs$ be a family of signs on $I(D)$ such that for every infinite place~$\tau$ the
+vector $l_D(\tau)$ has gap $h(D)$ for~$\fs$. Then \m{\epsilon_{D,\fs}} is a cusp kernel of order~$h_2(D)$, and for
+every space $\cV$ over $E(D)$ with index set $I(D)$ and signs~$\fs$ the space \m{\Prin{D}{\cV}} has finite
+dimension.
+\end{lemma}
+\begin{proof}
+By Input~8(c), \m{500r(D)^3+h_2(D)\le2h_2(D)=h(D)}, and a vector with gap $h(D)$ has every smaller gap; so
+Input~2(a) applies with \m{B=h_2(D)}. The group $K_g(D)$ is open, so Input~2(b) gives the finite dimension.
+\end{proof}
+\leanline{\lean{isCuspKernelparamW}\sep the finite dimension is an instance without a name}
+
+By Lemmas \ref{l:hasgap} and~\ref{l:cusp}, the spaces \m{\spaceY{D}{0}} and \m{\spaceW{D}{i}} satisfy the
+hypothesis on gaps of Setting~\ref{s:two}, and their spaces of principal forms have finite dimension.
+
+\sect{Levels, moduli and auxiliary pairs}{s:levels}
+\begin{lemma}\label{l:Q}
+In Setting~\ref{s:data}, let $\vartheta$ be a tame character of~$D$ and $v$ a prime of~$E(D)$. If $v$ or
+$\bar v$ belongs to $Q(\vartheta)$, then the product of the norms of the members of $Q(\vartheta)$ lies in~$v$,
+and neither $\overline{\pi_g(D)}$ nor $N(D)$ lies in~$v$.
+\end{lemma}
+\begin{proof}
+The norm of a prime lies in it and in its conjugate, which gives the first assertion. The product of the norms
+is prime to \m{g_0(D)g_1(D)N(D)}, hence a unit modulo~$v$; as \m{\overline{\pi_g(D)}\pi_g(D)=g_0(D)g_1(D)}, neither $\overline{\pi_g(D)}$ nor $N(D)$
+can lie in~$v$.
+\end{proof}
+\leanline{\lean{levelNormmemandnotMemofmemQ}}
+
+\begin{definition}[places and moduli of a tame character]\label{d:levels}
+In Setting~\ref{s:data}, let $\vartheta$ be a tame character of~$D$.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item \m{\levelPlaces{D}{\vartheta}} is the system of places with the chosen primes $\Ch(D)$ as its chosen places
+and the members of $Q(\vartheta)$ as its twist places. (It is a system of places in the library's sense: these
+primes are distinct, and none is the conjugate of one of them, by Lemma~\ref{l:Q}.)
+\item For a natural number $n$ and a Boolean~$o$, \m{\levelMod{D}{\vartheta}{n}{o}} is the ideal
+\m{\bigl(\prod_{v\in\Ch(D)}v\bigr)^{n}\cdot\prod_{v\in Q(\vartheta)}v} of $O_{E(D)}$ if $o$ is true, and
+\m{\bigl(\prod_{v\in\Ch(D)}v\bigr)^{n}} if $o$ is false. The formal text takes $o$ true when it is not given.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{levelPlaces}\sep \lean{decl}}
+
+\begin{lemma}\label{l:nonempty}
+In Setting~\ref{s:data}, let $\vartheta$ be a tame character of~$D$, $n$ a natural number with \m{n\ge1}, and $o$
+a Boolean. Then some prime of $E(D)$ divides \m{\levelMod{D}{\vartheta}{n}{o}}.
+\end{lemma}
+\begin{proof}
+There is a chosen prime $v$ above~$g_0(D)$. The ideal is contained in \m{(\prod_{v'\in\Ch(D)}v')^n}, which, as
+\m{n\ge1}, is contained in the product of the chosen primes and so in~$v$.
+\end{proof}
+\leanline{\lean{nonemptymodulusplaces}}
+
+\begin{definition}[the auxiliary pairs]\label{d:aux}
+An \emph{auxiliary pair} over a CM field, in the sense of the unit on the rows, is a record of: a system of
+places; a space with an index set $I_1$ and signs; an embedding of $I_1$ into a larger index set~$I'$; a numbering
+\m{I_1\to\mathbb N}; two families of natural numbers \m{k^+(\tau,n)}, \m{k^-(\tau,n)} (numbers of columns of
+height~$n$, which give the weight of forms on the standard space with index set~$I'$); and a character of the
+norm-one ideles with a weight and with a tame part that is trivial off the places of the system.
+
+In Setting~\ref{s:data}, let $\vartheta$ be a tame character of~$D$ and $i$ a natural number. The auxiliary pair
+\m{\auxPair{D}{\vartheta}{i}} has: the system of places \m{\levelPlaces{D}{\vartheta}}; the space
+\m{\spaceW{D}{i}} with its signs \m{\fs^{W}_{D,i}}; the inclusion of $I(D)$ into
+\m{I(D)\sqcup\{0,\dots,t(D)-1\}}; the numbering \m{\iota\mapsto\num_D(\iota)} where the sign is~$1$ and
+\m{\iota\mapsto r(D)-1-\num_D(\iota)} where it is~$-1$; the numbers
+\begin{align*}
+k^+(\tau,n)&=\Bigl(\varkappa_D(\tau,n-1)-\max\bigl(\varkappa_D(\tau,n),\lfloor t(D)/2\rfloor-w_{D,i}(\tau)\bigr)-1\Bigr)_+,\\
+k^-(\tau,n)&=\Bigl(\min\bigl(\varkappa_D(\tau,r(D)-n-1),-w_{D,i}(\tau)-\lfloor t(D)/2\rfloor\bigr)-\varkappa_D(\tau,r(D)-n)-1\Bigr)_+,
+\end{align*}
+where \m{(\cdot)_+} is the positive part and the differences \m{n-1}, \m{r(D)-n-1}, \m{r(D)-n} of natural numbers are
+truncated at zero; and the character \m{\phi_{D,i}\,\vartheta}, where $\phi_{D,i}$ is the character of the data of
+weight \m{\tau\mapsto-w_{D,i}(\tau)} with tame part \m{(\omega_{D,v}^{\,i})_v}, so that the tame part of the
+product is \m{(\omega_{D,v}^{\,i}\,\psi_{\vartheta,v})_v}.
+\end{definition}
+\leanline{\lean{auxPair}}
+
+\sect{The good idempotent}{s:idem}
+\begin{lemma}\label{l:central}
+In Setting~\ref{s:data}, the element $e_0(D)$ is an idempotent of \m{\mathbb C[\sG(D)]} whose coefficients are
+constant on conjugacy classes.
+\end{lemma}
+\begin{proof}
+It is a sum of elements \m{e^{\otimes}_{I(D),\mathbf c}} over a finite set of families; apply Input~4(a).
+\end{proof}
+\leanline{\lean{isCentralProje}}
+
+So $e_0(D)$ is central, and \m{\prep{D}{\cV}(e_0(D))} is a projector of \m{\Prin{D}{\cV}} onto \m{\Good{D}{\cV}}
+that commutes with \m{\prep{D}{\cV}}.
+
+\begin{lemma}[good forms see no reflection characters]\label{l:refl}
+In Setting~\ref{s:data}, let \m{(y_v)_{v\in\Ch(D)}} be a family of elements \m{y_v\in\mathbb C[\GL_{I(D)}(\F_v)]},
+let $v_0$ be a chosen prime, $\chi$ a multiplicative character of~$\F_{v_0}$ and \m{l\in\F_{v_0}^{I(D)}} a vector.
+Suppose that \m{\chi^{M_\omega(D)}=1}, that \m{l\ne0}, and that
+\m{y_{v_0}=\sum_h\chi(\det h)^{-1}h}, the sum over the \m{h\in\GL_{I(D)}(\F_{v_0})} of the form
+\m{1+u\,l^{\mathsf T}}. Then \m{\bigl(\bigotimes_{v}y_v\bigr)\cdot e_0(D)=0}.
+\end{lemma}
+\begin{proof}
+It suffices to show \m{(\bigotimes_vy_v)\cdot e^{\otimes}_{I(D),\mathbf c}=0} for every family $\mathbf c$ in the
+sum that defines~$e_0(D)$. This product is the tensor product of the \m{y_v\,e_{I(D),c_v}}. By
+Definition~\ref{d:good}, no \m{x\in\F_{v_0}} with \m{x^{M_\omega(D)}=1} is a root of~$c_{v_0}$; and
+\m{x_\chi^{M_\omega(D)}=1}, because \m{\chi\mapsto x_\chi} is a homomorphism. So $x_\chi$ is not a root of
+$c_{v_0}$, and the factor at $v_0$ vanishes by Input~4(b).
+\end{proof}
+\leanline{\lean{reflectionSummule}}
+
+\sect{Hecke operators: one operator for two pairings; equal traces}{s:hecke}
+For a tame character $\vartheta$ of $D$, a natural number~$i$ and a space $\cV$ over $E(D)$ with index set
+$I(D)$, the unit on the exchange defines the \emph{Rallis terms}. Call a prime of $E(D)$ \emph{bad} if it or its
+conjugate divides \m{\levelMod{D}{\vartheta}{1}{\mathrm{true}}}; the chosen primes are bad. Let
+\m{L_{D,\vartheta}} be the subgroup of the \m{g\in G_f(I(D))} whose components at the primes that are not bad
+are integral. The Rallis terms are the numbers
+\[
+\mathrm{Ral}_{D,\vartheta,i}(\cV;z,y;\gamma)=c_{D,\vartheta,i}(\gamma)\,\langle z,R(g_\gamma)\,y\rangle\qquad
+\bigl(z,y\in\Prin{D}{\cV},\ \gamma\in G_f(I(D))/L_{D,\vartheta}\bigr).
+\]
+Here \m{g_\gamma\in G_f(I(D))} is a representative of $\gamma$, chosen by the library, whose components at the
+bad primes are~$1$, and \m{c_{D,\vartheta,i}(\gamma)} is a complex number
+that does not depend on the space: a matrix coefficient of the vacuum vector of a Weil representation at
+$g_\gamma$, for the character of \m{\auxPair{D}{\vartheta}{i}}, divided by a power of the norm of that modulus.
+
+\begin{lemma}[one Hecke operator for two pairings]\label{l:common}
+In Setting~\ref{s:data}, let $\fs$, $\fs'$, $\cV$, $\cV'$ be as in Setting~\ref{s:two}. Let $\vartheta$ be a tame
+character of~$D$, $i$ a natural number, $A$ and $A'$ complex numbers, $B$ a complex function on
+\m{\Prin{D}{\cV}\times\Prin{D}{\cV}} and $B'$ one on \m{\Prin{D}{\cV'}\times\Prin{D}{\cV'}}. Suppose that for all
+\m{z,y\in\Prin{D}{\cV}} the family \m{\bigl(A\cdot\mathrm{Ral}_{D,\vartheta,i}(\cV;z,y;\gamma)\bigr)_\gamma} is
+summable with sum \m{B(z,y)}, and that for all \m{z,y\in\Prin{D}{\cV'}} the family
+\m{\bigl(A'\cdot\mathrm{Ral}_{D,\vartheta,i}(\cV';z,y;\gamma)\bigr)_\gamma} is summable with sum \m{B'(z,y)}. Then
+there is \m{T\in\cH(D)} such that
+\begin{align*}
+B(z,y)&=A\,\langle z,T_\cV\,y\rangle&&\text{for all }z,y\in\Prin{D}{\cV},\\
+B'(z,y)&=A'\,\langle z,T_{\cV'}\,y\rangle&&\text{for all }z,y\in\Prin{D}{\cV'}.
+\end{align*}
+\end{lemma}
+\begin{proof}
+For \m{T\in\cH(D)} let $\Psi(T)$ be the pair of the function \m{(z,y)\mapsto A\langle z,T_\cV y\rangle}
+on pairs of forms on~$\cV$ and of the function \m{(z,y)\mapsto A'\langle z,T_{\cV'}y\rangle} on pairs of forms
+on~$\cV'$. The map $\Psi$ is linear, and it factors through the pair
+\m{(T_\cV,T_{\cV'})} of endomorphisms of two spaces of finite dimension (Lemma~\ref{l:cusp}); so its image
+$\mathcal Z$ is a subspace of finite dimension of the space of pairs of functions, hence closed for pointwise
+convergence. The pair \m{(B,B')} is the limit of the finite partial sums of the pairs of terms. So it suffices
+to show that for every coset~$\gamma$ the pair of the two terms lies in~$\mathcal Z$.
+
+Fix $\gamma$, write \m{g=g_\gamma}, and let $H$ be the subgroup of the \m{k\in K_g(D)} with
+\m{g^{-1}kg\in K_g(D)}. It is open in the compact group~$K_g(D)$, so of finite index. Put
+\[
+T^\gamma=\frac{c_{D,\vartheta,i}(\gamma)}{[K_g(D):H]}\sum_{k\in K_g(D)/H}R(kgk^{-1}).
+\]
+The elements \m{kgk^{-1}} have component~$1$ at every chosen prime, because $g$ has: the chosen primes
+are bad. For a form $y$ fixed by~$K_g(D)$, \m{R(kgk^{-1})y=R(k)R(g)y}; this depends only on the class
+of $k$ modulo~$H$, and the sum over the classes is again fixed by~$K_g(D)$. So $T^\gamma$ maps
+\m{\Prin{D}{\cV}} to itself for every space~$\cV$, and \m{T^\gamma\in\cH(D)}. As $R$ is unitary and $z$ is fixed
+by~$K_g(D)$,
+\[
+\langle z,T^\gamma_\cV\,y\rangle=\frac{c_{D,\vartheta,i}(\gamma)}{[K_g(D):H]}\sum_k\langle R(k)^{-1}z,R(g)y\rangle
+=\mathrm{Ral}_{D,\vartheta,i}(\cV;z,y;\gamma),
+\]
+and the same holds for~$\cV'$ with the same~$T^\gamma$. So the pair of terms is \m{\Psi(T^\gamma)}.
+\end{proof}
+\leanline{\lean{existscommonheckerallis}}
+
+\begin{proof}[Proof of Theorem 1]
+By Lemma~\ref{l:cusp}, \m{\Prin{D}{\cV}} and \m{\Prin{D}{\cV'}} have finite dimension. Let $\mathcal F$ be the
+set of the eigensystems $p$ with \m{\Prin{D}{\cV}[p]\ne0} or \m{\Prin{D}{\cV'}[p]\ne0}; it is finite, and each of
+the two spaces is the sum of its parts \m{[p]}, \m{p\in\mathcal F} (Input~5(b)). For \m{p\in\mathcal F} let
+\m{\Pi^p\in\cH(D)} be as in Input~5(c), for $p$ and~$\mathcal F$.
+
+\emph{Twisting the labels.} Fix \m{p\in\mathcal F} and a chosen prime~$v$. The sets \m{\Occ(D,\cV,p,v)} and
+\m{\Occ(D,\cV',p,v)} have at most one element each, by the two hypotheses of rigidity; $I(D)$ has $r(D)$ elements
+and $r(D)$ is a power of~$3$ greater than~$1$; and $9$ divides \m{\#\F_v-1}. So the theorem on the cubic twist of the note
+\emph{Primitive labels} gives, for every polynomial \m{c\in\F_v[X]}, a polynomial \m{c^{p,v}\in\F_v[X]} such that:
+if $c$ is a primitive label of degree~$r(D)$, then so is $c^{p,v}$, and $c^{p,v}$ lies in neither of the two sets;
+and \m{e_{I(D),c}(\gamma)=e_{I(D),c^{p,v}}(\gamma)} for every \m{\gamma\in\GL_{I(D)}(\F_v)} whose characteristic
+polynomial is not irreducible. Put
+\[
+\tilde e_p=\sum_{\mathbf c}e^{\otimes}_{I(D),(c_v^{p,v})_v}\ \in\mathbb C[\sG(D)],
+\]
+the sum over the same families \m{\mathbf c=(c_v)_v} as in the definition of~$e_0(D)$.
+
+\emph{The twisted idempotent kills the part $[p]$.} Let $\cV''$ be $\cV$ or~$\cV'$, and $\mathbf c$ a family in
+that sum. Above $g_0(D)$ there is a chosen prime $v$ at which $c_v$ is a primitive label. Then $c_v^{p,v}$ is a
+primitive label of degree~$r(D)$ outside \m{\Occ(D,\cV'',p,v)}, which by the definition of that set means that
+\m{e_{I(D),c_v^{p,v}}}, acting through the factor~$v$, kills \m{\Prin{D}{\cV''}[p]}. By Input~4(c) the tensor
+product kills it too. Hence \m{\prep{D}{\cV''}(\tilde e_p)} is zero on \m{\Prin{D}{\cV''}[p]}.
+
+\emph{A formula for the trace.} On \m{\Prin{D}{\cV''}},
+\begin{equation}\label{e:sum}
+T_{\cV''}\circ\prep{D}{\cV''}\bigl(e_0(D)\bigr)=\sum_{p\in\mathcal F}(T\,\Pi^p)_{\cV''}\circ\prep{D}{\cV''}\bigl(e_0(D)-\tilde e_p\bigr).
+\end{equation}
+It suffices to check this on each part \m{\Prin{D}{\cV''}[p']}, \m{p'\in\mathcal F}. The representation
+\m{\prep{D}{\cV''}} preserves that part (Input~5(a)); on it $\Pi^p$ is the identity for \m{p=p'} and zero for the
+other \m{p\in\mathcal F}; and \m{\prep{D}{\cV''}(\tilde e_{p'})} vanishes there. So both sides of \eqref{e:sum}
+are \m{T_{\cV''}\circ\prep{D}{\cV''}(e_0(D))} on that part. Now \m{\prep{D}{\cV''}(e_0(D))} is a projector onto
+\m{\Good{D}{\cV''}} that commutes with $T_{\cV''}$ (Lemma~\ref{l:central}, Input~5(a)), so the trace of the left
+side of \eqref{e:sum} is the trace of $T$ on \m{\Good{D}{\cV''}}.
+
+For \m{p\in\mathcal F} write \m{(T\,\Pi^p)_{\cV''}=\sum_gc^p_g\,R(g)}, a finite sum over elements
+\m{g\in G_f(I(D))} with component $1$ at the chosen primes, the same for $\cV$ and~$\cV'$. Let \m{(b_n)_n} be an
+orthonormal basis of \m{\Prin{D}{\cV''}}. The trace of an endomorphism $S$ is \m{\sum_n\langle b_n,Sb_n\rangle},
+so by \eqref{e:sum} and the definition of \m{\prep{D}{\cV''}}
+\begin{equation}\label{e:trace}
+\mathrm{tr}\bigl(T\mid\Good{D}{\cV''}\bigr)=\sum_{p\in\mathcal F}\ \sum_{\gamma\in\sG(D)}\ \sum_g\,(e_0(D)-\tilde e_p)(\gamma)\;c^p_g\;
+\sum_n\langle b_n,R(g\tilde\gamma)\,b_n\rangle .
+\end{equation}
+
+\emph{Only elliptic elements remain.} Let \m{\gamma=(\gamma_v)_v\in\sG(D)} be such that no $\gamma_v$ has an
+irreducible characteristic polynomial. Then for every family $\mathbf c$ and every~$v$,
+\m{e_{I(D),c_v}(\gamma_v)=e_{I(D),c_v^{p,v}}(\gamma_v)}; taking products over $v$ and summing over $\mathbf c$ gives
+\m{(e_0(D)-\tilde e_p)(\gamma)=0}. So in \eqref{e:trace} only those $\gamma$ contribute for which some
+$\gamma_{v_0}$ has an irreducible characteristic polynomial. For such a $\gamma$, for $g$ with component~$1$ at
+the chosen primes and for \m{k\in K_g(D)}, the component at $v_0$ of \m{g\tilde\gamma k} is that of
+\m{\tilde\gamma k}: a matrix over $O_{v_0}$ with reduction~$\gamma_{v_0}$. Its characteristic polynomial is monic
+over~$O_{v_0}$ with irreducible reduction, hence irreducible over $O_{v_0}$ and, by Gauss's lemma, over~$E_{v_0}$.
+
+\emph{Comparison.} So Input~1 applies to \m{K=K_g(D)} and the element \m{g\tilde\gamma}, with \m{l=l_D},
+\m{B=h_2(D)} and \m{H=h(D)}: the field $E(D)$ contains a primitive root of unity of order~$5040$ and has an even
+number of infinite places, and the two inequalities hold by Input~8(c). For both $\cV$ and $\cV'$ the type is a
+cusp kernel of order $h_2(D)$ (Lemma~\ref{l:cusp}) and $l_D(\tau)$ has gap~$h(D)$ (Setting~\ref{s:two}). Hence the
+inner sum \m{\sum_n\langle b_n,R(g\tilde\gamma)b_n\rangle} of \eqref{e:trace} has the same value for $\cV$ and
+for~$\cV'$. All other factors of \eqref{e:trace} do not depend on the space, and the theorem follows.
+\end{proof}
+
+\begin{proof}[Proof of Theorem 2]
+(a) For \m{n\ge0}, \m{T^n\in\cH(D)}, and the action on good forms respects products. By Theorem~1 the $n$-th
+powers of the two restrictions of $T$ have equal traces, for all \m{n\ge0}. By Input~4(d) they have the same
+characteristic polynomial, hence the same determinant.
+
+(b) Let $\mathcal F'$ be the finite set of the eigensystems $p'$ with \m{\Prin{D}{\cV'}[p']\ne0}, and $\Pi$ as in
+Input~5(c) for $p$ and~$\mathcal F'$. On \m{\Prin{D}{\cV'}}, which is the sum of its parts \m{[p']},
+\m{p'\in\mathcal F'}, the image of $\Pi_{\cV'}$ lies in \m{\Prin{D}{\cV'}[p]}. Since $\Pi_{\cV'}$ preserves the
+good forms, it maps \m{\Good{D}{\cV'}} into \m{\Good{D}{\cV'}\cap\Prin{D}{\cV'}[p]=0}. So \m{1-\Pi} is the identity
+on \m{\Good{D}{\cV'}}, with determinant~$1$; by (a) its determinant on \m{\Good{D}{\cV}} is~$1$, and
+\m{1-\Pi_\cV} is injective there. But it kills \m{\Good{D}{\cV}\cap\Prin{D}{\cV}[p]}, on which $\Pi_\cV$ is the
+identity. So this intersection is zero.
+
+For the last assertion apply Theorem~1 to \m{\cV=\spaceY{D}{0}} and \m{\cV'=\spaceW{D}{i}}, which satisfy
+Setting~\ref{s:two} by Lemma~\ref{l:hasgap} and have rigid labels by Theorem~3, and to \m{T=1}: the trace of the
+identity is the dimension.
+\end{proof}
+
+\sect{Rigid labels: proof of Theorem 3}{s:rigid}
+\begin{lemma}[the parahoric type of a vector of the level of an auxiliary pair]\label{l:type}
+In Setting~\ref{s:data}, let $O$ be an auxiliary pair over $E(D)$ whose space has the index set $I_1$ and whose
+embedding is \m{\nu_O\colon I_1\to I'}, with $I_1$ and $I'$ finite sets. Its \emph{level group} $K_O$ consists of
+the \m{k\in K_0(I')} whose reduction fixes the basis vectors indexed by \m{\nu_O(I_1)} at the chosen places of~$O$
+and preserves the span of the other basis vectors at its twist places; its \emph{level character} is
+\m{k\mapsto\prod_w\psi_{O,w}^{-1}(\det s_w(k))}, the product over the twist places, with $s_w(k)$ the block of the
+reduction of $k$ at $w$ indexed by \m{\nu_O(I_1)} and \m{(\psi_{O,w})_w} the tame part of the character of~$O$. Let
+$\mathcal S$ be a complex vector space of functions on $G_f(I')$ with values in the functions on a finite set,
+and $\pi$ a representation of $G_f(I')$ on~$\mathcal S$. On the subspace of the \m{u\in\mathcal S} on which $K_O$
+acts through the level character, the group \m{\prod_w\GL_{I_1}(\F_w)}, $w$ the chosen places of~$O$, acts by
+\m{\rho_O(\gamma)=\prod_w\psi_{O,w}(\det\gamma_w)\cdot\pi(\tilde\gamma)}, with $\tilde\gamma$ a lift of the block
+diagonal matrices with blocks $\gamma_w$ and~$1$. Let $u$ be a vector of that subspace, $v$ a chosen place of~$O$,
+which is split, and $f$ a function on $G_f(I')$ with values in the functions on that finite set. Suppose that
+\[
+\pi(k^{(v)})\,u=R(k^{(v)})\,f\qquad\text{for every }k\in\GL_{I'}(E_v).
+\]
+Then for every \m{x\in\GL_{I_1}(\F_v)} and every \m{k\in\GL_{I'}(O_v)} whose reduction $\bar k$ is block upper
+triangular for the two blocks \m{\nu_O(I_1)} and its complement, with first block equal to~$x$:
+\[
+R(k^{(v)})\,f=\psi_{O,v}(\det x)^{-1}\cdot\rho_O(x_{(v)})\,u ,
+\]
+where $x_{(v)}$ has component $x$ at $v$ and $1$ at the other chosen places of~$O$. In the language of Input~6:
+$f$ satisfies its condition \textup{(iii)} for the map $\beta$ that is $0$ on \m{\nu_O(I_1)} and $1$ elsewhere,
+\m{n_1=1}, \m{\chi_1=1}, \m{\psi=\psi_{O,v}^{-1}}, and \m{x\mapsto\rho_O(x_{(v)})\,u} in the place of
+\m{x\mapsto L(\prep{D}{\cV}(x_{(v)})y)}.
+\end{lemma}
+\begin{proof}
+Let $x$ and $k$ be as stated. By hypothesis \m{R(k^{(v)})f=\pi(k^{(v)})u}. The reductions of $k^{(v)}$ at the
+places of $O$ are $\bar k$ at $v$ and~$1$ elsewhere. Since $\bar k$ is block upper triangular with first
+block~$x$, its columns indexed by \m{\nu_O(I_1)} vanish outside the rows of \m{\nu_O(I_1)} and form the
+matrix~$x$ there; at the other places the condition of Input~7(c) holds with the identity matrix. So Input~7(c)
+gives \m{\pi(k^{(v)})u=\psi_{O,v}(\det x)^{-1}\rho_O(x_{(v)})u}.
+\end{proof}
+\leanline{\lean{hasParahoricTypechosenGLRep}}
+
+\begin{proof}[Proof of Theorem 3]
+Let $p$ be an eigensystem and $v$ a chosen prime. In both cases Input~6 is applied; the gaps that it does not
+ask for are not needed.
+
+\emph{The space \m{\spaceW{D}{i}}, \m{1\le i\le m(D)}.} Take \m{I'=I(D)\sqcup\{0,\dots,t(D)-1\}}, $\nu$ the inclusion,
+and \m{L=\Lambda_i} of Input~7(a); (i) and (ii) are part of that input. For (iii), Lemma~\ref{l:type} is applied
+to \m{O=\auxPair{D}{1}{i}}, to the representation of right translations on the functions on $G_f(I')$, to
+\m{u=f=\Lambda_i(y)}, for which its hypothesis is trivially true, and to~$v$: with the equivariance of
+$\Lambda_i$ in Input~7(a) it gives (iii) for \m{n_1=1}, \m{\chi_1=1} and \m{\psi=\psi_{O,v}^{-1}}. The tame part
+of the character of this pair at $v$ is \m{\omega_{D,v}^{\,i}}, because the trivial tame character has trivial
+tame part; so \m{\psi=\omega_{D,v}^{-i}} and \m{\psi^{M_\omega(D)}=1}. A single character is a family of distinct
+characters, and \m{1^{M_\omega(D)}=1}; this is (iv).
+
+\emph{The space \m{\spaceY{D}{0}}.} Take \m{I'=I_{m(D)}(D)}, $\nu$ the inclusion of $I(D)$, and \m{L=\Lambda_{\mathrm{ch}}} of
+Input~7(b), which gives (i) and (ii). Let $\beta$ be the map that is $0$ on $I(D)$ and $n$ on
+\m{\{n\}\times\{0,\dots,t(D)-1\}}, \m{n_1=m(D)}, \m{\chi_n=\omega_{D,v}^{\,n}} and \m{\psi=1}. For
+\m{k\in\GL_{I'}(O_v)} with reduction block upper triangular for $\beta$ and block~$0$ equal to~$x$, the element
+$k^{(v)}$ lies in $K_0(I')$ and has reductions $\bar k$ at $v$ and $1$ at the other chosen primes; so the formula
+of Input~7(b), in which all factors at the other chosen primes are~$1$, is (iii). The characters
+\m{\omega_{D,v}^{\,n}}, \m{1\le n\le m(D)}, are distinct: a quotient of two of them is \m{\omega_{D,v}^{\,n-n'}} with
+\m{0<|n-n'|\le8m(D)}, which is not trivial by Input~8(d). They have order dividing \m{M_\omega(D)}, the order
+of~$\omega_{D,v}$. This is (iv).
+\end{proof}
+
+\sect{Where the results are used}{s:use}
+The definitions of this note are used throughout Chapters V to~VIII: \m{\Row{D}} is the space of rows of the
+three main theorems, and \m{\spaceY{D}{i}}, \m{\spaceW{D}{i}} are the spaces of the chain of theta lifts and of the
+single lifts. Theorem~2 enters the proof of Theorem~C in three places. Its part~(a), with Lemma~\ref{l:common},
+is the step that writes the volume of the chain of lifts on the rows as a constant times the product of the
+volumes of the single lifts (unit on the rows): by Lemma~\ref{l:common} the two Rallis inner products are given
+by one Hecke operator, and by part~(a) its determinants on \m{\Row{D}} and on \m{\Good{D}{\spaceW{D}{i}}} agree.
+The equality of dimensions is used there too, and in Chapter~VI to bound \m{\rowDim{D}} from below. Part~(b)
+is used in the construction of the fit family of twists (Chapter~VIII), to pass from eigensystems of good forms
+on~\m{\spaceW{D}{i}} to those of rows. Lemma~\ref{l:refl} is used in the comparison of forms on the rows, and
+Lemma~\ref{l:type} again in Chapter~VIII. Lemmas \ref{l:m}, \ref{l:pi}, \ref{l:Q} and~\ref{l:nonempty} are used in
+the units on the seesaw and on the exchange.
+
+\sect{Notes on the formal text}{s:notes}
+\begin{enumerate}[label=\textup{\arabic*.},leftmargin=1.6em,itemsep=5pt]
+\item \emph{Letters.} The formal text writes {\leanfont V}, {\leanfont s} for a space and its signs,
+{\leanfont j} for the index~$i$, {\leanfont w} and {\leanfont x} for primes and chosen primes, {\leanfont p} for a
+Hecke element in the file on traces and for an eigensystem in the file on rigidity, {\leanfont q} and
+{\leanfont d} for eigensystems, {\leanfont a}, {\leanfont a'} for the constants $A$, $A'$, {\leanfont c},
+{\leanfont b} for the exponent $n$ and the Boolean $o$ of a modulus, {\leanfont ς} for the row parameter and
+{\leanfont paramW} for its double~$l_D$. The spaces \m{\spaceY{D}{i}}, \m{\spaceW{D}{i}} are the authors'
+{\leanfont Y\_j} and {\leanfont W\_j}.
+\item \emph{The hypothesis on gaps} of Setting~\ref{s:two} is an instance argument in the formal text: it is
+found by Lean, not passed by hand. Its only role in Lemma~\ref{l:common} is to make the two spaces of forms
+finite-dimensional.
+\item \emph{Lemma~\ref{l:pi}.} The formal text states the valuations as values \m{\exp(-1)} and~$1$ of the
+valuation at~$v$, written multiplicatively in the value group; this is the order $1$ and~$0$. The proof there
+quotes Input~8(e).
+\item \emph{Lemma~\ref{l:gap}.} The formal proof uses only the inequality \m{w_{D,i}(\tau)+h(D)\le w_{D,i'}(\tau)}
+for \m{i<i'}, an input from the unit on the exchange, and closes the cases by an automatic tactic; I used the
+definition of the weights, which gives the difference exactly. After the lemma the formal text registers it as a
+pattern for that tactic; this line is not part of a proof.
+\item \emph{Lemma~\ref{l:Y}.} In (b) the formal statement is made for every proof of \m{i<m(D)}. The formal proof
+takes for the infinite components of the point the inverses of the matrices
+\m{y_\tau\,\mathrm{diag}(\fs^{Y}_{D,i})}-type frames that Input~3(a) provides, arranged so that the defining
+identity of a space holds; I did not trace this arrangement term by term, and the dossier of the unit marks the
+same place as uncertain.
+\item \emph{Theorem~1.} The formal proof first shows identity \eqref{e:sum} for an arbitrary space whose occurring
+labels are among those of $\cV$ and~$\cV'$ and whose eigensystems lie in~$\mathcal F$, and then applies it twice.
+It uses of a good family only that it has a primitive label above~$g_0(D)$. The Hecke elements $\Pi^p$ are chosen for
+all eigensystems, and the theorem on the cubic twist of the note \emph{Primitive labels} is applied to all pairs \m{(p,v)}, not only
+for \m{p\in\mathcal F}.
+\item \emph{Theorem~2.} In (a) the formal proof writes the determinants as products of the roots of the
+characteristic polynomials. The traces for \m{n=0} give the equality of the dimensions, which the comparison of
+characteristic polynomials of matrices of different sizes needs.
+\item \emph{Theorem~3.} The applications of Input~6 pass most of its arguments implicitly; in the case of
+\m{\spaceY{D}{0}} two side conditions on the places other than~$v$ are closed by automatic tactics, and I read
+them as the statement that the reductions of $k^{(v)}$ at those places are~$1$. The dossier marks the same lines.
+\item \emph{Arguments.} For Lemma~\ref{l:Y}, Lemma~\ref{l:cusp} with its instance, and Lemma~\ref{l:refl}, the
+dossier records the arguments as derived by hand from the text of the signatures, not as printed by Lean; the
+second reading of this write-up asks for Lean's own output before these records are called confirmed. The
+statements above agree with the derived lists: Lemma~\ref{l:Y} takes $D$ and~$i$ only; Lemma~\ref{l:cusp} takes
+the hypothesis on gaps as an instance argument; Lemma~\ref{l:refl} takes the family, the character and the vector
+implicitly and the chosen prime and the three hypotheses explicitly.
+\item \emph{What the final theorems do not use.} The plan of the write-up, which follows names in the text of
+the proofs, records most but not all of the \UnitMembers{} declarations of the unit as reached from the final
+theorems. Instances are used by Lean without being named, so which declarations are really unused is for the
+kernel export to say.
+\end{enumerate}
+
+\subhead{How this note was written.} From the dossier of the unit: its statements and the structured proofs of
+Lemmas \ref{l:pi}, \ref{l:Y}, \ref{l:gap}, \ref{l:nonempty}, \ref{l:refl}, \ref{l:common}, \ref{l:type} and of
+Theorems 1 to~3, which a program compared line by line with the source (\UnitSteps{} leaf steps in the
+\UnitProofs{} proofs of the unit), and the second reading of the unit by the other agent of this write-up. I read
+the four Lean files of the unit completely; in the other units the definitions of the Hecke algebra, of the
+eigenparts and of the occurring labels, of the good idempotent, of the weights and of the row parameter, of
+auxiliary pairs and of the Rallis terms; and in the library the definitions of spaces, forms, levels and types,
+and the statement of Input~1. The statements of the other inputs I took from the dossier's quotations, which the
+program compared with the source. Every statement of a declaration of this note was compared with its Lean
+statement argument by argument, and the order of the quantifiers is that of the formal text. The proofs follow
+the formal ones; the proof of Lemma~\ref{l:gap} is shorter, and the proof of Theorem~1 is arranged as a
+computation with an explicit formula for the trace. The descriptions of the objects of Setting~\ref{s:data} are
+recollections, and the notes of their units are the authority for them. The references are those of the
+library's files, of the catalogue of this handout and of its second reading; I did not open the cited works.
+
+\head{Appendix A. Concordance with the Lean artifact}
+{\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}\setlength{\tabcolsep}{0pt}
+\begin{longtable}{@{}p{30mm}p{56mm}p{43mm}r@{}}
+\textbf{In this note} & \textbf{Lean declaration} & \textbf{File} & \textbf{Lines}\\\midrule\endhead
+\ConcordanceRows
+\end{longtable}}
+
+\subhead{The main statements as they are written in the artifact.}
+\quoted{traceheckeOnGoodeq}
+\quoted{detheckeOnGoodeq}
+\quoted{finrankrowseqfinrankgoodForms}
+\quoted{existscommonheckerallis}
+\quoted{traceComparison}
+The first three stand after a line that declares the variables {\leanfont D}, {\leanfont s}, {\leanfont s'},
+{\leanfont V}, {\leanfont V'}, the two instance arguments on gaps and the two hypotheses of rigidity
+{\leanfont o}, {\leanfont o'}. In these texts {\leanfont principalForms}, {\leanfont goodForms},
+{\leanfont heckeAlgebra}, {\leanfont heckeOnGood}, {\leanfont rallisTerm} are \m{\Prin{D}{\cV}}, \m{\Good{D}{\cV}},
+$\cH(D)$, the action of $\cH(D)$ on good forms and the Rallis terms; {\leanfont spaceW}, {\leanfont rowDim} are
+\m{\spaceW{D}{i}} and \m{\rowDim{D}}; {\leanfont typeKernel l s} is \m{\prod_\tau\epsilon_{l(\tau)}},
+{\leanfont formRep} is~$R$ and {\leanfont levelSpace} takes the vectors fixed by a subgroup.
+
+\head{Notation}
+\begingroup\fontsize{8.6}{10.9}\selectfont\raggedright
+\setlength{\columnsep}{9mm}\setlength{\parskip}{0pt}
+\begin{multicols}{2}
+\nt{$P=(N_0,d)$, $D$}{the parameters; admissible data (Setting~\ref{s:data})}
+\nt{$E$, $E(D)$, $K$, $O_E$}{a CM field; the field of the data; \m{\mathbb Q(\sqrt{-d})}; the ring of integers}
+\nt{$v$, $w$, $\bar v$, $\F_v$, $E_v$, $O_v$}{primes of a number field, the conjugate prime, residue field, completion, its integers}
+\nt{$\mathbb A_E$, $\mathbb A_{E,f}$, $\hat O_E$}{adeles, finite adeles, integral finite adeles}
+\nt{$\tau$}{an infinite place of $E(D)$}
+\nt{$m(D)$, $r(D)$, $x(D)$, $\mu(D)$}{components of $D$: the number of lifts, the rank, the first scale, the exponent}
+\nt{$k(D)$, $t(D)$, $\varrho(D)$, $n_i(D)$}{\m{r(D)+1-m(D)}, \m{5r(D)}, \m{m(D)/2-1}, \m{k(D)+i(t(D)+1)}}
+\nt{$h_2(D)$, $h(D)$, $M_\omega(D)$}{\m{r(D)^8}, \m{2r(D)^8}, \m{(N_0d)^{\mu(D)+6}}}
+\nt{$w_{D,i}(\tau)$, $\varkappa_D(\tau,n)$, $l_D(\tau)$}{the weights, the row parameter, its double as a vector on $I(D)$}
+\nt{$N(D)$, $\pi_N(D)$, $g_0(D)$, $g_1(D)$, $\pi_g(D)$}{the level and an element of norm $N(D)$; two primes and an element of norm $g_0(D)g_1(D)$}
+\nt{$\Ch(D)$, $\sG(D)$}{the chosen primes; \m{\prod_{v\in\Ch(D)}\GL_{I(D)}(\F_v)}}
+\nt{$I(D)$, $\num_D$, $I_i(D)$, $\mathcal X_i(D)$}{the row index set and its numbering; the index sets of \m{\spaceY{D}{i}} and of its first summand}
+\nt{$\omega_{D,v}$}{the character of order $M_\omega(D)$ of $\F_v^\times$ at a chosen prime}
+\nt{$\vartheta$, $Q(\vartheta)$, $\psi_{\vartheta,v}$}{a tame character, its set of primes, its tame part}
+\nt{$I$, $I'$, $I_1$, $\GL_I$, $g^*$}{finite index sets; invertible matrices indexed by $I$; conjugate transpose}
+\nt{$\fs$, $\fs'$, $\fs^{Y}_{D,i}$, $\fs^{W}_{D,i}$}{families of signs; those of \m{\spaceY{D}{i}} and \m{\spaceW{D}{i}}}
+\nt{$G_\infty(\fs)$, $\mathrm U(\fs)$, $G_f(I)$, $K_0(I)$, $K_g(D)$}{the unitary groups at the infinite places and over the finite adeles; the integral points; the principal congruence subgroup at the chosen primes}
+\nt{$g_v$, $k^{(v)}$, $\bar k$, $\tilde\gamma$, $x_{(v)}$}{component at $v$; the element with component $k$ at a split $v$; reduction; the chosen lift of \m{\gamma\in\sG(D)}; the element of a product with component $x$ at $v$}
+\nt{$\cV=(J,\mathbf x)$, $\cV'$, $\cV''$, $\Gamma_\cV$}{spaces with a point; the rational points in the adelic group}
+\nt{$F$, $F'$, $R(g)$, $\langle\ ,\ \rangle$}{forms; right translation; the Petersson product}
+\nt{$\epsilon$, $\epsilon_l$, $\epsilon_{D,\fs}$, $u$, $\alpha$}{types; the kernel of a discrete series; the type of the data; an element of $G_\infty(\fs)$ or a vector; a function of compact support, and in $\alpha(D)$ the idele of the Weil data}
+\nt{$l$, $l(\tau)$, $H$, $B$}{integer vectors (in Lemma~\ref{l:refl}, a vector over a finite field); a gap; an order of a cusp kernel (in Lemma~\ref{l:common}, with $B'$, a function on pairs of forms; in Lemma~\ref{l:Y}, a lattice basis)}
+\nt{$\Sigma=(\varrho,\mathcal X,o)$, $e_n$, $e^*_n$, $z$}{a shape and its index set; $o$ also a Boolean, $z$ also a form}
+\nt{\m{\besselIx{\Sigma}}, \m{\indexY{D}{i}{i<m(D)}}}{bijections of index sets (Definition~\ref{d:index})}
+\nt{\m{\chosenIdele{D}}, \m{\ideleA{D}}, \m{\piIdele{D}}, \m{\latticeScale{D}{i}}}{the ideles of Definition~\ref{d:ideles}}
+\nt{$\mathrm{Gr}(\beta,N)$, $\mathrm{Lb}(\beta,a,\pi,u)$, $s$}{graded Gram matrix and lattice basis; the length of the string}
+\nt{\m{\spaceY{D}{i}}, \m{\spaceW{D}{i}}}{the spaces of Definition~\ref{d:YW}}
+\nt{\m{\Prin{D}{\cV}}, \m{\prep{D}{\cV}}}{principal forms and the action of $\sG(D)$ (Definition~\ref{d:prin})}
+\nt{$e_0(D)$, \m{\Good{D}{\cV}}, \m{\Row{D}}, \m{\rowDim{D}}}{the good idempotent, good forms, rows, their dimension}
+\nt{$e_{I,c}$, $e^{\otimes}_{I,\mathbf c}$, $\mathrm{Good}_{M_\omega(D),r(D)}$, $x_\chi$}{idempotents of labels and of families, good tuples, the unit naming a character (note \emph{Primitive labels})}
+\nt{$c$, $\mathbf c=(c_v)_v$, $c^{p,v}$, $\tilde e_p$, $X$, $\mathcal C$}{polynomials, families, cubic twists, the twisted idempotent; the variable; a set of families}
+\nt{$\cH(D)$, $T$, $T_\cV$, $T^\gamma$, $\Pi$, $\Pi^p$, $\mathbb T^{v,n}$}{the Hecke algebra away from the chosen primes, its elements and their operators; the Hecke operators at a prime}
+\nt{$p$, $p'$, $\mathcal F$, $\mathcal F'$, \m{\Prin{D}{\cV}[p]}}{eigensystems, finite sets of them, eigenparts}
+\nt{$\Occ(D,\cV,p,v)$, \Rigid{D}{\cV}}{occurring primitive labels; Definition~\ref{d:rigid}}
+\nt{\m{\levelPlaces{D}{\vartheta}}, \m{\levelMod{D}{\vartheta}{n}{o}}}{places and moduli of a tame character (Definition~\ref{d:levels})}
+\nt{\m{\auxPair{D}{\vartheta}{i}}, $k^+$, $k^-$, $\phi_{D,i}$, $O$, $\nu_O$, $K_O$, $\psi_{O,w}$, $\rho_O$, $\rho_i$, $s_w$}{auxiliary pairs and their parts (Definition~\ref{d:aux}, Lemma~\ref{l:type})}
+\nt{$\mathrm{Ral}_{D,\vartheta,i}$, $c_{D,\vartheta,i}(\gamma)$, $g_\gamma$, $L_{D,\vartheta}$, $A$, $A'$, $\Psi$, $\mathcal Z$}{Rallis terms and the objects of Lemma~\ref{l:common}}
+\nt{$L$, $\Lambda_i$, $\Lambda_{\mathrm{ch}}$, $\Upsilon_w$, $\nu$, $\beta$, $n_1$, $\chi$, $\chi_n$, $\psi$}{lifts and the data of Input~6; $\beta$ also a bijection of index sets, $\chi$ a multiplicative character}
+\nt{$\mathcal S$, $\pi$, $f$, $y$, $y_v$, $\rho$, $S$, $S'$}{a space of functions, a representation, a function, vectors or elements of group algebras, a representation, matrices}
+\nt{$b_n$, $t$, $c_g$, $c^p_g$}{an orthonormal basis; the common trace of Input~1; coefficients of Hecke elements}
+\nt{$i$, $i'$, $n$, $n'$, $a$, $k$, $k_1$, $k_2$, $h$, $\gamma$, $\iota$, $\iota'$, $\varpi$}{indices and natural numbers; an idele; integral matrices; a matrix over a finite field; elements of $\sG(D)$ or cosets; elements of index sets; a uniformizer}
+\nt{$y_\tau$, $\mathsf T$}{frames at the infinite places; transpose}
+\end{multicols}
+\endgroup
+
+\head{References}
+{\fontsize{9.4}{12.6}\selectfont
+All references are given as the library's files, the catalogue of this handout and its second reading record
+them; I did not open the works.\par
+J.~Arthur, L.~Clozel, \emph{Simple algebras, base change, and the advanced theory of the trace formula}, 1989;
+Chapter~1, §2, Lemmas 2.4--2.6.\par
+A.~Borel, lectures on automorphic forms (Park City), 8.3--8.4, for the finiteness of spaces of cusp forms; at
+second hand.\par
+R.~Jacobowitz, \emph{Hermitian forms over local fields}, Amer. J. Math. 84 (1962); place to be confirmed.\par
+J.-P.~Labesse, \emph{Changement de base CM et séries discrètes}, 2011; Théorèmes 5.1 and~5.4.\par}
+
+\end{document}

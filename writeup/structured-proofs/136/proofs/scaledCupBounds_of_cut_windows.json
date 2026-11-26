@@ -1,0 +1,508 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Lift.SparseThickLetters:199:7",
+ "name": "Lift.KummerChart.PairingSide.SidePairing.scaledCupBounds_of_cut_windows",
+ "summary": "At each cut, a deep point of each side comes from its cokernel killer (killsCokernel_at_cut), deepened through the windows (pointsOver_nonempty_of_costs, cost ≤ 24κ by sum_twoWindows_le), or, in the long-gap alternative, from pointsOver_nonempty_of_long_gap moved by φ^t; the walk scaledCupBounds_of_points_at_cuts then gives the bound.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "definition",
+   "claim": "Let A(a) = η if a ≤ 2J, else 0.",
+   "lines": [
+    206,
+    206
+   ],
+   "span": [
+    206,
+    3,
+    206,
+    33
+   ],
+   "lean": "let A a := ite (a ≤ 2 * J) η 0",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "choice",
+   "claim": "For every letter i let l(i) be the least l ∈ (0, 2J + 1] with σ^{−l}(i) a cut (hL), with its minimality.",
+   "lines": [
+    207,
+    207
+   ],
+   "span": [
+    207,
+    3,
+    207,
+    64
+   ],
+   "lean": "choose l hl hn using (hL · |> Nat.findX |>.exists_of_subtype)",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "choice",
+   "claim": "For every i choose t(i) and the alternative of H at that cut.",
+   "lines": [
+    208,
+    208
+   ],
+   "span": [
+    208,
+    3,
+    208,
+    48
+   ],
+   "lean": "choose t hc using (H · _ (hl _).2 (by grind))",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "2"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "definition",
+   "claim": "Let R(ρ, i, a, u) = max(stdExponent(l(i), a, u) if ε(σ^{−t(i)} i) = ρ else −u − A(a), −u − A(a)).",
+   "lines": [
+    209,
+    209
+   ],
+   "span": [
+    209,
+    3,
+    209,
+    99
+   ],
+   "lean": "let R ρ i a u := ite (ε (.stepBack i (t i)) = ρ) (stdExponent (l i) a u) (-u - A a) ⊔ (-u - A a)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "step": "2"
+    },
+    {
+     "step": "3"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "fact",
+   "claim": "For sides T, T' with jumps in the windows of signs ε/(−ρ), ε/ρ, every c and every cut i: HasDeepPoint(T, T', c, i, 25κ, cut, l(i), R(ρ), R(σ), (j ↦ raisedAtE(−s(j))), ε(σ^{−t(i)} i) = ρ). Proof:",
+   "lines": [
+    210,
+    239
+   ],
+   "span": [
+    210,
+    3,
+    239,
+    66
+   ],
+   "lean": "have pt {T T' : PairingSide O} ρ {σ} (hU : ∀ i, IsInJumpWindow η (ε i / -ρ) (β i) V (T.U i) ∧\n      IsInJumpWindow η (ε i / ρ) (β i) V (T'.U i)) {c i} (hi : cut i) : T.HasDeepPoint T' c i\n    (25 * κ) cut (l i) (R ρ) (R σ) (raisedAtE <| -s ·) (ε (i.stepBack (t i)) = ρ) := by\n    obtain ⟨⟨hL, hl⟩, hc, ht, h₀, q, z⟩ := hl i, hc i, hK i hi, (hK i hi).imp (·.1) (·.2.1.2.2),\n      (show _ ≤ R σ · · · from le_sup_right), stepBack_zero i\n    generalize R σ = w at *; unfold HasDeepPoint R; generalize l i = l, t i = t at *\n    simp [IsInJumpWindow, div_eq_one, ← Int.units_ne_iff_eq_neg] at hU\n    have kl := T.killsCokernel_at_cut hX hκ hδ h₈ hs hy hK hz ?_\n    let o a u := raisedAtE (s i) a u + A (a / 2)\n    obtain ⟨⟨_, hx⟩, ⟨hi, hk, hp, hy, rfl, ht, he, hc⟩ | ⟨hl, hc⟩⟩ :=\n      pointsOver_nonempty_of_killsCokernel (kl i hi) c,\n      (em (ε (i.stepBack t) = ρ ∧ ¬_)).imp (·.imp_right hc.resolve_left) (And.intro (z ▸ hi))\n    have y a : (i.stepBack t).stepBack a = i.stepBack (t + a) := by simp [pow_add]\n    have hx := phi_pow_smul_mem_pointsOver (pointsOver_nonempty_of_long_gap J.succ_pos hk (y _ ▸\n      hy ▸ kl _ hl) (killsCokernel_of_isUnramified _ _ (by clear * - hU hz hp hW; grind) hk hp) rfl\n      (y · ▸ by clear * - hU hc hs hW hi; grind) (he.trans_le ?_) (by lia) hδ c).some_mem\n    let o a u := ite (a ≠ t) (stdExponent (t + J.succ) a u + 3 * A (a / 2)) (2 * b)\n    all_goals try refine ⟨o, _,\n      (pointsOver_nonempty_of_costs hx ((range (4 * J + 2)).sigma fun a ↦ twoWindows (ite (a = 0)\n      (s i) 0 + W) (ite (ε (i.stepBack a) = ρ) 1 (-1) * β (i.stepBack a))) ?_ (by\n      clear * - hd h₀ hs z hη hW hX hκ\n      grw [← sum_sigma', sum_le_card_nsmul _ _ (72 * X), card_range]; lia\n      refine fun a ha ↦ (sum_twoWindows_le n (2 * b) ?_ ?_).trans ?_ <;> grind [mul_le_mul' hs.1\n        (add_le_add_left (mem_range_le ha) k.differentExp),\n        le_of_mul_le_of_one_le_left (le_of_add_le_left hX) (by lia)])).imp fun _ ↦\n      .imp_right (.imp_right (.imp_left (JumpLattice.mem_withExponents_of_le · ?_))), hl, ?_⟩\n    all_goals\n      try intro a; specialize hc a\n      clear * - hU hc hi hL hs hW ht hη z hy he q; generalize i.stepBack = f at *\n      (try simp [raisedAtE, -Nat.cast_sum]); grind (splits := 15)",
+   "head_lines": [
+    210,
+    212
+   ],
+   "head_span": [
+    210,
+    3,
+    212,
+    88
+   ],
+   "typed_fact": "T.HasDeepPoint T' c i\n    (25 * κ) cut (l i) (R ρ) (R σ) (raisedAtE <| -s ·) (ε (i.stepBack (t i)) = ρ)",
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "decl": "Lift.KummerChart.PairingSide.HasDeepPoint"
+    }
+   ]
+  },
+  {
+   "id": "5.1",
+   "parent": "5",
+   "kind": "setup",
+   "claim": "Collect the data of l, t, hK at i,",
+   "lines": [
+    213,
+    214
+   ],
+   "span": [
+    213,
+    5,
+    214,
+    8
+   ],
+   "lean": "obtain ⟨⟨hL, hl⟩, hc, ht, h₀, q, z⟩ := hl i, hc i, hK i hi, (hK i hi).imp (·.1) (·.2.1.2.2),\n      (",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "5.2",
+   "parent": "5",
+   "kind": "fact",
+   "claim": "the bound R(σ) ≥ −u − A(a) (le_sup_right), and σ^0 = id;",
+   "lines": [
+    214,
+    214
+   ],
+   "span": [
+    214,
+    8,
+    214,
+    62
+   ],
+   "lean": "show _ ≤ R σ · · · from le_sup_right), stepBack_zero i",
+   "typed_fact": "_ ≤ R σ · · ·",
+   "uses": [
+    {
+     "decl": "Lift.KummerChart.PairingSide.stepBack_zero"
+    }
+   ]
+  },
+  {
+   "id": "5.3",
+   "parent": "5",
+   "kind": "computation",
+   "claim": "unfold HasDeepPoint and R;",
+   "lines": [
+    215,
+    215
+   ],
+   "span": [
+    215,
+    5,
+    215,
+    85
+   ],
+   "lean": "generalize R σ = w at *; unfold HasDeepPoint R; generalize l i = l, t i = t at *",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "5.4",
+   "parent": "5",
+   "kind": "computation",
+   "claim": "unfold the window conditions;",
+   "lines": [
+    216,
+    216
+   ],
+   "span": [
+    216,
+    5,
+    216,
+    71
+   ],
+   "lean": "simp [IsInJumpWindow, div_eq_one, ← Int.units_ne_iff_eq_neg] at hU",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "5.5",
+   "parent": "5",
+   "kind": "fact",
+   "claim": "the cokernel of T is killed by p^κE^{s(j)} at every cut j (killsCokernel_at_cut);",
+   "lines": [
+    217,
+    217
+   ],
+   "span": [
+    217,
+    5,
+    217,
+    65
+   ],
+   "lean": "have kl := T.killsCokernel_at_cut hX hκ hδ h₈ hs hy hK hz ?_",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Lift.KummerChart.PairingSide.killsCokernel_at_cut"
+    }
+   ]
+  },
+  {
+   "id": "5.6",
+   "parent": "5",
+   "kind": "definition",
+   "claim": "let o(a, u) = raisedAtE(s(i), a, u) + A(⌊a/2⌋);",
+   "lines": [
+    218,
+    218
+   ],
+   "span": [
+    218,
+    5,
+    218,
+    49
+   ],
+   "lean": "let o a u := raisedAtE (s i) a u + A (a / 2)",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "5.7",
+   "parent": "5",
+   "kind": "choice",
+   "claim": "a point of T over p^κ c at i with exponents raisedAtE(−s(i)) (pointsOver_nonempty_of_killsCokernel); and either the long-gap alternative of H holds at i, or the sign alternative;",
+   "lines": [
+    219,
+    221
+   ],
+   "span": [
+    219,
+    5,
+    221,
+    94
+   ],
+   "lean": "obtain ⟨⟨_, hx⟩, ⟨hi, hk, hp, hy, rfl, ht, he, hc⟩ | ⟨hl, hc⟩⟩ :=\n      pointsOver_nonempty_of_killsCokernel (kl i hi) c,\n      (em (ε (i.stepBack t) = ρ ∧ ¬_)).imp (·.imp_right hc.resolve_left) (And.intro (z ▸ hi))",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "5.5"
+    },
+    {
+     "decl": "Lift.KummerChart.PairingSide.pointsOver_nonempty_of_killsCokernel"
+    }
+   ]
+  },
+  {
+   "id": "5.8",
+   "parent": "5",
+   "kind": "fact",
+   "claim": "σ^{−a}(σ^{−t} i) = σ^{−(t+a)}(i);",
+   "lines": [
+    222,
+    222
+   ],
+   "span": [
+    222,
+    5,
+    222,
+    83
+   ],
+   "lean": "have y a : (i.stepBack t).stepBack a = i.stepBack (t + a) := by simp [pow_add]",
+   "typed_fact": "(i.stepBack t).stepBack a = i.stepBack (t + a)",
+   "uses": []
+  },
+  {
+   "id": "5.9",
+   "parent": "5",
+   "kind": "fact",
+   "claim": "in the long-gap case, a point of T at σ^{−t}(i) from pointsOver_nonempty_of_long_gap (killers at σ^{−l}(i) and σ^{−t}(i), killsCokernel_of_isUnramified), moved to i by φ^t (phi_pow_smul_mem_pointsOver);",
+   "lines": [
+    223,
+    225
+   ],
+   "span": [
+    223,
+    5,
+    225,
+    90
+   ],
+   "lean": "have hx := phi_pow_smul_mem_pointsOver (pointsOver_nonempty_of_long_gap J.succ_pos hk (y _ ▸\n      hy ▸ kl _ hl) (killsCokernel_of_isUnramified _ _ (by clear * - hU hz hp hW; grind) hk hp) rfl\n      (y · ▸ by clear * - hU hc hs hW hi; grind) (he.trans_le ?_) (by lia) hδ c).some_mem",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "5.5"
+    },
+    {
+     "step": "5.8"
+    },
+    {
+     "decl": "Lift.KummerChart.PairingSide.pointsOver_nonempty_of_long_gap"
+    },
+    {
+     "decl": "Lift.KummerChart.PairingSide.killsCokernel_of_isUnramified"
+    },
+    {
+     "decl": "Lift.KummerChart.PairingSide.phi_pow_smul_mem_pointsOver"
+    }
+   ]
+  },
+  {
+   "id": "5.10",
+   "parent": "5",
+   "kind": "definition",
+   "claim": "let o(a, u) = stdExponent(t + J + 1, a, u) + 3A(⌊a/2⌋) for a ≠ t and 2b at a = t;",
+   "lines": [
+    226,
+    226
+   ],
+   "span": [
+    226,
+    5,
+    226,
+    84
+   ],
+   "lean": "let o a u := ite (a ≠ t) (stdExponent (t + J.succ) a u + 3 * A (a / 2)) (2 * b)",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "5.11",
+   "parent": "5",
+   "kind": "witness",
+   "claim": "in both cases take the exponents o and the depth obtained by deepening the point:",
+   "lines": [
+    227,
+    235
+   ],
+   "span": [
+    227,
+    5,
+    235,
+    94
+   ],
+   "lean": "all_goals try refine ⟨o, _,\n      (pointsOver_nonempty_of_costs hx ((range (4 * J + 2)).sigma fun a ↦ twoWindows (ite (a = 0)\n      (s i) 0 + W) (ite (ε (i.stepBack a) = ρ) 1 (-1) * β (i.stepBack a))) ?_ (by\n      clear * - hd h₀ hs z hη hW hX hκ\n      grw [← sum_sigma', sum_le_card_nsmul _ _ (72 * X), card_range]; lia\n      refine fun a ha ↦ (sum_twoWindows_le n (2 * b) ?_ ?_).trans ?_ <;> grind [mul_le_mul' hs.1\n        (add_le_add_left (mem_range_le ha) k.differentExp),\n        le_of_mul_le_of_one_le_left (le_of_add_le_left hX) (by lia)])).imp fun _ ↦\n      .imp_right (.imp_right (.imp_left (JumpLattice.mem_withExponents_of_le · ?_))), hl, ?_⟩",
+   "head_lines": [
+    227,
+    227
+   ],
+   "head_span": [
+    227,
+    5,
+    227,
+    32
+   ],
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "5.11.1",
+   "parent": "5.11",
+   "kind": "fact",
+   "claim": "deepen with the steps I = {(a, y) : a < 4J + 2, y ∈ twoWindows(s(i)[a = 0] + W, ±β(σ^{−a} i))} (pointsOver_nonempty_of_costs),",
+   "lines": [
+    228,
+    229
+   ],
+   "span": [
+    228,
+    7,
+    229,
+    78
+   ],
+   "lean": "(pointsOver_nonempty_of_costs hx ((range (4 * J + 2)).sigma fun a ↦ twoWindows (ite (a = 0)\n      (s i) 0 + W) (ite (ε (i.stepBack a) = ρ) 1 (-1) * β (i.stepBack a))) ?_",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Lift.KummerChart.PairingSide.pointsOver_nonempty_of_costs"
+    },
+    {
+     "decl": "Lift.twoWindows"
+    }
+   ]
+  },
+  {
+   "id": "5.11.2",
+   "parent": "5.11",
+   "kind": "fact",
+   "claim": "at total cost ≤ (4J + 2)·(72X) ≤ 24κ (sum_twoWindows_le for each a, with hd, hs, hX, hκ);",
+   "lines": [
+    229,
+    234
+   ],
+   "span": [
+    229,
+    79,
+    234,
+    71
+   ],
+   "lean": "(by\n      clear * - hd h₀ hs z hη hW hX hκ\n      grw [← sum_sigma', sum_le_card_nsmul _ _ (72 * X), card_range]; lia\n      refine fun a ha ↦ (sum_twoWindows_le n (2 * b) ?_ ?_).trans ?_ <;> grind [mul_le_mul' hs.1\n        (add_le_add_left (mem_range_le ha) k.differentExp),\n        le_of_mul_le_of_one_le_left (le_of_add_le_left hX) (by lia)]))",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Lift.sum_twoWindows_le"
+    }
+   ]
+  },
+  {
+   "id": "5.11.3",
+   "parent": "5.11",
+   "kind": "fact",
+   "claim": "the resulting exponents dominate o (mem_withExponents_of_le), with cut distance l(i);",
+   "lines": [
+    234,
+    235
+   ],
+   "span": [
+    234,
+    71,
+    235,
+    94
+   ],
+   "lean": ".imp fun _ ↦\n      .imp_right (.imp_right (.imp_left (JumpLattice.mem_withExponents_of_le · ?_))), hl, ?_⟩",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Lift.KummerChart.JumpLattice.mem_withExponents_of_le"
+    }
+   ]
+  },
+  {
+   "id": "5.12",
+   "parent": "5",
+   "kind": "fact",
+   "claim": "the remaining inequalities follow from the windows, the alternative of H, hs, hW, hη.",
+   "lines": [
+    236,
+    239
+   ],
+   "span": [
+    236,
+    5,
+    239,
+    66
+   ],
+   "lean": "all_goals\n      try intro a; specialize hc a\n      clear * - hU hc hi hL hs hW ht hη z hy he q; generalize i.stepBack = f at *\n      (try simp [raisedAtE, -Nat.cast_sum]); grind (splits := 15)",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Apply scaledCupBounds_of_points_at_cuts with l and Q(i) = (ε(σ^{−t(i)} i) = 1): step 5 with ρ = 1 for S and ρ = −1 for S', and the point of the third side over p^κ·1 from its killer (killsCokernel_at_cut, pointsOver_nonempty_of_killsCokernel); the window and antitonicity conditions close by computation.",
+   "lines": [
+    240,
+    243
+   ],
+   "span": [
+    240,
+    3,
+    243,
+    59
+   ],
+   "lean": "refine h.scaledCupBounds_of_points_at_cuts _ _ l (by grind [IsLeast, lowerBounds]) fun i e ↦\n    ⟨pt 1 ?_ e, Int.units_ne_iff_eq_neg.eq ▸ pt (-1) ?_ e, pointsOver_nonempty_of_killsCokernel\n    (killsCokernel_at_cut hX hκ hδ h₈ hs hy hK hz ?_ i e) 1, ?_⟩ <;>\n    clear * - hU hW <;> simp [div_neg, Antitone] <;> grind",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "5"
+    },
+    {
+     "decl": "Lift.KummerChart.PairingSide.SidePairing.scaledCupBounds_of_points_at_cuts"
+    },
+    {
+     "decl": "Lift.KummerChart.PairingSide.killsCokernel_at_cut"
+    },
+    {
+     "decl": "Lift.KummerChart.PairingSide.pointsOver_nonempty_of_killsCokernel"
+    }
+   ]
+  }
+ ]
+}

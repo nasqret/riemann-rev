@@ -1,0 +1,802 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Selmer.RibetFirstOrder:91:7",
+ "summary": "Work in the group algebra over Λ = O[X_J]. Relations N among the u(g) − 1 (cocycle, ties, trace ideal, p, the normaliser ω) are built; a matrix B₀ with rows in N has det ψ₀(B₀) of valuation ≤ b₀ (the obeying cocycles at π); for each character ξ_e the Fitting-ideal block lemma gives Γ_e·∏X_j; a combined matrix M has block determinant a·det B; Ribet's Cramer construction (exists_ribet_element_cramer) gives f with f·β ∈ 𝒥, and the coefficient computation gives c.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Notation: Λ = O[X_J]; U(g) the elements of the group algebra Λ[G]; κ : O → Λ; μ the matrices over κ; χ_x, ψ_x the algebra maps from Λ[G] to matrices over Λ induced by u_x, ρ_x, and η_e : Λ[G] → Λ the algebra map induced by ξ_e.",
+   "lines": [
+    107,
+    113
+   ],
+   "lean": "  let Λ := MvPolynomial J O\n  let U := of Λ G\n  let κ := Algebra.ofId O Λ\n  let μ := κ.mapMatrix (m := σ)\n  let χ x := (lift Λ ..) (μ.1.1.comp (u x))\n  let ψ x := (lift Λ ..) (κ.mapMatrix.1.1.comp (ρ x))\n  let η e := (lift Λ ..) (κ.1.1.comp (ξ e))"
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "fact",
+   "claim": "η_e(U g) = ξ_e(g) (a constant).",
+   "lines": [
+    114,
+    114
+   ],
+   "lean": "  have hη e g : η e (U g) = .C _ := lift_of ..",
+   "typed_fact": "η e (U g) = .C _"
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "fact",
+   "claim": "There is k ∈ Λ[G] with η_e(k) = 1 for every e and ψ_x(k) = 0 for every x ∈ 𝓧: the product over x of (y_x − 1)⁻¹·(y_x − U(γ_x)) (h₀, hy, hγ).",
+   "lines": [
+    115,
+    118
+   ],
+   "lean": "  obtain ⟨k, hk', hk⟩ := univ.induction_on (motive := (∃ k, (∀ e, η e k = 1) ∧ ∀ x ∈ ·, ψ x k = 0))\n    ⟨1, by simp⟩ fun x _ _ ⟨k, h', h⟩ ↦ (hy x).exists_left_inv.elim fun z e ↦ ⟨k * z • (κ (y x)\n    • 1 - U (γ x)), by simpa [h', hη, hγ, κ, Λ] using congr(κ $e), by\n    simp +contextual [h]; simp +zetaDelta [h₀, smul_one_eq_diagonal]⟩",
+   "uses": [
+    {
+     "step": "2"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "setup",
+   "claim": "For each e choose",
+   "lines": [
+    119,
+    119
+   ],
+   "span": [
+    119,
+    3,
+    119,
+    29
+   ],
+   "lean": "choose q hq using fun e ↦ "
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "fact",
+   "claim": "q_e ∈ Λ[G] with η_k(q_e) = C if k = e and 0 otherwise: q_e = w·∏_{k≠e}(U(a) − ξ_k(a)) (the nodal polynomial of the values ξ_k(a), k ≠ e, evaluated at U(a)), where C = w·∏_{k≠e}(ξ_e(a) − ξ_k(a)) (hC).",
+   "lines": [
+    119,
+    121
+   ],
+   "span": [
+    119,
+    29,
+    121,
+    100
+   ],
+   "lean": "show ∃ q, ∀ k, η k q = ite (k = e) (.C C) 0 from (hC e).elim fun w h ↦\n    ⟨w • Polynomial.aeval (U a) (Lagrange.nodal {e}ᶜ (κ <| ξ · a)), fun k ↦ by split <;> simp [κ, Λ,\n    mul_comm, Lagrange.nodal, -aeval_eq_sum_range, ← aeval_algHom_apply, prod_eq_zero (i := k), *]⟩",
+   "ambient_uses": [
+    "Lagrange.nodal"
+   ],
+   "typed_fact": "∃ q, ∀ k, η k q = ite (k = e) (.C C) 0"
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Choose a finite set s₀ ⊆ G such that the u(g) − 1, g ∈ s₀, span the O-span of all u(g) − 1 (finite generation over the Noetherian O); σ nonempty.",
+   "lines": [
+    122,
+    123
+   ],
+   "lean": "  obtain ⟨⟨s₀, h₁⟩, _⟩ := ((fg_iff_compact _).1 .of_finite).exists_finset_of_le_iSup\n    (fun g ↦ O ∙ (u · g - 1)) le_rfl, ϵ.symm.nonempty"
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "setup",
+   "claim": "x : W ⊕ s₀ ⊕ s → G (δ, then s₀, then s) and T the O-linear map O^{W⊕s₀⊕s} → (Y → M_σ(O)) of the u(x_i) − 1.",
+   "lines": [
+    124,
+    125
+   ],
+   "lean": "  let x : W ⊕ s₀ ⊕ s → G := δ ⊕ᵥ ((↑) ⊕ᵥ (↑))\n  let T := Fintype.linearCombination O fun i ↦ (u · (x i) - 1)"
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "setup",
+   "claim": "For each g choose z(g) with T(z(g)) = u(g) − 1.",
+   "lines": [
+    126,
+    127
+   ],
+   "lean": "  choose z hz using by simpa using h₁.trans (c := T.range) (by\n    simp [T]; exact (subset_span ⟨inr <| inl ⟨·, ·⟩, rfl⟩))"
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "setup",
+   "claim": "V: the Λ[G]-linear map of the U(x_i) − 1; v: vectors into Λ[G] via U(1).",
+   "lines": [
+    128,
+    129
+   ],
+   "lean": "  let V := Fintype.linearCombination Λ[G] (U ∘ x - 1)\n  let v {ι} := (LinearMap.toSpanSingleton O _ (U 1)).compLeft ι"
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "fact",
+   "claim": "χ_y(U g) = μ(u_y(g)).",
+   "lines": [
+    130,
+    130
+   ],
+   "lean": "  have hU y g : χ y (U g) = _ := lift_of ..",
+   "typed_fact": "χ y (U g) = _"
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "fact",
+   "claim": "χ_y(V(v m)) = μ(T(m)(y)).",
+   "lines": [
+    131,
+    131
+   ],
+   "lean": "  have hv y m : χ y (V (v m)) = μ (T m y) := by simp [V, v, T, hU, Fintype.linearCombination]"
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "setup",
+   "claim": "ω = Σ z (ribetNormaliser γ_π a y_π (p₀C) n).",
+   "lines": [
+    132,
+    132
+   ],
+   "lean": "  let ω := Finsupp.linearCombination O z (ribetNormaliser (γ π) a (y π) (p₀ * C) n)"
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "setup",
+   "claim": "N = V⁻¹(span{r : tr(χ_x(r)χ_x(U g)) ∈ 𝒥 for all g} + (V(v ω))·ker η_0).",
+   "lines": [
+    133,
+    134
+   ],
+   "lean": "  let N := Submodule.comap V (span _ {r | ∀ g, (fun x ↦ algebraMap _ _ (χ x r * χ x (U g)).trace) ∈\n    𝒥} ⊔ .map (.mulRight _ (V (v ω))) (RingHom.ker (η 0)))"
+  },
+  {
+   "id": "14",
+   "parent": null,
+   "kind": "fact",
+   "claim": "If χ_x(V r) = 0 for every x, then r ∈ N.",
+   "lines": [
+    135,
+    136
+   ],
+   "lean": "  have le r (h : ∀ x, χ x (V r) = 0) : r ∈ N := mem_sup_left (subset_span (by\n    simp [h, ← Pi.zero_def]))",
+   "typed_fact": "r ∈ N"
+  },
+  {
+   "id": "15",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Relations in N: the cocycle relations v(z(gh) − z(g)) − U(g)·v(z(h)), v(z(x_i)) − e_i, and v(Σθ z) when Σθ(u − 1) = 0 (step 14).",
+   "lines": [
+    137,
+    140
+   ],
+   "lean": "  have hg g h := le (v (z (g * h) - z g) - U g • v (z h)) (by simp [*, mul_sub])\n  have hx i := le (v (z (x i)) - Pi.single i 1) (by simp [V, *])\n  have hK θ (h : Finsupp.linearCombination O (fun g ↦ (u · g - 1)) θ = 0) :=\n    le (v (Finsupp.linearCombination O z θ)) (by simp [↓hv, Function.comp_def, *])",
+   "uses": [
+    {
+     "step": "14"
+    }
+   ]
+  },
+  {
+   "id": "16",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Constants of traces commute with μ.",
+   "lines": [
+    141,
+    142
+   ],
+   "lean": "  have tr A : .C (algebraMap O L A.trace) = algebraMap _ (MvPolynomial J L) (μ A).trace := by\n    simp +zetaDelta [trace]",
+   "typed_fact": ".C (algebraMap O L A.trace) = algebraMap _ (MvPolynomial J L) (μ A).trace"
+  },
+  {
+   "id": "17",
+   "parent": null,
+   "kind": "fact",
+   "claim": "The ties: v(z(τ_k)) − X_{k.1}·ε_{k.1}(U(φ_k))·v(z(φ_k)) ∈ N (h𝒥).",
+   "lines": [
+    143,
+    145
+   ],
+   "lean": "  have hτ k : v (z (τ k)) - (.X k.1 : Λ) • Polynomial.aeval (U (φ k)) (ε k.1) • v (z (φ k)) ∈ N :=\n    mem_sup_left\n    (subset_span fun g ↦ by simpa [*, Λ, mul_comm (Polynomial.X - _), sub_mul] using (h𝒥.2.2 g).2 k)",
+   "uses": [
+    {
+     "decl": "IsTraceIdeal"
+    }
+   ],
+   "typed_fact": "v (z (τ k)) - (.X k.1 : Λ) • Polynomial.aeval (U (φ k)) (ε k.1) • v (z (φ k)) ∈ N"
+  },
+  {
+   "id": "18",
+   "parent": null,
+   "kind": "fact",
+   "claim": "(U(g) − 1)·v(ω) ∈ N.",
+   "lines": [
+    146,
+    146
+   ],
+   "lean": "  have hω g : (U g - 1) • v ω ∈ N := mem_sup_right ⟨U g - 1, by simp [*]⟩",
+   "typed_fact": "(U g - 1) • v ω ∈ N"
+  },
+  {
+   "id": "19",
+   "parent": null,
+   "kind": "fact",
+   "claim": "p·w ∈ N for every w (h𝒥).",
+   "lines": [
+    147,
+    148
+   ],
+   "lean": "  have hW w : p • w ∈ N := mem_sup_left ((by simp : V w • p • U 1 = V (p • w)) ▸ smul_mem _ _\n    (subset_span fun g ↦ by simpa [*, Λ] using (h𝒥.2.2 g).1))",
+   "typed_fact": "p • w ∈ N"
+  },
+  {
+   "id": "20",
+   "parent": null,
+   "kind": "setup",
+   "claim": "ψ₀ = ψ_π followed by evaluation of the variables at 0.",
+   "lines": [
+    149,
+    149
+   ],
+   "lean": "  let ψ₀ := (MvPolynomial.aeval (S₁ := O) 0).mapMatrix.comp ((ψ π).restrictScalars O)"
+  },
+  {
+   "id": "20b",
+   "parent": null,
+   "kind": "fact",
+   "claim": "ψ₀(U g) = ρ_π(g).",
+   "lines": [
+    150,
+    150
+   ],
+   "lean": "  have ψU g : ψ₀ (U g) = ρ π g := Matrix.ext (by simp +zetaDelta)",
+   "typed_fact": "ψ₀ (U g) = ρ π g"
+  },
+  {
+   "id": "21",
+   "parent": null,
+   "kind": "fact",
+   "claim": "A square matrix B₀ with rows in N and v(det ψ₀(B₀)) ≤ b₀ (exists_rows_addVal_det_le: ψ₀ is onto by hρ; the vectors of ((O/p₀)^r) killed by N through ψ₀ form, via l, obeying cocycles modulo p₀ vanishing on the τ's and at γ_π, of length ≤ b₀ by hb₀), the membership being checked through:",
+   "lines": [
+    151,
+    161
+   ],
+   "span": [
+    151,
+    3,
+    161,
+    81
+   ],
+   "lean": "obtain ⟨B₀, hB₀, e₀⟩ := exists_rows_addVal_det_le ψ₀ (ψ₀.toLinearMap.range_eq_top.1\n    (eq_top_mono (by simp [span_le, ← ψU]) hρ)) N hp₀ hlt ((length_le_of_le_map\n    (.funLeft _ _ x) _ le_rfl).trans hb₀) fun w H ↦ let l := Fintype.linearCombination O w\n    ⟨l ∘ z, .imp (.imp_right (hy π).smul_eq_zero.1) _root_.funext (by\n    simpa [show ∀ m, ∑ j, ψ₀ (v m j) • w j = l m by simp [v, l, Fintype.linearCombination],\n      mul_smul, ← smul_sum, sub_smul, ψU, ω, ribetNormaliser, smul_sub, h₀,\n      add_smul, ↓Set.forall_mem_range, show ∀ j a, ψ₀ ((.X j : Λ) • a) = 0 by simp [ψ₀,\n      Matrix.map_smul'], show ∀ b : r → QuotSpan p₀, p₀ • b = 0 by simp [↓funext_iff,\n      smul_quot_eq_zero_of_dvd], ← Finsupp.apply_linearCombination] using\n      (⟨⟨⟨⟨(H _ <| hg · ·), (H _ <| hK · ·)⟩, (H _ <| hτ ·)⟩, H _ (sub_mem (hω (γ π)) (N.smul_mem\n      (U (γ π) - 1) (hg (γ π) a)))⟩, (H _ <| hx ·)⟩ : (((_ ∧ _) ∧ _) ∧ _) ∧ _))⟩",
+   "head_span": [
+    151,
+    3,
+    155,
+    12
+   ],
+   "head_lines": [
+    151,
+    155
+   ],
+   "uses": [
+    {
+     "decl": "exists_rows_addVal_det_le"
+    },
+    {
+     "decl": "obeyingCocycles"
+    }
+   ]
+  },
+  {
+   "id": "21.1",
+   "parent": "21",
+   "kind": "computation",
+   "claim": "Σ_j ψ₀(v(m)_j)·w_j = l(m) for every m;",
+   "lines": [
+    155,
+    157
+   ],
+   "span": [
+    155,
+    12,
+    157,
+    40
+   ],
+   "lean": "show ∀ m, ∑ j, ψ₀ (v m j) • w j = l m by simp [v, l, Fintype.linearCombination],\n      mul_smul, ← smul_sum, sub_smul, ψU, ω, ribetNormaliser, smul_sub, h₀,\n      add_smul, ↓Set.forall_mem_range, ",
+   "typed_fact": "∀ m, ∑ j, ψ₀ (v m j) • w j = l m"
+  },
+  {
+   "id": "21.2",
+   "parent": "21",
+   "kind": "computation",
+   "claim": "ψ₀(X_j·a) = 0 (evaluation at 0);",
+   "lines": [
+    157,
+    158
+   ],
+   "span": [
+    157,
+    40,
+    158,
+    26
+   ],
+   "lean": "show ∀ j a, ψ₀ ((.X j : Λ) • a) = 0 by simp [ψ₀,\n      Matrix.map_smul'], ",
+   "typed_fact": "∀ j a, ψ₀ ((.X j : Λ) • a) = 0"
+  },
+  {
+   "id": "21.3",
+   "parent": "21",
+   "kind": "computation",
+   "claim": "p₀·b = 0 on (O/p₀)^r; and the relations of steps 15–18 (cocycle, ties, normaliser, coordinates).",
+   "lines": [
+    158,
+    161
+   ],
+   "span": [
+    158,
+    26,
+    161,
+    81
+   ],
+   "lean": "show ∀ b : r → QuotSpan p₀, p₀ • b = 0 by simp [↓funext_iff,\n      smul_quot_eq_zero_of_dvd], ← Finsupp.apply_linearCombination] using\n      (⟨⟨⟨⟨(H _ <| hg · ·), (H _ <| hK · ·)⟩, (H _ <| hτ ·)⟩, H _ (sub_mem (hω (γ π)) (N.smul_mem\n      (U (γ π) - 1) (hg (γ π) a)))⟩, (H _ <| hx ·)⟩ : (((_ ∧ _) ∧ _) ∧ _) ∧ _))⟩",
+   "typed_fact": "∀ b : r → QuotSpan p₀, p₀ • b = 0"
+  },
+  {
+   "id": "22",
+   "parent": null,
+   "kind": "fact",
+   "claim": "On 𝓧, χ_x is the block sum of ψ_x and diag(η_e) (hu).",
+   "lines": [
+    162,
+    164
+   ],
+   "lean": "  have R x a : χ x.1 a = reindex ϵ ϵ (fromBlocks (ψ x a) 0 0 (diagonal (η · a))) :=\n    (Equiv.symm_apply_eq _).1 (by ext1 ⟨⟩ ⟨⟩ <;> simp +zetaDelta [hu, lift_apply,\n    diagonal, apply_ite κ])",
+   "typed_fact": "χ x.1 a = reindex ϵ ϵ (fromBlocks (ψ x a) 0 0 (diagonal (η · a)))"
+  },
+  {
+   "id": "23",
+   "parent": null,
+   "kind": "fact",
+   "claim": "For x ∈ 𝓧 and a matrix M: the determinant of the block matrix χ_x(M) is det(ψ_x(M))·∏_e det(η_e(M)) (block triangular after reindexing).",
+   "lines": [
+    165,
+    169
+   ],
+   "lean": "  have D (x : 𝓧) (M : type_of% B₀) :=\n    (((Matrix.comp ..) (M.map (χ x))).det_submatrix_equiv_self\n    (.trans (.symm (.prodSumDistrib ..)) (.prodCongr 1 ϵ))).symm.trans (by\n    convert ((Matrix.comp ..) (M.map (ψ x))).det_fromBlocks_zero₂₁ 0 (blockDiagonal (M.map <| η ·))\n    ext1 ⟨⟩ ⟨⟩ <;> simp [R, blockDiagonal, diagonal])",
+   "uses": [
+    {
+     "step": "22"
+    }
+   ]
+  },
+  {
+   "id": "24",
+   "parent": null,
+   "kind": "setup",
+   "claim": "E_e: the map N → (s-coordinates) through η_e.",
+   "lines": [
+    170,
+    170
+   ],
+   "lean": "  let E e := .funLeft _ _ inr ∘ₗ (η e).toLinearMap.compLeft (W ⊕ s₀ ⊕ s)"
+  },
+  {
+   "id": "25",
+   "parent": null,
+   "kind": "fact",
+   "claim": "For each e: the hypothesis hb applies to the module of forms of N through E_e (and any A, K with the image of N in K): HasTriangleCost and detection.",
+   "lines": [
+    171,
+    184
+   ],
+   "lean": "  have B {e r} {A : _ →ₗ[_] r → _} {K} (l : (N.restrictScalars _).map (A ∘ₗ E e) ≤ K) :=\n    hb e (formsMod ((A ∘ₗ E e).restrictScalars O ∘ₗ v) z K p) (fun _ ⟨Ψ, H, Q⟩ ↦ Q ▸\n    have h m {w} k (q : ∀ x, η e _ = η e _) := @H m (l ⟨w, k, congr(A $(_root_.funext q))⟩)\n    ⟨by simpa using! And.intro (fun g g' ↦ h (z (g * g') - z g - ξ e g • z g') (hg g g') (by\n      simp [hη, Λ])) (H <| l ⟨_, hK · ·, rfl⟩), fun v ↦ h _ (hx (inl v)) (by simp [x]),\n      fun m L g ↦ L g ▸ by_contra fun b ↦ by\n    obtain ⟨w, W⟩ := (dvd_prod_of_mem (a := 0) _ (by simp; rintro rfl; simp [ξ₀] at b)).trans (hC e)\n    have K : Ψ ω = _ := congr($(show Ψ ∘ₗ Finsupp.linearCombination O z =\n      (Finsupp.linearCombination O (ξ e · - 1)).smulRight m by ext : 2; simpa using L _) _)\n    simp [ribetNormaliser, *] at K; set r := Finsupp.linearCombination O (M := O) _ _\n    refine IsLocalRing.nonunits_add (b <| ·.smul_eq_zero.1 ?_) (by\n      simp [← addVal_eq_zero_iff, hlt.ne_zero]) ((sub_add_cancel _ (p₀ * (w * r))).substr (hy π))\n    linear_combination (norm := module) (ξ e g - 1) • K - (Ψ.map_smul ..).symm.trans (h ((ξ e g - 1)\n      • ω) (hω g) (by simp [hη, Λ]))⟩)",
+   "head_lines": [
+    171,
+    172
+   ],
+   "uses": [
+    {
+     "decl": "formsMod"
+    }
+   ]
+  },
+  {
+   "id": "25.1",
+   "parent": "25",
+   "kind": "fact",
+   "claim": "h: a form Ψ of the module vanishes at m whenever some element of N has the same image as m under η_e (coordinatewise).",
+   "lines": [
+    173,
+    173
+   ],
+   "lean": "    have h m {w} k (q : ∀ x, η e _ = η e _) := @H m (l ⟨w, k, congr(A $(_root_.funext q))⟩)"
+  },
+  {
+   "id": "25.2",
+   "parent": "25",
+   "kind": "fact",
+   "claim": "Such a form gives a cocycle obeying (u, ξ_e) modulo p (cocycle relations and step 15), vanishing at the δ_v.",
+   "lines": [
+    174,
+    175
+   ],
+   "lean": "    ⟨by simpa using! And.intro (fun g g' ↦ h (z (g * g') - z g - ξ e g • z g') (hg g g') (by\n      simp [hη, Λ])) (H <| l ⟨_, hK · ·, rfl⟩), fun v ↦ h _ (hx (inl v)) (by simp [x]),"
+  },
+  {
+   "id": "25.3",
+   "parent": "25",
+   "kind": "fact",
+   "claim": "Its coboundary-like elements are killed by ξ_e(a) − 1: otherwise, a nonzero value contradicts that the normaliser relation (step 18) and the unit y_π − 1 force a unit to be a non-unit.",
+   "lines": [
+    176,
+    184
+   ],
+   "lean": "      fun m L g ↦ L g ▸ by_contra fun b ↦ by\n    obtain ⟨w, W⟩ := (dvd_prod_of_mem (a := 0) _ (by simp; rintro rfl; simp [ξ₀] at b)).trans (hC e)\n    have K : Ψ ω = _ := congr($(show Ψ ∘ₗ Finsupp.linearCombination O z =\n      (Finsupp.linearCombination O (ξ e · - 1)).smulRight m by ext : 2; simpa using L _) _)\n    simp [ribetNormaliser, *] at K; set r := Finsupp.linearCombination O (M := O) _ _\n    refine IsLocalRing.nonunits_add (b <| ·.smul_eq_zero.1 ?_) (by\n      simp [← addVal_eq_zero_iff, hlt.ne_zero]) ((sub_add_cancel _ (p₀ * (w * r))).substr (hy π))\n    linear_combination (norm := module) (ξ e g - 1) • K - (Ψ.map_smul ..).symm.trans (h ((ξ e g - 1)\n      • ω) (hω g) (by simp [hη, Λ]))⟩)",
+   "head_lines": [
+    176,
+    176
+   ]
+  },
+  {
+   "id": "25.3.1",
+   "parent": "25.3",
+   "kind": "setup",
+   "claim": "e ≠ 0 (for e = 0 the factor ξ_e(a) − 1 vanishes, ξ_0 = 1, contrary to the assumption), so ξ_e(a) − ξ_0(a) = ξ_e(a) − 1 divides ∏_{k≠e}(ξ_e(a) − ξ_k(a)), which divides C (hC): C = (ξ_e(a) − 1)·w.",
+   "lines": [
+    177,
+    177
+   ],
+   "lean": "    obtain ⟨w, W⟩ := (dvd_prod_of_mem (a := 0) _ (by simp; rintro rfl; simp [ξ₀] at b)).trans (hC e)"
+  },
+  {
+   "id": "25.3.2",
+   "parent": "25.3",
+   "kind": "fact",
+   "claim": "K: the form at ω equals",
+   "lines": [
+    178,
+    178
+   ],
+   "span": [
+    178,
+    5,
+    178,
+    33
+   ],
+   "lean": "have K : Ψ ω = _ := congr($(",
+   "typed_fact": "Ψ ω = _"
+  },
+  {
+   "id": "25.3.3",
+   "parent": "25.3",
+   "kind": "fact",
+   "claim": "the linear combination with coefficients (ξ_e(g) − 1)·m (Ψ∘Σz = (Σ(ξ_e − 1))·m).",
+   "lines": [
+    178,
+    179
+   ],
+   "span": [
+    178,
+    33,
+    179,
+    92
+   ],
+   "lean": "show Ψ ∘ₗ Finsupp.linearCombination O z =\n      (Finsupp.linearCombination O (ξ e · - 1)).smulRight m by ext : 2; simpa using L _) _)",
+   "typed_fact": "Ψ ∘ₗ Finsupp.linearCombination O z ="
+  },
+  {
+   "id": "25.3.4",
+   "parent": "25.3",
+   "kind": "computation",
+   "claim": "Expand the normaliser (ribetNormaliser).",
+   "lines": [
+    180,
+    180
+   ],
+   "lean": "    simp [ribetNormaliser, *] at K; set r := Finsupp.linearCombination O (M := O) _ _"
+  },
+  {
+   "id": "25.3.5",
+   "parent": "25.3",
+   "kind": "deduction",
+   "claim": "y_π − 1 = (y_π − 1 − p₀wr) + p₀wr is a unit (hy) and p₀wr is not (v(p₀) > b₀ ≥ 0, hlt); nonunits of the local ring O are closed under addition, so y_π − 1 − p₀wr is a unit, and it suffices that it kills (ξ_e(a) − 1)(ξ_e(g) − 1)m.",
+   "lines": [
+    181,
+    182
+   ],
+   "lean": "    refine IsLocalRing.nonunits_add (b <| ·.smul_eq_zero.1 ?_) (by\n      simp [← addVal_eq_zero_iff, hlt.ne_zero]) ((sub_add_cancel _ (p₀ * (w * r))).substr (hy π))",
+   "uses": [
+    {
+     "decl": "ribetNormaliser"
+    }
+   ]
+  },
+  {
+   "id": "25.3.6",
+   "parent": "25.3",
+   "kind": "computation",
+   "claim": "(ξ_e(g) − 1)·Ψ(ω) = Ψ((ξ_e(g) − 1)·ω) = 0 (step 18 through h), and by K, hγ and C = (ξ_e(a) − 1)w, Ψ(ω) = −(y_π − 1 − p₀wr)(ξ_e(a) − 1)m; together the required identity (linear_combination).",
+   "lines": [
+    183,
+    184
+   ],
+   "lean": "    linear_combination (norm := module) (ξ e g - 1) • K - (Ψ.map_smul ..).symm.trans (h ((ξ e g - 1)\n      • ω) (hω g) (by simp [hη, Λ]))⟩)"
+  },
+  {
+   "id": "26",
+   "parent": null,
+   "kind": "fact",
+   "claim": "For each e and i: m_{e,i} ∈ N with the s-coordinates of e_i (mem_of_forall_form_eq_zero with step 25).",
+   "lines": [
+    185,
+    188
+   ],
+   "lean": "  choose m hm k₁ using fun e i ↦ (((N.restrictScalars _).map (.funLeft _ _ inl ∘ₗ E\n    e)).sub_mem_iff_right (mem_of_forall_form_eq_zero hp (by exact ⟨_, hW <|\n    v ·, by simp⟩) fun Ψ h ↦ congr($((B le_rfl).2 _ ⟨Ψ, h, rfl⟩ (h ⟨_, hx <| inr <|\n    inr ⟨·, ·⟩, by ext; simp [E, x]⟩)) _))).1 ⟨_, hx (inr (inl i)), map_sub ..⟩",
+   "uses": [
+    {
+     "decl": "mem_of_forall_form_eq_zero"
+    }
+   ]
+  },
+  {
+   "id": "27",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Simplify k₁.",
+   "lines": [
+    189,
+    189
+   ],
+   "lean": "  simp [E, funext_iff] at k₁"
+  },
+  {
+   "id": "28",
+   "parent": null,
+   "kind": "fact",
+   "claim": "For each i: ν_i ∈ N whose s₀-coordinates under every η_e are e_i.",
+   "lines": [
+    190,
+    192
+   ],
+   "lean": "  choose ν hn hn' using fun i ↦ univ.induction_on (motive := (∃ w ∈ N, ∀ e ∈ ·, ∀ j, η e (w (inr\n    (inl j))) = ite (j = i) 1 0)) ⟨0, by simp⟩ fun e _ _ ⟨w, h, H⟩ ↦ ⟨_, add_mem h (N.sum_smul_mem\n    (t := univ) (Pi.single i 1 - w ∘ inr ∘ inl) fun j _ ↦ hm e j), by simp +contextual [H, k₁]⟩"
+  },
+  {
+   "id": "29",
+   "parent": null,
+   "kind": "setup",
+   "claim": "A_e: the linear map that eliminates the s₀-coordinates by means of the rows E_e(ν_i) (vecMulLinear of a block matrix); 𝔮: the polynomials with no monomial ≤ ∏X_j (restrictSupportIdeal of the complement of Iic).",
+   "lines": [
+    193,
+    194
+   ],
+   "lean": "  let A e := vecMulLinear (fromRows (m₂ := s) (-(of (E e <| ν ·)).toCols₂) 1)\n  let 𝔮 := restrictSupportIdeal O _ (isLowerSet_Iic (∑ j : J, .single j 1)).compl"
+  },
+  {
+   "id": "30",
+   "parent": null,
+   "kind": "fact",
+   "claim": "For each e, the block lemma (exists_mem_fittingIdeal_block) gives Γ_e with v(Γ_e(0)) ≤ b_e + (…)·v(C) and Γ_e·∏_{ty j = e} X_j in the Fitting ideal of the image of N plus 𝔮-colon terms.",
+   "lines": [
+    195,
+    204
+   ],
+   "lean": "  choose Γ hl hΓ using fun e ↦ exists_mem_fittingIdeal_block hp (@B e _ (A e)\n    (_ ⊔ 𝔮.colon {∏ j with ty j < e, .X j} • ⊤) le_sup_left).1\n    (mem_sup_left ⟨_, hW <| v ·, by simp⟩) (mem_sup_left ⟨_,\n    hx <| inr <| inr ·, by ext1; simp [E, A, x, vecMul_eq_sum]⟩) (fun k ↦ (hε e k).elim fun d h ↦\n    mem_sup_left ⟨_, add_mem (hτ k) (hW ((.X _ : Λ) • v (d • z (φ k)))), by\n    erw [← (A e).map_smul, ← (A e).map_sub]; congrm A e fun _ ↦ ?_\n    simp [E, hη, Λ, by simpa [κ, Λ] using congr(κ $h)]; ring⟩) fun j h i hi ↦\n    ((mem_filter.1 h).2 ▸ ty.mono hi.le).eq_or_lt.imp (by simp) fun k _ ↦ mem_sup_right\n    (smul_mem_smul (by simpa [MvPolynomial.X, ← monomial_sum_one, 𝔮, Finsupp.le_def,\n      ← 𝔮.restrictScalars_mem O] using ⟨i, by simp [k, Finsupp.single_apply]⟩) trivial)",
+   "head_lines": [
+    195,
+    195
+   ],
+   "uses": [
+    {
+     "decl": "exists_mem_fittingIdeal_block"
+    }
+   ]
+  },
+  {
+   "id": "30.1",
+   "parent": "30",
+   "kind": "fact",
+   "claim": "The hypotheses of the block lemma: the triangle cost (step 25 with A_e and the module K = image of N + (𝔮 : ∏_{ty j < e} X_j)·⊤), the p-hypothesis (step 19) and the coordinate hypothesis (step 15, hx).",
+   "lines": [
+    196,
+    198
+   ],
+   "lean": "    (_ ⊔ 𝔮.colon {∏ j with ty j < e, .X j} • ⊤) le_sup_left).1\n    (mem_sup_left ⟨_, hW <| v ·, by simp⟩) (mem_sup_left ⟨_,\n    hx <| inr <| inr ·, by ext1; simp [E, A, x, vecMul_eq_sum]⟩) (fun k ↦ (hε e k).elim fun d h ↦"
+  },
+  {
+   "id": "30.2",
+   "parent": "30",
+   "kind": "fact",
+   "claim": "The tie hypothesis from hτ and hε.",
+   "lines": [
+    199,
+    201
+   ],
+   "lean": "    mem_sup_left ⟨_, add_mem (hτ k) (hW ((.X _ : Λ) • v (d • z (φ k)))), by\n    erw [← (A e).map_smul, ← (A e).map_sub]; congrm A e fun _ ↦ ?_\n    simp [E, hη, Λ, by simpa [κ, Λ] using congr(κ $h)]; ring⟩) fun j h i hi ↦"
+  },
+  {
+   "id": "30.3",
+   "parent": "30",
+   "kind": "fact",
+   "claim": "The ordering hypothesis: earlier variables of other types are killed modulo 𝔮.",
+   "lines": [
+    202,
+    204
+   ],
+   "lean": "    ((mem_filter.1 h).2 ▸ ty.mono hi.le).eq_or_lt.imp (by simp) fun k _ ↦ mem_sup_right\n    (smul_mem_smul (by simpa [MvPolynomial.X, ← monomial_sum_one, 𝔮, Finsupp.le_def,\n      ← 𝔮.restrictScalars_mem O] using ⟨i, by simp [k, Finsupp.single_apply]⟩) trivial)"
+  },
+  {
+   "id": "31",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Decompose (fittingIdeal.sup_smul_top_le): Γ_e·∏_{ty j = e}X_j = d_e + ζ_e with d_e in the Fitting ideal of the image of N and ζ_e in the colon ideal (𝔮 : ∏_{ty j < e} X_j).",
+   "lines": [
+    205,
+    205
+   ],
+   "lean": "  choose d hd ζ hI h₃ using (mem_sup.1 <| fittingIdeal.sup_smul_top_le <| hΓ ·)",
+   "uses": [
+    {
+     "decl": "fittingIdeal.sup_smul_top_le"
+    }
+   ]
+  },
+  {
+   "id": "32",
+   "parent": null,
+   "kind": "setup",
+   "claim": "a = (∏_v o_v(1))·C^{|s|}; write each d_e as a combination of determinants of matrices B_e(i) with rows in the image of N (mem_span_set').",
+   "lines": [
+    206,
+    209
+   ],
+   "lean": "  let a := (∏ v, (o v).eval 1) * C ^ #s\n  choose _ w z hw using (mem_span_set'.1 <| hd ·)\n  choose B h e' using (z · · |>.2)\n  choose w' h k' using h"
+  },
+  {
+   "id": "33",
+   "parent": null,
+   "kind": "setup",
+   "claim": "M(i): the matrix with rows aeval(U(δ_v))(o_v) at the W-coordinates, ν, and Σ_e q_e·w'_e.",
+   "lines": [
+    210,
+    211
+   ],
+   "lean": "  let M (i : ∀ _, _) := of ((fun v ↦\n    Pi.single (inl v) (Polynomial.aeval (U (δ v)) (o v))) ⊕ᵥ (ν ⊕ᵥ (∑ e, q e • w' e (i e) ·)))"
+  },
+  {
+   "id": "34",
+   "parent": null,
+   "kind": "fact",
+   "claim": "det(η_i(M_j)) = a·det(B_i(j_i)) (block triangular: the W-block diagonal with o_v(1)… and identity, the q_e select the e-th block).",
+   "lines": [
+    212,
+    218
+   ],
+   "lean": "  have e j i : (of (η i <| M j · ·)).det = .C a * (B i (j i)).det := by\n    rw [← fromBlocks_toBlocks (of _), (_ : toBlocks₁₂ _ = 0), det_fromBlocks_zero₁₂',\n      ← IsDiag.diagonal_diag (A := toBlocks₁₁ _), ← fromBlocks_toBlocks (toBlocks₂₂ _), (_ :\n      (toBlocks₂₂ _).toBlocks₁₁ = 1), det_fromBlocks_one₁₁', (_ : _ - _ = κ C • B i (j i))] <;> simp\n      +contextual [IsDiag, Pairwise, a, κ, Λ, M, ← ext_iff, toBlocks₁₁, toBlocks₁₂,\n      toBlocks₂₁, toBlocks₂₂, Matrix.mul_apply, hn', hη, hδ, hq, ← k', A, E, vecMul_eq_sum, eq_comm,\n      mul_assoc, mul_add, sub_eq_neg_add]",
+   "uses": [
+    {
+     "step": "5"
+    }
+   ],
+   "typed_fact": "(of (η i <| M j · ·)).det = .C a * (B i (j i)).det"
+  },
+  {
+   "id": "35",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Coefficients of monomials d ≤ ∏X_j: the products with ∏X_j split into the d_e parts, the 𝔮 parts contributing nothing below ∏X_j.",
+   "lines": [
+    219,
+    223
+   ],
+   "lean": "  have hd' D := by simpa [𝔮, ← 𝔮.restrictScalars_mem O, mem_restrictSupport_iff, not_imp_not,\n    mul_sub, h₃, sum_fiberwise, MvPolynomial.X, ← mul_assoc, ← monomial_sum_one,\n    coeff_mul_monomial'] using 𝔮.mul_mem_left D ((sub_eq_of_eq_add' (prod_add_ordered univ d\n    ζ)).symm.subst (sum_mem fun e _ ↦ 𝔮.mem_of_dvd (by simp [h₃, mul_dvd_mul_left,\n    prod_fiberwise_eq_prod_filter, Dvd.dvd.mul_right]) (hI e ⟨_, rfl, rfl⟩)))"
+  },
+  {
+   "id": "36",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Ribet's Cramer construction (exists_ribet_element_cramer) for χ, κ the evaluation into S, 𝒥, w = v(ω), V: β ∈ S and, for each matrix with rows in N + …, an f.",
+   "lines": [
+    224,
+    226
+   ],
+   "lean": "  have ⟨hS, P⟩ := exists_ribet_element_cramer χ (MvPolynomial.aeval (⟨_, h𝒥.1 ·⟩)).1 (by ext <;>\n    simp [Λ]) (by simp +zetaDelta [Algebra.ofId, ↓charpoly_map, h𝒥.2.1]) 𝒥 (v ω) V (.C <| β ·)\n    (by simp [hβ, hv, ω, μ, hz, Finsupp.linearCombination, det_apply', κ, Λ])",
+   "uses": [
+    {
+     "decl": "exists_ribet_element_cramer"
+    }
+   ]
+  },
+  {
+   "id": "37",
+   "parent": null,
+   "kind": "setup",
+   "claim": "For each choice i, f_i from step 36 applied to k·(∏_e w_e(i_e))·q_0 and B₀ + k·(M(i) − B₀), whose rows lie in N (hH, steps 21, 28).",
+   "lines": [
+    227,
+    230
+   ],
+   "lean": "  choose f hf hf' using fun i ↦ P (k * (∏ e, w e (i e)) • q 0) (B₀ + k • (M i - B₀)) fun j ↦\n    add_mem (hB₀ j) (N.smul_mem _ (sub_mem (j.rec (fun v ↦ le (Pi.single _ _) fun y ↦ by\n    simpa [V, x, hU] using congr(μ $(hH v y))) (Sum.rec hn\n      (N.sum_smul_mem _ fun e _ ↦ h e _ ·))) (hB₀ j)))",
+   "uses": [
+    {
+     "step": "21"
+    },
+    {
+     "step": "28"
+    }
+   ]
+  },
+  {
+   "id": "38",
+   "parent": null,
+   "kind": "fact",
+   "claim": "For y ∈ 𝓧 and n ≤ ∏X_j: the coefficient of X^n in (Σ_i f_i)(y) is that of det(ψ_y(B₀))·C·a^t·(Σ Γ…) (steps 23, 34, 35, the k-element killing ψ and fixing η).",
+   "lines": [
+    231,
+    237
+   ],
+   "lean": "  have H (y : 𝓧) n hn : ((∑ i, f i).1 y).coeff n = _ := .trans (by\n    simp [(hf · y fun m (k : _ = _) ↦ by simp +contextual [*]), ↓D, (det_classical _).symm.trans\n      (det_blockDiagonal _), R, trace, e, ← hw, ← e', hq, Fintype.prod_sum, hk, hk', ← ϵ.sum_comp,\n      Matrix.map, κ, Λ, ← MvPolynomial.coeff_map]\n    ac_rfl) (congrArg (algebraMap O L) (hd' (((Matrix.comp ..)\n    (B₀.map (ψ y))).det * κ (C * a ^ t)) n\n      hn).symm)",
+   "uses": [
+    {
+     "step": "23"
+    },
+    {
+     "step": "34"
+    },
+    {
+     "step": "35"
+    },
+    {
+     "step": "3"
+    }
+   ],
+   "typed_fact": "((∑ i, f i).1 y).coeff n = _"
+  },
+  {
+   "id": "39",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "c = the coefficient at ∏X_j at π: β ∈ S and (Σf_i)·β ∈ 𝒥; on 𝓧, β = 0 (a zero column of the block determinant) and the coefficients below ∏X_j vanish (step 38); v(c) ≤ v(det ψ₀(B₀)) + Σ_e v(Γ_e(0)) + t·v(a) + … ≤ the stated bound (steps 21, 30).",
+   "lines": [
+    238,
+    245
+   ],
+   "lean": "  exact ⟨_, ⟨hS, _, by simp [sum_mul, sum_mem, hf'], fun y ↦ ⟨by simp +contextual [*,\n    det_eq_zero_of_column_eq_zero (ϵ (inr 0)), ϵ.surjective.forall, Finsupp.linearCombination,\n    diagonal], fun d h ↦ by simp [↓H y d h.le, h.not_ge]⟩, H π _ le_rfl⟩, by\n    simp [← constantCoeff_eq]\n    grw [addVal_prod, hl, ← e₀]\n    simp +zetaDelta [det_apply', addVal_prod, ← sum_mul, ← Nat.cast_sum,\n      ← card_eq_sum_card_fiberwise]\n    ring_nf; rfl⟩",
+   "uses": [
+    {
+     "step": "21"
+    },
+    {
+     "step": "30"
+    },
+    {
+     "step": "38"
+    },
+    {
+     "decl": "IsRibetElement"
+    }
+   ]
+  }
+ ]
+}

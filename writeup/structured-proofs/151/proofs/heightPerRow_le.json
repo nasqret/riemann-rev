@@ -1,0 +1,213 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Endgame.ShortAndEnough:48:7",
+ "name": "Data.heightPerRow_le",
+ "file": "New/Endgame/ShortAndEnough.lean",
+ "file_sha256": "eb7eaf3c1a7a7d91978d4c85e4be3e44526250f69aabf5507b8b0281eff7d6d3",
+ "commit": "72fead102f663d5c7a407964a13dc0cf9d977207",
+ "summary": "Stirling bounds the jet size; the level prime N is chosen with log N ≥ λ, which cancels the main term m·a(w̄ + G) of the excesses; the rest is within the budget.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Put w̄ := (1/f_D)·∑_τ log w_D(τ), the mean of the log-weights over all infinite places.",
+   "lines": [
+    49,
+    49
+   ],
+   "lean": "  set w := (∑ τ, (D.nominalWeight τ).log) / D.f",
+   "uses": [
+    {
+     "decl": "Data.nominalWeight"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Put G := log(g·rd_E/(2π)) (g = g₀g₁) (hG).",
+   "lines": [
+    50,
+    50
+   ],
+   "lean": "  set G := (D.gProd * D.rootDisc / (2 * π)).log with hG",
+   "uses": [
+    {
+     "decl": "Data.gProd"
+    },
+    {
+     "decl": "Data.rootDisc"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Stirling: log a_D! ≤ a_D·log a_D − a_D + (1 + log a_D/2), from the monotonicity of log of Stirling's sequence n!/(√(2n)(n/e)^n) (its value at a_D is at most its value at 1), with a_D ≥ 1.",
+   "lines": [
+    51,
+    55
+   ],
+   "lean": "  have stirling : log D.a.factorial ≤ D.a * log D.a - D.a + (1 + log D.a / 2) := by\n    have S := log_stirlingSeq'_antitone D.a.pred.zero_le\n    simp [log_stirlingSeq_formula, log_div, log_mul, log_sqrt, (HasLogBound.pos D).ne',\n      (D.nat_le_of_hasLogBound : 1 ≤ D.a)] at S\n    bound",
+   "typed_fact": "log D.a.factorial ≤ D.a * log D.a - D.a + (1 + log D.a / 2)",
+   "uses": [
+    {
+     "decl": "Data.nat_le_of_hasLogBound"
+    },
+    {
+     "decl": "Data.HasLogBound.pos"
+    }
+   ],
+   "ambient_uses": [
+    "Stirling.log_stirlingSeq'_antitone",
+    "Stirling.log_stirlingSeq_formula"
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "fact",
+   "claim": "The excess: jetSize_D(a_D) − Ask_main(D) ≤ a_D·(w̄ + G) + (1 + log a_D/2). Indeed jetSize_D(a_D) = log a_D! − a_D·log(Ω/g) with Ω = e^(ℓ(d))·2π/rd_E, and Ask_main(D) = a_D(log a_D − 1 − ℓ(d) − w̄), so the difference is log a_D! − a_D log a_D + a_D + a_D(G + w̄), and step 3 applies.",
+   "lines": [
+    56,
+    58
+   ],
+   "lean": "  have excess : D.jetSize D.a - D.mainAsk ≤ D.a * (w + G) + (1 + log D.a / 2) := by\n    simp [jetSize, mainAsk, hG, bigOmega, log_div, log_mul, (HasLogBound.pos D).ne']\n    bound",
+   "typed_fact": "D.jetSize D.a - D.mainAsk ≤ D.a * (w + G) + (1 + log D.a / 2)",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "step": "2"
+    },
+    {
+     "step": "3"
+    },
+    {
+     "decl": "Data.jetSize"
+    },
+    {
+     "decl": "Data.mainAsk"
+    },
+    {
+     "decl": "Parameters.bigOmega"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "fact",
+   "claim": "The level: m_D·(w̄ + G) − (G + (15/2)·log b_D) ≤ log N_D, because the left side is λ_D = `Data.logLevelTarget` and λ_D ≤ log N_D (`Data.log_N_mem_window`).",
+   "lines": [
+    60,
+    61
+   ],
+   "lean": "  have level : D.m * (w + G) - (G + 15 / 2 * D.logB) ≤\n    log D.N := by grind [D.log_N_mem_window.1, logLevelTarget]",
+   "typed_fact": "D.m * (w + G) - (G + 15 / 2 * D.logB) ≤\n    log D.N",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "step": "2"
+    },
+    {
+     "decl": "Data.log_N_mem_window"
+    },
+    {
+     "decl": "Data.logLevelTarget"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "h₀(D) ≤ h_main(D) − m_D·rem(D) + 𝓑(D), by the following chain.",
+   "lines": [
+    62,
+    70
+   ],
+   "lean": "  calc D.heightPerRow = D.mainHeight - D.m * D.remainder + #_ *\n      (D.m * (D.jetSize D.a - D.mainAsk) - D.a * log D.N) := by\n        simp [heightPerRow, mainHeight, remainder]\n        ring\n    _ ≤ D.mainHeight - D.m * D.remainder + #D.tops * (D.m * (_ + (1 + log D.a / 2)) -\n        D.a * (_ - (G + _))) := by bound\n    -- `m a (w + G)` cancels\n    _ = _ + #D.tops * (D.m * (1 + log D.a / 2) + D.a * (G + 15 / 2 * D.logB)) := by ring\n    _ ≤ _ := add_le_add_right D.le_of_hasLogBound _",
+   "uses": []
+  },
+  {
+   "id": "6.1",
+   "parent": "6",
+   "kind": "identity",
+   "claim": "h₀(D) = h_main(D) − m_D·rem(D) + #tops(D)·(m_D·(jetSize_D(a_D) − Ask_main(D)) − a_D·log N_D): unfold h₀, h_main = m·k·𝖴 and rem = ∑_τ (Ask(D, a_D, τ) − Ask_main(D)), and rearrange.",
+   "lines": [
+    62,
+    65
+   ],
+   "lean": "  calc D.heightPerRow = D.mainHeight - D.m * D.remainder + #_ *\n      (D.m * (D.jetSize D.a - D.mainAsk) - D.a * log D.N) := by\n        simp [heightPerRow, mainHeight, remainder]\n        ring",
+   "uses": [
+    {
+     "decl": "Data.heightPerRow"
+    },
+    {
+     "decl": "Data.mainHeight"
+    },
+    {
+     "decl": "Data.remainder"
+    }
+   ]
+  },
+  {
+   "id": "6.2",
+   "parent": "6",
+   "kind": "deduction",
+   "claim": "… ≤ h_main(D) − m_D·rem(D) + #tops(D)·(m_D·(a_D(w̄ + G) + (1 + log a_D/2)) − a_D·(m_D(w̄ + G) − (G + (15/2)log b_D))), by steps 4 and 5 (all factors are non-negative).",
+   "lines": [
+    66,
+    67
+   ],
+   "lean": "    _ ≤ D.mainHeight - D.m * D.remainder + #D.tops * (D.m * (_ + (1 + log D.a / 2)) -\n        D.a * (_ - (G + _))) := by bound",
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "step": "5"
+    }
+   ]
+  },
+  {
+   "id": "6.3",
+   "parent": "6",
+   "kind": "identity",
+   "claim": "… = h_main(D) − m_D·rem(D) + #tops(D)·(m_D·(1 + log a_D/2) + a_D·(G + (15/2)·log b_D)): the terms m_D·a_D·(w̄ + G) cancel.",
+   "lines": [
+    69,
+    69
+   ],
+   "lean": "    _ = _ + #D.tops * (D.m * (1 + log D.a / 2) + D.a * (G + 15 / 2 * D.logB)) := by ring",
+   "uses": []
+  },
+  {
+   "id": "6.4",
+   "parent": "6",
+   "kind": "deduction",
+   "claim": "… ≤ h_main(D) − m_D·rem(D) + 𝓑(D), by the size comparison (`Data.le_of_hasLogBound`): #tops(D)·(m_D(1 + log a_D/2) + a_D(G + 7.5·log b_D)) ≤ f_D·a_D·(log b_D)³.",
+   "lines": [
+    70,
+    70
+   ],
+   "lean": "    _ ≤ _ := add_le_add_right D.le_of_hasLogBound _",
+   "uses": [
+    {
+     "decl": "Data.le_of_hasLogBound"
+    },
+    {
+     "decl": "Data.budget"
+    }
+   ]
+  }
+ ]
+}

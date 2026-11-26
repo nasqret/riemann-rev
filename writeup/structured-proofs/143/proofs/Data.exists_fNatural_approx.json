@@ -1,0 +1,539 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Rows.NaturalFormNear:65:7",
+ "name": "Data.exists_fNatural_approx",
+ "summary": "K₀ is the carrier near its maximum point times a matrix coefficient of the line polynomial, integrated against the holomorphic minors; sparse theta sums (norm_modKernel_sub_realInner_le) approximate each kernel by that coefficient where the first minimum is large, the trace characters span the data, and the reproducing formula expresses the integral through F♮.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "fact",
+   "claim": "The padding has m negative signs (hm), the sizes are at most t (h4, n), the index maps are injective with the right signs (negIndex_posRowIndex_spec), the bounds of ν = nStar (b2), and the carrier is of every level and holomorphic (cl, ho, cH: carrierForm_spec for twistedChi with c = 2).",
+   "lines": [
+    69,
+    72
+   ],
+   "lean": "  obtain ⟨hm, ⟨h4, n⟩, hr, b2, cl, _, ho, cH⟩ := (by simp [card_neg_signsW, j.2.2, *] :\n    negCount (padSigns j) = D.m), (by simp [↓card_rowIndex]; grind : card D.CarrierIndex ≤ D.t ∧\n    card (D.RowIndex ⊕ PadIndex j) ≤ D.t), negIndex_posRowIndex_spec j, D.nStar_bounds,\n    carrierForm_spec D.m_even (isTameFor_twistedChi (c := 2) j 1)",
+   "uses": [
+    {
+     "decl": "Data.negIndex_posRowIndex_spec"
+    },
+    {
+     "decl": "carrierForm_spec"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "witness",
+   "claim": "An embedding e of the 3m carrier indices into I♭ (cardinality), the weight of carrierChar (pb), and a point x near the maximum of the carrier (exists_near_max: |carrier| ≤ 2|carrier(x)| ≠ 0 with first minimum bounds xl) — the carrier being nonzero (carrierForm_ne_zero).",
+   "lines": [
+    73,
+    78
+   ],
+   "lean": "  obtain ⟨⟨e⟩, ⟨eb, he, pb⟩, x, x0, xm, xl⟩ :=\n    @Function.Embedding.nonempty_of_card_le D.CarrierIndex D.FlatIndex _ _\n    (by simp; omega), (@exists_eq_left _ (AutChar.HasWeight _ · 1) _).2 (carrierChar_hasWeight j),\n    exists_near_max (5 * D.b) D.x₁ ho (by simp; grind) (by simpa [Real.exp_nonneg] using\n    D.le_of_hasLogBound) D.le_of_hasLogBound D.le_of_hasLogBound P.star_sqrtNegDInE\n    (by simpa [P.d_prime.pos] using D.le_of_hasLogBound) (cl _) cH carrierForm_ne_zero",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "decl": "carrierForm_ne_zero"
+    },
+    {
+     "decl": "exists_near_max"
+    },
+    {
+     "decl": "Data.carrierChar_hasWeight"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let ς be the weight −𝗁′ on the first block and |I♭| on the second.",
+   "lines": [
+    79,
+    79
+   ],
+   "lean": "  let ς (_ : D.Φ) : D.CarrierIndex → ℤ := -D.reducedHalfGap ⊕ᵥ card D.FlatIndex",
+   "uses": []
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "fact",
+   "claim": "The matrix coefficient of the Fock vector of linePoly j under the real Weil representation is a product of holomorphic minors (realInner_realPairWeil_eq_holMinorsPi; the minors of linePoly in the rows negIndex, posRowIndex: linSubst_letterMinor).",
+   "lines": [
+    80,
+    83
+   ],
+   "lean": "  have pe := realInner_realPairWeil_eq_holMinorsPi (1 ⊕ᵥ -1) (padSigns j) (linePoly j) (by\n    simp (maxDischargeDepth := 9) [linePoly, letterMinor, det_apply', prod_mem, mul_mem, pow_mem,\n      sum_mem, hr]) (fun _ ↦ D.m) eb fun _ ↦ by simp [linePoly, prod_pow_eq_pow_sum, -card_sum,\n    linSubst_letterMinor (hr.2.2 _) inl_injective, linSubst_letterMinor hr.2.1 inr_injective]; rfl",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "decl": "Data.linePoly"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Name its weight v, k and the coefficient function C.",
+   "lines": [
+    84,
+    84
+   ],
+   "lean": "  extract_lets v k C at pe",
+   "uses": []
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let ι(y) be the archimedean point ((y, 1), 1) of the padded space.",
+   "lines": [
+    85,
+    85
+   ],
+   "lean": "  let ι y : GInf D.E (padSigns j) := (G.sum ((y, 1), 1)).1",
+   "uses": []
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "fact",
+   "claim": "The integral bound for the holomorphic minors at m = ν, B = 5b (integral_mul_holMinorsPi_le), with the gaps and dominance of ς and k (two_mul_card_detIndex_add_le).",
+   "lines": [
+    86,
+    89
+   ],
+   "lean": "  have ⟨J, H⟩ := integral_mul_holMinorsPi_le (m := nStar D) (B := 5 * D.b) (by grw [h4])\n    D.le_of_hasLogBound D.le_of_hasLogBound ho (w := ς) (k := k) (by simp [ς]) (by simp [k])\n    (by simp [ς, reducedHalfGap]; lia) (by simp [k, -Nat.cast_sum]; grind [reducedHalfGap])\n    fun w i ↦ by grw [← two_mul_card_detIndex_add_le j w]; clear * - hm; norm_cast; grind",
+   "uses": [
+    {
+     "decl": "integral_mul_holMinorsPi_le"
+    }
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "witness",
+   "claim": "ϖ̄² ≠ 0, the conductor and t odd are nonzero, the first minimum at x is positive, and the reproducing formula for the kernel (reproducing_formula_modKernel with the minors product as holomorphic datum and the paired determinant products of the short rows spanning the Fock vectors) at x: constants c and the identity hc.",
+   "lines": [
+    90,
+    96
+   ],
+   "lean": "  obtain ⟨v0, _, _, _, c, hc⟩ := RingOfIntegers.coe_ne_zero_iff.2 (pow_ne_zero 2 D.piGBar_ne_zero),\n    NeZero.ne D.cycloConductor, D.t_odd.pos, ((signedSpace ..).move x).firstMinimum_pos,\n    reproducing_formula_modKernel ho D.ideal_untwistedModulus_eq_span nonempty_modulus_places _\n    (hasWeight_upsilonU1_pow D.m) .one (u :=\n    ς) (by simp [ς]) (by simpa using H 1 (by fun_prop) 1 0 : _ ∧\n    _).1 (by simp; omega) e (prod_letterMinor_mem_holomorphicData ho (.trans .inl e) ..) _ (fun p ↦\n    realPairWeil_mem_span_pairedDetProd (Y := D.shortRows (p, 0)) _ (by simp [shortRows]) _ _) x",
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "decl": "reproducing_formula_modKernel"
+    },
+    {
+     "decl": "Data.ideal_untwistedModulus_eq_span"
+    }
+   ]
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "fact",
+   "claim": "key: for a continuous A with |A(u)| ≤ b·‖u‖^N (N ≤ 6ν), the product of the carrier at x, A and the minors is integrable with the bound of step 7 (|carrier| ≤ 2|carrier(x)|).",
+   "lines": [
+    97,
+    99
+   ],
+   "lean": "  have key {A b} N l (h : ∀ u, ‖A u‖ ≤ b * maxOpNorm u ^ N) (a :\n    Continuous A := by fun_prop [modKernel]) := H\n    _ ((cH x).continuous.fun_mul a) _ N l fun u ↦ by grw [norm_mul, xm, h, mul_comm, mul_right_comm]",
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "step": "7"
+    }
+   ]
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "witness",
+   "claim": "A unitary structure for the determinant twist of the real Weil representation (isUnitaryRep_detTwist): an inner product a in which the operators are unitary (r).",
+   "lines": [
+    100,
+    102
+   ],
+   "lean": "  choose _ _ _ l a r using (isUnitaryRep_detTwist (ε :=\n    realSigns D.E (homSigns (n := D.CarrierIndex) (1 ⊕ᵥ -1) (padSigns j)))\n    (f := .id _) (γ := 0) (one_mul _).ge).exists_innerProductSpace; simp at r",
+   "uses": []
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "fact",
+   "claim": "For every y the coefficient C(·, y) is bounded (by the norm of the vector: unitarity), so key applies with N = 0 (k0).",
+   "lines": [
+    103,
+    104
+   ],
+   "lean": "  have k0 y :=\n    key (A := (C · y)) 0 bot_le fun _ ↦ by simp [C, realPairWeil, ← a]; grw [norm_inner_le_norm, r]",
+   "uses": [
+    {
+     "step": "9"
+    },
+    {
+     "step": "10"
+    }
+   ]
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "fact",
+   "claim": "The integral of the carrier times the conjugate minors (IsHolOfWeight.integral_mul_conj_holMinorsPi): its value e1, by the weights (card_detIndex_add_bigCharExp).",
+   "lines": [
+    105,
+    108
+   ],
+   "lean": "  have e1 := IsHolOfWeight.integral_mul_conj_holMinorsPi (u := k) ho (by simp [k]) (by\n    convert ((cH x).mul ho.1 (isHolOfWeight_holMinorsPi (u := ς) ho (by simp [ς]))).mul ho.1\n      (.sum (T := {0}) ![C 1 1] fun _ ↦ isHolOfWeight_holMinorsPi ho (u := v) (by simp [v]))\n    ext w (_ | _) <;> simp [ς, v, k, he, hm, ← card_detIndex_add_bigCharExp j] <;> omega)",
+   "uses": [
+    {
+     "step": "2"
+    },
+    {
+     "decl": "Data.card_detIndex_add_bigCharExp"
+    }
+   ]
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Rewrite e1 through the matrix coefficient (step 4).",
+   "lines": [
+    109,
+    109
+   ],
+   "lean": "  simp [mul_assoc _ (C .. * _), ← pe, mul_right_comm _ _ (C ..)] at e1",
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "step": "12"
+    }
+   ]
+  },
+  {
+   "id": "14",
+   "parent": null,
+   "kind": "witness",
+   "claim": "Take K₀(y) = the integral of step 11 at ι(y), C and ε as below; the approximation:",
+   "lines": [
+    110,
+    123
+   ],
+   "span": [
+    110,
+    1,
+    123,
+    96
+   ],
+   "lean": "  refine ⟨_, _, _, ?_, (ι · |> k0 |>.2), fun g hl ↦ (norm_modKernel_sub_realInner_le ((D.spaceW\n    j).sum ((stdSpace ..).neg.sum (stdSpace ..))) (hasWeight_upsilonU1_pow _) pb (div_ne_zero\n    (NeZero.ne (D.N₁ : D.E)) v0) ?_ (.sum (g, 1)) (D.b ^ 7 * D.x) (2 * nStar D) (HasLogBound.pos D)\n    (fun w ↦ ?_) (by grw [card_prod, card_prod, h4, n]; use D.nat_lt_of_hasLogBound) (linePoly j)\n    rfl _ fun _ _ ↦ by simp [-sum_add_distrib, -prod_mul_distrib, linePoly, letterMinor, det_apply',\n    ← Complex.coe_smul, -smul_eq_mul, ← smul_sum, ← pow_mul, ← pow_add,\n    prod_pow_eq_pow_sum]; rfl).elim fun Ψ hΨ ↦ (exists_sum_smul_addChar_trace_eq (D.untwistedModulus\n    2).isPrimitive_primAddChar fun x ↦ Ψ x.toRows₁ * (Pi.single (inclMatrix _ e) 1 : _ → ℂ)\n    x.toRows₂).imp' (fun f a ↦ c a.2 * f a.1) fun f hf y ↦ (key _ (by omega) (hΨ · (ι y))).elim fun\n    i q ↦ (congrArg _ (sub_eq_of_eq_add (.trans (.trans ?_ ((hc _ (mul_modKernel_mem_rapidOfLevel\n    D.ideal_untwistedModulus_eq_span (hb := pb) (cl _) ..)).symm.trans\n    (by congr with; simp [field]))) (MeasureTheory.integral_add i (k0 _).1)))).trans_le (q.trans\n    (by simp_rw [mul_assoc]; grw [← mul_assoc 3, show maxOpNorm _ ≤ maxOpNorm y by simp [ι, G.sum,\n    U.sum, pi_norm_le_iff_of_nonempty, one_le_maxOpNorm, norm_le_pi_norm (y · |>.1.1)]]; rfl))⟩",
+   "uses": []
+  },
+  {
+   "id": "14.1",
+   "parent": "14",
+   "kind": "deduction",
+   "claim": "for g with large first minimum, the sparse theta sum bound (norm_modKernel_sub_realInner_le for the block space, the weights, ϖ̄²/N₁, b⁷x points and q = 2ν, linePoly homogeneous) gives a datum Ψ with the kernel within the error of the matrix coefficient; the trace characters span the functions of the indicator datum (exists_sum_smul_addChar_trace_eq),",
+   "lines": [
+    110,
+    116
+   ],
+   "lean": "  refine ⟨_, _, _, ?_, (ι · |> k0 |>.2), fun g hl ↦ (norm_modKernel_sub_realInner_le ((D.spaceW\n    j).sum ((stdSpace ..).neg.sum (stdSpace ..))) (hasWeight_upsilonU1_pow _) pb (div_ne_zero\n    (NeZero.ne (D.N₁ : D.E)) v0) ?_ (.sum (g, 1)) (D.b ^ 7 * D.x) (2 * nStar D) (HasLogBound.pos D)\n    (fun w ↦ ?_) (by grw [card_prod, card_prod, h4, n]; use D.nat_lt_of_hasLogBound) (linePoly j)\n    rfl _ fun _ _ ↦ by simp [-sum_add_distrib, -prod_mul_distrib, linePoly, letterMinor, det_apply',\n    ← Complex.coe_smul, -smul_eq_mul, ← smul_sum, ← pow_mul, ← pow_add,\n    prod_pow_eq_pow_sum]; rfl).elim fun Ψ hΨ ↦ (exists_sum_smul_addChar_trace_eq (D.untwistedModulus",
+   "uses": [
+    {
+     "decl": "norm_modKernel_sub_realInner_le"
+    }
+   ]
+  },
+  {
+   "id": "14.2",
+   "parent": "14",
+   "kind": "deduction",
+   "claim": "so the combination Σ_a c_a F♮_a(g·) minus K₀ is the integral of the difference (reproducing formula hc, mul_modKernel_mem_rapidOfLevel), bounded through key by the sparse error times ‖y‖^{6ν} (step 14.3).",
+   "lines": [
+    117,
+    122
+   ],
+   "span": [
+    117,
+    5,
+    122,
+    50
+   ],
+   "lean": "2).isPrimitive_primAddChar fun x ↦ Ψ x.toRows₁ * (Pi.single (inclMatrix _ e) 1 : _ → ℂ)\n    x.toRows₂).imp' (fun f a ↦ c a.2 * f a.1) fun f hf y ↦ (key _ (by omega) (hΨ · (ι y))).elim fun\n    i q ↦ (congrArg _ (sub_eq_of_eq_add (.trans (.trans ?_ ((hc _ (mul_modKernel_mem_rapidOfLevel\n    D.ideal_untwistedModulus_eq_span (hb := pb) (cl _) ..)).symm.trans\n    (by congr with; simp [field]))) (MeasureTheory.integral_add i (k0 _).1)))).trans_le (q.trans\n    (by simp_rw [mul_assoc]; grw [← mul_assoc 3, ",
+   "uses": [
+    {
+     "step": "8"
+    },
+    {
+     "step": "9"
+    },
+    {
+     "step": "11"
+    }
+   ]
+  },
+  {
+   "id": "14.3",
+   "parent": "14",
+   "kind": "fact",
+   "claim": "‖ι(y)‖ ≤ ‖y‖ for the point of the padded space (block norms, ‖1‖ ≥ 1).",
+   "lines": [
+    122,
+    123
+   ],
+   "span": [
+    122,
+    50,
+    123,
+    96
+   ],
+   "lean": "show maxOpNorm _ ≤ maxOpNorm y by simp [ι, G.sum,\n    U.sum, pi_norm_le_iff_of_nonempty, one_le_maxOpNorm, norm_le_pi_norm (y · |>.1.1)]]; rfl))⟩",
+   "typed_fact": "maxOpNorm _ ≤ maxOpNorm y",
+   "uses": [
+    {
+     "step": "6"
+    }
+   ]
+  },
+  {
+   "id": "15",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "The inequality 4ε(5b)^{7ν} + ε < |K₀(1)|: rewrite K₀(1) by e1 at ι(1) = 1 (step 15.1) and bound the relative error by b^{−12}.",
+   "lines": [
+    124,
+    124
+   ],
+   "span": [
+    124,
+    3,
+    124,
+    75
+   ],
+   "lean": "grw [show ι 1 = 1 by simp [ι], e1 (k0 _).1, (?_ : _ / _ ≤ (D.b ^ 12)⁻¹)]",
+   "head_lines": [
+    124,
+    124
+   ],
+   "head_span": [
+    124,
+    3,
+    124,
+    8
+   ],
+   "uses": [
+    {
+     "step": "12"
+    },
+    {
+     "step": "11"
+    }
+   ]
+  },
+  {
+   "id": "15.1",
+   "parent": "15",
+   "kind": "identity",
+   "claim": "ι(1) = 1.",
+   "lines": [
+    124,
+    124
+   ],
+   "span": [
+    124,
+    8,
+    124,
+    75
+   ],
+   "lean": "show ι 1 = 1 by simp [ι], e1 (k0 _).1, (?_ : _ / _ ≤ (D.b ^ 12)⁻¹)]",
+   "typed_fact": "ι 1 = 1",
+   "uses": [
+    {
+     "step": "6"
+    }
+   ]
+  },
+  {
+   "id": "16",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Unfold C and the absolute values.",
+   "lines": [
+    125,
+    125
+   ],
+   "lean": "  simp [C, abs_of_pos J, field, ← a, linePoly]",
+   "uses": []
+  },
+  {
+   "id": "17",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Clear the nonzero denominators (minors, injective maps).",
+   "lines": [
+    126,
+    126
+   ],
+   "lean": "  field_simp [prod_eq_zero_iff, hr, inl_injective, inr_injective]",
+   "uses": []
+  },
+  {
+   "id": "18",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The strict inequality on the scales (lt_of_hasLogBound).",
+   "lines": [
+    127,
+    128
+   ],
+   "lean": "  use D.lt_of_hasLogBound\n    (by clear * -; grind [(D.le_of_hasLogBound : 1 + 7 * |↑(nStar D)| ≤ nStar D * D.logB)])",
+   "uses": [
+    {
+     "decl": "Data.le_of_hasLogBound"
+    }
+   ]
+  },
+  {
+   "id": "19",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Bound the sum of the column counts (two_mul_card_detIndex_add_le) and conclude on the scales.",
+   "lines": [
+    129,
+    131
+   ],
+   "lean": "  grw [Nat.cast_sum, sum_le_card_nsmul _ _ (2 * D.m * (5 * D.b)) fun w _ ↦ by\n    grw [← two_mul_card_detIndex_add_le j\n      w]; clear * -; norm_cast; simp [← mul_sum]; lia]; simpa using D.le_of_hasLogBound",
+   "uses": [
+    {
+     "decl": "Data.le_of_hasLogBound"
+    }
+   ]
+  },
+  {
+   "id": "20",
+   "parent": null,
+   "kind": "computation",
+   "claim": "The integrality condition of the sparse theta sums: (N₁/ϖ̄²)·α·z is integral for z ∈ ϖ̄²Ô (N₁·α integral: N₁_mul_α_mem).",
+   "lines": [
+    132,
+    135
+   ],
+   "lean": "  simpa [Modulus.reduction_eq_zero_iff, ideal_untwistedModulus_eq_span,\n    Ideal.mem_span_singleton, ↓dvd_def, -Subtype.forall, ← mul_assoc,\n    mul_right_comm _ α.1, ← map_pow, ← map_mul, -Nat.cast_mul, ↓div_mul_cancel₀ _ v0,\n    -Subtype.exists] using! fun z : Ô _ ↦ mul_right_comm _ _ z.1 ▸ mul_mem P.N₁_mul_α_mem z.2",
+   "uses": [
+    {
+     "decl": "Data.ideal_untwistedModulus_eq_span"
+    }
+   ]
+  },
+  {
+   "id": "21",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The first minimum condition of the sparse theta sums: the Hom lattice of the block space at (g, x) has first minimum at least the product of those of W_j at g and of the definite spaces (firstMinimum_mul_le_hom, the conductor in the different, inf_le_firstMinimum_sum), with |Φ_w(N₁/ϖ̄²)| = N₁/g (step 21.1).",
+   "lines": [
+    136,
+    141
+   ],
+   "span": [
+    136,
+    3,
+    141,
+    49
+   ],
+   "lean": "· grw [← firstMinimum_mul_le_hom _ P.cycloConductor_mem_different, Space.shortBasisConst,\n      ← inf_le_firstMinimum_sum, ← G.sum.map_one, ← inf_le_firstMinimum_sum, ← ((stdSpace ..).move\n      _).one_le_firstMinimum, ← ((stdSpace ..).neg.move _).one_le_firstMinimum, inf_idem,\n      inf_of_le_left (by simp), ← hl, ← xl _ le_rfl, h4, n, show ‖_‖ = (D.N₁ : ℝ) / D.gProd by\n      simpa [sq, -Nat.cast_mul] using congr(D.N₁ / ‖Φ w $D.piGBar_mul_star‖)]\n    simpa [WeilData.j] using D.le_of_hasLogBound",
+   "head_lines": [
+    136,
+    139
+   ],
+   "head_span": [
+    136,
+    3,
+    139,
+    61
+   ],
+   "uses": [
+    {
+     "decl": "firstMinimum_mul_le_hom"
+    }
+   ]
+  },
+  {
+   "id": "21.1",
+   "parent": "21",
+   "kind": "identity",
+   "claim": "|Φ_w(·)|² for the scale is N₁/g (from ϖ̄·conj ϖ̄ = g: piGBar_mul_star).",
+   "lines": [
+    139,
+    140
+   ],
+   "span": [
+    139,
+    61,
+    140,
+    78
+   ],
+   "lean": "show ‖_‖ = (D.N₁ : ℝ) / D.gProd by\n      simpa [sq, -Nat.cast_mul] using congr(D.N₁ / ‖Φ w $D.piGBar_mul_star‖)]",
+   "typed_fact": "‖_‖ = (D.N₁ : ℝ) / D.gProd",
+   "uses": [
+    {
+     "decl": "Data.piGBar_mul_star"
+    }
+   ]
+  },
+  {
+   "id": "21.2",
+   "parent": "21",
+   "kind": "deduction",
+   "claim": "Conclude on the scales (le_of_hasLogBound).",
+   "lines": [
+    141,
+    141
+   ],
+   "lean": "    simpa [WeilData.j] using D.le_of_hasLogBound",
+   "uses": [
+    {
+     "decl": "Data.le_of_hasLogBound"
+    }
+   ]
+  },
+  {
+   "id": "22",
+   "parent": null,
+   "kind": "computation",
+   "claim": "The combination is a sum of F♮: unfold fNatural, exchange the sum with the integral (integral_mul_sum_const_mul), combine the kernels (modKernel_sum_right, the trace expansion hf).",
+   "lines": [
+    142,
+    146
+   ],
+   "lean": "  · simp_rw [sum_prod_type_right (α₂ := _ × _), mul_assoc (c _), ← mul_sum, fNatural, Pi.mul_apply]\n    congr! 2; rw [← integral_mul_sum_const_mul fun t ↦\n      mul_modKernel_mem_rapidOfLevel D.ideal_untwistedModulus_eq_span (cl _) ..]; congr with\n    simp_rw [mul_assoc, ← modKernel_sum_right, ← hf, ← modKernelBilin_apply]; simp [ι, G.sum,\n      ← map_mul]; left; rfl",
+   "uses": [
+    {
+     "decl": "Data.fNatural"
+    },
+    {
+     "decl": "modKernel_sum_right"
+    }
+   ]
+  }
+ ]
+}

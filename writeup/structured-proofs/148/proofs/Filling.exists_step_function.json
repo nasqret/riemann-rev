@@ -1,0 +1,66 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Filling.FiniteSystem:16:7",
+ "summary": "Choose a unit u so small that, for every z ∈ s, all points p(z) + u·r (r ∈ Rⁿ) lie in the neighbourhood of hf. Put Φ(x) = max{c(z) : z ∈ s, ∃ k ∈ H, u⁻¹(k·x − p(z)) ∈ Rⁿ}. Φ is supported in finitely many translates of the compact u·Rⁿ, invariant under translation by u·Rⁿ and under H (H preserves Rⁿ), Φ ≤ f by hf, and Φ(p(z)) ≥ c(z) (k = 1).",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Since almost every element of A is a unit, the units are dense, so 0 is a limit of units; by compactness of Rⁿ (intVectors_open_compact_vol) and hf, for b near 0 every point p(z) + b·r (z ∈ s, r ∈ Rⁿ) is in the neighbourhood of hf and b·(p(z) + b·r) ∈ Rⁿ. Take such a unit u (e: the orbit condition at p(z) + u·r).",
+   "lines": [
+    21,
+    24
+   ],
+   "lean": "  obtain ⟨_, e, u, rfl⟩ := mem_closure_iff_nhds.1 (Measure.dense_of_ae P.ae_isUnit 0) _\n    (s.eventually_all.2 fun z k ↦ P.intVectors_open_compact_vol.2.1.eventually_forall_mem (fun b r ↦\n    (_ + b • r, b • (p z + b • r))) _ fun _ _ ↦\n    prod_mem_nhds (by simpa using! hf z k) (P.intVectors_open_compact_vol.1.mem_nhds (by simp)))",
+   "ambient_uses": [
+    "mem_closure_iff_nhds"
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Restate e for every x with u⁻¹(x − p(z)) ∈ Rⁿ: c(z) ≤ f(y) whenever k·y = x, k ∈ H.",
+   "lines": [
+    25,
+    25
+   ],
+   "lean": "  replace e z k x := e z k (u⁻¹ • (x - p z))"
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "M: for k ∈ H (an integral invertible matrix by i) and a unit b: k·(b·x) ∈ Rⁿ ⟺ b·x ∈ Rⁿ (mulVec_mem_intVectors_iff).",
+   "lines": [
+    26,
+    26
+   ],
+   "lean": "  have M (k : H) (b : Aˣ) x := k.1.1.1.mulVec_smul b x ▸ mulVec_mem_intVectors_iff (i k.2)"
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Rewrite e and M with scalar actions of units (simp).",
+   "lines": [
+    27,
+    27
+   ],
+   "lean": "  simp [← Units.smul_def] at e M"
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Take Φ(x) = sup{c(z) : z ∈ s, ∃ k ∈ H, u⁻¹(k·x − p(z)) ∈ Rⁿ}. Compact support: the support lies in finitely many sets k⁻¹(p(z) + u·Rⁿ) — u⁻¹-scaled compact sets; local constancy: for v with u⁻¹v ∈ Rⁿ (a neighbourhood of 0) u⁻¹(k(x + v) − p(z)) ∈ Rⁿ ⟺ u⁻¹(kx − p(z)) ∈ Rⁿ (M); H-invariance: reindex k ↦ k·k' (Equiv.mulRight); Φ ≤ f: each z in the set has k·x = p(z) + u·r, so c(z) ≤ f(x) by e; Φ(p(z)) ≥ c(z): k = 1, u⁻¹·0 ∈ Rⁿ. The remaining set-membership goals are closed by simp_all and grind.",
+   "lines": [
+    28,
+    33
+   ],
+   "lean": "  use fun x ↦ {z ∈ s | ∃ k : H, u⁻¹ • (k.1.1.1 *ᵥ x - p z) ∈ intVectors R n}.sup c, .intro\n    (P.intVectors_open_compact_vol.2.1.smul u⁻¹) ?_,\n    ((P.intVectors_open_compact_vol.1.preimage (continuous_const_smul u⁻¹)).eventually_mem ?_).mono\n    (by simp +contextual [add_sub_right_comm, add_mem_cancel_right, M]), fun k l x ↦ sup_congr\n    (s.filter_congr fun z _ ↦ (Equiv.mulRight ⟨k, l⟩).exists_congr ?_) ?_, ?_, fun z k ↦ le_sup\n    (s.mem_filter.2 ⟨k, 1, ?_⟩) <;> simp_all [Set.mem_inv_smul_set_iff] <;> grind"
+  }
+ ]
+}

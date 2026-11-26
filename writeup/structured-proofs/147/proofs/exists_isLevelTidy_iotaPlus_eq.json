@@ -1,0 +1,230 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Exchange.GridFirstColumns:199:7",
+ "name": "Data.exists_isLevelTidy_iotaPlus_eq",
+ "summary": "Decreasing induction on b from m: at each step bind Φ with the inclusion data of the two new edges (point descents are sums of descents with indicator data over the matrices reducing to the inclusion), which keeps level-tidiness with one more edge per grid.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "block",
+   "claim": "Decreasing induction on b (`Nat.decreasingInduction`): the step from b + 1 to b given Φ, q (tidiness), e (the identity) at b + 1; the base case b = m below.",
+   "lines": [
+    203,
+    237
+   ],
+   "lean": "  (legDescents S _ b Ξ) (legDescents S _ b φ) := Nat.decreasingInduction (fun b h ⟨Φ, q, e⟩ ↦ by\n  let u z := verticalEdge z 0 b\n  let Ψ z (y : Matrix (NodeIndex (u z).2) (D.NodeIndex (u z).1) _) :=\n    inclusionDatum _ (y.map (reduceToTriangle ϑ z))\n  have s z {n w Λ} (v : u z ∉ w) : IsLevelTidy n w Λ →\n    IsLevelTidy (n + 1) (insert (u z) w) (Λ.bind (fun _ ↦ Ψ z)\n    (update · _)) := .imp (.bind (by simp [card_matrix_le_tupleBound, u, h, h.le]) fun S y e ↦ by\n      cases z; have : HasLeftInv y := ⟨_ * (inclMatrix _ .inl)ᵀ, (Matrix.mul_assoc ..).trans\n        (isUnit_of_mapMatrix (reduceToTriangle ..) (by simp; erw [Pi.support_single_subset e,\n        transpose_map, map_inclMatrix, inclMatrix_transpose_mul_self .inl]; simp)).val_inv_mul⟩\n      all_goals grind [IsOfFinOrder.one]) fun C g G f ↦ by\n    have a i k (h : k ∈ nodeLevel ϑ (z, 0, i)) : k.map (reduceToTriangle ϑ z) = 1 ∧\n      edgeChar ϑ (u z) k.1.det = 1 := by\n      cases z <;> simp [nodeLevel] at h; simp [h]\n      obtain ⟨k, rfl⟩ := reductionK₀_surjective k\n      erw [← gridChar_det _ _ Unit 1, gridChar_det (ϑ := 1) false b Unit 1,\n        (Units.ext Modulus.factor_reductionK₀).symm.trans h]; simp [h]\n    erw [edgeCharProd, prod_insert v, mul_assoc, ← C g G]\n    simp [h.le, u, *]\n    congr with S; simp\n    convert (injective_gl_inv_mul_mul (g (u z).2) (g (u z).1)).bijective_of_finite.sum_comp _\n    simp [Ψ, u, h.le, *, -coe_units_inv, ← GeneralLinearGroup.val_map_apply]\n    left; congr; set_option synthInstance.maxHeartbeats 200000 in\n      grind [tupleAction, Matrix.mul_assoc]\n  refine ⟨_, by convert s false ?_ (s true ?_ q) <;> first | lia | simp [legEdges,\n    ← insert_Ico_add_one_left_eq_Ico h, u, insert_comm], fun B Ξ φ ↦ ?_⟩\n  unfold legDescents iotaPlus\n  simp_rw [h, ite_true, prod_eq_prod_Ico_succ_bot h]\n  erw [e (B.compl₁₂ (pointDescent ..) (pointDescent ϑ ..))]\n  simp [fun z ↦ (by erw [pointDescent, modDescent, ← modDatum_factor, modDatum_eq_sum]; simp; rfl :\n    pointDescent ϑ z b = (triangleOrder z ϑ b : ℂ) • ∑ y, Ψ z y • descentMove y), fun z c S y ↦\n    @legDescents_congr _ D ϑ (update S (u c) y) S z (b + 1) (by grind [legEdges]),\n    u, LinearMap.pi, ← sum_fn, ← Pi.smul_def, -smul_eq_mul]\n  simp [mul_sum]; ac_rfl) ⟨.proj 0, ⟨⟨_, {0}, 1, 0, by simp [legEdges]⟩, by\n    delta tupleAction edgeCharProd legEdges; aesop⟩, by simp [iotaPlus, legDescents]⟩ hb",
+   "head_lines": [
+    203,
+    203
+   ],
+   "ambient_uses": [
+    "Nat.decreasingInduction"
+   ]
+  },
+  {
+   "id": "1.1",
+   "parent": "1",
+   "kind": "step",
+   "claim": "Let u(z) = verticalEdge(z, 0, b).",
+   "lines": [
+    204,
+    204
+   ],
+   "lean": "  let u z := verticalEdge z 0 b"
+  },
+  {
+   "id": "1.2",
+   "parent": "1",
+   "kind": "step",
+   "claim": "Let Ψ(z)(y) = inclusionDatum of the reduction of y modulo triangleModulus(z, ϑ).",
+   "lines": [
+    205,
+    206
+   ],
+   "lean": "  let Ψ z (y : Matrix (NodeIndex (u z).2) (D.NodeIndex (u z).1) _) :=\n    inclusionDatum _ (y.map (reduceToTriangle ϑ z))",
+   "uses": [
+    {
+     "step": "1.1"
+    }
+   ]
+  },
+  {
+   "id": "1.3",
+   "parent": "1",
+   "kind": "block",
+   "claim": "Adding one edge u(z) ∉ w keeps level-tidiness: IsLevelTidy(n, w, Λ) implies IsLevelTidy(n + 1, w ∪ {u(z)}, bind(Λ, Ψ(z), update at u(z))): short sums by `Data.IsShortSum.bind` (at most tupleBound matrices, `Data.card_matrix_le_tupleBound`; weights 0 or 1, roots of unity) and equivariance below.",
+   "lines": [
+    207,
+    226
+   ],
+   "lean": "  have s z {n w Λ} (v : u z ∉ w) : IsLevelTidy n w Λ →\n    IsLevelTidy (n + 1) (insert (u z) w) (Λ.bind (fun _ ↦ Ψ z)\n    (update · _)) := .imp (.bind (by simp [card_matrix_le_tupleBound, u, h, h.le]) fun S y e ↦ by\n      cases z; have : HasLeftInv y := ⟨_ * (inclMatrix _ .inl)ᵀ, (Matrix.mul_assoc ..).trans\n        (isUnit_of_mapMatrix (reduceToTriangle ..) (by simp; erw [Pi.support_single_subset e,\n        transpose_map, map_inclMatrix, inclMatrix_transpose_mul_self .inl]; simp)).val_inv_mul⟩\n      all_goals grind [IsOfFinOrder.one]) fun C g G f ↦ by\n    have a i k (h : k ∈ nodeLevel ϑ (z, 0, i)) : k.map (reduceToTriangle ϑ z) = 1 ∧\n      edgeChar ϑ (u z) k.1.det = 1 := by\n      cases z <;> simp [nodeLevel] at h; simp [h]\n      obtain ⟨k, rfl⟩ := reductionK₀_surjective k\n      erw [← gridChar_det _ _ Unit 1, gridChar_det (ϑ := 1) false b Unit 1,\n        (Units.ext Modulus.factor_reductionK₀).symm.trans h]; simp [h]\n    erw [edgeCharProd, prod_insert v, mul_assoc, ← C g G]\n    simp [h.le, u, *]\n    congr with S; simp\n    convert (injective_gl_inv_mul_mul (g (u z).2) (g (u z).1)).bijective_of_finite.sum_comp _\n    simp [Ψ, u, h.le, *, -coe_units_inv, ← GeneralLinearGroup.val_map_apply]\n    left; congr; set_option synthInstance.maxHeartbeats 200000 in\n      grind [tupleAction, Matrix.mul_assoc]",
+   "head_span": [
+    207,
+    3,
+    210,
+    15
+   ],
+   "head_lines": [
+    207,
+    210
+   ],
+   "typed_fact": "IsLevelTidy n w Λ →\n    IsLevelTidy (n + 1) (insert (u z) w) (Λ.bind (fun _ ↦ Ψ z)\n    (update · _))",
+   "uses": [
+    {
+     "step": "1.1"
+    },
+    {
+     "step": "1.2"
+    },
+    {
+     "decl": "Data.IsShortSum.bind"
+    },
+    {
+     "decl": "Data.card_matrix_le_tupleBound"
+    }
+   ]
+  },
+  {
+   "id": "1.3.1",
+   "parent": "1.3",
+   "kind": "step",
+   "claim": "Where Ψ(z)(y) ≠ 0, y reduces to the inclusion matrix, which has a left inverse, so y has a left inverse (a unit modulo the triangle modulus lifts, the reduction being local).",
+   "lines": [
+    210,
+    213
+   ],
+   "span": [
+    210,
+    16,
+    213,
+    59
+   ],
+   "lean": "have : HasLeftInv y := ⟨_ * (inclMatrix _ .inl)ᵀ, (Matrix.mul_assoc ..).trans\n        (isUnit_of_mapMatrix (reduceToTriangle ..) (by simp; erw [Pi.support_single_subset e,\n        transpose_map, map_inclMatrix, inclMatrix_transpose_mul_self .inl]; simp)).val_inv_mul⟩\n      all_goals grind [IsOfFinOrder.one]) fun C g G f ↦ by",
+   "typed_fact": "HasLeftInv y"
+  },
+  {
+   "id": "1.3.2",
+   "parent": "1.3",
+   "kind": "block",
+   "claim": "Equivariance: for k in nodeLevel(ϑ, (z, 0, i)), k reduces to 1 modulo the triangle modulus and the edge character of u(z) is 1 on det k (a); then the edge product over the new edge is moved out, the equivariance C of Λ applies, and the sum over matrices is re-indexed by the bijection y ↦ g⁻¹yg (`injective_gl_inv_mul_mul`).",
+   "lines": [
+    214,
+    226
+   ],
+   "lean": "    have a i k (h : k ∈ nodeLevel ϑ (z, 0, i)) : k.map (reduceToTriangle ϑ z) = 1 ∧\n      edgeChar ϑ (u z) k.1.det = 1 := by\n      cases z <;> simp [nodeLevel] at h; simp [h]\n      obtain ⟨k, rfl⟩ := reductionK₀_surjective k\n      erw [← gridChar_det _ _ Unit 1, gridChar_det (ϑ := 1) false b Unit 1,\n        (Units.ext Modulus.factor_reductionK₀).symm.trans h]; simp [h]\n    erw [edgeCharProd, prod_insert v, mul_assoc, ← C g G]\n    simp [h.le, u, *]\n    congr with S; simp\n    convert (injective_gl_inv_mul_mul (g (u z).2) (g (u z).1)).bijective_of_finite.sum_comp _\n    simp [Ψ, u, h.le, *, -coe_units_inv, ← GeneralLinearGroup.val_map_apply]\n    left; congr; set_option synthInstance.maxHeartbeats 200000 in\n      grind [tupleAction, Matrix.mul_assoc]",
+   "head_lines": [
+    214,
+    219
+   ],
+   "typed_fact": "k.map (reduceToTriangle ϑ z) = 1 ∧\n      edgeChar ϑ (u z) k.1.det = 1",
+   "uses": [
+    {
+     "decl": "injective_gl_inv_mul_mul"
+    },
+    {
+     "decl": "Data.gridChar_det"
+    },
+    {
+     "decl": "Modulus.factor_reductionK₀"
+    }
+   ]
+  },
+  {
+   "id": "1.3.2.1",
+   "parent": "1.3.2",
+   "kind": "step",
+   "claim": "The re-indexed sum: the inclusion data are invariant, and the moved tuples agree (tupleAction).",
+   "lines": [
+    220,
+    226
+   ],
+   "lean": "    erw [edgeCharProd, prod_insert v, mul_assoc, ← C g G]\n    simp [h.le, u, *]\n    congr with S; simp\n    convert (injective_gl_inv_mul_mul (g (u z).2) (g (u z).1)).bijective_of_finite.sum_comp _\n    simp [Ψ, u, h.le, *, -coe_units_inv, ← GeneralLinearGroup.val_map_apply]\n    left; congr; set_option synthInstance.maxHeartbeats 200000 in\n      grind [tupleAction, Matrix.mul_assoc]",
+   "uses": [
+    {
+     "decl": "injective_gl_inv_mul_mul"
+    }
+   ]
+  },
+  {
+   "id": "1.4",
+   "parent": "1",
+   "kind": "step",
+   "claim": "Take Φ′ = the two-fold bind (one edge per grid; the edge sets match legEdges(·, b)); the identity remains.",
+   "lines": [
+    227,
+    228
+   ],
+   "lean": "  refine ⟨_, by convert s false ?_ (s true ?_ q) <;> first | lia | simp [legEdges,\n    ← insert_Ico_add_one_left_eq_Ico h, u, insert_comm], fun B Ξ φ ↦ ?_⟩",
+   "uses": [
+    {
+     "step": "1.3"
+    }
+   ]
+  },
+  {
+   "id": "1.5",
+   "parent": "1",
+   "kind": "step",
+   "claim": "Unfold legDescents and iotaPlus at b.",
+   "lines": [
+    229,
+    229
+   ],
+   "lean": "  unfold legDescents iotaPlus"
+  },
+  {
+   "id": "1.6",
+   "parent": "1",
+   "kind": "step",
+   "claim": "b < m, and the product over [b, m) splits off its first factor.",
+   "lines": [
+    230,
+    230
+   ],
+   "lean": "  simp_rw [h, ite_true, prod_eq_prod_Ico_succ_bot h]"
+  },
+  {
+   "id": "1.7",
+   "parent": "1",
+   "kind": "step",
+   "claim": "Apply e at b + 1 to the bilinear form B composed with the point descents at b.",
+   "lines": [
+    231,
+    231
+   ],
+   "lean": "  erw [e (B.compl₁₂ (pointDescent ..) (pointDescent ϑ ..))]"
+  },
+  {
+   "id": "1.8",
+   "parent": "1",
+   "kind": "step",
+   "claim": "The point descent at b is triangleOrder(z, ϑ, b) times the sum over matrices y of Ψ(z)(y) times the descent with y (`Data.pointDescent`, `modDatum_eq_sum`), and legDescents for S updated at u(z) agrees with S below (`Data.legDescents_congr`).",
+   "lines": [
+    232,
+    235
+   ],
+   "lean": "  simp [fun z ↦ (by erw [pointDescent, modDescent, ← modDatum_factor, modDatum_eq_sum]; simp; rfl :\n    pointDescent ϑ z b = (triangleOrder z ϑ b : ℂ) • ∑ y, Ψ z y • descentMove y), fun z c S y ↦\n    @legDescents_congr _ D ϑ (update S (u c) y) S z (b + 1) (by grind [legEdges]),\n    u, LinearMap.pi, ← sum_fn, ← Pi.smul_def, -smul_eq_mul]",
+   "uses": [
+    {
+     "decl": "Data.pointDescent"
+    },
+    {
+     "decl": "Data.legDescents_congr"
+    }
+   ]
+  },
+  {
+   "id": "1.9",
+   "parent": "1",
+   "kind": "step",
+   "claim": "Collect the sums and the products; base case b = m: Φ = the evaluation at the zero tuple, a short sum of one term, equivariant with an empty product, and both iotaPlus and legDescents are the identity at m.",
+   "lines": [
+    236,
+    237
+   ],
+   "lean": "  simp [mul_sum]; ac_rfl) ⟨.proj 0, ⟨⟨_, {0}, 1, 0, by simp [legEdges]⟩, by\n    delta tupleAction edgeCharProd legEdges; aesop⟩, by simp [iotaPlus, legDescents]⟩ hb"
+  }
+ ]
+}

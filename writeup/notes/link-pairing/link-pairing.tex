@@ -1,0 +1,982 @@
+% !TEX program = lualatex
+% ---------------------------------------------------------------------------------------------
+%  Readback note 39: Links of pairs of terms: integral lifts and the discriminant gain
+%
+%  Build:  python3 tools/rb.py note <slug>
+%
+%  One unit of a Lean artifact, rewritten as ordinary mathematics. The prose is hand-written. Lean names,
+%  line ranges and counts come from data.tex; quoted Lean statements are copied from the artifact by the build.
+%
+%  Rules of the text: standard terminology; every symbol is explained where it first appears and listed again
+%  in the notation at the end; no letter has two meanings; a proof is complete or says what it takes for granted;
+%  Lean names appear only in the LEAN lines and in the concordance.
+%
+%  The signature rule (the build enforces it): a function, relation or predicate that the artifact defines is
+%  written only through its notation macro, which the build makes from the spec (`notation`) with one slot for
+%  each explicit argument of the Lean definition. No argument is fixed and dropped, also not "for brevity" and
+%  not for one section. Every argument and every hypothesis of a stated declaration stands inside its
+%  statement, or in a Setting that the statement cites by number; only implicit and instance arguments (the
+%  ambient objects) may stand in the conventions.
+% ---------------------------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\ifdefined\pdfvariable\pdfvariable suppressoptionalinfo \numexpr 1+2+4+8\relax\fi
+\usepackage[a4paper,hmargin=35mm,top=22mm,bottom=27mm,footskip=12mm,nohead]{geometry}
+
+\usepackage{fontspec}
+\directlua{
+  luaotfload.add_fallback("gfallback", {"STIXTwoMath-Regular.otf:mode=node;", "DejaVuSans.ttf:mode=node;"})
+  luaotfload.add_fallback("gmonofallback", {"DejaVuSansMono.ttf:mode=node;", "STIXTwoMath-Regular.otf:mode=node;"})
+}
+\setmainfont{NewCM10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookItalic,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldItalic,SmallCapsFont=*-Book,SmallCapsFeatures={Letters=SmallCaps},
+  RawFeature={fallback=gfallback}]
+\setsansfont{NewCMSans10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookOblique,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldOblique,RawFeature={fallback=gfallback}]
+\setmonofont{JetBrainsMono}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,Scale=MatchLowercase,
+  RawFeature={-calt;-liga;fallback=gmonofallback}]
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage[math-style=TeX]{unicode-math}
+\setmathfont{NewCMMath-Book.otf}
+\emergencystretch=2.5em\relax
+
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows.meta,positioning,backgrounds}
+\usepackage[protrusion=true,expansion=true]{microtype}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{multicol}
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+
+\definecolor{ink}{HTML}{0F172A}
+\definecolor{inksoft}{HTML}{475569}
+\definecolor{inkfaint}{HTML}{94A3B8}
+\definecolor{rulegrey}{HTML}{CBD5E1}
+\definecolor{arith}{HTML}{C2410C}
+\definecolor{est}{HTML}{7C3AED}
+\definecolor{ana}{HTML}{0891B2}
+\definecolor{ok}{HTML}{047857}
+\definecolor{leancol}{HTML}{3730A3}
+
+\title{Links of pairs of terms: integral lifts and the discriminant gain}
+\author{grh-compact}
+\date{}
+
+% ------------------------------------------------------------------------------------- macros
+\newcommand{\leanfont}{\ttfamily\fontsize{8.6}{10.5}\selectfont\color{leancol}}
+\newcommand{\lean}[1]{\csname LN@#1\endcsname}
+\newcommand{\fillin}[1]{{\color{arith}\itshape[#1]}}  % a place of the template that is not written yet; the build reports every one that is left
+\newcommand{\leanquote}[1]{\csname LQ@#1\endcsname}
+\input{data.tex}
+
+\linespread{1.08}                       % 11 pt on 14.7 pt
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt plus 1.5pt minus 0.5pt}
+\setlength{\abovedisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\belowdisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\abovedisplayshortskip}{3pt plus 2pt}
+\setlength{\belowdisplayshortskip}{6pt plus 2pt minus 2pt}
+\emergencystretch=1.5em
+\clubpenalty=10000 \widowpenalty=10000 \displaywidowpenalty=10000
+\relpenalty=7000 \binoppenalty=9000
+\raggedbottom
+\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\sffamily\fontsize{7.6}{9}\selectfont\color{inkfaint}\thepage\,/\,\pageref*{LastPage}}
+\setlist{topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=4pt,leftmargin=2.1em,labelsep=0.55em}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\len}{\operatorname{len}}
+\newcommand{\cok}{\operatorname{cok}}
+\newcommand{\End}{\operatorname{End}}
+\newcommand{\Hom}{\operatorname{Hom}}
+\newcommand{\Gal}{\operatorname{Gal}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\kw}[1]{\emph{#1}}
+\newcommand{\m}[1]{\mbox{$#1$}}        % a short formula that must not be broken across lines
+\newcommand{\head}[1]{\par\addvspace{17pt plus 4pt minus 2pt}\Needspace{6\baselineskip}%
+  \noindent{\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\sect}[2]{\refstepcounter{section}\label{#2}\par\addvspace{19pt plus 4pt minus 2pt}\Needspace{7\baselineskip}%
+  \noindent\llap{{\fontsize{13.2}{16}\selectfont\bfseries\color{inkfaint}\thesection}\hspace{9pt}}%
+  {\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\subhead}[1]{\par\addvspace{9pt plus 2pt}\Needspace{4\baselineskip}\noindent\textbf{#1}\enspace\ignorespaces}
+% where a statement lives in the Lean archive
+\newcommand{\leantag}{{\sffamily\bfseries\fontsize{6.3}{8}\selectfont\color{leancol}\addfontfeatures{LetterSpace=7}LEAN}}
+\newcommand{\sep}{\unskip\nobreak\hspace{5pt}{\color{inkfaint}\textperiodcentered}\hspace{5pt plus 2pt}\ignorespaces}
+\newcommand{\leanline}[1]{\par\nopagebreak\vspace{-2.5pt}{\fontsize{8.9}{12.4}\selectfont\color{inksoft}\raggedright
+  \noindent\llap{\leantag\hspace{9pt}}#1\par}\vspace{1pt}}
+% a displayed statement in a tinted box: #1 colour, #2 text
+\newcommand{\statement}[2]{\par\addvspace{7pt}\begingroup\setlength{\fboxsep}{8.5pt}\setlength{\fboxrule}{0.6pt}%
+  \noindent\fcolorbox{#1!30!white}{#1!3!white}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{#2}}%
+  \endgroup\par\addvspace{7pt}}
+\newcommand{\nt}[2]{\par\noindent\hangindent=1.1em\hangafter=1 #1\enspace{\color{inksoft}#2}\par\vspace{1pt}}
+\newcommand{\legdot}[1]{\tikz[baseline=-0.62ex]\fill[#1] (0,0) circle (2.5pt);\hspace{3pt}}
+\newcommand{\crow}[4]{\csname CS@#1\endcsname & #2 & \textcolor{inksoft}{#3} & \textcolor{inksoft}{#4}\\}
+\newcommand{\leanquoteline}[2]{\par\noindent\hangindent=\dimexpr#1\fontdimen2\font+2.2em\relax\hangafter=1
+  \hspace*{#1\fontdimen2\font}#2}
+\newcommand{\quoted}[1]{\par\vspace{3pt}{\ttfamily\fontsize{7.5}{10.4}\selectfont\color{leancol}\raggedright
+  \setlength{\parskip}{0pt}\leanquote{#1}\par}\vspace{4pt}}
+\newcommand{\bx}[3]{{\sffamily\bfseries\fontsize{7.3}{9.2}\selectfont\color{#1!82!black}#2}\\[1.5pt]#3}
+\newcommand{\cs}[2]{\expandafter\newcommand\csname CS@#1\endcsname{#2}}
+
+% theorems
+\newtheoremstyle{plainx}{7pt plus 2pt}{7pt plus 2pt}{\itshape}{}{\bfseries}{.}{0.5em}{}
+\newtheoremstyle{uprightx}{7pt plus 2pt}{7pt plus 2pt}{}{}{\bfseries}{.}{0.5em}{}
+\theoremstyle{plainx}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{uprightx}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{setting}[theorem]{Setting}          % hypotheses shared by several statements; each of them cites it by number
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\renewcommand{\qedsymbol}{{\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.5pt}\fbox{\rule{0pt}{0.46em}\hspace{0.46em}}}}
+% what holds throughout the note: the ambient objects only (implicit and instance arguments), never a hypothesis
+\newenvironment{conventions}{\par\addvspace{5pt}\noindent\textbf{Conventions.}\enspace\ignorespaces}{\par\addvspace{3pt}}
+\makeatletter
+\renewenvironment{proof}[1][Proof]{\par\pushQED{\qed}\normalfont\topsep0pt\partopsep0pt
+  \trivlist\item[\hskip\labelsep\itshape #1.]\ignorespaces}{\popQED\endtrivlist\@endpefalse}
+\makeatother
+
+
+% where each declaration of the concordance is treated: \cs{key}{place}, the place naming a \label or a lettered item
+\cs{absnormbordereddet}{Lemma~\ref{l:bordered}}
+\cs{existsliftslinkDiscSqle}{Proposition~\ref{p:lifts}}
+\cs{existsisIntMatrix}{Lemma~\ref{l:int}}
+\cs{existsorthogonalsplit}{Lemma~\ref{l:split}}
+\cs{existsmemlinktermDisceq}{Lemma~\ref{l:vector}}
+\cs{onelexRowsIndexandsaturationIndex}{Corollary~\ref{c:pos}}
+\cs{minorNormsqlelinkDiscSqmul}{Proposition~\ref{p:minor}}
+\cs{existslinksplitleclassGauge}{Theorem B}
+\cs{pairInvariantmulle}{Theorem A}
+% ----- macros-148: the recalled notions of unit 148 (chunks a, b) and of its neighbours, with every explicit
+% ----- argument of the Lean definition as a slot. Shared by Notes F, P, T, G; copy unchanged into the preamble.
+\newcommand{\fs}{\mathfrak{s}}                      % the shape (rho, kappa, k_0)
+\newcommand{\sT}{\mathsf{T}}                        % a finite set of finite places
+\newcommand{\cL}{\mathcal{L}}                       % a level
+\newcommand{\AEf}{\mathbb{A}_{E,f}}
+\newcommand{\hO}{\hat{O}_E}
+\newcommand{\GL}{\mathrm{GL}}
+\newcommand{\full}{\mathrm{full}}
+\newcommand{\cut}{\mathrm{cut}}
+\newcommand{\rh}[1]{\varrho(#1)}                    % Shape.ϱ
+\newcommand{\kk}[1]{k(#1)}                          % Shape.k = #κ
+\newcommand{\nn}[1]{n(#1)}                          % Shape.n = ϱ + 1
+\newcommand{\rr}[1]{r(#1)}                          % Shape.r = 2ϱ + k + 1
+\newcommand{\Ix}[1]{I(#1)}                          % Shape.BesselIndex
+\newcommand{\Mx}[1]{M(#1)}                          % Shape.MiddleIndex
+\newcommand{\ninf}[1]{f(#1)}                        % numInfPlaces E
+\newcommand{\ET}[1]{E_{#1}}                         % LocProd T
+% the components of the filling data S
+\newcommand{\bS}[1]{b(#1)}                          % S.b
+\newcommand{\NS}[1]{N(#1)}                          % S.N
+\newcommand{\qS}[2]{q_{#2}(#1)}                     % S.levelPrime i
+\newcommand{\gS}[1]{g(#1)}                          % S.g = q_0 q_1
+\newcommand{\piS}[1]{\bar\pi(#1)}                   % S.piBar
+\newcommand{\vpS}[1]{\varpi(#1)}                    % S.ϖ
+\newcommand{\ChS}[2]{\mathrm{Ch}_{#2}(#1)}          % S.chosenPlaces i
+\newcommand{\KcolS}[1]{K^{\mathrm{col}}(#1)}        % S.columnLevel
+\newcommand{\BsysS}[2]{\mathfrak{B}_{#2}(#1)}       % S.besselSys v
+% forms, groups, levels of the set-up (Setup.lean)
+\newcommand{\Trat}[2]{T^{\mathrm{rat}}_{#1}(#2)}    % S.ratMiddle R
+\newcommand{\Tlat}[2]{T^{\mathrm{lat}}_{#1}(#2)}    % S.latMiddle R
+\newcommand{\GS}[2]{G_{#1}(#2)}                     % S.G R
+\newcommand{\GFin}[1]{G^{\mathrm{lat}}_{#1}}        % S.GFin
+\newcommand{\GRes}[1]{\mathsf{G}(#1)}               % S.GRes
+\newcommand{\Cl}[1]{\mathrm{Cl}(#1)}                % S.Classes
+\newcommand{\Bc}[1]{\mathrm{Bc}(#1)}                % S.BesselCoord
+\newcommand{\KS}[1]{K(#1)}                          % S.latStabilizer
+\newcommand{\redS}[1]{\mathrm{red}_{#1}}            % S.reduction
+\newcommand{\KgS}[1]{K_g(#1)}                       % S.principalLevel
+\newcommand{\redim}[2]{\overline{#2}^{\,#1}}        % S.reducedImage A
+\newcommand{\kapS}[2]{\kappa_{#2}(#1)}              % S.kappa v
+\newcommand{\gid}[1]{\hat{g}(#1)}                   % S.gIdele
+\newcommand{\latB}[1]{\Lambda(#1)}                  % S.latBasis
+\newcommand{\rinf}[1]{\mathrm{r}^{\infty}_{#1}}     % S.ratToInf
+\newcommand{\rfin}[1]{\mathrm{r}^{f}_{#1}}          % S.ratToFin
+\newcommand{\incH}[1]{\mathrm{inc}_{#1}}            % S.inclHFin
+\newcommand{\hc}[2]{h_{#1}(#2)}                     % S.h c
+\newcommand{\pos}[4]{\mathrm{pos}_{#1}(#2,#3;#4)}   % S.termPosition c c' γ
+\newcommand{\terms}[4]{\mathrm{Tm}_{#1}(#2,#3,#4)}  % S.termsOver c s c'
+\newcommand{\Zf}[2]{Z_{#1}(#2)}                     % S.frameProducts γ
+\newcommand{\tdisc}[2]{\mathsf{g}_{#1}(#2)}         % S.termDisc γ
+\newcommand{\clU}[2]{\mathcal{U}_{#1,#2}}           % S.classUnip c
+\newcommand{\cutoff}[2]{\beta_{#1,#2}}              % S.classCutoff c
+\newcommand{\besfn}[4]{W^{#1}_{#2}(#3)_{#4}}        % S.besselFn y i, with the side
+\newcommand{\amp}[5]{a^{#1}_{#2}(#3,#4;#5)}         % S.amplitude c c' γ, with the side
+\newcommand{\ampabs}[5]{|a|^{#1}_{#2}(#3,#4;#5)}    % S.amplitudeAbs c c' γ, with the side
+\newcommand{\ampsum}[6]{A^{#1}_{#2}(#3;#4,#5,#6)}   % S.amplitudeSum T c s c', with the side
+\newcommand{\uchar}[2]{\psi^{\mathcal{U}}_{#1}(#2)} % S.unipotentChar u
+\newcommand{\ucov}[1]{\nu(#1)}                      % S.unipCovolume
+\newcommand{\siegC}[1]{c_{*}(#1)}                   % S.siegelConst
+\newcommand{\packC}[1]{a_{*}(#1)}                   % S.packetConst
+\newcommand{\uord}[1]{\mathrm{uo}(#1)}              % S.unipOrder
+\newcommand{\cdim}[1]{\mathrm{cd}(#1)}              % S.columnDim
+\newcommand{\bdeg}[1]{\deg(#1)}                     % S.besselDegree
+\newcommand{\mainE}[1]{\mathsf{d}(#1)}              % S.mainEnergy
+\newcommand{\besE}[1]{\mathsf{d}_{1}(#1)}           % S.besselEnergy
+\newcommand{\tailS}[1]{\mathrm{tl}(#1)}             % S.tailScale
+\newcommand{\codimF}[1]{\mathrm{cf}(#1)}            % S.codimFactor
+\newcommand{\fscale}[3]{\mathrm{fs}_{#1}(#2,#3)}    % S.frameScaleSq v a
+\newcommand{\fsprod}[1]{\mathrm{fs}(#1)}            % S.frameScaleProd
+\newcommand{\mass}[2]{\operatorname{mass}(#1,#2)}   % mass E r
+% chunk b and the sieve
+\newcommand{\energy}[3]{\mathrm{En}_{#1}(#2;#3)}    % Filling.energy A Ω (S implicit in Lean, shown)
+\newcommand{\linkE}[5]{\mathrm{LE}^{#1}_{#2}(#3;#4,#5)} % Filling.linkEnergy T Ω' R (side and S implicit, shown)
+\newcommand{\fixset}[3]{\mathrm{Fix}_{#1}(#2,#3)}   % Filling.fixingSet Sg d (S implicit, shown)
+\newcommand{\vfix}[3]{\mathrm{Fix}_{#1,#2}(#3)}     % Filling.vectorFixer w d (S implicit, shown)
+\newcommand{\charT}[2]{\psi_{#1,#2}}                % S.charOnPlaces T
+\newcommand{\fgain}[3]{\beta_{#1,#2}(#3)}           % S.frequencyGain T ξ
+\newcommand{\link}[1]{\operatorname{link}(#1)}      % link γ
+\newcommand{\clink}[2]{\operatorname{link}^{\circ}(#1,#2)} % commonLink γ γ'
+\newcommand{\tdnorm}[2]{\|\mathsf{g}\|_{#1}(#2)}    % S.termDiscNorm γ
+\newcommand{\mnorm}[3]{\mathrm{mn}_{#1}(#2;#3)}     % S.minorNorm j γ
+\newcommand{\cgauge}[5]{\mathrm{cg}_{#1}(#2;#3,#4;#5)} % S.classGauge j c c' γ
+\newcommand{\pinv}[5]{\mathrm{pi}_{#1}(#2,#3;#4,#5)} % S.pairInvariant c c' γ γ'
+\newcommand{\ldsq}[3]{\mathrm{ld}_{#1}(#2,#3)}      % S.linkDiscSq v e
+\newcommand{\lmet}[1]{Q^{\mathrm{link}}_{#1}}       % S.linkMetric
+% ----- end of macros-148
+% ----- recalled notions of the set-up that this note needs beyond macros-148, each with every explicit argument
+\newcommand{\Jrat}[1]{J_{#1}}                         % S.ratGram
+\newcommand{\fpair}[1]{\mathrm{fp}(#1)}               % framePair γ
+\newcommand{\ifp}[1]{\mathrm{ifp}(#1)}                % isotropicFramePair γ
+\newcommand{\lmat}[1]{\mathrm{lm}(#1)}                % linkMatrix γ
+\newcommand{\zp}[1]{\mathrm{zp}(#1)}                  % zFormPair T
+\newcommand{\lform}[1]{Q^{\pm}_{#1}}                  % S.linkForm
+\newcommand{\cc}[2]{\mathrm{cc}_{#1}(#2)}             % S.classCoord c
+\newcommand{\ccX}[2]{\mathrm{cc}^{0}_{#1}(#2)}        % S.classCoordX₀ c
+\newcommand{\lifts}[4]{#4\in\operatorname{Lift}_{#1}(#2,#3)} % HasIntegralLifts c γ m (S implicit, shown)
+\newcommand{\xri}[3]{\mathrm{xi}_{#1}(#2;#3)}         % S.xRowsIndex j k
+\newcommand{\sat}[2]{\mathrm{sat}_{#1}(#2)}           % S.saturationIndex k
+\newcommand{\ldisc}[3]{\operatorname{disc}_{#1}(#2;#3)} % S.latticeDisc c V
+\newcommand{\fvi}[5]{\mathrm{fv}_{#1}(#2;#3,#4;#5)}   % S.frameValueIndex c k a V
+\newcommand{\haslevel}[3]{#3\in\operatorname{Lev}_{#1}(#2)} % S.HasLevel j γ
+\newcommand{\lminor}[2]{D_{#2}(#1)}                   % leadingMinor Z j
+\newcommand{\vol}{\operatorname{vol}}
+\newcommand{\CC}{\mathbb{C}}
+\newcommand{\RR}{\mathbb{R}}
+
+\begin{document}
+\color{ink}
+
+{\raggedright
+{\sffamily\bfseries\fontsize{7.2}{9}\selectfont\color{leancol}\addfontfeatures{LetterSpace=8}READBACK NOTE 39\par}
+\vspace{5pt}
+{\fontsize{21.5}{25.5}\selectfont\bfseries Links of pairs of terms: integral lifts and the discriminant gain\par}
+\vspace{5pt}
+{\fontsize{12.4}{16}\selectfont\itshape\color{inksoft} One unit of the Lean artifact \ArtifactName, read back into
+mathematics\par}}
+\vspace{8pt}
+{\color{rulegrey}\hrule height 0.6pt}
+\vspace{7pt}
+\thispagestyle{empty}
+
+\textbf{Summary.} In the second moment of the Poincaré series, two rational terms $\gamma$, $\gamma'$ over the
+same classes and the same element of the level group interact through their \emph{links}, two Lagrangian
+subspaces of a split hermitian space of dimension \m{2(\kk{\fs}+1)}. This note proves the arithmetic input for
+the pairs whose links differ: the product of the invariants of the pair, which measure the lattice of the
+common part of the links, is smaller than the product of the gauges of the two terms by a power of \m{2/\gS{S}}
+for each dimension in which the links differ. The proof computes the discriminant of the lattice of integral
+lifts of a link by a bordered determinant and Jacobi's identity, splits this lattice orthogonally along the
+second link, and applies an inequality of Liouville type to the pairing of the two complements, which is
+divisible by \m{\gS{S}} because the two terms are congruent.
+
+\statement{leancol}{\fontsize{9.6}{13.2}\selectfont\textbf{What this note is.} The artifact \ArtifactName{} is a
+body of Lean code: the compact edition of a formal proof, due to L.~Alpöge with the AI system Claude, of the
+Riemann hypothesis and of its generalisation to Dirichlet $L$-functions. That headline is a claim. The authors
+report that every file compiles and that Lean's kernel accepted the proofs; an independent replay is recorded in
+the handout's record of checks when it reports. No mathematician has read the argument through, and nothing here
+says that the Riemann hypothesis is proved. This note (Note~P of its unit) treats \UnitInNote{} of the
+\UnitMembers{} declarations of the unit \emph{Translates of Poincaré series fill the rows}: the module on link
+pairings. Proved here from the inputs: Theorems A and~B and the statements of §\ref{s:proofs}; where a step
+is a verification of matrix entries, the note says so and gives the identity that is verified. Taken for
+granted and stated as Inputs 1 to~4: the properties of links, levels and class coordinates from the set-up of
+the unit, an inequality of Liouville type for Gram determinants, the bound of an index by agreeing characters,
+and Jacobi's identity for discriminants of complements from the background library. Every statement was
+compared with its Lean text, argument by argument. The Lean text read is \PinText; Appendix~A is the concordance
+of \ConcDecls{} declarations.}
+
+\sect{The statements}{s:intro}
+The objects are recalled in §\ref{s:setting}. In brief: \m{\link{\gamma}} is the link of a rational element,
+\m{\clink{\gamma}{\gamma'}} the common part of two links inside~$E^\kappa$; \m{\pinv{S}{c}{c'}{\gamma}{\gamma'}} is the
+invariant of the pair and \m{\cgauge{S}{j}{c}{c'}{\gamma}} the gauge of a term of level~$j$.
+
+\statement{arith}{\phantomsection\label{t:A}\textbf{Theorem A} (the discriminant gain).\enspace
+\emph{In Setting~\ref{s:S}, suppose that $E$ is stably unramified. Let $c$, $c'$ be classes of~$S$,
+\m{s\in\GRes{S}} an element that agrees, $x$ a real number such that $s$ fixes norm at least~$x$, $j$ a level,
+and \m{\gamma,\gamma'\in\terms{S}{c}{s}{c'}} two terms with \m{\haslevel{S}{j}{\gamma}} and
+\m{\haslevel{S}{j}{\gamma'}}. Then there is a natural number $i$ such that}
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=1pt]
+\item \m{\kk{\fs}\le\dim_E\clink{\gamma}{\gamma'}+i+(j-\rh{\fs})_+};
+\item \emph{if \m{i=0}, then \m{\link{\gamma}=\link{\gamma'}}; and}
+\item \emph{with \m{x'=x} if \m{\rh{\fs}<j} and \m{i=0}, and \m{x'=1} otherwise,}
+\[\pinv{S}{c}{c'}{\gamma}{\gamma'}\cdot\pinv{S}{c}{c'}{\gamma'}{\gamma}\cdot x'^2\ \le\
+\Bigl(\frac{2}{\gS{S}}\Bigr)^{2\,i\,\ninf{E}}\cdot\cgauge{S}{j}{c}{c'}{\gamma}\cdot\cgauge{S}{j}{c}{c'}{\gamma'} .\]
+\end{enumerate}}
+\leanline{\lean{pairInvariantmulle}}
+
+\statement{arith}{\phantomsection\label{t:B}\textbf{Theorem B} (splitting a link along a second one).\enspace
+\emph{In Setting~\ref{s:S}, suppose that $E$ is stably unramified. Let $c$, $c'$ be classes of~$S$,
+\m{s\in\GRes{S}} an element that agrees, $x$ a real number such that $s$ fixes norm at least~$x$, $j$ a level,
+\m{\gamma\in\terms{S}{c}{s}{c'}} a term with \m{\haslevel{S}{j}{\gamma}}, and \m{\gamma'\in\GS{S}{E}}. Put
+\m{k_\gamma=\pos{S}{c}{c'}{\gamma}} and \m{L=\link{\gamma}\cap\link{\gamma'}}. Then}
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=1pt]
+\item \m{0<\ldisc{S}{c}{\clink{\gamma}{\gamma'}}} \emph{and} \m{1\le\fvi{S}{c}{k_\gamma}{1}{\clink{\gamma}{\gamma'}}};
+\item \emph{there are a natural number~$i$, a finite index set $\mathcal C$, a matrix $m$ over $E$ with
+columns indexed by~$\mathcal C$, a matrix $y$ over $E$ with $i$ columns, \m{v\in\GL_i(\AEf)} and a matrix $z$
+over \m{\AEf} with rows $\mathcal C$ and $i$ columns, such that: \m{i=\kk{\fs}+1-\dim L};
+\m{\kk{\fs}\le\dim\clink{\gamma}{\gamma'}+i+(j-\rh{\fs})_+}; if \m{i=0} then \m{L=\link{\gamma}}; the columns of
+$m$ span~$L$; the columns of $y$ lie in \m{\link{\gamma}}; \m{y\,t\in L} only for \m{t=0}; the columns of
+\m{(m\,|\,y)} span \m{\link{\gamma}}; \m{\lifts{S}{c}{\gamma}{\tilde mz+\tilde yv}}; and, with $x'$ as in
+Theorem~A,}
+\[\bigl(\pinv{S}{c}{c'}{\gamma}{\gamma'}\cdot x'\bigr)^2\cdot\ldsq{S}{y}{v}\ \le\ \cgauge{S}{j}{c}{c'}{\gamma}^2 .\]
+\end{enumerate}}
+\leanline{\lean{existslinksplitleclassGauge}}
+
+Theorem~A is used in the crude estimate of the unit (the note on the energy of amplitude sums): there the pairs
+of terms of one level over one \m{(c,s,c')} are summed with the weights that the invariants of the pair
+control, and the factor \m{(2/\gS{S})^{2i\ninf{E}}} pays for the number of links at distance~$i$.
+
+\sect{The setting}{s:setting}
+\begin{conventions}\phantomsection\label{c:conventions}
+The natural numbers are \m{0,1,2,\dots}, and \m{(a)_+} is $a$ if \m{a\ge0} and $0$ otherwise. $E$ is a CM field
+with its CM type: a number field that is a CM field, with complex conjugation \m{x\mapsto\bar x} and one
+embedding at each infinite place~$\tau$; \m{x_\tau} is the image of~$x$, \m{\ninf{E}} the number of infinite
+places, \m{N_{E/\Q}} the norm. \m{\AEf} is the ring of finite adeles, \m{\hO} its subring of integral adeles,
+\m{\tilde a} the image in \m{\AEf} of a matrix $a$ over~$E$, and \m{[\xi]} the generalised index of
+\m{\xi\in\AEf}: the index of \m{\xi\hO} in \m{\hO} for integral~$\xi$, extended multiplicatively to the units
+and $0$ on non-units; for \m{\xi\in E^\times} it is \m{|N_{E/\Q}(\xi)|}. $E$ is \emph{stably unramified} if
+it contains a primitive root of unity of order~$5040$. A \emph{shape} is a triple
+\m{\fs=(\varrho,\kappa,k_0)}; \m{\rh{\fs}}, \m{\kk{\fs}=\#\kappa}; a \emph{level} is an element $j$ of
+\m{\{0,\dots,\rh{\fs}+1\}}. For a matrix $X$ over a ring with involution, $X^*$ is the conjugate transpose; a
+matrix \emph{has a left inverse} if its columns are linearly independent, and its \emph{column span} is the
+space spanned by its columns. Index sets written $\mathcal C$, $\mathcal C'$ are finite index sets of columns
+of matrices; where the formal text lists such a set, its finiteness or a matrix among the arguments of a
+statement that does not use them, this is said in §\ref{s:notes}.
+\end{conventions}
+
+\begin{setting}[filling data]\label{s:S}
+$E$ is a CM field with its CM type, $\fs$ is a shape, and $S$ is filling data over $E$ of shape~$\fs$, in the
+sense of the set-up of this unit, with its prime \m{\NS{S}}, the number \m{\gS{S}}, the finite group
+\m{\GRes{S}}, the classes \m{\Cl{S}}, the groups \m{\GS{S}{E}} and \m{\GFin{S}}, the integral subgroup \m{\KS{S}}
+with its reduction \m{\redS{S}} and kernel \m{\KgS{S}}, the positions \m{\pos{S}{c}{c'}{\gamma}} and the sets of
+terms \m{\terms{S}{c}{s}{c'}}, as recalled in the setting ``filling data'' of Note~F of this unit (\emph{Translates
+of Poincaré series fill the rows}).
+\end{setting}
+
+\subhead{Recalled definitions.} All the notions below belong to the set-up of the unit; they are recalled with
+every argument of their formal definitions. The index set \m{\Ix{\fs}} of the whole space consists of
+\m{e_0,\dots,e_{\rh{\fs}-1}}, of~$\kappa$, of $z$ and of \m{e^*_0,\dots,e^*_{\rh{\fs}-1}}; \m{\Mx{\fs}=\kappa\sqcup\{z\}}
+indexes the \emph{middle}. $X$ is the span of the~$e_a$; the frame is \m{\mathfrak f_a=e_a} (\m{a<\rh{\fs}}),
+\m{\mathfrak f_{\rh{\fs}}=z}. In Setting~\ref{s:S}: \m{T=\Trat{S}{E}} is the diagonal matrix on \m{\Mx{\fs}} with
+entries $1$ on $\kappa$ and \m{-\NS{S}} at~$z$; \m{\Jrat{S}} is its split Gram matrix on \m{\Ix{\fs}}, the Gram
+matrix of the hermitian form $h$; \m{\Tlat{S}{\AEf}} and its split Gram matrix $J_f$ are the same in the lattice
+basis over the finite adeles.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item For \m{\gamma\in\GS{S}{E}}: \m{\Zf{S}{\gamma}=(h(\mathfrak f_a,\gamma\mathfrak f_{a'}))_{a,a'}} is the frame Gram
+matrix, \m{\lminor{Z}{l}} the leading minor of order $l$ of a matrix~$Z$, and
+\m{\tdisc{S}{\gamma}=|\lminor{\Zf{S}{\gamma}}{\varrho+1}|^2-\NS{S}^2|\lminor{\Zf{S}{\gamma}}{\varrho}|^2}, with
+\m{|\xi|^2=\xi\bar\xi}, the term discriminant; \m{\tdnorm{S}{\gamma}=\prod_\tau|\tdisc{S}{\gamma}_\tau|}.
+\item \m{\fpair{\gamma}=(\mathfrak f\,|\,\gamma\mathfrak f)} is the matrix of the frame and its image,
+\m{\ifp{\gamma}=(e_a\,|\,\gamma e_a)_{a<\rh{\fs}}} its part on~$X$. The \emph{link matrix} \m{\lmat{\gamma}} sends a
+vector $t$ to the pair of the middle parts of $t$ and of \m{\gamma^{-1}t}, a vector indexed by
+\m{\Mx{\fs}\sqcup\Mx{\fs}}; and \m{\link{\gamma}=\lmat{\gamma}\bigl(\ker(\ifp{\gamma}^*\Jrat{S})\bigr)}, the
+\emph{link}: the pairs of the classes of $t$ and of $\gamma^{-1}t$ for $t$ orthogonal to $X$ and~$\gamma X$.
+\item \m{\zp{T}} is the matrix with two rows that takes from a pair of middle vectors the two products with
+the row of $T$ at~$z$; \m{\lform{S}=\diag(T,-T)} is the \emph{link form} and
+\[\lmet{S}=\tfrac12\diag(T,T)+\NS{S}^{-1}\,\zp{T}^*\zp{T}\]
+the \emph{link metric}, both on pairs of middle vectors. For \m{\gamma,\gamma'},
+\m{\clink{\gamma}{\gamma'}\subseteq E^\kappa} is the space of the $\kappa$-parts of the first components of the
+pairs in \m{\link{\gamma}\cap\link{\gamma'}\cap\ker\zp{T}}.
+\item For a matrix $v$ over $E$ on pairs of middle vectors with columns~$\mathcal C$ and
+\m{e\in\GL_{\mathcal C}(\AEf)}: \m{\ldsq{S}{v}{e}=|N_{E/\Q}\det(v^*\lmet{S}v)|\cdot[\det e]^2}.
+\item For a class~$c$, \m{\cc{S}{c}} is the matrix over \m{\AEf} that takes rational coordinates on the whole
+space to coordinates in the basis of the lattice of~$c$, and \m{\ccX{S}{c}} the matrix whose columns are the
+basis vectors of $E^\kappa$ in the basis of the middle part of that lattice. For classes $c$, $c'$,
+\m{\gamma\in\GS{S}{E}} and \m{k=\pos{S}{c}{c'}{\gamma}}: \m{\cc{S}{c}\,\widetilde{\fpair{\gamma}}=\fpair{k}}.
+\item For a class $c$, \m{\gamma\in\GS{S}{E}} and a matrix $m$ over \m{\AEf} on pairs of middle vectors with
+columns~$\mathcal C$: \m{\lifts{S}{c}{\gamma}{m}} (\emph{$m$ has integral lifts}) if there are a finite index set
+$\mathcal C'$, a matrix $t$ over $E$ with rows \m{\Ix{\fs}} and columns $\mathcal C'$ and a matrix $w$ over
+\m{\AEf} with rows $\mathcal C'$ and columns $\mathcal C$ such that \m{\ifp{\gamma}^*\Jrat{S}\,t=0}, the matrix
+\m{\cc{S}{c}\,\tilde t\,w} is integral, and \m{\widetilde{\lmat{\gamma}t}\,w=m}.
+\item For \m{k\in\GFin{S}} with frame Gram matrix $Z(k)$ for \m{\Tlat{S}{\AEf}} and a level~$j$:
+\m{\xri{S}{j}{k}} is the index of the \m{\hO}-span of the conjugated first \m{\min(j,\rh{\fs})} rows of $Z(k)$ in
+that of its conjugated first \m{\rh{\fs}} rows, and \m{\sat{S}{k}} the index of the \m{\hO}-span of the columns of
+\m{\ifp{k}} in the lattice of the integral vectors of their span; both are $0$ if infinite.
+\item For a class $c$ and a subspace $V$ of~$E^\kappa$: \m{\ldisc{S}{c}{V}} is the discriminant of the lattice of
+the adelic points of $V$ that are integral in the lattice of~$c$; for \m{k\in\GFin{S}} and a unit $a$ of
+\m{\AEf}, \m{\fvi{S}{c}{k}{a}{V}} is the index in the lattice of the values \m{(h(k\mathfrak f_l,y))_{l<\rh{\fs}}}, for $y$
+in that lattice of~$V$, of its intersection with $a$ times the lattice spanned by the conjugated first
+\m{\rh{\fs}} rows of $Z(k)$ ($0$ if infinite). The \emph{invariant of a pair} is
+\[\begin{aligned}\pinv{S}{c}{c'}{\gamma}{\gamma'}={}&\ldisc{S}{c}{\clink{\gamma}{\gamma'}}\cdot
+\fvi{S}{c}{\pos{S}{c}{c'}{\gamma}}{1}{\clink{\gamma}{\gamma'}}\\&\cdot\sat{S}{\pos{S}{c}{c'}{\gamma}} .\end{aligned}\]
+\item For a level $j$ and \m{\gamma\in\GS{S}{E}}:
+\m{\mnorm{S}{j}{\gamma}=|N_{E/\Q}(\lminor{\Zf{S}{\gamma}}{j})|\cdot\NS{S}^{-2(j-\rh{\fs})_+\ninf{E}}}, and for classes
+$c$, $c'$, with \m{k=\pos{S}{c}{c'}{\gamma}}, the \emph{gauge}
+\[\cgauge{S}{j}{c}{c'}{\gamma}=\frac{\max\bigl(\tdnorm{S}{\gamma},\ \NS{S}^{\ninf{E}}\mnorm{S}{j}{\gamma}\bigr)}
+{\xri{S}{j}{k}\cdot\xri{S}{j}{k^{-1}}} .\]
+\item \m{\haslevel{S}{j}{\gamma}} (\emph{$\gamma$ has level $j$}) if $\gamma$ is in normal form of index~$j$,
+\m{\lminor{\Zf{S}{\gamma}}{j}\ne0}, and \m{\rh{\fs}<j} holds exactly if \m{\tdisc{S}{\gamma}\ne0}. Here $\gamma$ is in
+\emph{normal form of index $j$} if there is \m{\zeta\in E} with \m{\zeta\bar\zeta=1} such that for every frame
+index \m{a\ge j} there are coefficient vectors $x$, $y$ supported on the indices \m{\le a} with \m{x_a=\zeta},
+\m{y_a=1} and \m{\sum_{a'}x_{a'}\mathfrak f_{a'}=\gamma\sum_{a'}y_{a'}\mathfrak f_{a'}}.
+\item \m{s\in\GRes{S}} \emph{agrees} if for all \m{u,u'\in\KS{S}} in the Bessel unipotent group with
+$\redS{S}(u)\,s=s\,\redS{S}(u')$ the unipotent characters of $u$ and $u'$ are equal; and $s$ \emph{fixes norm at
+least}~$x$ in the sense of the definition of fixing sets recalled in Note~F: there is a finite set of triples of
+an index \m{i\in\{0,1\}}, a chosen place above the $i$-th prime of $S$ and a Boolean, the product of whose
+primes is at least~$x$, such that for each of them $s$, or its inverse adjoint if the Boolean is true, fixes at
+that place a non-zero vector of the span of the frame.
+\end{enumerate}
+
+\sect{What is taken for granted}{s:inputs}
+\statement{est}{\phantomsection\label{i:1}\textbf{Input 1} (links, levels, class coordinates; set-up of this
+unit).\enspace In Setting~\ref{s:S}, for \m{\gamma,\gamma'\in\GS{S}{E}}:
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=1pt]
+\item \m{\dim_E\link{\gamma}=\kk{\fs}+1}, and \m{\link{\gamma}} is Lagrangian for the link form: a pair $p$ lies
+in \m{\link{\gamma}} exactly if \m{q^*\lform{S}\,p=0} for all \m{q\in\link{\gamma}}. In particular
+\m{v^*\lform{S}u=0} for matrices $u$, $v$ with columns in \m{\link{\gamma}}.
+\item If the columns of $t$ are orthogonal to \m{X+\gamma X} and those of $t'$ to \m{X+\gamma'X}, then for
+\m{a,a'\in E}:
+\m{(\lmat{\gamma}t)^*\diag(aT,-a'T)(\lmat{\gamma'}t')=a\,t^*\Jrat{S}t'-a'\,t^*\Jrat{S}(\gamma\gamma'^{-1})t'}.
+\item The link metric is positive definite at every infinite place, and \m{\det(v^*\lmet{S}v)\ne0} for every
+matrix $v$ with a left inverse.
+\item For matrices $t$, $t'$ over $E$ with rows \m{\Ix{\fs}}:
+\m{(\cc{S}{c}\tilde t)^*J_f(\cc{S}{c}\tilde t')=\widetilde{t^*\Jrat{S}t'}}; $J_f$ is unimodular; and the frame
+Gram matrix of \m{\pos{S}{c}{c'}{\gamma}} is the image of~\m{\Zf{S}{\gamma}}.
+\item If \m{\haslevel{S}{j}{\gamma}}, then \m{\haslevel{S}{j}{\gamma^{-1}}} and \m{\mnorm{S}{j}{\gamma}>0}. If
+$\gamma$ is in normal form of index~$j$, then for every vector $y$ of frame coordinates there are $x$, $y'$
+with \m{y'_a=y_a} for \m{a\ge j} and \m{\sum_ax_a\mathfrak f_a=\gamma\sum_ay'_a\mathfrak f_a}; in such a relation the
+top coordinates satisfy \m{\bar x_\varrho x_\varrho=\bar y'_\varrho y'_\varrho}. If \m{\haslevel{S}{j}{\gamma}} and \m{b\ge j} is
+a frame index, the combination of the vectors \m{\gamma\mathfrak f_a} with the coefficients of column $b$ of the
+inverse of the matrix \m{\mathrm{pl}_j(\Zf{S}{\gamma})}, whose rows \m{a<j} are those of \m{\Zf{S}{\gamma}} and whose
+other rows are those of the identity, lies in the span of the frame.
+\item If \m{\Zf{S}{\gamma}\,y=D\,e_\varrho} for a coefficient vector $y$ and \m{D\in E}, and
+\m{t=\sum_ay_a\gamma\mathfrak f_a}, then the coordinates of $t$ at the $e^*_a$ vanish, \m{-\NS{S}\,t_z=D}, and
+\m{\NS{S}\sum_{i\in\kappa}|t_i|^2=|D|^2-\NS{S}^2|y_\varrho|^2}.
+\item If \m{\gamma\in\terms{S}{c}{s}{c'}} and \m{\gamma'\in\terms{S}{c'}{s'}{c''}}, then
+\m{\gamma\gamma'\in\terms{S}{c}{ss'}{c''}}; the inverse of a term over \m{(c,s,c')} is a term over
+\m{(c',s^{-1},c)}; and the position of a term over \m{(c,1,c)} lies in \m{\KgS{S}}, so that it is congruent to
+$1$ modulo \m{\gS{S}}.
+\item If the columns of $n$ are orthogonal to \m{X+kX} for \m{k\in G(\Tlat{S}{\AEf})} and
+\m{\zp{\Tlat{S}{\AEf}}\lmat{k}n=0}, then \m{\mathrm{fm}(k)^*\,\Tlat{S}{\AEf}\,n_M=-Z_X(k)^*\,n_X}, where $n_X$ is the
+part of $n$ on the~$e_a$, $n_M$ its middle part, \m{\mathrm{fm}(k)} the matrix of the middle parts of the
+\m{k\mathfrak f_l}, \m{l<\rh{\fs}}, and \m{Z_X(k)} the matrix of the first \m{\rh{\fs}} rows of $Z(k)$.
+\end{enumerate}}
+
+\statement{est}{\phantomsection\label{i:2}\textbf{Input 2} (Liouville's inequality for Gram determinants;
+set-up of this unit).\enspace Let $E$ be stably unramified, $Q$ a square matrix over $E$ that is positive
+definite at every infinite place, $a$, $a'$ matrices over $E$ with the rows of $Q$ and columns indexed by a
+finite set $\mathcal C$ with \m{\det(a^*Qa')\ne0}, \m{v,v'\in\GL_{\mathcal C}(\AEf)}, and \m{x_0\ge0} a real
+number such that \m{x_0\le[\delta]} whenever \m{\delta=\det(v^*\,\widetilde{a^*Qa'}\,v')} is a unit of~\m{\AEf}.
+Then \m{x_0^2\le[\det v]^2\,|N_{E/\Q}\det(a^*Qa)|\cdot|N_{E/\Q}\det(a'^*Qa')|\,[\det v']^2}.}
+
+\statement{est}{\phantomsection\label{i:3}\textbf{Input 3} (lattices; set-up of this unit and background
+library).\enspace Let $E$ be stably unramified.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=1pt]
+\item \emph{(Primitive completion.)} If a matrix over \m{\AEf} with columns \m{\mathcal C\sqcup\mathcal C'} has a
+left inverse, it becomes primitive (its columns extend to a basis of the lattice of integral vectors) after
+multiplication on the right by a block matrix with diagonal blocks \m{a\in\GL_{\mathcal C}(\AEf)},
+\m{e\in\GL_{\mathcal C'}(\AEf)}, an upper right block $z$ and lower left block~$0$. A square primitive matrix is
+integral with integral inverse, so its determinant has generalised index~$1$.
+\item \emph{(Jacobi's identity for discriminants of complements; reference to be confirmed.)} Let $J$ be a
+unimodular hermitian matrix over~\m{\AEf}, $F$ an integral matrix, $n$ a primitive matrix with \m{F^*Jn=0}, of
+complementary sizes, $p$ a matrix of bordering columns and $c_0$ a unit. Then the solutions $u'$ of
+\m{n^*Ju'=0} are the combinations of the columns of~$F$, and
+\[\bigl[\det\bigl(n^*(J+c_0^{-1}Jpp^*J)n\bigr)\bigr]\cdot\mathfrak i(F)^2\cdot[c_0]^{d_p}=[\det M],\]
+where $M$ is the Gram matrix of \m{(F\,|\,p)} for $J$ with $c_0$ added on the diagonal block of~$p$, $d_p$ is
+the number of columns of~$p$, and \m{\mathfrak i(F)} the index of the lattice of integral vectors in the lattice
+of the $y$ with $Fy$ integral.
+\item \emph{(Extension of a basis modulo a kernel.)} Let $A$ and $x$ be matrices over $E$ with
+\m{\det(Ax)\ne0}, and $L$ a subspace containing the columns of~$x$. Then there is a matrix $y$ with
+\m{\dim(L\cap\ker A)} columns such that \m{(x\,|\,y)} has a left inverse and its columns span~$L$, the columns
+of $y$ lie in~$L$, \m{Ay=0}, and \m{yt} lies in the column span of $x$ only for \m{t=0}.
+\item \emph{(Discriminant of a sublattice.)} Let $c$ be a class, $V$ a subspace of~$E^\kappa$ of
+dimension~$d$, $p$ a matrix over $E$ with $d$ columns in~$V$, \m{a\in\GL_d(\AEf)} with
+\m{D=[\det(p^*p)]\,[\det a]^2\ne0}, and $k$ in \m{\GFin{S}}. If \m{\ccX{S}{c}\,\tilde p\,a} is integral and its
+values \m{(h(k\mathfrak f_l,\cdot))_l} lie in the lattice spanned by the conjugated first \m{\rh{\fs}} rows of
+$Z(k)$, then \m{(\ldisc{S}{c}{V}\cdot\fvi{S}{c}{k}{1}{V})^2\le D}, \m{\ldisc{S}{c}{V}>0} and
+\m{\fvi{S}{c}{k}{1}{V}\ge1}.
+\end{enumerate}}
+
+\statement{est}{\phantomsection\label{i:4}\textbf{Input 4} (agreeing characters force a large index; set-up
+of this unit).\enspace In Setting~\ref{s:S}, let $E$ be stably unramified, \m{k\in\KS{S}} with \m{\redS{S}(k)}
+agreeing, $x$ a real number such that \m{\redS{S}(k)} fixes norm at least~$x$, and $n$ an integral matrix
+with two columns whose pairings with the $e_a$ and the $ke_a$ vanish. If the determinant $\delta$ of the
+\m{2\times2} matrix of the pairings of the columns of $n$ with $z$ and $kz$ is a unit of~\m{\AEf}, then
+\m{x\le[\delta]}.}
+
+\sect{Proofs}{s:proofs}
+Throughout, in Setting~\ref{s:S}, \m{N=\NS{S}}, \m{\varrho=\rh{\fs}}, \m{T=\Trat{S}{E}}, and \m{[N]=N^{2\ninf{E}}}
+is the generalised index of the integer~$N$, the degree of $E$ being \m{2\ninf{E}}.
+
+\subhead{The bordered determinant.}
+\begin{lemma}[a bordered Gram determinant]\label{l:bordered}
+In Setting~\ref{s:S}, let $j$ be a level and \m{\gamma\in\GS{S}{E}} with \m{\haslevel{S}{j}{\gamma}}. Let $P$ be
+the matrix over $E$ with rows \m{\Ix{\fs}} whose columns are: the vectors $e_a$ for \m{a<\rh{\fs}}; the vectors
+\m{\gamma e_a} for \m{a<\rh{\fs}} with \m{a<j}; the basis vectors $e^*_a$ for \m{a<\rh{\fs}} with \m{a\ge j}; and
+$z$ and~$\gamma z$. Let $M$ be the sum of \m{P^*\Jrat{S}P} and of the diagonal matrix with entry \m{\NS{S}} at
+the columns $e^*_a$, $z$, $\gamma z$ and $0$ at the others. Then
+\[[\det\tilde M]=\bigl(\NS{S}^{2\ninf{E}}\cdot\mnorm{S}{j}{\gamma}\bigr)^2 .\]
+\end{lemma}
+\begin{proof}
+Let \m{Z'=\Zf{S}{\gamma^{-1}}}, the conjugate transpose of \m{\Zf{S}{\gamma}}, and let $A$ be the square matrix of
+size \m{\varrho+1} whose rows \m{a<j}, \m{a<\varrho}, are those of~$Z'$, whose rows \m{j\le a<\varrho} are those
+of the identity, and whose top row is that of~$Z'$. The formal text reorders the rows and columns of $M$ and
+verifies, entry by entry from the Gram matrix of the listed vectors, that $M$ becomes block upper triangular
+with diagonal blocks $A$ and~$A^*$. Hence \m{\det M=\pm\det A\cdot\overline{\det A}}, and as
+\m{\det M\in E}, \m{[\det\tilde M]=|N_{E/\Q}(\det A)|^2}. It remains to show
+\m{|N_{E/\Q}(\det A)|=N^{2\ninf{E}}\mnorm{S}{j}{\gamma}}.
+
+If \m{j=\varrho+1}, then \m{A=Z'}, \m{|N_{E/\Q}\det Z'|=|N_{E/\Q}\lminor{\Zf{S}{\gamma}}{\varrho+1}|}, and the claim
+is the definition of \m{\mnorm{S}{\varrho+1}{\gamma}}, in which \m{(j-\varrho)_+=1}.
+
+Let \m{j\le\varrho}. The element \m{\gamma^{-1}} has level~$j$ (Input~1(e)), so for the frame index
+\m{\varrho\ge j} the combination of the \m{\gamma^{-1}\mathfrak f_a} with the coefficients $y$ of the top column of
+\m{\mathrm{pl}_j(Z')^{-1}} lies in the span of the frame: \m{\sum_ay_a\gamma^{-1}\mathfrak f_a=\sum_ax_a\mathfrak f_a}.
+The matrix $A$ differs from \m{\mathrm{pl}_j(Z')} only in the top row, so by Cramer's rule
+\m{\det A=\det\mathrm{pl}_j(Z')\cdot(Z'y)_\varrho}, and \m{\det\mathrm{pl}_j(Z')=\lminor{Z'}{j}\ne0}. Now
+\m{(Z'y)_\varrho=h(z,\sum_ay_a\gamma^{-1}\mathfrak f_a)=h(z,\sum_ax_a\mathfrak f_a)=-N\,x_\varrho}, and
+\m{\bar x_\varrho x_\varrho=\bar y_\varrho y_\varrho=1}, because the top diagonal entry of
+\m{\mathrm{pl}_j(Z')\,\mathrm{pl}_j(Z')^{-1}} is~$1$ and the top row of \m{\mathrm{pl}_j(Z')} is that of the identity.
+So \m{\det A=-N\,x_\varrho\,\lminor{Z'}{j}} with $x_\varrho$ of norm one at every place, and
+\m{|N_{E/\Q}(\det A)|=N^{2\ninf{E}}\,|N_{E/\Q}\lminor{\Zf{S}{\gamma}}{j}|=N^{2\ninf{E}}\mnorm{S}{j}{\gamma}}, the leading
+minors of $Z'$ being the conjugates of those of \m{\Zf{S}{\gamma}}.
+\end{proof}
+\leanline{\lean{absnormbordereddet}}
+
+\subhead{Integral lifts of a basis of the link.}
+\begin{proposition}[lifts with small discriminant]\label{p:lifts}
+In Setting~\ref{s:S}, suppose that $E$ is stably unramified. Let $c$, $c'$ be classes of~$S$, \m{t\in\GRes{S}},
+$j$ a level, \m{\gamma\in\terms{S}{c}{t}{c'}} with \m{\haslevel{S}{j}{\gamma}}, $\mathcal C$ a finite index set and
+$v$ a matrix over $E$ with rows \m{\Mx{\fs}\sqcup\Mx{\fs}} and columns $\mathcal C$ that has a left inverse and
+whose column span is \m{\link{\gamma}}. Put \m{k=\pos{S}{c}{c'}{\gamma}} and
+\m{w_0=\xri{S}{j}{k}\cdot\xri{S}{j}{k^{-1}}\cdot\sat{S}{k}}. Then there is \m{e\in\GL_{\mathcal C}(\AEf)} such that
+\[\lifts{S}{c}{\gamma}{\tilde v\,e},\qquad\ldsq{S}{v}{e}\cdot w_0^2\le\mnorm{S}{j}{\gamma}^2,\qquad w_0\ne0 .\]
+\end{proposition}
+\begin{proof}
+Let $B$ be the set of the \m{a<\varrho} with \m{a\ge j}; it is empty if \m{j\ge\varrho}.
+
+\emph{Step 1: a rational lift.} There is a matrix $u$ over $E$ with rows \m{\Ix{\fs}} and columns
+\m{B\sqcup\mathcal C} such that the columns of $u$ are orthogonal to \m{X+\gamma X}; \m{\lmat{\gamma}u=(0\,|\,v)};
+and the $e_a$-coordinates of the columns of $u$, for \m{a\in B}, form the matrix \m{(1\,|\,0)}. Indeed, a
+column $v_b$ of $v$ lies in the link, so \m{v_b=\lmat{\gamma}t_b} with $t_b$ orthogonal to \m{X+\gamma X}. By the
+normal form of \m{\gamma^{-1}} (Input~1(e)), for every prescription of coordinates at the indices \m{a\in B}
+there is a vector \m{w'=\sum_ay'_ae_a} with these coordinates, with \m{y'_\varrho=0}, such that
+\m{\gamma^{-1}w'=\sum_ax_a\mathfrak f_a} with \m{x_\varrho=0}. Then $w'$ lies in \m{X\cap\gamma X}; it is orthogonal
+to \m{X+\gamma X}, both spaces being isotropic, and \m{\lmat{\gamma}w'=0}, the middle parts of $w'$ and of
+\m{\gamma^{-1}w'} being zero. Adding such vectors to the $t_b$, and taking them alone for the columns of~$B$,
+gives~$u$.
+
+\emph{Step 2: completion.} The matrix \m{\cc{S}{c}\tilde u} has a left inverse. By Input~3(a) there are
+\m{a\in\GL_B(\AEf)}, \m{e\in\GL_{\mathcal C}(\AEf)} and $z_1$ such that
+\m{n=\cc{S}{c}\,\tilde u\,\bigl(\begin{smallmatrix}a&z_1\\0&e\end{smallmatrix}\bigr)} is primitive. The columns of
+$n$ indexed by $\mathcal C$ are \m{\cc{S}{c}\tilde u\binom{z_1}{e}}; they are integral, and
+\m{\widetilde{\lmat{\gamma}u}\binom{z_1}{e}=\tilde v\,e}. With Step~1 this shows \m{\lifts{S}{c}{\gamma}{\tilde v\,e}}.
+
+\emph{Step 3: Jacobi's identity.} Let $F$ and $p'$ be the images under \m{\cc{S}{c}} of the first columns
+($e_a$ for \m{a<\varrho}; $\gamma e_a$ for \m{a<j}, \m{a<\varrho}) and of the last columns ($e^*_a$ for
+\m{a\in B}; $z$; $\gamma z$) of the matrix $P$ of Lemma~\ref{l:bordered}; by the last sentence of
+§\ref{s:setting}(e), $F$ consists of the vectors $e_a$ and $ke_a$. The matrix $F$ is integral because \m{k\in\KS{S}}; \m{F^*J_fn=0} by
+Step~1 and Input~1(d); and the sizes are complementary because \m{\#\mathcal C=\kk{\fs}+1} (Input~1(a)).
+Jacobi's identity (Input~3(b)), for \m{J=J_f}, $F$, $n$, $p'$ and \m{c_0=N}, gives
+\[\bigl[\det\bigl(n^*(J_f+N^{-1}J_fp'p'^*J_f)n\bigr)\bigr]\cdot\mathfrak i(F)^2\cdot[N]^{\#B+2}=[\det\tilde M]
+=\bigl(N^{2\ninf{E}}\mnorm{S}{j}{\gamma}\bigr)^2,\]
+the Gram matrix in the coordinates of the lattice being the rational one (Input~1(d)) and the last equality
+being Lemma~\ref{l:bordered}. On the left, with $Q$ the matrix of the products of the columns of $u$ with
+$e^*_a$ (\m{a\in B}), $z$ and~$\gamma z$,
+\[n^*(J_f+N^{-1}J_fp'p'^*J_f)n=\bigl(\begin{smallmatrix}a&z_1\\0&e\end{smallmatrix}\bigr)^*\,
+\widetilde{\bigl(u^*\Jrat{S}u+N^{-1}Q^*Q\bigr)}\,\bigl(\begin{smallmatrix}a&z_1\\0&e\end{smallmatrix}\bigr),\]
+\[u^*\Jrat{S}u+N^{-1}Q^*Q=\begin{pmatrix}N^{-1}\cdot1_B&0\\0&v^*\lmet{S}v\end{pmatrix}.\]
+The second identity follows from Step~1. A column of $u$ indexed by $B$ lies in \m{X\cap\gamma X}: its
+products with $z$, $\gamma z$ and with the other columns vanish, and its products with the $e^*_a$,
+\m{a\in B}, are its $e_a$-coordinates; this gives the block \m{N^{-1}\cdot1_B} and the zero blocks. For the
+columns indexed by~$\mathcal C$, the products with the $e^*_a$, \m{a\in B}, vanish, the products with $z$ and
+$\gamma z$ are the values of \m{\zp{T}} on the link images, which gives the term \m{N^{-1}\zp{T}^*\zp{T}} of the
+link metric, and Input~1(b), with \m{\gamma'=\gamma} and the coefficients \m{\tfrac12}, \m{-\tfrac12}, gives
+\m{u^*\Jrat{S}u=v^*\,\tfrac12\diag(T,T)\,v} on them. Taking generalised indices,
+\[[\det a]^2\,[\det e]^2\cdot[N]^{-\#B}\cdot|N_{E/\Q}\det(v^*\lmet{S}v)|\cdot\mathfrak i(F)^2\cdot[N]^{\#B+2}
+=[N]^2\,\mnorm{S}{j}{\gamma}^2,\]
+that is
+\begin{equation}\label{e:jacobi}
+\ldsq{S}{v}{e}\cdot[\det a]^2\cdot\mathfrak i(F)^2=\mnorm{S}{j}{\gamma}^2 .
+\end{equation}
+\emph{Step 4: the indices.} The formal text shows two divisibilities. First, the matrix $a$ is integral, the
+index of its column lattice in the integral vectors is \m{[\det a]\ne0}, and by the relation of Input~1(h),
+applied to the columns of $n$ indexed by~$B$, and the description of the frame Gram matrix of $k$
+(Input~1(d)), the lattice of the conjugated first $\varrho$ rows of $Z(k)$ is generated by that of its first
+\m{\min(j,\varrho)} rows and the image of the column lattice of~$a$; so \m{\xri{S}{j}{k}} divides \m{[\det a]}.
+Second, \m{\xri{S}{j}{k^{-1}}} divides the index of the column lattice of \m{\ifp{k}} in that of~$F$,
+\m{\sat{S}{k}} is the index of the column lattice of \m{\ifp{k}} in the lattice of the integral vectors of its
+span, and by the first assertion of Jacobi's identity that lattice lies in the lattice of the $y$ with $Fy$
+integral; as indices multiply, \m{\xri{S}{j}{k^{-1}}\cdot\sat{S}{k}} divides \m{\mathfrak i(F)}, which is non-zero by
+\eqref{e:jacobi} and \m{\mnorm{S}{j}{\gamma}>0}. Hence \m{w_0\ne0}, \m{w_0\le[\det a]\,\mathfrak i(F)}, and
+\eqref{e:jacobi} gives \m{\ldsq{S}{v}{e}\,w_0^2\le\mnorm{S}{j}{\gamma}^2}.
+\end{proof}
+\leanline{\lean{existsliftslinkDiscSqle}}
+
+\begin{corollary}[positivity]\label{c:pos}
+In Setting~\ref{s:S}, suppose that $E$ is stably unramified. Let $c$, $c'$ be classes of~$S$, \m{s\in\GRes{S}},
+$j$ a level and \m{\gamma\in\terms{S}{c}{s}{c'}} with \m{\haslevel{S}{j}{\gamma}}, and \m{k=\pos{S}{c}{c'}{\gamma}}.
+Then \m{1\le\xri{S}{j}{k}}, \m{1\le\sat{S}{k}} and \m{0<\cgauge{S}{j}{c}{c'}{\gamma}}.
+\end{corollary}
+\begin{proof}
+Apply Proposition~\ref{p:lifts} to a basis of the link: \m{w_0\ne0}, so its three factors, which are natural
+numbers, are at least~$1$; and the numerator of the gauge is at least
+\m{N^{\ninf{E}}\mnorm{S}{j}{\gamma}>0} (Input~1(e)).
+\end{proof}
+\leanline{\lean{onelexRowsIndexandsaturationIndex}}
+
+\begin{lemma}[an integral matrix from lifts]\label{l:int}
+In Setting~\ref{s:S}, let $c$ be a class of~$S$, \m{\gamma\in\GS{S}{E}}, $\mathcal C$ an index set, $m$ a matrix
+over \m{\AEf} with rows \m{\Mx{\fs}\sqcup\Mx{\fs}} and columns~$\mathcal C$, and $c'$ a class of~$S$. Suppose that
+\m{\lifts{S}{c}{\gamma}{m}}. Then, with \m{k=\pos{S}{c}{c'}{\gamma}}, there is an integral matrix $n$ with rows
+\m{\Ix{\fs}} and columns $\mathcal C$ such that
+\[\zp{\Tlat{S}{\AEf}}\,\lmat{k}\,n=\widetilde{\zp{T}}\,m,\qquad\ifp{k}^*J_fn=0,\]
+and such that, for every matrix $p$ with rows~$\kappa$: if the first half of $m$ is $p$ on the rows $\kappa$
+and $0$ on the row~$z$, then the middle rows of $n$ are \m{\ccX{S}{c}\,p}.
+\end{lemma}
+\begin{proof}
+Let \m{(\mathcal C',t,w)} be as in the definition of integral lifts and put \m{n=\cc{S}{c}\tilde tw}. It is
+integral. As \m{\cc{S}{c}\widetilde{\fpair{\gamma}}=\fpair{k}}, Input~1(d) turns the pairings of $n$ with the
+columns of \m{\fpair{k}} into those of \m{\tilde tw} with the columns of \m{\fpair{\gamma}}: those with the $e_a$,
+$\gamma e_a$ vanish, and those with $z$, $\gamma z$, which are the values of \m{\zp{\cdot}} on the link images,
+are \m{\widetilde{\zp{T}}\,\widetilde{\lmat{\gamma}t}\,w=\widetilde{\zp{T}}\,m}. The last assertion is read off
+from the block form of \m{\cc{S}{c}} on the middle coordinates.
+\end{proof}
+\leanline{\lean{existsisIntMatrix}}
+
+\begin{lemma}[orthogonal splitting of lifts]\label{l:split}
+In Setting~\ref{s:S}, suppose that $E$ is stably unramified. Let $c$ be a class of~$S$, \m{\gamma\in\GS{S}{E}},
+$\mathcal C$ a finite index set, $m$ a matrix over $E$ with rows \m{\Mx{\fs}\sqcup\Mx{\fs}} and
+columns~$\mathcal C$, $d$ a natural number, $y$ a matrix over $E$ with the same rows and $d$ columns, and $f$ an
+invertible matrix over \m{\AEf} with rows and columns indexed by $\mathcal C$ and the $d$ columns of~$y$.
+Suppose that \m{m^*\lmet{S}\,y=0} and that \m{\lifts{S}{c}{\gamma}{\widetilde{(m\,|\,y)}f}}. Then there are
+\m{a\in\GL_{\mathcal C}(\AEf)}, \m{v\in\GL_d(\AEf)} and a matrix $z_1$ over \m{\AEf} with rows $\mathcal C$ and $d$
+columns such that
+\[\lifts{S}{c}{\gamma}{\tilde ma},\qquad\lifts{S}{c}{\gamma}{\tilde mz_1+\tilde yv},\qquad
+\ldsq{S}{m}{a}\cdot\ldsq{S}{y}{v}=\ldsq{S}{(m\,|\,y)}{f} .\]
+\end{lemma}
+\begin{proof}
+By Input~3(a), applied to~$f^{-1}$, there are $a$, $v$, $z_1$ such that
+\m{f^{-1}\bigl(\begin{smallmatrix}a&z_1\\0&v\end{smallmatrix}\bigr)} is primitive, in particular integral with
+\m{[\det a]\,[\det v]=[\det f]}. Let \m{(\mathcal C',t,w)} be lift data for \m{\widetilde{(m\,|\,y)}f}. Then
+\m{(\tilde ma\,|\,\tilde mz_1+\tilde yv)=\widetilde{\lmat{\gamma}t}\cdot w\,f^{-1}\bigl(\begin{smallmatrix}a&z_1\\0&v\end{smallmatrix}\bigr)},
+and \m{\cc{S}{c}\tilde t\cdot w\,f^{-1}\bigl(\begin{smallmatrix}a&z_1\\0&v\end{smallmatrix}\bigr)} is integral; taking
+the two blocks of columns gives the two lifts. Since \m{m^*\lmet{S}y=0}, the Gram matrix of \m{(m\,|\,y)} for
+the link metric is block diagonal, so its determinant is the product of those of $m$ and of~$y$; with
+\m{[\det f]^2=[\det a]^2[\det v]^2} this is the identity of the discriminants.
+\end{proof}
+\leanline{\lean{existsorthogonalsplit}}
+
+\subhead{The vector that carries the term discriminant.}
+\begin{lemma}\label{l:vector}
+In Setting~\ref{s:S}, let $j$ be a level and \m{\gamma\in\GS{S}{E}} with \m{\haslevel{S}{j}{\gamma}}. Then there
+are \m{a\in E^\kappa} and \m{y\in E} such that the pair \m{(a-z,\ yz)} of middle vectors lies in
+\m{\link{\gamma}}, and
+\[\tdisc{S}{\gamma}=\lminor{\Zf{S}{\gamma}}{j}\cdot\overline{\lminor{\Zf{S}{\gamma}}{j}}\cdot(1-\bar yy).\]
+\end{lemma}
+\begin{proof}
+It suffices to find a coefficient vector $x$ such that \m{t=\sum_bx_b\gamma\mathfrak f_b} has middle part
+\m{a-z} and such that \m{\gamma^{-1}t=\sum_bx_b\mathfrak f_b} has middle part $yz$, that is \m{y=x_\varrho}, with
+$t$ orthogonal to $X$ and~$\gamma X$: then the pair is the link image of~$t$.
+
+If \m{j=\varrho+1}, then \m{D=\det\Zf{S}{\gamma}=\lminor{\Zf{S}{\gamma}}{j}\ne0}; let $x'$ be the solution of
+\m{\Zf{S}{\gamma}x'=D\,e_\varrho} and \m{x=(N/D)\,x'}, so that \m{\Zf{S}{\gamma}x=N\,e_\varrho}. By Input~1(f) the
+vector \m{t=\sum_bx_b\gamma\mathfrak f_b} has no coordinates at the $e^*_a$ and has \m{t_z=-1}; so its middle part
+is \m{a-z} with \m{a\in E^\kappa}, and it is orthogonal to~$X$. It is orthogonal to $\gamma X$ because
+\m{h(\gamma e_a,t)=h(e_a,\sum_bx_b\mathfrak f_b)=0}. By Cramer's rule \m{x'_\varrho=\lminor{\Zf{S}{\gamma}}{\varrho}},
+the cofactor of the top entry; so \m{y=x_\varrho=N\lminor{\Zf{S}{\gamma}}{\varrho}/D}, and
+\m{\tdisc{S}{\gamma}=D\bar D-N^2|\lminor{\Zf{S}{\gamma}}{\varrho}|^2=D\bar D(1-\bar yy)}.
+
+If \m{j\le\varrho}, the normal form of \m{\gamma^{-1}} for the prescription $-1$ at the top (Input~1(e)) gives
+$x$, $y'$ with \m{y'_\varrho=-1} and \m{\sum_bx_b\mathfrak f_b=\gamma^{-1}\sum_by'_b\mathfrak f_b}; take
+\m{t=\sum_by'_b\mathfrak f_b}, whose middle part is \m{-z} (so \m{a=0}), and \m{y=x_\varrho}, for which
+\m{\bar yy=\bar y'_\varrho y'_\varrho=1}. Both $t$ and \m{\gamma^{-1}t} lie in the span of the frame, so $t$ is
+orthogonal to $X$ and to~$\gamma X$. As \m{j\le\varrho}, \m{\tdisc{S}{\gamma}=0} by the definition of the level,
+and \m{1-\bar yy=0}.
+\end{proof}
+\leanline{\lean{existsmemlinktermDisceq}}
+
+\subhead{Comparison of the minor with a partial discriminant.}
+\begin{proposition}\label{p:minor}
+In Setting~\ref{s:S}, suppose that $E$ is stably unramified. Let $c$, $c'$ be classes of~$S$, \m{s\in\GRes{S}} an
+element that agrees, $x$ a real number such that $s$ fixes norm at least~$x$, $j$ a level and
+\m{\gamma\in\terms{S}{c}{s}{c'}} with \m{\haslevel{S}{j}{\gamma}}. Let $r$ and $i$ be natural numbers, $w$ a
+matrix over \m{\AEf} with rows \m{\Mx{\fs}\sqcup\Mx{\fs}} and $r$ columns, $y$ a matrix over $E$ with the same
+rows and $r$ columns, and \m{v\in\GL_r(\AEf)}. Suppose that
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=1pt]
+\item if \m{i=0}, then \m{\dim(\link{\gamma}\cap\ker\zp{T})+r=\dim\link{\gamma}};
+\item the columns of $y$ lie in \m{\link{\gamma}}, and \m{\zp{T}\,y} has a left inverse;
+\item \m{\lifts{S}{c}{\gamma}{w}}, and \m{\widetilde{\zp{T}}\,w=\widetilde{\zp{T}y}\,v}.
+\end{enumerate}
+Then \m{r\le1+(j-\rh{\fs})_+} and, with \m{x'=x} if \m{\rh{\fs}<j} and \m{i=0}, and \m{x'=1} otherwise,
+\[x'^2\cdot\mnorm{S}{j}{\gamma}^2\ \le\ \ldsq{S}{y}{v}\cdot\max\bigl(\tdnorm{S}{\gamma},\ \NS{S}^{\ninf{E}}\mnorm{S}{j}{\gamma}\bigr)^2 .\]
+\end{proposition}
+\begin{proof}
+Let \m{k=\pos{S}{c}{c'}{\gamma}\in\KS{S}} and let $n$ be the integral matrix of Lemma~\ref{l:int} for~$w$.
+By Lemma~\ref{l:vector} for $\gamma$ and for \m{\gamma^{-1}} there are pairs \m{\varepsilon_1=(a-z,\ uz)} in
+\m{\link{\gamma}} with \m{\tdisc{S}{\gamma}=D_j\bar D_j(1-\bar uu)}, \m{D_j=\lminor{\Zf{S}{\gamma}}{j}}, and
+\m{(a'-z,\ u'z)} in \m{\link{\gamma^{-1}}}; exchanging the two components of the latter gives a second pair
+\m{\varepsilon_2=(u'z,\ a'-z)} in \m{\link{\gamma}}. Let $\varepsilon$ be the matrix with the columns
+$\varepsilon_1$, $\varepsilon_2$.
+
+\emph{Two identities.} For every matrix $w'$ with columns in \m{\link{\gamma}},
+\begin{equation}\label{e:eps}
+\varepsilon^*\,\lmet{S}\,w'=\zp{T}\,w' ,\qquad\zp{T}\,\varepsilon=N\begin{pmatrix}1&-\bar u\\-u&1\end{pmatrix}.
+\end{equation}
+Indeed the value of \m{\zp{T}} on a pair with coordinates $s_1$, $s_2$ at $z$ is \m{(-Ns_1,-Ns_2)}, which gives
+$\zp{T}\varepsilon$ with the entry \m{-Nu'} in the upper right corner; and $\varepsilon_1^*\lform{S}\varepsilon_2=0$
+(Input~1(a)) reads \m{Nu'-N\bar u=0}, so \m{u'=\bar u}. For the first identity write
+$\lmet{S}=\tfrac12\lform{S}+\diag(0,T)+N^{-1}\zp{T}^*\zp{T}$; the link form vanishes on the link, and the two
+other terms, computed from the coordinates of $\varepsilon_1$, $\varepsilon_2$ and using once more that
+$\varepsilon_2^*\lform{S}w'=0$, add up to \m{\zp{T}w'}.
+
+\emph{A minor.} As \m{\zp{T}y} has two rows and a left inverse, \m{r\le2}, and there is an injective map
+$\varsigma_0$ from the $r$ columns to the two rows such that the corresponding minor of \m{\zp{T}y} is non-zero.
+Let $\varepsilon_{\varsigma_0}$ be the matrix of the columns of $\varepsilon$ selected by~$\varsigma_0$; by
+\eqref{e:eps} the matrix \m{\varepsilon_{\varsigma_0}^*\lmet{S}y} is that minor's matrix, so its determinant is
+non-zero.
+
+\emph{Liouville's inequality} (Input~2, with \m{Q=\lmet{S}}, which is positive definite at the infinite
+places, \m{a=\varepsilon_{\varsigma_0}}, \m{a'=y}, the identity and~$v$) gives
+\begin{equation}\label{e:liou}
+x'^2\ \le\ |N_{E/\Q}\det(\varepsilon_{\varsigma_0}^*\lmet{S}\varepsilon_{\varsigma_0})|\cdot\ldsq{S}{y}{v},
+\end{equation}
+provided \m{x'\le[\delta]} whenever \m{\delta=\det\bigl((\widetilde{\zp{T}y}\,v)_{\varsigma_0}\bigr)=
+\det\bigl((\widetilde{\zp{T}}w)_{\varsigma_0}\bigr)} is a unit. By Lemma~\ref{l:int},
+\m{\widetilde{\zp{T}}w} is the matrix of the pairings of the columns of the integral matrix $n$ with $z$
+and~$kz$, and the pairings of $n$ with the $e_a$, $ke_a$ vanish. If \m{\varrho<j} and \m{i=0}, then
+\m{\tdisc{S}{\gamma}\ne0}, so \m{1-\bar uu\ne0} and \m{\zp{T}\varepsilon} is invertible; hence
+\m{\dim\link{\gamma}=2+\dim(\link{\gamma}\cap\ker\zp{T})}, hypothesis (a) gives \m{r=2}, the minor is the full
+determinant, and Input~4 gives \m{x\le[\delta]}; otherwise \m{x'=1\le[\delta]} because
+$\delta$ is a unit that is the determinant of an integral matrix.
+
+\emph{The determinant of the selected block.} By \eqref{e:eps},
+$\varepsilon^*\lmet{S}\varepsilon=\zp{T}\varepsilon$. If \m{r=0}, the determinant in \eqref{e:liou} is $1$. If
+\m{r=1}, it is a diagonal entry, equal to~$N$, of absolute norm \m{N^{2\ninf{E}}}. If \m{r=2}, it is
+\m{N^2(1-\bar uu)}, and it is non-zero: $\zp{T}y=\varepsilon^*\lmet{S}y$ is invertible, so $\varepsilon$ has
+rank~$2$ and the link metric is positive definite. Hence $\tdisc{S}{\gamma}=D_j\bar D_j(1-\bar uu)\ne0$ and
+\m{j=\varrho+1} by the definition of the level; so $r\le1+(j-\varrho)_+$ in all cases. Moreover, as
+$|N_{E/\Q}(\xi)|=\prod_\tau|\xi_\tau|^2$ and $\mnorm{S}{\varrho+1}{\gamma}=|N_{E/\Q}(D_j)|\,N^{-2\ninf{E}}$,
+$|N_{E/\Q}(N^2(1-\bar uu))|\cdot\mnorm{S}{j}{\gamma}^2=|N_{E/\Q}(D_j)|^2\,|N_{E/\Q}(1-\bar uu)|=\tdnorm{S}{\gamma}^2$. Multiplying \eqref{e:liou} by $\mnorm{S}{j}{\gamma}^2$: for
+\m{r\le1} the right side is at most $\ldsq{S}{y}{v}\,(N^{\ninf{E}}\mnorm{S}{j}{\gamma})^2$, and for \m{r=2} it
+is $\ldsq{S}{y}{v}\,\tdnorm{S}{\gamma}^2$. Both are bounded by the maximum.
+\end{proof}
+\leanline{\lean{minorNormsqlelinkDiscSqmul}}
+
+\subhead{Proof of Theorem B.}
+\begin{proof}[Proof of Theorem B]
+Write \m{k_0=\kk{\fs}}, $k_\gamma=\pos{S}{c}{c'}{\gamma}$, $L_0=L\cap\ker\zp{T}$ and
+$T^\circ=\clink{\gamma}{\gamma'}$.
+
+\emph{Bases.} Let $m$ be a matrix whose columns, indexed by a finite set~$\mathcal C$, are a basis of~$L_0$,
+and $p$ its part on the rows $\kappa$ of the first components. The rows $z$ of $m$ vanish, and the link form
+vanishes on~$L_0$; so \m{m^*\lmet{S}m=p^*p}, and \m{T^\circ} is the column span of~$p$, of dimension
+\m{\#\mathcal C}. By Input~3(c) (with \m{A=m^*\lmet{S}}, whose product with $m$ is invertible by Input~1(c)),
+extend $m$ by a matrix $u$ to a basis \m{(m\,|\,u)} of~$L$ with \m{m^*\lmet{S}u=0}, and then \m{(m\,|\,u)} by a
+matrix $y$ with $i$ columns to a basis of \m{\link{\gamma}} with \m{(m\,|\,u)^*\lmet{S}y=0} and
+\m{y\,t\in L} only for \m{t=0}. Then \m{i=k_0+1-\dim L} by Input~1(a), and if \m{i=0} then \m{L=\link{\gamma}}.
+Moreover \m{\zp{T}u} has a left inverse, the columns of $u$ being independent modulo~$L_0$.
+
+\emph{Lifts.} By Proposition~\ref{p:lifts} there is $e$ with
+$\lifts{S}{c}{\gamma}{\widetilde{(m\,|\,u\,|\,y)}e}$, $\ldsq{S}{(m\,|\,u\,|\,y)}{e}\,w_0^2\le\mnorm{S}{j}{\gamma}^2$
+and $w_0=\xri{S}{j}{k_\gamma}\xri{S}{j}{k_\gamma^{-1}}\sat{S}{k_\gamma}\ne0$. Lemma~\ref{l:split}, applied to \m{m_1=(m\,|\,u)} and~$y$,
+gives $a'$, $v$, $z$ with integral lifts of \m{\tilde m_1a'} and of $\tilde m_1z+\tilde yv$; applied to $m$
+and~$u$ and the lift \m{\tilde m_1a'}, it gives $a$, $g_0$, $z'$ with integral lifts of \m{\tilde ma} and of
+$\tilde mz'+\tilde ug_0$; and the discriminants multiply:
+\begin{equation}\label{e:three}
+\ldsq{S}{m}{a}\cdot\ldsq{S}{u}{g_0}\cdot\ldsq{S}{y}{v}=\ldsq{S}{(m\,|\,u\,|\,y)}{e}.
+\end{equation}
+The matrix of the statement of Theorem~B is $m_1$, whose columns span~$L$, with the index set
+\m{\mathcal C\sqcup\{1,\dots,r\}}, $r$ the number of columns of~$u$.
+
+\emph{The part in~$L_0$.} Let $n$ be the integral matrix of Lemma~\ref{l:int} for \m{\tilde ma} and~$c'$. Its
+middle rows are \m{\ccX{S}{c}\,\tilde p\,a}, its link image is killed by \m{\zp{\cdot}}, and its columns are
+orthogonal to \m{X+k_\gamma X}; so by Input~1(h) the values \m{(h(k_\gamma\mathfrak f_l,\cdot))_{l<\varrho}} of its middle
+part lie in the lattice of the conjugated first $\varrho$ rows of \m{Z(k_\gamma)}. Input~3(d), with \m{V=T^\circ},
+$p$, $a$ and \m{D=[\det(p^*p)]\,[\det a]^2=\ldsq{S}{m}{a}\ne0}, gives~(i) and
+\begin{equation}\label{e:disc}
+\bigl(\ldisc{S}{c}{T^\circ}\cdot\fvi{S}{c}{k_\gamma}{1}{T^\circ}\bigr)^2\ \le\ \ldsq{S}{m}{a}.
+\end{equation}
+\emph{The part in $L$ off $L_0$.} Proposition~\ref{p:minor}, for the matrix $u$, the
+lift \m{\tilde mz'+\tilde ug_0} (whose image under \m{\widetilde{\zp{T}}} is that of \m{\tilde ug_0}) and the
+number~$i$ (if \m{i=0} then \m{L=\link{\gamma}} and hypothesis (a) holds), gives \m{r\le1+(j-\varrho)_+} and
+\begin{equation}\label{e:G}
+x'^2\,\mnorm{S}{j}{\gamma}^2\ \le\ \ldsq{S}{u}{g_0}\cdot\max\bigl(\tdnorm{S}{\gamma},N^{\ninf{E}}\mnorm{S}{j}{\gamma}\bigr)^2 .
+\end{equation}
+Since \m{k_0+1=\dim\link{\gamma}=\#\mathcal C+r+i}, we get \m{k_0\le\dim T^\circ+i+(j-\varrho)_+}.
+
+\emph{Assembly.} Multiplying \eqref{e:disc}, \eqref{e:G} and \m{\ldsq{S}{y}{v}}, then using \eqref{e:three} and
+the bound for the full lift,
+\[\begin{aligned}\bigl(\ldisc{S}{c}{T^\circ}\fvi{S}{c}{k_\gamma}{1}{T^\circ}\bigr)^2x'^2\,\mnorm{S}{j}{\gamma}^2\,\ldsq{S}{y}{v}
+&\le\max(\cdots)^2\,\ldsq{S}{(m\,|\,u\,|\,y)}{e}\\&\le\max(\cdots)^2\,\mnorm{S}{j}{\gamma}^2\,w_0^{-2}.\end{aligned}\]
+Dividing by $\mnorm{S}{j}{\gamma}^2>0$ and multiplying by $\sat{S}{k_\gamma}^2$, the left side becomes
+\[\bigl(\pinv{S}{c}{c'}{\gamma}{\gamma'}\,x'\bigr)^2\,\ldsq{S}{y}{v},\]
+and the right side becomes
+\[\max(\cdots)^2\cdot\bigl(\xri{S}{j}{k_\gamma}\,\xri{S}{j}{k_\gamma^{-1}}\bigr)^{-2}=\cgauge{S}{j}{c}{c'}{\gamma}^2 .\qedhere\]
+\end{proof}
+
+\subhead{Proof of Theorem A.}
+\begin{proof}[Proof of Theorem A]
+Apply Theorem~B to \m{(\gamma,\gamma')} and to \m{(\gamma',\gamma)}; the space $L$ is the same, so both give the
+same number \m{i=\kk{\fs}+1-\dim L} and the same~$x'$. This gives (i) and (ii) of Theorem~A, matrices $m$, $y$,
+$v$, $z$ for $\gamma$ and $m'$, $y'$, $v'$, $z'$ for~$\gamma'$, with $i$ columns in $y$ and in~$y'$, and
+\begin{equation}\label{e:two}
+\begin{aligned}\bigl(\pinv{S}{c}{c'}{\gamma}{\gamma'}x'\bigr)^2\ldsq{S}{y}{v}&\le\cgauge{S}{j}{c}{c'}{\gamma}^2,\\
+\bigl(\pinv{S}{c}{c'}{\gamma'}{\gamma}x'\bigr)^2\ldsq{S}{y'}{v'}&\le\cgauge{S}{j}{c}{c'}{\gamma'}^2 .\end{aligned}
+\end{equation}
+\emph{The pairing of the complements.} Let $Q_0$ be the diagonal matrix with \m{\lmet{S}Q_0=\lform{S}}; it
+satisfies \m{Q_0^*\lform{S}=4\,\lmet{S}} (both are checked on the diagonal entries). We apply Input~2 with
+\m{Q=\lmet{S}}, \m{a=\gS{S}^{-1}y}, \m{a'=Q_0y'}, $v$, $v'$ and \m{x_0=1}. Here
+\m{a^*Qa'=\gS{S}^{-1}y^*\lform{S}y'}, \m{a^*Qa=\gS{S}^{-2}y^*\lmet{S}y} and \m{a'^*Qa'=4\,y'^*\lmet{S}y'}, whose
+determinants have absolute norms \m{\gS{S}^{-4i\ninf{E}}|N_{E/\Q}\det(y^*\lmet{S}y)|} and
+\m{2^{4i\ninf{E}}|N_{E/\Q}\det(y'^*\lmet{S}y')|}. So, once its hypotheses are verified, Input~2 gives
+\begin{equation}\label{e:pair}
+1\ \le\ \Bigl(\frac{2}{\gS{S}}\Bigr)^{4i\ninf{E}}\ldsq{S}{y}{v}\cdot\ldsq{S}{y'}{v'} .
+\end{equation}
+\emph{Invertibility.} Suppose \m{y^*\lform{S}y'\,t=0}. The vector \m{y't} lies in \m{\link{\gamma'}}, which is
+isotropic for the link form and contains~$L$; so \m{y't} is orthogonal to the columns of $m$ and of~$y$, which
+span \m{\link{\gamma}}. As the link is Lagrangian (Input~1(a)), \m{y't\in\link{\gamma}}, hence \m{y't\in L} and
+\m{t=0} by the property of~$y'$.
+
+\emph{Integrality.} Let \m{(t_1,w_1)} and \m{(t_2,w_2)} be lift data for \m{\tilde mz+\tilde yv} and for
+\m{\tilde m'z'+\tilde y'v'}. The columns of $m$, $m'$ lie in~$L$, which is orthogonal for the link form to
+\m{\link{\gamma}} and to \m{\link{\gamma'}}; so
+\[v^*\,\widetilde{y^*\lform{S}y'}\,v'=(\tilde mz+\tilde yv)^*\,\widetilde{\lform{S}}\,(\tilde m'z'+\tilde y'v')
+=w_1^*\,\widetilde{t_1^*\Jrat{S}(1-\gamma\gamma'^{-1})t_2}\,w_2,\]
+the last step by Input~1(b) with the coefficients $1$,~$1$. In the coordinates of the lattice of $c$ this is
+\m{(\cc{S}{c}\tilde t_1w_1)^*J_f(1-\kappa_0)(\cc{S}{c}\tilde t_2w_2)} with
+\m{\kappa_0=\pos{S}{c}{c}{\gamma\gamma'^{-1}}}; as \m{\gamma\gamma'^{-1}} is a term over \m{(c,1,c)},
+\m{\gS{S}^{-1}(1-\kappa_0)} is integral (Input~1(g)), and the other factors are integral. Hence the matrix
+\m{v^*\,\widetilde{a^*Qa'}\,v'} is integral, and if its determinant $\delta$ is a unit then \m{1\le[\delta]}.
+
+\emph{Conclusion.} Multiplying the two inequalities \eqref{e:two} and using \eqref{e:pair},
+\[\bigl(\pinv{S}{c}{c'}{\gamma}{\gamma'}\pinv{S}{c}{c'}{\gamma'}{\gamma}\,x'^2\bigr)^2\ \le\
+\Bigl(\frac{2}{\gS{S}}\Bigr)^{4i\ninf{E}}\bigl(\cgauge{S}{j}{c}{c'}{\gamma}\,\cgauge{S}{j}{c}{c'}{\gamma'}\bigr)^2,\]
+and all the quantities are non-negative; taking square roots gives~(iii).
+\end{proof}
+
+\sect{Where the results are used}{s:used}
+Theorem~A is used in the note on the energy of amplitude sums of this unit, in the estimate of the pairs of
+terms of one level (the main step of the crude estimate, Input~3 of Note~F); Proposition~\ref{p:lifts},
+Proposition~\ref{p:minor} and Corollary~\ref{c:pos} are used there as well, for single terms. Nothing of this
+note is used directly by the filling theorem.
+
+\sect{Notes on the formal text}{s:notes}
+\begin{enumerate}[leftmargin=1.6em,itemsep=3pt]
+\item \emph{Arguments that the census reads differently from Lean; to be settled by} \texttt{\#check}
+\emph{on a build.} In Lemma~\ref{l:int} the formal statement names the index set of the columns of~$m$, a
+variable of the file, so Lean takes it as an argument although the census does not list it; it is the set
+$\mathcal C$ of the statement here. For Theorem~B the census lists a variable of the file for a matrix, its
+index set and the finiteness of that set; the statement introduces its own matrix $m$ after ``there are'', and
+Lean takes none of the three. They have no counterpart in the statement of Theorem~B.
+\item \emph{Statements cut by the census.} The statements of Lemma~\ref{l:bordered},
+Proposition~\ref{p:lifts}, Lemma~\ref{l:int} and Theorem~B contain local definitions at which the census ends
+the statement; they were read to their true end, with the second reader's table of corrected spans.
+\item \emph{The columns of the bordered matrix.} In Lemma~\ref{l:bordered} the columns are $\gamma e_a$ for
+\m{a<j} and $e^*_a$ for \m{a\ge j}, as the code selects them; the comment of the source says \m{a\le j} and
+\m{a>j}. The second reader of the dossier had noted this.
+\item \emph{The matrix $m$ of Theorem~B} spans \m{L=\link{\gamma}\cap\link{\gamma'}}, not its part in
+\m{\ker\zp{T}}; the latter appears only in the proof.
+\item \emph{Truncated differences.} \m{(j-\rh{\fs})_+} and \m{\kk{\fs}+1-\dim L} are differences of natural
+numbers in the formal text; the first is $0$ or~$1$, and the second is not truncated since
+\m{\dim L\le\kk{\fs}+1}.
+\item \emph{Exponents computed here.} In Proposition~\ref{p:lifts} the powers of $N$ in Jacobi's identity
+cancel exactly: \m{[N]^{\#B+2}\cdot[N]^{-\#B}=[N]^2=N^{4\ninf{E}}}, the square of the factor in
+Lemma~\ref{l:bordered}. In Theorem~A the factor \m{(2/\gS{S})^{2i\ninf{E}}} is the square root of
+\m{\gS{S}^{-4i\ninf{E}}\cdot2^{4i\ninf{E}}}, the absolute norms of \m{\gS{S}^{-2i}} and of~$4^{i}$. In
+Proposition~\ref{p:minor} the case \m{r=2} uses \m{|N_{E/\Q}(N^2)|=N^{4\ninf{E}}}, which cancels the
+normalisation of \m{\mnorm{S}{\varrho+1}{\gamma}}.
+\item \emph{What was not re-derived.} Two passages are stated as the formal text has them and were not
+derived again for this note: the reordering of the bordered matrix into block triangular form in
+Lemma~\ref{l:bordered}, and the two divisibilities of Step~4 of Proposition~\ref{p:lifts}. All other steps are
+proved in the text from the inputs.
+\end{enumerate}
+
+\subhead{How this note was written.} From the structured proofs of the module on link pairings in the fourth
+chunk of the unit's dossier, which a second reader had re-read completely. I read the module in the Lean text
+line by line and compared every statement of this note with it argument by argument; I read in the Lean text
+the definitions recalled in §\ref{s:setting}. The inputs are stated from the dossier's readings of their quoted
+statements; of them I read in the Lean text only the definitions they involve. Arguments that are mine and
+replace matrix computations of the formal text: the evaluation of \m{\det A} in Lemma~\ref{l:bordered} by a
+rank-one update, the block identity in Step~3 of Proposition~\ref{p:lifts}, the two identities \eqref{e:eps},
+the exclusion of \m{r=2} for \m{j\le\varrho}, and the computation of the pairing in Theorem~A. Nothing was
+compiled for this note. The program check of the unit's dossier covered \UnitSteps{} leaf steps of \UnitProofs{}
+proofs.
+
+\head{Appendix A. Concordance with the Lean artifact}
+The formal names of the objects and the letters of this note: \texttt{link}, \texttt{commonLink},
+\texttt{linkMatrix}, \texttt{framePair}, \texttt{isotropicFramePair} are \m{\link{\gamma}},
+\m{\clink{\gamma}{\gamma'}}, \m{\lmat{\gamma}}, \m{\fpair{\gamma}}, \m{\ifp{\gamma}}; \texttt{linkForm},
+\texttt{linkMetric}, \texttt{zFormPair} are \m{\lform{S}}, \m{\lmet{S}}, \m{\zp{T}}; \texttt{linkDiscSq},
+\texttt{minorNorm}, \texttt{classGauge}, \texttt{pairInvariant}, \texttt{termDiscNorm} are \m{\ldsq{S}{v}{e}},
+\m{\mnorm{S}{j}{\gamma}}, \m{\cgauge{S}{j}{c}{c'}{\gamma}}, \m{\pinv{S}{c}{c'}{\gamma}{\gamma'}}, \m{\tdnorm{S}{\gamma}};
+\texttt{xRowsIndex}, \texttt{saturationIndex}, \texttt{latticeDisc}, \texttt{frameValueIndex} are
+\m{\xri{S}{j}{k}}, \m{\sat{S}{k}}, \m{\ldisc{S}{c}{V}}, \m{\fvi{S}{c}{k}{a}{V}}; \texttt{HasIntegralLifts},
+\texttt{HasLevel} are \m{\lifts{S}{c}{\gamma}{m}}, \m{\haslevel{S}{j}{\gamma}}; \texttt{classCoord},
+\texttt{classCoordX₀} are \m{\cc{S}{c}}, \m{\ccX{S}{c}}; \texttt{genIndex} is \m{[\xi]}. Two statements as the
+artifact has them:
+\quoted{pairInvariantmulle}
+\quoted{existslinksplitleclassGauge}
+{\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}\setlength{\tabcolsep}{0pt}
+\begin{longtable}{@{}p{27mm}>{\raggedright\arraybackslash}p{68mm}p{34mm}r@{}}
+\textbf{In this note} & \textbf{Lean declaration} & \textbf{File} & \textbf{Lines}\\\midrule\endhead
+\ConcordanceRows
+\end{longtable}}
+
+\head{Notation}
+\begingroup\fontsize{8.6}{10.9}\selectfont\raggedright
+\setlength{\columnsep}{9mm}\setlength{\parskip}{0pt}
+\begin{multicols}{2}
+\nt{$E$, $\tau$, $x_\tau$, \m{\ninf{E}}, \m{N_{E/\Q}}}{a CM field with its CM type, an infinite place, the image
+at it, the number of infinite places, the norm}
+\nt{\m{\AEf}, \m{\hO}, \m{\tilde a}, \m{[\xi]}}{finite adeles, integral adeles, the image of a matrix over~$E$,
+the generalised index}
+\nt{\m{\fs=(\varrho,\kappa,k_0)}}{a shape; \m{\rh{\fs}}, \m{\kk{\fs}}, \m{\Ix{\fs}}, \m{\Mx{\fs}}; $j$ a level; in
+proofs \m{\varrho}, \m{k_0} abbreviate \m{\rh{\fs}}, \m{\kk{\fs}}}
+\nt{$e_a$, $e^*_a$, $z$, \m{\mathfrak f_a}, $X$}{basis vectors, the frame, the span of the $e_a$; $h$ the
+hermitian form}
+\nt{$S$}{filling data: \m{\NS{S}} (also $N$), \m{\gS{S}}, \m{\GRes{S}}, \m{\Cl{S}}, \m{\GS{S}{E}}, \m{\GFin{S}},
+\m{\KS{S}}, \m{\redS{S}}, \m{\KgS{S}}}
+\nt{$T$, \m{\Trat{S}{E}}, \m{\Tlat{S}{\AEf}}, \m{\Jrat{S}}, $J_f$}{the middle form and the split Gram matrices,
+rational and in the lattice basis}
+\nt{$c$, $c'$, $s$, $t$, \m{\gamma}, \m{\gamma'}}{classes, elements of \m{\GRes{S}}, rational elements}
+\nt{\m{\pos{S}{c}{c'}{\gamma}}, \m{\terms{S}{c}{s}{c'}}, $k$, \m{k_\gamma}, \m{\kappa_0}}{position, terms; positions
+in proofs}
+\nt{\m{\Zf{S}{\gamma}}, $Z(k)$, \m{Z_X(k)}, \m{\lminor{Z}{l}}, \m{D_j}, $D$}{frame Gram matrices, their first rows,
+leading minors}
+\nt{\m{\tdisc{S}{\gamma}}, \m{\tdnorm{S}{\gamma}}}{term discriminant and the product of its absolute values}
+\nt{\m{\fpair{\gamma}}, \m{\ifp{\gamma}}, \m{\lmat{\gamma}}, \m{\link{\gamma}}, \m{\clink{\gamma}{\gamma'}}}{frame
+pair, isotropic frame pair, link matrix, link, common link; $L$, $L_0$, \m{T^\circ} in the proof of Theorem~B}
+\nt{\m{\zp{T}}, \m{\lform{S}}, \m{\lmet{S}}, $Q_0$}{the $z$-pairings, link form, link metric, a diagonal matrix}
+\nt{\m{\ldsq{S}{v}{e}}, \m{\mnorm{S}{j}{\gamma}}, \m{\cgauge{S}{j}{c}{c'}{\gamma}}, \m{\pinv{S}{c}{c'}{\gamma}{\gamma'}}}{squared
+discriminant, minor norm, gauge, invariant of a pair}
+\nt{\m{\cc{S}{c}}, \m{\ccX{S}{c}}, \m{\lifts{S}{c}{\gamma}{m}}}{class coordinates; integral lifts}
+\nt{\m{\xri{S}{j}{k}}, \m{\sat{S}{k}}, \m{\ldisc{S}{c}{V}}, \m{\fvi{S}{c}{k}{a}{V}}, \m{\mathfrak i(F)}, $w_0$}{indices
+and discriminants of lattices}
+\nt{\m{\haslevel{S}{j}{\gamma}}, \m{\mathrm{pl}_j(Z)}, \m{\zeta}}{level; the padded leading matrix; the scalar of a
+normal form}
+\nt{$P$, $M$, $A$, $Z'$, $B$, $F$, $p'$, $Q$, $u$, $n$, $a$, $e$, $z_1$}{matrices of Lemma~\ref{l:bordered} and
+Proposition~\ref{p:lifts}; here $P$ is a matrix, not the parameters}
+\nt{$\mathcal C$, $\mathcal C'$, $m$, $y$, $v$, $z$, $f$, $d$, $r$, $i$, $w$, $x$, $x'$, $x_0$}{index sets, matrices
+and numbers of the statements}
+\nt{\m{\varepsilon}, \m{\varepsilon_1}, \m{\varepsilon_2}, $u'$, $a'$, \m{\varsigma_0}, \m{\delta}}{the two link
+vectors, a selection of rows, a determinant, in Proposition~\ref{p:minor}}
+\nt{$p$, $g_0$, $z'$, $m_1$, $m'$, $y'$, $v'$, $t_1$, $t_2$, $w_1$, $w_2$}{in the proofs of Theorems B and~A}
+\nt{$J$, $c_0$, $d_p$, $V$, $q$, $l$, $b$, $D_0$, $O$, $G$, $K$, $U$, $R$, $H$, $I$, \m{\mathrm{fm}(k)}, $n_X$, $n_M$}{in
+the inputs and as stated where they occur; \m{\GL}, \m{\Q}}
+\end{multicols}
+\endgroup
+
+\end{document}

@@ -1,0 +1,1905 @@
+% !TEX program = lualatex
+% ---------------------------------------------------------------------------------------------
+%  Readback note 1: From a one-sided bound for primes to a zero-free half-plane
+%
+%  Build:  python3 tools/rb.py note <slug>
+%
+%  One unit of a Lean artifact, rewritten as ordinary mathematics. The prose is hand-written. Lean names,
+%  line ranges and counts come from data.tex; quoted Lean statements are copied from the artifact by the build.
+%
+%  Rules of the text: standard terminology; every symbol is explained where it first appears and listed again
+%  in the notation at the end; no letter has two meanings; a proof is complete or says what it takes for granted;
+%  Lean names appear only in the LEAN lines and in the concordance.
+%
+%  The signature rule (the build enforces it): a function, relation or predicate that the artifact defines is
+%  written only through its notation macro, which the build makes from the spec (`notation`) with one slot for
+%  each explicit argument of the Lean definition. No argument is fixed and dropped, also not "for brevity" and
+%  not for one section. Every argument and every hypothesis of a stated declaration stands inside its
+%  statement, or in a Setting that the statement cites by number; only implicit and instance arguments (the
+%  ambient objects) may stand in the conventions.
+% ---------------------------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\ifdefined\pdfvariable\pdfvariable suppressoptionalinfo \numexpr 1+2+4+8\relax\fi
+\usepackage[a4paper,hmargin=35mm,top=22mm,bottom=27mm,footskip=12mm,nohead]{geometry}
+
+\usepackage{fontspec}
+\directlua{
+  luaotfload.add_fallback("gfallback", {"STIXTwoMath-Regular.otf:mode=node;", "DejaVuSans.ttf:mode=node;"})
+  luaotfload.add_fallback("gmonofallback", {"DejaVuSansMono.ttf:mode=node;", "STIXTwoMath-Regular.otf:mode=node;"})
+}
+\setmainfont{NewCM10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookItalic,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldItalic,SmallCapsFont=*-Book,SmallCapsFeatures={Letters=SmallCaps},
+  RawFeature={fallback=gfallback}]
+\setsansfont{NewCMSans10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookOblique,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldOblique,RawFeature={fallback=gfallback}]
+\setmonofont{JetBrainsMono}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,Scale=MatchLowercase,
+  RawFeature={-calt;-liga;fallback=gmonofallback}]
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage[math-style=TeX]{unicode-math}
+\setmathfont{NewCMMath-Book.otf}
+\emergencystretch=2.5em\relax
+
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows.meta,positioning,backgrounds}
+\usepackage[protrusion=true,expansion=true]{microtype}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{multicol}
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+
+\definecolor{ink}{HTML}{0F172A}
+\definecolor{inksoft}{HTML}{475569}
+\definecolor{inkfaint}{HTML}{94A3B8}
+\definecolor{rulegrey}{HTML}{CBD5E1}
+\definecolor{arith}{HTML}{C2410C}
+\definecolor{est}{HTML}{7C3AED}
+\definecolor{ana}{HTML}{0891B2}
+\definecolor{ok}{HTML}{047857}
+\definecolor{leancol}{HTML}{3730A3}
+
+\title{From a one-sided bound for primes to a zero-free half-plane}
+\author{grh-compact}
+\date{}
+
+% ------------------------------------------------------------------------------------- macros
+\newcommand{\leanfont}{\ttfamily\fontsize{8.6}{10.5}\selectfont\color{leancol}}
+\newcommand{\lean}[1]{\csname LN@#1\endcsname}
+\newcommand{\fillin}[1]{{\color{arith}\itshape[#1]}}  % a place of the template that is not written yet; the build reports every one that is left
+\newcommand{\leanquote}[1]{\csname LQ@#1\endcsname}
+\input{data.tex}
+
+\linespread{1.08}                       % 11 pt on 14.7 pt
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt plus 1.5pt minus 0.5pt}
+\setlength{\abovedisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\belowdisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\abovedisplayshortskip}{3pt plus 2pt}
+\setlength{\belowdisplayshortskip}{6pt plus 2pt minus 2pt}
+\emergencystretch=1.5em
+\clubpenalty=10000 \widowpenalty=10000 \displaywidowpenalty=10000
+\relpenalty=7000 \binoppenalty=9000
+\raggedbottom
+\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\sffamily\fontsize{7.6}{9}\selectfont\color{inkfaint}\thepage\,/\,\pageref*{LastPage}}
+\setlist{topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=4pt,leftmargin=2.1em,labelsep=0.55em}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\len}{\operatorname{len}}
+\newcommand{\cok}{\operatorname{cok}}
+\newcommand{\End}{\operatorname{End}}
+\newcommand{\Hom}{\operatorname{Hom}}
+\newcommand{\Gal}{\operatorname{Gal}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\kw}[1]{\emph{#1}}
+\newcommand{\m}[1]{\mbox{$#1$}}        % a short formula that must not be broken across lines
+\newcommand{\head}[1]{\par\addvspace{17pt plus 4pt minus 2pt}\Needspace{6\baselineskip}%
+  \noindent{\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\sect}[2]{\refstepcounter{section}\label{#2}\par\addvspace{19pt plus 4pt minus 2pt}\Needspace{7\baselineskip}%
+  \noindent\llap{{\fontsize{13.2}{16}\selectfont\bfseries\color{inkfaint}\thesection}\hspace{9pt}}%
+  {\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\subhead}[1]{\par\addvspace{9pt plus 2pt}\Needspace{4\baselineskip}\noindent\textbf{#1}\enspace\ignorespaces}
+% where a statement lives in the Lean archive
+\newcommand{\leantag}{{\sffamily\bfseries\fontsize{6.3}{8}\selectfont\color{leancol}\addfontfeatures{LetterSpace=7}LEAN}}
+\newcommand{\sep}{\unskip\nobreak\hspace{5pt}{\color{inkfaint}\textperiodcentered}\hspace{5pt plus 2pt}\ignorespaces}
+\newcommand{\leanline}[1]{\par\nopagebreak\vspace{-2.5pt}{\fontsize{8.9}{12.4}\selectfont\color{inksoft}\raggedright
+  \noindent\llap{\leantag\hspace{9pt}}#1\par}\vspace{1pt}}
+% a displayed statement in a tinted box: #1 colour, #2 text
+\newcommand{\statement}[2]{\par\addvspace{7pt}\begingroup\setlength{\fboxsep}{8.5pt}\setlength{\fboxrule}{0.6pt}%
+  \noindent\fcolorbox{#1!30!white}{#1!3!white}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{#2}}%
+  \endgroup\par\addvspace{7pt}}
+\newcommand{\nt}[2]{\par\noindent\hangindent=1.1em\hangafter=1 #1\enspace{\color{inksoft}#2}\par\vspace{1pt}}
+\newcommand{\legdot}[1]{\tikz[baseline=-0.62ex]\fill[#1] (0,0) circle (2.5pt);\hspace{3pt}}
+\newcommand{\crow}[4]{\csname CS@#1\endcsname & #2 & \textcolor{inksoft}{#3} & \textcolor{inksoft}{#4}\\}
+\newcommand{\leanquoteline}[2]{\par\noindent\hangindent=\dimexpr#1\fontdimen2\font+2.2em\relax\hangafter=1
+  \hspace*{#1\fontdimen2\font}#2}
+\newcommand{\quoted}[1]{\par\vspace{3pt}{\ttfamily\fontsize{7.5}{10.4}\selectfont\color{leancol}\raggedright
+  \setlength{\parskip}{0pt}\leanquote{#1}\par}\vspace{4pt}}
+\newcommand{\bx}[3]{{\sffamily\bfseries\fontsize{7.3}{9.2}\selectfont\color{#1!82!black}#2}\\[1.5pt]#3}
+\newcommand{\cs}[2]{\expandafter\newcommand\csname CS@#1\endcsname{#2}}
+
+% theorems
+\newtheoremstyle{plainx}{7pt plus 2pt}{7pt plus 2pt}{\itshape}{}{\bfseries}{.}{0.5em}{}
+\newtheoremstyle{uprightx}{7pt plus 2pt}{7pt plus 2pt}{}{}{\bfseries}{.}{0.5em}{}
+\theoremstyle{plainx}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{uprightx}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{setting}[theorem]{Setting}          % hypotheses shared by several statements; each of them cites it by number
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\renewcommand{\qedsymbol}{{\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.5pt}\fbox{\rule{0pt}{0.46em}\hspace{0.46em}}}}
+% what holds throughout the note: the ambient objects only (implicit and instance arguments), never a hypothesis
+\newenvironment{conventions}{\par\addvspace{5pt}\noindent\textbf{Conventions.}\enspace\ignorespaces}{\par\addvspace{3pt}}
+\makeatletter
+\renewenvironment{proof}[1][Proof]{\par\pushQED{\qed}\normalfont\topsep0pt\partopsep0pt
+  \trivlist\item[\hskip\labelsep\itshape #1.]\ignorespaces}{\popQED\endtrivlist\@endpefalse}
+\makeatother
+
+% ------------------------------------------------------------------------------------- macros of this note
+% (the notations of the defined functions of the artifact are made by the build, in data.tex)
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\NN}{\mathbb{N}}
+\newcommand{\ee}{\mathrm{e}}
+\newcommand{\dd}{\mathrm{d}}
+\newcommand{\re}{\operatorname{Re}}
+\newcommand{\im}{\operatorname{Im}}
+\newcommand{\ord}{\operatorname{ord}}
+\newcommand{\AutC}{\operatorname{Aut}(\C)}
+\newcommand{\one}{\mathbf{1}}
+\newcommand{\Eu}{\mathrm{C}_{\mathrm{Eu}}}
+\newcommand{\Ltv}[2]{\tilde L(#1,#2)}
+\newcommand{\Ltd}[2]{\frac{\tilde L'}{\tilde L}(#1,#2)}
+\newcommand{\kap}[2]{\kappa_{#1,#2}}
+\newcommand{\Ph}[3]{\Phi_{#1,#2}(#3)}
+\newcommand{\res}[3]{\operatorname{res}_{#1,#2}(#3)}
+\newcommand{\cE}{\mathcal{E}}
+% Part II: objects of other units, always written with the data
+\newcommand{\tops}[1]{\mathrm{tops}(#1)}
+\newcommand{\thick}[1]{\mathrm{thick}(#1)}
+\newcommand{\budget}[1]{\mathrm{budget}(#1)}
+\newcommand{\wD}[2]{w_{#1}(#2)}
+\newcommand{\wbar}[1]{\bar{w}_{#1}}
+\newcommand{\Ask}[3]{\mathrm{Ask}_{#1}(#2,#3)}
+\newcommand{\jet}[2]{\mathrm{jet}_{#1}(#2)}
+\newcommand{\cost}[1]{\mathsf{U}(#1)}
+\newcommand{\hrow}[1]{h_{0}(#1)}
+\newcommand{\Row}[1]{\mathrm{Row}(#1)}
+\newcommand{\Col}[1]{\mathrm{Col}(#1)}
+\newcommand{\Colram}[1]{\mathrm{Col}^{\mathrm{ram}}(#1)}
+\newcommand{\GD}[1]{\mathsf{G}(#1)}
+\newcommand{\PF}[1]{\mathrm{PF}(#1)}
+\newcommand{\Poin}[1]{\operatorname{Poin}_{#1}}
+\newcommand{\gpt}[2]{\varpi_{#1}(#2)}
+\newcommand{\Th}[2]{\Theta_{#1,#2}}
+\newcommand{\Thf}[2]{\Theta^{\flat}_{#1,#2}}
+\newcommand{\AAf}[2]{\mathcal{A}_{#1,#2}}
+\newcommand{\nsq}[2]{\|#1\|^{2}_{#2}}
+\newcommand{\covol}[2]{\operatorname{covol}^{2}_{#2}(#1)}
+\newcommand{\zz}[2]{\mathfrak{z}_{#1}(#2)}
+\newcommand{\gain}[2]{\mathrm{gain}_{#1}(#2)}
+\newcommand{\err}[2]{\mathrm{err}_{#1}(#2)}
+\newcommand{\nonsplit}[1]{\mathrm{nonsplit}(#1)}
+\newcommand{\Ch}[2]{\operatorname{Ch}_{#1}(#2)}
+\newcommand{\vol}[3]{\operatorname{vol}_{#1}(#2,#3)}
+\newcommand{\cst}[2]{\operatorname{cst}^{\mathrm{#1}}_{#2}}
+\newcommand{\GamD}[1]{\mathrm{per}_{#1}}
+\newcommand{\rr}{\mathfrak{r}}
+\newcommand{\iv}[1]{[#1\text{ principal}]}
+\newcounter{inp}
+\newcommand{\inputhead}[2]{\refstepcounter{inp}\textbf{Input~\theinp} (#1; #2)\textbf{.}\enspace\ignorespaces}
+\newcommand{\src}[1]{\par\vspace{2pt}{\fontsize{9.2}{12.4}\selectfont\color{inksoft}#1\par}}
+
+% where each declaration of the concordance is treated: \cs{key}{place}, the place naming a \label or a lettered item
+\cs{chiK}{Definition~\ref{d:chi}}
+\cs{quadTwist}{Definition~\ref{d:chi}}
+\cs{quadTwistapply}{Definition~\ref{d:chi}}
+\cs{entireL}{Definition~\ref{d:Lt}}
+\cs{chowlaSelbergConst}{Definition~\ref{d:cs}}
+\cs{lambdaClass}{Definition~\ref{d:lambda}}
+\cs{lambdaSum}{Definition~\ref{d:A}}
+\cs{logDerivMean}{Definition~\ref{d:G}}
+\cs{primeError}{Definition~\ref{d:R}}
+\cs{IsPolar}{Definition~\ref{d:polar}}
+\cs{entireLnezero}{Input~\ref{i:nonvanishing}}
+\cs{LSeriesHasSummulvonMangoldt}{Input~\ref{i:logderiv}}
+\cs{tendstosubmullogDeriventireL}{Input~\ref{i:logderiv}}
+\cs{quadTwistneone}{Input~\ref{i:twist}}
+\cs{landau}{Input~\ref{i:landau}}
+\cs{existsentireLquadTwistnezero}{Input~\ref{i:density}}
+\cs{laplacepow}{Input~\ref{i:laplace}}
+\cs{integrableOnlaplaceofabsle}{Input~\ref{i:laplace}}
+\cs{summabletaylorofremovable}{Input~\ref{i:taylor}}
+\cs{lambdaClassnonnegandabsle}{Lemma~\ref{l:lambdabound}}
+\cs{abslambdaSumexple}{Lemma~\ref{l:Abound}}
+\cs{primeErroreqsum}{Lemma~\ref{l:Rsum}}
+\cs{relogDerivMeanone}{Lemma~\ref{l:constant}}
+\cs{isPolarprimeError}{Theorem 1}
+\cs{entireLnezeroofprimeErrorle}{Theorem 2}
+\cs{eventuallymomentle}{Proposition~\ref{p:moments}}
+\cs{existswindowsubmulle}{Theorem 3}
+\cs{existsratlogeqandpadicnormeq}{Lemma~\ref{l:rational}}
+\cs{mainHeight}{Definition~\ref{d:hmain}}
+\cs{mainAsk}{Definition~\ref{d:askmain}}
+\cs{remainder}{Definition~\ref{d:rem}}
+\cs{heightPerRowle}{Proposition~\ref{p:level}}
+\cs{absmainHeightaddremainderle}{Lemma~\ref{l:crude}}
+\cs{remaindereq}{Theorem 4}
+\cs{scaledInclusion}{Definition~\ref{d:inc}}
+\cs{projectedPoincare}{Definition~\ref{d:proj}}
+\cs{integralRamified}{Definition~\ref{d:intram}}
+\cs{IndexLe}{Definition~\ref{d:index}}
+\cs{shortforms}{Theorem A}
+\cs{enoughforms}{Theorem B}
+\cs{heightLevolumeratiosq}{Lemma~\ref{l:ratio}}
+\cs{heightLevolumerows}{Lemma~\ref{l:volrows}}
+\cs{integralformslong}{Theorem C}
+\cs{existsfamilycovolumeSqle}{Corollary~\ref{c:AB}}
+
+\begin{document}
+\color{ink}
+
+{\raggedright
+{\sffamily\bfseries\fontsize{7.2}{9}\selectfont\color{leancol}\addfontfeatures{LetterSpace=8}READBACK NOTE \,·\, CHAPTER II\par}
+\vspace{5pt}
+{\fontsize{21.5}{25.5}\selectfont\bfseries From a one-sided bound for primes to a zero-free half-plane\par}
+\vspace{5pt}
+{\fontsize{12.4}{16}\selectfont\itshape\color{inksoft} One unit of the Lean artifact \ArtifactName, read back into
+mathematics\par}}
+\vspace{8pt}
+{\color{rulegrey}\hrule height 0.6pt}
+\vspace{7pt}
+\thispagestyle{empty}
+
+\textbf{Summary.} The unit read here closes the argument of the formal proof, and it has two parts. Part~I is analytic
+number theory. For a prime $d\equiv 7\pmod 8$ and a modulus $M$ prime to~$d$ it studies the remainder
+$\primeError{d}{M}{x}$ of a weighted sum over the prime powers $\equiv 1\pmod M$ that sees only the primes not split in
+$\Q(\sqrt{-d})$. The Laplace transform of $v\mapsto\primeError{d}{M}{\ee^{v}}$ is meromorphic. In the half-plane
+$\re s>0$ its poles lie at zeros of the Dirichlet $L$-functions modulo~$M$ and of their twists by the Legendre symbol
+modulo~$d$, and its residue at such a point~$\rho$ is $1/(\varphi(M)\rho(1-\rho))$ times the difference of two sums
+of orders of vanishing at~$\rho$: that of the $L$-functions modulo~$M$ minus that of their twists; here $\varphi$ is
+Euler's function (Theorem~1). By Landau's lemma, a one-sided bound
+$\primeError{d}{M}{x}\le x^{\beta-1}$, valid for all primes $d$ of one residue class, then forces $L(s,\chi)\ne 0$ for
+$\re s>\beta$ and every character $\chi$ modulo~$M$ (Theorem~2); a companion finds, in every window
+$[v_0,v_0^{2}]$, a point where a combination of two such remainders is at most $\ee^{-v_0}$ (Theorem~3). Part~II belongs
+to the geometric side of the proof: it writes the remainder of the data as a combination of the
+$\primeError{d}{M}{x}$ (Theorem~4), and it carries out the last steps of the three statements on theta lifts that the
+authors call Theorems~A, B and~C.
+
+\statement{leancol}{\fontsize{9.6}{13.2}\selectfont\textbf{What this note is.} The artifact \ArtifactName{} is a
+body of Lean code: the compact edition of a formal proof of the Riemann hypothesis and of its generalisation to
+Dirichlet $L$-functions. Its authors report that it compiles and that the kernel of Lean accepts the final theorems
+from the three standard axioms; a replay by the owner of this write-up is recorded with the write-up, not here, and
+nothing was compiled for this note. No mathematician has read the argument through, so the headline is a
+\emph{claim}, and this note does not say that the Riemann hypothesis is proved. It says what one unit of the formal
+text asserts and how it argues. The note treats \UnitInNote{} of the \UnitMembers{} declarations of the unit.
+\emph{Proved here in full}: everything in Part~I (Theorems 1 to~3 and the lemmas), from seven results of the background
+library that are quoted with their statements (Inputs \ref{i:nonvanishing} to~\ref{i:taylor}: among them Landau's
+lemma, the non-vanishing of $L$-functions on $\re s\ge1$, and a zero-free box for quadratic twists); and Theorem~4,
+from the description of the data. \emph{Deduced here from inputs that carry the substance}: Theorems A, B and~C,
+whose proofs in this unit are short deductions from results of other units, stated as Inputs \ref{i:sizes}
+to~\ref{i:hadamard} with the unit that owns each. Every statement of the unit, and every quoted statement
+of the background library, was compared by the writer with its Lean text, argument by argument. The Lean text read is
+\PinText; Appendix~A is the concordance of \ConcDecls{} declarations.}
+
+\sect{The statements of Part I}{s:intro}
+The objects first, in one paragraph; the definitions are in §\ref{s:setting}. Let $d$ be a prime number and $M\ge 1$ a
+natural number. Write $\Lambda$ for von Mangoldt's function, $\varphi$ for Euler's function and $\chiK{d}$ for the
+quadratic character modulo~$d$, the Legendre symbol when $d$ is odd. The \kw{weight} of a natural number $\nu$ is
+$\lambdaClass{d}{M}{\nu}=\Lambda(\nu)\bigl(1-\chiK{d}(\nu)\bigr)$ if $\nu\equiv 1\pmod M$, and $0$ otherwise. For
+$d\equiv 3\pmod 4$ it is carried by the powers of~$d$ and by the odd powers of the primes that are inert in
+$\Q(\sqrt{-d})$, in the residue class $1$ modulo~$M$. The \kw{remainder} is, for real $x\ge 1$,
+\[
+\primeError{d}{M}{x}=\sum_{1\le\nu\le x}\lambdaClass{d}{M}{\nu}\Bigl(\frac1\nu-\frac1x\Bigr)-\frac{\log x}{\varphi(M)}-\kap{d}{M},
+\]
+where the constant $\kap{d}{M}$ is formed from the logarithmic derivatives at $s=1$ of the $L$-functions of the
+Dirichlet characters $\xi$ modulo~$M$ and of their twists $\quadTwist{\xi}{d}$ (Definitions \ref{d:G} and~\ref{d:R}).
+For a Dirichlet character $\chi$ we write $\Ltv{s}{\chi}$ for the entire function $L(s,\chi)$, or $(s-1)L(s,\chi)$ if
+$\chi$ is principal, and $\ord_s f$ for the order of vanishing at~$s$ of an entire function $f\ne 0$. A function
+$\cE\colon\RR\to\RR$ is \kw{polar with residue function} $\omega\colon\C\to\C$ (Definition~\ref{d:polar}) if
+$\cE(v)=O(\ee^{v})$ and the transform $\int_0^\infty\cE(v)\,\ee^{(1-s)v}\,\dd v$ continues to a meromorphic function
+$\Phi$ on~$\C$ that has no pole in $\re s\ge 1$ and satisfies $(s-\rho)\Phi(s)\to\omega(\rho)$ as $s\to\rho$, for every
+$\rho$ with $\re\rho>0$.
+
+\statement{arith}{\phantomsection\label{t:1}\textbf{Theorem 1} (zeros as poles)\textbf{.}\enspace Let $d$ be a prime
+number with $d\equiv 7\pmod 8$ and let $M\ge 1$ be a natural number with $\gcd(M,d)=1$. For a complex number $s$ put
+\[
+\res{d}{M}{s}=\frac{1}{\varphi(M)\,s(1-s)}\sum_{\xi}\Bigl(\ord_{s}\entireL{\xi}-\ord_{s}\entireL{\quadTwist{\xi}{d}}\Bigr)
+\quad\text{for }s\ne 0,1,
+\]
+the sum over the Dirichlet characters $\xi$ modulo~$M$, and put $\res{d}{M}{0}=\res{d}{M}{1}=0$. Then, as a function of the real variable~$v$,
+\polarWords{v\mapsto\primeError{d}{M}{\ee^{v}}}{s\mapsto\res{d}{M}{s}}.}
+
+\statement{arith}{\phantomsection\label{t:2}\textbf{Theorem 2} (the one-sided criterion)\textbf{.}\enspace Let $M\ge 1$
+be a natural number, $c$ an element of $\Z/M$ and $\beta$ a real number. Assume that $\beta>\tfrac12$, that $c$ is a
+unit of $\Z/M$, and that every prime number $d$ with $d\equiv c\pmod M$ has the following three properties:
+$d\equiv 7\pmod 8$; $\gcd(M,d)=1$; and
+\[\primeError{d}{M}{x}\le x^{\beta-1}\qquad\text{for all sufficiently large real }x.\]
+Then for every complex number $\rho$ with $\re\rho>\beta$ and every Dirichlet character $\chi$ modulo~$M$,
+\[\Ltv{\rho}{\chi}\ne 0.\]}
+
+\statement{arith}{\phantomsection\label{t:3}\textbf{Theorem 3} (a good point in every window)\textbf{.}\enspace Let
+$\cE_1,\cE_2\colon\RR\to\RR$ and $\omega_1,\omega_2\colon\C\to\C$ be functions such that
+\polarWords{\cE_1}{\omega_1} and \polarWords{\cE_2}{\omega_2}. Then there is a real number $v_\ast$ such that for every
+real $v_0\ge v_\ast$ and every real $X$ with $0\le X\le\ee^{v_0}$ there is a real number $v_1$ with
+$v_0\le v_1\le v_0^{2}$ and
+\[\cE_1(v_1)-X\,\cE_2(v_1)\le\ee^{-v_0}.\]}
+
+In Theorem~2 the conclusion gives $L(\rho,\chi)\ne 0$, the point $\rho=1$ excepted when $\chi$ is principal. The three
+theorems are used as follows in the last unit of the proof (Chapter~I of the write-up). The geometric part of the
+proof bounds $\primeError{d}{N_0}{x}$ from above by $x^{8\varepsilon-1/2}$ for every $\varepsilon\in(0,\tfrac1{100})$,
+for a multiple $N_0$ of $18480$ and every prime $d\equiv N_0/2-1\pmod{N_0}$; Theorems 1 and~3 enter that deduction at
+one point, the choice of the second scale. Theorem~2 with $M=N_0$ and $c=N_0/2-1$ then turns the bound into
+$\Ltv{\rho}{\chi}\ne 0$ for $\re\rho>\tfrac12$. The bound is one-sided, and it is needed for every prime of a class:
+§\ref{s:criterion} explains both points. Part~II (§§\ref{s:data} to~\ref{s:C}) needs the vocabulary of the data and of
+the forms, and its statements (Theorems 4, A, B and~C) stand there.
+
+\sect{The setting of Part I}{s:setting}
+\begin{conventions}\phantomsection\label{c:conventions}
+$\NN=\{0,1,2,\dots\}$. For a natural number $M\ge 1$, a \kw{Dirichlet character modulo~$M$} is a multiplicative
+map $\Z/M\to\C$ that vanishes off the units; it is read as a function on $\Z$, and it is \kw{principal} if it is $1$
+on the units. Sums over $\xi$ run over all Dirichlet characters modulo~$M$, and $\varphi(M)$ is their number. $\one$ is
+the Dirichlet character modulo~$1$. $\Lambda$ is von Mangoldt's function, with $\Lambda(0)=0$; $\log$ is the natural
+logarithm, $\ee$ its base, and $(z)_{+}=\max(z,0)$ for real~$z$. For an entire function $f\ne0$ and $s\in\C$, $\ord_s f\in\NN$ is the
+order of vanishing of $f$ at~$s$. A function is \kw{analytic at a point} if it is holomorphic in a neighbourhood of
+it. \kw{For all sufficiently large $x$} means: for all $x\ge x_\ast$, for some real~$x_\ast$. Integrals are Lebesgue
+integrals; a family of complex numbers is \kw{summable} if it is absolutely summable.
+\end{conventions}
+
+\begin{definition}[the quadratic character and the twists]\label{d:chi}
+Let $d$ be a prime number. The Dirichlet character $\chiK{d}$ modulo~$d$ is the quadratic character of the field
+$\Z/d$, with values in $\{-1,0,1\}$: $\chiK{d}(n)=0$ if $d\mid n$, $\chiK{d}(n)=1$ if $n$ is a non-zero square
+modulo~$d$, and $\chiK{d}(n)=-1$ otherwise. For odd $d$ it is the Legendre symbol, and for $d\equiv 3\pmod 4$ it is the
+quadratic character $\chi_K$ of the field $K=\Q(\sqrt{-d})$. Let moreover $M\ge 1$ be a natural number and $\xi$ a
+Dirichlet character modulo~$M$. The \kw{twist} $\quadTwist{\xi}{d}$ is the Dirichlet character modulo $Md$ with
+$(\quadTwist{\xi}{d})(n)=\xi(n)\,\chiK{d}(n)$ for every integer~$n$.
+\end{definition}
+\leanline{\lean{chiK}\sep \lean{quadTwist}\sep \lean{quadTwistapply}}
+
+\begin{definition}[the entire $L$-function]\label{d:Lt}
+Let $M\ge1$ be a natural number and $\chi$ a Dirichlet character modulo~$M$. The function
+$\entireL{\chi}\colon\C\to\C$, with values written $\Ltv{s}{\chi}$, is the Dirichlet $L$-function
+$s\mapsto L(s,\chi)$ if $\chi$ is not principal, and the entire function that equals $(s-1)L(s,\chi)$ for $s\ne 1$
+if $\chi$ is principal (its value at $s=1$ is then $\prod_{p\mid M}(1-1/p)$, the residue of $L(s,\chi)$). In both cases it is entire and not identically zero. Its derivative is $\tilde L'$, and
+$\Ltd{s}{\chi}$ is the quotient of the two values at~$s$.
+\end{definition}
+\leanline{\lean{entireL}}
+
+\begin{definition}[the Chowla--Selberg constant]\label{d:cs}
+Let $d$ be a prime number. Then
+\[\chowla{d}=\Eu-\re\Ltd{1}{\quadTwist{\one}{d}},\]
+where $\Eu$ is Euler's constant and $\quadTwist{\one}{d}$ is the twist of the character modulo~$1$, that is, the
+character $n\mapsto\chiK{d}(n)$ modulo~$d$.
+\end{definition}
+\leanline{\lean{chowlaSelbergConst}}
+
+\begin{definition}[the weight]\label{d:lambda}
+Let $d$ be a prime number and let $M$ and $\nu$ be natural numbers. Then
+\[
+\lambdaClass{d}{M}{\nu}=\Lambda(\nu)\bigl(1-\chiK{d}(\nu)\bigr)\quad\text{if }\nu\equiv 1\pmod M,\qquad
+\lambdaClass{d}{M}{\nu}=0\quad\text{otherwise.}
+\]
+\end{definition}
+\leanline{\lean{lambdaClass}}
+
+So $\lambdaClass{d}{M}{\nu}\ne 0$ only if $\nu=p^{e}$ is a power of a prime, $\nu\equiv 1\pmod M$, and either $p=d$
+(the value is $\log d$) or $\chiK{d}(p)=-1$ and $e$ is odd (the value is $2\log p$).
+
+\begin{definition}[the weighted sums]\label{d:A}
+Let $d$ be a prime number, let $M$ and $i$ be natural numbers and $x$ a real number. Then
+\[\lambdaSum{d}{M}{i}{x}=x^{-i}\sum_{1\le\nu\le x}\lambdaClass{d}{M}{\nu}\,\nu^{\,i-1},\]
+the sum over the natural numbers $\nu$ with $1\le\nu\le x$; it is empty, and the value is $0$, for $x<1$.
+\end{definition}
+\leanline{\lean{lambdaSum}}
+
+\begin{definition}[the mean of the logarithmic derivatives]\label{d:G}
+Let $d$ be a prime number, $M\ge 1$ a natural number and $s$ a complex number. Then
+\[
+\logDerivMean{d}{M}{s}=\frac{1}{\varphi(M)}\Bigl(\sum_{\xi}\Bigl(\Ltd{s}{\quadTwist{\xi}{d}}-\Ltd{s}{\xi}\Bigr)-1\Bigr),
+\qquad \kap{d}{M}=\re\logDerivMean{d}{M}{1},
+\]
+the sum over the Dirichlet characters $\xi$ modulo~$M$. As a function of~$s$ it is meromorphic on~$\C$, and it is
+analytic at every point where none of the functions $\entireL{\xi}$ and $\entireL{\quadTwist{\xi}{d}}$ vanishes.
+\end{definition}
+\leanline{\lean{logDerivMean}}
+
+\begin{definition}[the remainder]\label{d:R}
+Let $d$ be a prime number, $M\ge 1$ a natural number and $x$ a real number. Then
+\[
+\primeError{d}{M}{x}=\lambdaSum{d}{M}{0}{x}-\lambdaSum{d}{M}{1}{x}-\frac{\log x}{\varphi(M)}-\kap{d}{M}
+=\sum_{1\le\nu\le x}\lambdaClass{d}{M}{\nu}\Bigl(\frac1\nu-\frac1x\Bigr)-\frac{\log x}{\varphi(M)}-\kap{d}{M},
+\]
+with $\kap{d}{M}=\re\logDerivMean{d}{M}{1}$ as in Definition~\ref{d:G}.
+\end{definition}
+\leanline{\lean{primeError}}
+
+\begin{definition}[polar functions]\label{d:polar}
+Let $\cE\colon\RR\to\RR$ and $\omega\colon\C\to\C$ be functions. We say that \polarWords{\cE}{\omega}, and write
+$\isPolar{\cE}{\omega}$, if $\cE$ is Borel measurable and there are a real number~$C$ and a function
+$\Phi\colon\C\to\C$, meromorphic on~$\C$ and defined at every point (at a pole its value is arbitrary), with the
+following four properties.
+\begin{enumerate}[label=(P\arabic*)]
+\item $|\cE(v)|\le C\,\ee^{v}$ for every real $v\ge 0$.
+\item $\Phi(s)=\int_0^\infty\cE(v)\,\ee^{(1-s)v}\,\dd v$ for every $s\in\C$ with $\re s>2$.
+\item The function $s\mapsto(s-1)\Phi(s)$, whose value at $s=1$ is $0$ whatever $\Phi(1)$ is, is analytic at every
+point of the closed half-plane $\re s\ge 1$.
+\item For every $\rho\in\C$ with $\re\rho>0$: $(s-\rho)\Phi(s)\to\omega(\rho)$ as $s\to\rho$, $s\ne\rho$.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{IsPolar}}
+
+\begin{remark}[how to read the definition]\label{r:polar}
+By (P1) and the measurability, the integral in (P2) converges absolutely for $\re s>2$, so $\Phi$ is the meromorphic
+continuation of the Laplace transform of $v\mapsto\cE(v)\ee^{v}$, and it is unique. (P4) says that the poles of $\Phi$
+in the half-plane $\re s>0$ are at most simple, and that $\omega(\rho)$ is the residue at~$\rho$; so
+$\omega(\rho)=0$ exactly when $\Phi$ is analytic at~$\rho$ (after correcting its value there). The clause of (P3)
+on the value at $s=1$ is essential: (P3) says that $\Phi$ is analytic at
+every point $s\ne 1$ of $\re s\ge1$, and that near $s=1$ it is the quotient by $s-1$ of an analytic function that
+vanishes at~$1$: the singularity at $s=1$ is removable. Hence a polar function has $\omega(\rho)=0$ for $\re\rho\ge 1$.
+Read without the clause, for a meromorphic function with its removable singularities filled in, (P3) would allow a
+simple pole of $\Phi$ at $s=1$; the constant function~$1$, with $\Phi(s)=1/(s-1)$, would then be polar, and
+Theorem~3 would be false for the constant functions $1$ and~$0$.
+The values of $\omega$ on $\re\rho\le0$ play no role.
+\end{remark}
+
+\begin{remark}[what the remainder measures; not part of the formal text]\label{r:heuristic}
+By the orthogonality of characters, for $\re s>1$ and $\gcd(M,d)=1$, $d\ne 2$,
+\[
+\sum_{\nu\ge1}\lambdaClass{d}{M}{\nu}\,\nu^{-s}=\logDerivMean{d}{M}{s}+\frac{s}{\varphi(M)(s-1)}
+\]
+(this is step~3 of the proof of Theorem~1). The only singularity on $\re s\ge 1$ is the simple pole at $s=1$ with
+residue $1/\varphi(M)$, which comes from the principal character. Accordingly one expects
+$\sum_{\nu\le x}\lambdaClass{d}{M}{\nu}/\nu=\log x/\varphi(M)+\text{constant}+o(1)$ and
+$x^{-1}\sum_{\nu\le x}\lambdaClass{d}{M}{\nu}=1/\varphi(M)+o(1)$, and the constant $\kap{d}{M}$ is the one for which
+$\primeError{d}{M}{x}$ has no constant term: in the language of Definition~\ref{d:polar}, the one for which the
+transform has no pole at $s=1$. A zero $\rho$ of some $\entireL{\xi}$ with $0<\re\rho<1$ gives the transform
+a pole with residue $\ord_\rho\entireL{\xi}/(\varphi(M)\rho(1-\rho))$, hence, formally, a term of size $x^{\re\rho-1}$ in
+$\primeError{d}{M}{x}$; a zero of a twist $\entireL{\quadTwist{\xi}{d}}$ does the same with the opposite sign. So the
+bound $\primeError{d}{M}{x}=O(x^{\beta-1})$ is what one expects if there is no zero with $\re\rho>\beta$, and the
+generalised Riemann hypothesis corresponds to $\beta=\tfrac12$. Theorem~2 goes in the other direction, and it asks for
+an upper bound only.
+\end{remark}
+
+\sect{Quoted results}{s:inputs}
+Part~I rests on seven results that the artifact proves in its background library, from Mathlib, and we quote all
+seven. Six of them are classical or elementary. The seventh, Input~\ref{i:density}, is not: the theorem that its
+source names treats real characters, and the formal statement also covers the quadratic twists of non-real
+characters, by an estimate for each fixed character that the library proves itself; its box says exactly what is
+proved and what the cited theorem gives. Each box gives the statement as the formal text has it, the unit that owns it, and
+what is known about its source: the comparison with the literature that the second reader of this write-up made
+for three of them, and otherwise the entry of the catalogue of quoted results. \emph{Reference to be confirmed}
+means that there is no reference with a confirmed place.
+
+\statement{ana}{\inputhead{non-vanishing on $\re s\ge1$}{unit~107}\label{i:nonvanishing}
+Let $M\ge 1$ be a natural number, $\chi$ a Dirichlet character modulo~$M$ and $s$ a complex number with
+$\re s\ge 1$. Then $\Ltv{s}{\chi}\ne0$.
+\src{Classical: Hadamard and de la Vall\'ee Poussin on the line $\re s=1$, Dirichlet at $s=1$. In the formal text
+it is a direct consequence of two theorems of Mathlib, at the version that the artifact pins, after the principal
+case is split off: for non-principal $\chi$, $L(s,\chi)\ne0$ on $\re s\ge1$; for principal $\chi$ and $s\ne1$ both
+factors of $(s-1)L(s,\chi)$ are non-zero; and at $s=1$ the entire function has the value $\prod_{p\mid M}(1-1/p)\ne0$.
+Relation: the theorem itself. The comparison with Mathlib at the pin was made by the second reader of this
+write-up.}}
+\leanline{\lean{entireLnezero}}
+
+\statement{ana}{\inputhead{the logarithmic derivative}{unit~107}\label{i:logderiv}
+Let $M\ge 1$ be a natural number, $\chi$ a Dirichlet character modulo~$M$ and $s$ a complex number.
+
+\emph{(a)} If $\re s>1$, the family $\bigl(\chi(\nu)\Lambda(\nu)\nu^{-s}\bigr)_{\nu\ge1}$ is summable, with sum
+\[\sum_{\nu\ge 1}\chi(\nu)\Lambda(\nu)\,\nu^{-s}=\frac{\iv{\chi}}{s-1}-\Ltd{s}{\chi},\]
+where the bracket $\iv{\chi}$ is the number $1$ if $\chi$ is principal and $0$ otherwise.
+
+\emph{(b)} $\ord_s\entireL{\chi}=0$ if and only if $\Ltv{s}{\chi}\ne0$; and
+$(s'-s)\,\Ltd{s'}{\chi}\to\ord_s\entireL{\chi}$ as $s'\to s$, $s'\ne s$.
+\src{Elementary: (a) is the logarithmic derivative of the Euler product, (b) the residue of the logarithmic
+derivative of an analytic function. The catalogue names Davenport, \emph{Multiplicative Number Theory}, for (a),
+without a place: reference to be confirmed.}}
+\leanline{\lean{LSeriesHasSummulvonMangoldt}\sep \lean{tendstosubmullogDeriventireL}}
+
+\statement{ana}{\inputhead{twists are not principal}{unit~107}\label{i:twist}
+Let $M$ be a natural number, $\xi$ a Dirichlet character modulo~$M$ and $d$ a prime number with $d\neq 2$ and
+$\gcd(M,d)=1$. Then the twist $\quadTwist{\xi}{d}$ is not the principal character modulo~$Md$.
+\src{Elementary (the Chinese remainder theorem gives $n$ with $n\equiv1\pmod M$ and $\chiK{d}(n)=-1$).}}
+\leanline{\lean{quadTwistneone}}
+
+\statement{ana}{\inputhead{Landau's lemma}{unit~107}\label{i:landau}
+Let $\cE\colon\RR\to\RR$ and $\omega\colon\C\to\C$ be functions such that \polarWords{\cE}{\omega}, and let
+$\beta$ be a real number with $\beta>0$. Assume that $\re\omega(s)\ge 0$ for every real number $s>\beta$, and that
+$\cE(v)\le\ee^{(\beta-1)v}$ for all sufficiently large real~$v$. Then $\omega(\rho)=0$ for every complex number
+$\rho$ with $\re\rho>\beta$.
+\src{Relation to the literature, as compared by the second reader of this write-up from the pinned Lean text and
+the primary texts (the writer has not consulted them): a corollary of D.~V.~Widder, \emph{The Laplace Transform},
+Chapter~II, §5, Theorem~5b, p.~58 [Wi], with a residue argument. Widder's theorem concerns the
+Laplace--Stieltjes transform of a monotone function with a finite abscissa of convergence, and gives a singularity at
+the real point of the abscissa; it applies to the primitive of the non-negative measurable function
+$v\mapsto C_1\ee^{\beta v}-\cE(v)\ee^{v}$, for a suitable constant~$C_1$. What the formal statement adds is the step at that real point, which
+compares the sign of the residue with positivity (Remark~\ref{r:landau}). The header of the formal file names
+H.~L.~Montgomery and R.~C.~Vaughan, \emph{Multiplicative Number Theory~I}, §15.1, Lemma~15.1, p.~463 [MV], as the
+source; that lemma is the same theorem for a density that is Riemann integrable on bounded intervals and of
+eventually constant sign, whereas $\cE$ is only assumed measurable here, so it does not apply as it stands.}}
+\leanline{\lean{landau}}
+
+\statement{ana}{\inputhead{a zero-free box for quadratic twists}{unit~127}\label{i:density}
+Let $M\ge 1$ be a natural number, $\beta$ and $z$ real numbers and $c$ an element of $\Z/M$. Assume that
+$\beta>\tfrac12$, that $c$ is a unit of $\Z/M$, and that every prime number $d$ with $d\equiv c\pmod M$ satisfies
+$d\equiv 7\pmod 8$ and $\gcd(M,d)=1$. Then there is a prime number $d$ with $d\equiv c\pmod M$ such that
+\[\Ltv{s}{\quadTwist{\xi}{d}}\ne 0\]
+for every Dirichlet character $\xi$ modulo~$M$ and every complex number $s$ with $\re s\ge\beta$ and $|\im s|\le z$.
+\src{The number $z$ is any real number; for $z<0$ the condition on $s$ is empty, and the statement still gives a
+prime. \emph{What the formal library proves}, in two steps that the writer read in the Lean text. First, an
+estimate for one character: for every Dirichlet character $\xi$ modulo~$M$, real or not, every real number $\Delta>0$
+and every real~$z$, the number of the primes $d\le x$ with $d\equiv7\pmod 8$ and $\gcd(M,d)=1$ for which
+$\entireL{\quadTwist{\xi}{d}}$ has a zero $s$ with $\re s\ge\tfrac12+9\Delta$ and $|\im s|\le z$ is $O(x^{1-\Delta/2})$ as
+$x\to\infty$. The proof passes to the primitive character that induces~$\xi$, and uses a three-lines argument and a
+smoothed mean square of sums of Jacobi symbols. Second, the bounds for the $\varphi(M)$ characters $\xi$ are added
+and set against the divergence of $\sum 1/p$ over the primes $p\equiv c\pmod M$: if every prime of the class failed
+for some~$\xi$, that sum would converge. \emph{What the literature gives}, as compared by the second reader of this
+write-up from the pinned Lean text and the primary text (the writer has not consulted it): the header of the formal
+file names M.~Jutila, On mean values of Dirichlet polynomials with real characters, Acta Arith.\ 27 (1975),
+191--198; its Theorem~2, equation~(6), p.~193 [Ju], bounds the number of zeros in a box, summed over real
+characters. For a non-real character $\xi$ the twists $\quadTwist{\xi}{d}$ are not real, so that theorem alone does
+not give the first step, and it does not contain the second. Input~\ref{i:density} is therefore not a classical
+theorem in the form used here: it is the combination of a variant of a classical zero-density estimate, for which
+no published place has been confirmed, with the divergence of a sum over primes. The catalogue of quoted results
+records it in this way.}}
+\leanline{\lean{existsentireLquadTwistnezero}}
+
+\statement{ana}{\inputhead{Laplace integrals}{unit~107}\label{i:laplace}
+\emph{(a)} Let $s$ be a complex number with $\re s>0$ and $i$ a natural number. Then
+$\int_0^\infty v^{i}\,\ee^{-sv}\,\dd v=i!/s^{i+1}$.
+
+\emph{(b)} Let $\cE\colon\RR\to\RR$ be a Borel measurable function, $C$ a real number with $|\cE(v)|\le C\,\ee^{v}$
+for every real $v\ge 0$, and $s$ a complex number with $\re s>2$. Then $v\mapsto\cE(v)\,\ee^{(1-s)v}$ is integrable
+on $(0,\infty)$.
+\src{Elementary: (a) is the integral of the Gamma function.}}
+\leanline{\lean{laplacepow}\sep \lean{integrableOnlaplaceofabsle}}
+
+\statement{ana}{\inputhead{Taylor series across a removable singularity}{unit~107}\label{i:taylor}
+Let $\Phi\colon\C\to\C$ be a function, $\rr_0$ a real number and $s_0,s_1,s_2$ complex numbers. Assume that
+the function $s\mapsto(s-s_1)\Phi(s)$ is analytic at every point of the open disc $|s-s_0|<\rr_0$, and that
+$s_0\neq s_1$, $|s_1-s_0|<\rr_0$ and $|s_2-s_0|<\rr_0$. Then the family
+$\bigl((s_2-s_0)^{i}\,\Phi^{(i)}(s_0)/i!\bigr)_{i\ge 0}$ is summable, where $\Phi^{(i)}$ is the $i$-th complex
+derivative.
+\src{Elementary. The function $s\mapsto(s-s_1)\Phi(s)$ vanishes at $s_1$, because it is a product with the factor
+$s-s_1$ whatever the value $\Phi(s_1)$ is; being analytic, it is divisible by $s-s_1$. So off $s_1$ the function
+$\Phi$ agrees with a function analytic in the disc, with the same derivatives at $s_0$, and the Taylor series of
+that function at $s_0$ converges absolutely in the disc. Analyticity of the product without the vanishing would
+allow a simple pole of $\Phi$ at~$s_1$.}}
+\leanline{\lean{summabletaylorofremovable}}
+
+\begin{remark}[from the classical lemma to Input~\ref{i:landau}; our derivation]\label{r:landau}
+In the formal library Input~\ref{i:landau} is proved directly, by the Taylor expansion at a real point that proves
+the classical lemma. Here is how it follows from the classical statement in this form (its relation to Widder's
+theorem is described in the box of Input~\ref{i:landau}): \emph{if $\cE_0\ge 0$ on $(0,\infty)$ and the
+Laplace integral $\int_0^\infty\cE_0(v)\ee^{-sv}\dd v$ converges for some real~$s$ but not for all, then the function
+that it defines to the right of its abscissa of convergence~$x_0$ has no analytic continuation to a neighbourhood of
+the point~$x_0$.} Let $C$ and $\Phi$ be as in Definition~\ref{d:polar}, let $\cE(v)\le\ee^{(\beta-1)v}$ for
+$v\ge v_\ast\ge0$, and put $C_1=\max(1,|C|\ee^{2v_\ast})$. Then
+$\cE_0(v)=C_1\,\ee^{\beta v}-\cE(v)\ee^{v}$ is $\ge0$ for all $v>0$: for $v\ge v_\ast$ because
+$\cE(v)\ee^{v}\le\ee^{\beta v}$, and for $v<v_\ast$ because $\cE(v)\ee^{v}\le|C|\ee^{2v_\ast}\le C_1\ee^{\beta v}$. Its
+Laplace integral converges for $\re s>\max(2,\beta)$, where by (P2) it equals $C_1/(s-\beta)-\Phi(s)$, a function
+meromorphic on~$\C$. Suppose that the abscissa of convergence $x_0$ is $>\beta$. To the right of~$x_0$ the integral
+is analytic, so by the identity theorem it equals $C_1/(s-\beta)-\Phi(s)$ on all of $\re s>x_0$; for real $s>x_0$ it is
+$\ge0$. Multiplying by $s-x_0>0$ and letting $s$ decrease to~$x_0$, (P4) gives $-\omega(x_0)\ge0$. With the hypothesis
+$\re\omega(x_0)\ge0$ this forces $\omega(x_0)=0$, so $C_1/(s-\beta)-\Phi(s)$ is analytic at~$x_0$, against the classical
+lemma. Hence $x_0\le\beta$: the integral is analytic in $\re s>\beta$ and equals $C_1/(s-\beta)-\Phi(s)$ there, so
+$\Phi$ has no pole in $\re s>\beta$, and $\omega(\rho)=0$ for $\re\rho>\beta$ by (P4). Note that the hypothesis does not
+ask that $\Phi$ be analytic at the real points to the right of~$\beta$: poles there whose residue has non-negative
+real part are allowed, and the conclusion says that there are none. This is the form in which the lemma is used
+below.
+\end{remark}
+
+\sect{Elementary properties of the weight and of the remainder}{s:elementary}
+
+\begin{lemma}[bounds for the weight]\label{l:lambdabound}
+Let $d$ be a prime number and let $M$ and $\nu$ be natural numbers. Then
+$0\le\lambdaClass{d}{M}{\nu}$ and $|\lambdaClass{d}{M}{\nu}|\le 2\nu$.
+\end{lemma}
+\begin{proof}
+$0\le\Lambda(\nu)\le\log\nu\le\nu$ for $\nu\ge1$, $\Lambda(0)=0$, and $1-\chiK{d}(\nu)\in\{0,1,2\}$.
+\end{proof}
+\leanline{\lean{lambdaClassnonnegandabsle}}
+
+\begin{lemma}[bound for the weighted sums]\label{l:Abound}
+Let $d$ be a prime number, let $M$ and $i$ be natural numbers and $v$ a real number. Then
+$|\lambdaSum{d}{M}{i}{\ee^{v}}|\le 2\,\ee^{v}$.
+\end{lemma}
+\begin{proof}
+Put $x=\ee^{v}$. By Lemma~\ref{l:lambdabound}, $|\lambdaClass{d}{M}{\nu}|\,\nu^{\,i-1}\le 2\nu^{\,i}\le 2x^{i}$ for
+$1\le\nu\le x$, and the sum in Definition~\ref{d:A} has at most $x$ terms. So
+$|\lambdaSum{d}{M}{i}{x}|\le x^{-i}\cdot x\cdot 2x^{i}=2x$.
+\end{proof}
+\leanline{\lean{abslambdaSumexple}}
+
+\begin{lemma}[the remainder as a sum of positive parts]\label{l:Rsum}
+Let $d$ be a prime number, let $M\ge 1$ and $a$ be natural numbers, and let $x$ be a real number with $0<x$ and
+$x\le a$. Then
+\[
+\primeError{d}{M}{x}=\frac1a\sum_{\nu=1}^{a}\lambdaClass{d}{M}{\nu}\Bigl(\frac a\nu-\frac ax\Bigr)_{+}-\frac{\log x}{\varphi(M)}-\kap{d}{M}.
+\]
+\end{lemma}
+\begin{proof}
+$a\ge x>0$, so $a\ge 1$. For $1\le\nu\le a$ the number $\frac1a(\frac a\nu-\frac ax)_{+}=(\frac1\nu-\frac1x)_{+}$ is
+$\frac1\nu-\frac1x$ if $\nu\le x$ and $0$ if $\nu>x$. So the sum is
+$\sum_{1\le\nu\le x}\lambdaClass{d}{M}{\nu}(\frac1\nu-\frac1x)=\lambdaSum{d}{M}{0}{x}-\lambdaSum{d}{M}{1}{x}$, and the
+claim is Definition~\ref{d:R}.
+\end{proof}
+\leanline{\lean{primeErroreqsum}}
+
+This identity is the reason for the shape of the remainder. In Part~II the prime sums of the data have the form
+$\sum_{\nu\le a}\lambdaClass{d}{M}{\nu}(z/\nu-w)_{+}$ with a real \emph{order} $z$ and a real \emph{weight} $w$; with
+$z=a$ and $w=a/x$ this is $a$ times the sum of the lemma.
+
+\begin{lemma}[the constant for the modulus $1$]\label{l:constant}
+Let $d$ be a prime number. Then $\re\logDerivMean{d}{1}{1}=-1-\chowla{d}$; in other words
+$\kap{d}{1}=-1-\chowla{d}$.
+\end{lemma}
+\begin{proof}
+Modulo~$1$ there is one Dirichlet character, $\one$, and $\varphi(1)=1$; so
+$\logDerivMean{d}{1}{s}=\Ltd{s}{\quadTwist{\one}{d}}-\Ltd{s}{\one}-1$. The function $\entireL{\one}$ is
+$s\mapsto(s-1)\zeta(s)$, where $\zeta$ is the Riemann zeta function; from the expansion
+$\zeta(s)=1/(s-1)+\Eu+O(s-1)$ at $s=1$ its value at $1$ is $1$ and its derivative at $1$ is $\Eu$, so
+$\Ltd{1}{\one}=\Eu$. Hence $\re\logDerivMean{d}{1}{1}=\re\Ltd{1}{\quadTwist{\one}{d}}-\Eu-1=-\chowla{d}-1$ by
+Definition~\ref{d:cs}.
+\end{proof}
+\leanline{\lean{relogDerivMeanone}}
+
+\sect{The transform of the remainder: proof of Theorem 1}{s:polar}
+Let $d$ and $M$ be as in Theorem~1: $d$ is a prime with $d\equiv7\pmod 8$, $M\ge1$ and $\gcd(M,d)=1$. Put
+\[
+\Ph{d}{M}{s}=\frac{1}{s-1}\Bigl(\frac{\logDerivMean{d}{M}{s}}{s}-\kap{d}{M}\Bigr)\qquad(s\in\C,\ s\ne1),
+\tag{5.1}
+\]
+and $\Ph{d}{M}{1}=0$; the value at $s=1$ plays no role. We verify Definition~\ref{d:polar} for $\cE(v)=\primeError{d}{M}{\ee^{v}}$ and $\omega(s)=\res{d}{M}{s}$, with the
+constant $C=|\kap{d}{M}|+5$ and the function $\Phi=\Phi_{d,M}$. The proof has seven steps.
+
+\subhead{Step 1: analyticity.} By Input~\ref{i:nonvanishing} none of the functions $\entireL{\xi}$ and
+$\entireL{\quadTwist{\xi}{d}}$, $\xi$ modulo~$M$, has a zero in $\re s\ge1$. So $s\mapsto\logDerivMean{d}{M}{s}$ is
+analytic at every point of $\re s\ge1$ (Definition~\ref{d:G}), and so is the function
+$s\mapsto\logDerivMean{d}{M}{s}/s-\kap{d}{M}$. As a quotient of meromorphic functions, $\Phi_{d,M}$ is meromorphic
+on~$\C$.
+
+\subhead{Step 2: measurability and (P1).} For $i=0,1$ the function $v\mapsto\lambdaSum{d}{M}{i}{\ee^{v}}$ is the
+product of $\ee^{-iv}$ and a step function, and $v\mapsto v/\varphi(M)+\kap{d}{M}$ is continuous; so
+$v\mapsto\primeError{d}{M}{\ee^{v}}$ is Borel measurable. For $v\ge0$, Lemma~\ref{l:Abound} gives
+\[
+|\primeError{d}{M}{\ee^{v}}|\le 2\ee^{v}+2\ee^{v}+\frac{v}{\varphi(M)}+|\kap{d}{M}|\le\bigl(|\kap{d}{M}|+5\bigr)\,\ee^{v},
+\]
+because $v\le\ee^{v}$, $\varphi(M)\ge1$ and $1\le\ee^{v}$.
+
+\subhead{Step 3: the Dirichlet series of the weight.} For $\re s>1$ the family
+$(\lambdaClass{d}{M}{\nu}\nu^{-s})_{\nu\ge1}$ is summable, and
+\[
+\sum_{\nu\ge1}\lambdaClass{d}{M}{\nu}\,\nu^{-s}=\logDerivMean{d}{M}{s}+\frac{s}{\varphi(M)\,(s-1)}.
+\tag{5.2}
+\]
+Indeed, by the orthogonality of characters the indicator of the class $\nu\equiv1\pmod M$ is
+$\varphi(M)^{-1}\sum_\xi\xi(\nu)$, so
+$\lambdaClass{d}{M}{\nu}=\varphi(M)^{-1}\sum_\xi\bigl(\xi(\nu)-(\quadTwist{\xi}{d})(\nu)\bigr)\Lambda(\nu)$ by
+Definitions \ref{d:lambda} and~\ref{d:chi}. Input~\ref{i:logderiv}(a), for the characters $\xi$ modulo~$M$ and
+$\quadTwist{\xi}{d}$ modulo~$Md$, gives
+\[
+\sum_{\nu\ge1}\lambdaClass{d}{M}{\nu}\,\nu^{-s}
+=\frac1{\varphi(M)}\sum_\xi\Bigl(\frac{\iv{\xi}-\iv{\quadTwist{\xi}{d}}}{s-1}-\Ltd{s}{\xi}+\Ltd{s}{\quadTwist{\xi}{d}}\Bigr).
+\]
+Here $\iv{\quadTwist{\xi}{d}}=0$ for every $\xi$, by Input~\ref{i:twist}: $d\ne2$ because $d\equiv7\pmod 8$, and
+$\gcd(M,d)=1$. And $\sum_\xi\iv{\xi}=1$. So the right side is
+$\logDerivMean{d}{M}{s}+\varphi(M)^{-1}\bigl(1+\frac1{s-1}\bigr)$, which is~(5.2). This is the only place where the
+hypothesis $d\equiv7\pmod8$ enters the proof.
+
+\subhead{Step 4: the transforms of the weighted sums.} Let $\re s>2$ and $i\in\{0,1\}$. By Lemma~\ref{l:Abound} and
+Input~\ref{i:laplace}(b) the function $v\mapsto\lambdaSum{d}{M}{i}{\ee^{v}}\ee^{(1-s)v}$ is integrable on
+$(0,\infty)$, and
+\[
+(s+i-1)\int_0^\infty\lambdaSum{d}{M}{i}{\ee^{v}}\,\ee^{(1-s)v}\,\dd v=\sum_{\nu\ge1}\lambdaClass{d}{M}{\nu}\,\nu^{-s}.
+\tag{5.3}
+\]
+To see this, substitute $x=\ee^{v}$: the integral is
+\[
+\int_1^\infty\lambdaSum{d}{M}{i}{x}\,x^{-s}\,\dd x
+=\int_1^\infty\Bigl(\sum_{1\le\nu\le x}\lambdaClass{d}{M}{\nu}\,\nu^{\,i-1}\Bigr)\,x^{-(s+i-1)-1}\,\dd x .
+\]
+The coefficients
+$\lambdaClass{d}{M}{\nu}\nu^{\,i-1}$ are $\ge0$, and their sum up to~$x$ is $x^{i}\lambdaSum{d}{M}{i}{x}\le2x^{1+i}$ by
+Lemma~\ref{l:Abound}. Partial summation, in the form that Mathlib provides, says that a Dirichlet series whose
+coefficients have absolute partial sums $O(x^{1+i})$ is, at every $s'$ with $\re s'>1+i$, equal to $s'$ times the
+integral over $(1,\infty)$ of its partial sums against $x^{-s'-1}$. With $s'=s+i-1$, whose real part exceeds $1+i$
+because $\re s>2$, this is~(5.3).
+
+\subhead{Step 5: (P2).} Let $\re s>2$. By Input~\ref{i:laplace}(a) at the point $s-1$,
+$\int_0^\infty\ee^{(1-s)v}\dd v=\frac1{s-1}$ and $\int_0^\infty v\,\ee^{(1-s)v}\dd v=\frac1{(s-1)^2}$. By Definition~\ref{d:R},
+$\primeError{d}{M}{\ee^{v}}=\lambdaSum{d}{M}{0}{\ee^{v}}-\lambdaSum{d}{M}{1}{\ee^{v}}-v/\varphi(M)-\kap{d}{M}$; each of
+the four terms, times $\ee^{(1-s)v}$, is integrable on $(0,\infty)$. So by (5.3) for $i=0$ and $i=1$, and by (5.2),
+\begin{align*}
+\int_0^\infty\primeError{d}{M}{\ee^{v}}\,\ee^{(1-s)v}\,\dd v
+&=\Bigl(\frac1{s-1}-\frac1s\Bigr)\Bigl(\logDerivMean{d}{M}{s}+\frac{s}{\varphi(M)(s-1)}\Bigr)-\frac{1}{\varphi(M)(s-1)^2}-\frac{\kap{d}{M}}{s-1}\\
+&=\frac{\logDerivMean{d}{M}{s}}{s(s-1)}-\frac{\kap{d}{M}}{s-1}=\Ph{d}{M}{s}.
+\end{align*}
+The term $\log x/\varphi(M)$ of the remainder has cancelled the double pole at $s=1$ that the pole of the
+Dirichlet series produces.
+
+\subhead{Step 6: the constant is real, and (P3).} We claim that $\logDerivMean{d}{M}{1}=\kap{d}{M}$, that is, that
+$\logDerivMean{d}{M}{1}$ is real. For real $s>2$ the number $\Ph{d}{M}{s}$ is the integral of a real function, by
+Step~5; so $\logDerivMean{d}{M}{s}/s-\kap{d}{M}=(s-1)\Ph{d}{M}{s}$ is real. By Step~1 the function
+$s\mapsto\im\bigl(\logDerivMean{d}{M}{s}/s-\kap{d}{M}\bigr)$ of the real variable~$s$ is real analytic on a
+neighbourhood of the half-line
+$[1,\infty)$; it vanishes on $(2,\infty)$, hence on $[1,\infty)$, by the identity theorem. At $s=1$ this gives
+$\im\logDerivMean{d}{M}{1}=0$, and $\re\logDerivMean{d}{M}{1}=\kap{d}{M}$ by definition. Now (P3): for $s\ne1$,
+$(s-1)\Ph{d}{M}{s}=\logDerivMean{d}{M}{s}/s-\kap{d}{M}$, and at $s=1$ the left side is $0$ and the right side is
+$\logDerivMean{d}{M}{1}-\kap{d}{M}=0$. So $s\mapsto(s-1)\Ph{d}{M}{s}$ is the function of Step~1, which is analytic at
+every point of $\re s\ge1$. This is the role of the constant $\kap{d}{M}$ in the remainder: it removes the pole
+of the transform at $s=1$.
+
+\subhead{Step 7: (P4).} Let $\re\rho>0$. If $\rho=1$, then $(s-1)\Ph{d}{M}{s}\to0=\res{d}{M}{1}$ by Step~6. Let
+$\rho\ne1$. By Input~\ref{i:logderiv}(b), applied to each $\xi$ and to each $\quadTwist{\xi}{d}$,
+\[
+(s-\rho)\,\logDerivMean{d}{M}{s}\ \longrightarrow\ \frac1{\varphi(M)}\sum_\xi\bigl(\ord_\rho\entireL{\quadTwist{\xi}{d}}-\ord_\rho\entireL{\xi}\bigr)
+\qquad(s\to\rho,\ s\ne\rho),
+\]
+the constant $-1$ in $\logDerivMean{d}{M}{s}$ contributing nothing. Since $s\to\rho\ne0$, $s-1\to\rho-1\ne0$ and
+$(s-\rho)\kap{d}{M}\to0$, (5.1) gives
+\[
+(s-\rho)\,\Ph{d}{M}{s}\ \longrightarrow\ \frac{1}{\varphi(M)\,\rho(\rho-1)}\sum_\xi\bigl(\ord_\rho\entireL{\quadTwist{\xi}{d}}-\ord_\rho\entireL{\xi}\bigr)=\res{d}{M}{\rho}.
+\]
+This proves Theorem~1. \hfill\qedsymbol
+\leanline{\lean{isPolarprimeError}}
+
+\sect{The one-sided criterion: proof of Theorem 2}{s:criterion}
+Let $M$, $c$, $\beta$ be as in Theorem~2, let $\rho\in\C$ with $\re\rho>\beta$, and let $\chi$ be a Dirichlet character
+modulo~$M$. If $\re\rho\ge1$, then $\Ltv{\rho}{\chi}\ne0$ by Input~\ref{i:nonvanishing}. Assume $\re\rho<1$.
+
+\subhead{Step 1: the prime $d$.} The hypotheses of Input~\ref{i:density} hold for $M$, $\beta$, $c$ and
+$z=|\im\rho|$: they are part of the hypotheses of Theorem~2. So there is a prime $d\equiv c\pmod M$ with
+\[
+\Ltv{s}{\quadTwist{\xi}{d}}\ne0\qquad\text{for all }\xi\text{ modulo }M\text{ and all }s\text{ with }\re s\ge\beta,\ |\im s|\le|\im\rho|.
+\tag{6.1}
+\]
+By hypothesis this $d$ satisfies $d\equiv7\pmod 8$, $\gcd(M,d)=1$, and
+$\primeError{d}{M}{x}\le x^{\beta-1}$ for all sufficiently large~$x$.
+
+\subhead{Step 2: the polar function.} By Theorem~1,
+\polarWords{v\mapsto\primeError{d}{M}{\ee^{v}}}{s\mapsto\res{d}{M}{s}}. We check the two hypotheses of
+Input~\ref{i:landau} for it, with the exponent $\beta>\tfrac12>0$.
+
+\emph{The one-sided bound.} If $v$ is large, so is $\ee^{v}$, and then
+$\primeError{d}{M}{\ee^{v}}\le(\ee^{v})^{\beta-1}=\ee^{(\beta-1)v}$.
+
+\emph{The sign of the residues at real points.} Let $s$ be a real number with $s>\beta$. If $s\ge1$, no
+$\entireL{\xi}$ and
+no $\entireL{\quadTwist{\xi}{d}}$ vanishes at~$s$ (Input~\ref{i:nonvanishing}), all orders at $s$ are $0$
+(Input~\ref{i:logderiv}(b)), and $\res{d}{M}{s}=0$. If $\beta<s<1$, the point $s$ lies in the box of (6.1), so
+$\ord_s\entireL{\quadTwist{\xi}{d}}=0$ for all $\xi$, and
+\[\res{d}{M}{s}=\frac{1}{\varphi(M)\,s(1-s)}\sum_\xi\ord_s\entireL{\xi}\ \ge\ 0,\]
+because $s(1-s)>0$.
+
+\subhead{Step 3: conclusion.} Input~\ref{i:landau} gives $\res{d}{M}{\rho}=0$. The point $\rho$ lies in the box of
+(6.1), so again $\ord_\rho\entireL{\quadTwist{\xi}{d}}=0$ for all $\xi$; and $\rho(1-\rho)\ne0$ because
+$0<\re\rho<1$. Hence $\sum_\xi\ord_\rho\entireL{\xi}=0$. The summands are natural numbers, so each is $0$; in
+particular $\ord_\rho\entireL{\chi}=0$, that is, $\Ltv{\rho}{\chi}\ne0$ by Input~\ref{i:logderiv}(b). \hfill\qedsymbol
+\leanline{\lean{entireLnezeroofprimeErrorle}}
+
+\begin{remark}[the anatomy of the criterion]\label{r:anatomy}
+\emph{Where positivity comes from.} Landau's lemma needs a transform whose poles to the right of~$\beta$, if real,
+have residues of one sign. In $\res{d}{M}{s}$ the zeros of the $\entireL{\xi}$ count positively and those of the
+twists $\entireL{\quadTwist{\xi}{d}}$ negatively. The twists are present because the weight
+$\lambdaClass{d}{M}{\nu}$ carries the factor $1-\chiK{d}(\nu)$; this factor is what the geometric part of the proof
+can bound, since it selects the primes that do not split in~$K=\Q(\sqrt{-d})$. Input~\ref{i:density} removes the
+negative terms from a box of the height of~$\rho$.
+
+\emph{Why every prime of a class.} The prime $d$ is not chosen in advance: Input~\ref{i:density} produces it, and
+it depends on the height $|\im\rho|$ of the point at which a zero is to be excluded. So the one-sided bound must be
+known for every prime of the class~$c$.
+
+\emph{Why an upper bound suffices.} The lemma is applied to the non-negative function
+$C_1\ee^{\beta v}-\primeError{d}{M}{\ee^{v}}\ee^{v}$ (Remark~\ref{r:landau}); only the inequality
+$\primeError{d}{M}{x}\le x^{\beta-1}$ is used, and no lower bound.
+
+\emph{Real zeros.} Zeros of the $\entireL{\xi}$ on the real segment $(\beta,1)$ are not excluded by hypothesis: they
+would give poles with positive residue, which Input~\ref{i:landau} admits, and the conclusion excludes them. Real
+zeros of the twists in $(\beta,1)$ are excluded by (6.1). The header of the formal file notes that the classical
+forms of this argument assume that there are no real zeros, and names as related work M.~Suzuki, \emph{On variants
+of Chebyshev's conjecture} (2024), §§15.1--15.2 of [MV], and Landau's paper of 1905 on a theorem of Chebyshev; we
+have not compared the statements.
+\end{remark}
+
+\sect{A good point in every window: proof of Theorem 3}{s:window}
+The proof of Theorem~3 uses the analyticity of the transform on $\re s\ge1$ through the moments
+$\int_0^\infty v^{i}\ee^{-3v}\cE(v)\,\dd v$, which are the derivatives of $\Phi$ at $s=4$ up to sign.
+
+\begin{proposition}[moments of a polar function]\label{p:moments}
+Let $\cE\colon\RR\to\RR$ and $\omega\colon\C\to\C$ be functions such that \polarWords{\cE}{\omega}. Then there is a
+real number $\rr_0>3$ such that for every real number $\rr$ with $3<\rr<\rr_0$ there is a real number
+$v_\ast$ such that for every real $v_0\ge v_\ast$:
+\begin{enumerate}[label=(\roman*)]
+\item $|\cE(v)|\le v_0\,\ee^{v}$ for every real $v\ge0$;
+\item for every natural number $i$ the function $v\mapsto v^{i}\ee^{-3v}\cE(v)$ is integrable on $(0,\infty)$, and
+\[\Bigl|\int_0^\infty v^{i}\,\ee^{-3v}\,\cE(v)\,\dd v\Bigr|\le\frac{i!\;v_0}{\rr^{i}}.\]
+\end{enumerate}
+\end{proposition}
+\begin{proof}
+Let $C$ and $\Phi$ be as in Definition~\ref{d:polar}. Only the measurability of $\cE$ and (P1), (P2), (P3) are used.
+
+\emph{A disc of analyticity.} The closed disc $|s-4|\le3$ lies in the half-plane $\re s\ge1$, and it contains the
+point $s=1$. By (P3) the function $s\mapsto(s-1)\Phi(s)$, which vanishes at $s=1$, is analytic at each of its
+points. The set of points at which a function is analytic is open
+and the disc is compact, so there is a real number $\rr_0>3$ such that $s\mapsto(s-1)\Phi(s)$ is analytic at every
+point of the open disc $|s-4|<\rr_0$. Let $3<\rr<\rr_0$. Input~\ref{i:taylor}, with $s_0=4$, $s_1=1$, $s_2=4+\rr$
+and the radius $\rr_0$, shows that the Taylor series of $\Phi$ at $4$ converges absolutely at $4+\rr$,
+beyond the point $1$:
+\[C_{\rr}=\sum_{i\ge0}\frac{\rr^{i}\,|\Phi^{(i)}(4)|}{i!}<\infty.\]
+
+\emph{Differentiation under the integral sign.} We claim that for every natural number $i$ and every $s\in\C$ with
+$\re s>2$ the function $v\mapsto(-v)^{i}\cE(v)\ee^{(1-s)v}$ is integrable on $(0,\infty)$, and
+\[\Phi^{(i)}(s)=\int_0^\infty(-v)^{i}\,\cE(v)\,\ee^{(1-s)v}\,\dd v.\tag{7.1}\]
+For $i=0$ this is Input~\ref{i:laplace}(b) and (P2). Let the claim hold for~$i$, let $\re s>2$, and choose
+$\Delta>0$ with $2\Delta<\re s-2$. For $v>0$ and $s'\in\C$ with $\re s'>2+2\Delta$,
+\[
+\bigl|(-v)^{i+1}\cE(v)\,\ee^{(1-s')v}\bigr|\le\frac1{\Delta}\,\bigl|(-v)^{i}\cE(v)\,\ee^{(1-(2+\Delta))v}\bigr|,
+\]
+because $\Delta v\le\ee^{\Delta v}$ and $\Delta+1-\re s'\le-1-\Delta$. The right side is
+integrable on $(0,\infty)$, by the claim for $i$ at the point $2+\Delta$, and it does not depend on~$s'$. So
+the integral in (7.1) may be differentiated under the integral sign on the half-plane $\re s'>2+2\Delta$,
+which is a neighbourhood of~$s$: its derivative at $s$ is the integral for $i+1$, which converges absolutely. Since
+the integral for $i$ equals $\Phi^{(i)}$ on $\re s'>2$, this is the claim for $i+1$.
+
+\emph{Conclusion.} At $s=4$, (7.1) says that $v\mapsto v^{i}\ee^{-3v}\cE(v)$ is integrable on $(0,\infty)$ and that
+$\bigl|\int_0^\infty v^{i}\ee^{-3v}\cE(v)\,\dd v\bigr|=|\Phi^{(i)}(4)|\le i!\,C_{\rr}/\rr^{i}$. So (i) and (ii) hold for
+every $v_0\ge v_\ast=\max(C,C_{\rr})$, (i) by (P1).
+\end{proof}
+\leanline{\lean{eventuallymomentle}}
+
+\subhead{Proof of Theorem 3.} Apply Proposition~\ref{p:moments} to $(\cE_1,\omega_1)$ and to $(\cE_2,\omega_2)$, and
+choose a real number $\rr$ with $3<\rr<4$ that is below the bound $\rr_0$ of each of the two. Let $v_\ast$ be so large that the conclusions
+(i) and (ii) hold for $\cE_1$ and for $\cE_2$ whenever $v_0\ge v_\ast$, and that
+$v_\ast\ge 99/\log(\rr/3)$ and $v_\ast\ge9$. Let $v_0\ge v_\ast$ and $0\le X\le\ee^{v_0}$, and put
+$i=\lceil v_0^{2}/9\rceil$. Since $v_0+1\le\ee^{v_0}$ and $X\le\ee^{v_0}$,
+\[v_0+v_0X+1\le\ee^{2v_0}.\tag{7.2}\]
+Suppose, for a contradiction, that $\cE_1(v)-X\cE_2(v)>\ee^{-v_0}$ for every $v$ in the window $[v_0,v_0^{2}]$.
+Consider, for $v>0$,
+\[
+I(v)=\ee^{7v_0-\rr v}+\ee^{2v_0-v_0^{2}-v}+\ee^{-3v}\bigl(\cE_1(v)-X\,\cE_2(v)-\ee^{-v_0}\bigr).
+\]
+
+\emph{$I(v)\ge0$ for all $v>0$.} In the window all three terms are positive. Outside it, by (i) for $\cE_1$ and
+$\cE_2$ and by (7.2), $|\cE_1(v)-X\cE_2(v)-\ee^{-v_0}|\le(v_0+Xv_0+1)\ee^{v}\le\ee^{2v_0+v}$, so the third term is
+at least $-\ee^{2v_0-2v}$. If $v<v_0$, then $7v_0-\rr v\ge2v_0-2v$, because $(\rr-2)v<2v_0$; so the first term
+compensates. If $v>v_0^{2}$, then $2v_0-v_0^{2}-v\ge2v_0-2v$; so the second term compensates.
+
+\emph{The contradiction.} Multiply by $v^{i}$ and integrate over $(0,\infty)$. By Input~\ref{i:laplace}(a), and by
+(ii) for $\cE_1$ and $\cE_2$,
+\[
+0\le\int_0^\infty v^{i}I(v)\,\dd v\le\frac{i!\,\ee^{7v_0}}{\rr^{i+1}}+i!\,\ee^{2v_0-v_0^{2}}+\frac{i!\,(v_0+Xv_0)}{\rr^{i}}-\frac{i!\,\ee^{-v_0}}{3^{i+1}} .
+\]
+With (7.2) and after division by $i!$,
+\[
+\frac{\ee^{-v_0}}{3^{i+1}}<\frac{\ee^{7v_0}}{\rr^{i+1}}+\ee^{2v_0-v_0^{2}}+\frac{\ee^{2v_0}}{\rr^{i}}.\tag{7.3}
+\]
+But each term on the right is at most a third of the left side. Indeed $i\ge v_0^{2}/9$ and $v_0\log(\rr/3)\ge99$
+give $(\rr/3)^{i}\ge\ee^{11v_0}$, and $\ee^{11v_0}\ge3\ee^{8v_0}$ and $\ee^{11v_0}\ge9\ee^{3v_0}$: this settles the
+first and the third term. For the second term one needs $(i+2)\log3+3v_0\le v_0^{2}$; it holds because
+$i+2\le v_0^{2}/9+3$, $\log3<\tfrac{11}{10}$ and $v_0\ge9$. So the right side of (7.3) is at most the left side, a
+contradiction. Hence some $v_1\in[v_0,v_0^{2}]$ has $\cE_1(v_1)-X\cE_2(v_1)\le\ee^{-v_0}$. \hfill\qedsymbol
+\leanline{\lean{existswindowsubmulle}}
+
+\begin{remark}[what the window lemma replaces]\label{r:window}
+The weight $v^{i}\ee^{-3v}$ has its mass near $v=i/3\approx v_0^{2}/27$, inside the window, and the factor
+$\rr^{-i}$ with $\rr>3$ in Proposition~\ref{p:moments} says that the moments of a polar function are smaller, by a
+factor exponential in~$i$, than those of a function of constant sign and size~$1$. So a polar function cannot stay
+above $\ee^{-v_0}$ on a whole window. In the proof of the one-sided bound (Chapter~I) the theorem is applied to
+$\cE_1(v)=\primeError{d}{N_0}{\ee^{v}}$ and $\cE_2(v)=\primeError{d}{1}{\ee^{v}}$, which are polar by Theorem~1, and
+$\ee^{v_1}$ becomes the second scale of the data. A pointwise bound for these remainders, that is, a prime number
+theorem in progressions with a remainder term, is thus not needed; the header of the formal file names the work of
+Pintz and of Kaczorowski on sign changes of remainder terms as related, and we have not compared it.
+\end{remark}
+
+\sect{Part II. The data, and what is taken from other units}{s:data}
+From here on the note needs the vocabulary of the geometric part of the proof: the data, the rows and columns, the
+theta lifts. These objects belong to other units, and the chapters on those units define them. This section and the
+Settings of §§\ref{s:AB} and~\ref{s:C} say what is used of them. The results of the present unit are then proved in
+full from the properties that are listed; the properties themselves are \emph{taken for granted}, each with the unit
+that owns it, in the words of the reader's dossier, whose statements were compared with the Lean text.
+
+\begin{setting}[parameters and data; unit~152]\label{st:data}
+\emph{Parameters} are a pair $P=(N_0,d)$: a positive multiple $N_0$ of $18480$ and a prime number $d$ with
+$d\equiv N_0/2-1\pmod{N_0}$. \emph{Admissible data} for $P$ are a record~$D$ of unit~152. Among its components are
+three positive real numbers $x$, $x_1$, $b$, the \emph{scales} (the record stores their logarithms), two natural
+numbers $m$ and $r$, and a finite set $\thick{D}$ of infinite places of the field $E(D)$ defined below. To the
+parameters $P$ and data $D$ the following objects are attached.
+
+\emph{The field and its places.} $K=\Q(\sqrt{-d})$. The natural number $N_1(D)$ is a multiple of $N_0$ with the same
+prime divisors. The field
+$E(D)$ is $K$ with the roots of unity of order $N_1(D)$ adjoined. Its infinite places form a principal homogeneous
+space under $\Gal(E(D)/K)\cong(\Z/N_1(D))^{\times}$; the isomorphism is restriction to the roots of unity, and it is
+onto because $K$ is not contained in the field that they generate over~$\Q$: the prime $d$ ramifies in~$K$ and does
+not divide $N_1(D)$. A base place, fixed once by the artifact, identifies the places with this group, and so makes
+them a finite commutative group; $f(D)$ is their number. Reduction modulo~$N_0$ gives each place $\tau$ a
+\emph{class} in $(\Z/N_0)^{\times}$, multiplicatively in~$\tau$. For an integer $\nu$ and a place $\tau$, the place
+$\nu\cdot\tau$ is the product of $\tau$ and the place identified with $\nu$ modulo $N_1(D)$ if $\nu$ is prime to
+$N_1(D)$, and $\nu\cdot\tau=\tau$ otherwise; if $\nu$ is prime to $N_1(D)$, the class of $\nu\cdot\tau$ is $\nu$ times
+the class of~$\tau$.
+
+\emph{Tops and thick places.} $\tops{D}$ is the set of the places of class $1$ modulo~$N_0$. Every place of
+$\thick{D}$ has class $-1$ modulo~$N_0$. And $f(D)=\varphi(N_0)\cdot\#\tops{D}$.
+
+\emph{Sizes.} $k(D)=r+1-m$, $t(D)=5r$, $a(D)$ is the least multiple of $N_1(D)$ that is at least $x\,b$, and
+$\budget{D}=f(D)\,a(D)\,(\log b)^{3}$.
+
+\emph{Prime sums.} The \emph{nominal weight} of a place $\tau$ is $\wD{D}{\tau}=a(D)/x$ if $\tau\in\thick{D}$ and
+$\wD{D}{\tau}=a(D)/x_1$ otherwise; it is positive, and $\wbar{D}$ is the mean of $\log\wD{D}{\tau}$ over all $f(D)$
+infinite places~$\tau$. For a real number $z$ and a place~$\tau$,
+\[
+\Ask{D}{z}{\tau}=\sum_{\nu=1}^{a(D)}\lambdaClass{d}{1}{\nu}\,\Bigl(\frac z\nu-\wD{D}{(-\nu)\cdot\tau}\Bigr)_{+}.
+\]
+
+\emph{Periods, the cost of one direction, the level.} $g(D)$ is the product of two primes of the data, and
+the \emph{period term} is $\GamD{D}=\log\bigl(g(D)\,\mathrm{rd}_{E(D)}/2\pi\bigr)$, with $\mathrm{rd}_{E(D)}$ the root
+discriminant of $E(D)$. For a
+natural number $i$ the \emph{jet size} is $\jet{D}{i}=\log(i!)-i\,\bigl(\chowla{d}-\GamD{D}\bigr)$. The \emph{cost of
+one direction} $\cost{D}$ is a real number: a sum over all infinite places $\tau$ of a jet size minus the prime sum
+$\Ask{D}{\wD{D}{\tau}}{\tau}$; its formula is in Chapter~III, and its value plays no role here. The \emph{level}
+$N(D)$ is a prime number (unit~141). Finally (unit~145)
+\[
+\hrow{D}=m\Bigl(\sum_{\tau\in\tops{D}}\bigl(\jet{D}{a(D)}-\Ask{D}{a(D)}{\tau}\bigr)+k(D)\,\cost{D}\Bigr)-\#\tops{D}\cdot a(D)\,\log N(D).
+\]
+\end{setting}
+
+The formal text writes $\chowla{d}-\GamD{D}$ as $\log(\Omega/g(D))$ with the period
+$\Omega=\ee^{\chowla{d}}\cdot2\pi/\mathrm{rd}_{E(D)}$. The next two boxes are what Part~II takes from units 152 and~141
+about sizes.
+
+\statement{ana}{\inputhead{comparison of sizes}{unit~152}\label{i:sizes}
+In Setting~\ref{st:data}:
+\begin{enumerate}[label=(S\arabic*),start=0]
+\item $a(D)\ge1$, $x\le a(D)$, $x_1\le a(D)$, $m\,k(D)\ne0$, $b>0$ and $\budget{D}>0$;
+\item $\#\tops{D}\cdot\bigl(m\,(1+\tfrac12\log a(D))+a(D)\,(\GamD{D}+\tfrac{15}{2}\log b)\bigr)\le\budget{D}$;
+\item if $|\Ask{D}{z}{\tau}|\le2\,a(D)\,|z|$ for all real $z$ and all places $\tau$, then
+$|\mainHeight{D}|+m\,|\remainder{D}|\le b^{2}x^{99}$ (Definitions \ref{d:hmain} and~\ref{d:rem});
+\item $x^{99}+5\,\budget{D}\le\log b\cdot\budget{D}$;
+\item $x^{99}+x_1^{2}b^{2}+4m^{2}\,t(D)\,x^{999}\le\tfrac14\,b^{3}$;
+\item $m^{2}\cdot2\,t(D)\,x^{999}\le2\log b\cdot\budget{D}$;
+\item $b\le\log b\cdot\budget{D}$.
+\end{enumerate}
+\src{These are instances of one mechanism of unit~152. Every quantity attached to the data carries a bound of the
+form $\exp$ of a linear form in $\log x$, $\log x_1$, $\log b$ and $\log\log b$, found from the bounds of its factors,
+and two such bounds are compared through the conditions on the scales, among them $(\log b)^{100}\le x$,
+$x^{10^{6}}\le x_1$ and $x_1^{10^{6}}\le b$. At (S2), (S3) and (S4) the source does not write out the inequality that
+it passes to this mechanism; the forms given here are those of the dossier, and the proofs below show that they are
+what is needed.}}
+
+\statement{ana}{\inputhead{the level}{unit~141}\label{i:level}
+In Setting~\ref{st:data}: $N(D)$ is a prime number, and
+$\log N(D)\ge m\,\bigl(\wbar{D}+\GamD{D}\bigr)-\GamD{D}-\tfrac{15}{2}\log b$.
+\src{The level is chosen, in a window of length $\sqrt{\log b}$, above this target.}}
+
+\sect{The remainder of the data: Theorem 4}{s:rem}
+
+\begin{definition}[the main amount]\label{d:hmain}
+Let $P$ be parameters and $D$ admissible data for~$P$, with components $x$, $x_1$, $b$, $m$, $r$
+(Setting~\ref{st:data}). Then $\mainHeight{D}=m\,k(D)\,\cost{D}$.
+\end{definition}
+\leanline{\lean{mainHeight}}
+
+\begin{definition}[the expected value of a prime sum]\label{d:askmain}
+Let $P$ be parameters and $D$ admissible data for~$P$, with components $x$, $x_1$, $b$, $m$, $r$
+(Setting~\ref{st:data}). Then
+\[\mainAsk{D}=a(D)\,\bigl(\log a(D)-1-\chowla{d}-\wbar{D}\bigr)=a(D)\,\bigl(\log a(D)+\kap{d}{1}-\wbar{D}\bigr),\]
+the second form by Lemma~\ref{l:constant}.
+\end{definition}
+\leanline{\lean{mainAsk}}
+
+\begin{definition}[the remainder of the data]\label{d:rem}
+Let $P$ be parameters and $D$ admissible data for~$P$, with components $x$, $x_1$, $b$, $m$, $r$
+(Setting~\ref{st:data}). Then
+\[\remainder{D}=\sum_{\tau\in\tops{D}}\bigl(\Ask{D}{a(D)}{\tau}-\mainAsk{D}\bigr).\]
+\end{definition}
+\leanline{\lean{remainder}}
+
+\statement{arith}{\phantomsection\label{t:4}\textbf{Theorem 4} (the remainder of the data in terms of the remainders
+of Part~I)\textbf{.}\enspace Let $P=(N_0,d)$ be parameters and $D$ admissible data for~$P$, with components $x$,
+$x_1$, $b$, $m$, $r$ (Setting~\ref{st:data}). Then
+\[
+\remainder{D}=a(D)\,\Bigl(\#\thick{D}\cdot\bigl(\primeError{d}{N_0}{x}-\primeError{d}{N_0}{x_1}\bigr)+\#\tops{D}\cdot\primeError{d}{1}{x_1}\Bigr).
+\]}
+
+\begin{proof}
+Write $a=a(D)$. By (S0), $a\ge1$, $0<x\le a$ and $0<x_1\le a$.
+
+\emph{Step 1: counting.} For every natural number $\nu$,
+\[
+\#\{\tau\in\tops{D}:(-\nu)\cdot\tau\in\thick{D}\}=
+\begin{cases}\#\thick{D}&\text{if }\nu\equiv1\pmod{N_0},\\ 0&\text{otherwise.}\end{cases}
+\tag{9.1}
+\]
+Let $\nu\equiv1\pmod{N_0}$. Then $\nu$ is prime to $N_0$, hence to $N_1(D)$, which has the same prime divisors. So
+$\tau\mapsto(-\nu)\cdot\tau$ is a bijection of the set of places that multiplies the classes by $-\nu\equiv-1$: it maps
+$\tops{D}$ onto the set of the places of class $-1$ modulo~$N_0$, which contains $\thick{D}$, and every thick place
+is met exactly once. Let $\nu\not\equiv1\pmod{N_0}$. If $\nu$ is prime to $N_1(D)$, the places $(-\nu)\cdot\tau$ with
+$\tau\in\tops{D}$ have class $-\nu\ne-1$, and none is thick. If $\nu$ is not prime to $N_1(D)$, then
+$(-\nu)\cdot\tau=\tau$ by the convention of Setting~\ref{st:data}, and no place of $\tops{D}$ is thick, because the
+classes $1$ and $-1$ modulo $N_0$ differ. This proves (9.1). By Definition~\ref{d:lambda},
+$\lambdaClass{d}{N_0}{\nu}$ equals $\lambdaClass{d}{1}{\nu}$ if $\nu\equiv1\pmod{N_0}$ and is $0$ otherwise; so (9.1)
+gives, for every natural number $\nu$,
+\[
+\#\{\tau\in\tops{D}:(-\nu)\cdot\tau\in\thick{D}\}\cdot\lambdaClass{d}{1}{\nu}=\#\thick{D}\cdot\lambdaClass{d}{N_0}{\nu}.
+\tag{9.2}
+\]
+
+\emph{Step 2: the sum of the prime sums over the tops.} For $\tau\in\tops{D}$ and $1\le\nu\le a$ the weight
+$\wD{D}{(-\nu)\cdot\tau}$ is $a/x$ if $(-\nu)\cdot\tau$ is thick and $a/x_1$ otherwise. Summing over $\tau$ and using
+(9.2),
+\begin{align*}
+\sum_{\tau\in\tops{D}}\Ask{D}{a}{\tau}
+={}&\#\thick{D}\sum_{\nu=1}^{a}\lambdaClass{d}{N_0}{\nu}\Bigl(\bigl(\tfrac a\nu-\tfrac ax\bigr)_{+}-\bigl(\tfrac a\nu-\tfrac a{x_1}\bigr)_{+}\Bigr)\\
+&+\#\tops{D}\sum_{\nu=1}^{a}\lambdaClass{d}{1}{\nu}\bigl(\tfrac a\nu-\tfrac a{x_1}\bigr)_{+}.
+\end{align*}
+By Lemma~\ref{l:Rsum}, for $M\in\{N_0,1\}$ and a real number $z$ with $0<z\le a$,
+$\sum_{\nu=1}^{a}\lambdaClass{d}{M}{\nu}(\frac a\nu-\frac az)_{+}=a\bigl(\primeError{d}{M}{z}+\log z/\varphi(M)+\kap{d}{M}\bigr)$.
+We use it for $M=N_0$ at $z=x$ and $z=x_1$, where the constant $\kap{d}{N_0}$ drops out of the difference, and
+for $M=1$ at $z=x_1$, where $\varphi(1)=1$:
+\begin{align*}
+\sum_{\tau\in\tops{D}}\Ask{D}{a}{\tau}
+={}&a\Bigl(\#\thick{D}\bigl(\primeError{d}{N_0}{x}-\primeError{d}{N_0}{x_1}\bigr)+\#\tops{D}\,\primeError{d}{1}{x_1}\Bigr)\\
+&+a\Bigl(\#\thick{D}\,\frac{\log x-\log x_1}{\varphi(N_0)}+\#\tops{D}\,\bigl(\log x_1+\kap{d}{1}\bigr)\Bigr).
+\end{align*}
+
+\emph{Step 3: the expected value.} Since $\#\thick{D}$ places have weight $a/x$ and the other $f(D)-\#\thick{D}$
+have weight $a/x_1$, $\log a-\wbar{D}=\log x_1+\frac{\#\thick{D}}{f(D)}(\log x-\log x_1)$. With
+$f(D)=\varphi(N_0)\cdot\#\tops{D}$ and Definition~\ref{d:askmain},
+\[
+\#\tops{D}\cdot\mainAsk{D}=a\Bigl(\#\thick{D}\,\frac{\log x-\log x_1}{\varphi(N_0)}+\#\tops{D}\,\bigl(\log x_1+\kap{d}{1}\bigr)\Bigr).
+\]
+
+\emph{Step 4.} By Definition~\ref{d:rem}, $\remainder{D}=\sum_{\tau\in\tops{D}}\Ask{D}{a}{\tau}-\#\tops{D}\cdot\mainAsk{D}$,
+and Steps 2 and~3 give the claim: the terms $\log x$, $\log x_1$ and $\kap{d}{1}$ cancel.
+\end{proof}
+\leanline{\lean{remaindereq}}
+
+Step~1 is the place where the progression $1$ modulo $N_0$ enters the proof: the thick places sit in one class,
+and the tops are the stabiliser of that class. The convention for the integers $\nu$ that are not prime to $N_1(D)$
+does not affect the prime sums: for such $\nu$ the weight $\lambdaClass{d}{1}{\nu}$ is $0$, because every prime
+that divides $N_1(D)$ splits in~$K$ (unit~152).
+
+\begin{proposition}[the level pays the excess]\label{p:level}
+Let $P$ be parameters and $D$ admissible data for~$P$, with components $x$, $x_1$, $b$, $m$, $r$
+(Setting~\ref{st:data}). Then
+\[\hrow{D}\le\mainHeight{D}-m\cdot\remainder{D}+\budget{D}.\]
+\end{proposition}
+\begin{proof}
+Write $a=a(D)$. By the definitions of $\hrow{D}$, $\mainHeight{D}$ and $\remainder{D}$,
+\[
+\hrow{D}=\mainHeight{D}-m\cdot\remainder{D}+\#\tops{D}\cdot\Bigl(m\,\bigl(\jet{D}{a}-\mainAsk{D}\bigr)-a\,\log N(D)\Bigr).\tag{9.3}
+\]
+\emph{The excess of one row.} By the definitions of the jet size and of $\mainAsk{D}$, in which the constant
+$\chowla{d}$ cancels,
+$\jet{D}{a}-\mainAsk{D}=\log(a!)-a\log a+a+a\,(\wbar{D}+\GamD{D})$. Stirling's bound
+$\log(a!)\le a\log a-a+1+\tfrac12\log a$, valid for $a\ge1$, gives
+\[\jet{D}{a}-\mainAsk{D}\le a\,(\wbar{D}+\GamD{D})+1+\tfrac12\log a.\]
+\emph{The level.} By Input~\ref{i:level}, $a\log N(D)\ge a\,m\,(\wbar{D}+\GamD{D})-a\,(\GamD{D}+\tfrac{15}{2}\log b)$.
+So the term $m\,a\,(\wbar{D}+\GamD{D})$ cancels in the bracket of (9.3), which is at most
+$m\,(1+\tfrac12\log a)+a\,(\GamD{D}+\tfrac{15}{2}\log b)$. The claim follows from (S1).
+\end{proof}
+\leanline{\lean{heightPerRowle}}
+
+The number $\hrow{D}$ will bound the logarithm of the size of a chain of $m$ theta lifts of a short column
+(Input~\ref{i:size}). The proposition says that the level $N(D)$, whose logarithm is subtracted in $\hrow{D}$, has
+been chosen so that it cancels the excess of size over expected divisibility of the $m$ lifts; what remains is the
+main amount, less $m$ times the remainder of the data.
+
+\begin{lemma}[a crude bound]\label{l:crude}
+Let $P$ be parameters and $D$ admissible data for~$P$, with components $x$, $x_1$, $b$, $m$, $r$
+(Setting~\ref{st:data}). Then
+\[|\mainHeight{D}|+m\cdot|\remainder{D}|\le b^{2}\,x^{99}.\]
+\end{lemma}
+\begin{proof}
+For every real number $z$ and every place $\tau$, $|\Ask{D}{z}{\tau}|\le2\,a(D)\,|z|$: the sum has $a(D)$ terms, and
+$0\le\lambdaClass{d}{1}{\nu}\,(z/\nu-w)_{+}\le2\nu\cdot|z|/\nu$ for every weight $w\ge0$, by Lemma~\ref{l:lambdabound}.
+The claim is then (S2). In the formal text the comparison of sizes also uses that $|\chowla{d}|$ is at most a
+constant of the parameters, which the conditions on the scales make negligible.
+\end{proof}
+\leanline{\lean{absmainHeightaddremainderle}}
+
+The bound is far from sharp, and it is only used to pay for a small number of missing dimensions in the proof of
+the main inequality. To see that there is room (this is not the formal argument): unit~152 has $m\le2\sqrt x$,
+$r\le3x^{5}$ and $f(D)\le x^{11}(\log b)^{1/5}$ up to a constant of the parameters, and $a(D)$ is about $xb$; so the
+$f(D)$ prime sums in $\cost{D}$, each at most $2a(D)^{2}/x$, give $|\mainHeight{D}|$ the order $x^{18}b^{2}$ at
+most, and $m\,|\remainder{D}|$ has the order $x^{14}b^{2}$ at most.
+
+\sect{Theorems A and B}{s:AB}
+
+\begin{setting}[forms and lifts; units 102, 140, 141, 143, 145, 147, 148]\label{st:forms}
+Let $P$ be parameters and $D$ admissible data for~$P$, with components $x$, $x_1$, $b$, $m$, $r$, as in
+Setting~\ref{st:data}. Other units attach to $D$ the following objects.
+
+\emph{Columns} (unit~145). $\Col{D}$ is a finite-dimensional complex vector space of algebraic modular forms on a
+definite unitary group of rank $k(D)$ over $E(D)$; its complex dimension $\dim\Col{D}$ is a different number from the
+rank $k(D)$, and both occur below. The \emph{ramifying operator} is a linear map
+$\operatorname{ram}_D\colon\Col{D}\to\Col{D}$, and its image $\Colram{D}$ is the space of \emph{ramified columns}.
+
+\emph{Rows} (units 140, 141). $\GD{D}$ is a finite group. $\PF{D}$ is a complex vector space of cusp forms on an
+indefinite unitary group of rank~$r$ over $E(D)$, the \emph{forms of principal level}, on which $\GD{D}$ acts
+linearly. The space of \emph{rows} $\Row{D}\subseteq\PF{D}$ is the image of a fixed idempotent of the group algebra of
+$\GD{D}$; it is finite-dimensional. For $\gamma\in\GD{D}$ the linear map $\gpt{D}{\gamma}\colon\PF{D}\to\Row{D}$
+translates a form by $\gamma$ and applies $\#\GD{D}$ times the idempotent.
+
+\emph{Poincaré series} (unit~148). A linear map $\Poin{D}\colon\Col{D}\to\PF{D}$.
+
+\emph{Twists and lifts} (units 141, 143, 147). A \emph{twist} of $D$ is a character $\vartheta$ of a certain kind,
+with a finite set $Q(\vartheta)$ of primes of $E(D)$ where it ramifies; an \emph{$m$-fold twist} is a twist whose
+powers $\vartheta^{2},\dots,\vartheta^{m}$ are twists with the same set; the trivial character $1$ is an $m$-fold
+twist with $Q(1)=\emptyset$. A prime number $\ell$ is \emph{prime to~$\vartheta$} if it is prime to the norms of the
+primes in $Q(\vartheta)$. For a twist $\vartheta$, the \emph{chain of lifts} is a linear map
+$\Thf{D}{\vartheta}\colon\PF{D}\to\AAf{D}{\vartheta}$, the composite of $m$ theta lifts, into a finite-dimensional
+complex vector space $\AAf{D}{\vartheta}$ of algebraic modular forms on a definite unitary group, which carries a
+positive definite hermitian product. For an $m$-fold twist $\vartheta$, $\Th{D}{\vartheta}\colon\Row{D}\to\AAf{D}{\vartheta}$
+is the restriction of $\Thf{D}{\vartheta}$ to the rows, and
+$\zz{D}{\vartheta}=\det\bigl(\Th{D}{\vartheta}^{\ast}\Th{D}{\vartheta}\bigr)$.
+
+\emph{Conjugates and sizes} (unit~102). The columns and the elements of the spaces $\AAf{D}{\vartheta}$ are functions
+with values in complex vector spaces that have a rational structure and a norm; so for $\sigma\in\AutC$ a form $F$
+has a conjugate $\sigma\circ F$. We say that $F$ is \emph{pointwise at most $\ee^{B}$ at~$\sigma$}, for a real
+number~$B$, if every value of $\sigma\circ F$ has squared norm at most $\ee^{B}$. For $F,F_1,\dots,F_n$ in
+$\AAf{D}{\vartheta}$, $\nsq{F}{\sigma}$ is the Petersson norm of $\sigma\circ F$, a finite sum over classes of squared
+norms of values, and $\covol{F_1,\dots,F_n}{\sigma}$ is the absolute value of the determinant of the matrix of
+Petersson products of the $\sigma\circ F_i$.
+
+\emph{Integrality} (unit~102). For a prime number $\ell$ and a ring homomorphism $j\colon\C\to\C_\ell$, $O_j$ is the
+ring of the complex numbers $H$ with $|j(H)|_\ell\le1$. A column, or an element of some $\AAf{D}{\vartheta}$, is
+\emph{$j$-integral} if all its values are, for a lattice fixed in unit~102; the $j$-integral elements form an
+$O_j$-module, and if $F$ is $j$-integral and $|j(H)|_\ell\le1$ for a complex number $H$, then $HF$ is $j$-integral.
+A column is \emph{integral} if it is $j$-integral for every prime $\ell$ and every $j\colon\C\to\C_\ell$.
+\end{setting}
+
+\statement{ana}{\inputhead{the seesaw identity}{unit~141}\label{i:seesaw}
+In Settings \ref{st:data} and~\ref{st:forms} there is a non-zero complex number $H$ such that for every twist
+$\vartheta$ of $D$ there is a good datum $\Psi$ for~$\vartheta$ with
+\[\Thf{D}{\vartheta}\bigl(\Poin{D}(H\,\psi)\bigr)=\Ch{D}{\vartheta,\Psi}(\psi)\qquad\text{for every }\psi\in\Colram{D}.\]
+Here a \emph{good datum} for $\vartheta$ is a notion of unit~145, and
+$\Ch{D}{\vartheta,\Psi}\colon\Col{D}\to\AAf{D}{\vartheta}$ is the chain of $m$ theta lifts between definite spaces that
+$\Psi$ defines (unit~147). The formal text fixes one such number~$H$, by choice; we write $\cst{see}{D}$ for it.
+\src{The identity moves the lifts of Poincaré series to the definite side, where sizes and divisibility are
+computed; it is the subject of Chapter~V.}}
+
+\begin{definition}[the scaled inclusion]\label{d:inc}
+Let $P$ be parameters and $D$ admissible data for~$P$, with components $x$, $x_1$, $b$, $m$, $r$ (Settings
+\ref{st:data} and~\ref{st:forms}). The linear map $\scaledInclusion{D}\colon\Colram{D}\to\Col{D}$ is the inclusion
+multiplied by the constant $\cst{see}{D}$ of Input~\ref{i:seesaw}.
+\end{definition}
+\leanline{\lean{scaledInclusion}}
+
+\begin{definition}[the Poincaré maps]\label{d:proj}
+Let $P$ be parameters and $D$ admissible data for~$P$, with components $x$, $x_1$, $b$, $m$, $r$ (Settings
+\ref{st:data} and~\ref{st:forms}), and let $\gamma\in\GD{D}$. The linear map
+$\projectedPoincare{D}{\gamma}{}\colon\Colram{D}\to\Row{D}$ is the composite
+$\gpt{D}{\gamma}\circ\Poin{D}\circ\scaledInclusion{D}$; its value at a ramified column $\psi$ is written
+$\projectedPoincare{D}{\gamma}{\psi}$.
+\end{definition}
+\leanline{\lean{projectedPoincare}}
+
+\begin{definition}[integral ramified columns]\label{d:intram}
+Let $P$ be parameters and $D$ admissible data for~$P$, with components $x$, $x_1$, $b$, $m$, $r$ (Settings
+\ref{st:data} and~\ref{st:forms}). Then $\integralRamified{D}$ is the set of the ramified columns
+$\psi\in\Colram{D}$ that are integral: $j$-integral for every prime number $\ell$ and every ring homomorphism
+$j\colon\C\to\C_\ell$.
+\end{definition}
+\leanline{\lean{integralRamified}}
+
+\begin{definition}[the index of a family of rows]\label{d:index}
+Let $P$ be parameters and $D$ admissible data for~$P$, with components $x$, $x_1$, $b$, $m$, $r$ (Settings
+\ref{st:data} and~\ref{st:forms}). Let $n$ be a natural number, $y=(y_1,\dots,y_n)$ a family of rows in $\Row{D}$,
+and $\delta$ a real number. We say that \indexWords{D}{y}{\delta}, and write $\IndexLe{D}{y}{\delta}$, if there are
+real numbers $\eta_\ell$, $\ell\in\NN$, with $\sum_{\ell\in J}\eta_\ell\le\delta$ for every finite set $J\subset\NN$,
+such that for every prime number $\ell$, every ring homomorphism $j\colon\C\to\C_\ell$ and every $m$-fold twist
+$\vartheta$ of $D$ to which $\ell$ is prime, there is an $n\times n$ matrix $u=(u_{ii'})$ with entries in $O_j$
+such that $|j(\det u)|_\ell\ge\ee^{-\eta_\ell}$ and such that
+$\Th{D}{\vartheta}\bigl(\sum_{i'}u_{ii'}\,y_{i'}\bigr)$ is $j$-integral for $i=1,\dots,n$.
+\end{definition}
+\leanline{\lean{IndexLe}}
+
+The index bounds, prime by prime and for all twists at once, the denominators of the lifts of the family: after a
+change of the family by a matrix of small determinant, the lifts are integral.
+
+\statement{ana}{\inputhead{short integral columns span}{unit~145}\label{i:short}
+In Settings \ref{st:data} and~\ref{st:forms}, $\Colram{D}$ is spanned over $\C$ by the ramified columns that are
+integral and pointwise at most $\ee^{\budget{D}}$ at every $\sigma\in\AutC$.}
+
+\statement{ana}{\inputhead{the size of the chain}{units 145, 150}\label{i:size}
+In Settings \ref{st:data} and~\ref{st:forms}, let $\nonsplit{D}$ be the set of the prime numbers $\ell<x_1$ with
+$\chiK{d}(\ell)\ne1$, and let $\gain{D}{\ell}$, for a natural number~$\ell$, be the real number that unit~150 calls the
+\emph{gain} at~$\ell$: the divisibility by $\ell$ that is asked of a chain of lifts. Let $\Psi$ be a good datum for
+the trivial twist, $\sigma\in\AutC$, $\psi\in\Colram{D}$ and $B$ a real number. If $\psi$ is pointwise at most
+$\ee^{B}$ at~$\sigma$, then $\Ch{D}{1,\Psi}(\psi)$ is pointwise at most
+\[\exp\Bigl(B+\hrow{D}+2\sum_{\ell\in\nonsplit{D}}\gain{D}{\ell}\,\log\ell+\budget{D}\Bigr)\quad\text{at }\sigma.\]}
+
+\statement{ana}{\inputhead{passing to the rows}{unit~143}\label{i:goodpart}
+In Settings \ref{st:data} and~\ref{st:forms}, let $F\in\PF{D}$ and $\gamma\in\GD{D}$.
+
+\emph{(a)} Let $\sigma\in\AutC$ and let $B$ be a real number. If $\Thf{D}{1}(F)$ is pointwise at most $\ee^{B}$
+at~$\sigma$, then $\nsq{\Th{D}{1}(\gpt{D}{\gamma}F)}{\sigma}\le\exp(x^{99}+B)$.
+
+\emph{(b)} Let $\vartheta$ be a twist of $D$, $\ell$ a prime number, $j\colon\C\to\C_\ell$ a ring homomorphism and
+$H$ a complex number. If $H\cdot\Thf{D}{\vartheta}(F)$ is $j$-integral, then so is
+$H\cdot\Thf{D}{\vartheta}(\gpt{D}{\gamma}F)$.}
+
+\statement{ana}{\inputhead{the divisibility of the chain}{units 145, 150}\label{i:div}
+In Settings \ref{st:data} and~\ref{st:forms}, unit~145 defines for every natural number $\ell$ a real number
+$\err{D}{\ell}$, the \emph{allowed loss} at~$\ell$, with these properties.
+
+\emph{(a)} $\err{D}{\ell}=0$ unless $\ell\in\nonsplit{D}$ or $\ell=N(D)$; and
+$\sum_{\ell\in J}\err{D}{\ell}\log\ell\le\budget{D}$ for every finite set $J\subset\NN$.
+
+\emph{(b)} Let $\ell$ be a prime number, $j\colon\C\to\C_\ell$ a ring homomorphism, and $e$ an integer with
+$e<\gain{D}{\ell}-\err{D}{\ell}+1$ if $\ell\in\nonsplit{D}$, and $e<-\err{D}{\ell}+1$ otherwise. Then there are a
+natural number $i_0\le\err{D}{\ell}\cdot\dim\Col{D}$ and an $O_j$-submodule $\mathcal{S}$ of $\Col{D}$ such that:
+every finite family $\psi_1,\dots,\psi_n$ of $j$-integral columns admits an $n\times n$ matrix $u$ over $O_j$ whose
+determinant divides $\ell^{\,i_0}$ in $O_j$ and for which all $\sum_{i'}u_{ii'}\psi_{i'}$ lie in $\mathcal{S}$; and
+$\ell^{-e}\cdot\Ch{D}{\vartheta,\Psi}(\psi)$ is $j$-integral for every twist $\vartheta$ of $D$ to which $\ell$ is
+prime, every good datum $\Psi$ for~$\vartheta$ and every $\psi\in\mathcal{S}\cap\Colram{D}$.}
+
+\statement{ana}{\inputhead{the index of a span}{unit~149}\label{i:span}
+In Settings \ref{st:data} and~\ref{st:forms}, let $\ell$ be a prime number, $j\colon\C\to\C_\ell$ a ring
+homomorphism, $i_0$ a natural number and $q$ a rational number. Let $\mathcal{M}\subseteq\Colram{D}$ and
+$\mathcal{N}\subseteq\Row{D}$ be $O_j$-submodules. Assume that for every $\gamma\in\GD{D}$ every finite family
+$\psi_1,\dots,\psi_n$ in $\mathcal{M}$ admits an $n\times n$ matrix $u$ over $O_j$ whose determinant divides
+$\ell^{\,i_0}$ and for which all $q\,\projectedPoincare{D}{\gamma}{\bigl(\sum_{i'}u_{ii'}\psi_{i'}\bigr)}$ lie in
+$\mathcal{N}$. Then for every finite set $\mathcal{T}\subseteq\GD{D}$, every finite family $y_1,\dots,y_n$ in the
+$O_j$-span of $\mathcal{N}$ and of the rows $q\,\projectedPoincare{D}{\gamma}{\psi}$ with $\gamma\in\mathcal{T}$,
+$\psi\in\mathcal{M}$, admits an $n\times n$ matrix $u$ over $O_j$ whose determinant divides
+$\ell^{\,i_0\cdot\#\mathcal{T}}$ and for which all $\sum_{i'}u_{ii'}y_{i'}$ lie in~$\mathcal{N}$.
+\src{A special case of a lemma on modules over a commutative ring: the index of a sum of images is at most the
+product of the indices.}}
+
+\begin{lemma}[a rational number with prescribed valuations]\label{l:rational}
+Let $J$ be a finite set of natural numbers and $e\colon\NN\to\Z$, $\ell\mapsto e_\ell$, a function. Assume that every
+element of $J$ is a prime number and that $e_\ell=0$ for every $\ell\notin J$. Then there is a rational number $q$
+with $q>0$, $\log q=\sum_{\ell\in J}e_\ell\log\ell$, and $|q|_\ell=|\ell|_\ell^{\,e_\ell}$ for every prime
+number~$\ell$, where $|\cdot|_\ell$ is the absolute value of $\C_\ell$.
+\end{lemma}
+\begin{proof}
+Take $q=\prod_{\ell\in J}\ell^{\,e_\ell}$. For a prime $\ell\in J$ the other factors are $\ell$-adic units; for a prime
+$\ell\notin J$ all factors are, and $e_\ell=0$.
+\end{proof}
+\leanline{\lean{existsratlogeqandpadicnormeq}}
+
+\statement{arith}{\phantomsection\label{t:A}\textbf{Theorem A} (short forms)\textbf{.}\enspace Let $P$ be parameters
+and $D$ admissible data for~$P$, with components $x$, $x_1$, $b$, $m$, $r$ (Settings \ref{st:data}
+and~\ref{st:forms}). There is a rational number $q>0$ with the following two properties.
+
+\emph{(a) Size.} There is a subset $S$ of $\integralRamified{D}$ that spans $\Colram{D}$ over~$\C$, such that for all
+$\psi\in S$, all $\gamma\in\GD{D}$ and all $\sigma\in\AutC$,
+\[
+\nsq{\Th{D}{1}\bigl(q\,\projectedPoincare{D}{\gamma}{\psi}\bigr)}{\sigma}\le\exp\bigl(\mainHeight{D}-m\cdot\remainder{D}+\log b\cdot\budget{D}\bigr).
+\]
+
+\emph{(b) Index.} For every finite set $\mathcal{T}\subseteq\GD{D}$, every natural number $n$ and every family
+$y=(y_1,\dots,y_n)$ of rows, each of the form $q\,\projectedPoincare{D}{\gamma}{\psi}$ with $\gamma\in\mathcal{T}$ and
+$\psi\in\integralRamified{D}$: \indexWords{D}{y}{\#\mathcal{T}\cdot\dim\Col{D}\cdot\budget{D}}.}
+
+\begin{proof}
+\emph{The number $q$.} Let $J=\nonsplit{D}\cup\{N(D)\}$, a finite set of primes (Input~\ref{i:level}), and for a
+natural number $\ell$ let
+\[e_\ell=\bigl\lfloor\err{D}{\ell}-\gain{D}{\ell}\bigr\rfloor\ \text{ if }\ell\in\nonsplit{D},\qquad
+e_\ell=\bigl\lfloor\err{D}{\ell}\bigr\rfloor\ \text{ otherwise.}\]
+Then $e_\ell=0$ for $\ell\notin J$ by Input~\ref{i:div}(a). Let $q$ be the rational number of Lemma~\ref{l:rational}:
+$q>0$, $\log q=\sum_{\ell\in J}e_\ell\log\ell$, and $|q|_\ell=|\ell|_\ell^{\,e_\ell}$ for every prime~$\ell$. For every
+twist $\vartheta$ choose a good datum $\Psi_\vartheta$ as in Input~\ref{i:seesaw}. By Definitions \ref{d:inc}
+and~\ref{d:proj}, for $\gamma\in\GD{D}$, $\psi\in\Colram{D}$ and an $m$-fold twist~$\vartheta$,
+\[
+\projectedPoincare{D}{\gamma}{\psi}=\gpt{D}{\gamma}\bigl(\Poin{D}(\cst{see}{D}\,\psi)\bigr),\qquad
+\Thf{D}{\vartheta}\bigl(\Poin{D}(\cst{see}{D}\,\psi)\bigr)=\Ch{D}{\vartheta,\Psi_\vartheta}(\psi).\tag{10.1}
+\]
+
+\emph{(a).} Let $S$ be the set of the ramified columns that are integral and pointwise at most
+$\ee^{\budget{D}}$ at every $\sigma\in\AutC$. Then $S\subseteq\integralRamified{D}$, and $S$ spans $\Colram{D}$ by
+Input~\ref{i:short}. Let $\psi\in S$, $\gamma\in\GD{D}$ and $\sigma\in\AutC$. Since $\sigma(q)=q$, the column $q\psi$
+is pointwise at most $q^{2}\ee^{\budget{D}}=\exp(2\log q+\budget{D})$ at~$\sigma$. By (10.1) and Input~\ref{i:size},
+$\Thf{D}{1}(\Poin{D}(\cst{see}{D}\,q\psi))=\Ch{D}{1,\Psi_1}(q\psi)$ is pointwise at most
+$\exp\bigl(2\log q+\budget{D}+\hrow{D}+2\sum_{\ell\in\nonsplit{D}}\gain{D}{\ell}\log\ell+\budget{D}\bigr)$ at~$\sigma$,
+and by Input~\ref{i:goodpart}(a) the number $\nsq{\Th{D}{1}(q\,\projectedPoincare{D}{\gamma}{\psi})}{\sigma}$ is at
+most $\exp$ of $x^{99}$ plus this exponent. Now
+\begin{align*}
+2\log q=2\sum_{\ell\in J}e_\ell\log\ell
+&\le2\sum_{\ell\in J}\err{D}{\ell}\log\ell-2\sum_{\ell\in\nonsplit{D}}\gain{D}{\ell}\log\ell\\
+&\le2\,\budget{D}-2\sum_{\ell\in\nonsplit{D}}\gain{D}{\ell}\log\ell,
+\end{align*}
+by Input~\ref{i:div}(a). The gains cancel: this is what $q$ is for. With
+$\hrow{D}\le\mainHeight{D}-m\cdot\remainder{D}+\budget{D}$ (Proposition~\ref{p:level}) the exponent is at most
+$\mainHeight{D}-m\cdot\remainder{D}+x^{99}+5\,\budget{D}$, and (S3) gives~(a).
+
+\emph{(b).} Let $\mathcal{T}$, $n$ and $y$ be as in~(b), and put
+$\eta_\ell=\#\mathcal{T}\cdot\dim\Col{D}\cdot\err{D}{\ell}\log\ell$ for $\ell\in\NN$. Then
+$\sum_{\ell\in J'}\eta_\ell\le\#\mathcal{T}\cdot\dim\Col{D}\cdot\budget{D}$ for every finite set $J'\subset\NN$, by
+Input~\ref{i:div}(a). Let $\ell$ be a prime number, $j\colon\C\to\C_\ell$ a ring homomorphism and $\vartheta$ an
+$m$-fold twist to which $\ell$ is prime. The integer $e=-e_\ell$ satisfies the hypothesis of Input~\ref{i:div}(b),
+because $-\lfloor z\rfloor<-z+1$ for real~$z$. Let $i_0$ and $\mathcal{S}$ be as given there, and let $\mathcal{M}$
+be the $O_j$-module of the $j$-integral ramified columns, $\mathcal{N}$ the $O_j$-module of the rows $y'$ for which
+$\Th{D}{\vartheta}(y')$ is $j$-integral. We check the hypothesis of Input~\ref{i:span}. Let $\gamma\in\GD{D}$ and let
+$\psi_1,\dots,\psi_n$ be in $\mathcal{M}$. Input~\ref{i:div}(b) gives a matrix $u$ over $O_j$ whose determinant
+divides $\ell^{\,i_0}$ such that every $\psi'_i=\sum_{i'}u_{ii'}\psi_{i'}$ lies in $\mathcal{S}\cap\Colram{D}$ and
+$\ell^{\,e_\ell}\Ch{D}{\vartheta,\Psi_\vartheta}(\psi'_i)$ is $j$-integral. Since $|q|_\ell=|\ell^{\,e_\ell}|_\ell$, also
+$q\,\Ch{D}{\vartheta,\Psi_\vartheta}(\psi'_i)=q\,\Thf{D}{\vartheta}(\Poin{D}(\cst{see}{D}\psi'_i))$ is $j$-integral, by
+(10.1); and then so is $q\,\Thf{D}{\vartheta}\bigl(\gpt{D}{\gamma}\Poin{D}(\cst{see}{D}\psi'_i)\bigr)
+=\Th{D}{\vartheta}\bigl(q\,\projectedPoincare{D}{\gamma}{\psi'_i}\bigr)$, by Input~\ref{i:goodpart}(b). So
+$q\,\projectedPoincare{D}{\gamma}{\psi'_i}\in\mathcal{N}$. Each $y_i$ is of the form
+$q\,\projectedPoincare{D}{\gamma}{\psi}$ with $\gamma\in\mathcal{T}$ and $\psi\in\integralRamified{D}\subseteq\mathcal{M}$.
+So Input~\ref{i:span} gives an $n\times n$ matrix $u$ over $O_j$ whose determinant divides
+$\ell^{\,i_0\cdot\#\mathcal{T}}$ in $O_j$, with $\Th{D}{\vartheta}(\sum_{i'}u_{ii'}y_{i'})$ $j$-integral for all~$i$.
+Finally $|j(\det u)|_\ell\ge|\ell|_\ell^{\,i_0\cdot\#\mathcal{T}}=\exp(-i_0\cdot\#\mathcal{T}\cdot\log\ell)\ge\ee^{-\eta_\ell}$,
+because $i_0\le\err{D}{\ell}\cdot\dim\Col{D}$. This is Definition~\ref{d:index}.
+\end{proof}
+\leanline{\lean{shortforms}}
+
+\statement{ana}{\inputhead{columns and rows exist}{units 141, 148}\label{i:nonzero}
+In Settings \ref{st:data} and~\ref{st:forms}: $\Col{D}\ne0$ and $\Row{D}\ne0$.}
+
+\statement{ana}{\inputhead{the filling theorem, and few translates}{units 148, 135}\label{i:filling}
+In Settings \ref{st:data} and~\ref{st:forms}:
+
+\emph{(a)} For every non-zero complex number $H$ the family of linear maps
+$\gpt{D}{\gamma}\circ\Poin{D}\circ(H\cdot\operatorname{ram}_D)\colon\Col{D}\to\Row{D}$, $\gamma\in\GD{D}$, is
+\emph{spread with constant $b^{-2}$}: for every subspace $W$ of $\Row{D}$ there is $\gamma\in\GD{D}$ such that the
+preimage of $W$ under the map of index $\gamma$ has dimension at most
+$\bigl(\tfrac12(1+\dim W/\dim\Row{D})+b^{-2}\bigr)\cdot\dim\Col{D}$.
+
+\emph{(b)} If a family of linear maps from $\Col{D}\ne0$ to $\Row{D}$, indexed by $\GD{D}$, is spread with constant
+$b^{-2}$, then there is a finite set $\mathcal{T}\subseteq\GD{D}$ with
+$\#\mathcal{T}\cdot\dim\Col{D}\le5\,\dim\Row{D}\cdot\log(1+b^{2})$ such that the sum of the images of the maps of
+index $\gamma\in\mathcal{T}$ has dimension at least $(1-4b^{-2})\dim\Row{D}$.
+\src{(a) is the filling theorem of unit~148, the subject of Chapter~VI. (b) is a special case of a lemma of
+unit~135 on families of linear maps between finite-dimensional spaces, proved by a greedy choice of translates.}}
+
+\statement{arith}{\phantomsection\label{t:B}\textbf{Theorem B} (enough forms)\textbf{.}\enspace Let $P$ be parameters
+and $D$ admissible data for~$P$, with components $x$, $x_1$, $b$, $m$, $r$ (Settings \ref{st:data}
+and~\ref{st:forms}). Then $\dim\Col{D}>0$ and $\dim\Row{D}>0$, and there is a finite set $\mathcal{T}\subseteq\GD{D}$
+with
+\begin{align*}
+\#\mathcal{T}\cdot\dim\Col{D}&\le5\,\dim\Row{D}\cdot\log(1+b^{2})\qquad\text{and}\\
+\Bigl(1-\frac4{b^{2}}\Bigr)\dim\Row{D}&\le\dim\sum_{\gamma\in\mathcal{T}}\projectedPoincare{D}{\gamma}{\bigl(\Colram{D}\bigr)} .
+\end{align*}}
+
+\begin{proof}
+The dimensions are positive by Input~\ref{i:nonzero}. Apply Input~\ref{i:filling}(a) with $H=\cst{see}{D}$, and then
+(b), which is allowed because $b>0$ by (S0): there is a finite set $\mathcal{T}\subseteq\GD{D}$ with the first
+inequality, such that the images of the maps
+$\gpt{D}{\gamma}\circ\Poin{D}\circ(\cst{see}{D}\cdot\operatorname{ram}_D)$, $\gamma\in\mathcal{T}$, span dimension at
+least $(1-4/b^{2})\dim\Row{D}$. For a column $\psi_0$ the element $\operatorname{ram}_D(\psi_0)$ is a ramified column,
+and $\gpt{D}{\gamma}\Poin{D}(\cst{see}{D}\operatorname{ram}_D(\psi_0))=\projectedPoincare{D}{\gamma}{\operatorname{ram}_D(\psi_0)}$
+by Definitions \ref{d:inc} and~\ref{d:proj}. So each of these images lies in
+$\projectedPoincare{D}{\gamma}{(\Colram{D})}$, and the second inequality follows.
+\end{proof}
+\leanline{\lean{enoughforms}}
+
+\sect{Theorem C, and the family given by A and B}{s:C}
+
+\begin{setting}[heights and fit families; units 135, 138]\label{st:heights}
+Let $P$ and $D$ be as in Settings \ref{st:data} and~\ref{st:forms}. Families of complex numbers and of twists are
+indexed by the pairs $(\ell,\iota)$ of a prime number $\ell$ and a field isomorphism
+$\iota\colon\C\to\overline{\Q}_\ell$ onto an algebraic closure of the field of $\ell$-adic numbers, with its absolute
+value $|\cdot|_\ell$. A family $Z=(Z_{\ell,\iota})$ of complex numbers has \emph{height at most~$h$}, for a real
+number~$h$, if there are a non-zero complex number $H$, a real number $\alpha$ and real numbers $\eta_\ell$,
+$\ell\in\NN$, such that $|\sigma(H)|\le\ee^{\alpha}$ for all $\sigma\in\AutC$,
+$|\iota(H\,Z_{\ell,\iota})|_\ell\le\ee^{\eta_\ell}$ for all pairs $(\ell,\iota)$, and
+$\alpha+\sum_{\ell<i,\ \ell\text{ prime}}\eta_\ell\le h$ for all sufficiently large natural numbers~$i$ (unit~135). A
+family $\theta=(\theta_{\ell,\iota})$ of $m$-fold twists of $D$ may be \emph{fit for~$D$}; this property is defined in
+unit~138 and bounds, for each $\ell$, the congruences of the lifts at the twists $\theta_{\ell,\iota}$. Of its
+definition we use only that $\ell$ is prime to $\theta_{\ell,\iota}$ for every pair $(\ell,\iota)$; otherwise it enters
+through Inputs \ref{i:volume}, \ref{i:lift} and~\ref{i:crude}.
+\end{setting}
+
+\statement{ana}{\inputhead{heights}{unit~135}\label{i:heights}
+For families $Z$, $Z'$ of complex numbers indexed by the pairs $(\ell,\iota)$ and real numbers $h$, $h'$:
+
+\emph{(a)} if $Z$ has height at most $h$ and $Z'$ has height at most $h'$, then the family of the products
+$Z_{\ell,\iota}Z'_{\ell,\iota}$ has height at most $h+h'$; the same holds for finite products, and the family of the
+$n$-th powers of $Z$ has height at most $n\,h$;
+
+\emph{(b)} if $Z$ has height at most $h$, $h\le h'$, and $|\iota(Z'_{\ell,\iota})|_\ell\le|\iota(Z_{\ell,\iota})|_\ell$ for
+all pairs, then $Z'$ has height at most $h'$;
+
+\emph{(c)} if the constant family $1$ has height at most $h$, then $h\ge0$.
+\src{(c) is the product formula, applied to the norm of the auxiliary number~$H$. Chapter~IV.}}
+
+\statement{ana}{\inputhead{fit families exist}{unit~138}\label{i:fit}
+In Settings \ref{st:data}, \ref{st:forms} and~\ref{st:heights} there is a family $\theta=(\theta_{\ell,\iota})$ of
+$m$-fold twists of $D$ that is fit for~$D$.
+\src{The subject of Chapter~VIII.}}
+
+\statement{ana}{\inputhead{the volume of the chain}{units 143, 147}\label{i:volume}
+In Settings \ref{st:data}, \ref{st:forms} and~\ref{st:heights}, say that a complex-valued function
+$\vartheta\mapsto\operatorname{cst}(\vartheta)$ on the $m$-fold twists of $D$ \emph{costs $n$ squares}, for a natural
+number~$n$, if for every family $\theta$ that is fit for~$D$ the family
+$(\ell,\iota)\mapsto|\operatorname{cst}(\theta_{\ell,\iota})/\operatorname{cst}(1)|^{-2}$ has height at most
+$n\cdot2\,t(D)\,x^{999}$. There is a function $\cst{vol}{D}$ that costs $m^{2}$ squares such that for every $m$-fold
+twist~$\vartheta$,
+\[
+\zz{D}{\vartheta}\ne0\qquad\text{and}\qquad
+\zz{D}{\vartheta}=\bigl|\cst{vol}{D}(\vartheta)\bigr|^{\dim\Row{D}}\cdot\prod_{i=1}^{m}\vol{D}{\vartheta}{i},
+\]
+where $\vol{D}{\vartheta}{i}$ is the volume of the $i$-th lift of the chain at the twist $\vartheta^{i}$
+(unit~143).}
+
+\statement{ana}{\inputhead{the height of one lift}{unit~143}\label{i:lift}
+In Settings \ref{st:data}, \ref{st:forms} and~\ref{st:heights}, let $\theta$ be a family of $m$-fold twists that
+is fit for~$D$, and let $i$ be a natural number with $1\le i\le m$. Then the family
+$(\ell,\iota)\mapsto\vol{D}{1}{i}/\vol{D}{\theta_{\ell,\iota}}{i}$ has height at most
+\[\dim\Row{D}\cdot k(D)\cdot\Bigl(\log b\cdot\frac{\budget{D}}{m\,k(D)}-\cost{D}\Bigr).\]
+\src{Each lift repays one direction: this is where $\cost{D}$, and so the main amount, enters the lower bound.
+Chapter~VII.}}
+
+\statement{ana}{\inputhead{crude rows}{unit~147}\label{i:crude}
+In Settings \ref{st:data}, \ref{st:forms} and~\ref{st:heights} there is a function $\cst{cr}{D}$ on the $m$-fold
+twists of $D$, with non-zero complex values, that costs $2m^{2}$ squares, such that $\PF{D}$ is spanned over $\C$ by
+the forms $F$ with these two properties: for every $m$-fold twist $\vartheta$, every prime number $\ell$ that is
+prime to~$\vartheta$ and every ring homomorphism $j\colon\C\to\C_\ell$, the form
+$\bigl(\cst{cr}{D}(\vartheta)/\cst{cr}{D}(1)\bigr)\cdot\Thf{D}{\vartheta}(F)$ is $j$-integral; and $\Thf{D}{1}(F)$ is
+pointwise at most $\exp(x_1^{2}b^{2})$ at every $\sigma\in\AutC$. We call such forms \emph{crude}.}
+
+\statement{ana}{\inputhead{one determinant}{unit~135}\label{i:onedet}
+In Settings \ref{st:data}, \ref{st:forms} and~\ref{st:heights}, let $\theta=(\theta_{\ell,\iota})$ be a family of
+$m$-fold twists of $D$ and let $y_1,\dots,y_{n'}$ be a basis of $\Row{D}$. Let $B$, $\delta$, $h$ be real numbers,
+$n''$ a natural number, $(\eta_\ell)_{\ell\in\NN}$ real numbers and $(H_{\ell,\iota})$ a family of non-zero complex
+numbers. Assume:
+\begin{enumerate}[label=(\arabic*)]
+\item $\Th{D}{1}$ is injective, and $|\sigma(\det(\langle\Th{D}{1}y_i,\Th{D}{1}y_{i'}\rangle)_{i,i'})|\le\ee^{B}$ for
+every $\sigma\in\AutC$;
+\item the family $(\ell,\iota)\mapsto|H_{\ell,\iota}|^{-2}$ has height at most~$h$;
+\item $\sum_{\ell\in J}\eta_\ell\le\delta$ for every finite set $J\subset\NN$;
+\item for every pair $(\ell,\iota)$ and every ring homomorphism $j\colon\C\to\C_\ell$: if
+$F,F'\in\AAf{D}{\theta_{\ell,\iota}}$, $F'$ is $j$-integral and $F$ is integral for the composite of $j$ with complex
+conjugation, then $|j(\langle F,F'\rangle)|_\ell\le1$;
+\item for every pair $(\ell,\iota)$ and every ring homomorphism $j\colon\C\to\C_\ell$ there is a complex
+$n'\times n'$ matrix $u$ with $\ee^{-\eta_\ell}\,|j(H_{\ell,\iota})|_\ell^{\,n''}\le|j(\det u)|_\ell$ such that all
+$\Th{D}{\theta_{\ell,\iota}}(\sum_{i'}u_{ii'}y_{i'})$ are $j$-integral.
+\end{enumerate}
+Then the family $(\ell,\iota)\mapsto\zz{D}{\theta_{\ell,\iota}}/\zz{D}{1}$ has height at most $B+2\delta+n''\,h$.
+\src{A special case: the lemma of unit~135 is stated for an arbitrary family of linear maps from one space into
+inner product spaces. Chapter~IV.}}
+
+\statement{ana}{\inputhead{integral forms pair integrally}{units 102, 152, 147}\label{i:pairing}
+In Settings \ref{st:data} and~\ref{st:forms}, hypothesis (4) of Input~\ref{i:onedet} holds for every twist: for a
+twist~$\vartheta$, a prime number $\ell$, a ring homomorphism $j\colon\C\to\C_\ell$ and $F,F'\in\AAf{D}{\vartheta}$
+with $F'$ $j$-integral and $F$ integral for the composite of $j$ with complex conjugation,
+$|j(\langle F,F'\rangle)|_\ell\le1$.
+\src{Unit~102 proves this with a factor: a common multiple of the orders of the stabilisers that occur in the
+Petersson product. Units 152 and~147 show that at the level of $\AAf{D}{\vartheta}$ all these stabilisers are
+trivial.}}
+
+\statement{ana}{\inputhead{Hadamard and Fischer}{unit~102}\label{i:hadamard}
+In Settings \ref{st:data} and~\ref{st:forms}, let $\vartheta$ be a twist, $\sigma\in\AutC$, $B$ and $V$ real
+numbers, and $F_1,\dots,F_n,F'_1,\dots,F'_{n''}\in\AAf{D}{\vartheta}$.
+
+\emph{(a)} If $\nsq{F'_i}{\sigma}\le\ee^{B}$ for all $i$, then $\covol{F'_1,\dots,F'_{n''}}{\sigma}\le\ee^{n''B}$.
+
+\emph{(b)} If moreover $\covol{F_1,\dots,F_n}{\sigma}\le\ee^{V}$, then
+$\covol{F_1,\dots,F_n,F'_1,\dots,F'_{n''}}{\sigma}\le\ee^{V+n''B}$.
+
+\emph{(c)} If $\covol{F_1,\dots,F_n}{\sigma'}\le\ee^{V}$ for every $\sigma'\in\AutC$, then
+$|\sigma(\det(\langle F_i,F_{i'}\rangle)_{i,i'})|\le\ee^{V}$.}
+
+\begin{lemma}[the height of the inverse ratio of volumes]\label{l:ratio}
+Let $P$ be parameters and $D$ admissible data for~$P$, with components $x$, $x_1$, $b$, $m$, $r$ (Settings
+\ref{st:data}, \ref{st:forms} and~\ref{st:heights}), and let $\theta=(\theta_{\ell,\iota})$ be a family of $m$-fold
+twists of $D$ that is fit for~$D$. Then the family
+$(\ell,\iota)\mapsto\zz{D}{1}^{2}/\zz{D}{\theta_{\ell,\iota}}^{2}$ has height at most
+\[2\,\dim\Row{D}\cdot\bigl(2\log b\cdot\budget{D}-\mainHeight{D}\bigr).\]
+\end{lemma}
+\begin{proof}
+By Input~\ref{i:volume}, for every pair $(\ell,\iota)$,
+\[
+\frac{\zz{D}{1}^{2}}{\zz{D}{\theta_{\ell,\iota}}^{2}}
+=\Bigl(\prod_{i=1}^{m}\frac{\vol{D}{1}{i}}{\vol{D}{\theta_{\ell,\iota}}{i}}\Bigr)^{2}\cdot
+\Bigl(\Bigl|\frac{\cst{vol}{D}(\theta_{\ell,\iota})}{\cst{vol}{D}(1)}\Bigr|^{-2}\Bigr)^{\dim\Row{D}}.
+\]
+By Inputs \ref{i:lift} and~\ref{i:heights}(a) the product over $i$ has height at most $m$ times the bound of
+Input~\ref{i:lift}, which is $\dim\Row{D}\cdot(\log b\cdot\budget{D}-\mainHeight{D})$ by Definition~\ref{d:hmain}; here
+$m\,k(D)\ne0$ by (S0). The function $\cst{vol}{D}$ costs $m^{2}$ squares, so the last family in brackets has height
+at most $m^{2}\cdot2\,t(D)\,x^{999}\le2\log b\cdot\budget{D}$, by (S5) and Input~\ref{i:heights}(b). By
+Input~\ref{i:heights}(a) the height of the product is at most
+$2\dim\Row{D}\,(\log b\cdot\budget{D}-\mainHeight{D})+\dim\Row{D}\cdot2\log b\cdot\budget{D}$.
+\end{proof}
+\leanline{\lean{heightLevolumeratiosq}}
+
+\begin{setting}[an almost spanning family of small index and small covolume]\label{st:family}
+Let $P$ be parameters and $D$ admissible data for~$P$, with components $x$, $x_1$, $b$, $m$, $r$ (Settings
+\ref{st:data} and~\ref{st:forms}). Let $n$ be a natural number, $y=(y_1,\dots,y_n)$ a family of rows in $\Row{D}$,
+and $\delta$ and $V$ real numbers, such that:
+\begin{enumerate}[label=(\roman*)]
+\item the family $y$ is linearly independent over~$\C$;
+\item $(1-4/b^{2})\cdot\dim\Row{D}\le n$;
+\item \indexWords{D}{y}{\delta};
+\item $\covol{\Th{D}{1}y_1,\dots,\Th{D}{1}y_n}{\sigma}\le\ee^{V}$ for every $\sigma\in\AutC$.
+\end{enumerate}
+\end{setting}
+
+\begin{lemma}[the height of the ratio of volumes]\label{l:volrows}
+In Setting~\ref{st:family}, let $\theta=(\theta_{\ell,\iota})$ be a family of $m$-fold twists of $D$ that is fit
+for~$D$ (Setting~\ref{st:heights}). Then the family $(\ell,\iota)\mapsto\zz{D}{\theta_{\ell,\iota}}/\zz{D}{1}$ has
+height at most $V+2\delta+\dim\Row{D}\cdot b$.
+\end{lemma}
+\begin{proof}
+\emph{Completion to a basis.} Let $\cst{cr}{D}$ be as in Input~\ref{i:crude}. The map $\gpt{D}{1}$, for the unit
+element of $\GD{D}$, maps $\PF{D}$ onto $\Row{D}$, so the rows $\gpt{D}{1}F$ with $F$ crude span $\Row{D}$. Since $y$
+is linearly independent (i), there are $n''=\dim\Row{D}-n$ crude forms $F_1,\dots,F_{n''}$ such that
+$y_1,\dots,y_n,\gpt{D}{1}F_1,\dots,\gpt{D}{1}F_{n''}$ is a basis of $\Row{D}$. We apply Input~\ref{i:onedet} to this
+basis, to the family $\theta$, and to $H_{\ell,\iota}=\cst{cr}{D}(\theta_{\ell,\iota})/\cst{cr}{D}(1)$.
+
+\emph{Hypothesis (1).} $\Th{D}{1}$ is injective because $\zz{D}{1}\ne0$ (Input~\ref{i:volume}). Each $F_i$ is crude,
+so $\nsq{\Th{D}{1}(\gpt{D}{1}F_i)}{\sigma}\le\exp(x^{99}+x_1^{2}b^{2})$ for every $\sigma$, by
+Input~\ref{i:goodpart}(a). With (iv) and Input~\ref{i:hadamard}(b), (c), the conjugates of the Gram determinant of
+the images of the basis under $\Th{D}{1}$ have absolute value at most $\ee^{B}$ with
+$B=V+n''\,(x^{99}+x_1^{2}b^{2})$.
+
+\emph{Hypotheses (2), (3), (4).} The function $\cst{cr}{D}$ costs $2m^{2}$ squares and $\theta$ is fit, so (2) holds
+with $h=2m^{2}\cdot2\,t(D)\,x^{999}$. Let $(\eta_\ell)$ be as in Definition~\ref{d:index} for the family $y$, by
+(iii); this is (3). And (4) is Input~\ref{i:pairing}.
+
+\emph{Hypothesis (5).} Let $(\ell,\iota)$ be a pair and $j\colon\C\to\C_\ell$ a ring homomorphism. The prime $\ell$ is
+prime to $\theta_{\ell,\iota}$, because $\theta$ is fit. By (iii) there is an $n\times n$ matrix $u_0$ over $O_j$ with
+$|j(\det u_0)|_\ell\ge\ee^{-\eta_\ell}$ such that all
+$\Th{D}{\theta_{\ell,\iota}}(\sum_{i'}(u_0)_{ii'}y_{i'})$ are $j$-integral. Let $u$ be the block matrix with the blocks
+$u_0$ and $H_{\ell,\iota}$ times the identity matrix of size~$n''$. Then
+$|j(\det u)|_\ell\ge\ee^{-\eta_\ell}|j(H_{\ell,\iota})|_\ell^{\,n''}$. The new rows of the second block are the
+$H_{\ell,\iota}\,\gpt{D}{1}F_i$, and $\Th{D}{\theta_{\ell,\iota}}(H_{\ell,\iota}\,\gpt{D}{1}F_i)
+=H_{\ell,\iota}\Thf{D}{\theta_{\ell,\iota}}(\gpt{D}{1}F_i)$ is $j$-integral, by the first property of crude forms and
+Input~\ref{i:goodpart}(b).
+
+\emph{Conclusion.} Input~\ref{i:onedet} gives the height bound
+$V+2\delta+n''\,\bigl(x^{99}+x_1^{2}b^{2}+4m^{2}t(D)x^{999}\bigr)$. By (ii), $n''\le4b^{-2}\dim\Row{D}$, and by (S4)
+the bracket is at most $\tfrac14b^{3}$. So the bound is at most $V+2\delta+\dim\Row{D}\cdot b$, and
+Input~\ref{i:heights}(b) concludes.
+\end{proof}
+\leanline{\lean{heightLevolumerows}}
+
+\statement{arith}{\phantomsection\label{t:C}\textbf{Theorem C} (integral forms are long)\textbf{.}\enspace Let $P$ be
+parameters and $D$ admissible data for~$P$, with components $x$, $x_1$, $b$, $m$, $r$ (Settings \ref{st:data}
+and~\ref{st:forms}). Let $n$ be a natural number, $y=(y_1,\dots,y_n)$ a family of rows in $\Row{D}$, and $\delta$ and
+$V$ real numbers. Assume that the family $y$ is linearly independent over~$\C$, that
+$(1-4/b^{2})\cdot\dim\Row{D}\le n$, that \indexWords{D}{y}{\delta}, and that
+$\covol{\Th{D}{1}y_1,\dots,\Th{D}{1}y_n}{\sigma}\le\ee^{V}$ for every $\sigma\in\AutC$. Then
+\[\dim\Row{D}\cdot\bigl(\mainHeight{D}-3\log b\cdot\budget{D}\bigr)\le V+2\delta.\]}
+
+\begin{proof}
+The hypotheses are those of Setting~\ref{st:family}. Let $\theta$ be a family of $m$-fold twists that is fit for~$D$
+(Input~\ref{i:fit}). For every pair $(\ell,\iota)$ the numbers $\zz{D}{1}$ and $\zz{D}{\theta_{\ell,\iota}}$ are not
+zero (Input~\ref{i:volume}), so
+\[\Bigl(\frac{\zz{D}{\theta_{\ell,\iota}}}{\zz{D}{1}}\Bigr)^{2}\cdot\frac{\zz{D}{1}^{2}}{\zz{D}{\theta_{\ell,\iota}}^{2}}=1.\]
+By Lemma~\ref{l:volrows} and Input~\ref{i:heights}(a) the first factor has height at most
+$2\,(V+2\delta+\dim\Row{D}\cdot b)$; by Lemma~\ref{l:ratio} the second has height at most
+$2\dim\Row{D}\,(2\log b\cdot\budget{D}-\mainHeight{D})$. So the constant family $1$ has height at most the sum, and
+by the product formula, Input~\ref{i:heights}(c),
+\[0\le2\,(V+2\delta+\dim\Row{D}\cdot b)+2\dim\Row{D}\cdot\bigl(2\log b\cdot\budget{D}-\mainHeight{D}\bigr).\]
+With $b\le\log b\cdot\budget{D}$, which is (S6), this is the claim.
+\end{proof}
+\leanline{\lean{integralformslong}}
+
+\begin{corollary}[Theorems A and B together]\label{c:AB}
+Let $P$ be parameters and $D$ admissible data for~$P$, with components $x$, $x_1$, $b$, $m$, $r$ (Settings
+\ref{st:data} and~\ref{st:forms}). There are a natural number $n$ and a family $y=(y_1,\dots,y_n)$ of rows in
+$\Row{D}$ such that: the family $y$ is linearly independent over~$\C$; $(1-4/b^{2})\cdot\dim\Row{D}\le n$; there is a
+real number $\delta\le5\,\dim\Row{D}\cdot\log(1+b^{2})\cdot\budget{D}$ such that \indexWords{D}{y}{\delta}; and for
+every $\sigma\in\AutC$,
+\[
+\covol{\Th{D}{1}y_1,\dots,\Th{D}{1}y_n}{\sigma}\le\exp\Bigl(n\cdot\bigl(\mainHeight{D}-m\cdot\remainder{D}+\log b\cdot\budget{D}\bigr)\Bigr).
+\]
+\end{corollary}
+\begin{proof}
+Let $q$ and $S$ be as in Theorem~A, and $\mathcal{T}$ as in Theorem~B. Since $S$ spans $\Colram{D}$ and $q\ne0$, the
+rows $q\,\projectedPoincare{D}{\gamma}{\psi}$ with $\gamma\in\mathcal{T}$, $\psi\in S$ span the space
+$\sum_{\gamma\in\mathcal{T}}\projectedPoincare{D}{\gamma}{(\Colram{D})}$. Choose a basis $y_1,\dots,y_n$ of this space
+among them. Then $y$ is linearly independent and $n\ge(1-4/b^{2})\dim\Row{D}$ by Theorem~B. By Theorem~A(b), with
+$S\subseteq\integralRamified{D}$, the family $y$ has $D$-index at most
+$\delta=\#\mathcal{T}\cdot\dim\Col{D}\cdot\budget{D}$, and
+$\delta\le5\dim\Row{D}\cdot\log(1+b^{2})\cdot\budget{D}$ by Theorem~B and $\budget{D}>0$. Finally each
+$\nsq{\Th{D}{1}y_i}{\sigma}$ is at most $\exp(\mainHeight{D}-m\cdot\remainder{D}+\log b\cdot\budget{D})$ by
+Theorem~A(a), and Hadamard's inequality, Input~\ref{i:hadamard}(a), bounds the covolume.
+\end{proof}
+\leanline{\lean{existsfamilycovolumeSqle}}
+
+\sect{Where the results are used}{s:use}
+All consumers are in the last unit of the proof (unit~154, Chapter~I), which has three steps.
+
+\emph{The main inequality} $m\cdot\remainder{D}\le(\log b)^{2}\cdot\budget{D}$. Take the family of
+Corollary~\ref{c:AB} and apply Theorem~C to it, with $V=n\,(\mainHeight{D}-m\cdot\remainder{D}+\log b\cdot\budget{D})$.
+The main amount occurs on both sides, once with the factor $\dim\Row{D}$ and once with the factor~$n$;
+Lemma~\ref{l:crude} pays for the difference, since $\dim\Row{D}-n\le4b^{-2}\dim\Row{D}$. After division by
+$\dim\Row{D}$ the main amount has cancelled, and what remains is the inequality.
+
+\emph{The one-sided bound} $\primeError{d}{N_0}{x}\le x^{8\varepsilon-1/2}$ for large~$x$. Theorem~4 solves for
+$\primeError{d}{N_0}{x}$, and leaves the combination
+$\primeError{d}{N_0}{x_1}-X\,\primeError{d}{1}{x_1}$ with $X=\#\tops{D}/\#\thick{D}$ to be bounded from above.
+Theorem~1, for the moduli $N_0$ and~$1$, and Theorem~3 provide a point $v_1$ in the window $[v_0,v_0^{2}]$,
+$v_0=10^{6}\log x$, at which this combination is at most $\ee^{-v_0}$, and the second scale is moved to
+$x_1=\ee^{v_1}$; the main inequality bounds the rest.
+
+\emph{The zero-free half-plane.} Theorem~2 with $M=N_0$ and $c=N_0/2-1$.
+
+Inside the unit, Lemmas \ref{l:lambdabound} to~\ref{l:constant} serve Theorems 1 and~4 and Lemma~\ref{l:crude};
+Proposition~\ref{p:moments} serves Theorem~3; Proposition~\ref{p:level} and Lemma~\ref{l:rational} serve Theorem~A;
+Lemmas \ref{l:ratio} and~\ref{l:volrows} serve Theorem~C.
+
+\sect{Notes on the formal text}{s:notes}
+
+\subhead{Conventions of Lean that the statements hide.} Division by zero gives zero. So the residue function of
+Theorem~1 is defined at $s=0$ and $s=1$, with the value~$0$, as stated; at $s=1$ the numerator vanishes anyway, by
+Input~\ref{i:nonvanishing}. The logarithmic derivative of a function is $0$ at its zeros, so
+$\logDerivMean{d}{M}{s}$ is defined for every~$s$; the proofs use it only as a meromorphic function and at points
+where no $\entireL{\xi}$, $\entireL{\quadTwist{\xi}{d}}$ vanishes. The remainder $\primeError{d}{M}{x}$ is defined for
+every real~$x$, with Lean's logarithm of a number $\le0$; only $x>0$ is used. The integral of a function that is not
+integrable is~$0$, which is why Proposition~\ref{p:moments} and Input~\ref{i:laplace} assert integrability
+separately. The weight $\lambdaClass{d}{M}{\nu}$ and the sums $\lambdaSum{d}{M}{i}{x}$ are defined for every natural
+number~$M$, also $M=0$, where $\Z/0=\Z$ and the weight vanishes identically.
+
+\subhead{Definition~\ref{d:polar}.} The formal definition asks that $\Phi$ be meromorphic at every point of~$\C$ as
+a function on $\C$; its values at its poles are arbitrary. Condition (P3) is stated for the product
+$(s-1)\Phi(s)$ as a function, so its value at $s=1$ is~$0$; the clause on that value in (P3) and
+Remark~\ref{r:polar} are our reading of it, and the comment above the formal definition says the same: no pole
+at~$1$ is allowed.
+
+\subhead{Theorem~1.} The hypothesis $d\equiv7\pmod 8$ is used only through $d\ne2$ (Step~3). The formal proof
+orders the steps differently: it proves the Laplace identity (our Steps 3 to~5) after it has used it, as a pending
+goal, to show that the constant is real (Step~6); the order of the goals was inferred by the reader of the
+dossier from the structure of the term, and the writer agrees with that reading. The formal statement speaks of
+the function $v\mapsto\primeError{d}{M}{\ee^{v}}$ and of a residue function given by a formula; the names
+$\Phi_{d,M}$ and $\operatorname{res}_{d,M}$ are ours, after the overview of the write-up, and the transform (5.1)
+and the constant $|\kap{d}{M}|+5$ are the witnesses of the formal proof.
+
+\subhead{Theorem~2.} The conclusion is about $\Ltv{\rho}{\chi}$; for principal $\chi$ this is
+$(\rho-1)L(\rho,\chi)$. The hypothesis on the primes $d\equiv c$ is one conjunction in the formal text, and it is
+used three times: for Input~\ref{i:density}, for Theorem~1, and for the one-sided bound. In the formal statement
+$d$ runs over the type of prime numbers and $d\equiv c\pmod M$ is written as an equality in $\Z/M$.
+
+\subhead{Proposition~\ref{p:moments}: the boundary of the statement.} The formal statement contains a local
+definition of the function $v\mapsto v^{i}\ee^{-3v}\cE(v)$, written with a sign of definition. The census of the
+workspace, which reads the text line by line, takes that sign for the end of the statement; the dossier corrects
+this, and the writer read the complete statement in the source: it ends after the bound $i!\,v_0/\rr^{i}$. The
+quantifiers of the formal statement are filters, \emph{for all $\rr>3$ close to~$3$} and \emph{for all large
+$v_0$}; the proposition writes them out, in this order. Its proof uses neither the meromorphy of $\Phi$ nor (P4);
+the residues of a polar function enter the proof only through Landau's lemma.
+
+\subhead{Arguments that the census lists and Lean does not take.} The census reads the arguments of a declaration
+from its text and counts every variable of the surrounding section whose name occurs in the statement. In three
+places a bound variable of the statement has the name of such a section variable, and Lean, which the writer follows,
+does not take it as an argument. \emph{(1)} Corollary~\ref{c:AB}: its statement binds its own $n$, $y$ and $\delta$
+under existential quantifiers, and its only arguments are the parameters and the data. The reader of the dossier
+could not confirm this with Lean; the writer confirms it from the use of the corollary in the proof of the main
+inequality, where it is applied to the data alone and nothing could determine further arguments. \emph{(2)}
+Input~\ref{i:density}: the character $\xi$ is bound by a universal quantifier inside the statement and is not an
+argument. \emph{(3)} Definition~\ref{d:proj}: the formal declaration takes the data and $\gamma$, and its value is a
+linear map; the census reads the arrow in the type of that map as one more argument. The notation of this note has
+a third place for that reason, and it is left empty when the map itself is meant.
+
+\subhead{Theorem~A.} The formal statement names the family of maps $\gamma\mapsto q\,\projectedPoincare{D}{\gamma}{}$:
+it says that there are $q$ and a family equal to this one, with the two properties. We have substituted the
+family. In~(b) the finite sets $J$ of Definition~\ref{d:index} are arbitrary finite sets of natural numbers, not
+only sets of primes, as in the formal text. The formal proof of (b) obtains the bound for the determinant from
+divisibility in the valuation ring $O_j$, as we do.
+
+\subhead{Theorem~B.} Its first two assertions, that there are columns and rows, are part of the formal statement.
+The filling theorem is stated for columns and the operator $\operatorname{ram}_D$, and Theorem~B for ramified
+columns; the proof passes from one to the other.
+
+\subhead{Theorem~C.} In the formal text the four hypotheses of Setting~\ref{st:family} are variables of the section,
+shared by Lemma~\ref{l:volrows} and Theorem~C, in the order (i), (ii), (iii), (iv); Lemma~\ref{l:ratio} takes none of
+them. The formal proof of Lemma~\ref{l:volrows} gets the injectivity of $\Th{D}{1}$ from a lemma that is applied
+automatically and that we have not located; we derive it from $\zz{D}{1}\ne0$, which is the same fact.
+
+\subhead{Two names for the chain.} The formal text has two maps for the chain of lifts on $\PF{D}$: one with values
+in forms that are functions with vector values, for which pointwise sizes and integrality of values are defined,
+and one with values in the space that carries the Petersson product. They have the same values, and the proofs of
+Theorems A and~C pass from one to the other without comment; we write $\Thf{D}{\vartheta}$ for both.
+
+\subhead{What the reader of the dossier was unsure of.} Besides the three points above (the boundary of the
+statement of Proposition~\ref{p:moments}, the arguments of Corollary~\ref{c:AB} and of Definition~\ref{d:proj}): the
+facts of Mathlib that Lemma~\ref{l:constant} needs, namely that $(s-1)\zeta(s)$ has the value $1$ and the derivative
+$\Eu$ at $s=1$, were inferred by the first reader from the proof going through, because the pinned version of
+Mathlib was not at hand. The second reader of this write-up has since found both at the pin, and also the value
+$\prod_{p\mid M}(1-1/p)$ of Definition~\ref{d:Lt} and the two statements of Mathlib that Step~3 and Step~4 of the
+proof of Theorem~1 quote (orthogonality of characters against von Mangoldt's function, and partial summation). For
+this note the writer did not open Mathlib: every fact of Mathlib that the note uses rests on the second reader's
+check at the pin. This is said of this note only; the three notes of Chapter~I list in their appendices the
+declarations of Mathlib that their writer read at the pinned commit. The readings of the Inputs \ref{i:sizes} to~\ref{i:hadamard} come from their formal statements and
+comments, not from their proofs; the chapters on the units that own them are the reference.
+
+\subhead{The dossier, and its second reading.} The second reader of this write-up compared the dossier with the
+source and asked for six corrections; this note agrees with all of them. Two concern words of the dossier that
+were wrong as mathematics while its quotations were exact. In the structured proof of Theorem~4, one step says
+that $(-\nu)\cdot\tau$ runs over the places of class $-\nu$ as $\tau$ runs over the tops; this holds for $\nu$ prime to
+$N_1(D)$ only, and for the other $\nu$ the formal text makes $(-\nu)\cdot\tau=\tau$ (Step~1 above treats both cases).
+In the structured proof of Lemma~\ref{l:crude}, an intermediate bound had absolute values around $z/\nu-w$ where the
+positive part stands; with the positive part the bound $|z|/\nu$ is correct. The other four are points of
+exposition: the quadratic character is that of $K$ only for $d\equiv3\pmod 4$ (Definition~\ref{d:chi}); the value of
+the entire $L$-function of a principal character at $s=1$ (Definition~\ref{d:Lt}); the vanishing at $s=1$ that makes
+the singularity removable (Remark~\ref{r:polar}, Input~\ref{i:taylor}); and the difference between the rank $k(D)$
+and the dimension of $\Col{D}$ (Setting~\ref{st:forms}).
+
+\subhead{What of the unit the final theorems use.} The last unit of the proof uses Theorems 1, 2, 3, 4 and~C,
+Corollary~\ref{c:AB} and Lemma~\ref{l:crude} directly; every other declaration of the unit is used by one of these.
+
+\subhead{How this note was written.} From the dossier of unit~151: its statements, its \UnitProofs{} structured
+proofs with \UnitSteps{} leaf steps, which a program compared with the source, and its readings of the declarations
+of other units. The writer read in the Lean text itself: the four files of the unit completely, statements and
+proofs; the file of the background library with the definition of polar functions, Landau's lemma and the
+elementary inputs, completely; the definitions of the characters, of the entire $L$-function and of the
+Chowla--Selberg constant; the statement and the last step of the proof of Input~\ref{i:density}; the record of the
+data and the definitions attached to it that Setting~\ref{st:data} uses; the statements, as quoted in the dossier, of
+every Input of Part~II, and in the source the definitions of the height, of fit families, of twists, of the index
+relation of unit~149 and of the mechanism that compares sizes; and the last unit of the proof, to see how the
+results are used. Every statement of the note was compared with its formal statement, argument by argument and in
+the order of the quantifiers. The relation of Inputs \ref{i:nonvanishing}, \ref{i:landau} and~\ref{i:density} to the
+literature is the second reader's comparison, as their boxes say. Not opened for this note: the proofs of the
+Inputs of Part~II, and Mathlib, whose facts were checked at the pin by the second reader, as said above.
+
+The arguments are those of the formal proofs, with these differences. In Theorem~3 the final numerical
+comparison is done by hand here and by an arithmetic tactic there. In Theorem~4 the counting of Step~1 is written
+out here; the formal proof reindexes the sum by a translation of the group of places and uses a lemma of unit~152,
+which says that the place named by an integer $\nu$ has class $-1$ modulo $N_0$ exactly when $\nu\equiv-1$, also for
+the integers that are not prime to $N_1(D)$. Remarks \ref{r:heuristic},
+\ref{r:landau}, \ref{r:anatomy} and~\ref{r:window}, and the estimate of orders of magnitude after
+Lemma~\ref{l:crude}, are ours and have no formal counterpart.
+
+\head{Appendix A. Concordance with the Lean artifact}
+{\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}\setlength{\tabcolsep}{0pt}
+\begin{longtable}{@{}p{30mm}p{56mm}p{43mm}r@{}}
+\textbf{In this note} & \textbf{Lean declaration} & \textbf{File} & \textbf{Lines}\\\midrule\endhead
+\ConcordanceRows
+\end{longtable}}
+
+\subhead{Legend.} The note changes some letters of the formal text, never the number of arguments. The modulus is
+$M$ here, and $M$ or $N$ there. The unit class $c$ of Theorem~2 and Input~\ref{i:density} is \texttt{a}; the height
+$z$ of Input~\ref{i:density} is \texttt{y}. The exponent $i$ of the weighted sums is \texttt{r}, and their real
+argument $x$ is \texttt{y}; the natural number $a$ and the point $x$ of Lemma~\ref{l:Rsum} are \texttt{A} and
+\texttt{z}. A polar function $\cE$ with residue function $\omega$ is \texttt{E} with \texttt{r}; in Theorem~3,
+$\cE_1,\omega_1,\cE_2,\omega_2$ are \texttt{E}, \texttt{r}, \texttt{E'}, \texttt{r'}, the parameter $v_0$ is
+\texttt{t}, and the point $v_1$ is \texttt{u}. In Proposition~\ref{p:moments} the radius $\rr$ is \texttt{R}, the
+number $v_0$ is \texttt{t} and the order $i$ is \texttt{k}. In Input~\ref{i:taylor}, $s_0,s_1,s_2$ and $\Phi$ are
+\texttt{z}, \texttt{a}, \texttt{σ} and \texttt{Ψ}, and the radius $\rr_0$ is \texttt{ε}. In Lemma~\ref{l:rational} the set $J$ is \texttt{T}, the exponents
+$e_\ell$ are \texttt{g l}, and primes are \texttt{l} throughout. In Part~II the scales $x,x_1,b$ are the exponentials
+of the components \texttt{logX}, \texttt{logX₁}, \texttt{logB} of the data; a place $\tau$ is \texttt{σ} or
+\texttt{τ}; an element $\gamma$ of $\GD{D}$ is \texttt{s}; a finite subset $\mathcal{T}$ is \texttt{t}; a ramified
+column $\psi$ is \texttt{φ}; a ring homomorphism $j$ is \texttt{ι}, of the class \texttt{PadicPlace}; the numbers
+$\eta_\ell$ are \texttt{e l}, and a finite set $J$ of natural numbers is \texttt{U}. The objects of other units
+have these formal names: $\tops{D}$, $\thick{D}$, $\budget{D}$, $\cost{D}$, $\hrow{D}$ are \texttt{Data.tops},
+\texttt{Data.thick}, \texttt{Data.budget}, \texttt{Data.dirCost}, \texttt{Data.heightPerRow}; $\wD{D}{\tau}$,
+$\Ask{D}{z}{\tau}$ and $\jet{D}{i}$ are \texttt{Data.nominalWeight}, \texttt{Data.primeSum} and
+\texttt{Data.jetSize}; $\Col{D}$, $\Colram{D}$, $\Row{D}$, $\GD{D}$ are \texttt{Data.Column},
+\texttt{Data.ramifiedColumns}, \texttt{Data.rows}, \texttt{Data.G}; $\Poin{D}$ and $\gpt{D}{\gamma}$ are
+\texttt{Data.poincare} and \texttt{Data.goodProjTranslate}; $\Th{D}{\vartheta}$ and $\zz{D}{\vartheta}$ are
+\texttt{Data.Θ} and \texttt{Data.𝔷}; the height is \texttt{HeightLe}, and fitness is \texttt{Data.IsFitFamily}.
+
+\subhead{Six statements, as the artifact has them.} The remainder; Theorem~1; Theorem~2; polar functions;
+Landau's lemma; Theorem~4.
+\quoted{primeError}
+\quoted{isPolarprimeError}
+\quoted{entireLnezeroofprimeErrorle}
+\quoted{IsPolar}
+\quoted{landau}
+\quoted{remaindereq}
+
+\head{Notation}
+\begingroup\fontsize{8.6}{10.9}\selectfont\raggedright
+\setlength{\columnsep}{9mm}\setlength{\parskip}{0pt}
+\begin{multicols}{2}
+\nt{$\NN,\Z,\Q,\RR,\C$}{natural numbers with $0$, integers, rational, real, complex numbers}
+\nt{$\C_\ell,\overline{\Q}_\ell$}{the completion of an algebraic closure of the $\ell$-adic numbers; an algebraic
+closure; $|\cdot|_\ell$ their absolute value}
+\nt{$\re,\im$}{real and imaginary part}
+\nt{$\ee$, $\log$, $(z)_{+}$}{base of the natural logarithm; natural logarithm; $\max(z,0)$}
+\nt{$O(\cdot)$, $o(1)$}{Landau's symbols}
+\nt{$d$}{a prime number; in Part~II the second parameter}
+\nt{$M$}{a natural number, the modulus of the characters}
+\nt{$\nu$}{a natural number, the variable of the prime sums}
+\nt{$p$, $e$}{a prime; an integer exponent; $e_\ell$ the exponents of Lemma~\ref{l:rational}}
+\nt{$\Lambda$, $\varphi$}{von Mangoldt's function; Euler's function}
+\nt{$\chiK{d}$, $\chi_K$}{the quadratic character modulo~$d$ (Definition~\ref{d:chi}); it is the character of
+$K=\Q(\sqrt{-d})$ if $d\equiv3\pmod 4$}
+\nt{$\xi$, $\chi$, $\one$}{Dirichlet characters modulo~$M$; the character modulo~$1$}
+\nt{$\quadTwist{\xi}{d}$}{the twist of $\xi$, a character modulo $Md$ (Definition~\ref{d:chi})}
+\nt{$\iv{\chi}$}{the number $1$ if $\chi$ is principal, $0$ otherwise}
+\nt{$L(s,\chi)$, $\Ltv{s}{\chi}$, $\entireL{\chi}$}{the Dirichlet $L$-function; the entire $L$-function, its values and
+the function (Definition~\ref{d:Lt}); $\tilde L'$ its derivative}
+\nt{$\zeta$}{the Riemann zeta function}
+\nt{$\ord_s f$}{order of vanishing at $s$ of an entire function $f\ne0$}
+\nt{$\Eu$, $\chowla{d}$}{Euler's constant; the Chowla--Selberg constant (Definition~\ref{d:cs})}
+\nt{$\lambdaClass{d}{M}{\nu}$}{the weight (Definition~\ref{d:lambda})}
+\nt{$\lambdaSum{d}{M}{i}{x}$}{the weighted sums (Definition~\ref{d:A})}
+\nt{$\logDerivMean{d}{M}{s}$, $\kap{d}{M}$}{the mean of the logarithmic derivatives and its real part at $s=1$
+(Definition~\ref{d:G})}
+\nt{$\primeError{d}{M}{x}$}{the remainder (Definition~\ref{d:R})}
+\nt{$\Ph{d}{M}{s}$, $\res{d}{M}{s}$}{the transform of the remainder, (5.1); its residue function (Theorem~1)}
+\nt{$s$, $s'$, $s_0,s_1,s_2$}{complex numbers, the variable of the transforms}
+\nt{$\rho$}{a complex number with $\re\rho>0$; in Theorem~2 the point where a zero is excluded}
+\nt{$\beta$}{a real number, the exponent of the one-sided bound}
+\nt{$c$}{a unit of $\Z/M$, the class of the primes $d$}
+\nt{$x$, $z$, $v$}{real numbers: $x$ the argument of the remainder and of the weighted sums, $v$ its logarithm; $x_0$ (an abscissa of convergence), $x_\ast$, $v_\ast$ particular values}
+\nt{$i$}{a natural number: an exponent, the order of a moment or of a derivative; in Part~II also the index of a
+row or of a lift, with $i'$, $i_0$}
+\nt{$a$}{a natural number (Lemma~\ref{l:Rsum}); in the proofs of §\ref{s:rem} it abbreviates $a(D)$}
+\nt{$\cE,\cE_0,\cE_1,\cE_2$; $\omega,\omega_1,\omega_2$}{functions $\RR\to\RR$; functions $\C\to\C$, residue functions}
+\nt{$\isPolar{\cE}{\omega}$}{$\cE$ is polar with residue function $\omega$ (Definition~\ref{d:polar})}
+\nt{$C$, $C_1$, $C_{\mathfrak{r}}$; $\Phi$}{real constants; a meromorphic function on $\C$, the transform; $\Phi^{(i)}$ its
+$i$-th derivative}
+\nt{$v_0$, $v_1$, $X$}{the parameter of a window, a point of it, a real factor (Theorem~3)}
+\nt{$\mathfrak{r}$, $\mathfrak{r}_0$, $\Delta$}{radii of discs: $\mathfrak{r}_0$ the radius in Input~\ref{i:taylor} and the bound of Proposition~\ref{p:moments}, $3<\mathfrak{r}<\mathfrak{r}_0$; a positive real number, in the box of Input~\ref{i:density} and in the proof of that proposition}
+\nt{$\varepsilon$}{a real number with $0<\varepsilon<\tfrac1{100}$, in the exponent of the one-sided bound of Chapter~I}
+\nt{$I(v)$}{the auxiliary function in the proof of Theorem~3}
+\nt{$P=(N_0,d)$, $D$}{parameters and admissible data (Setting~\ref{st:data})}
+\nt{$x,x_1,b$; $m,r$}{the scales of $D$; its two natural numbers}
+\nt{$K$, $E(D)$, $N_1(D)$, $f(D)$}{$\Q(\sqrt{-d})$; the field of the data, the order of its roots of unity, the
+number of its infinite places}
+\nt{$\tau$, $\nu\cdot\tau$}{an infinite place of $E(D)$; its translate by the integer~$\nu$}
+\nt{$\tops{D}$, $\thick{D}$}{the places of class $1$ modulo $N_0$; the thick places}
+\nt{$k(D)$, $t(D)$, $a(D)$}{$r+1-m$; $5r$; the least multiple of $N_1(D)$ that is $\ge xb$}
+\nt{$\budget{D}$}{$f(D)\,a(D)\,(\log b)^{3}$}
+\nt{$\wD{D}{\tau}$, $\wbar{D}$, $w$}{the nominal weight, the mean of its logarithm; a real weight}
+\nt{$\Ask{D}{z}{\tau}$, $\mainAsk{D}$}{the prime sum of order $z$ at $\tau$; its expected value
+(Definition~\ref{d:askmain})}
+\nt{$g(D)$, $\mathrm{rd}_{E(D)}$, $\GamD{D}$, $\Omega$, $\pi$}{product of two primes of the data; root discriminant;
+the period term $\log(g(D)\,\mathrm{rd}_{E(D)}/2\pi)$; the period; the number $3.14\ldots$}
+\nt{$\jet{D}{i}$, $\cost{D}$, $N(D)$, $\hrow{D}$}{jet size, cost of one direction, level, height per row
+(Setting~\ref{st:data})}
+\nt{$\mainHeight{D}$, $\remainder{D}$}{the main amount and the remainder of the data (Definitions \ref{d:hmain},
+\ref{d:rem})}
+\nt{$\Col{D}$, $\Colram{D}$, $\integralRamified{D}$}{columns, ramified columns, integral ramified columns}
+\nt{$\psi$, $\psi_i$, $\psi'_i$, $\psi_0$}{columns}
+\nt{$\GD{D}$, $\gamma$, $\mathcal{T}$}{the finite group of the data, an element, a finite subset}
+\nt{$\PF{D}$, $\Row{D}$, $y=(y_i)$, $n$}{forms of principal level, rows, a family of $n$ rows; $n'$, $n''$ further
+numbers of rows}
+\nt{$\gpt{D}{\gamma}$, $\Poin{D}$, $\operatorname{ram}_D$}{translation followed by the projection to rows; Poincaré
+series; the ramifying operator}
+\nt{$\scaledInclusion{D}$, $\projectedPoincare{D}{\gamma}{\psi}$}{the scaled inclusion and the Poincaré maps
+(Definitions \ref{d:inc}, \ref{d:proj})}
+\nt{$\vartheta$, $Q(\vartheta)$, $\theta=(\theta_{\ell,\iota})$}{a twist, its set of ramified primes; a family of
+$m$-fold twists}
+\nt{$\Thf{D}{\vartheta}$, $\Th{D}{\vartheta}$, $\AAf{D}{\vartheta}$}{the chain of lifts on $\PF{D}$ and on the rows;
+its target}
+\nt{$\zz{D}{\vartheta}$, $\vol{D}{\vartheta}{i}$}{the volume of the chain; of its $i$-th lift}
+\nt{$F$, $F'$, $F_i$}{forms, in $\AAf{D}{\vartheta}$ or in $\PF{D}$}
+\nt{$\sigma$, $\AutC$}{an automorphism of the field $\C$; their group}
+\nt{$\nsq{F}{\sigma}$, $\covol{F_1,\dots,F_n}{\sigma}$}{Petersson norm and squared covolume of $\sigma$-conjugates}
+\nt{$\ell$, $j$, $O_j$}{a prime number (in Lemma~\ref{l:rational} and in sums, a natural number); a ring homomorphism
+$\C\to\C_\ell$; its valuation ring in $\C$}
+\nt{$\iota$}{a field isomorphism $\C\to\overline{\Q}_\ell$}
+\nt{$\eta_\ell$, $J$}{real numbers indexed by $\ell\in\NN$; a finite set of natural numbers}
+\nt{$u$, $u_0$}{square matrices}
+\nt{$\IndexLe{D}{y}{\delta}$, $\delta$}{$y$ has $D$-index at most $\delta$ (Definition~\ref{d:index}); a real number}
+\nt{$V$, $B$, $h$, $h'$}{real numbers: bounds for logarithms of covolumes, of sizes, of heights}
+\nt{$q$, $S$}{the rational number and the spanning set of Theorem~A}
+\nt{$\Psi$, $\Ch{D}{\vartheta,\Psi}$}{a good datum; the chain of lifts between definite spaces}
+\nt{$\gain{D}{\ell}$, $\err{D}{\ell}$, $\nonsplit{D}$}{gain and allowed loss at $\ell$; the primes $\ell<x_1$ with
+$\chiK{d}(\ell)\ne1$}
+\nt{$\mathcal{S}$, $\mathcal{M}$, $\mathcal{N}$}{$O_j$-modules of columns and of rows}
+\nt{$W$}{a subspace of $\Row{D}$}
+\nt{$H$, $H_{\ell,\iota}$}{complex numbers used as factors}
+\nt{$Z$, $Z'$, $\alpha$}{families of complex numbers indexed by the pairs $(\ell,\iota)$; a real number in the
+definition of the height}
+\nt{$\cst{see}{D}$, $\cst{vol}{D}$, $\cst{cr}{D}$}{the constants of Inputs \ref{i:seesaw}, \ref{i:volume},
+\ref{i:crude}}
+\end{multicols}
+\endgroup
+
+\head{References}
+\begingroup\fontsize{9.2}{12.2}\selectfont\raggedright
+The places are those found by the second reader of this write-up (Inputs \ref{i:landau} and~\ref{i:density}); the
+writer has not consulted the texts.
+
+\nt{[Ju]}{M.~Jutila, On mean values of Dirichlet polynomials with real characters, Acta Arithmetica 27 (1975),
+191--198. Theorem~2, equation~(6), p.~193.}
+\nt{[MV]}{H.~L.~Montgomery and R.~C.~Vaughan, \emph{Multiplicative Number Theory I. Classical Theory}, Cambridge,
+2007. §15.1, Lemma~15.1, p.~463.}
+\nt{[Wi]}{D.~V.~Widder, \emph{The Laplace Transform}, 1941; the second printing, of 1946, was the one compared.
+Chapter~II, §5, Theorem~5b, p.~58.}
+\endgroup
+
+\end{document}

@@ -1,0 +1,69 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Curve.FrameSections:22:7",
+ "summary": "Compare the coefficients of u^k. Θ_f(u·a·v) is an integral of f against exp(u·L(w)) with L the linear form w ↦ a∑_p⟨w_p, v_p⟩; expanding the exponential and exchanging sum and integral (dominated convergence) gives its power series; k! times the k-th coefficient of either side is the jet of T_a f along (∑ v_i z_i)^k: jet((∑_i v_i z_i)^k, F) = k!·[u^k]F(u·v) (a jet along a monomial z^α carries the factor α!, ZerosCostDegree.lean 162).",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "It suffices to compare, for each k, the coefficients of u^k.",
+   "lines": [
+    25,
+    25
+   ],
+   "lean": "  ext k",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let L be the continuous ℂ-linear form w ↦ a·∑_p ⟨w_p, v_p⟩ on Fock coordinates.",
+   "lines": [
+    26,
+    26
+   ],
+   "lean": "  let L := a • ∑ p, innerSLFlip ℂ (v p) ∘SL .proj p",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Two facts. (a) The function t ↦ Θ_f(t·a·v) has at 0 the power series with coefficients ∫ realVac(w)·f(realVec w)·L(w)^k/k! dμ(w): its value at every t is the integral of realVac(w) f(realVec w) e^{tL(w)}, and the exponential series can be summed under the integral by dominated convergence (|L(w)| ≤ ‖L‖‖w‖, ∫ e^{c‖w‖}·realVac integrable); hence k! times its k-th Taylor coefficient is that integral. (b) k! times the coefficient of u^k of the substituted series T_a f(v·u) equals the jet of T_a f along the polynomial (∑_i v_i z_i)^k (`jet_subst_linearSeries` turns the jet of the substituted series along X^k, which is k!·[u^k], into that jet).",
+   "lines": [
+    27,
+    35
+   ],
+   "lean": "  rcases (hasFPowerSeriesAt_iff (p := .ofScalars ℂ _) (z₀ := 0).2\n    (.of_forall fun t ↦ by simpa [mul_pow, mul_assoc, div_eq_inv_mul, mul_left_comm] using\n    hasSum_integral_of_dominated_convergence (μ := realMeasure _) _ (by fun_prop [realVac]) (fun _ ↦\n    .of_forall (by simp; grw [L.le_opNorm ·, norm_apply_le])) (by simp [Summable.mul_right,\n    expSeries_div_summable]) (by simpa [tsum_mul_right, exp_eq_tsum_div, Real.exp_eq_exp_ℝ,\n    mul_assoc] using (integrable_exp_mul_realVac (_ * _)).mul_const _) (.of_forall fun w ↦\n    .mul_right\n    (realVac w * f (realVec w)) (expSeries_div_hasSum_exp (t * L w))))).choose_spec.factorial_smul 1\n    k, (jet_subst_linearSeries (.replicateCol _ v) (.X () ^ k) (V.jetSeries a f)).symm",
+   "indivisible": "one `rcases` of a pair of terms; the first is a single application of `hasFPowerSeriesAt_iff` to one application of `hasSum_integral_of_dominated_convergence`, whose nine lines are that lemma's hypotheses (measurability, domination, summability, integrability, pointwise sum)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "jet_subst_linearSeries"
+    }
+   ],
+   "ambient_uses": [
+    "hasFPowerSeriesAt_iff",
+    "hasSum_integral_of_dominated_convergence"
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Unfolding Θ_f as an integral (`entireTheta_eq_integral`), the jet series T_a f through the theta functional of polynomial vectors (`theta_integrated`), and the k-th derivative at 0, the two coefficients of (a) and (b) agree.",
+   "lines": [
+    36,
+    38
+   ],
+   "lean": "  simp_all [entireTheta_eq_integral, L, mul_sum, linSubst, MvPolynomial.X_pow_eq_monomial, ↓map_pow,\n    mul_assoc, ↓theta_integrated,\n    holCoord_eq, iteratedDeriv, mul_left_comm, exp_eq_exp_ℂ, linearSeries]",
+   "typed_fact": null,
+   "uses": []
+  }
+ ]
+}

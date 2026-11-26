@@ -1,0 +1,1454 @@
+% !TEX program = lualatex
+% ---------------------------------------------------------------------------------------------
+%  Readback note 24: The characters, the level prime and the index sets of the data; the grid spaces
+%
+%  Build:  python3 tools/rb.py note <slug>
+%
+%  One unit of a Lean artifact, rewritten as ordinary mathematics. The prose is hand-written. Lean names,
+%  line ranges and counts come from data.tex; quoted Lean statements are copied from the artifact by the build.
+%
+%  Rules of the text: standard terminology; every symbol is explained where it first appears and listed again
+%  in the notation at the end; no letter has two meanings; a proof is complete or says what it takes for granted;
+%  Lean names appear only in the LEAN lines and in the concordance.
+%
+%  The signature rule (the build enforces it): a function, relation or predicate that the artifact defines is
+%  written only through its notation macro, which the build makes from the spec (`notation`) with one slot for
+%  each explicit argument of the Lean definition. No argument is fixed and dropped, also not "for brevity" and
+%  not for one section. Every argument and every hypothesis of a stated declaration stands inside its
+%  statement, or in a Setting that the statement cites by number; only implicit and instance arguments (the
+%  ambient objects) may stand in the conventions.
+% ---------------------------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\ifdefined\pdfvariable\pdfvariable suppressoptionalinfo \numexpr 1+2+4+8\relax\fi
+\usepackage[a4paper,hmargin=35mm,top=22mm,bottom=27mm,footskip=12mm,nohead]{geometry}
+
+\usepackage{fontspec}
+\directlua{
+  luaotfload.add_fallback("gfallback", {"STIXTwoMath-Regular.otf:mode=node;", "DejaVuSans.ttf:mode=node;"})
+  luaotfload.add_fallback("gmonofallback", {"DejaVuSansMono.ttf:mode=node;", "STIXTwoMath-Regular.otf:mode=node;"})
+}
+\setmainfont{NewCM10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookItalic,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldItalic,SmallCapsFont=*-Book,SmallCapsFeatures={Letters=SmallCaps},
+  RawFeature={fallback=gfallback}]
+\setsansfont{NewCMSans10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookOblique,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldOblique,RawFeature={fallback=gfallback}]
+\setmonofont{JetBrainsMono}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,Scale=MatchLowercase,
+  RawFeature={-calt;-liga;fallback=gmonofallback}]
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage[math-style=TeX]{unicode-math}
+\setmathfont{NewCMMath-Book.otf}
+\emergencystretch=2.5em\relax
+
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows.meta,positioning,backgrounds}
+\usepackage[protrusion=true,expansion=true]{microtype}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{multicol}
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+
+\definecolor{ink}{HTML}{0F172A}
+\definecolor{inksoft}{HTML}{475569}
+\definecolor{inkfaint}{HTML}{94A3B8}
+\definecolor{rulegrey}{HTML}{CBD5E1}
+\definecolor{arith}{HTML}{C2410C}
+\definecolor{est}{HTML}{7C3AED}
+\definecolor{ana}{HTML}{0891B2}
+\definecolor{ok}{HTML}{047857}
+\definecolor{leancol}{HTML}{3730A3}
+
+\title{The characters, the level prime and the index sets of the data; the grid spaces}
+\author{grh-compact}
+\date{}
+
+% ------------------------------------------------------------------------------------- macros
+\newcommand{\leanfont}{\ttfamily\fontsize{8.6}{10.5}\selectfont\color{leancol}}
+\newcommand{\lean}[1]{\csname LN@#1\endcsname}
+\newcommand{\fillin}[1]{{\color{arith}\itshape[#1]}}  % a place of the template that is not written yet; the build reports every one that is left
+\newcommand{\leanquote}[1]{\csname LQ@#1\endcsname}
+\input{data.tex}
+
+\linespread{1.08}                       % 11 pt on 14.7 pt
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt plus 1.5pt minus 0.5pt}
+\setlength{\abovedisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\belowdisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\abovedisplayshortskip}{3pt plus 2pt}
+\setlength{\belowdisplayshortskip}{6pt plus 2pt minus 2pt}
+\emergencystretch=1.5em
+\clubpenalty=10000 \widowpenalty=10000 \displaywidowpenalty=10000
+\relpenalty=7000 \binoppenalty=9000
+\raggedbottom
+\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\sffamily\fontsize{7.6}{9}\selectfont\color{inkfaint}\thepage\,/\,\pageref*{LastPage}}
+\setlist{topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=4pt,leftmargin=2.1em,labelsep=0.55em}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\len}{\operatorname{len}}
+\newcommand{\cok}{\operatorname{cok}}
+\newcommand{\End}{\operatorname{End}}
+\newcommand{\Hom}{\operatorname{Hom}}
+\newcommand{\Gal}{\operatorname{Gal}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\kw}[1]{\emph{#1}}
+\newcommand{\m}[1]{\mbox{$#1$}}        % a short formula that must not be broken across lines
+\newcommand{\head}[1]{\par\addvspace{17pt plus 4pt minus 2pt}\Needspace{6\baselineskip}%
+  \noindent{\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\sect}[2]{\refstepcounter{section}\label{#2}\par\addvspace{19pt plus 4pt minus 2pt}\Needspace{7\baselineskip}%
+  \noindent\llap{{\fontsize{13.2}{16}\selectfont\bfseries\color{inkfaint}\thesection}\hspace{9pt}}%
+  {\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\subhead}[1]{\par\addvspace{9pt plus 2pt}\Needspace{4\baselineskip}\noindent\textbf{#1}\enspace\ignorespaces}
+% where a statement lives in the Lean archive
+\newcommand{\leantag}{{\sffamily\bfseries\fontsize{6.3}{8}\selectfont\color{leancol}\addfontfeatures{LetterSpace=7}LEAN}}
+\newcommand{\sep}{\unskip\nobreak\hspace{5pt}{\color{inkfaint}\textperiodcentered}\hspace{5pt plus 2pt}\ignorespaces}
+\newcommand{\leanline}[1]{\par\nopagebreak\vspace{-2.5pt}{\fontsize{8.9}{12.4}\selectfont\color{inksoft}\raggedright
+  \noindent\llap{\leantag\hspace{9pt}}#1\par}\vspace{1pt}}
+% a displayed statement in a tinted box: #1 colour, #2 text
+\newcommand{\statement}[2]{\par\addvspace{7pt}\begingroup\setlength{\fboxsep}{8.5pt}\setlength{\fboxrule}{0.6pt}%
+  \noindent\fcolorbox{#1!30!white}{#1!3!white}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{#2}}%
+  \endgroup\par\addvspace{7pt}}
+\newcommand{\nt}[2]{\par\noindent\hangindent=1.1em\hangafter=1 #1\enspace{\color{inksoft}#2}\par\vspace{1pt}}
+\newcommand{\legdot}[1]{\tikz[baseline=-0.62ex]\fill[#1] (0,0) circle (2.5pt);\hspace{3pt}}
+\newcommand{\crow}[4]{\csname CS@#1\endcsname & #2 & \textcolor{inksoft}{#3} & \textcolor{inksoft}{#4}\\}
+\newcommand{\leanquoteline}[2]{\par\noindent\hangindent=\dimexpr#1\fontdimen2\font+2.2em\relax\hangafter=1
+  \hspace*{#1\fontdimen2\font}#2}
+\newcommand{\quoted}[1]{\par\vspace{3pt}{\ttfamily\fontsize{7.5}{10.4}\selectfont\color{leancol}\raggedright
+  \setlength{\parskip}{0pt}\leanquote{#1}\par}\vspace{4pt}}
+\newcommand{\bx}[3]{{\sffamily\bfseries\fontsize{7.3}{9.2}\selectfont\color{#1!82!black}#2}\\[1.5pt]#3}
+\newcommand{\cs}[2]{\expandafter\newcommand\csname CS@#1\endcsname{#2}}
+
+% theorems
+\newtheoremstyle{plainx}{7pt plus 2pt}{7pt plus 2pt}{\itshape}{}{\bfseries}{.}{0.5em}{}
+\newtheoremstyle{uprightx}{7pt plus 2pt}{7pt plus 2pt}{}{}{\bfseries}{.}{0.5em}{}
+\theoremstyle{plainx}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{uprightx}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{setting}[theorem]{Setting}          % hypotheses shared by several statements; each of them cites it by number
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\renewcommand{\qedsymbol}{{\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.5pt}\fbox{\rule{0pt}{0.46em}\hspace{0.46em}}}}
+% what holds throughout the note: the ambient objects only (implicit and instance arguments), never a hypothesis
+\newenvironment{conventions}{\par\addvspace{5pt}\noindent\textbf{Conventions.}\enspace\ignorespaces}{\par\addvspace{3pt}}
+\makeatletter
+\renewenvironment{proof}[1][Proof]{\par\pushQED{\qed}\normalfont\topsep0pt\partopsep0pt
+  \trivlist\item[\hskip\labelsep\itshape #1.]\ignorespaces}{\popQED\endtrivlist\@endpefalse}
+\makeatother
+
+% where each declaration of the concordance is treated: \cs{key}{place}, the place naming a \label or a lettered item
+% where each declaration of the concordance is treated: \cs{key}{place}, the place naming a \label or a lettered item
+\cs{hasLogBoundvarpi}{Lemma~\ref{l:sizes}}
+\cs{hasLogBoundrootDisc}{Lemma~\ref{l:sizes}}
+\cs{piGBar}{Definition~\ref{d:chosen}}
+\cs{IsChosen}{Definition~\ref{d:chosen}}
+\cs{ChosenPlace}{Definition~\ref{d:chosen}}
+\cs{chosen}{Definition~\ref{d:chosen}}
+\cs{piGBarmulstar}{Lemma~\ref{l:chosen}}
+\cs{piGnezero}{Lemma~\ref{l:chosen}}
+\cs{piGBarnezero}{Lemma~\ref{l:chosen}}
+\cs{existscofactor}{Lemma~\ref{l:chosen}}
+\cs{isChoseniff}{Lemma~\ref{l:chosen}}
+\cs{qeqg}{Lemma~\ref{l:chosen}}
+\cs{finiteisChosen}{Lemma~\ref{l:chosen}}
+\cs{existsresiduecharoforder}{Lemma~\ref{l:reschar}}
+\cs{decla}{Definition~\ref{d:omega}}
+\cs{orderOf}{Lemma~\ref{l:omega}}
+\cs{omegaeqoneofnotisChosen}{Lemma~\ref{l:omega}}
+\cs{omegazpowmulpoweqone}{Lemma~\ref{l:omega}}
+\cs{existscharhasWeight}{Theorem B}
+\cs{muFlat}{Definition~\ref{d:muflat}}
+\cs{declb}{Definition~\ref{d:muflat}}
+\cs{decld}{Definition~\ref{d:muflat}}
+\cs{muFlathasWeight}{Lemma~\ref{l:muflat}}
+\cs{chihasWeight}{Lemma~\ref{l:muflat}}
+\cs{muhasWeight}{Theorem B}
+\cs{Pair}{Definition~\ref{d:pair}}
+\cs{logLevelTarget}{Definition~\ref{d:target}}
+\cs{logLevelTargetmemIcc}{Theorem A}
+\cs{N}{Definition~\ref{d:level}}
+\cs{Nprime}{Theorem A}
+\cs{NmodEqone}{Theorem A}
+\cs{logNmemwindow}{Theorem A}
+\cs{logNmemIcc}{Theorem A}
+\cs{existspimulstar}{Theorem A}
+\cs{declc}{Definition~\ref{d:pi}}
+\cs{mulstar}{Theorem A}
+\cs{TameChar}{Definition~\ref{d:tame}}
+\cs{levelNorm}{Definition~\ref{d:tame}}
+\cs{Twist}{Definition~\ref{d:tame}}
+\cs{one}{Definition~\ref{d:tame}}
+\cs{liftChar}{Definition~\ref{d:liftchar}}
+\cs{liftTamePart}{Definition~\ref{d:liftchar}}
+\cs{hasWeightliftChar}{Theorem B}
+\cs{LiftIndex}{Definition~\ref{d:liftchar}}
+\cs{BlockIndex}{Definition~\ref{d:block}}
+\cs{firstBlock}{Definition~\ref{d:block}}
+\cs{equivSum}{Definition~\ref{d:block}}
+\cs{instFintypeYT}{Lemma~\ref{l:block}}
+\cs{card}{Lemma~\ref{l:block}}
+\cs{decle}{Definition~\ref{d:index}}
+\cs{InitIndex}{Definition~\ref{d:index}}
+\cs{X}{Definition~\ref{d:index}}
+\cs{shape}{Definition~\ref{d:index}}
+\cs{RowIndex}{Definition~\ref{d:index}}
+\cs{Y}{Definition~\ref{d:index}}
+\cs{cardrowIndex}{Lemma~\ref{l:rowindex}}
+\cs{basisNumber}{Definition~\ref{d:rowpar}}
+\cs{rowParameter}{Definition~\ref{d:rowpar}}
+\cs{paramW}{Definition~\ref{d:rowpar}}
+\cs{signsW}{Definition~\ref{d:rowpar}}
+\cs{entrySign}{Definition~\ref{d:esign}}
+\cs{iteoddeqsubemod}{Lemma~\ref{l:ite}}
+\cs{G}{Definition~\ref{d:G}}
+\cs{goodTupleFamilies}{Definition~\ref{d:G}}
+\cs{e}{Definition~\ref{d:G}}
+\cs{existsbranchingpairing}{Theorem C}
+\cs{Node}{Definition~\ref{d:grid}}
+\cs{NodeIndex}{Definition~\ref{d:grid}}
+\cs{gridSpace}{Definition~\ref{d:grid}}
+\cs{gridKernel}{Definition~\ref{d:gridforms}}
+\cs{GridForm}{Definition~\ref{d:gridforms}}
+\cs{gridLevelForms}{Definition~\ref{d:gridforms}}
+\cs{gridChar}{Definition~\ref{d:gridchar}}
+\cs{gridTamePart}{Definition~\ref{d:gridchar}}
+\cs{triangleOrder}{Definition~\ref{d:gridlevels}}
+\cs{nodeLevel}{Definition~\ref{d:gridlevels}}
+\cs{levelIndex}{Definition~\ref{d:gridlevels}}
+\cs{pointDescent}{Definition~\ref{d:moves}}
+\cs{iotaPlus}{Definition~\ref{d:moves}}
+\cs{descentMove}{Definition~\ref{d:moves}}
+\cs{liftMove}{Definition~\ref{d:moves}}
+\cs{isConjKernelPairgridKernel}{Lemma~\ref{l:gridkernel}}
+\cs{gridCharhasWeight}{Lemma~\ref{l:gridcharweight}}
+\cs{gridChardet}{Lemma~\ref{l:gridcharweight}}
+\cs{isEdgeFamilygrid}{Lemma~\ref{l:edge}}
+\cs{gridSpacediag}{Lemma~\ref{l:diag}}
+\cs{gridSpacesubdiag}{Lemma~\ref{l:diag}}
+\cs{levelIndexequntwisted}{Lemma~\ref{l:levelindex}}
+
+% ------------------------------------------------------------------ macros of this note that are not notations of
+% defined functions of the unit (those are made by the build, in data.tex, from the spec)
+\newcommand{\OO}{\mathcal{O}}
+\newcommand{\CC}{\mathbb{C}}
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\ZZ}{\mathbb{Z}}
+\newcommand{\QQ}{\mathbb{Q}}
+\newcommand{\NN}{\mathbb{N}}
+\newcommand{\FF}{\mathbb{F}}
+\newcommand{\Ad}{\mathbb{A}}
+\newcommand{\Af}{\mathbb{A}_f}
+\newcommand{\Ohat}{\hat{\OO}}
+\newcommand{\GL}{\mathrm{GL}}
+\newcommand{\Un}{\mathrm{U}}
+\newcommand{\cj}[1]{\overline{#1}}
+\newcommand{\Nm}{\mathrm{N}}                       % the absolute norm of a finite place: \Nm w
+\newcommand{\pt}{\ast}                             % the added point of an index set
+% objects of other units, written with all their arguments (Chapter III: units 152; Chapter VII: units 140, 147)
+\newcommand{\KP}[1]{K(#1)}
+\newcommand{\cP}[1]{C(#1)}
+\newcommand{\ED}[1]{E(#1)}
+\newcommand{\None}[1]{N_1(#1)}
+\newcommand{\fD}[1]{f(#1)}
+\newcommand{\kD}[1]{k(#1)}
+\newcommand{\tD}[1]{t(#1)}
+\newcommand{\aD}[1]{a(#1)}
+\newcommand{\gD}[1]{g(#1)}
+\newcommand{\hD}[1]{h(#1)}
+\newcommand{\hhD}[1]{h_2(#1)}
+\newcommand{\nD}[2]{n_{#2}(#1)}
+\newcommand{\wt}[3]{w_{#1,#2}(#3)}
+\newcommand{\nw}[2]{w_{#1}(#2)}
+\newcommand{\bone}[1]{b_1(#1)}
+\newcommand{\btwo}[1]{b_2(#1)}
+\newcommand{\thick}[1]{\operatorname{thick}(#1)}
+\newcommand{\rdD}[1]{\operatorname{rd}_{\ED{#1}}}
+\newcommand{\PlD}[1]{\operatorname{Pl}(#1)}
+\newcommand{\Mom}[2]{M_\omega(#1,#2)}
+\newcommand{\vpi}[2]{\varpi(#1,#2)}
+\newcommand{\OmP}[2]{\Omega(#1,#2)}
+\newcommand{\rtu}[1]{\varsigma_{#1}}               % the root of unity of order N_1(D) that generates E(D) over K
+\newcommand{\ups}{\upsilon}                        % the splitting character on U(1)
+\newcommand{\SpY}[2]{Y_{#2}(#1)}                   % the hermitian space Y_j(D) of unit 140
+% the definitions of the unit whose census arguments are not Lean's (see Notes on the formal text)
+\newcommand{\InitIdx}[2]{\underline{X}^{\circ}_{#2}(#1)}
+\newcommand{\esign}[3]{\operatorname{sg}(#1,#2,#3)}
+\newcommand{\nodeLev}[2]{\mathcal{K}_{D}(#1;#2)}
+\newcommand{\oneT}{1_{D}}                          % the trivial tame character of D
+% grids (unit 147)
+\newcommand{\GrIdx}[3]{\underline{\mathcal{V}}^{#1}_{#2,#3}(D)}
+\newcommand{\gsigns}[4]{\operatorname{sgn}^{#1,#2}_{#3,#4}(D)}
+\newcommand{\gpar}[5]{\operatorname{gpar}^{#1,#2}_{#3,#4}(D,#5)}
+\newcommand{\gwt}[3]{\operatorname{gw}_{D}(#1,#2,#3)}
+\newcommand{\ghar}[9]{\operatorname{har}_{D}(#1,#2,#3,#4;#5;#6,#7;#8,#9)}
+\newcommand{\gmod}[1]{\mathfrak{m}_{D}(#1)}
+\newcommand{\tmod}[2]{\mathfrak{m}^{\triangle}_{D}(#1,#2)}
+\newcommand{\lmod}[2]{\mathfrak{m}_{D}(#1;#2)}
+% weights (background library)
+\newcommand{\hc}[4]{\operatorname{hc}_{#1,#2}^{#3}(#4)}   % hc_{kappa,e}^{N}(tau,p): doubled Harish-Chandra parameter
+\newcommand{\wrep}[2]{\rho_{#1,#2}}
+\newcommand{\boxes}[2]{\operatorname{boxes}(#1,#2)}
+\newcommand{\wn}[1]{\lVert #1\rVert}
+\newcommand{\Fof}[3]{F^{#1,#2}_{#3}}
+\newcommand{\clint}[2]{\operatorname{mean}_{#1}(#2)}
+\newcommand{\Kmax}{\mathcal{K}_0}
+\newcommand{\dg}[1]{\operatorname{diag}_{\sigma}(#1)}
+\newcommand{\chow}[1]{\operatorname{cs}(#1)}                 % Euler's constant minus Re(L'/L)(1,chi_K)
+\newcommand{\rtuz}{\varsigma_0}                     % a primitive root of unity of order N_0 in C
+\newcommand{\brm}{\mathrm{br}}                      % the branching matrix
+\newcommand{\kup}{\kappa^{\uparrow}}
+\newcommand{\kdn}{\kappa^{\downarrow}}
+\newcommand{\knat}{\kappa^{\natural}}
+\newcommand{\enat}{e^{\natural}}
+\newcommand{\imag}{\mathrm{i}}
+
+\begin{document}
+\color{ink}
+
+{\raggedright
+{\sffamily\bfseries\fontsize{7.2}{9}\selectfont\color{leancol}\addfontfeatures{LetterSpace=8}READBACK NOTE 24\par}
+\vspace{5pt}
+{\fontsize{21.5}{25.5}\selectfont\bfseries The characters, the level prime and the index sets of the data; the grid spaces\par}
+\vspace{5pt}
+{\fontsize{12.4}{16}\selectfont\itshape\color{inksoft} One unit of the Lean artifact \ArtifactName, read back into
+mathematics\par}}
+\vspace{8pt}
+{\color{rulegrey}\hrule height 0.6pt}
+\vspace{7pt}
+\thispagestyle{empty}
+
+\textbf{Summary.} Besides scales and ranks, the data~$D$ of the argument carry a list of chosen objects from which
+the automorphic forms of Chapters V to VII are built. This note fixes them: the chosen places above the two primes
+$g_0,g_1$ and the residue characters there; three characters of the norm-one group $\Un(1)$ with their weights and
+tame parts; the level, a prime $\levelN{D}$ in a short window, with an integer of norm $\levelN{D}$; tame characters
+and twists; the index sets of the hermitian spaces of the chain of theta lifts, the finite group $\Ggrp{D}$ and its
+idempotent; and the spaces, characters and levels on the two grids of lifts of Chapter~VII. Three statements have
+content: the level exists and $m\log b\le\log\levelN{D}\le30\,m\log b$ (Theorem~A); the characters exist, by Weil's
+criterion for algebraic Hecke characters (Theorem~B); and for interlacing weights there is an integral pairing that
+computes periods over a definite unitary group as finite means (Theorem~C).
+
+\statement{leancol}{\fontsize{9.6}{13.2}\selectfont\textbf{What this note is.} The artifact \ArtifactName{} is a
+body of Lean code whose final theorems state the Riemann hypothesis and its analogue for Dirichlet $L$-functions.
+That is a claim: its authors report that Lean's kernel accepts the code; the record of checks of this write-up says
+who has built what; nothing was compiled for this note, and no mathematician has read the proof through. This note is one of four on one unit, the folder of the seesaw identity (Chapter~V): it treats
+\UnitInNote{} of the unit's \UnitMembers{} declarations, those of the file of index types and of the file of the
+grid spaces, which are vocabulary for other units; the notes \emph{The seesaw identity for the chain of theta
+lifts}, \emph{Two consecutive theta lifts} and \emph{Chains of definite theta lifts and the Gauss-sum operator}
+treat the rest. Every statement below was compared, argument by argument, with the Lean text. Proofs are given in
+full, except that results of other units and of the background library are quoted as \emph{Inputs}, each with its
+owner. The Lean text read is \PinText; Appendix~A is the concordance of \ConcDecls{} declarations.}
+
+\sect{The statements}{s:intro}
+The notation is that of Section~\ref{s:setting}. In particular $D$ is admissible data for parameters $P=(N_0,d)$,
+with scales $x,x_1,b$, exponent~$\mu$ and number of lifts~$m$; $\ED{D}$ is its CM field, with infinite
+places~$\tau$; $\wt{D}{j}{\tau}$ are the weights of Chapter~III; and $\logTarget{D}$, $\levelN{D}$, $\piN{D}$,
+$\omD{D}{w}$, $\muZero{D}{j}$, $\liftChar{D}{\vartheta}{j}$, $\liftTame{D}{\vartheta}{j}$ are defined in
+Sections \ref{s:chosen} to~\ref{s:tame}.
+
+\statement{arith}{\phantomsection\label{t:A}\textbf{Theorem A (the level).}\enspace In Setting~\ref{set:data}, for
+parameters $P$ and admissible data $D$ for~$P$:
+\begin{enumerate}[label=(\roman*)]
+\item $m\log b\le\logTarget{D}\le29\,m\log b$;
+\item $\levelN{D}$ is a prime number, $\levelN{D}\equiv1$ modulo $\None{D}\,d$, and
+\[\logTarget{D}\le\log\levelN{D}\le\logTarget{D}+\sqrt{\log b},\qquad m\log b\le\log\levelN{D}\le30\,m\log b;\]
+\item there is an integer $\pi$ of $\ED{D}$ with $\pi\,\cj{\pi}=\levelN{D}$, and
+$\piN{D}\cdot\cj{\piN{D}}=\levelN{D}$.
+\end{enumerate}}
+\leanline{\lean{logLevelTargetmemIcc}\sep \lean{Nprime}\sep \lean{NmodEqone}\sep \lean{logNmemwindow}\sep
+\lean{logNmemIcc}\sep \lean{existspimulstar}\sep \lean{mulstar}}
+
+\statement{arith}{\phantomsection\label{t:B}\textbf{Theorem B (the characters).}\enspace In Setting~\ref{set:data},
+for parameters $P$ and admissible data $D$ for~$P$:
+\begin{enumerate}[label=(\roman*)]
+\item for all natural numbers $c$ and~$n$ there is a character of $\Un(1)$ of $\ED{D}$ (a continuous character of
+the norm-one adeles, trivial on the norm-one elements of $\ED{D}$) of weight \m{\tau\mapsto-c\cdot\wt{D}{0}{\tau}}
+and tame part \m{(\omD{D}{w}^{\,n})_w};
+\item for every natural number $j$, the character $\muZero{D}{j}$ has weight \m{\tau\mapsto-\wt{D}{j}{\tau}} and tame
+part \m{(\omD{D}{w}^{\,j})_w};
+\item for every tame character $\vartheta$ of~$D$ and every natural number~$j$, the character
+$\liftChar{D}{\vartheta}{j}$ has weight \m{\tau\mapsto-\wt{D}{j}{\tau}} and tame part $\liftTame{D}{\vartheta}{j}$.
+\end{enumerate}}
+\leanline{\lean{existscharhasWeight}\sep \lean{muhasWeight}\sep \lean{hasWeightliftChar}}
+
+Theorem~C does not involve the data. A \kw{weight} for a CM field $E$ is a pair $(\kappa,e)$: for every infinite
+place $\tau$ of~$E$ a function \m{\kappa_\tau\colon\NN\to\NN} (the number $\kappa_\tau(h)$ of columns of height $h$
+of a Young diagram) and an integer $e_\tau$. In rank~$N$ its \kw{doubled Harish-Chandra parameter} is
+\[\hc{\kappa}{e}{N}{\tau,p}=2\Bigl(e_\tau+\sum_{p<h<N}\kappa_\tau(h)\Bigr)+N-1-2p\qquad(0\le p<N),\]
+and a family $l=(l_\tau)$ of maps from an index set of $N$ elements to $\ZZ$ \kw{is the doubled Harish-Chandra
+parameter of $(\kappa,e)$} if every $l_\tau$ is injective and its values, in decreasing order, are
+$\hc{\kappa}{e}{N}{\tau,0},\dots,\hc{\kappa}{e}{N}{\tau,N-1}$. The representation $\wrep{\kappa}{e}$, the Weyl norm
+$\wn{\cdot}$, the functions $\Fof{l}{\mathbf{s}}{\eta}$ and the mean $\clint{\mathcal{K}}{\cdot}$ are recalled in
+Section~\ref{s:branching}.
+
+\statement{arith}{\phantomsection\label{t:C}\textbf{Theorem C (branching pairing).}\enspace Let $E$ be a CM field
+with a CM type, $n$ a non-empty finite index set and $n'$ a finite index set, $(\kappa,e)$ and $(\kappa',e')$
+weights for~$E$, $l=(l_\tau)$ and $l'=(l'_\tau)$ families of maps $l_\tau\colon n\to\ZZ$, $l'_\tau\colon n'\to\ZZ$,
+$\sigma\colon n\sqcup\{\pt\}\to n'$ a bijection, and $\mathbf{s}$, $\mathbf{r}$, $\mathbf{t}$ signs on $n$, on
+$\{\pt\}$ and on~$n'$. Suppose that $(\mathbf{s}\sqcup\mathbf{r})\circ\sigma^{-1}=\mathbf{t}$ and $\mathbf{t}=1$;
+that $l'$ is the doubled Harish-Chandra parameter of $(\kappa,e)$ and $-l$ is the
+doubled Harish-Chandra parameter of $(\kappa',e')$; and that $l$ and $l'$ interlace: for every infinite
+place~$\tau$ and every integer~$y$,
+\[\#\{j\in n':y<l'_\tau(j)\}-\#\{i\in n:y<l_\tau(i)\}\in\{0,1\}.\]
+Then there is a matrix $B$ with integer entries, from coordinates of weight $\kappa$ in rank $|n'|$ to coordinates of
+weight $\kappa'$ in rank~$|n|$, with the following properties.
+\begin{enumerate}[label=(\alph*)]
+\item There are integers $N_\tau$, one for each infinite place~$\tau$, such that:
+  \begin{enumerate}[label=(\arabic*)]
+  \item for all commutative rings $S$ with an involution, all fields $R$ of characteristic~$0$, all families of ring
+  homomorphisms $f_\tau\colon S\to R$, all $g\in\Un_n(S)$, $u\in\Un_1(S)$ and all vectors $v'$, $v$ over~$R$,
+  \[\bigl\langle\wrep{\kappa'}{e'}\bigl(f(g)\bigr)v',\,B\,\wrep{\kappa}{e}\bigl(f(\dg{g,u})\bigr)v\bigr\rangle
+  =\prod_\tau f_\tau(\det u)^{N_\tau}\cdot\langle v',Bv\rangle;\]
+  \item $|N_\tau|\le\boxes{\kappa}{|n'|}+|e_\tau|$ for every~$\tau$;
+  \item for every natural number $M\ge\boxes{\kappa}{|n'|}$ and all complex vectors $v'$, $v$:
+  \m{|\langle v',Bv\rangle|\le(M^{M})^{3}\,\wn{v'}\,\wn{v}}.
+  \end{enumerate}
+\item For every point $g=(g_\tau)_\tau$ of the product, over the infinite places, of the real unitary groups of the
+signs~$\mathbf{t}$ there is a complex number $C$ such that
+for every standard hermitian space $V$ with index set $n$ and signs~$\mathbf{s}$, all algebraic forms $\eta$ of
+weight $(\kappa',e')$ in rank~$|n|$ and $\phi$ of weight $(\kappa,e)$ in rank~$|n'|$, every $u\in\Un_1(\Af)$ and every
+level $\mathcal{K}\subseteq\Un_n(\Af)$,
+\[\begin{aligned}\int_{[\Un(V)]}\Fof{-l}{\mathbf{s}}{\eta}(y)\cdot{}&\Fof{l'}{\mathbf{t}}{\phi}\bigl(\dg{y,(1,u)}\cdot(g,1)\bigr)\,dy\\
+&=\frac{C}{[\Kmax:\mathcal{K}]}\cdot\clint{\mathcal{K}}{h\mapsto\langle\eta(h),B\,\phi(\dg{h,u})\rangle}.\end{aligned}\]
+\end{enumerate}}
+\leanline{\lean{existsbranchingpairing}}
+
+\sect{The setting}{s:setting}
+\begin{conventions}\phantomsection\label{c:conventions}
+Throughout, $P$ denotes parameters and $D$ admissible data for~$P$; Setting~\ref{set:data} recalls what these are,
+and every statement that takes $D$ as an argument cites it. The letter $\tau$ denotes an infinite place of the
+field $\ED{D}$ and $w$ a finite place of it; $i\in\{0,1\}$ numbers the two primes $g_0,g_1$ of~$D$. A stage is a
+natural number~$j$; $\vartheta$ is a tame character of~$D$ (Definition~\ref{d:tame}), in Section~\ref{s:grid} an
+$m$-fold twist; $\psi$ is a family $(\psi_w)_w$ of characters of the residue fields of~$\ED{D}$. In
+Definition~\ref{d:block} and Lemma~\ref{l:block}, $S$, $T$ and $\alpha$ are sets. In Theorem~C, $E$ is a CM field,
+$n$ and $n'$ are finite index sets, $n$ non-empty, and $\kappa,\kappa'$, $e,e'$, $l,l'$,
+$\mathbf{s},\mathbf{r},\mathbf{t}$, $\sigma$ are as stated there; in Lemma~\ref{l:gridcharweight}, $n$ and $n'$ are
+finite index sets. In Section~\ref{s:grid}, $z$ and $c$ are elements of $\{0,1\}$, $I$ is a set, and
+$i,i',j,j',a,b,l$ are natural numbers. Every other letter is bound by the statement that uses it.
+\end{conventions}
+
+\begin{setting}[parameters and data]\label{set:data}
+\kw{Parameters} are a pair $P=(N_0,d)$: a positive multiple $N_0$ of $18480$ and a prime $d\equiv N_0/2-1$
+modulo~$N_0$; put $\KP{P}=\QQ(\sqrt{-d})$. \kw{Admissible data} for $P$ are a record $D$ with these components: real
+scales $x$, $x_1$, $b$; natural numbers $\mu$ (the exponent), $m$ (the number of lifts) and $r$ (the rank); a set
+$\thick{D}$ of infinite places of the field $\ED{D}$ below; two primes $g_0\ne g_1$; and an integer $\pi_g$ of $\KP{P}$
+with \m{\pi_g\cj{\pi_g}=g_0g_1}. They satisfy the conditions of Chapter~III. This note uses the following ones, in
+which $\cP{P}\ge64$ is the constant of~$P$ of Chapter~III:
+\begin{enumerate}[label=(D\arabic*)]
+\item \m{10^{12}\,\cP{P}\le\log\log b}, \m{100\log\log b\le\log x}, \m{10^6\log x\le\log x_1} and
+\m{10^6\log x_1\le\log b};
+\item $m$ is a power of $2$, $m\ge2$, and $2^\mu=m^{22}$;
+\m{\sqrt x\le m\le2\sqrt x}; \m{\mu\le32\log x}; $r$ is a power of $3$ with \m{x^5\le r\le3x^5};
+\item for $i\in\{0,1\}$: \m{g_i\equiv1} modulo $\None{D}\,d$, the square of $\Mom{P}{\mu}$ divides $g_i-1$, and
+\m{b^{10}\le g_i\le b^{11}};
+\item for every real $U$ with \m{100\log b\le U\le2^\mu} there is a prime $p\equiv1$ modulo $\Mom{P}{\mu}^2$ with
+\m{U\le\log p\le U+\sqrt{\log b}}.
+\end{enumerate}
+The following objects of Chapter~III are attached to $P$ and~$D$. The number
+$\None{D}=N_0\cdot3^{\lfloor\log_3\mu\rfloor+5}\cdot2^{\mu}$ and the field $\ED{D}$, generated over $\KP{P}$ by a
+root of unity $\rtu{D}$ of order $\None{D}$: a CM field, with complex conjugation $y\mapsto\cj{y}$ and ring of
+integers $\OO_{\ED{D}}$. The set $\PlD{D}$ of its infinite places, of cardinality $\fD{D}$; each $\tau\in\PlD{D}$
+comes with an embedding \m{\ED{D}\to\CC}, also written~$\tau$, and \m{|y|_\tau=|\tau(y)|}. The root
+discriminant~$\rdD{D}$. The finite places of $\ED{D}$ are the non-zero prime ideals $w$ of $\OO_{\ED{D}}$; $\FF_w$ is
+the residue field, $\Nm w$ its cardinality, $\cj{w}$ the conjugate place, and $w$ \kw{lies above} a prime $p$ if
+$p\in w$. The numbers \m{\kD{D}=r+1-m}, \m{\tD{D}=5r}, \m{\hhD{D}=r^8}, \m{\hD{D}=2\,\hhD{D}} and
+\m{\nD{D}{j}=\kD{D}+j\,(\tD{D}+1)}; the least multiple $\aD{D}$ of $\None{D}$ that is at least~$x\,b$, and the least
+multiples $\bone{D}$, $\btwo{D}$ of $\None{D}$ that are at least $\aD{D}/x$ and $\aD{D}/x_1$. The \kw{weights}
+\[\wt{D}{j}{\tau}=\begin{cases}\bone{D}+j\,\hD{D}+\hhD{D}&\text{if }\tau\in\thick{D},\\
+\btwo{D}+j\,\hD{D}+\hhD{D}&\text{otherwise,}\end{cases}\]
+and the \kw{nominal weight} $\nw{D}{\tau}$, equal to $\aD{D}/x$ if $\tau\in\thick{D}$ and to $\aD{D}/x_1$ otherwise.
+The number \m{\gD{D}=g_0g_1}. Finally \m{\Mom{P}{\mu}=(N_0d)^{\mu+6}}; $\vpi{P}{\mu}$ is the purely imaginary generator
+of the different of $\ED{D}$ of Chapter~III; and \m{\OmP{P}{\mu}=e^{\chow{d}}\cdot2\pi/\rdD{D}}, where $\chow{d}$ is
+Euler's constant minus the real part of the logarithmic derivative at $1$ of the $L$-function of the quadratic
+character of~$\KP{P}$.
+\end{setting}
+
+\statement{ana}{\textbf{Inputs from Chapter III} (unit~152, the folder of the data; the notes \emph{The parameters and
+the CM field} and \emph{Admissible data}).\enspace In Setting~\ref{set:data}:
+
+(I1) If $p$ is a prime with $p\equiv1$ modulo $\None{D}\,d$, every finite place of $\ED{D}$ above $p$ has absolute
+norm~$p$.
+
+(I2) Every root of unity of $\ED{D}$ is a power of $\rtu{D}$; \m{\prod_{\tau\in\PlD{D}}\tau(y)} is the norm of $y$
+from $\ED{D}$ to~$\KP{P}$, for every $y\in\ED{D}$; the cyclotomic polynomial of order $\None{D}$ is irreducible
+over~$\KP{P}$.
+
+(I3) $\None{D}\,d$ divides $\Mom{P}{\mu}$.
+
+(I4) For every $\tau\in\PlD{D}$: \m{|\vpi{P}{\mu}|_\tau=\sqrt d\cdot|\Psi'(\rtu{D})|_\tau}, where $\Psi$ is the
+cyclotomic polynomial of order~$\None{D}$; and \m{\Psi(X)=\Psi_0(X^{\None{D}/N_0})}, where $\Psi_0$ is the cyclotomic
+polynomial of order~$N_0$. Moreover \m{\prod_{\tau\in\PlD{D}}|\vpi{P}{\mu}|_\tau=\rdD{D}^{\,\fD{D}}}.
+
+(I5) \m{\cP{P}\ge d}, \m{\cP{P}\ge N_0}, \m{\cP{P}\ge|\chow{d}|}, and
+\m{\cP{P}\ge\bigl|\log|\Psi_0'(\rtuz)|\bigr|} for every primitive root of unity $\rtuz\in\CC$ of order~$N_0$.}
+
+\subhead{Characters of $\Un(1)$.} These definitions belong to the background library. Let $E$ be a CM field with a
+CM type, so that every infinite place $\tau$ has an embedding $\tau\colon E\to\CC$. The group $\Un(1)(\Ad_E)$
+consists of the adeles $u$ of $E$ with $u\cj{u}=1$; it contains the group $\Un(1)(E)$ of the elements of $E$ of
+norm one to the totally real subfield. A \kw{character of $\Un(1)$ of $E$} is a continuous homomorphism from
+$\Un(1)(\Ad_E)$ to the unit circle that is trivial on $\Un(1)(E)$. Such a character $\nu$ has \kw{weight}
+$\mathbf{e}=(\mathbf{e}(\tau))_\tau$, a family of integers, and \kw{tame part} $\psi=(\psi_w)_w$, a family of
+multiplicative characters $\psi_w$ of the residue fields $\FF_w$, if $\psi_w$ is trivial for all but finitely many $w$
+and
+\[\nu(u)=\prod_\tau u_\tau^{\mathbf{e}(\tau)}\cdot\prod_w\psi_w(u_w\bmod w)\]
+for every $u\in\Un(1)(\Ad_E)$ whose finite part is integral; here $u_\tau\in\CC$ is the component of $u$ at~$\tau$.
+
+\statement{ana}{\textbf{Inputs from the background library.}\enspace Let $E$ be a CM field with a CM type.
+
+(I6) \emph{Existence} (unit~104). Let $\mathbf{e}$ be a family of integers indexed by the infinite places and
+$\psi$ a family of characters of the residue fields, trivial outside a finite set $\Sigma$ of finite places. If
+\m{\prod_\tau\tau(u)^{\mathbf{e}(\tau)}\cdot\prod_{w\in\Sigma}\psi_w(u\bmod w)=1} for every integer $u$ of $E$ with
+$u\cj{u}=1$, then there is a character of $\Un(1)$ of $E$ of weight $\mathbf{e}$ and tame part~$\psi$. This is a
+special case of the existence of algebraic Hecke characters with prescribed infinity type: A.~Weil~[W];
+exposition in A.~Raghuram~[R], §4.
+
+(I7) \emph{Products} (unit~104). If $\nu$, $\nu'$ have weights $\mathbf{e}$, $\mathbf{e}'$ and tame parts $\psi$,
+$\psi'$, then $\nu\nu'$ has weight $\mathbf{e}+\mathbf{e}'$ and tame part $\psi\psi'$, and $\nu^{y}$ has weight
+$y\,\mathbf{e}$ and tame part $\psi^{y}$ for every integer~$y$.
+
+(I8) \emph{The splitting character.} If $E$ carries Weil data, with splitting character $\ups$ restricted to
+$\Un(1)(\Ad_E)$, then $\ups^{y}$ has the constant weight $y$ and trivial tame part, for every integer~$y$. The field
+$\ED{D}$ of Setting~\ref{set:data} carries Weil data (Chapter~III).}
+
+\sect{Chosen places and their residue characters}{s:chosen}
+\begin{definition}[chosen places]\label{d:chosen}
+In Setting~\ref{set:data}, let $P$ be parameters and $D$ admissible data for~$P$.
+\begin{enumerate}[label=(\alph*)]
+\item $\piGbar{D}$ is the complex conjugate of the image of $\pi_g$ in the ring of integers of $\ED{D}$.
+\item A finite place $w$ of $\ED{D}$ is a \kw{chosen place of~$D$}, in symbols $\isChosen{D}{w}$, if
+$\piGbar{D}\in w$; otherwise we write $\notChosen{D}{w}$.
+\item For $i\in\{0,1\}$, $\ChPl{D}{i}$ is the set of the finite places $w$ of $\ED{D}$ with $\piGbar{D}\in w$ and
+$g_i\in w$: the chosen places above~$g_i$.
+\item For a pair $x=(i,w)$ with $i\in\{0,1\}$ and $w\in\ChPl{D}{i}$, the place $\chosenOf{D}{x}$ is~$w$.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{piGBar}\sep \lean{IsChosen}\sep \lean{ChosenPlace}\sep \lean{chosen}}
+
+\begin{lemma}\label{l:chosen}
+In Setting~\ref{set:data}, let $P$ be parameters, $D$ admissible data for~$P$, $i\in\{0,1\}$ and $w$ a finite place
+of~$\ED{D}$.
+\begin{enumerate}[label=(\roman*)]
+\item \m{\piGbar{D}\cdot\cj{\piGbar{D}}=\gD{D}}; $\pi_g\ne0$ and $\piGbar{D}\ne0$.
+\item There is a natural number $c$, prime to $g_i$, with \m{\piGbar{D}\cdot\cj{\piGbar{D}}=g_i\,c}.
+\item $\isChosen{D}{w}$ holds if and only if, for some $i\in\{0,1\}$, both $\isChosen{D}{w}$ and $g_i\in w$ hold.
+\item If $w$ lies above $g_i$, then $\Nm w=g_i$.
+\item The set of the chosen places of $D$ is finite; hence so are $\ChPl{D}{0}$ and $\ChPl{D}{1}$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(i) The product is the image of \m{\cj{\pi_g}\,\pi_g=g_0g_1}, and $g_0g_1\ne0$. (ii) Take $c=g_{1-i}$; the primes
+$g_0$ and $g_1$ are distinct. (iii) If $\piGbar{D}\in w$ then $g_0g_1\in w$ by~(i), and $w$ is a prime ideal.
+(iv) This is (I1), by~(D3). (v) A non-zero integer of $\ED{D}$ lies in finitely many prime ideals.
+\end{proof}
+\leanline{\lean{piGBarmulstar}\sep \lean{piGnezero}\sep \lean{piGBarnezero}\sep \lean{existscofactor}\sep
+\lean{isChoseniff}\sep \lean{qeqg}\sep \lean{finiteisChosen}}
+
+\begin{lemma}\label{l:reschar}
+In Setting~\ref{set:data}, let $P$ be parameters, $D$ admissible data for~$P$ and $w$ a finite place of $\ED{D}$
+with $\isChosen{D}{w}$. Then there is a multiplicative character $T$ of the residue field $\FF_w$, with values
+in~$\CC$, of order exactly~$\Mom{P}{\mu}^2$.
+\end{lemma}
+\begin{proof}
+By Lemma~\ref{l:chosen}(iii) and~(iv), $\FF_w$ has $g_i$ elements for some~$i$, so $\FF_w^\times$ is cyclic of order
+$g_i-1$, which $\Mom{P}{\mu}^2$ divides by~(D3). Map a generator to a primitive root of unity of order
+$\Mom{P}{\mu}^2$ in~$\CC$.
+\end{proof}
+\leanline{\lean{existsresiduecharoforder}}
+
+\begin{definition}[the residue characters]\label{d:omega}
+In Setting~\ref{set:data}, let $D$ be admissible data and $w$ a finite place of~$\ED{D}$. If $w$ is a chosen place
+of~$D$, then \m{\omD{D}{w}=T_w^{\,\Mom{P}{\mu}}}, where $T_w$ is a chosen character of $\FF_w$ of order
+$\Mom{P}{\mu}^2$ (Lemma~\ref{l:reschar}); otherwise $\omD{D}{w}$ is the trivial character of~$\FF_w$. We write
+$\omD{D}{\bullet}$ for the family $(\omD{D}{w})_w$.
+\end{definition}
+\leanline{\lean{decla}}
+
+\begin{lemma}\label{l:omega}
+In Setting~\ref{set:data}, let $P$ be parameters, $D$ admissible data for~$P$ and $w$ a finite place of~$\ED{D}$.
+\begin{enumerate}[label=(\roman*)]
+\item If $\isChosen{D}{w}$, then $\omD{D}{w}$ has order exactly~$\Mom{P}{\mu}$.
+\item If $\notChosen{D}{w}$, then $\omD{D}{w}=1$.
+\item Let $n$ be an integer and $\psi$ a family of characters of the residue fields with $\psi_w=1$. Then
+\m{\bigl(\omD{D}{w}^{\,n}\,\psi_w\bigr)^{\Mom{P}{\mu}}=1}.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(i) A power $T^{M}$ of an element $T$ of order $M^2$ has order~$M$. (ii) By definition. (iii) By (i) and (ii),
+\m{\omD{D}{w}^{\,\Mom{P}{\mu}}=1} in both cases.
+\end{proof}
+\leanline{\lean{orderOf}\sep \lean{omegaeqoneofnotisChosen}\sep \lean{omegazpowmulpoweqone}}
+
+\sect{The characters of the data}{s:chars}
+\begin{proof}[Proof of Theorem~B(i)]
+Put \m{\mathbf{e}(\tau)=-c\,\wt{D}{0}{\tau}} and \m{\psi_w=\omD{D}{w}^{\,n}}. By Lemma~\ref{l:omega}(ii) and
+Lemma~\ref{l:chosen}(v), $\psi$ is trivial outside the finite set $\Sigma$ of the chosen places, so by~(I6) it
+suffices to show
+\begin{equation}\label{e:unit}
+\prod_{\tau\in\PlD{D}}\tau(u)^{-c\,\wt{D}{0}{\tau}}\cdot\prod_{w\in\Sigma}\omD{D}{w}(u\bmod w)^{n}=1
+\end{equation}
+for every integer $u$ of $\ED{D}$ with $u\cj{u}=1$. Such a $u$ is an algebraic integer all of whose conjugates have
+absolute value~$1$, since complex conjugation commutes with every embedding of a CM field; so $u$ is a root of
+unity (Kronecker), and \m{u=\rtu{D}^{\,q}} for some natural number~$q$ by~(I2). By Setting~\ref{set:data},
+\m{\wt{D}{0}{\tau}-\hhD{D}} is $\bone{D}$ or $\btwo{D}$, a multiple of~$\None{D}$; so
+\m{\tau(u)^{\wt{D}{0}{\tau}}=\tau(u)^{\hhD{D}}}, and the first product in~\eqref{e:unit} is
+\[\Bigl(\prod_{\tau\in\PlD{D}}\tau(\rtu{D})\Bigr)^{-c\,q\,\hhD{D}}.\]
+By (I2) the product in brackets is the norm of $\rtu{D}$ to $\KP{P}$, and the minimal polynomial of $\rtu{D}$ over
+$\KP{P}$ is the cyclotomic polynomial $\Psi$ of order~$\None{D}$. Its degree is even and $\Psi(0)=1$, because
+$\None{D}>2$; so the norm is~$1$. For the second product, let $w\in\Sigma$. Then \m{\omD{D}{w}=T_w^{\,\Mom{P}{\mu}}}, and
+\m{\rtu{D}^{\,\Mom{P}{\mu}}=1} because $\None{D}$ divides $\Mom{P}{\mu}$ by~(I3); hence
+\m{\omD{D}{w}(\rtu{D}\bmod w)=T_w(\rtu{D}^{\,\Mom{P}{\mu}}\bmod w)=1}. This proves~\eqref{e:unit}.
+\end{proof}
+
+\begin{definition}[the three characters]\label{d:muflat}
+In Setting~\ref{set:data}, let $D$ be admissible data.
+\begin{enumerate}[label=(\alph*)]
+\item $\muFlat{D}$ is a chosen character of $\Un(1)$ of $\ED{D}$ of weight \m{\tau\mapsto-\wt{D}{0}{\tau}} and
+trivial tame part (Theorem~B(i) with $c=1$, $n=0$).
+\item $\chiCirc{D}$ is a chosen character of $\Un(1)$ of $\ED{D}$ of weight $0$ and tame part $\omD{D}{\bullet}$
+(Theorem~B(i) with $c=0$, $n=1$).
+\item For a natural number~$j$,
+\m{\muZero{D}{j}=\muFlat{D}\cdot\bigl(\ups^{-\hD{D}}\,\chiCirc{D}\bigr)^{j}}, where $\ups$ is the splitting character
+of the Weil data of $\ED{D}$, restricted to~$\Un(1)$.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{muFlat}\sep \lean{declb}\sep \lean{decld}}
+
+\begin{lemma}\label{l:muflat}
+In Setting~\ref{set:data}, let $P$ be parameters and $D$ admissible data for~$P$. The character $\muFlat{D}$ has weight
+\m{\tau\mapsto-\wt{D}{0}{\tau}} and trivial tame part, and $\chiCirc{D}$ has weight $0$ and tame part
+\m{(\omD{D}{w})_w}.
+\end{lemma}
+\begin{proof}
+By the choices of Definition~\ref{d:muflat}, since \m{\omD{D}{w}^{\,0}=1} and \m{\omD{D}{w}^{\,1}=\omD{D}{w}}.
+\end{proof}
+\leanline{\lean{muFlathasWeight}\sep \lean{chihasWeight}}
+
+\begin{proof}[Proof of Theorem~B(ii) and (iii)]
+(ii) By (I8) the character $\ups^{-\hD{D}}$ has weight $-\hD{D}$ and trivial tame part. By Lemma~\ref{l:muflat}
+and~(I7), \m{\ups^{-\hD{D}}\chiCirc{D}} has weight $-\hD{D}$ and tame part $\omD{D}{\bullet}$, its $j$-th power has
+weight $-j\,\hD{D}$ and tame part \m{(\omD{D}{w}^{\,j})_w}, and $\muZero{D}{j}$ has weight
+\m{-\wt{D}{0}{\tau}-j\,\hD{D}=-\wt{D}{j}{\tau}} and the same tame part. (iii) By Definition~\ref{d:liftchar},
+\m{\liftChar{D}{\vartheta}{j}=\muZero{D}{j}\cdot\vartheta} and $\vartheta$ has weight $0$ and tame
+part~$\psi_\vartheta$; apply (ii) and~(I7).
+\end{proof}
+
+\begin{definition}[pairs]\label{d:pair}
+In Setting~\ref{set:data}, let $D$ be admissible data. The set $\PairSet{D}$ of the \kw{pairs} of~$D$ consists of the
+quadruples $(\nu,\mathbf{c},\psi,z)$ of a character $\nu$ of $\Un(1)$ of~$\ED{D}$, a family
+\m{\mathbf{c}=(\mathbf{c}(\tau))_{\tau\in\PlD{D}}} of natural numbers, a family $\psi$ of characters of the residue
+fields and a natural number~$z$ such that: $\nu$ has weight \m{\tau\mapsto-\mathbf{c}(\tau)} and tame part~$\psi$;
+$\psi_w=1$ for every finite place $w$ that is not a chosen place of~$D$; \m{1\le z\le\tD{D}}; and
+\m{z\le\mathbf{c}(\tau)\le4b} for every~$\tau$.
+\end{definition}
+\leanline{\lean{Pair}}
+
+\sect{The level}{s:level}
+\begin{lemma}[sizes]\label{l:sizes}
+In Setting~\ref{set:data}, let $P$ be parameters and $D$ admissible data for~$P$. Then
+\begin{enumerate}[label=(\roman*)]
+\item \m{x^{10}\le|\vpi{P}{\mu}|_\tau\le x^{12}} for every infinite place $\tau$ of $\ED{D}$;
+\item \m{x^{10}\le\rdD{D}\le x^{12}};
+\item \m{x^{-13}\le\OmP{P}{\mu}\le1}.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(i) By (I4), \m{\Psi'(\rtu{D})=M_0\,\rtu{D}^{\,M_0-1}\,\Psi_0'(\rtu{D}^{\,M_0})} with
+\m{M_0=\None{D}/N_0}, and $\rtu{D}^{\,M_0}$ is a primitive root of unity of order~$N_0$; so
+\[\log|\vpi{P}{\mu}|_\tau=\tfrac12\log d+\log M_0+\log\bigl|\Psi_0'(\rtuz)\bigr|\]
+for a primitive root of unity $\rtuz\in\CC$ of order~$N_0$. Here
+\m{\log M_0=(\lfloor\log_3\mu\rfloor+5)\log3+\mu\log2}. By (D2), \m{2^\mu=m^{22}} lies between $x^{11}$ and
+$2^{22}x^{11}$, and \m{1\le3^{\lfloor\log_3\mu\rfloor+5}\le243\,\mu\le7776\log x}. By (I5) the other two terms have
+absolute value at most $2\,\cP{P}$, and \m{10^{14}\,\cP{P}\le\log x} by~(D1). Hence
+\m{11\log x-2\,\cP{P}\le\log|\vpi{P}{\mu}|_\tau\le11\log x+22\log2+\log(7776\log x)+2\,\cP{P}}, which lies between
+$10\log x$ and $12\log x$. (ii) By (I4), $\rdD{D}$ is the geometric mean of the numbers $|\vpi{P}{\mu}|_\tau$; apply~(i).
+(iii) By (I5), \m{e^{-\cP{P}}\le e^{\chow{d}}\le e^{\cP{P}}}; apply (ii) and~(D1).
+\end{proof}
+\leanline{\lean{hasLogBoundvarpi}\sep \lean{hasLogBoundrootDisc}}
+In the formal text these bounds are \emph{instances}: facts that Lean's search for comparisons of sizes uses without
+being named. (iii) is such an instance without a name.
+
+\begin{definition}[the target]\label{d:target}
+In Setting~\ref{set:data}, let $D$ be admissible data. Then
+\[\logTarget{D}=m\cdot\frac{1}{\fD{D}}\sum_{\tau\in\PlD{D}}\log\nw{D}{\tau}
++(m-1)\cdot\log\frac{\gD{D}\cdot\rdD{D}}{2\pi}-\frac{15}{2}\log b .\]
+\end{definition}
+\leanline{\lean{logLevelTarget}}
+
+\begin{proof}[Proof of Theorem~A(i)]
+By Setting~\ref{set:data}, $x\,b\le\aD{D}<x\,b+\None{D}$, and
+$\None{D}\le\cP{P}\cdot243\,\mu\cdot2^{22}x^{11}\le b$ by (I5), (D2) and~(D1). So \m{b\le\aD{D}/x\le2b} and
+\m{1\le x\,b/x_1\le\aD{D}/x_1\le2b}, whence \m{0\le\log\nw{D}{\tau}\le2\log b} for every~$\tau$. By (D3),
+\m{b^{20}\le\gD{D}\le b^{22}}; with Lemma~\ref{l:sizes}(ii) and \m{2\pi\le x^{10}}, \m{x^{12}\le b^{5}}, this gives
+\m{b^{2}\le\gD{D}\,\rdD{D}/(2\pi)\le b^{27}}. Therefore
+\[(2m-\tfrac{19}{2})\log b\ \le\ \logTarget{D}\ \le\ \bigl(2m+27(m-1)\bigr)\log b ,\]
+and \m{m\ge10} by (D2) and~(D1).
+\end{proof}
+
+\begin{definition}[the level]\label{d:level}
+In Setting~\ref{set:data}, let $D$ be admissible data. By Theorem~A(i), (D1) and~(D2),
+\m{100\log b\le\logTarget{D}\le29\,m\log b\le m^{22}=2^\mu}. The \kw{level} $\levelN{D}$ is a chosen prime number
+with \m{\levelN{D}\equiv1} modulo $\Mom{P}{\mu}^2$ and
+\m{\logTarget{D}\le\log\levelN{D}\le\logTarget{D}+\sqrt{\log b}}; one exists by~(D4), applied to $U=\logTarget{D}$.
+\end{definition}
+\leanline{\lean{N}}
+
+\begin{proof}[Proof of Theorem~A(ii) and (iii)]
+(ii) $\levelN{D}$ is prime and lies in the window by its choice. By (I3), $\None{D}\,d$ divides $\Mom{P}{\mu}$, hence
+$\Mom{P}{\mu}^2$, so \m{\levelN{D}\equiv1} modulo $\None{D}\,d$. The last two inequalities follow from (i) and
+\m{\sqrt{\log b}\le\log b\le m\log b}.
+
+(iii) Since $16$ divides $N_0$ and $N_0$ divides $\None{D}$, (ii) gives \m{\levelN{D}\equiv1} modulo~$4$. By Fermat's
+theorem on sums of two squares there are integers $y$, $y'$ with \m{y^2+y'^2=\levelN{D}}. The element
+\m{\imag=\rtu{D}^{\,\None{D}/4}} of $\OO_{\ED{D}}$ has $\imag^2=-1$, and \m{\cj{\imag}=\imag^{-1}=-\imag}
+because complex conjugation inverts roots of unity. So \m{\pi=y+y'\,\imag} has
+\m{\pi\,\cj{\pi}=y^2+y'^2=\levelN{D}}. The second statement is the choice of Definition~\ref{d:pi}.
+\end{proof}
+
+\begin{definition}\label{d:pi}
+In Setting~\ref{set:data}, let $D$ be admissible data. Then $\piN{D}$ is a chosen integer $\pi$ of $\ED{D}$ with
+\m{\pi\,\cj{\pi}=\levelN{D}} (Theorem~A(iii)).
+\end{definition}
+\leanline{\lean{declc}}
+
+\begin{remark}\label{r:levelsizes}
+Three more facts are recorded in the formal text as instances without names: $\levelN{D}$ is prime;
+\m{\sqrt x\,\log b\le\log\levelN{D}\le e^{32}\sqrt x\,\log b}; and \m{\levelN{D}\ge b^{101}}. They follow from
+Theorem~A(ii) and \m{\sqrt x\le m\le2\sqrt x}, \m{m\ge101}. By (I1) and Theorem~A(ii), every finite place of
+$\ED{D}$ above $\levelN{D}$ has absolute norm~$\levelN{D}$.
+\end{remark}
+
+\sect{Tame characters and twists}{s:tame}
+\begin{definition}[tame characters, twists]\label{d:tame}
+In Setting~\ref{set:data}, let $P$ be parameters and $D$ admissible data for~$P$.
+\begin{enumerate}[label=(\alph*)]
+\item The set $\TameSet{D}$ of the \kw{tame characters of~$D$} consists of the triples of a character of $\Un(1)$ of
+$\ED{D}$, a finite set $Q$ of finite places of $\ED{D}$ and a family $\psi$ of characters of the residue fields, such
+that: the character has weight $0$ and tame part~$\psi$; $\psi_w=1$ for every $w\notin Q$; $\cj{w}\notin Q$ for
+every $w\in Q$; and \m{\gD{D}\cdot\levelN{D}} is prime to \m{\prod_{w\in Q}\Nm w}. We write $\vartheta$ for a tame
+character and for its character of $\Un(1)$, $Q(\vartheta)$ for its set and
+\m{\psi_\vartheta=(\psi_{\vartheta,w})_w} for its family.
+\item For a tame character $\vartheta$ of $D$, \m{\levelNorm{\vartheta}=\prod_{w\in Q(\vartheta)}\Nm w}.
+\item The set $\TwistSet{D}$ of the \kw{twists of~$D$} consists of the tame characters $\vartheta\in\TameSet{D}$ with
+\m{\psi_{\vartheta,w}\ne1} for every $w\in Q(\vartheta)$.
+\item The \kw{trivial tame character} $\oneT$ of $D$ is the trivial character with $Q(\oneT)=\emptyset$ and trivial
+family; it is a twist of~$D$.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{TameChar}\sep \lean{levelNorm}\sep \lean{Twist}\sep \lean{one}}
+A tame character may mark a place: its set $Q(\vartheta)$ may contain places $w$ with
+\m{\psi_{\vartheta,w}=1}. Non-triviality at every marked place is what a twist adds; so for a twist, and only then,
+$Q(\vartheta)$ is exactly the set of the places where the tame part is not trivial. The formal text
+makes the trivial twist the unit element $1$ of the type of twists and lets a twist be used as a tame character
+(two instances without names). The $m$-fold twists of the overview are the twists $\vartheta$ of $D$ such that
+\m{\psi_{\vartheta,w}^{\,n}\ne1} for all $w\in Q(\vartheta)$ and \m{1\le n\le m}; they, and the power
+$\vartheta^{n}$ of a tame character (the same set $Q(\vartheta)$, the family $\psi_\vartheta^{\,n}$), are defined in
+Chapter~VII (unit~147).
+
+\begin{definition}[characters of the lifts]\label{d:liftchar}
+In Setting~\ref{set:data}, let $D$ be admissible data, $\vartheta$ a tame character of~$D$ and $j$ a natural number.
+\begin{enumerate}[label=(\alph*)]
+\item \m{\liftChar{D}{\vartheta}{j}=\muZero{D}{j}\cdot\vartheta}, a character of $\Un(1)$ of~$\ED{D}$.
+\item $\liftTame{D}{\vartheta}{j}$ is the family \m{\bigl(\omD{D}{w}^{\,j}\cdot\psi_{\vartheta,w}\bigr)_w} of characters
+of the residue fields.
+\item $\LiftIdx{D}$ is the set \m{\{1,\dots,m\}}, the indices of the lifts.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{liftChar}\sep \lean{liftTamePart}\sep \lean{LiftIndex}}
+
+\sect{Index sets}{s:index}
+For a natural number $q$ we write $[q]=\{0,\dots,q-1\}$, and $\{\pt\}$ for a set with one element.
+
+\begin{definition}[blocks]\label{d:block}
+Let $S$, $T$ be sets and $j$ a natural number.
+\begin{enumerate}[label=(\alph*)]
+\item \m{\BlockIdx{j}{S}{T}} is defined by recursion: \m{\BlockIdx{0}{S}{T}=S} and
+\m{\BlockIdx{j+1}{S}{T}=\BlockIdx{j}{S}{T}\sqcup T}. It is the disjoint union of $S$ and $j$ copies of~$T$.
+\item \m{\firstBlock{j}\colon S\to\BlockIdx{j}{S}{T}} is the inclusion of the first block.
+\item For a set $\alpha$ and a bijection $\nu\colon S\to\alpha$,
+\m{\equivSum{\nu}{j}\colon\BlockIdx{j}{S}{T}\to\alpha\sqcup([j]\times T)} is a bijection: $\nu$ for $j=0$, and for
+$j+1$ a chosen bijection, which exists because both sides have the cardinality of \m{\alpha\sqcup([j]\times T)\sqcup T}.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{BlockIndex}\sep \lean{firstBlock}\sep \lean{equivSum}}
+
+\begin{lemma}\label{l:block}
+Let $S$, $T$ be finite sets and $j$ a natural number. Then $\BlockIdx{j}{S}{T}$ is finite, with
+\m{|S|+j\,|T|} elements.
+\end{lemma}
+\begin{proof}
+By induction on~$j$; or by the bijection $\equivSum{\nu}{j}$ for the identity $\nu$ of~$S$.
+\end{proof}
+\leanline{\lean{instFintypeYT}\sep \lean{card}}
+
+\begin{definition}[the index sets of the data]\label{d:index}
+In Setting~\ref{set:data}, let $D$ be admissible data and $j$ a natural number.
+\begin{enumerate}[label=(\alph*)]
+\item \m{\rhoD{D}=\lfloor m/2\rfloor-1}, or $0$ if this is negative.
+\item \m{\InitIdx{D}{j}=[\nD{D}{j}-1]}.
+\item \m{\Xidx{D}{j}=\InitIdx{D}{j}\sqcup\{\pt\}}: the basis index set of the standard definite hermitian space
+$X_j(D)$ of rank~$\nD{D}{j}$, the point $\pt$ indexing the last basis vector.
+\item $\shapeD{D}$ is the \kw{shape} consisting of the number $\rhoD{D}$, the index set $\Xidx{D}{0}$ and its
+element~$\pt$.
+\item \m{\Ridx{D}=[\rhoD{D}]\sqcup\bigl(\Xidx{D}{0}\sqcup\{\pt\}\bigr)\sqcup[\rhoD{D}]}, the index set of the shape
+$\shapeD{D}$: indices of $\rhoD{D}$ isotropic vectors, of $\Xidx{D}{0}$, of one further vector, and of $\rhoD{D}$
+dual isotropic vectors.
+\item \m{\Yidx{D}{j}=\BlockIdx{j}{\Ridx{D}}{[\tD{D}]}}: the basis index set of the hermitian space $\SpY{D}{j}$.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{decle}\sep \lean{InitIndex}\sep \lean{X}\sep \lean{shape}\sep \lean{RowIndex}\sep \lean{Y}}
+
+\begin{lemma}\label{l:rowindex}
+In Setting~\ref{set:data}, let $P$ be parameters and $D$ admissible data for~$P$. Then \m{m=2\,\rhoD{D}+2}, the set
+$\Ridx{D}$ has exactly $r$ elements, and $\Yidx{D}{j}$ has \m{r+j\,\tD{D}} elements for every natural number~$j$.
+\end{lemma}
+\begin{proof}
+By (D2), $m$ is even and at least~$2$, so \m{\rhoD{D}=m/2-1}; and \m{m\le2\sqrt x\le x^5\le r}, so
+\m{\kD{D}=r+1-m\ge1} and $\Xidx{D}{0}$ has \m{\nD{D}{0}=\kD{D}} elements. Hence
+\[|\Ridx{D}|=2\,\rhoD{D}+\kD{D}+1=(m-2)+(r+1-m)+1=r.\]
+The last statement is Lemma~\ref{l:block}.
+\end{proof}
+\leanline{\lean{cardrowIndex}}
+The formal text adds an instance without a name: a bound for the size of $r$ is also one for~$|\Ridx{D}|$. The
+identity \m{m=2\,\rhoD{D}+2} is stated there in Chapter~VII (unit~140).
+
+\begin{definition}[numbering, row parameter, signs]\label{d:rowpar}
+In Setting~\ref{set:data}, let $D$ be admissible data.
+\begin{enumerate}[label=(\alph*)]
+\item \m{\basisNum{D}\colon\Ridx{D}\to[r]} is a chosen bijection (Lemma~\ref{l:rowindex}).
+\item For an infinite place $\tau$ of $\ED{D}$ and a natural number $i$, the entry $i$ of the \kw{row parameter} is
+\[\rowPar{D}{\tau}{i}=\begin{cases}\kD{D}/2-1-i&\text{if }i+1<\kD{D},\\
+\hhD{D}-\wt{D}{i+2-\kD{D}}{\tau}&\text{if }i+1\ge\kD{D}.\end{cases}\]
+\item For an infinite place $\tau$ and $i\in\Ridx{D}$: \m{\parW{D}{\tau}{i}=2\,\rowPar{D}{\tau}{\basisNum{D}(i)}}.
+\item For a natural number $j$ and $i\in\Ridx{D}$: \m{\signsW{D}{j}{i}=-1} if \m{\basisNum{D}(i)\ge\kD{D}+j-1}, and
+\m{\signsW{D}{j}{i}=+1} otherwise.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{basisNumber}\sep \lean{rowParameter}\sep \lean{paramW}\sep \lean{signsW}}
+The number $\kD{D}$ is even, since $r$ is odd and $m$ even. For $i=\kD{D}-1,\dots,r-1$ the second case gives
+\m{-(\wt{D}{q}{\tau}-\hhD{D})} with $q=i+2-\kD{D}\in\{1,\dots,m\}$. So the row parameter consists of the
+$\kD{D}-1$ numbers \m{\kD{D}/2-1,\dots,1-\kD{D}/2}, followed by $m$ entries given by the weights of the $m$ lifts; $\parW{D}{\tau}{\cdot}$ is the doubled parameter of the forms on $\SpY{D}{0}$ and on the
+spaces $W_j$ of signs $\signsW{D}{j}{\cdot}$ of Chapter~VII.
+
+\begin{definition}[entry signs]\label{d:esign}
+For natural numbers $o$, $j$, $a$ the sign \m{\esign{o}{j}{a}\in\{\pm1\}} is defined by recursion on~$o$:
+\[\esign{o+1}{0}{a}=-\esign{o}{0}{a},\qquad\esign{o}{j}{a}=(-1)^{\,o+a+\min(\max(a-o,0),\;j)}\ \text{ in all other
+cases.}\]
+The second formula holds in the first case as well, since \m{\min(\max(a-o,0),0)=0}.
+\end{definition}
+\leanline{\lean{entrySign}}
+
+\begin{lemma}\label{l:ite}
+Let $j$ be a natural number and $y$ an integer. Then the number that is $y-1$ if $j$ is odd and $y$ if $j$ is even
+equals \m{y-(j\bmod2)}.
+\end{lemma}
+\begin{proof}
+$j\bmod2$ is $1$ or $0$ accordingly.
+\end{proof}
+\leanline{\lean{iteoddeqsubemod}}
+
+\begin{definition}[the finite group and its idempotent]\label{d:G}
+In Setting~\ref{set:data}, let $D$ be admissible data.
+\begin{enumerate}[label=(\alph*)]
+\item \m{\Ggrp{D}=\prod_{x}\GL_{\Ridx{D}}\bigl(\FF_{\chosenOf{D}{x}}\bigr)}, the product over the pairs $x=(i,w)$
+with $i\in\{0,1\}$ and $w\in\ChPl{D}{i}$: a finite group, the product of the groups $\GL_r$ of the residue fields
+of the chosen places.
+\item $\goodFam{D}$ is the finite set of the families \m{(c_x)_x} of monic polynomials \m{c_x} of degree $r$ over
+$\FF_{\chosenOf{D}{x}}$ such that, for each $i\in\{0,1\}$, the tuple \m{(c_{(i,w)})_{w\in\ChPl{D}{i}}} is \kw{good}
+for $\Mom{P}{\mu}$ and~$r$: every $c_{(i,w)}$ is squarefree with non-zero constant term and has no root $y$ in
+$\FF_w$ with \m{y^{\Mom{P}{\mu}}=1}, and at least one $c_{(i,w)}$ is irreducible with a root of multiplicative order
+\m{(\Nm w)^r-1} in an algebraic closure of~$\FF_w$.
+\item \m{\ezero{D}=\sum_{c\in\goodFam{D}}\bigotimes_x e_{c_x}} in the group algebra $\CC[\Ggrp{D}]$, where $e_{c_x}$ is
+the idempotent of Green's character with the label $c_x$ in the group algebra of
+$\GL_{\Ridx{D}}(\FF_{\chosenOf{D}{x}})$.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{G}\sep \lean{goodTupleFamilies}\sep \lean{e}}
+Good tuples and the idempotents $e_c$ belong to Chapter~VII (unit~140, the note \emph{Primitive labels of general
+linear groups over finite fields}) and to the background library; there $\ezero{D}$ is shown to be a central
+idempotent, and the rows of the overview are its image on the forms of principal level on~$\SpY{D}{0}$.
+
+\sect{The branching pairing}{s:branching}
+In this section $E$ is a CM field with a CM type, and weights and their Harish-Chandra parameters are as before
+Theorem~C. We recall the objects of the background library that the theorem names.
+
+\subhead{Representations.} For a weight $(\kappa,e)$ and a finite index set $n$, the vectors \kw{of weight $\kappa$
+in rank~$|n|$} over a commutative ring $R$ are the coordinate vectors, in the basis of semistandard fillings, of the
+product over the infinite places $\tau$ of the Weyl modules of $\GL_n$ whose Young diagram has $\kappa_\tau(h)$ columns
+of height~$h$, for $0<h<|n|$. On them a family \m{g=(g_\tau)_\tau} of matrices in $\GL_n(R)$ acts by
+\m{\wrep{\kappa}{e}(g)=\prod_\tau\det(g_\tau)^{e_\tau}} times the Schur matrix of~$g$. For vectors $v'$, $v$ with the
+same index set, \m{\langle v',v\rangle=\sum_a v'_a v_a} is the bilinear dot product, and $\wn{v}^2$ is the value at
+$(v,v)$ of the positive definite hermitian form on complex vectors of weight $\kappa$ given by the integral Gram
+matrix of the Weyl lattice. \m{\boxes{\kappa}{N}=\sum_\tau\sum_{h<N}h\,\kappa_\tau(h)} is the number of boxes. For a
+ring $S$ with an involution $y\mapsto\cj{y}$, $\Un_n(S)$ is the group of the $g\in\GL_n(S)$ with
+\m{\cj{g}^{\mathrm{t}}g=1}; for $g\in\Un_n(S)$ and $u\in\Un_1(S)$, \m{\dg{g,u}\in\Un_{n'}(S)} is the block diagonal
+matrix with blocks $g$ and~$u$, relabelled by~$\sigma$; and for ring homomorphisms $f_\tau\colon S\to R$, $f(g)$ is the
+family \m{(f_\tau(g))_\tau}, entry by entry.
+
+\subhead{Forms.} A \kw{standard} hermitian space $V$ with index set $n$ has Gram matrix $1$ and the standard
+lattice; its signs are all~$+1$. Its adelic unitary group is the product of a compact real group and $\Un_n(\Af)$;
+$[\Un(V)]$ is the quotient by the rational points, with the invariant measure that the background library fixes. An \kw{algebraic form} of
+weight $(\kappa,e)$ in rank $|n|$ is a function $\phi$ on $\Un_n(\Af)$, invariant on the right under an open
+subgroup, with values in the complex vectors of weight $\kappa$ in rank~$|n|$, such that
+\m{\phi(y_0h)=\wrep{\kappa}{e}(y_0)\phi(h)} for rational points~$y_0$. For a family $l$ that is the doubled
+Harish-Chandra parameter of $(\kappa,e)$ and signs~$\mathbf{s}$, the function $\Fof{l}{\mathbf{s}}{\phi}$ on the adelic
+group is \m{(y_\infty,h)\mapsto\bigl(v^{+}_{l},\cj{\wrep{\kappa}{e}}(y_\infty)^{-1}\phi(h)\bigr)}, the coefficient of
+the highest weight vector $v^{+}_{l}$ for the Gram form, where $\cj{\wrep{\kappa}{e}}$ is $\wrep{\kappa}{e}$ at the
+complex conjugates of the matrices. A \kw{level} is an open subgroup $\mathcal{K}$ of the stabiliser $\Kmax$ of the
+standard lattice in $\Un_n(\Af)$, and for a function $F$ on $\Un_n(\Af)$, left invariant under the rational points
+and right invariant under an open subgroup, $\clint{\mathcal{K}}{F}$ is its integral over the quotient of
+$\Un_n(\Af)$ by the rational points for the measure that gives $\mathcal{K}$ the volume~$1$: a finite sum over
+classes, weighted by inverse orders of stabilisers.
+
+\statement{ana}{\textbf{Inputs for Theorem C.}\enspace Let $E$, $n$, $n'$, $\sigma$ be as in Theorem~C, with
+$|n'|=|n|+1$.
+
+(I9) \emph{Parameters with a gap} (unit~143). If a family $l=(l_\tau)$ of maps $n\to\ZZ$ has, for every~$\tau$,
+distinct values that are all congruent to $|n|-1$ modulo~$2$, then $l$ is the doubled Harish-Chandra parameter of
+some weight $(\knat,\enat)$.
+
+(I10) \emph{Dual pairing} (unit~101). If $l$ is the doubled Harish-Chandra parameter of
+$(\knat,\enat)$ and $-l$ that of $(\kappa',e')$, both in rank~$|n|$, there is an integer matrix $A$
+with: \m{\langle\wrep{\kappa'}{e'}(g)v',A\,\wrep{\knat}{\enat}(g)v\rangle=\langle v',Av\rangle} for
+all fields $R$ of characteristic~$0$, all families $g$ in $\GL_n(R)$ and all $v'$, $v$; for all signs $\mathbf{s}$
+and algebraic forms $\eta$ of weight $(\kappa',e')$,
+\m{\Fof{-l}{\mathbf{s}}{\eta}(y_\infty,h)=\langle\eta(h),A\,\cj{\wrep{\knat}{\enat}}(y_\infty)v^{+}_{l}\rangle};
+and for every complex vector $v$ of weight $\knat$ there is a complex vector $v^{\circ}$ of weight
+$\kappa'$ with \m{\wn{v^{\circ}}=\wn{v}} and \m{\langle v',Av\rangle=(v^{\circ},v')} for all~$v'$, where
+$(\cdot,\cdot)$ is the Gram form, conjugate linear in the first variable.
+
+(I11) \emph{Branching} (unit~19; the branching law from $\GL_{|n|+1}$ to $\GL_{|n|}$ with multiplicity one, in an
+integral form, here in the case $q=0$ of the formal statement; reference to be confirmed). Let $(\kappa,e)$ be a weight, and let $\kup$, $\kdn$ be families of
+functions $\NN\to\NN$ with \m{\kup+\kdn=\kappa}. Let \m{(\knat,\enat)} be a weight with
+\m{\knat_\tau(h)=\kdn_\tau(h)+\kup_\tau(h+1)} for $0<h<|n|$ and
+\m{\enat_\tau=e_\tau+\kdn_\tau(|n|)}. Then there is an integer matrix $\brm$, from weight $\kappa$ in rank
+$|n'|$ to weight $\knat$ in rank~$|n|$, such that: over every field $R$ of characteristic~$0$,
+\[\brm\cdot\wrep{\kappa}{e}(\dg{g,u})=\prod_\tau u_\tau^{\,e_\tau+\sum_{0<h<|n'|}\kup_\tau(h)}\cdot\wrep{\knat}{\enat}(g)\cdot\brm\]
+for all families $g$ in $\GL_n(R)$ and $u$ in $R^\times$; \m{\wn{\brm\,v}\le(M^{M})^{3}\wn{v}} for all complex $v$
+and every natural number \m{M\ge\boxes{\knat}{|n|}}; and every complex matrix that intertwines
+\m{\wrep{\kappa}{e}(\dg{g,1})} with \m{\wrep{\knat}{\enat}(g)} for all families $g$ of unitary matrices is a multiple
+of~$\brm$.
+
+(I12) \emph{Periods as means} (unit~27; reference to be confirmed). Let $V$ be a standard space with index set~$n$,
+let $\brm$ have the last property of~(I11), let $L'$ be a linear functional on the complex vectors of weight
+$\kappa$ in rank~$|n'|$ and $v^{\natural}$ a complex vector of weight $\knat$ in rank~$|n|$. Then there is
+a complex number $C$ such that for every algebraic form $\phi$ of weight $(\kappa,e)$ in rank~$|n'|$, every automorphic
+function $\Phi$ on the adelic unitary group of~$V$, every $u\in\Un_1(\Af)$, every family $(L_h)_h$ of linear
+functionals on the complex vectors of weight $\knat$, indexed by $h\in\Un_n(\Af)$, and every level~$\mathcal{K}$: if
+\m{\Phi(y_\infty,h)=L_h\bigl(\cj{\wrep{\knat}{\enat}}(y_\infty)v^{\natural}\bigr)} for all
+$(y_\infty,h)$, then
+\[\begin{aligned}\int_{[\Un(V)]}\Phi(y)\cdot{}&L'\bigl(\cj{\wrep{\kappa}{e}}(\dg{y_\infty,1})^{-1}\phi(\dg{h,u})\bigr)\,dy\\
+&=\frac{C}{[\Kmax:\mathcal{K}]}\cdot\clint{\mathcal{K}}{h\mapsto L_h\bigl(\brm\,\phi(\dg{h,u})\bigr)},\end{aligned}\]
+where $y=(y_\infty,h)$. The functions $\Fof{-l}{\mathbf{s}}{\eta}$ are automorphic (unit~102).}
+
+\begin{proof}[Proof of Theorem~C]
+Since $\sigma$ is a bijection, \m{|n'|=|n|+1}; write $N=|n|$. By the two hypotheses on the signs, all of
+$\mathbf{s}$, $\mathbf{r}$, $\mathbf{t}$ are~$1$. Since $-l$ is a doubled Harish-Chandra parameter in rank~$N$, the
+values of each $l_\tau$ are distinct and congruent to $N-1$ modulo~$2$; by~(I9), $l$ is the doubled Harish-Chandra
+parameter of a weight $(\knat,\enat)$. For $0\le p\le N$ and $0\le q<N$ put
+\[\lambda_\tau(p)=e_\tau+\sum_{p<h<N+1}\kappa_\tau(h),\qquad
+\lambda^{\natural}_\tau(q)=\enat_\tau+\sum_{q<h<N}\knat_\tau(h),\]
+the highest weights. The values of $l'_\tau$ in decreasing order are \m{2\lambda_\tau(p)+N-2p}, $p=0,\dots,N$, and
+those of $l_\tau$ are \m{2\lambda^{\natural}_\tau(q)+N-1-2q}, $q=0,\dots,N-1$.
+
+\emph{Interlacing.} Fix $\tau$ and $q<N$, and count values from~$0$. Exactly $q$ values of $l'_\tau$ exceed its
+$q$-th value~$y$; by the hypothesis at this~$y$, at most $q$ values of $l_\tau$ exceed it, so the $q$-th value of
+$l_\tau$ is at most the $q$-th value of $l'_\tau$. Exactly $q$ values of $l_\tau$ exceed its $q$-th value~$y$; by
+the hypothesis at this~$y$, at most $q+1$ values of $l'_\tau$ exceed it, so the $(q+1)$-st value of $l'_\tau$ is
+at most the $q$-th value of~$l_\tau$. The values of $l_\tau$ and of $l'_\tau$ have opposite parities, so both
+inequalities are strict, and in terms of the highest weights they read
+\begin{equation}\label{e:interlace}
+\lambda_\tau(q+1)\ \le\ \lambda^{\natural}_\tau(q)\ \le\ \lambda_\tau(q)\qquad(0\le q<N).
+\end{equation}
+Put \m{\delta_\tau(q)=\lambda^{\natural}_\tau(q)-\lambda_\tau(q+1)}; it is half of the difference of the $q$-th value of
+$l_\tau$ and the $(q+1)$-st value of $l'_\tau$, rounded down, and \m{0\le\delta_\tau(q)\le\kappa_\tau(q+1)}
+by~\eqref{e:interlace}.
+
+\emph{The matrix.} Let $\kdn_\tau(h)=\delta_\tau(h-1)$ and $\kup_\tau(h)=\kappa_\tau(h)-\delta_\tau(h-1)$ for
+\m{1\le h\le N}, and $\kdn_\tau(h)=0$, $\kup_\tau(h)=\kappa_\tau(h)$ for the other~$h$. Then
+\m{\kup+\kdn=\kappa}, and
+\begin{align*}
+\kdn_\tau(h)+\kup_\tau(h+1)&=\lambda^{\natural}_\tau(h-1)-\lambda^{\natural}_\tau(h)=\knat_\tau(h)\qquad(0<h<N),\\
+e_\tau+\kdn_\tau(N)&=\lambda_\tau(N)+\delta_\tau(N-1)=\lambda^{\natural}_\tau(N-1)=\enat_\tau .
+\end{align*}
+So
+(I11) gives a matrix~$\brm$, and (I10) a matrix~$A$. Put \m{B=A\cdot\brm} and
+\m{N_\tau=e_\tau+\sum_{0<h<N+1}\kup_\tau(h)}.
+
+(a1) For $g\in\Un_n(S)$ and $u\in\Un_1(S)$, the intertwining property of $\brm$ over $R$, at the families $f(g)$
+and $(f_\tau(\det u))_\tau$, and then the invariance of~$A$ give
+\[\bigl\langle\wrep{\kappa'}{e'}(f(g))v',A\,\brm\,\wrep{\kappa}{e}(f(\dg{g,u}))v\bigr\rangle
+=\prod_\tau f_\tau(\det u)^{N_\tau}\cdot\langle v',A\,\brm\,v\rangle .\]
+(a2) \m{|N_\tau|\le|e_\tau|+\sum_{0<h<N+1}\kappa_\tau(h)\le|e_\tau|+\boxes{\kappa}{N+1}}.
+
+(a3) By (I10), applied to the vector $\brm\,v$, there is $v^{\circ}$ with \m{\wn{v^{\circ}}=\wn{\brm\,v}} and
+\m{\langle v',A\,\brm\,v\rangle=(v^{\circ},v')}. The Cauchy--Schwarz inequality for the positive definite Gram form and
+(I11) give \m{|\langle v',Bv\rangle|\le\wn{\brm\,v}\,\wn{v'}\le(M^{M})^{3}\wn{v}\,\wn{v'}}, provided
+\m{M\ge\boxes{\knat}{N}}. This holds for $M\ge\boxes{\kappa}{N+1}$: counting boxes by rows,
+\m{\boxes{\knat}{N}=\sum_\tau\sum_{q<N}(\lambda^{\natural}_\tau(q)-\enat_\tau)} and
+\m{\boxes{\kappa}{N+1}=\sum_\tau\sum_{p<N+1}(\lambda_\tau(p)-e_\tau)}, and
+\m{\lambda^{\natural}_\tau(q)-\enat_\tau\le\lambda_\tau(q)-e_\tau} by~\eqref{e:interlace} and
+\m{\enat_\tau\ge e_\tau}.
+
+(b) Fix~$g$. Apply (I12) to the standard space, the matrix~$\brm$, the vector \m{v^{\natural}=v^{+}_{l}} and the
+functional \m{L'=(v^{+}_{l'},\cj{\wrep{\kappa}{e}}(g)^{-1}\,\cdot\,)}; it gives~$C$. For $V$, $\eta$, $\phi$, $u$,
+$\mathcal{K}$ as in the statement, $V$ is the standard space, $\Phi=\Fof{-l}{\mathbf{s}}{\eta}$ is automorphic, and by
+(I10) it has the form required in (I12) with \m{L_h=\langle\eta(h),A\,\cdot\,\rangle}. The left side of (I12)
+is then the integral of the theorem, because the value of \m{\Fof{l'}{\mathbf{t}}{\phi}} at \m{\dg{y,(1,u)}\cdot(g,1)} is
+\m{L'\bigl(\cj{\wrep{\kappa}{e}}(\dg{y_\infty,1})^{-1}\phi(\dg{h,u})\bigr)}, and the right side is the mean of
+\m{h\mapsto\langle\eta(h),A\,\brm\,\phi(\dg{h,u})\rangle}.
+\end{proof}
+
+\sect{The grid spaces}{s:grid}
+Chapter~VII compares the chain of lifts with a second chain by moving through two grids of hermitian spaces, the
+grid $V$ and the grid~$Z$. The file read here only names the objects on the grids; their index sets, signs and
+parameters are defined in Chapter~VII. In this section $D$ is admissible data as in Setting~\ref{set:data}, and
+$z\in\{0,1\}$ names a grid: $z=0$ is the grid~$V$, $z=1$ the grid~$Z$. (The formal text uses truth values; $1$ is
+\emph{true}.)
+
+\statement{ana}{\textbf{Inputs from Chapter VII} (units 140 and~147) \textbf{and from the background
+library.}\enspace In Setting~\ref{set:data}:
+
+(I13) \emph{Spaces.} A hermitian space with a point over $\ED{D}$, with a finite index set and signs on it, is a
+Gram matrix over $\ED{D}$ with an adelic frame that brings it to the diagonal matrix of the signs at the infinite
+places and to $1$ at the finite places. Such spaces have orthogonal sums $\oplus$, relabellings along bijections of
+index sets that carry the signs, and opposites (the Gram matrix and the signs are negated); for signs $\mathbf{s}$
+there is the standard signed space $I(\mathbf{s})$. For every natural number~$j$, $\SpY{D}{j}$ is a hermitian space
+with index set $\Yidx{D}{j}$ and signs $\gsigns{0}{0}{0}{j}$ (unit~140).
+
+(I14) \emph{Index sets, signs, parameters} (unit~147). For $z\in\{0,1\}$ and natural numbers $o,i,j$:
+\m{\GrIdx{z}{i}{j}=\BlockIdx{j}{\BlockIdx{i}{\BlockIdx{z}{\Ridx{D}}{\{\pt\}}}{[\tD{D}+z]}}{[\tD{D}-z]}}, a set with
+\m{r+z+i\,(\tD{D}+z)+j\,(\tD{D}-z)} elements; its base indices, those of $\BlockIdx{z}{\Ridx{D}}{\{\pt\}}$, are
+numbered by $\basisNum{D}$ and, for the point, by~$r$. The signs $\gsigns{z}{o}{i}{j}$ on it are
+\m{\esign{o}{j}{\max(q+1-\kD{D},0)}} at the base index of number~$q$ and $+1$ elsewhere. The doubled parameter
+$\gpar{z}{o}{i}{j}{\tau}$, for an infinite place~$\tau$, is the integer vector on the same index set with the
+following entries: $2\,\rowPar{D}{\tau}{q}$ at the base index of number~$q$;
+\m{2\,\wt{D}{l+1}{\tau}+\tD{D}-1-2a} at the position $a\in[\tD{D}+z]$ of the block $l<i$ of the first kind;
+\m{\tD{D}-1-2\,(\wt{D}{l+1+o}{\tau}+z)-2a} at the position $a\in[\tD{D}-z]$ of the block $l<j$ of the second kind;
+all raised by $1$ if $z=1$, and lowered by $1$ if $z=0$ and $i+j$ is odd. The weight
+$\gwt{c}{l}{n}$, for $c\in\{0,1\}$, a natural number $l$ and a finite set~$n$, is
+\m{\tau\mapsto\lfloor(|n|+1-c)/2\rfloor-\wt{D}{l+1}{\tau}}. The polynomial \m{\ghar{o}{d}{c}{l}{z}{a}{b}{i}{j}}, for
+$d\in\{0,1\}$, is a chosen joint harmonic for the nodes $(a,b)$ and $(i,j)$ of grid~$z$, the weights
+$\gwt{c}{l}{\cdot}$ and the parameters, negated if $d=1$. Facts: (i) $\gsigns{1}{0}{0}{0}$ is $\gsigns{0}{0}{0}{0}$ on
+$\Ridx{D}$ and $+1$ at the point; (ii) the number of signs $-1$ in $\gsigns{z}{0}{i}{j}$ is
+\m{\lfloor(\max(m-j,0)+z)/2\rfloor}; (iii) there are chosen bijections
+\m{\Delta_j\colon\GrIdx{0}{j}{j}\sqcup\{\pt\}\to\GrIdx{1}{j}{j}}, the identity for $j=0$, such that for $j\le m$
+the signs $\gsigns{1}{0}{j}{j}$ correspond to $\gsigns{0}{0}{j}{j}$ and $(-1)^{j}$ at the point; (iv) for all
+$z,i,j$ and~$\tau$, the entries of $\gpar{z}{0}{i}{j}{\tau}$ are distinct, congruent to $|\GrIdx{z}{i}{j}|-1$
+modulo~$2$, and two entries at indices of different signs differ by at least $2\,\hD{D}$; (v) for a step of the
+grid as in Lemma~\ref{l:edge}, the weights, parameters and signs at its two ends correspond in the sense of the theta
+correspondence of discrete series parameters; (vi) $\tD{D}$ is odd.}
+
+\statement{ana}{\textbf{Inputs from Chapter VII and from the background library, continued.}\enspace In
+Setting~\ref{set:data}:
+
+(I15) \emph{Moduli} (units 140 and~147). For a tame character $\vartheta$ of $D$ and a natural number $q\ge1$,
+$\lmod{\vartheta}{q}$ is the ideal of $\OO_{\ED{D}}$ that is the $q$-th power of the product of the chosen places
+of~$D$, times the product of the places of~$Q(\vartheta)$; its prime divisors are the chosen places and the places
+of~$Q(\vartheta)$. For an $m$-fold twist~$\vartheta$: \m{\gmod{\vartheta}=\lmod{\vartheta}{\bone{D}}},
+\m{\tmod{0}{\vartheta}=\lmod{\vartheta}{1}} and \m{\tmod{1}{\vartheta}=\lmod{\oneT}{\bone{D}}}, which divides
+$\gmod{\vartheta}$. For a finite index set $n$ and each of these ideals $\mathfrak{a}$, reduction from the stabiliser $\Kmax$ of the
+standard lattice in $\Un_n(\Af)$ to \m{\GL_n(\OO_{\ED{D}}/\mathfrak{a})} is surjective.
+
+(I16) \emph{Kernels and lifts} (background library). For a parameter $l$ and signs $\mathbf{s}$ on a finite index
+set, the \kw{kernel pair} of $(l,\mathbf{s})$ sends $0$ to the product over the infinite places of the discrete series
+kernels of the parameters~$l_\tau$, and $1$ to that of~$-l$. A pair of functions on the real unitary group is a
+\kw{conjugate kernel pair} if the two are complex conjugates of each other and each is a cusp kernel of order~$0$.
+If, for every~$\tau$, the entries of $l_\tau$ are distinct, of the right parity, and differ by at least
+$1000\,|n|^3$ at indices of different signs, then the kernel pair of $(l,\mathbf{s})$ is a conjugate kernel pair.
+For spaces $\mathcal{S}$, $\mathcal{T}$, characters of $\Un(1)$, a polynomial and a function $\Psi$ of matrices modulo an
+ideal, there are the theta lift from forms on $\mathcal{S}$ to forms on $\mathcal{T}$ and the descent in the other
+direction, both with the Schwartz function made of the polynomial at the infinite places and of $\Psi$ at the
+finite places. A family of characters, two kernel pairs, a direction $d\in\{0,1\}$ and a polynomial form an
+\kw{edge family} if both pairs are conjugate kernel pairs, the characters have weights independent of the member of
+the family, and the polynomial is an edge for the real Weil representation between the kernels of index~$d$. If
+weights, parameters and signs correspond as in (I14)(v), then the kernel pairs, the joint harmonic and any family of
+characters of these weights form an edge family.
+
+(I17) \emph{Determinants} (background library). If a character $\nu$ of $\Un(1)$ of $\ED{D}$ has a weight and a tame
+part $\psi$ that is trivial outside the prime divisors of an ideal $\mathfrak{a}$, then for every finite index set $n'$,
+all signs $\mathbf{s}$ on $n'$ and every $k\in\Kmax\subseteq\Un_{n'}(\Af)$: the value of $\nu$ at the determinant of
+the adelic point $(1,k)$ is \m{\prod_{w\mid\mathfrak{a}}\psi_w\bigl(\det(k\bmod w)\bigr)}.}
+
+\begin{definition}[nodes and their spaces]\label{d:grid}
+In Setting~\ref{set:data}, let $D$ be admissible data.
+\begin{enumerate}[label=(\alph*)]
+\item A \kw{node} is a triple $p=(z,a,b)$ of an element $z\in\{0,1\}$ and natural numbers $a$, $b$.
+\item For a node $p=(z,i,j)$: \m{\nodeIdx{p}=\GrIdx{z}{i}{j}}.
+\item For natural numbers $o,i,j$ and $z\in\{0,1\}$, the hermitian space $\gridSp{o}{z}{i}{j}$ has index set
+$\GrIdx{z}{i}{j}$ and signs $\gsigns{z}{o}{i}{j}$. It is: \m{\SpY{D}{0}\oplus I(+1)} for $(o,z,i,j)=(0,1,0,0)$, where
+$I(+1)$ is the standard line of sign~$+1$; $\SpY{D}{j}$ for $(o,z,i)=(0,0,0)$; the opposite of
+$\gridSp{o-1}{z}{0}{0}$ for $o\ge1$ and $i=j=0$; and the standard signed space $I(\gsigns{z}{o}{i}{j})$ in all other
+cases.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{Node}\sep \lean{NodeIndex}\sep \lean{gridSpace}}
+The first case has the right signs by (I14)(i), and the third because
+$\esign{o}{0}{a}=-\esign{o-1}{0}{a}$; this is why Definition~\ref{d:esign} begins with that equation.
+
+\begin{definition}[forms on the grids]\label{d:gridforms}
+In Setting~\ref{set:data}, let $D$ be admissible data, $z\in\{0,1\}$ and $i,j,a,b$ natural numbers.
+\begin{enumerate}[label=(\alph*)]
+\item $\gridKer{z}{i}{j}$ is the kernel pair of the parameter \m{\tau\mapsto\gpar{z}{0}{i}{j}{\tau}} and the signs
+$\gsigns{z}{0}{i}{j}$ (Input~(I16)).
+\item $\gridForm{z}{a}{b}$ is the space of the forms on the unitary group of $\gridSp{0}{z}{a}{b}$ whose type is the
+kernel of index $1$ of $\gridKer{z}{a}{b}$, that of the negated parameter; it carries the Petersson product.
+\item $\gridLevForms{i}$ is the subspace of $\gridForm{1}{0}{i}$ of the forms fixed by the principal level of the
+integer \m{\piGbar{D}^{\,\bone{D}}}.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{gridKernel}\sep \lean{GridForm}\sep \lean{gridLevelForms}}
+
+\begin{definition}[characters on the grids]\label{d:gridchar}
+In Setting~\ref{set:data}, let $D$ be admissible data, $\vartheta$ an $m$-fold twist of~$D$, $c\in\{0,1\}$, $l$ a
+natural number and $n$ a finite index set.
+\begin{enumerate}[label=(\alph*)]
+\item \m{\gridChar{\vartheta}{c}{l}{n}=\liftChar{D}{\vartheta^{l+1}}{l+1}\cdot\ups^{\lfloor|n|/2\rfloor}} if $c=1$, and
+\m{\gridChar{\vartheta}{c}{l}{n}=\liftChar{D}{\oneT}{l+1}\cdot\ups^{\lfloor(|n|+1)/2\rfloor}} if $c=0$.
+\item \m{\gridTame{\vartheta}{c}{l}=\liftTame{D}{\vartheta^{l+1}}{l+1}} if $c=1$, and
+\m{\gridTame{\vartheta}{c}{l}=\liftTame{D}{\oneT}{l+1}} if $c=0$.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{gridChar}\sep \lean{gridTamePart}}
+
+\begin{definition}[levels on the grids]\label{d:gridlevels}
+In Setting~\ref{set:data}, let $D$ be admissible data, $\vartheta$ an $m$-fold twist of~$D$, $z\in\{0,1\}$ and $a$,
+$b$ natural numbers.
+\begin{enumerate}[label=(\alph*)]
+\item $\triOrd{z}{\vartheta}{b}$ is the order of the group
+\m{\GL_{\GrIdx{z}{0}{b}}\bigl(\OO_{\ED{D}}/\tmod{z}{\vartheta}\bigr)}.
+\item For a node $p=(z,a,b)$, $\nodeLev{\vartheta}{p}$ is the following subgroup of
+\m{\GL_{\nodeIdx{p}}\bigl(\OO_{\ED{D}}/\gmod{\vartheta}\bigr)}: the trivial subgroup if $z=0$ and $a=0$, and otherwise
+the kernel of reduction to \m{\GL_{\nodeIdx{p}}\bigl(\OO_{\ED{D}}/\tmod{1}{\vartheta}\bigr)}.
+\item $\levIdx{\vartheta}{z}{a}{b}$ is the index of $\nodeLev{\vartheta}{(z,a,b)}$ in that group, as a complex
+number.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{triangleOrder}\sep \lean{nodeLevel}\sep \lean{levelIndex}}
+
+\begin{definition}[moves on the grids]\label{d:moves}
+In Setting~\ref{set:data}, let $D$ be admissible data, $\vartheta$ an $m$-fold twist of~$D$, $z\in\{0,1\}$ and $a$,
+$b$ natural numbers. In each case $F$ is a form in the source of the map.
+\begin{enumerate}[label=(\alph*)]
+\item \m{\ptDesc{\vartheta}{z}{b}{\,\cdot\,}\colon\gridForm{z}{0}{b+1}\to\gridForm{z}{0}{b}} is
+$\triOrd{z}{\vartheta}{b}$ times the descent (Input~(I16)) from $\gridSp{0}{z}{0}{b+1}$ to $\gridSp{0}{z}{0}{b}$ with
+the characters \m{n\mapsto\gridChar{\vartheta}{1-z}{b}{n}}, the polynomial \m{\ghar{0}{0}{1-z}{b}{z}{0}{b}{0}{b+1}}
+and, at the finite places, the indicator of the matrix of the inclusion of $\GrIdx{z}{0}{b}$ into
+$\GrIdx{z}{0}{b+1}$ modulo~$\tmod{z}{\vartheta}$; we write $\ptDesc{\vartheta}{z}{b}{F}$ for its value at~$F$.
+\item \m{\iotaPlus{\vartheta}{z}{b}{\,\cdot\,}\colon\gridForm{z}{0}{m}\to\gridForm{z}{0}{b}} is defined by descending
+recursion: it is the identity for $b=m$, zero for $b>m$, and for $b<m$
+\m{\iotaPlus{\vartheta}{z}{b}{F}=\ptDesc{\vartheta}{z}{b}{\iotaPlus{\vartheta}{z}{b+1}{F}}}.
+\item For a matrix $y$ over \m{\OO_{\ED{D}}/\gmod{\vartheta}} with rows indexed by $\GrIdx{z}{a}{b+1}$ and columns by
+$\GrIdx{z}{a}{b}$, $\descMove{y}{\,\cdot\,}\colon\gridForm{z}{a}{b+1}\to\gridForm{z}{a}{b}$ is the descent with the
+characters $n\mapsto\gridChar{\vartheta}{1-z}{b}{n}$, the polynomial $\ghar{0}{0}{1-z}{b}{z}{a}{b}{a}{b+1}$ and
+the indicator of $y$ modulo~$\gmod{\vartheta}$.
+\item For a matrix $y$ over \m{\OO_{\ED{D}}/\gmod{\vartheta}} with rows indexed by $\GrIdx{z}{a+1}{b}$ and columns by
+$\GrIdx{z}{a}{b}$, $\liftMove{y}{\,\cdot\,}\colon\gridForm{z}{a}{b}\to\gridForm{z}{a+1}{b}$ is the lift with the
+characters $n\mapsto\gridChar{\vartheta}{z}{a}{n}$, the polynomial $\ghar{0}{1}{z}{a}{z}{a}{b}{a+1}{b}$ and the
+indicator of $y$ modulo~$\gmod{\vartheta}$.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{pointDescent}\sep \lean{iotaPlus}\sep \lean{descentMove}\sep \lean{liftMove}}
+
+\begin{lemma}\label{l:gridkernel}
+In Setting~\ref{set:data}, let $D$ be admissible data, $z\in\{0,1\}$ and $i$, $j$ natural numbers with $i\le m$ and
+$j\le m$. Then $\gridKer{z}{i}{j}$ is a conjugate kernel pair.
+\end{lemma}
+\begin{proof}
+The index set has at most \m{2\,\nD{D}{m}} elements (this count is in unit~147), and
+\[\nD{D}{m}=\kD{D}+m\,(5r+1)\le r+12\sqrt x\,r\le2r^2\]
+by~(D2). By (I14)(iv) the entries of the parameter at each $\tau$ are distinct, of the right parity, and differ by at
+least \m{2\,\hD{D}=4r^8\ge1000\,(4r^2)^3} at indices of different signs; so (I16) applies.
+\end{proof}
+\leanline{\lean{isConjKernelPairgridKernel}}
+
+\begin{lemma}\label{l:gridcharweight}
+In Setting~\ref{set:data}, let $D$ be admissible data, $\vartheta$ an $m$-fold twist of~$D$, $c\in\{0,1\}$, $l$ a
+natural number and $n$ a finite index set.
+\begin{enumerate}[label=(\roman*)]
+\item $\gridChar{\vartheta}{c}{l}{n}$ has weight $\gwt{c}{l}{n}$ and tame part $\gridTame{\vartheta}{c}{l}$.
+\item Let $n'$ be a finite index set, $\mathbf{s}$ signs on $n'$ and $k$ an element of the stabiliser $\Kmax$ of the
+standard lattice in $\Un_{n'}(\Af)$. Then the value of $\gridChar{\vartheta}{c}{l}{n}$ at the determinant of the
+adelic point $(1,k)$ of the unitary group of the signs $\mathbf{s}$ is
+\[\prod_{w\mid\gmod{\vartheta}}\gridTame{\vartheta}{c}{l}_w\bigl(\det(k\bmod w)\bigr),\]
+the value at \m{\det(k\bmod\gmod{\vartheta})} of the character of \m{(\OO_{\ED{D}}/\gmod{\vartheta})^\times} with these
+components. In particular it does not depend on~$n$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(i) By Theorem~B(iii) the first factor has weight \m{-\wt{D}{l+1}{\tau}} and the stated tame part; by (I8) and (I7),
+multiplying by $\ups^{y}$ adds $y$ to the weight. (ii) By Lemma~\ref{l:omega}(ii) and Definition~\ref{d:tame}, the
+tame part is trivial outside the chosen places and the places of $Q(\vartheta)$, which by (I15) are the prime
+divisors of $\gmod{\vartheta}$; apply (I17) with~(i).
+\end{proof}
+\leanline{\lean{gridCharhasWeight}\sep \lean{gridChardet}}
+
+\begin{lemma}[steps of the grids are edges]\label{l:edge}
+In Setting~\ref{set:data}, let $D$ be admissible data, $z\in\{0,1\}$, $i,j$ natural numbers, $I$ a set,
+\m{\vartheta=(\vartheta_y)_{y\in I}} a family of $m$-fold twists of~$D$ and $d\in\{0,1\}$. Let $c\in\{0,1\}$ and
+natural numbers $l,i',j'$ be given by \m{(c,l,i',j')=(z,i,i+1,j)} if $d=1$ and \m{(c,l,i',j')=(1-z,j,i,j+1)} if
+$d=0$, and suppose $i'\le m$ and $j'\le m$. Then the characters
+\m{n\mapsto\gridChar{\vartheta_y}{c}{l}{n}}, $y\in I$, the kernel pairs $\gridKer{z}{i}{j}$ and
+$\gridKer{z}{i'}{j'}$, the direction $d$ and the polynomial \m{\ghar{0}{d}{c}{l}{z}{i}{j}{i'}{j'}} form an edge
+family.
+\end{lemma}
+\begin{proof}
+By Lemma~\ref{l:gridcharweight}(i) the characters have the weights $\gwt{c}{l}{\cdot}$, which do not depend on~$y$.
+By (I14)(v) weights, parameters and signs at the two nodes correspond, and (I16) gives the edge family.
+\end{proof}
+\leanline{\lean{isEdgeFamilygrid}}
+
+\begin{lemma}[the two grids meet]\label{l:diag}
+In Setting~\ref{set:data}, let $D$ be admissible data and $j$ a natural number.
+\begin{enumerate}[label=(\roman*)]
+\item If $j\le m$, then $\gridSp{0}{1}{j}{j}$ is the orthogonal sum of $\gridSp{0}{0}{j}{j}$ and the standard line of
+sign $(-1)^j$, relabelled along the bijection $\Delta_j$ of~(I14)(iii).
+\item There is a bijection from $\GrIdx{0}{j+1}{j}$ to $\GrIdx{1}{j}{j+1}$ that carries the signs
+$\gsigns{0}{0}{j+1}{j}$ to $\gsigns{1}{0}{j}{j+1}$ and along which $\gridSp{0}{1}{j}{j+1}$ is the relabelling of
+$\gridSp{0}{0}{j+1}{j}$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(i) For $j=0$ both sides are \m{\SpY{D}{0}\oplus I(+1)} by Definition~\ref{d:grid}, and $\Delta_0$ is the
+identity. For $j\ge1$ both $\gridSp{0}{1}{j}{j}$ and $\gridSp{0}{0}{j}{j}$ are standard signed spaces. A sum of
+standard signed spaces is the standard signed space of the two families of signs, and its relabelling is the
+standard signed space of the transported signs, which are $\gsigns{1}{0}{j}{j}$ by~(I14)(iii).
+
+(ii) Both index sets have \m{r+(2j+1)\,\tD{D}} elements by (I14), since $\tD{D}\ge1$. By (I14)(ii) the numbers of
+signs $-1$ are \m{\lfloor(\max(m-j-1,0)+1)/2\rfloor} and \m{\lfloor\max(m-j,0)/2\rfloor}, which agree. So there is a
+bijection carrying one family of signs to the other. Both spaces are standard signed spaces by
+Definition~\ref{d:grid}, since $j+1\ne0$; relabelling one gives the other.
+\end{proof}
+\leanline{\lean{gridSpacediag}\sep \lean{gridSpacesubdiag}}
+
+\begin{lemma}\label{l:levelindex}
+In Setting~\ref{set:data}, let $D$ be admissible data, $\vartheta$ an $m$-fold twist of~$D$, $z\in\{0,1\}$ and $a,b$
+natural numbers, and suppose that $z=1$ or $a\ne0$. Then
+\[\levIdx{\vartheta}{z}{a}{b}=\bigl|\GL_{\GrIdx{z}{a}{b}}\bigl(\OO_{\ED{D}}/\gmod{\oneT}\bigr)\bigr| .\]
+In particular it does not depend on~$\vartheta$.
+\end{lemma}
+\begin{proof}
+Under the hypothesis, $\nodeLev{\vartheta}{(z,a,b)}$ is the kernel of the reduction
+\[\GL\bigl(\OO_{\ED{D}}/\gmod{\vartheta}\bigr)\longrightarrow\GL\bigl(\OO_{\ED{D}}/\tmod{1}{\vartheta}\bigr),\]
+and $\tmod{1}{\vartheta}=\gmod{\oneT}$ by~(I15). The index of a kernel is the order of the image, and the reduction
+is surjective: by (I15) reduction from $\Kmax$ is surjective and factors through it.
+\end{proof}
+\leanline{\lean{levelIndexequntwisted}}
+
+\sect{Where the results are used}{s:use}
+The objects of Sections \ref{s:chosen} to \ref{s:index} are used in every later chapter. The level $\levelN{D}$ and
+the element $\piN{D}$ define the level of the columns of Chapter~V (unit~145) and the split places where the
+Gauss-sum operator of the note \emph{Chains of definite theta lifts and the Gauss-sum operator} acts; the lower bound
+\m{\log\levelN{D}\ge\logTarget{D}} of Theorem~A(ii) is what lets a power of $\levelN{D}$ pay for the excess of size
+over divisibility in the last step of the theorem on short forms (unit~151), and the form of $\logTarget{D}$
+enters the admissibility of the filling data (unit~148). The characters $\liftChar{D}{\vartheta}{j}$ are those of the $j$-th
+theta lift in the seesaw identity and in Chapter~VII; the index sets $\Xidx{D}{j}$ and $\Yidx{D}{j}$ carry the
+definite and the indefinite chain. The group $\Ggrp{D}$ and the idempotent $\ezero{D}$ define the rows (unit~140).
+Pairs are the arguments of the ratios of $L$-values of Chapters VII and~VIII. Theorem~C and everything of
+Section~\ref{s:grid} are used only in the folder of the exchange identity (unit~147); so are entry signs and
+Lemma~\ref{l:ite}.
+
+\sect{Notes on the formal text}{s:notes}
+\subhead{Arguments that the census lists and Lean does not take.} The lists of arguments used by the build of this
+note are read from the text of the source, not printed by Lean. In the file of index types a line of the form
+\emph{variable} declares a finite place~$w$ and natural numbers $a$, $n$, $j$ for the whole file, and the reading
+attributes such a variable to a declaration whenever its name occurs in it, also as the name of a field or of a bound
+variable. So it lists $w$ among the arguments of the definitions of $\ChPl{D}{i}$, $\PairSet{D}$, the row parameter,
+$\TameSet{D}$, $\levelNorm{\vartheta}$, $\TwistSet{D}$, $\goodFam{D}$ and of statements of Theorem~B and of
+Lemmas \ref{l:chosen}(v) and~\ref{l:muflat}; a type $T$ in Lemma~\ref{l:reschar} (it is the character there); a number $a$
+in Lemma~\ref{l:sizes}(i); a number $n$ in the definition of $\InitIdx{D}{j}$ (the name occurs as the name of the
+function $\nD{D}{j}$); two numbers $a$, $j$ in the definition of entry signs (they are names of pattern variables);
+an index set $n$ in the definition of $\nodeLev{\vartheta}{p}$ (it names an argument of another function); and
+the field with its structures and a finiteness in Lemma~\ref{l:gridcharweight}(ii). Lean takes none of these. For
+the last three definitions this note therefore writes the notation with Lean's arguments ($D$ and $j$; $o$, $j$,
+$a$; $\vartheta$ and $p$) and not with the census's. In the other direction, the reading takes the source of each
+of the four linear maps of Definition~\ref{d:moves} for an argument; the notation shows the form to which the map is
+applied in that place. The arguments of $\BlockIdx{j}{S}{T}$ are, in Lean's order, $S$, $T$ and the number~$j$.
+
+\subhead{Implicit data in Section~\ref{s:grid}.} In the file of the grid spaces the data $D$ are an implicit
+argument of every definition, so the notations of that section show $D$ as a fixed letter and not in a slot of
+their own; they are to be read with the $D$ of Setting~\ref{set:data}.
+
+\subhead{Where the formal statements differ from the ones above.}
+Theorem~A(iii): the formal proof takes the square root of $-1$ from a lemma of the background library on fields
+containing a root of unity of order $5040$; the proof above takes it from the root of unity of~$\ED{D}$.
+Lemma~\ref{l:chosen}(iii) repeats ``$w$ is chosen'' on its right-hand side, as the formal statement does; its content
+is that a chosen place lies above $g_0$ or~$g_1$. Lemma~\ref{l:rowindex}: the formal lemma is the count
+\m{|\Ridx{D}|=r}; the other two statements are added here. Definition~\ref{d:rowpar}(b): the formal text divides
+$\kD{D}$ by $2$ as an integer, which is exact; the index $i+2-\kD{D}$ is a truncated difference of natural numbers,
+used only for $i+1\ge\kD{D}$. Definition~\ref{d:pair}: the formal structure names its components
+\emph{character}, $c$, $\psi$, $z$; the bound $4b$ is a real number. Definition~\ref{d:tame}(a): the coprimality is
+stated for the natural numbers \m{\gD{D}\cdot\levelN{D}} and \m{\prod_{w\in Q}\Nm w}. Theorem~C: the hypotheses on
+the signs force all three families to be~$1$, so the theorem concerns definite groups only; the letter for the sign
+on the point is an argument of the formal statement although it is determined. In (a1) the formal statement
+quantifies over all rings $S$ with an involution and all fields $R$ of characteristic~$0$, as above; the
+expression \m{\langle v',Bv\rangle} is bilinear there, in (a3) and in the mean of~(b). In (b) the constant $C$
+depends on $g$ only: it is chosen after $g$ and before the space, the forms, $u$ and the level; the statement does
+not say that $C\ne0$. Input~(I11) is
+the case $q=0$ of a formal statement with one more parameter. Lemma~\ref{l:edge}: the two bounds $i'\le m$,
+$j'\le m$ are arguments with a default proof by arithmetic. Lemma~\ref{l:diag}(i): the hypothesis $j\le m$ enters only
+through the signs of~(I14)(iii).
+
+\subhead{Members that nothing refers to by name.} The reader's dossier lists a few members of the unit to which
+no other declaration refers by name. Those of this note are: the statement $\pi_g\ne0$ of
+Lemma~\ref{l:chosen}(i), which Lean's simplifier uses, and the bound for the root discriminant
+(Lemma~\ref{l:sizes}(ii)) and the finiteness of $\BlockIdx{j}{S}{T}$ (Lemma~\ref{l:block}), which are instances found
+by Lean's search. The instances of the file of index types that have no name have no line in the concordance;
+they are mentioned in Lemmas \ref{l:sizes}(iii) and~\ref{l:chosen}(v), after Lemma~\ref{l:rowindex}, in
+Remark~\ref{r:levelsizes} and after Definition~\ref{d:tame}. Whether a hypothesis of a formal statement is unused was not determined: no Lean
+was run.
+
+\subhead{How this note was written.} From the dossier of the unit: the texts of its members and the
+structured proofs of the declarations treated here. I read the two Lean files of this note completely, the proof
+of Theorem~C line by line, and compared every statement of this note with the Lean statement, argument by
+argument, with the lists of arguments of the census and of the dossier. For the Inputs I read the Lean statements
+of (I6), (I9) to (I12) and the definitions behind (I13) to (I17) in the files of Chapters III and~VII and of the
+background library; I opened none of their proofs. The proofs of Lemma~\ref{l:sizes}, of Theorem~A(i) and of
+Lemma~\ref{l:gridkernel} replace Lean's automatic comparisons of sizes by explicit inequalities from (D1) to~(D3),
+and are mine; so are the proof of Theorem~A(iii) and the wording of the interlacing in the proof of Theorem~C, which
+the formal text does by a case analysis left to automation. Two step claims of the dossier were corrected against
+the Lean text: in Theorem~B(i) the residue characters are trivial at the root of unity (the dossier says that their
+order divides $\Mom{P}{\mu}$), and in Theorem~C(a3) the vector of equal norm is attached to $\brm\,v$, not to~$v'$.
+The program check of the unit's dossier covered \UnitSteps{} leaf steps of \UnitProofs{} proofs.
+
+\head{Appendix A. Concordance with the Lean artifact}
+The formal names of the objects: \texttt{P.N₀}, \texttt{P.d} are $N_0$, $d$; the fields \texttt{D.logX},
+\texttt{D.logB}, \texttt{D.s}, \texttt{D.m}, \texttt{D.r}, \texttt{D.g}, \texttt{D.piG} are $\log x$, $\log b$,
+$\mu$, $m$, $r$, $(g_0,g_1)$, $\pi_g$; \texttt{D.Φ} is $\PlD{D}$, \texttt{D.w j τ} is $\wt{D}{j}{\tau}$,
+\texttt{D.nominalWeight} the nominal weight, \texttt{D.gProd} is $\gD{D}$, \texttt{P.Mω D.s} is $\Mom{P}{\mu}$;
+\texttt{star} is complex conjugation; \texttt{w.q} is $\Nm w$; \texttt{AutChar} is the group of characters of
+$\Un(1)$ and \texttt{HasWeight} the relation ``has weight and tame part''; \texttt{WeilData.upsilonU1} is~$\ups$;
+truth values are written $1$ and~$0$. Three statements as they stand in the artifact:
+\quoted{TameChar}
+\quoted{decld}
+\quoted{gridSpace}
+
+{\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}\setlength{\tabcolsep}{0pt}
+\begin{longtable}{@{}p{30mm}p{56mm}p{43mm}r@{}}
+\textbf{In this note} & \textbf{Lean declaration} & \textbf{File} & \textbf{Lines}\\\midrule\endhead
+\ConcordanceRows
+\end{longtable}}
+
+\head{Notation}
+\begingroup\fontsize{8.6}{10.9}\selectfont\raggedright
+\setlength{\columnsep}{9mm}\setlength{\parskip}{0pt}
+\begin{multicols}{2}
+\nt{$P=(N_0,d)$, $\KP{P}$}{parameters; the field \m{\QQ(\sqrt{-d})}}
+\nt{$D$}{admissible data for~$P$ (Setting~\ref{set:data})}
+\nt{$x$, $x_1$, $b$}{the three scales of~$D$}
+\nt{$\mu$, $m$, $r$}{the exponent, the number of lifts and the rank of~$D$}
+\nt{$g_0$, $g_1$, $\gD{D}$, $\pi_g$}{the two primes of~$D$, their product, an integer of $\KP{P}$ of norm $g_0g_1$}
+\nt{$\cP{P}$}{the constant of~$P$ of Chapter~III}
+\nt{$\ED{D}$, $\None{D}$, $\rtu{D}$}{the CM field of~$D$; the order of its root of unity; that root}
+\nt{$\PlD{D}$, $\tau$, $\fD{D}$}{the infinite places of $\ED{D}$; one of them; their number}
+\nt{$\thick{D}$}{the thick places}
+\nt{$w$, $\cj{w}$, $\FF_w$, $\Nm w$}{a finite place of $\ED{D}$; its conjugate; residue field; absolute norm}
+\nt{$\OO$, $\Af$}{rings of integers; the finite adeles of the field in question}
+\nt{$\rdD{D}$, $\vpi{P}{\mu}$, $\OmP{P}{\mu}$, $\chow{d}$}{root discriminant; generator of the different; the period;
+a constant of~$d$}
+\nt{$\Mom{P}{\mu}$}{the number \m{(N_0d)^{\mu+6}}}
+\nt{$\kD{D}$, $\tD{D}$, $\hhD{D}$, $\hD{D}$, $\nD{D}{j}$}{the numbers $r+1-m$, $5r$, $r^8$, $2r^8$,
+\m{\kD{D}+j(\tD{D}+1)}}
+\nt{$\aD{D}$, $\bone{D}$, $\btwo{D}$}{least multiples of $\None{D}$ above $xb$, $\aD{D}/x$, $\aD{D}/x_1$}
+\nt{$\wt{D}{j}{\tau}$, $\nw{D}{\tau}$}{the weights; the nominal weight}
+\nt{$\piGbar{D}$}{the conjugate of $\pi_g$ in $\OO_{\ED{D}}$}
+\nt{$\isChosen{D}{w}$, $\notChosen{D}{w}$}{$w$ is, is not, a chosen place of~$D$}
+\nt{$\ChPl{D}{i}$, $\chosenOf{D}{x}$}{chosen places above $g_i$; the place of a pair $x=(i,w)$}
+\nt{$\omD{D}{w}$, $\omD{D}{\bullet}$, $T$, $T_w$}{residue character at~$w$; the family; characters of order
+$\Mom{P}{\mu}^2$}
+\nt{$\Un(1)$, $\Un_n$}{the norm-one group; the unitary group of the identity matrix}
+\nt{$\nu$, $\mathbf{e}$, $\psi$}{a character of $\Un(1)$ (in Definition~\ref{d:block}, a bijection); a weight; a
+tame part}
+\nt{$\ups$}{the splitting character on~$\Un(1)$}
+\nt{$\muFlat{D}$, $\chiCirc{D}$, $\muZero{D}{j}$}{the three characters of Definition~\ref{d:muflat}}
+\nt{$\PairSet{D}$, $(\nu,\mathbf{c},\psi,z)$}{the pairs of~$D$; a pair}
+\nt{$\logTarget{D}$, $\levelN{D}$, $\piN{D}$}{the target; the level; an integer of norm $\levelN{D}$}
+\nt{$U$, $p$, $M_0$, $\Psi$, $\Psi_0$, $\rtuz$}{in Section~\ref{s:level}: a real number, a prime, $\None{D}/N_0$,
+cyclotomic polynomials of orders $\None{D}$ and~$N_0$, a root of unity of order~$N_0$}
+\nt{$u$, $q$, $y$, $y'$}{an element or adele of norm one; natural numbers and integers bound in a statement}
+\nt{$\TameSet{D}$, $\TwistSet{D}$, $\oneT$}{tame characters and twists of~$D$; the trivial one}
+\nt{$\vartheta$, $Q(\vartheta)$, $\psi_\vartheta$, $\levelNorm{\vartheta}$}{a tame character; its set of places; its
+tame part; the product of the norms of the places of $Q(\vartheta)$}
+\nt{$\liftChar{D}{\vartheta}{j}$, $\liftTame{D}{\vartheta}{j}$, $\LiftIdx{D}$}{character and tame part of the
+$j$-th lift; the set $\{1,\dots,m\}$}
+\nt{$[q]$, $\{\pt\}$}{the set $\{0,\dots,q-1\}$; a set with one element}
+\nt{$S$, $T$, $\alpha$, $\BlockIdx{j}{S}{T}$}{sets; $S$ and $j$ copies of~$T$}
+\nt{$\firstBlock{j}$, $\equivSum{\nu}{j}$}{inclusion of the first block; a bijection}
+\nt{$\rhoD{D}$}{the number $m/2-1$}
+\nt{$\InitIdx{D}{j}$, $\Xidx{D}{j}$, $\Ridx{D}$, $\Yidx{D}{j}$}{index sets: of $X_j(D)$ without its last vector, of
+$X_j(D)$, of $\SpY{D}{0}$, of $\SpY{D}{j}$}
+\nt{$\shapeD{D}$}{the shape of $\SpY{D}{0}$}
+\nt{$\basisNum{D}$}{a numbering of $\Ridx{D}$}
+\nt{$\rowPar{D}{\tau}{i}$, $\parW{D}{\tau}{i}$}{the row parameter; its double on $\Ridx{D}$}
+\nt{$\signsW{D}{j}{i}$, $\esign{o}{j}{a}$}{signs of the spaces $W_j$; entry signs}
+\nt{$\Ggrp{D}$, $\goodFam{D}$, $\ezero{D}$, $c_x$, $e_{c_x}$}{the finite group; good families; the idempotent;
+a polynomial and its idempotent}
+\nt{$E$, $n$, $n'$, $N$}{in Section~\ref{s:branching}: a CM field, index sets, the number $|n|$}
+\nt{$(\kappa,e)$, $(\kappa',e')$, $(\knat,\enat)$}{weights}
+\nt{$\kup$, $\kdn$}{the two parts of $\kappa$ in (I11)}
+\nt{$l$, $l'$, $\hc{\kappa}{e}{N}{\tau,p}$}{families of parameters; the doubled Harish-Chandra parameter}
+\nt{$\lambda_\tau(p)$, $\lambda^{\natural}_\tau(q)$, $\delta_\tau(q)$}{highest weights; their difference}
+\nt{$\mathbf{s}$, $\mathbf{r}$, $\mathbf{t}$, $\sigma$}{signs; a bijection \m{n\sqcup\{\pt\}\to n'}}
+\nt{$\wrep{\kappa}{e}$, $\cj{\wrep{\kappa}{e}}$}{the representation of weight $(\kappa,e)$; at conjugate matrices}
+\nt{$\langle v',v\rangle$, $(v',v)$, $\wn{v}$}{dot product; Gram form; Weyl norm}
+\nt{$\boxes{\kappa}{N}$}{the number of boxes of $\kappa$ in rank~$N$}
+\nt{$S$, $R$, $f_\tau$, $g$, $h$}{rings; ring homomorphisms; group elements}
+\nt{$B$, $A$, $\brm$, $N_\tau$, $M$, $C$}{integer matrices; exponents; a natural number; a constant}
+\nt{$V$, $\eta$, $\phi$, $\Phi$, $F$}{a standard space; algebraic forms; an automorphic function; a form}
+\nt{$\Fof{l}{\mathbf{s}}{\eta}$, $v^{+}_{l}$, $v^{\natural}$, $v^{\circ}$}{the function of a form; highest vector;
+vectors}
+\nt{$\mathcal{K}$, $\Kmax$, $\clint{\mathcal{K}}{F}$}{a level; the maximal one; the mean at level $\mathcal{K}$}
+\nt{$\dg{g,u}$}{block diagonal matrix along~$\sigma$}
+\nt{$L'$, $L_h$}{linear functionals}
+\nt{$z$, $c$, $d$}{elements of $\{0,1\}$: a grid, twisted or not, a direction; $z$ is a natural number in a pair,
+$c$ a natural number in Theorem~B and Lemma~\ref{l:chosen}}
+\nt{$o$, $i$, $j$, $a$, $b$, $l$, $i'$, $j'$}{natural numbers: an offset and positions on the grids ($b$ also the
+third scale, $l$ also a parameter)}
+\nt{$I(\mathbf{s})$, $\SpY{D}{j}$}{standard signed space; the hermitian space $Y_j(D)$}
+\nt{$\GrIdx{z}{i}{j}$, $\gsigns{z}{o}{i}{j}$, $\gpar{z}{o}{i}{j}{\tau}$}{index set, signs and doubled parameter of a
+node}
+\nt{$\gwt{c}{l}{n}$, $\ghar{o}{d}{c}{l}{z}{a}{b}{i}{j}$}{grid weight; joint harmonic}
+\nt{$\lmod{\vartheta}{q}$, $\gmod{\vartheta}$, $\tmod{z}{\vartheta}$, $\mathfrak{a}$}{moduli; an ideal}
+\nt{$p=(z,a,b)$, $\nodeIdx{p}$}{a node; its index set}
+\nt{$\gridSp{o}{z}{i}{j}$}{the space at a node}
+\nt{$\gridKer{z}{i}{j}$, $\gridForm{z}{a}{b}$, $\gridLevForms{i}$}{kernel pair; forms at a node; forms of level}
+\nt{$\gridChar{\vartheta}{c}{l}{n}$, $\gridTame{\vartheta}{c}{l}$}{character and tame part on the grids}
+\nt{$\triOrd{z}{\vartheta}{b}$, $\nodeLev{\vartheta}{p}$, $\levIdx{\vartheta}{z}{a}{b}$}{an order; the level at a
+node; its index}
+\nt{$\ptDesc{\vartheta}{z}{b}{F}$, $\iotaPlus{\vartheta}{z}{b}{F}$}{descent by one step; iterated descent}
+\nt{$\descMove{y}{F}$, $\liftMove{y}{F}$}{descent and lift with the indicator of~$y$}
+\nt{$\Sigma$}{a finite set of finite places}
+\nt{$V$, $Z$}{the two grids ($z=0$, $z=1$); $V$ is also a standard space}
+\nt{$\Delta_j$, $k$, $I$, $\mathcal{S}$, $\mathcal{T}$}{a bijection; an element of $\Kmax$; an index set of a
+family; spaces}
+\nt{$\imag$, $\pi$, $e$}{a square root of $-1$; an integer of norm $\levelN{D}$ (also the number $\pi$); Euler's
+number}
+\end{multicols}
+\endgroup
+
+\head{References}
+{\fontsize{9.4}{12.6}\selectfont
+The references are those of the catalogue of quoted results of this write-up, with the state it records.
+
+[W] A.~Weil, \emph{On a certain type of characters of the id\`ele-class group of an algebraic number-field},
+Proceedings of the international symposium on algebraic number theory, Tokyo--Nikko 1955 (1956). (The work was
+found; no place in it is recorded.)
+
+[R] A.~Raghuram, \emph{Notes on the arithmetic of Hecke $L$-functions}, arXiv:2207.03399, §4. (Compared; place
+confirmed. Input~(I6) is a special case.)
+
+For Inputs (I11) and (I12) the catalogue has no confirmed reference for the statements used here: reference to be
+confirmed.\par}
+
+\end{document}

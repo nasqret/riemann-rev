@@ -1,0 +1,1458 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Selmer.RibetElement:122:7",
+ "summary": "Unpack the hypotheses and choose one coefficient ring O' over which the rows have lattices T_x = ψ'R₀_x with the Selmer bound, the columns u_x have lattices u'_x which for x ∈ 𝓧 are block diagonal T_x ⊕ cycInv^0 ⊕ … ⊕ cycInv^{t−1} (Brauer–Nesbitt from the trace identity hl'), and the block losses are bounded (sum_blockLoss_le). Apply Ribet's lemma to first order (ribet_first_order) with the doubled tied primes withConjInv τ, φ (isTraceIdeal_withConjInv), the auxiliary inertia elements z at Q and above g with polynomials o killing them, the triangle's separating element a and C = ℓ^{D.h₂·h}, and the triangle costs of the string blocks (hasTriangleCost_tateTwist, odd Sha bounded by X_D). Its valuation bound, plus v_ℓ(D.chosenGroupOrder³), is then estimated by |r|·rowBudget D ℓ.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Unpack: from IsAuxTwist, ψ comes from U(1) with modulus Q for the places above ℓ (hψ) and there are σ : Q → Gal(Ω/E) with IsNewPlaces 0 (the places of Q) σ 1 (each P ∈ Q is not above ℓ and σ_P is a tame generator at a place over P) and Σ_P v_ℓ(ψ(σ_P) − 1) ≤ crudeUnit ℓ D (hq); R_π is a row (hJ); from the triangle a finite set s ⊆ Gal(Ω/E) with (|K| + |s|)·D.h₂·h ≤ D.h₂²²·h (hs) such that every Selmer cocycle of O(−e) modulo ℓ^ν unramified off ℓ that vanishes on s is zero (hr); from exists_length_shaOdd_le (for N = D.cycloConductor, D.t and E) the integer X_D ≠ 0 (od) with length(shaOdd ℓ E O e n) ≤ v_O(X_D) (odd); V.rankDiff is odd, hence nonzero (o); the set B_g of the places above g₀ or g₁ that are not above ℓ is finite (hG, inside badPlaces D ℓ); and a bijection ϵ : Σ_i RowBlockIndex r i ≃ n, as |r| + V.rankDiff = |n|.",
+   "lines": [
+    134,
+    137
+   ],
+   "lean": "  obtain ⟨⟨-, hψ, σ, hq⟩, ⟨hJ⟩, ⟨s, hs, hr⟩, ⟨od, -, odd⟩, o, hG, ϵ⟩ := hq, hR π, tri.detect,\n    (exists_length_shaOdd_le _ D.t _ D.algebraMap_mem_cycloField).choose_spec, of_pos hc.odd.2.pos,\n    ((finite_toSet _).subset (placesDividing_union_subset_badPlaces D ℓ)).sdiff (t := placesDividing\n    _ ℓ), (equivOfCardEq (by simp! [V.rank_lt.le]) : Sigma (@RowBlockIndex r V.rankDiff) ≃ n)",
+   "uses": [
+    {
+     "decl": "IsAuxTwist"
+    },
+    {
+     "decl": "IsRow"
+    },
+    {
+     "decl": "IsPrimeTriangle"
+    },
+    {
+     "decl": "exists_length_shaOdd_le"
+    },
+    {
+     "decl": "Data.algebraMap_mem_cycloField"
+    },
+    {
+     "decl": "IsApt"
+    },
+    {
+     "decl": "placesDividing_union_subset_badPlaces"
+    },
+    {
+     "decl": "RowBlockIndex"
+    },
+    {
+     "decl": "AuxPair"
+    }
+   ],
+   "ambient_uses": [
+    "Fintype.equivOfCardEq",
+    "NeZero.of_pos"
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let z be the family on Q ⊔ B_g with z_P = σ_P for P ∈ Q and, for v ∈ B_g, z_v the tame generator of the inertia at the chosen place placeOver v of Ω over v.",
+   "lines": [
+    138,
+    138
+   ],
+   "lean": "  let z := σ ⊕ᵥ fun v : hG.toFinset ↦ v.1.isPlaceOver_placeOver.tameGenerator",
+   "uses": [
+    {
+     "decl": "IsPlaceOver.tameGenerator"
+    },
+    {
+     "decl": "FinPlace.isPlaceOver_placeOver"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "fact",
+   "claim": "IsNewPlaces 0 (Q ⊔ B_g → places) z 1: no place of Q or of B_g lies above ℓ, the element 1 fixes the roots of unity, and each z_j is a tame generator at a place over the j-th place.",
+   "lines": [
+    139,
+    140
+   ],
+   "lean": "  have N : IsNewPlaces 0 (_ ⊕ᵥ _) z 1 :=\n    Sum.rec hq.1 (⟨hG.mem_toFinset.1 ·.2 |>.2, map_one _, _, _, rfl⟩)",
+   "uses": [
+    {
+     "decl": "IsNewPlaces"
+    },
+    {
+     "step": "1"
+    },
+    {
+     "step": "2"
+    }
+   ],
+   "typed_fact": "IsNewPlaces 0 (_ ⊕ᵥ _) z 1"
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "fact",
+   "claim": "For every k = (j, b) ∈ (Q ⊔ B_g) × Bool and every set S of places containing the j-th place and its conjugate, withConjInv z k (z_j, or (z_j^c)⁻¹) lies in the inertia above S (idOrConjInv_mem_inertiaAbove).",
+   "lines": [
+    141,
+    142
+   ],
+   "lean": "  have M k {S} h : withConjInv z k ∈ inertiaAbove S := (N k.1).2.2.elim fun _ ⟨a, e⟩ ↦\n    idOrConjInv_mem_inertiaAbove a (e ▸ a.tameGenerator.2) h _",
+   "uses": [
+    {
+     "decl": "idOrConjInv_mem_inertiaAbove"
+    },
+    {
+     "decl": "withConjInv"
+    },
+    {
+     "step": "3"
+    }
+   ],
+   "typed_fact": "withConjInv z k ∈ inertiaAbove S"
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Choose one coefficient ring O' large enough (all conditions hold eventually along CoeffRing ℓ) that: (l) the conclusion of sum_blockLoss_le holds over O' for the row R_π (hJ), the labelled columns u_x, ϵ and π; (hL) every u_x has a lattice over O' (eventually_exists_isLatticeIn, u_x continuous); (ζ) O' contains a primitive root of unity of order the exponent of (ℤ/D.cycloConductor)^×; (η) all coefficients of all e_k lie in O'; and for every x ∈ 𝓧, (hR') the values of every lattice of R_x over O' span M_r(O') (span_and_scalar of the row) and SelmerLengthLe holds at O': a lattice R₀_x of R_x (hl), a character ψ'_x = ψ (hψ'), y'_x ∈ O' equal to y_x (ey), T_x(γ_x) = y'_x·1 for T_x = ψ'_x·R₀_x (e₀), y'_x − 1 a unit (hy), cyc(γ_x) = 1 (c₀), and normalised length of (Selmer module of T_x modulo ℓ^{m₀}, unramified off ℓ, g and Q ∪ Q̄, with the crystalline relations) ∩ (cocycles vanishing at γ_x) at most 10·D.f·|r|·crudeUnit ℓ D + crudeUnit ℓ D (hS).",
+   "lines": [
+    143,
+    147
+   ],
+   "lean": "  choose O' l hL ζ η hR' R₀ ψ' y' ey hl hψ' e₀ hy c₀ hS using\n    ((sum_blockLoss_le hc hJ (hu · |>.1) ϵ π).and (.and (.all (eventually_exists_isLatticeIn <|\n    hu · |>.1.continuous)) ((eventually_primitiveRoot (Monoid.exponent\n    (ZMod D.cycloConductor)ˣ)).and (.and (.all (e · |>.finite_range_coeff.eventually_all.2 fun a _ ↦\n    eventually_mem a.2)) (.all (hR · |>.elim (·.span_and_scalar.and ·))))))).exists",
+   "uses": [
+    {
+     "decl": "sum_blockLoss_le"
+    },
+    {
+     "decl": "eventually_exists_isLatticeIn"
+    },
+    {
+     "decl": "CoeffRing.eventually_primitiveRoot"
+    },
+    {
+     "decl": "CoeffRing.eventually_mem"
+    },
+    {
+     "decl": "SelmerLengthLe"
+    },
+    {
+     "decl": "IsRow"
+    },
+    {
+     "decl": "IsLabelledColumn"
+    },
+    {
+     "step": "1"
+    }
+   ],
+   "ambient_uses": [
+    "Filter.Eventually.and",
+    "Filter.Eventually.exists",
+    "Filter.Eventually.all",
+    "Polynomial.finite_range_coeff"
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "setup",
+   "claim": "For each k, e_k has its coefficients in O' (η), so it lifts: there is η_k ∈ O'[X] with the same image as e_k in ℚ̄_ℓ[X] (hε).",
+   "lines": [
+    148,
+    149
+   ],
+   "lean": "  choose η hε using fun j ↦ (mem_lifts ((e j).map (intQpBar ℓ).subtype)).1 ((mem_map_rangeS\n    (algebraMap O' _)).2 (⟨⟨_, η j _ ⟨·, rfl⟩⟩, by simp⟩))",
+   "uses": [
+    {
+     "step": "5"
+    }
+   ],
+   "ambient_uses": [
+    "Polynomial.mem_lifts",
+    "Polynomial.mem_map_rangeS"
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "setup",
+   "claim": "For x ∈ 𝓧 let T_x = ψ'_x·R₀_x : Gal(Ω/E) → M_r(O') (twistRep): a lattice over O' of the twist ψ·R_x.",
+   "lines": [
+    150,
+    150
+   ],
+   "lean": "  let T x := twistRep (.id _) (ψ' x) (R₀ x)",
+   "uses": [
+    {
+     "decl": "twistRep"
+    },
+    {
+     "step": "5"
+    }
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "fact",
+   "claim": "If ψ(g) = 1 then T_π(g) = R₀_π(g).",
+   "lines": [
+    151,
+    151
+   ],
+   "lean": "  have p1 {g} (h : ψ g = 1) : T π g = R₀ π g := by ext; simp [*, T, twistRep]",
+   "uses": [
+    {
+     "step": "7"
+    }
+   ],
+   "typed_fact": "T π g = R₀ π g"
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "fact",
+   "claim": "The values of T_x span M_r(O') over O': those of the lattice R₀_x do (hR'), and ψ'_x takes unit values.",
+   "lines": [
+    152,
+    152
+   ],
+   "lean": "  have sp x := Basis.units_smul_span_eq_top (w := (ψ' x).toHomUnits) (hR' x _ (hl x)).1",
+   "uses": [
+    {
+     "step": "5"
+    },
+    {
+     "step": "7"
+    }
+   ],
+   "ambient_uses": [
+    "Basis.units_smul_span_eq_top"
+   ]
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "setup",
+   "claim": "For a commutative ring R let Φ_R : Π_i M_{block i}(R) → M_n(R) be the block-diagonal embedding followed by reindexing along ϵ, an R-algebra map.",
+   "lines": [
+    153,
+    153
+   ],
+   "lean": "  let Φ R [CommRing R] := (reindexAlgEquiv R R ϵ).toAlgHom.comp blockDiagonalAlgHom",
+   "uses": [
+    {
+     "decl": "blockDiagonalAlgHom"
+    }
+   ],
+   "ambient_uses": [
+    "Matrix.reindexAlgEquiv"
+   ]
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "fact",
+   "claim": "For e < V.rankDiff, the block some e of blockRep T_x at g is the 1×1 matrix cycInv(g)^e.",
+   "lines": [
+    154,
+    155
+   ],
+   "lean": "  have B x (e : Fin V.rankDiff) g : Eq (blockRep (T x) (some e) g) fun _ _ ↦\n    cycInv ℓ _ O' g ^ e.1 := funext₂ fun _ _ ↦ ite_eq_left rfl",
+   "uses": [
+    {
+     "decl": "blockRep"
+    },
+    {
+     "decl": "tateTwist"
+    }
+   ],
+   "typed_fact": "Eq (blockRep (T x) (some e) g) fun _ _ ↦\n    cycInv ℓ _ O' g ^ e.1"
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Choose for every x ∈ Y a lattice u'_x of u_x over O' (hL), block diagonal when x ∈ 𝓧 (hB).",
+   "lines": [
+    156,
+    167
+   ],
+   "lean": "  choose u' hL hB using fun x ↦ show ∃ v, IsLatticeIn (u x) v ∧ ∀ h g, v g = Φ _\n    (blockRep (T ⟨x, h⟩) · g) from if h : x ∈ 𝓧 then ⟨(Φ _).1.1.comp (.pi _), .imp (fun Z c g ↦ by\n    simp [c, mul_assoc, Φ, ← submatrix_map, blockDiagonal'_map]; rfl)\n    ((hu x).1.nondeg.exists_conj_of_trace_eq\n    (.pi (O'.1.val.mapMatrix.1.1.comp <| blockRep (T ⟨x, h⟩) ·)) (Φ _) (fun y _ H ↦ by\n    ext (_ | e) a b\n    simpa [mul_apply, single_apply, ite_and] using congrFun₂ (LinearMap.congr_fun\n     (LinearMap.ext_on_range (g := 0) (f := .mulLeftRight _ (y _, y _) ∘ₗ (Algebra.linearMap O'\n     _).mapMatrix) (sp _) (congr($(H ·) _))) (.single b a 1)) a b\n    with_unfolding_all simpa using! (sum_singleton _ a).symm.trans congr($(H 1) _ a a)) fun g ↦ by\n    simp [↓hl' ⟨x, h⟩, ↓← (hl _).trace_eq, ← hψ' ⟨x, h⟩, Φ, trace, sum_range, mul_sum, reindex_equiv\n      ϵ, Fintype.sum_sigma, B, cycInv]; simp!; rfl), fun _ _ ↦ rfl⟩ else (hL x).imp (by tauto)",
+   "head_span": [
+    156,
+    3,
+    156,
+    33
+   ],
+   "head_lines": [
+    156,
+    156
+   ]
+  },
+  {
+   "id": "12.1",
+   "parent": "12",
+   "kind": "fact",
+   "claim": "For every x there is v : Gal(Ω/E) → M_n(O') that is a lattice in u_x and, if x ∈ 𝓧, satisfies v(g) = Φ_{O'}((blockRep T_x i (g))_i) for all g; by cases on x ∈ 𝓧.",
+   "lines": [
+    156,
+    167
+   ],
+   "span": [
+    156,
+    33,
+    167,
+    95
+   ],
+   "lean": "show ∃ v, IsLatticeIn (u x) v ∧ ∀ h g, v g = Φ _\n    (blockRep (T ⟨x, h⟩) · g) from if h : x ∈ 𝓧 then ⟨(Φ _).1.1.comp (.pi _), .imp (fun Z c g ↦ by\n    simp [c, mul_assoc, Φ, ← submatrix_map, blockDiagonal'_map]; rfl)\n    ((hu x).1.nondeg.exists_conj_of_trace_eq\n    (.pi (O'.1.val.mapMatrix.1.1.comp <| blockRep (T ⟨x, h⟩) ·)) (Φ _) (fun y _ H ↦ by\n    ext (_ | e) a b\n    simpa [mul_apply, single_apply, ite_and] using congrFun₂ (LinearMap.congr_fun\n     (LinearMap.ext_on_range (g := 0) (f := .mulLeftRight _ (y _, y _) ∘ₗ (Algebra.linearMap O'\n     _).mapMatrix) (sp _) (congr($(H ·) _))) (.single b a 1)) a b\n    with_unfolding_all simpa using! (sum_singleton _ a).symm.trans congr($(H 1) _ a a)) fun g ↦ by\n    simp [↓hl' ⟨x, h⟩, ↓← (hl _).trace_eq, ← hψ' ⟨x, h⟩, Φ, trace, sum_range, mul_sum, reindex_equiv\n      ϵ, Fintype.sum_sigma, B, cycInv]; simp!; rfl), fun _ _ ↦ rfl⟩ else (hL x).imp (by tauto)",
+   "head_span": [
+    156,
+    33,
+    157,
+    54
+   ],
+   "head_lines": [
+    156,
+    157
+   ],
+   "typed_fact": "∃ v, IsLatticeIn (u x) v ∧ ∀ h g, v g = Φ _"
+  },
+  {
+   "id": "12.1.1",
+   "parent": "12.1",
+   "kind": "case",
+   "claim": "Case x ∈ 𝓧: take v = Φ_{O'} of the blocks of T_x.",
+   "lines": [
+    157,
+    167
+   ],
+   "span": [
+    157,
+    54,
+    167,
+    69
+   ],
+   "lean": "⟨(Φ _).1.1.comp (.pi _), .imp (fun Z c g ↦ by\n    simp [c, mul_assoc, Φ, ← submatrix_map, blockDiagonal'_map]; rfl)\n    ((hu x).1.nondeg.exists_conj_of_trace_eq\n    (.pi (O'.1.val.mapMatrix.1.1.comp <| blockRep (T ⟨x, h⟩) ·)) (Φ _) (fun y _ H ↦ by\n    ext (_ | e) a b\n    simpa [mul_apply, single_apply, ite_and] using congrFun₂ (LinearMap.congr_fun\n     (LinearMap.ext_on_range (g := 0) (f := .mulLeftRight _ (y _, y _) ∘ₗ (Algebra.linearMap O'\n     _).mapMatrix) (sp _) (congr($(H ·) _))) (.single b a 1)) a b\n    with_unfolding_all simpa using! (sum_singleton _ a).symm.trans congr($(H 1) _ a a)) fun g ↦ by\n    simp [↓hl' ⟨x, h⟩, ↓← (hl _).trace_eq, ← hψ' ⟨x, h⟩, Φ, trace, sum_range, mul_sum, reindex_equiv\n      ϵ, Fintype.sum_sigma, B, cycInv]; simp!; rfl), fun _ _ ↦ rfl⟩ ",
+   "head_span": [
+    157,
+    54,
+    157,
+    79
+   ],
+   "head_lines": [
+    157,
+    157
+   ]
+  },
+  {
+   "id": "12.1.1.1",
+   "parent": "12.1.1",
+   "kind": "fact",
+   "claim": "It suffices to find an invertible P over ℚ̄_ℓ with u_x(g)·P = P·Φ(blocks of T_x at g) for all g: then P⁻¹u_x(g)P is the image in M_n(ℚ̄_ℓ) of v(g), i.e. v is a lattice in u_x (IsLatticeIn).",
+   "lines": [
+    157,
+    158
+   ],
+   "span": [
+    157,
+    79,
+    158,
+    70
+   ],
+   "lean": ".imp (fun Z c g ↦ by\n    simp [c, mul_assoc, Φ, ← submatrix_map, blockDiagonal'_map]; rfl)",
+   "uses": [
+    {
+     "decl": "IsLatticeIn"
+    }
+   ],
+   "ambient_uses": [
+    "Matrix.submatrix_map",
+    "Matrix.blockDiagonal'_map"
+   ]
+  },
+  {
+   "id": "12.1.1.2",
+   "parent": "12.1.1",
+   "kind": "fact",
+   "claim": "Such P exists by the Brauer–Nesbitt theorem (IsTraceNondeg.exists_conj_of_trace_eq): u_x has non-degenerate trace form (it is a column, hence conjugate self-dual), the product of the blocks of T_x mapped to ℚ̄_ℓ has semiprime span (12.1.1.3), and the traces agree after Φ (12.1.1.4).",
+   "lines": [
+    159,
+    160
+   ],
+   "span": [
+    159,
+    5,
+    160,
+    72
+   ],
+   "lean": "((hu x).1.nondeg.exists_conj_of_trace_eq\n    (.pi (O'.1.val.mapMatrix.1.1.comp <| blockRep (T ⟨x, h⟩) ·)) (Φ _) ",
+   "uses": [
+    {
+     "decl": "IsTraceNondeg.exists_conj_of_trace_eq"
+    },
+    {
+     "decl": "IsLabelledColumn"
+    },
+    {
+     "decl": "IsConjSelfDual"
+    }
+   ]
+  },
+  {
+   "id": "12.1.1.3",
+   "parent": "12.1.1",
+   "kind": "fact",
+   "claim": "Semiprime span: let y = (y_i)_i lie in the span of the block values with y·(blocks at g)·y = 0 for all g; then y = 0, compared block by block and entry by entry (a, b).",
+   "lines": [
+    160,
+    165
+   ],
+   "span": [
+    160,
+    72,
+    165,
+    89
+   ],
+   "lean": "(fun y _ H ↦ by\n    ext (_ | e) a b\n    simpa [mul_apply, single_apply, ite_and] using congrFun₂ (LinearMap.congr_fun\n     (LinearMap.ext_on_range (g := 0) (f := .mulLeftRight _ (y _, y _) ∘ₗ (Algebra.linearMap O'\n     _).mapMatrix) (sp _) (congr($(H ·) _))) (.single b a 1)) a b\n    with_unfolding_all simpa using! (sum_singleton _ a).symm.trans congr($(H 1) _ a a)) ",
+   "head_span": [
+    160,
+    72,
+    161,
+    20
+   ],
+   "head_lines": [
+    160,
+    161
+   ],
+   "uses": [
+    {
+     "decl": "HasSemiprimeSpan"
+    }
+   ]
+  },
+  {
+   "id": "12.1.1.3.1",
+   "parent": "12.1.1.3",
+   "kind": "case",
+   "claim": "The row block: y_row·T_x(g)·y_row = 0 for every g (H), so the linear map M ↦ y_row·M·y_row on M_r(O') (matrices mapped to ℚ̄_ℓ) vanishes on the values of T_x, which span M_r(O') (step 9), hence on every matrix unit; the (a, b) entry of y_row·E_{ba}·y_row is y_row(a, b)², so y_row(a, b) = 0 for all a, b.",
+   "lines": [
+    162,
+    164
+   ],
+   "lean": "    simpa [mul_apply, single_apply, ite_and] using congrFun₂ (LinearMap.congr_fun\n     (LinearMap.ext_on_range (g := 0) (f := .mulLeftRight _ (y _, y _) ∘ₗ (Algebra.linearMap O'\n     _).mapMatrix) (sp _) (congr($(H ·) _))) (.single b a 1)) a b",
+   "uses": [
+    {
+     "step": "9"
+    }
+   ],
+   "ambient_uses": [
+    "LinearMap.ext_on_range",
+    "Matrix.mul_apply",
+    "Matrix.single_apply"
+   ]
+  },
+  {
+   "id": "12.1.1.3.2",
+   "parent": "12.1.1.3",
+   "kind": "case",
+   "claim": "A block some e (1×1): H at g = 1 gives y_e² = 0 in ℚ̄_ℓ, so y_e = 0.",
+   "lines": [
+    165,
+    165
+   ],
+   "span": [
+    165,
+    1,
+    165,
+    89
+   ],
+   "lean": "    with_unfolding_all simpa using! (sum_singleton _ a).symm.trans congr($(H 1) _ a a)) ",
+   "ambient_uses": [
+    "Finset.sum_singleton"
+   ]
+  },
+  {
+   "id": "12.1.1.4",
+   "parent": "12.1.1",
+   "kind": "fact",
+   "claim": "The traces agree: tr u_x(g) = ψ(g)·tr R_x(g) + Σ_{e < V.rankDiff} cycInv(g)^e (hl'), while tr Φ(blocks of T_x at g) = tr T_x(g) + Σ_e cycInv(g)^e (step 11) and tr T_x(g) = ψ'_x(g)·tr R₀_x(g) = ψ(g)·tr R_x(g) (hψ', trace_eq of the lattice R₀_x).",
+   "lines": [
+    165,
+    167
+   ],
+   "span": [
+    165,
+    89,
+    167,
+    54
+   ],
+   "lean": "fun g ↦ by\n    simp [↓hl' ⟨x, h⟩, ↓← (hl _).trace_eq, ← hψ' ⟨x, h⟩, Φ, trace, sum_range, mul_sum, reindex_equiv\n      ϵ, Fintype.sum_sigma, B, cycInv]; simp!; rfl), ",
+   "uses": [
+    {
+     "decl": "IsLatticeIn.trace_eq"
+    },
+    {
+     "step": "11"
+    },
+    {
+     "decl": "cycInv"
+    }
+   ],
+   "ambient_uses": [
+    "Matrix.trace",
+    "Fintype.sum_sigma"
+   ]
+  },
+  {
+   "id": "12.1.1.5",
+   "parent": "12.1.1",
+   "kind": "fact",
+   "claim": "For x ∈ 𝓧, v(g) = Φ(blocks of T_x at g) by construction.",
+   "lines": [
+    167,
+    167
+   ],
+   "span": [
+    167,
+    54,
+    167,
+    69
+   ],
+   "lean": "fun _ _ ↦ rfl⟩ "
+  },
+  {
+   "id": "12.1.2",
+   "parent": "12.1",
+   "kind": "case",
+   "claim": "Case x ∉ 𝓧: any lattice of u_x over O' (hL x, step 5) serves; the block condition is vacuous.",
+   "lines": [
+    167,
+    167
+   ],
+   "span": [
+    167,
+    69,
+    167,
+    95
+   ],
+   "lean": "else (hL x).imp (by tauto)",
+   "uses": [
+    {
+     "step": "5"
+    }
+   ]
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "setup",
+   "claim": "For every x: an injective O'-algebra map F_x : M_n(O') → M_n(ℚ̄_ℓ) with F_x(u'_x(g)) = u_x(g) for all g, preserving determinants and traces (IsLatticeIn.exists_algHom).",
+   "lines": [
+    168,
+    168
+   ],
+   "lean": "  choose F I f d tr using (hL · |>.exists_algHom)",
+   "uses": [
+    {
+     "decl": "IsLatticeIn.exists_algHom"
+    },
+    {
+     "step": "12"
+    }
+   ]
+  },
+  {
+   "id": "14",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Every u'_x is continuous, as u_x is (IsLatticeIn.continuous).",
+   "lines": [
+    169,
+    169
+   ],
+   "lean": "  have hC x := (hL x).continuous (hu x).1.continuous",
+   "uses": [
+    {
+     "decl": "IsLatticeIn.continuous"
+    },
+    {
+     "step": "12"
+    }
+   ]
+  },
+  {
+   "id": "15",
+   "parent": null,
+   "kind": "fact",
+   "claim": "u'_x(g) = 1 for g in the inertia above the places outside (above ℓ) ∪ (above g₀g₁) ∪ Q ∪ Q̄ ∪ w(K) ∪ conj w(K): u_x is trivial there (IsColumn.eq_one_of_mem_inertiaAbove), hence so is its lattice (IsLatticeIn.eq_one).",
+   "lines": [
+    170,
+    170
+   ],
+   "lean": "  have U g h x := (hL x).eq_one ((hu x).1.eq_one_of_mem_inertiaAbove g h)",
+   "uses": [
+    {
+     "decl": "IsColumn.eq_one_of_mem_inertiaAbove"
+    },
+    {
+     "decl": "IsLatticeIn.eq_one"
+    },
+    {
+     "step": "12"
+    }
+   ]
+  },
+  {
+   "id": "16",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "Apply Ribet's lemma to first order (ribet_first_order) over the discrete valuation ring O', with S viewed as an O'-subalgebra (elements of O' have norm ≤ 1, so lie in ℤ̄_ℓ), the lattices u'_x and 𝒥; its arguments and hypotheses are supplied in the substeps, and its conclusion is turned into the claim, up to the numerical inequality ?H proved in steps 17–20.",
+   "lines": [
+    171,
+    210
+   ],
+   "span": [
+    171,
+    3,
+    210,
+    90
+   ],
+   "lean": "refine (ribet_first_order (S := ⟨_, (S.2 ⟨·, norm_le_one _⟩)⟩) u' 𝒥 (.trans ⟨(⟨none, ·⟩) ⊕ᵥ (⟨some\n    ·, ()⟩), (·.rec (·.rec .inl fun e _ ↦ .inr e)), by rintro ⟨⟩ <;> rfl, by rintro ⟨⟨⟩⟩ <;> rfl⟩ ϵ)\n    π T (by simp) (fun x g ↦ (reindex ..).symm_apply_eq.1 (by ext1 ⟨⟩ ⟨⟩ <;>\n    simp [hB, Φ, blockDiagonal', B] <;> rfl)) (sp π) e₀ hy (by simp [cycInv, c₀]) out (by\n    simpa [IsTraceIdeal, ↓(hL _).charpoly_eq_map, ← f, aeval_algHom_apply (F _), ← map_mul, sub_mul,\n      tr, O'.1.smul_def] using isTraceIdeal_withConjInv tri.isNewPlaces (e := η) (hu · |>.1.1.1) (by\n      simpa [IsTraceIdeal, hε, ← aeval_map_algebraMap (PadicAlgCl ℓ)] using! h𝒥)) (fun e k ↦ by\n    simpa [by simpa [eval_map, he'] using (congr(Polynomial.eval 1 $(hε ·)))]\n      using ((tri.isNewPlaces.cycInv_withConjInv ..).2 e).trans (sub_dvd_eval_sub _ 1 (η _))) _\n    (by simpa [cycInv] using\n    (map_dvd (algebraMap _ O') <| tri.prod_dvd ·)) ⟨(ty ·), ty.2⟩ out (.trans (by\n    simp [ribetNormaliser, Finsupp.linearCombination_apply ℕ, Finsupp.sum, f, pow_add, ey,\n      O'.1.smul_def]\n    rfl) <| d · _) (le_self_add.trans_lt (O'.normLength_mono.reflect_lt ((le_add_self.trans\n    ?H).trans_lt (by grw [hJ.rank_mem.2]; simpa using mod_cast Nat.lt_of_floor_lt hm))))\n    ((relLength_add_length_inf _ (obeying\n    (crysRels (T π)) _)).ge.trans (add_le_add (relLength_mono (fun _ ↦ (·.1.1)) le_rfl)\n    (length_mono (T := _ ⊓ _) fun c k ↦ ⟨tri.isNewPlaces.mem_selmerModule_of_tame_eq_zero\n    (obeyingCocycles.mem_selmerModule hC U k.1.1.1 k.2) (k.1.1.2 _ ⟨·, rfl⟩) (Set.union_assoc ..).ge\n    fun g ⟨v, hv, H⟩ _ ↦ (p1 (hψ.eq_one_of_mem_inertiaAbove g ⟨v, mt .inr hv, H⟩)).trans ((hl\n    π).eq_one (hJ.eq_one_of_mem_inertiaAbove g ⟨v, mt (.imp_right nofun) hv, H⟩)), k.1.2⟩))) (o :=\n    fun k ↦ ite k.1.isLeft (C (ψ' π (withConjInv z k)) - X) (∑ i ∈ range D.chosenGroupOrder,\n    X ^ i)) (by simp [N.cycInv_withConjInv]) (by\n    rintro ⟨j | j, b⟩ x <;> apply I x\n    simpa [f, ← hψ' π, Algebra.smul_def, ← neg_mul] using! congr(-$((hu x).2 _ (M _ (by simp))))\n    have ⟨v, ⟨⟨i, b⟩, l⟩, A, a, s⟩ := @M (.inr j,\n      b) (placesAboveG D \\ placesDividing _ ℓ) (by simpa using j.2)\n    have ⟨μ, _, Z, P⟩ := (exists_inertia_eigenvalues n hc b a V.rankDiff).choose_spec.2 _ s\n    convert ((hu x).1.local_conditions v (·.2 (.inr ⟨i, b⟩)) a).1.aeval_eq_zero_of_roots\n      (a.valuation_natCast_eq_one_iff.2 l) s (P (hu x).1).1\n      (X ^ D.chosenGroupOrder - 1) _ <;> simp [f, geom_sum_mul, eval_multiset_prod]\n    exact (Z · · |>.2.2.elim fun d ⟨a, h⟩ ↦ (g_pow_sub_one_dvd_chosenGroupOrder D\n      (a.imp_right D.nat_le_of_hasLogBound.trans')).choose_spec\n      ▸ by rw [pow_mul, h, one_pow])) (s := s ∪ image (withConjInv τ) univ) fun e Z H ↦ (fun N ↦\n    ⟨hasTriangleCost_tateTwist tri N (H · · |>.2.2) (add_le_add (relLength_mono (H · · |>.1) le_rfl)\n    (odd ℓ _ ⟨ζ, inferInstance⟩ e (e.2.trans_le hJ.t_le) ν)), fun c k b ↦ hr _ e c\n    (tri.isNewPlaces.mem_selmerModule_of_tame_eq_zero (N c k) (by simp [b])) (by simp +contextual\n    [b])⟩) fun c k ↦ N.mem_selmerModule_of_tame_eq_zero (obeyingCocycles.mem_selmerModule hC U (H c\n    k).1 (by simp [obeying])) (H c k).2.1).elim fun d k ↦ ⟨d, k.1, .trans (by\n    grw [ellVal_mul_le, (normLength_addVal d).ge, k.2, card_union_le, card_image_le]) ?H⟩",
+   "head_span": [
+    171,
+    3,
+    171,
+    71
+   ],
+   "head_lines": [
+    171,
+    171
+   ],
+   "uses": [
+    {
+     "decl": "ribet_first_order"
+    }
+   ]
+  },
+  {
+   "id": "16.1",
+   "parent": "16",
+   "kind": "setup",
+   "claim": "The index bijection r ⊔ Fin(V.rankDiff) ≃ Σ_i RowBlockIndex r i ≃ n: r to the row block, e to the block some e, then ϵ.",
+   "lines": [
+    171,
+    172
+   ],
+   "span": [
+    171,
+    71,
+    172,
+    101
+   ],
+   "lean": "(.trans ⟨(⟨none, ·⟩) ⊕ᵥ (⟨some\n    ·, ()⟩), (·.rec (·.rec .inl fun e _ ↦ .inr e)), by rintro ⟨⟩ <;> rfl, by rintro ⟨⟨⟩⟩ <;> rfl⟩ ϵ)",
+   "uses": [
+    {
+     "decl": "RowBlockIndex"
+    }
+   ]
+  },
+  {
+   "id": "16.2",
+   "parent": "16",
+   "kind": "setup",
+   "claim": "The point π, the row lattices ρ_x = T_x (x ∈ 𝓧), and the characters ξ_e = cycInv^e for e < V.rankDiff, with ξ_0 = 1.",
+   "lines": [
+    173,
+    173
+   ],
+   "span": [
+    173,
+    5,
+    173,
+    19
+   ],
+   "lean": "π T (by simp) ",
+   "uses": [
+    {
+     "step": "7"
+    }
+   ]
+  },
+  {
+   "id": "16.3",
+   "parent": "16",
+   "kind": "fact",
+   "claim": "For x ∈ 𝓧, u'_x(g) is the reindexing of the block matrix with blocks T_x(g) and diag(cycInv(g)^e)_e (hB and step 11).",
+   "lines": [
+    173,
+    174
+   ],
+   "span": [
+    173,
+    19,
+    174,
+    47
+   ],
+   "lean": "(fun x g ↦ (reindex ..).symm_apply_eq.1 (by ext1 ⟨⟩ ⟨⟩ <;>\n    simp [hB, Φ, blockDiagonal', B] <;> rfl)) ",
+   "uses": [
+    {
+     "step": "12"
+    },
+    {
+     "step": "11"
+    },
+    {
+     "step": "10"
+    }
+   ],
+   "ambient_uses": [
+    "Matrix.blockDiagonal'"
+   ]
+  },
+  {
+   "id": "16.4",
+   "parent": "16",
+   "kind": "fact",
+   "claim": "The values of T_π span M_r(O') (step 9); T_x(γ_x) = y'_x·1 (e₀); y'_x − 1 is a unit (hy); cycInv(γ_x)^e = 1 as cyc(γ_x) = 1 (c₀); and p = ℓ^ν ≠ 0.",
+   "lines": [
+    174,
+    174
+   ],
+   "span": [
+    174,
+    47,
+    174,
+    87
+   ],
+   "lean": "(sp π) e₀ hy (by simp [cycInv, c₀]) out ",
+   "uses": [
+    {
+     "step": "9"
+    },
+    {
+     "step": "5"
+    },
+    {
+     "decl": "cycInv"
+    }
+   ]
+  },
+  {
+   "id": "16.5",
+   "parent": "16",
+   "kind": "fact",
+   "claim": "IsTraceIdeal 𝒥 (u'_x(g)) (ℓ^ν) (withConjInv τ) (withConjInv φ) (first projection) η over O': the given trace ideal h𝒥, rewritten with η_k in place of e_k (hε), is extended to the doubled family by isTraceIdeal_withConjInv (the u_x are conjugate self-dual, (hu x).1, and IsNewPlaces from the triangle), and transported from u_x to u'_x through F_x (characteristic polynomials and traces agree: IsLatticeIn.charpoly_eq_map, step 13).",
+   "lines": [
+    174,
+    177
+   ],
+   "span": [
+    174,
+    87,
+    177,
+    83
+   ],
+   "lean": "(by\n    simpa [IsTraceIdeal, ↓(hL _).charpoly_eq_map, ← f, aeval_algHom_apply (F _), ← map_mul, sub_mul,\n      tr, O'.1.smul_def] using isTraceIdeal_withConjInv tri.isNewPlaces (e := η) (hu · |>.1.1.1) (by\n      simpa [IsTraceIdeal, hε, ← aeval_map_algebraMap (PadicAlgCl ℓ)] using! h𝒥)) ",
+   "uses": [
+    {
+     "decl": "isTraceIdeal_withConjInv"
+    },
+    {
+     "decl": "IsTraceIdeal"
+    },
+    {
+     "decl": "IsLatticeIn.charpoly_eq_map"
+    },
+    {
+     "decl": "IsPrimeTriangle"
+    },
+    {
+     "step": "6"
+    },
+    {
+     "step": "13"
+    }
+   ],
+   "ambient_uses": [
+    "Polynomial.aeval_algHom_apply",
+    "Polynomial.aeval_map_algebraMap"
+   ]
+  },
+  {
+   "id": "16.6",
+   "parent": "16",
+   "kind": "fact",
+   "claim": "For every e and k: ℓ^ν divides η_k(cycInv(φ'_k)^e) − 1, where φ'_k = withConjInv φ k: ℓ^ν divides cycInv(φ'_k)^e − 1 (IsNewPlaces.cycInv_withConjInv), and A − 1 divides η_k(A) − η_k(1), with η_k(1) = e_k(1) = 1 (he', hε).",
+   "lines": [
+    177,
+    179
+   ],
+   "span": [
+    177,
+    83,
+    179,
+    95
+   ],
+   "lean": "(fun e k ↦ by\n    simpa [by simpa [eval_map, he'] using (congr(Polynomial.eval 1 $(hε ·)))]\n      using ((tri.isNewPlaces.cycInv_withConjInv ..).2 e).trans (sub_dvd_eval_sub _ 1 (η _))) ",
+   "uses": [
+    {
+     "decl": "IsNewPlaces.cycInv_withConjInv"
+    },
+    {
+     "step": "6"
+    }
+   ],
+   "ambient_uses": [
+    "Polynomial.sub_dvd_eval_sub",
+    "Polynomial.eval_map"
+   ]
+  },
+  {
+   "id": "16.7",
+   "parent": "16",
+   "kind": "fact",
+   "claim": "The separating element a of the triangle; ∏_{k≠e}(cycInv(a)^e − cycInv(a)^k) divides C = ℓ^{D.h₂·h} in O' (prod_dvd of the triangle, mapped to O'); the types ty as a monotone map; and p₀ = ℓ^{m₀} ≠ 0.",
+   "lines": [
+    179,
+    181
+   ],
+   "span": [
+    179,
+    95,
+    181,
+    71
+   ],
+   "lean": "_\n    (by simpa [cycInv] using\n    (map_dvd (algebraMap _ O') <| tri.prod_dvd ·)) ⟨(ty ·), ty.2⟩ out ",
+   "uses": [
+    {
+     "decl": "IsPrimeTriangle"
+    },
+    {
+     "decl": "cycInv"
+    }
+   ],
+   "ambient_uses": [
+    "map_dvd"
+   ]
+  },
+  {
+   "id": "16.8",
+   "parent": "16",
+   "kind": "fact",
+   "claim": "β_x = det(Σ_g ω(g)(u_x(g) − 1)) is the image in ℚ̄_ℓ of det(Σ_g ω'(g)(u'_x(g) − 1)), ω' = ribetNormaliser (γ_π) a (y'_π) (p₀·C) θ over O': F_x maps u'_x(g) to u_x(g) and preserves determinants (step 13), ℓ^{m₀ + D.h₂·h} = ℓ^{m₀}·ℓ^{D.h₂·h} = p₀·C, and y'_π = y_π (ey).",
+   "lines": [
+    181,
+    184
+   ],
+   "span": [
+    181,
+    71,
+    184,
+    20
+   ],
+   "lean": "(.trans (by\n    simp [ribetNormaliser, Finsupp.linearCombination_apply ℕ, Finsupp.sum, f, pow_add, ey,\n      O'.1.smul_def]\n    rfl) <| d · _) ",
+   "uses": [
+    {
+     "decl": "ribetNormaliser"
+    },
+    {
+     "step": "13"
+    },
+    {
+     "step": "5"
+    }
+   ],
+   "ambient_uses": [
+    "Finsupp.linearCombination_apply"
+   ]
+  },
+  {
+   "id": "16.9",
+   "parent": "16",
+   "kind": "fact",
+   "claim": "b₀ < v_{O'}(p₀), b₀ the length bound below: the normalised length of b₀ is at most that of the whole bound, which with v_ℓ(D.chosenGroupOrder³) added is at most |r|·rowBudget D ℓ (?H, steps 17–20), and |r|·rowBudget D ℓ ≤ D.r·rowBudget D ℓ < m₀ = normLength(v_{O'}(ℓ^{m₀})) (hm, |r| ≤ D.r from the row type); normLength is monotone.",
+   "lines": [
+    184,
+    185
+   ],
+   "span": [
+    184,
+    20,
+    185,
+    89
+   ],
+   "lean": "(le_self_add.trans_lt (O'.normLength_mono.reflect_lt ((le_add_self.trans\n    ?H).trans_lt (by grw [hJ.rank_mem.2]; simpa using mod_cast Nat.lt_of_floor_lt hm))))",
+   "uses": [
+    {
+     "decl": "CoeffRing.normLength_mono"
+    },
+    {
+     "decl": "IsRowType"
+    }
+   ],
+   "ambient_uses": [
+    "Nat.lt_of_floor_lt"
+   ]
+  },
+  {
+   "id": "16.10",
+   "parent": "16",
+   "kind": "fact",
+   "claim": "The length of the cocycles for T_π modulo p₀ obeying the relations among the u'_x(g) − 1 and vanishing at the τ'_k and at γ_π is at most b₀ = (block loss of the row block) + (length of the Selmer part): split by the crystalline relations (relLength_add_length_inf); the first term is at most the row block's loss (relLength_mono); the second is at most the length of (Selmer module of T_π modulo ℓ^{m₀}, unramified off ℓ, g, Q ∪ Q̄, crystalline) ∩ (vanishing at γ_π), because such a cocycle is a Selmer cocycle (obeyingCocycles.mem_selmerModule with steps 14 and 15) which, vanishing at the tame generators τ'_k, is unramified at the w_k (IsNewPlaces.mem_selmerModule_of_tame_eq_zero), T_π being trivial on the inertia off ℓ, g and Q ∪ Q̄ (ψ by IsFromU1.eq_one_of_mem_inertiaAbove, step 8, and the row R_π with its lattice R₀_π).",
+   "lines": [
+    186,
+    191
+   ],
+   "span": [
+    186,
+    5,
+    191,
+    94
+   ],
+   "lean": "((relLength_add_length_inf _ (obeying\n    (crysRels (T π)) _)).ge.trans (add_le_add (relLength_mono (fun _ ↦ (·.1.1)) le_rfl)\n    (length_mono (T := _ ⊓ _) fun c k ↦ ⟨tri.isNewPlaces.mem_selmerModule_of_tame_eq_zero\n    (obeyingCocycles.mem_selmerModule hC U k.1.1.1 k.2) (k.1.1.2 _ ⟨·, rfl⟩) (Set.union_assoc ..).ge\n    fun g ⟨v, hv, H⟩ _ ↦ (p1 (hψ.eq_one_of_mem_inertiaAbove g ⟨v, mt .inr hv, H⟩)).trans ((hl\n    π).eq_one (hJ.eq_one_of_mem_inertiaAbove g ⟨v, mt (.imp_right nofun) hv, H⟩)), k.1.2⟩))) ",
+   "uses": [
+    {
+     "decl": "relLength_add_length_inf"
+    },
+    {
+     "decl": "relLength_mono"
+    },
+    {
+     "decl": "length_mono"
+    },
+    {
+     "decl": "obeyingCocycles.mem_selmerModule"
+    },
+    {
+     "decl": "IsNewPlaces.mem_selmerModule_of_tame_eq_zero"
+    },
+    {
+     "decl": "IsFromU1.eq_one_of_mem_inertiaAbove"
+    },
+    {
+     "decl": "IsColumn.eq_one_of_mem_inertiaAbove"
+    },
+    {
+     "decl": "IsLatticeIn.eq_one"
+    },
+    {
+     "decl": "crysRels"
+    },
+    {
+     "step": "8"
+    },
+    {
+     "step": "14"
+    },
+    {
+     "step": "15"
+    }
+   ],
+   "ambient_uses": [
+    "Set.union_assoc"
+   ]
+  },
+  {
+   "id": "16.11",
+   "parent": "16",
+   "kind": "setup",
+   "claim": "The polynomials o_k for k = (j, b) ∈ (Q ⊔ B_g) × Bool: o_k = ψ'_π(withConjInv z k) − X for j ∈ Q, and o_k = Σ_{i < D.chosenGroupOrder} X^i for j ∈ B_g; the elements are δ_k = withConjInv z k.",
+   "lines": [
+    191,
+    193
+   ],
+   "span": [
+    191,
+    94,
+    193,
+    13
+   ],
+   "lean": "(o :=\n    fun k ↦ ite k.1.isLeft (C (ψ' π (withConjInv z k)) - X) (∑ i ∈ range D.chosenGroupOrder,\n    X ^ i)) ",
+   "uses": [
+    {
+     "decl": "withConjInv"
+    },
+    {
+     "step": "2"
+    }
+   ]
+  },
+  {
+   "id": "16.12",
+   "parent": "16",
+   "kind": "fact",
+   "claim": "cycInv(δ_k)^e = 1 for all k and e, since cycInv(withConjInv z k) = 1 (IsNewPlaces.cycInv_withConjInv for step 3).",
+   "lines": [
+    193,
+    193
+   ],
+   "span": [
+    193,
+    13,
+    193,
+    46
+   ],
+   "lean": "(by simp [N.cycInv_withConjInv]) ",
+   "uses": [
+    {
+     "decl": "IsNewPlaces.cycInv_withConjInv"
+    },
+    {
+     "step": "3"
+    }
+   ]
+  },
+  {
+   "id": "16.13",
+   "parent": "16",
+   "kind": "fact",
+   "claim": "o_k·(X − 1) kills u'_x(δ_k) for all k and x: by injectivity of F_x it suffices that it kills u_x(δ_k); two cases, j ∈ Q and j ∈ B_g.",
+   "lines": [
+    193,
+    204
+   ],
+   "span": [
+    193,
+    46,
+    204,
+    39
+   ],
+   "lean": "(by\n    rintro ⟨j | j, b⟩ x <;> apply I x\n    simpa [f, ← hψ' π, Algebra.smul_def, ← neg_mul] using! congr(-$((hu x).2 _ (M _ (by simp))))\n    have ⟨v, ⟨⟨i, b⟩, l⟩, A, a, s⟩ := @M (.inr j,\n      b) (placesAboveG D \\ placesDividing _ ℓ) (by simpa using j.2)\n    have ⟨μ, _, Z, P⟩ := (exists_inertia_eigenvalues n hc b a V.rankDiff).choose_spec.2 _ s\n    convert ((hu x).1.local_conditions v (·.2 (.inr ⟨i, b⟩)) a).1.aeval_eq_zero_of_roots\n      (a.valuation_natCast_eq_one_iff.2 l) s (P (hu x).1).1\n      (X ^ D.chosenGroupOrder - 1) _ <;> simp [f, geom_sum_mul, eval_multiset_prod]\n    exact (Z · · |>.2.2.elim fun d ⟨a, h⟩ ↦ (g_pow_sub_one_dvd_chosenGroupOrder D\n      (a.imp_right D.nat_le_of_hasLogBound.trans')).choose_spec\n      ▸ by rw [pow_mul, h, one_pow])) ",
+   "head_span": [
+    193,
+    46,
+    194,
+    38
+   ],
+   "head_lines": [
+    193,
+    194
+   ],
+   "uses": [
+    {
+     "step": "13"
+    }
+   ]
+  },
+  {
+   "id": "16.13.1",
+   "parent": "16.13",
+   "kind": "case",
+   "claim": "j ∈ Q: δ_k lies in the inertia above Q ∪ Q̄ (step 4), so (u_x(δ_k) − ψ(δ_k))(u_x(δ_k) − 1) = 0 by hu; with ψ = ψ'_π this is (ψ'_π(δ_k) − X)(X − 1) evaluated at u_x(δ_k) = F_x(u'_x(δ_k)).",
+   "lines": [
+    195,
+    195
+   ],
+   "lean": "    simpa [f, ← hψ' π, Algebra.smul_def, ← neg_mul] using! congr(-$((hu x).2 _ (M _ (by simp))))",
+   "uses": [
+    {
+     "step": "4"
+    }
+   ]
+  },
+  {
+   "id": "16.13.2",
+   "parent": "16.13",
+   "kind": "case",
+   "claim": "j = v ∈ B_g (a place above g not above ℓ).",
+   "lines": [
+    196,
+    204
+   ],
+   "span": [
+    196,
+    1,
+    204,
+    39
+   ],
+   "lean": "    have ⟨v, ⟨⟨i, b⟩, l⟩, A, a, s⟩ := @M (.inr j,\n      b) (placesAboveG D \\ placesDividing _ ℓ) (by simpa using j.2)\n    have ⟨μ, _, Z, P⟩ := (exists_inertia_eigenvalues n hc b a V.rankDiff).choose_spec.2 _ s\n    convert ((hu x).1.local_conditions v (·.2 (.inr ⟨i, b⟩)) a).1.aeval_eq_zero_of_roots\n      (a.valuation_natCast_eq_one_iff.2 l) s (P (hu x).1).1\n      (X ^ D.chosenGroupOrder - 1) _ <;> simp [f, geom_sum_mul, eval_multiset_prod]\n    exact (Z · · |>.2.2.elim fun d ⟨a, h⟩ ↦ (g_pow_sub_one_dvd_chosenGroupOrder D\n      (a.imp_right D.nat_le_of_hasLogBound.trans')).choose_spec\n      ▸ by rw [pow_mul, h, one_pow])) "
+  },
+  {
+   "id": "16.13.2.1",
+   "parent": "16.13.2",
+   "kind": "fact",
+   "claim": "δ_k lies in the inertia above the places above g not above ℓ (step 4): it is in the inertia group of a place A of Ω over a place v' with g_i ∈ v' (b) and v' not above ℓ (l).",
+   "lines": [
+    196,
+    197
+   ],
+   "lean": "    have ⟨v, ⟨⟨i, b⟩, l⟩, A, a, s⟩ := @M (.inr j,\n      b) (placesAboveG D \\ placesDividing _ ℓ) (by simpa using j.2)",
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "decl": "placesAboveG"
+    },
+    {
+     "decl": "placesDividing"
+    }
+   ]
+  },
+  {
+   "id": "16.13.2.2",
+   "parent": "16.13.2",
+   "kind": "fact",
+   "claim": "By exists_inertia_eigenvalues (for V, c apt, v' above g_i, A over v' and t = V.rankDiff) there is a multiset μ ⊆ ℚ̄_ℓ of |r| + V.rankDiff elements, each with y^{g_i^d − 1} = 1 for some 1 ≤ d ≤ D.r (Z), such that ∏_{y∈μ}(X − y) kills δ_k at A on every labelled column with labels twistedLabel V c i·(X − 1)^{t} (P).",
+   "lines": [
+    198,
+    198
+   ],
+   "lean": "    have ⟨μ, _, Z, P⟩ := (exists_inertia_eigenvalues n hc b a V.rankDiff).choose_spec.2 _ s",
+   "uses": [
+    {
+     "decl": "exists_inertia_eigenvalues"
+    },
+    {
+     "step": "16.13.2.1"
+    }
+   ]
+  },
+  {
+   "id": "16.13.2.3",
+   "parent": "16.13.2",
+   "kind": "fact",
+   "claim": "u_x is of finite type at A (local conditions of the column at v', a place above g), ℓ is a unit at A, and δ_k ∈ inertia of A is killed by ∏(X − y) on u_x; so every polynomial vanishing on μ kills u_x(δ_k) (IsFiniteTypeAt.aeval_eq_zero_of_roots). Take X^{D.chosenGroupOrder} − 1 = (Σ_{i<D.chosenGroupOrder} X^i)(X − 1); it remains that y^{D.chosenGroupOrder} = 1 for y ∈ μ.",
+   "lines": [
+    199,
+    201
+   ],
+   "lean": "    convert ((hu x).1.local_conditions v (·.2 (.inr ⟨i, b⟩)) a).1.aeval_eq_zero_of_roots\n      (a.valuation_natCast_eq_one_iff.2 l) s (P (hu x).1).1\n      (X ^ D.chosenGroupOrder - 1) _ <;> simp [f, geom_sum_mul, eval_multiset_prod]",
+   "uses": [
+    {
+     "decl": "IsFiniteTypeAt.aeval_eq_zero_of_roots"
+    },
+    {
+     "decl": "IsColumn"
+    },
+    {
+     "decl": "IsPlaceOver.valuation_natCast_eq_one_iff"
+    },
+    {
+     "step": "16.13.2.1"
+    },
+    {
+     "step": "16.13.2.2"
+    }
+   ],
+   "ambient_uses": [
+    "geom_sum_mul",
+    "Polynomial.eval_multiset_prod"
+   ]
+  },
+  {
+   "id": "16.13.2.4",
+   "parent": "16.13.2",
+   "kind": "fact",
+   "claim": "For y ∈ μ with y^{g_i^d − 1} = 1, 1 ≤ d ≤ D.r ≤ D.r·D.t: g_i^d − 1 divides D.chosenGroupOrder (g_pow_sub_one_dvd_chosenGroupOrder), so y^{D.chosenGroupOrder} = 1.",
+   "lines": [
+    202,
+    204
+   ],
+   "span": [
+    202,
+    1,
+    204,
+    39
+   ],
+   "lean": "    exact (Z · · |>.2.2.elim fun d ⟨a, h⟩ ↦ (g_pow_sub_one_dvd_chosenGroupOrder D\n      (a.imp_right D.nat_le_of_hasLogBound.trans')).choose_spec\n      ▸ by rw [pow_mul, h, one_pow])) ",
+   "uses": [
+    {
+     "decl": "g_pow_sub_one_dvd_chosenGroupOrder"
+    },
+    {
+     "decl": "Data.nat_le_of_hasLogBound"
+    },
+    {
+     "step": "16.13.2.2"
+    }
+   ]
+  },
+  {
+   "id": "16.14",
+   "parent": "16",
+   "kind": "setup",
+   "claim": "The finite set of points of ribet_first_order is s ∪ {τ'_k : k ∈ K × Bool}, τ'_k = withConjInv τ k.",
+   "lines": [
+    204,
+    204
+   ],
+   "span": [
+    204,
+    39,
+    204,
+    77
+   ],
+   "lean": "(s := s ∪ image (withConjInv τ) univ) "
+  },
+  {
+   "id": "16.15",
+   "parent": "16",
+   "kind": "fact",
+   "claim": "For every string block e and every module Z of cocycles for cycInv^e modulo ℓ^ν that obey the relations among the u'_x(g) − 1, vanish at the δ_k and whose coboundaries are killed by cycInv(a)^e − 1 (H): Z has triangle cost b_e and is detected by s ∪ τ'; first the membership N of Z in a Selmer module.",
+   "lines": [
+    204,
+    209
+   ],
+   "span": [
+    204,
+    77,
+    209,
+    42
+   ],
+   "lean": "fun e Z H ↦ (fun N ↦\n    ⟨hasTriangleCost_tateTwist tri N (H · · |>.2.2) (add_le_add (relLength_mono (H · · |>.1) le_rfl)\n    (odd ℓ _ ⟨ζ, inferInstance⟩ e (e.2.trans_le hJ.t_le) ν)), fun c k b ↦ hr _ e c\n    (tri.isNewPlaces.mem_selmerModule_of_tame_eq_zero (N c k) (by simp [b])) (by simp +contextual\n    [b])⟩) fun c k ↦ N.mem_selmerModule_of_tame_eq_zero (obeyingCocycles.mem_selmerModule hC U (H c\n    k).1 (by simp [obeying])) (H c k).2.1",
+   "head_span": [
+    204,
+    77,
+    204,
+    97
+   ],
+   "head_lines": [
+    204,
+    204
+   ]
+  },
+  {
+   "id": "16.15.1",
+   "parent": "16.15",
+   "kind": "fact",
+   "claim": "HasTriangleCost Z (withConjInv τ) (withConjInv φ) {j : ty j = e} C b_e with b_e = (block loss of the block e at ν) + v_{O'}(X_D): hasTriangleCost_tateTwist (triangle, N, the coboundary condition from H), the local loss bounded by the block loss (relLength_mono) and length(shaOdd ℓ E O' e ν) ≤ v_{O'}(X_D) (odd, O' having enough roots of unity by (ζ), e < V.rankDiff ≤ D.t).",
+   "lines": [
+    205,
+    206
+   ],
+   "span": [
+    205,
+    5,
+    206,
+    63
+   ],
+   "lean": "⟨hasTriangleCost_tateTwist tri N (H · · |>.2.2) (add_le_add (relLength_mono (H · · |>.1) le_rfl)\n    (odd ℓ _ ⟨ζ, inferInstance⟩ e (e.2.trans_le hJ.t_le) ν)), ",
+   "uses": [
+    {
+     "decl": "hasTriangleCost_tateTwist"
+    },
+    {
+     "decl": "relLength_mono"
+    },
+    {
+     "decl": "HasTriangleCost"
+    },
+    {
+     "step": "1"
+    },
+    {
+     "step": "5"
+    }
+   ]
+  },
+  {
+   "id": "16.15.2",
+   "parent": "16.15",
+   "kind": "fact",
+   "claim": "Detection: c ∈ Z vanishing on s ∪ τ' vanishes at the τ'_k, so it is unramified at the w_k (IsNewPlaces.mem_selmerModule_of_tame_eq_zero), hence a Selmer cocycle of O'(−e) modulo ℓ^ν unramified off ℓ; vanishing on s it is 0 (hr, step 1).",
+   "lines": [
+    206,
+    208
+   ],
+   "span": [
+    206,
+    63,
+    208,
+    12
+   ],
+   "lean": "fun c k b ↦ hr _ e c\n    (tri.isNewPlaces.mem_selmerModule_of_tame_eq_zero (N c k) (by simp [b])) (by simp +contextual\n    [b])⟩) ",
+   "uses": [
+    {
+     "decl": "IsNewPlaces.mem_selmerModule_of_tame_eq_zero"
+    },
+    {
+     "step": "1"
+    }
+   ]
+  },
+  {
+   "id": "16.15.3",
+   "parent": "16.15",
+   "kind": "fact",
+   "claim": "N: every c ∈ Z lies in the Selmer module of O'(−e) modulo ℓ^ν unramified off ℓ and the w_k: c obeys the relations among the u'_x(g) − 1, so it is a locally constant cocycle unramified off the level (obeyingCocycles.mem_selmerModule with steps 14, 15), and vanishing at the δ_k it is unramified at Q and at the places above g (IsNewPlaces.mem_selmerModule_of_tame_eq_zero for step 3).",
+   "lines": [
+    208,
+    209
+   ],
+   "span": [
+    208,
+    12,
+    209,
+    42
+   ],
+   "lean": "fun c k ↦ N.mem_selmerModule_of_tame_eq_zero (obeyingCocycles.mem_selmerModule hC U (H c\n    k).1 (by simp [obeying])) (H c k).2.1",
+   "uses": [
+    {
+     "decl": "obeyingCocycles.mem_selmerModule"
+    },
+    {
+     "decl": "IsNewPlaces.mem_selmerModule_of_tame_eq_zero"
+    },
+    {
+     "step": "3"
+    },
+    {
+     "step": "14"
+    },
+    {
+     "step": "15"
+    },
+    {
+     "decl": "obeying"
+    }
+   ]
+  },
+  {
+   "id": "16.16",
+   "parent": "16",
+   "kind": "deduction",
+   "claim": "Ribet's lemma gives c ∈ O' with IsRibetElement 𝒥 β π c and v_{O'}(c) ≤ b₀ + Σ_e b_e + V.rankDiff·(Σ_k v(o_k(1)) + 2·|s ∪ τ'|·v(C)) + (|K| + 1)·v(C); take d = c. Then v_ℓ(D.chosenGroupOrder³·d) ≤ v_ℓ(D.chosenGroupOrder³) + v_ℓ(d) (ellVal_mul_le), v_ℓ(d) = normLength(v_{O'}(c)) (normLength_addVal), |s ∪ τ'| ≤ |s| + 2|K|, and the total is at most |r|·rowBudget D ℓ by ?H.",
+   "lines": [
+    209,
+    210
+   ],
+   "span": [
+    209,
+    42,
+    210,
+    90
+   ],
+   "lean": ").elim fun d k ↦ ⟨d, k.1, .trans (by\n    grw [ellVal_mul_le, (normLength_addVal d).ge, k.2, card_union_le, card_image_le]) ?H⟩",
+   "uses": [
+    {
+     "decl": "ellVal_mul_le"
+    },
+    {
+     "decl": "CoeffRing.normLength_addVal"
+    },
+    {
+     "decl": "IsRibetElement"
+    }
+   ],
+   "ambient_uses": [
+    "Finset.card_union_le",
+    "Finset.card_image_le"
+   ]
+  },
+  {
+   "id": "17",
+   "parent": null,
+   "kind": "computation",
+   "claim": "?H: read the bound hs, (|K| + |s|)·D.h₂·h ≤ D.h₂²²·h, in [0, ∞].",
+   "lines": [
+    211,
+    211
+   ],
+   "lean": "  rw [← @Nat.cast_le ℝ≥0∞] at hs",
+   "uses": [
+    {
+     "step": "1"
+    }
+   ]
+  },
+  {
+   "id": "18",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Unfold rowBudget D ℓ and simplify: v_ℓ of natural numbers (ellVal_natCast); o_k(1) = ψ'_π(δ_k) − 1 for j ∈ Q and D.chosenGroupOrder for j ∈ B_g; ψ(withConjInv σ k) = ψ(σ_j) since ψ comes from U(1) (IsFromU1.apply_idOrConjInv), so the sum over Q × Bool is twice Σ_P v_ℓ(ψ(σ_P) − 1); ψ'_π = ψ (hψ').",
+   "lines": [
+    212,
+    214
+   ],
+   "lean": "  simp [rowBudget, mul_add (_ ^ 27), ellVal_natCast, ne, od, two_mul, mul_two, add_mul, hψ',\n    sum_prod_type,\n    hψ.apply_idOrConjInv, z, -AddValuation.map_pow, -ENat.natCast_sub, -natCast_sub] at hs hq ⊢",
+   "uses": [
+    {
+     "decl": "rowBudget"
+    },
+    {
+     "decl": "ellVal_natCast"
+    },
+    {
+     "decl": "IsFromU1.apply_idOrConjInv"
+    },
+    {
+     "step": "2"
+    },
+    {
+     "step": "16"
+    }
+   ],
+   "ambient_uses": [
+    "Fintype.sum_prod_type"
+   ]
+  },
+  {
+   "id": "19",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Estimate the terms: the Selmer part by 10·D.f·|r|·crudeUnit ℓ D + crudeUnit ℓ D (hS); |r| ≤ D.r and 1 ≤ |r| (row type); Σ_P v_ℓ(ψ(σ_P) − 1) ≤ crudeUnit ℓ D (hq); #B_g ≤ 4·D.f (card_le_of_subset_placesAboveG); |K|·D.h₂·h ≤ D.h₂²²·h and |s|·D.h₂·h ≤ D.h₂²²·h (hs); h ≤ v_ℓ(D.chosenGroupOrder) (hh); V.rankDiff ≤ D.t (row type); v_ℓ(D.chosenGroupOrder) ≤ crudeUnit ℓ D.",
+   "lines": [
+    215,
+    218
+   ],
+   "lean": "  grw [hS, hJ.rank_mem.2, mul_add (card r : ℝ≥0∞),\n    ← le_mul_of_one_le_left' (mod_cast hJ.rank_mem.1),\n    hq.2, card_le_of_subset_placesAboveG D (by simp), le_self_add.trans hs, le_add_self.trans hs,\n    hh, hJ.t_le, (by simp [crudeUnit] : (padicValNat ℓ _ : ℝ≥0∞) ≤ crudeUnit ℓ D)]",
+   "uses": [
+    {
+     "decl": "card_le_of_subset_placesAboveG"
+    },
+    {
+     "decl": "IsRowType"
+    },
+    {
+     "decl": "crudeUnit"
+    },
+    {
+     "step": "1"
+    },
+    {
+     "step": "5"
+    }
+   ]
+  },
+  {
+   "id": "20",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Conclude ?H: the block losses (row block modulo ℓ^{m₀}, string blocks modulo ℓ^ν) total at most 4·|r|·f·loss D ℓ by (l) of step 5 applied to T_π, R₀_π and u' (u'_π block diagonal by hB, the u'_x lattices, R₀_π a lattice of R_π, and T_π = R₀_π on the decomposition groups above ℓ because ψ is trivial there, IsFromU1.eq_one_of_mem_decompGroup); and (4 + D.t·(2 + 10·D.f + 6·D.h₂²²) + D.h₂²² + D.h₂)·crudeUnit ℓ D + D.t·v_ℓ(X_D) ≤ |r|·D.h₂^27·(crudeUnit ℓ D + v_ℓ(X_D)), the coefficients being at most D.h₂^27 (Data.nat_le_of_hasLogBound) and D.t = 5·D.r; the sum is |r|·rowBudget D ℓ.",
+   "lines": [
+    219,
+    223
+   ],
+   "lean": "  exact (add_le_add (by gcongr <;> exact_mod_cast D.nat_le_of_hasLogBound) ((l _ u' (·.elim m₀\n    fun _ ↦ ν) (hB _ _) hL (hl π) fun v ↦ MonoidHom.ext (p1 <| hψ.eq_one_of_mem_decompGroup v.2\n    v.1.isPlaceOver_placeOver ·.2)).trans_eq (by ring)) : ((4 + D.t *\n    (2 + 10 * D.f + 6 * D.h₂ ^ 22) + D.h₂ ^ 22 + D.h₂) * _ + D.t * _ + _ : ℝ≥0∞) ≤\n    _).trans_eq' (by simp only [sum_option, Data.t]; push_cast; ring1!)",
+   "uses": [
+    {
+     "decl": "IsFromU1.eq_one_of_mem_decompGroup"
+    },
+    {
+     "decl": "Data.nat_le_of_hasLogBound"
+    },
+    {
+     "decl": "Data.t"
+    },
+    {
+     "step": "5"
+    },
+    {
+     "step": "8"
+    },
+    {
+     "step": "12"
+    }
+   ],
+   "ambient_uses": [
+    "Fintype.sum_option"
+   ]
+  }
+ ]
+}

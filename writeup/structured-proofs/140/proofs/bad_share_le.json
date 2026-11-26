@@ -1,0 +1,419 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Trace.BadShare:92:7",
+ "name": "bad_share_le",
+ "summary": "With m = (1 - r/q)/q^r, every good tuple contributes at least m^f to the real part of the coefficient of e at 1 (labelChar_degree_bounds factorwise). Good tuples include all families in prod_w A_w that are not in prod_w B_w, where A_w are the monic polynomials of degree r with no root in {0} or mu_M and no square factor, and B_w the non-primitive ones. Counting: |A_w| m >= 1 - eps (at most (1 + M) q^(r-1) + r q^(r-1) excluded polynomials), and |B_w| m <= 1 - L/f (the minimal polynomials of the phi(q^r - 1) primitive roots give at least phi(q^r - 1)/r primitive labels, and n <= phi(n)(2 log n + 1)). Then Re e(1) >= (1 - eps)^f - (1 - L/f)^f >= 1 - f eps - exp(-L).",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Rewrite the hypothesis on L as L <= f / (2r(2r log q + 1)) (the denominator is positive), and put m = (1 - r/q)/q^r.",
+   "lines": [
+    97,
+    97
+   ],
+   "lean": "  rw [← le_div_iff₀' (by positivity)] at hL; let m : ℝ := (1 - r / q) / q ^ r",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "fact",
+   "claim": "1 < q, from 1 < r < q.",
+   "lines": [
+    98,
+    98
+   ],
+   "lean": "  have h1 := hn.trans h2",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "fact",
+   "claim": "0 <= m (since r <= q) and 1 < q^r.",
+   "lines": [
+    99,
+    99
+   ],
+   "lean": "  obtain ⟨_ : 0 ≤ m, _⟩ := by simp [field, h2.le], one_lt_pow hn.ne_bot h1",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "2"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "fact",
+   "claim": "For every w: (the number of monic polynomials of degree r over k_w that are not primitive labels) times m is at most 1 - L/f.",
+   "lines": [
+    100,
+    114
+   ],
+   "lean": "  have B w : #{c ∈ monicsOfDegree (k w) r | ¬IsPrimitiveLabel r c} • m ≤ 1 - L / f := by\n    grw [hL, div_right_comm, div_self_le_one, (by simp [field] : m ≤ 1 / ↑(q ^ r)), nsmul_eq_mul,\n      filter_not, cast_card_sdiff (by simp), sub_mul]\n    gcongr; simp_all [monicsOfDegree, ofEquiv_card, field]; field\n    grw [(by lia : q ^ r ≤ (q ^ r - 1) * 2), cast_mul, le_totient_mul_log, ←\n      (@hasEnoughRootsOfUnity (k w) _ _ ⟨by simp [Ne.pos, hn.ne_zero, ← hq\n      w]⟩).1.choose_spec.card_primitiveRoots, sub_le] <;> simp [field, ← cast_mul, *]\n    apply card_le_mul_card_image_of_maps_to (f := minpoly _) <;>\n      simp_intro ξ g [monicsOfDegree, IsPrimitiveLabel, IsLabel, *]\n    obtain ⟨⟨⟩, ⟨_, d⟩, i⟩ := hq w, (pow_pred_eq_one_iff ‹_›).1 g.1, (isAlgebraic _).isIntegral.1 ξ\n    have := (g.2 _ (root_pow_card_pow_pred_eq_one (irreducible i) (by aesop) (by simp)).1).antisymm\n      (pow_sub_one_dvd_pow_sub_one _\n      ((root_pow_card_pow_eq_self_iff (irreducible i) (by simp)).1 d))\n    simp_all [monic, irreducible]; use Nat.pow_right_injective h1 (by lia), ξ, by simp\n    grw [card_le_degree_of_subset_roots (p := ξ.map (algebraMap ..)) fun _ ↦ _] <;> aesop",
+   "head_lines": [
+    100,
+    100
+   ],
+   "typed_fact": "#{c ∈ monicsOfDegree (k w) r | ¬IsPrimitiveLabel r c} • m ≤ 1 - L / f",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "step": "3"
+    }
+   ]
+  },
+  {
+   "id": "4.1",
+   "parent": "4",
+   "kind": "reduction",
+   "claim": "Using L/f <= 1/(2r(2r log q + 1)), m <= 1/q^r and #(not primitive) = q^r - #(primitive), it suffices to show that the number of primitive labels of degree r is at least q^r/(2r(2r log q + 1)).",
+   "lines": [
+    101,
+    102
+   ],
+   "lean": "    grw [hL, div_right_comm, div_self_le_one, (by simp [field] : m ≤ 1 / ↑(q ^ r)), nsmul_eq_mul,\n      filter_not, cast_card_sdiff (by simp), sub_mul]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "4.2",
+   "parent": "4",
+   "kind": "reduction",
+   "claim": "Clearing denominators (monicsOfDegree(k_w, r) has q^r elements): it suffices that q^r <= 2r(2r log q + 1) #(primitive labels).",
+   "lines": [
+    103,
+    103
+   ],
+   "lean": "    gcongr; simp_all [monicsOfDegree, ofEquiv_card, field]; field",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "monicsOfDegree"
+    }
+   ]
+  },
+  {
+   "id": "4.3",
+   "parent": "4",
+   "kind": "reduction",
+   "claim": "Since q^r <= 2(q^r - 1) <= 2 phi(q^r - 1)(2 log(q^r - 1) + 1) <= 2 phi(q^r - 1)(2r log q + 1), and the algebraic closure of k_w contains exactly phi(q^r - 1) primitive roots of unity of order q^r - 1, it suffices that their number is at most r times the number of primitive labels.",
+   "lines": [
+    104,
+    106
+   ],
+   "lean": "    grw [(by lia : q ^ r ≤ (q ^ r - 1) * 2), cast_mul, le_totient_mul_log, ←\n      (@hasEnoughRootsOfUnity (k w) _ _ ⟨by simp [Ne.pos, hn.ne_zero, ← hq\n      w]⟩).1.choose_spec.card_primitiveRoots, sub_le] <;> simp [field, ← cast_mul, *]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "le_totient_mul_log"
+    }
+   ],
+   "ambient_uses": [
+    "card_primitiveRoots"
+   ]
+  },
+  {
+   "id": "4.4",
+   "parent": "4",
+   "kind": "reduction",
+   "claim": "Map each such primitive root xi to its minimal polynomial over k_w: it suffices that this polynomial is a monic polynomial of degree r that is a primitive label, and that each fibre has at most r elements.",
+   "lines": [
+    107,
+    108
+   ],
+   "lean": "    apply card_le_mul_card_image_of_maps_to (f := minpoly _) <;>\n      simp_intro ξ g [monicsOfDegree, IsPrimitiveLabel, IsLabel, *]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "IsPrimitiveLabel"
+    },
+    {
+     "decl": "IsLabel"
+    }
+   ],
+   "ambient_uses": [
+    "Finset.card_le_mul_card_image_of_maps_to"
+   ]
+  },
+  {
+   "id": "4.5",
+   "parent": "4",
+   "kind": "fact",
+   "claim": "For such a xi: |k_w| = q, xi^(q^r - 1) = 1, and xi is integral (algebraic) over k_w with an irreducible minimal polynomial.",
+   "lines": [
+    109,
+    109
+   ],
+   "lean": "    obtain ⟨⟨⟩, ⟨_, d⟩, i⟩ := hq w, (pow_pred_eq_one_iff ‹_›).1 g.1, (isAlgebraic _).isIntegral.1 ξ",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "4.6",
+   "parent": "4",
+   "kind": "fact",
+   "claim": "The degree of the minimal polynomial of xi is r: xi^(q^d - 1) = 1 for d its degree gives (q^r - 1) | (q^d - 1), and d | r gives (q^d - 1) | (q^r - 1); so q^d - 1 = q^r - 1.",
+   "lines": [
+    110,
+    112
+   ],
+   "lean": "    have := (g.2 _ (root_pow_card_pow_pred_eq_one (irreducible i) (by aesop) (by simp)).1).antisymm\n      (pow_sub_one_dvd_pow_sub_one _\n      ((root_pow_card_pow_eq_self_iff (irreducible i) (by simp)).1 d))",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "4.5"
+    },
+    {
+     "decl": "root_pow_card_pow_pred_eq_one"
+    },
+    {
+     "decl": "root_pow_card_pow_eq_self_iff"
+    }
+   ]
+  },
+  {
+   "id": "4.7",
+   "parent": "4",
+   "kind": "deduction",
+   "claim": "Hence d = r (q > 1), and the minimal polynomial is monic, irreducible, of degree r, with the root xi of order q^r - 1: a primitive label of degree r.",
+   "lines": [
+    113,
+    113
+   ],
+   "lean": "    simp_all [monic, irreducible]; use Nat.pow_right_injective h1 (by lia), ξ, by simp",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "4.6"
+    }
+   ]
+  },
+  {
+   "id": "4.8",
+   "parent": "4",
+   "kind": "fact",
+   "claim": "Each fibre consists of roots of one polynomial of degree r, so has at most r elements.",
+   "lines": [
+    114,
+    114
+   ],
+   "lean": "    grw [card_le_degree_of_subset_roots (p := ξ.map (algebraMap ..)) fun _ ↦ _] <;> aesop",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "It suffices to prove the theorem from the inequality prod_w (1 - eps) <= prod_w #(A_w) m, where A_w is the set of monic polynomials of degree r over k_w that are neither (X - x) h with x = 0 or x^M = 1 and h monic of degree r - 1, nor g^2 h with g monic of degree (r - d)/2 and h monic of degree d < r; this inequality follows factor by factor (the factors 1 - eps being nonnegative) from the bound for each w.",
+   "lines": [
+    115,
+    124
+   ],
+   "lean": "  refine' (_ : _ → _) (prod_le_prod₀ (by grind) fun w _ ↦ show 1 -\n    ε ≤ #(monicsOfDegree _ r \\ ((insert 0 (nthRoots M (1 : k w)).toFinset).image₂ ((X - C ·) · * ·)\n    (monicsOfDegree _ (r - 1)) ∪ (range r).biUnion fun d ↦\n    (monicsOfDegree _ ((r - d) / 2)).image₂ (· ^ 2 * ·) (monicsOfDegree _ d))) • m by\n    grw [← hs, nsmul_eq_mul, ← sdiff_inter_self_left, cast_card_sdiff, inter_subset_right,\n      card_union_le, card_image₂_le, card_insert_le, Multiset.toFinset_card_le, card_nthRoots,\n      card_biUnion_le, card_image₂_le,\n      sum_le_card_nsmul _ _ (q ^ (r - 1))] <;> simp [monicsOfDegree,\n      ofEquiv_card, ← hq w, pow_sub₀, hn.le, field, ← pow_add, pow_le_pow_iff_right₀ one_lt_card]\n    nlinarith; lia)",
+   "head_lines": [
+    115,
+    115
+   ],
+   "head_span": [
+    115,
+    3,
+    115,
+    59
+   ],
+   "typed_fact": null,
+   "uses": [],
+   "ambient_uses": [
+    "Finset.prod_le_prod₀"
+   ]
+  },
+  {
+   "id": "5.1",
+   "parent": "5",
+   "kind": "fact",
+   "claim": "For every w: 1 - eps <= #(A_w) m.",
+   "lines": [
+    115,
+    124
+   ],
+   "span": [
+    115,
+    59,
+    124,
+    20
+   ],
+   "lean": "show 1 -\n    ε ≤ #(monicsOfDegree _ r \\ ((insert 0 (nthRoots M (1 : k w)).toFinset).image₂ ((X - C ·) · * ·)\n    (monicsOfDegree _ (r - 1)) ∪ (range r).biUnion fun d ↦\n    (monicsOfDegree _ ((r - d) / 2)).image₂ (· ^ 2 * ·) (monicsOfDegree _ d))) • m by\n    grw [← hs, nsmul_eq_mul, ← sdiff_inter_self_left, cast_card_sdiff, inter_subset_right,\n      card_union_le, card_image₂_le, card_insert_le, Multiset.toFinset_card_le, card_nthRoots,\n      card_biUnion_le, card_image₂_le,\n      sum_le_card_nsmul _ _ (q ^ (r - 1))] <;> simp [monicsOfDegree,\n      ofEquiv_card, ← hq w, pow_sub₀, hn.le, field, ← pow_add, pow_le_pow_iff_right₀ one_lt_card]\n    nlinarith; lia)",
+   "head_lines": [
+    115,
+    118
+   ],
+   "head_span": [
+    115,
+    59,
+    118,
+    86
+   ],
+   "typed_fact": "1 -",
+   "uses": []
+  },
+  {
+   "id": "5.1.1",
+   "parent": "5.1",
+   "kind": "computation",
+   "claim": "Counting: monicsOfDegree(k_w, r) has q^r elements; the excluded polynomials number at most (1 + M) q^(r-1) (at most 1 + M choices of x, q^(r-1) of h) plus sum_{d<r} q^((r-d)/2 + d) <= r q^(r-1); with (1 + M + 2r)/q <= eps the bound follows.",
+   "lines": [
+    119,
+    123
+   ],
+   "lean": "    grw [← hs, nsmul_eq_mul, ← sdiff_inter_self_left, cast_card_sdiff, inter_subset_right,\n      card_union_le, card_image₂_le, card_insert_le, Multiset.toFinset_card_le, card_nthRoots,\n      card_biUnion_le, card_image₂_le,\n      sum_le_card_nsmul _ _ (q ^ (r - 1))] <;> simp [monicsOfDegree,\n      ofEquiv_card, ← hq w, pow_sub₀, hn.le, field, ← pow_add, pow_le_pow_iff_right₀ one_lt_card]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "monicsOfDegree"
+    }
+   ]
+  },
+  {
+   "id": "5.1.2",
+   "parent": "5.1",
+   "kind": "computation",
+   "claim": "The remaining real and natural-number inequalities.",
+   "lines": [
+    124,
+    124
+   ],
+   "span": [
+    124,
+    5,
+    124,
+    20
+   ],
+   "lean": "nlinarith; lia)",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Main chain: the families of prod_w A_w not in prod_w B_w (B_w the non-primitive monic polynomials) are good tuples, so #goodTuples(M, r) >= prod_w #A_w - prod_w #B_w; every good tuple c contributes to Re e(1) the product over w of the coefficients of labelIdem(n, c_w) at 1, which is at least m^f; with step 4 this gives Re e(1) >= prod_w (#A_w m) - (1 - L/f)^f.",
+   "lines": [
+    125,
+    130
+   ],
+   "lean": "  grw [prod_smul, ← card_piFinset, card_le_card_sdiff_add_card, add_smul, card_piFinset,\n    ← prod_smul, B, card_le_card, card_nsmul_le_sum (goodTuples M r) (tupleIdem n · |>.coeff 1\n    |>.re) _ fun c g ↦ mod_cast (prod_le_prod₀ (by simp_all) fun w _ ↦ show (m : ℂ) ≤ _ by\n    obtain ⟨⟨⟩, l, _⟩ := hr, (mem_filter.1 g).2.1 w\n    simpa [labelIdem, m, ← hq w, l] using (labelChar_degree_bounds _ l).2).1] <;>\n    simp_all [goodTuples, sq, monicsOfDegree, NeZero.pos, subset_iff, ↓← dvd_iff_isRoot]",
+   "head_lines": [
+    125,
+    127
+   ],
+   "head_span": [
+    125,
+    3,
+    127,
+    72
+   ],
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "4"
+    }
+   ]
+  },
+  {
+   "id": "6.1",
+   "parent": "6",
+   "kind": "fact",
+   "claim": "For a good tuple c and each w: m <= the coefficient of labelIdem(n, c_w) at 1, as c_w is a label of degree r = |n| over a field with q elements.",
+   "lines": [
+    127,
+    129
+   ],
+   "span": [
+    127,
+    72,
+    129,
+    74
+   ],
+   "lean": "show (m : ℂ) ≤ _ by\n    obtain ⟨⟨⟩, l, _⟩ := hr, (mem_filter.1 g).2.1 w\n    simpa [labelIdem, m, ← hq w, l] using (labelChar_degree_bounds _ l).2",
+   "typed_fact": "(m : ℂ) ≤ _",
+   "uses": [
+    {
+     "decl": "labelChar_degree_bounds"
+    },
+    {
+     "decl": "labelIdem"
+    }
+   ]
+  },
+  {
+   "id": "6.2",
+   "parent": "6",
+   "kind": "computation",
+   "claim": "The side conditions of the chain (membership in goodTuples, positivity) by unfolding goodTuples.",
+   "lines": [
+    129,
+    130
+   ],
+   "span": [
+    129,
+    74,
+    130,
+    89
+   ],
+   "lean": ").1] <;>\n    simp_all [goodTuples, sq, monicsOfDegree, NeZero.pos, subset_iff, ↓← dvd_iff_isRoot]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "goodTuples"
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Conclude: (1 - eps)^f >= 1 - f eps (Bernoulli) and (1 - L/f)^f <= exp(-L), so Re(1 - e)(1) <= f eps + exp(-L).",
+   "lines": [
+    131,
+    131
+   ],
+   "lean": "  grind [one_add_mul_sub_le_pow, @one_sub_div_pow_le_exp_neg f _ (hL.trans (by bound))]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "5"
+    },
+    {
+     "step": "6"
+    }
+   ],
+   "ambient_uses": [
+    "one_add_mul_sub_le_pow",
+    "one_sub_div_pow_le_exp_neg"
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Remaining goal: a family in prod_w A_w not in prod_w B_w is a good tuple: each c_w is monic of degree r with nonzero constant term (0 is not a root), squarefree (an irreducible factor h with h^2 | c_w would make c_w of the form g^2 h'), and has no root x with x^M = 1; and some c_w is primitive.",
+   "lines": [
+    132,
+    136
+   ],
+   "lean": "  refine' fun c g _ _ w ↦ ⟨⟨_, fun Q q ↦ by_contra\n    (let ⟨_, _, _, h⟩ := Q.exists_monic_irreducible_factor ·\n    ((mul_dvd_mul h h).trans q).rec _), _⟩, _⟩ <;> grind [Irreducible.natDegree_pos,\n    Monic.natDegree_mul, monic_X_sub_C, natDegree_X_sub_C, =_ X_dvd_iff, monic_X, natDegree_X,\n    dvd_def, Monic.mul, → Monic.of_mul_monic_left]",
+   "typed_fact": null,
+   "uses": []
+  }
+ ]
+}

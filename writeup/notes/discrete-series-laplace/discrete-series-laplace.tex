@@ -1,0 +1,1991 @@
+% !TEX program = lualatex
+% ---------------------------------------------------------------------------------------------
+%  Readback note 46: Discrete series coefficients near the identity, Laplace's method for two coefficients, and Bessel functions with a peak
+%
+%  Build:  python3 tools/rb.py note <slug>
+%
+%  One unit of a Lean artifact, rewritten as ordinary mathematics. The prose is hand-written. Lean names,
+%  line ranges and counts come from data.tex; quoted Lean statements are copied from the artifact by the build.
+%
+%  Rules of the text: standard terminology; every symbol is explained where it first appears and listed again
+%  in the notation at the end; no letter has two meanings; a proof is complete or says what it takes for granted;
+%  Lean names appear only in the LEAN lines and in the concordance.
+%
+%  The signature rule (the build enforces it): a function, relation or predicate that the artifact defines is
+%  written only through its notation macro, which the build makes from the spec (`notation`) with one slot for
+%  each explicit argument of the Lean definition. No argument is fixed and dropped, also not "for brevity" and
+%  not for one section. Every argument and every hypothesis of a stated declaration stands inside its
+%  statement, or in a Setting that the statement cites by number; only implicit and instance arguments (the
+%  ambient objects) may stand in the conventions.
+% ---------------------------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\ifdefined\pdfvariable\pdfvariable suppressoptionalinfo \numexpr 1+2+4+8\relax\fi
+\usepackage[a4paper,hmargin=35mm,top=22mm,bottom=27mm,footskip=12mm,nohead]{geometry}
+
+\usepackage{fontspec}
+\directlua{
+  luaotfload.add_fallback("gfallback", {"STIXTwoMath-Regular.otf:mode=node;", "DejaVuSans.ttf:mode=node;"})
+  luaotfload.add_fallback("gmonofallback", {"DejaVuSansMono.ttf:mode=node;", "STIXTwoMath-Regular.otf:mode=node;"})
+}
+\setmainfont{NewCM10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookItalic,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldItalic,SmallCapsFont=*-Book,SmallCapsFeatures={Letters=SmallCaps},
+  RawFeature={fallback=gfallback}]
+\setsansfont{NewCMSans10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookOblique,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldOblique,RawFeature={fallback=gfallback}]
+\setmonofont{JetBrainsMono}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,Scale=MatchLowercase,
+  RawFeature={-calt;-liga;fallback=gmonofallback}]
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage[math-style=TeX]{unicode-math}
+\setmathfont{NewCMMath-Book.otf}
+\emergencystretch=2.5em\relax
+
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows.meta,positioning,backgrounds}
+\usepackage[protrusion=true,expansion=true]{microtype}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{multicol}
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+
+\definecolor{ink}{HTML}{0F172A}
+\definecolor{inksoft}{HTML}{475569}
+\definecolor{inkfaint}{HTML}{94A3B8}
+\definecolor{rulegrey}{HTML}{CBD5E1}
+\definecolor{arith}{HTML}{C2410C}
+\definecolor{est}{HTML}{7C3AED}
+\definecolor{ana}{HTML}{0891B2}
+\definecolor{ok}{HTML}{047857}
+\definecolor{leancol}{HTML}{3730A3}
+
+\title{Discrete series coefficients near the identity, Laplace's method for two coefficients, and Bessel functions with a peak}
+\author{grh-compact}
+\date{}
+
+% ------------------------------------------------------------------------------------- macros
+\newcommand{\leanfont}{\ttfamily\fontsize{8.6}{10.5}\selectfont\color{leancol}}
+\newcommand{\lean}[1]{\csname LN@#1\endcsname}
+\newcommand{\fillin}[1]{{\color{arith}\itshape[#1]}}  % a place of the template that is not written yet; the build reports every one that is left
+\newcommand{\leanquote}[1]{\csname LQ@#1\endcsname}
+\input{data.tex}
+
+\linespread{1.08}                       % 11 pt on 14.7 pt
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt plus 1.5pt minus 0.5pt}
+\setlength{\abovedisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\belowdisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\abovedisplayshortskip}{3pt plus 2pt}
+\setlength{\belowdisplayshortskip}{6pt plus 2pt minus 2pt}
+\emergencystretch=1.5em
+\clubpenalty=10000 \widowpenalty=10000 \displaywidowpenalty=10000
+\relpenalty=7000 \binoppenalty=9000
+\raggedbottom
+\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\sffamily\fontsize{7.6}{9}\selectfont\color{inkfaint}\thepage\,/\,\pageref*{LastPage}}
+\setlist{topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=4pt,leftmargin=2.1em,labelsep=0.55em}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\len}{\operatorname{len}}
+\newcommand{\cok}{\operatorname{cok}}
+\newcommand{\End}{\operatorname{End}}
+\newcommand{\Hom}{\operatorname{Hom}}
+\newcommand{\Gal}{\operatorname{Gal}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\kw}[1]{\emph{#1}}
+\newcommand{\m}[1]{\mbox{$#1$}}        % a short formula that must not be broken across lines
+\newcommand{\head}[1]{\par\addvspace{17pt plus 4pt minus 2pt}\Needspace{6\baselineskip}%
+  \noindent{\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\sect}[2]{\refstepcounter{section}\label{#2}\par\addvspace{19pt plus 4pt minus 2pt}\Needspace{7\baselineskip}%
+  \noindent\llap{{\fontsize{13.2}{16}\selectfont\bfseries\color{inkfaint}\thesection}\hspace{9pt}}%
+  {\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\subhead}[1]{\par\addvspace{9pt plus 2pt}\Needspace{4\baselineskip}\noindent\textbf{#1}\enspace\ignorespaces}
+% where a statement lives in the Lean archive
+\newcommand{\leantag}{{\sffamily\bfseries\fontsize{6.3}{8}\selectfont\color{leancol}\addfontfeatures{LetterSpace=7}LEAN}}
+\newcommand{\sep}{\unskip\nobreak\hspace{5pt}{\color{inkfaint}\textperiodcentered}\hspace{5pt plus 2pt}\ignorespaces}
+\newcommand{\leanline}[1]{\par\nopagebreak\vspace{-2.5pt}{\fontsize{8.9}{12.4}\selectfont\color{inksoft}\raggedright
+  \noindent\llap{\leantag\hspace{9pt}}#1\par}\vspace{1pt}}
+% a displayed statement in a tinted box: #1 colour, #2 text
+\newcommand{\statement}[2]{\par\addvspace{7pt}\begingroup\setlength{\fboxsep}{8.5pt}\setlength{\fboxrule}{0.6pt}%
+  \noindent\fcolorbox{#1!30!white}{#1!3!white}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{#2}}%
+  \endgroup\par\addvspace{7pt}}
+\newcommand{\nt}[2]{\par\noindent\hangindent=1.1em\hangafter=1 #1\enspace{\color{inksoft}#2}\par\vspace{1pt}}
+\newcommand{\legdot}[1]{\tikz[baseline=-0.62ex]\fill[#1] (0,0) circle (2.5pt);\hspace{3pt}}
+\newcommand{\crow}[4]{\csname CS@#1\endcsname & #2 & \textcolor{inksoft}{#3} & \textcolor{inksoft}{#4}\\}
+\newcommand{\leanquoteline}[2]{\par\noindent\hangindent=\dimexpr#1\fontdimen2\font+2.2em\relax\hangafter=1
+  \hspace*{#1\fontdimen2\font}#2}
+\newcommand{\quoted}[1]{\par\vspace{3pt}{\ttfamily\fontsize{7.5}{10.4}\selectfont\color{leancol}\raggedright
+  \setlength{\parskip}{0pt}\leanquote{#1}\par}\vspace{4pt}}
+\newcommand{\bx}[3]{{\sffamily\bfseries\fontsize{7.3}{9.2}\selectfont\color{#1!82!black}#2}\\[1.5pt]#3}
+\newcommand{\cs}[2]{\expandafter\newcommand\csname CS@#1\endcsname{#2}}
+
+% theorems
+\newtheoremstyle{plainx}{7pt plus 2pt}{7pt plus 2pt}{\itshape}{}{\bfseries}{.}{0.5em}{}
+\newtheoremstyle{uprightx}{7pt plus 2pt}{7pt plus 2pt}{}{}{\bfseries}{.}{0.5em}{}
+\theoremstyle{plainx}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{uprightx}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{setting}[theorem]{Setting}          % hypotheses shared by several statements; each of them cites it by number
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\renewcommand{\qedsymbol}{{\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.5pt}\fbox{\rule{0pt}{0.46em}\hspace{0.46em}}}}
+% what holds throughout the note: the ambient objects only (implicit and instance arguments), never a hypothesis
+\newenvironment{conventions}{\par\addvspace{5pt}\noindent\textbf{Conventions.}\enspace\ignorespaces}{\par\addvspace{3pt}}
+\makeatletter
+\renewenvironment{proof}[1][Proof]{\par\pushQED{\qed}\normalfont\topsep0pt\partopsep0pt
+  \trivlist\item[\hskip\labelsep\itshape #1.]\ignorespaces}{\popQED\endtrivlist\@endpefalse}
+\makeatother
+
+% where each declaration of the concordance is treated: \cs{key}{place}, the place naming a \label or a lettered item
+\cs{Frame}{Definition~\ref{d:frame}}
+\cs{IsBessel}{Definition~\ref{d:bestype}}
+\cs{besselGraph}{Definition~\ref{d:graph}}
+\cs{besselGraphChart}{Definition~\ref{d:chart}}
+\cs{besselGraphMeasure}{Definition~\ref{d:gmeasure}}
+\cs{besselGraphMeasurefiniteOnCompacts}{Lemma~\ref{l:gmeasure}}
+\cs{besselGraphMeasureisMulRightInvariant}{Lemma~\ref{l:gmeasure}}
+\cs{besselGraphfstmembesselS}{Lemma~\ref{l:fst}}
+\cs{lintegralunfoldbesselGraphMeasure}{Lemma~\ref{l:unfold}}
+\cs{besselGraphtracemulsubeqzero}{Lemma~\ref{l:gtrace}}
+\cs{besselPairHom}{Definition~\ref{d:pairhom}}
+\cs{HasPeakAt}{Definition~\ref{d:peak}}
+\cs{existsisTwoFactorbesselPairHom}{Theorem 4}
+\cs{isProperMapfstbesselPairHom}{Lemma~\ref{l:proper}}
+\cs{existsisBesselFunction}{Theorem 5}
+\cs{gapWeightedNormSq}{Definition~\ref{d:gw}}
+\cs{sumnormliecoordProjsq}{Lemma~\ref{l:levelsums}}
+\cs{normweightMinorssqleexp}{Lemma~\ref{l:minorsK}}
+\cs{dsCoeffgaussianshape}{Theorem 1}
+\cs{existsdetcompresseqexplogOneAdd}{Proposition~\ref{p:compress}}
+\cs{existsprincipalMinoreqexp}{Proposition~\ref{p:minors}}
+\cs{normpoincareperiodsuble}{Theorem 6}
+\cs{laplacemethod}{Theorem 2}
+\cs{existsisTwoFactorrestriction}{Theorem 3}
+\cs{phase}{Definition~\ref{d:phase}}
+\cs{IsSteep}{Definition~\ref{d:steep}}
+\cs{subOnePair}{Definition~\ref{d:pair}}
+\cs{laplaceIntegrand}{Definition~\ref{d:theta}}
+\cs{IsTwoFactor}{Definition~\ref{d:twofactor}}
+\cs{existsunitarysuboneeqinclMatrix}{Lemma~\ref{l:block}}
+\cs{normsqaddretracele}{Lemma~\ref{l:trace}}
+\cs{phaselogOneAdd}{Lemma~\ref{l:phaselog}}
+\cs{dsCoeffmuleqofzeroweightblock}{Lemma~\ref{l:zeroblock}}
+\cs{normdsCoeffpowfourle}{Lemma~\ref{l:fourth}}
+\cs{existsnearone}{Proposition~\ref{p:nearone}}
+% ---------------------------------------------------------------------------- macros of this note (written by hand)
+\newcommand{\CC}{\mathbb{C}}
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\NN}{\mathbb{N}}
+\newcommand{\ZZ}{\mathbb{Z}}
+\newcommand{\QQ}{\mathbb{Q}}
+\newcommand{\fs}{\mathfrak{s}}
+\newcommand{\fp}{\mathsf{p}}
+\newcommand{\abs}[1]{\lvert #1\rvert}
+\newcommand{\bigabs}[1]{\bigl\lvert #1\bigr\rvert}
+\newcommand{\Bigabs}[1]{\Bigl\lvert #1\Bigr\rvert}
+\newcommand{\hs}[1]{\lVert #1\rVert_{\mathrm{HS}}}
+\newcommand{\op}[1]{\lVert #1\rVert_{\mathrm{op}}}
+\newcommand{\nrm}[1]{\lVert #1\rVert}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\re}{\operatorname{Re}}
+\newcommand{\vol}{\operatorname{vol}}
+\newcommand{\GL}{\operatorname{GL}}
+\newcommand{\Mat}[1]{\mathrm{M}_{#1}(\CC)}
+\newcommand{\comm}[2]{[#1,#2]}
+\newcommand{\ip}[2]{\langle #1,#2\rangle}
+% unitary groups and matrices (background library)
+\newcommand{\Us}[1]{\mathrm{U}(#1)}                      % USign ε
+\newcommand{\Ks}[1]{\mathrm{K}(#1)}                      % maxCompactU ε
+\newcommand{\bd}[2]{\operatorname{bd}_{#1}(#2)}          % blockDiagPart ε g
+\newcommand{\inc}[1]{\operatorname{in}_{#1}}             % inclMatrix ℂ σ
+\newcommand{\lgo}[1]{\operatorname{lg}(#1)}              % logOneAdd X
+\newcommand{\cpr}[1]{p_{#1}}                             % coordProj p
+\newcommand{\pmn}[2]{\Delta_{#1}(#2)}                    % principalMinor y p
+\newcommand{\dg}[1]{\operatorname{diag}(#1)}             % intDiagonal w, signMatrix ε
+% parameters and coefficients (background library)
+\newcommand{\lowk}[1]{\Lambda(#1)}                       % lowestKType l
+\newcommand{\ups}[1]{\Upsilon(#1)}                       % paramAddRho l
+\newcommand{\dsc}[2]{\psi_{#1}(#2)}                      % dsCoeff l g
+\newcommand{\fj}[3]{\operatorname{FJ}_{#1}(#2,#3)}       % flenstedJensen l g z
+\newcommand{\wm}[2]{\mathfrak{m}_{#1}(#2)}               % weightMinors w g
+\newcommand{\ktn}[2]{\lVert\mathfrak{m}_{#2}\rVert^{2}_{\mathrm{K}(#1)}}   % kTypeNormSq (signs ε, weight w)
+\newcommand{\fdeg}[1]{\deg(#1)}                          % formalDegree l
+% the shape and its groups (background library)
+\newcommand{\rhs}[1]{\varrho(#1)}                        % Shape.ϱ
+\newcommand{\kps}[1]{\kappa(#1)}                         % Shape.κ
+\newcommand{\nsh}[1]{n(#1)}                              % Shape.n
+\newcommand{\rsh}[1]{r(#1)}                              % Shape.r
+\newcommand{\Ind}[1]{\operatorname{Ind}(#1)}             % Shape.BesselIndex
+\newcommand{\Jone}[1]{J_{1}(#1)}                         % Shape.J₁
+\newcommand{\Gone}[1]{G_{1}(#1)}                         % Shape.G₁
+\newcommand{\Uu}[1]{\mathcal{U}(#1)}                     % besselU (complex form)
+\newcommand{\Hh}[1]{\mathcal{H}(#1)}                     % besselH
+\newcommand{\Qq}[1]{\mathcal{Q}(#1)}                     % besselS
+\newcommand{\emb}[2]{\operatorname{emb}_{#1}(#2)}        % embedH h
+\newcommand{\sd}[1]{\operatorname{sd}(#1)}               % simpleRootSum
+\newcommand{\lev}[1]{\operatorname{lev}(#1)}             % FI.level
+\newcommand{\hU}[1]{\eta_{#1}}                           % Shape.besselHaar
+\newcommand{\hq}[1]{\dot\eta_{#1}}                       % besselQuotMeasure
+\newcommand{\bsz}[1]{\operatorname{size}_{\mathcal{Q}}(#1)}  % besselSize
+\newcommand{\peak}[5]{\operatorname{Peak}_{#1,#2}(#3;#4,#5)} % HasPeakAt l rep W x P
+\newcommand{\lf}[1]{{\leanfont #1}}
+\newcommand{\inp}[1]{\textup{(I#1)}}
+\begin{document}
+\color{ink}
+
+{\raggedright
+{\sffamily\bfseries\fontsize{7.2}{9}\selectfont\color{leancol}\addfontfeatures{LetterSpace=8}READBACK NOTE 46\par}
+\vspace{5pt}
+{\fontsize{21.5}{25.5}\selectfont\bfseries Discrete series coefficients near the identity, Laplace's method for two coefficients, and Bessel functions with a peak\par}
+\vspace{5pt}
+{\fontsize{12.4}{16}\selectfont\itshape\color{inksoft} One unit of the Lean artifact \ArtifactName, read back into
+mathematics\par}}
+\vspace{8pt}
+{\color{rulegrey}\hrule height 0.6pt}
+\vspace{7pt}
+\thispagestyle{empty}
+
+
+\textbf{Summary.} For signs $\varepsilon$ on a finite set, $\Us{\varepsilon}$ is a unitary group $\mathrm{U}(p,q)$, and
+Flensted-Jensen's function $\dsc{l}{\,\cdot\,}$ is the matrix coefficient of the lowest $K$-type of the discrete
+series whose doubled Harish-Chandra parameter is the integer vector~$l$. This note proves five things about it.
+Near the identity $\dsc{l}{g}$ is an explicit phase, $\exp\tr(\dg{\lowk{l}}\lgo{g-1})$, times a factor
+$\kappa\in[0,1]$, up to a small relative error (Theorem~1); the proof expands compressed determinants to second
+order. For an integrand made of two such coefficients on a group~$S$, with phases that cancel, a version of
+Laplace's method bounds the volume of a unit ball of~$S$ by a power of a parameter times the absolute value of its integral
+(Theorem~2). The hypotheses of Theorem~2 hold in two cases, both built from Lagrange interpolation: a restriction
+from $\mathrm{U}(p,q)$ to a conjugate of itself inside a group one rank larger (Theorem~3), and the Bessel subgroup of
+a unitary group at a point of controlled size (Theorem~4). In the second case the integral is the value at
+that point of a Bessel function, which therefore has a peak there (Theorem~5). Last, the period of an automorphic form
+against a Poincaré series of deep level is its main term up to an explicit error (Theorem~6).
+
+\statement{leancol}{\fontsize{9.6}{13.2}\selectfont\textbf{What this note is.} The artifact \ArtifactName{} is a
+body of Lean code: the compact edition of a formal proof, due to L.~Alpöge with the AI system Claude, of the
+Riemann hypothesis and of its generalisation to Dirichlet $L$-functions. That headline is a claim. The authors
+report that every file compiles with Lean v4.35.0 against a pinned version of the library Mathlib and that Lean's
+kernel accepted the proofs; a replay of the build is recorded in the handout's record of checks when it reports.
+No mathematician has read the argument through, and nothing here says that the Riemann hypothesis is proved. This
+note treats one unit of the artifact, the folder on discrete series: all \UnitInNote{} named declarations of its
+\UnitMembers{} (the other two are unnamed instances, stated in Lemma~\ref{l:gmeasure}). The results of the unit are
+proved here in full from the Inputs of §\ref{s:inputs}: results of the background library of the artifact
+(Flensted-Jensen's formula and its invariance, decay of the coefficient, estimates for Haar measures, Schur
+orthogonality, Witt's theorem, unfolding), quoted with their owners and, where a reference is confirmed, with
+it; and one result of another unit of the argument. Every statement was compared with its Lean text, argument by
+argument; what Lean's kernel checked is the formal text, and what is written here is a reading of it. The Lean
+text read is \PinText; Appendix~A is the concordance of \ConcDecls{} declarations.}
+
+\sect{The statements}{s:intro}
+The notions used in the six statements are defined in §\ref{s:setting}; here is what a reader needs to parse them.
+For signs \m{\varepsilon\colon\Omega\to\{\pm1\}} on a finite set, $\Us{\varepsilon}$ is the group of the complex
+matrices $g$ with \m{g^{*}\dg{\varepsilon}g=\dg{\varepsilon}}. The function $\dsc{l}{\,\cdot\,}$ on $\Us{\varepsilon}$
+is Flensted-Jensen's function of the integer vector~$l$ (Definition~\ref{d:coeff}), $\lowk{l}$ is the highest weight
+of the lowest $K$-type (Definition~\ref{d:param}), and $\lgo{X}$ is the logarithm of \m{1+X}
+(Definition~\ref{d:lg}). Two norms of matrices occur: the Hilbert--Schmidt norm $\hs{\,\cdot\,}$ and the
+operator norm $\op{\,\cdot\,}$. A vector~$l$ \kw{has large gap~$A$ for~$\varepsilon$} if its entries are distinct,
+of the parity of \m{\abs{\Omega}-1}, and differ by at least \m{2(500\abs{\Omega}^{3}+A)} across the two signs
+(Definition~\ref{d:gap}).
+
+\statement{arith}{\phantomsection\label{t:1}\textbf{Theorem 1} (Gaussian shape near the identity).\enspace{\itshape Let
+$\Omega$ be a non-empty finite set, \m{\varepsilon\colon\Omega\to\{\pm1\}} signs, \m{l\in\ZZ^{\Omega}}, let
+$\delta$ and $T$ be real numbers, $L$ and $A$ natural numbers, and \m{g\in\Us{\varepsilon}}. Suppose that $l$ has
+large gap~$A$ for~$\varepsilon$, that \m{\abs{l_i}\le L} for every \m{i\in\Omega}, and that
+\[\hs{g-1}\le\delta,\qquad 1\le T,\qquad \abs{\Omega}^{2}\le T,\qquad
+\abs{\Omega}^{2}\log(\abs{\Omega}+L+1)\le T,\qquad \delta\,T\le 10^{-12}.\]
+Then there is a real number \m{\kappa\in[0,1]} with
+\[\Bigabs{\frac{\dsc{l}{g}}{\exp\tr\bigl(\dg{\lowk{l}}\,\lgo{g-1}\bigr)}-\kappa}\ \le\ \frac{\kappa}{10}+e^{-100\,T}.\]}}
+\leanline{\lean{dsCoeffgaussianshape}}
+
+The proof gives $\kappa=\exp\bigl(-\tfrac14\sum_{i,i'}\abs{\ups{l}_i-\ups{l}_{i'}}\,\abs{(g-1)_{ii'}}^{2}\bigr)$, a
+Gaussian in the entries of \m{g-1} whose widths are the differences of the entries of
+\m{\ups{l}=\lambda+\rho} (Definition~\ref{d:param}). The factor $\kappa$ is small as soon as $g$ leaves the
+diagonal torus by more than the reciprocal square roots of these differences; on the torus the coefficient is the
+phase alone. The error is uniform in~$l$: only the size~$L$ and the rank enter, through~$T$.
+
+The next statement concerns a product of two coefficients. For a homomorphism
+$j=(j_1,j_2)\colon S\to\Us{\varepsilon}\times\Us{\varepsilon'}$ and a function \m{\phi\colon S\to\CC} put
+\[\lapint{l}{l'}{j}{\phi}{\sigma}=\dsc{l}{j_1(\sigma)}\;\overline{\dsc{l'}{j_2(\sigma)}}\;e^{-\phi(\sigma)}\qquad(\sigma\in S).\]
+The predicate \m{\twof{l}{l'}{j}{e'}{B}{e}{\phi}} (Definition~\ref{d:twofactor}) says, in short: the weights
+$\lowk{l}$ vanish on a block $e(\Xi)$ of positive coordinates and are steep, between $-3B$ and $-B$, on the other
+coordinates, whose signs alternate; $\phi$ is additive, purely imaginary, and equal to
+$\tr(\dg{\lowk{l}}(j_1-1))-\tr(\dg{\lowk{l'}}(j_2-1))$; and $j(S)$ contains a copy of the unitary group of
+$\CC^{\Xi}$, embedded in both factors.
+
+\statement{arith}{\phantomsection\label{t:2}\textbf{Theorem 2} (Laplace's method for two coefficients).\enspace{\itshape Let
+$\Omega$ and $\Omega'$ be non-empty finite sets, $\Xi$ a finite set, and $S$ a group with a topology, with its
+Borel $\sigma$-algebra, for which all left and right translations are measurable. Let $\nu$ be a measure on~$S$
+that is invariant under right translations and finite on compact sets. Let \m{\varepsilon\colon\Omega\to\{\pm1\}} and
+\m{\varepsilon'\colon\Omega'\to\{\pm1\}} be signs, \m{l\in\ZZ^{\Omega}}, \m{l'\in\ZZ^{\Omega'}},
+\m{e'\colon\Xi\to\Omega'} a map, $B$ and $\beta$ real numbers, $L$, $M$ and $A$ natural numbers,
+\m{e\colon\Xi\sqcup\{0,\dots,M-1\}\to\Omega} a bijection,
+$j=(j_1,j_2)\colon S\to\Us{\varepsilon}\times\Us{\varepsilon'}$ a homomorphism of groups and
+\m{\phi\colon S\to\CC} a function. Suppose that
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=1pt]
+\item \m{\twof{l}{l'}{j}{e'}{B}{e}{\phi}} holds;
+\item $l$ has large gap~$A$ for~$\varepsilon$, and $l'$ has large gap~$A$ for~$\varepsilon'$;
+\item \m{1\le B}; \m{\abs{l_i}\le L} for every \m{i\in\Omega}; \m{\abs{l'_i}\le L} for every \m{i\in\Omega'};
+\item \m{10^{12}\le\beta}, \m{\abs{\Omega}+\abs{\Omega'}+L\le\beta} and
+  $10^{30}\bigl((\abs{\Omega}+\abs{\Omega'})^{2}\log\beta\bigr)^{3}\le A$;
+\item the map \m{j_1\colon S\to\Us{\varepsilon}} is proper, the map \m{j_2\colon S\to\Us{\varepsilon'}} is continuous, and
+  \m{\op{j_2(\sigma)}\le\beta+1} for every \m{\sigma\in S} with \m{\op{j_1(\sigma)-1}\le1}.
+\end{enumerate}
+Then the set on the left has finite measure, $\lapint{l}{l'}{j}{\phi}{\,\cdot\,}$ is $\nu$-integrable, and
+\[\nu\bigl\{\sigma\in S:\ \op{j_1(\sigma)-1}\le1\bigr\}\ \le\ \beta^{\,20(\abs{\Omega}+\abs{\Omega'})^{2}}\cdot
+\Bigabs{\int_S\lapint{l}{l'}{j}{\phi}{\sigma}\,d\nu(\sigma)}.\]}}
+\leanline{\lean{laplacemethod}}
+
+So the integral of the oscillating integrand is not much smaller than the volume of the region where the integrand
+is not small. The reason is that the integrand has non-negative real part up to a tiny error, everywhere: far from the
+block-diagonal matrices both coefficients are tiny, and near them a translation by the embedded unitary group
+of~$\CC^{\Xi}$, which changes neither the integrand nor the measure, moves the point close to~$1$, where Theorem~1
+applies to both factors and the two phases cancel against~$e^{-\phi}$.
+
+\statement{arith}{\phantomsection\label{t:3}\textbf{Theorem 3} (the restriction to a conjugate subgroup).\enspace{\itshape Let
+$\Omega$ and $\Xi$ be finite sets, \m{\varepsilon\colon\Omega\to\{\pm1\}} signs, $B$ and $H$ real numbers, $M$ a
+natural number, \m{l\in\ZZ^{\Omega}} and \m{l'\in\ZZ^{\Omega\sqcup\{*\}}}, and let
+\m{e\colon\Xi\sqcup\{0,\dots,M-1\}\to\Omega} and $\tilde e\colon\Xi\sqcup\{0,\dots,M\}\to\Omega\sqcup\{*\}$ be
+bijections. Write \m{\varepsilon\oplus1} for the signs on \m{\Omega\sqcup\{*\}} that extend $\varepsilon$ by $+1$
+at~$*$. Suppose that $M$ is even, that \m{\steep{l}{B}{e}} holds for~$\varepsilon$ and \m{\steep{l'}{B}{\tilde e}}
+holds for \m{\varepsilon\oplus1}, that $l'$ has gap~$H$ for \m{\varepsilon\oplus1}, and that \m{1\le B}. Then
+there is \m{\omega\in\Us{\varepsilon\oplus1}} such that the homomorphism
+\[j^{\omega}\colon\Us{\varepsilon}\to\Us{\varepsilon}\times\Us{\varepsilon\oplus1},\qquad
+j^{\omega}(g)=\bigl(g,\ \omega^{-1}(g\oplus1)\,\omega\bigr),\]
+has the following three properties:
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=1pt]
+\item $\op{\omega}\le(\abs{\Omega}+1)^{2}\,(6B)^{M+(M+1)}$;
+\item $\twof{l}{-l'}{j^{\omega}}{\tilde e|_{\Xi}}{B}{e}{0}$ holds, with the function $0$ as phase;
+\item for every \m{g\in\Us{\varepsilon}}, the second component of the pair
+  $\bigl(j^{\omega}_1(g)-1,\ j^{\omega}_2(g)-1\bigr)$ is \m{\omega^{-1}\bigl((g-1)\oplus0\bigr)\omega}.
+\end{enumerate}}}
+\leanline{\lean{existsisTwoFactorrestriction}}
+
+Here \m{g\oplus1} and \m{(g-1)\oplus0} are the block matrices on \m{\Omega\sqcup\{*\}} with the entry $1$,
+respectively~$0$, at $(*,*)$. With Theorem~2 this gives a lower bound for the integral over $\Us{\varepsilon}$ of
+$\dsc{l}{g}$ against the conjugate of $\dsc{-l'}{\omega^{-1}(g\oplus1)\omega}$: a period for the restriction from
+$\mathrm{U}(p+1,q)$ to $\mathrm{U}(p,q)$, at a position~$\omega$ of explicit size.
+
+Theorems 4 and 5 concern a \kw{shape} $\fs$ (§\ref{s:shape}): a hermitian space $\CC^{\Ind{\fs}}$ with $\rhs{\fs}$
+hyperbolic planes, a positive definite part with basis indexed by $\kps{\fs}$ and a negative vector, of rank
+$\rsh{\fs}$, with unitary group $\Gone{\fs}$; its unipotent group $\Uu{\fs}$ with the character
+\m{u\mapsto e^{\sd{u}-\overline{\sd{u}}}}; the compact group $\Us{1}$ of $\CC^{\kps{\fs}}$, embedded by $\emb{\fs}{\,\cdot\,}$;
+the group $\bgr{\fs}$ of the pairs \m{(g,h)} with \m{g\in\emb{\fs}{h}\,\Uu{\fs}}, with its measure $\bms{\fs}$; and
+the homomorphism $\bph{x}{\,\cdot\,}$ from $\bgr{\fs}$ to \m{\Us{\varepsilon}\times\Us{1}}, which conjugates the
+first component by a point~$x$ and by a frame~$\fp$ (Definitions \ref{d:frame} to~\ref{d:pairhom}).
+
+\statement{arith}{\phantomsection\label{t:4}\textbf{Theorem 4} (the Bessel subgroup at a point of controlled size).\enspace{\itshape Let
+$\fs$ be a shape, \m{\varepsilon\colon\Ind{\fs}\to\{\pm1\}} signs, \m{\fp\in\frm{\fs}{\varepsilon}} a frame, $\Xi$ a
+finite set, $B$ a real number, \m{l\in\ZZ^{\Ind{\fs}}}, and
+$e\colon\Xi\sqcup\{0,\dots,2\rhs{\fs}+1\}\to\Ind{\fs}$ a bijection. Let
+\m{\tilde e\colon\Xi\sqcup\{*\}\to\kps{\fs}} be a bijection, \m{l'\in\ZZ^{\kps{\fs}}}, $a$ a natural number and $b$
+a real number. Suppose that \m{\steep{l}{B}{e}} holds for~$\varepsilon$; that, for the signs~$1$ on $\kps{\fs}$,
+\m{\lowk{l'}_i=a} if \m{i=\tilde e(*)} and \m{\lowk{l'}_i=0} otherwise; and that
+\[1\le B,\qquad 3B+a\le 2\,b^{2},\qquad 8\,(\rhs{\fs}+1)\le b.\]
+Then there is a point \m{x\in\Gone{\fs}} with \m{\bsz{x}\le b^{\,5\,\nsh{\fs}}} such that
+\[\twof{l}{l'}{\bph{x}{\,\cdot\,}}{\tilde e|_{\Xi}}{B}{e}{\phi_{\fs}}\quad\text{holds, where}\quad
+\phi_{\fs}(\sigma)=\sd{\sigma_1}-\overline{\sd{\sigma_1}}\]
+for \m{\sigma=(\sigma_1,\sigma_2)\in\bgr{\fs}}.}}
+\leanline{\lean{existsisTwoFactorbesselPairHom}}
+
+Here \m{\bsz{x}=\inf_{q\in\Qq{\fs}}\op{q\,x}+1} measures the distance of~$x$ from the Bessel subgroup $\Qq{\fs}$. The
+predicate $\peak{l}{\mathrm{rep}}{W}{x}{P}$ of the next statement (Definition~\ref{d:peak}) says that $W$ is a
+Bessel function for a representation $\mathrm{rep}$ of $\Us{1}$, reproduced by the coefficient of~$l$, non-zero
+at~$x$, and that two integrals over the Bessel subgroup are bounded in terms of \m{P\,\nrm{W(x)}}.
+
+\statement{arith}{\phantomsection\label{t:5}\textbf{Theorem 5} (a Bessel function with a peak).\enspace{\itshape Let $\fs$
+be a shape, $I$ a finite set, \m{\varepsilon\colon\Ind{\fs}\to\{\pm1\}} signs and \m{\fp\in\frm{\fs}{\varepsilon}} a
+frame. Let \m{x\in\Gone{\fs}}, \m{v_0\in\CC^{I}}, let $A$ and $n$ be natural numbers, $b$ a real number,
+\m{l\in\ZZ^{\Ind{\fs}}}, \m{l'\in\ZZ^{\kps{\fs}}}, and let $\mathrm{rep}$ be a homomorphism from the group
+$\Us{1}$ of the unitary matrices of $\CC^{\kps{\fs}}$ to the unitary \m{I\times I} matrices. Suppose that
+$\mathrm{rep}$ is continuous; that \m{\ip{v_0}{\mathrm{rep}(h)\,v_0}=\dsc{l'}{h}} for every \m{h\in\Us{1}}; that $l$
+has large gap~$A$ for~$\varepsilon$; that \m{16\le b}; and that, with $\phi_{\fs}(\sigma)=\sd{\sigma_1}-\overline{\sd{\sigma_1}}$,
+\[\bms{\fs}\bigl\{\sigma\in\bgr{\fs}:\ \op{\bph{x}{\sigma}_1-1}\le1\bigr\}\ \le\ b^{\,n}\cdot
+\Bigabs{\int_{\bgr{\fs}}\lapint{l}{l'}{\bph{x}{\,\cdot\,}}{\phi_{\fs}}{\sigma}\,d\bms{\fs}(\sigma)}.\]
+Then there is a function \m{W\colon\Gone{\fs}\to\CC^{I}} such that
+$\peak{l}{\mathrm{rep}}{W}{x}{b^{\,8\rsh{\fs}^{2}+1+n}}$ holds.}}
+\leanline{\lean{existsisBesselFunction}}
+
+The displayed hypothesis is the conclusion of Theorem~2 for the data of Theorem~4, with \m{b^{n}} in place of the
+power of~$\beta$. The function is
+\[W(y)=\int_{\bgr{\fs}}\dsc{l}{\fp^{-1}x^{-1}\sigma_1y\,\fp}\,e^{-\phi_{\fs}(\sigma)}\,\mathrm{rep}(\sigma_2)^{-1}v_0\,d\bms{\fs}(\sigma),\]
+and \m{\ip{v_0}{W(x)}} is the integral in the hypothesis.
+
+The last statement is adelic; §\ref{s:adelic} has the definitions. For a CM field~$E$ with $f_E$ infinite places
+and signs~$\varepsilon$ on~$\Omega$, the group $G(E,\varepsilon)=G_\infty(E,\varepsilon)\times G_{\mathrm f}(E,\Omega)$ is
+the adelic unitary group in standard coordinates, with $G_\infty(E,\varepsilon)=\prod_v\Us{\varepsilon}$ over the
+infinite places~$v$. A hermitian space with a point~$V$ gives the discrete subgroup $\Gamma(V)$ of
+$G(E,\varepsilon)$ and a measure $\varpi_V$ that computes integrals over \m{\Gamma(V)\backslash G(E,\varepsilon)};
+\m{V\cdot x} is $V$ with its point moved by~$x$, $\lambda_1(V)$ is the length of a shortest non-zero lattice vector
+of~$V$, cut off at~$1$, \m{V\oplus\langle1\rangle} is the sum of $V$ and a positive line, $K_\Omega(a_0)$ is the
+principal congruence subgroup of level~$a_0$, and \m{g\oplus1} is the block-diagonal embedding into the group of
+\m{\Omega\sqcup\{*\}}.
+
+\statement{arith}{\phantomsection\label{t:6}\textbf{Theorem 6} (the period of a Poincaré series of deep level).\enspace{\itshape Let
+$E$ be a CM field with a CM type that contains a primitive root of unity of order~$5040$, let $\Omega$ be a finite
+set, \m{\varepsilon\colon\Omega\to\{\pm1\}} signs, and $V$ a hermitian space with a point over~$E$ for~$\varepsilon$. Let
+\m{F\colon G(E,\varepsilon)\to\CC} be a function, $C$, $\rho$ and $Q$ real numbers, $a_0$ an integer of~$E$, $A$ a
+natural number, \m{l=(l_v)_v} a family of vectors \m{l_v\in\ZZ^{\Omega\sqcup\{*\}}} indexed by the infinite
+places~$v$ of~$E$, \m{x\in G(E,\varepsilon)}, and $\omega,\alpha\in G_\infty(E,\varepsilon\oplus1)$. Suppose that
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=1pt]
+\item $F$ is automorphic for~$V$, and \m{\abs{F(g)}\le C} for every \m{g\in G(E,\varepsilon)};
+\item \m{a_0\ne0}, and $F$ has level $K_\Omega(a_0)$;
+\item \m{\rho\le\abs{a_0}_v} for every infinite place~$v$, and \m{0\le\rho};
+\item \m{2f_E\,(\abs{\Omega}+1)+2\le A} and \m{8\,(\abs{\Omega}+1)^{2}<A};
+\item every $l_v$ has large gap~$2A$ for \m{\varepsilon\oplus1};
+\item \m{Q^{2}\le\rho\cdot\lambda_1(V\cdot x)}, \m{f_E\le Q} and \m{10\le Q}.
+\end{enumerate}
+Put $\Psi(g)=\prod_v\overline{\dsc{l_v}{\alpha_v^{-1}g_v\,\omega_v}}$ for \m{g\in G_\infty(E,\varepsilon\oplus1)}, and
+\[L_{*}=\prod_v\Bigl(\bigl(2\,(\op{\alpha_v}\op{\omega_v})^{2}\bigr)^{A}\cdot16^{A}\,
+\vol\bigl\{r\in\Us{\varepsilon}:\op{r-1}\le1\bigr\}\Bigr).\]
+Then \m{r\mapsto\Psi(r\oplus1)} is integrable on $G_\infty(E,\varepsilon)$, and, with
+$X_\gamma(y)=(x\oplus1)^{-1}\gamma\,(y\oplus1)$ for \m{\gamma\in\Gamma(V\oplus\langle1\rangle)} and
+\m{y\in G(E,\varepsilon)},
+\begin{multline*}
+\Bigabs{\int\sum_{\gamma\in\Gamma(V\oplus\langle1\rangle)}\Psi\bigl(X_\gamma(y)_\infty\bigr)\,
+\mathbf{1}_{K_{\Omega\sqcup\{*\}}(a_0)}\bigl(X_\gamma(y)_{\mathrm f}\bigr)\,F(y)\,d\varpi_V(y)\\
+-\vol\bigl(K_\Omega(a_0)\bigr)\int_{G_\infty(E,\varepsilon)}\Psi(r\oplus1)\,F\bigl(x\cdot(r,1)\bigr)\,dr}
+\ \le\ \vol\bigl(K_\Omega(a_0)\bigr)\cdot L_{*}\cdot C\cdot\frac{10}{Q}.
+\end{multline*}}}
+\leanline{\lean{normpoincareperiodsuble}}
+
+The sum over~$\gamma$ is, as a function of~$y$, the restriction to $G(E,\varepsilon)$ of a Poincaré series on the
+group of \m{V\oplus\langle1\rangle}, made from the test function \m{\Psi\otimes\mathbf{1}_{K(a_0)}} and translated
+by~$x$. The main term is the contribution of the classes \m{\gamma\in\Gamma(V)\oplus1}. All other classes move the
+vector of the added line to rational vectors that are congruent modulo~$a_0$, hence far apart at the infinite places
+when $a_0$ is large there and $x$ is not near the cusp; the decay of the coefficients then makes their total at most
+the stated error.
+
+\sect{The setting}{s:setting}
+\begin{conventions}\phantomsection\label{c:conventions}
+$\Omega$, $\Omega'$ and $\Xi$ denote a finite set each (in the formal text: a type with finitely many elements),
+and $I$ a finite set that indexes the coordinates of a vector space~$\CC^{I}$. A family of signs on~$\Omega$ is a
+map $\varepsilon\colon\Omega\to\{\pm1\}$; $\varepsilon'$ is a family of signs on~$\Omega'$, and $1$ also denotes
+the constant family~$+1$. The letter $S$ denotes a group, $\fs$ a shape (§\ref{s:shape}) and $\fp$ a frame of it.
+All matrices have complex entries; for index sets $\Omega_1,\Omega_2$ the entries of an
+\m{\Omega_1\times\Omega_2} matrix~$X$ are $X_{ii'}$, and $X^{*}$ is its conjugate transpose. An integer vector
+\m{l\in\ZZ^{\Omega}} is written with entries~$l_i$. Every statement introduces the objects it is about, also those
+that the formal text takes as implicit arguments; the instance arguments of the formal text (finiteness of the
+index sets, the group structure, the topology and the $\sigma$-algebra of~$S$, the frame) are the structures named
+here and in the statements. Integrals of complex or vector valued functions are Bochner integrals with the
+convention of the library: the integral of a function that is not integrable is~$0$. A sum over an infinite set is
+the unconditional sum when it exists and $0$ otherwise. For a measure~$\nu$, the measure of a set that occurs in
+an inequality between real numbers is read as $0$ when it is infinite; in this note every such set is shown to
+have finite measure.
+\end{conventions}
+
+\subhead{Matrices and unitary groups.} These notions belong to the background library; they are defined here
+because every statement uses them.
+
+\begin{definition}[norms, unitary groups]\label{d:mat}
+Let $\Omega$ be a finite set and $\varepsilon\colon\Omega\to\{\pm1\}$ signs.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=1pt]
+\item For an \m{\Omega\times\Omega} matrix~$X$, $\hs{X}=(\sum_{i,i'}\abs{X_{ii'}}^{2})^{1/2}$ is the
+  Hilbert--Schmidt (Frobenius) norm and $\op{X}$ the operator norm for the Euclidean norm of~$\CC^{\Omega}$. Both are
+  submultiplicative, \m{\op{X}\le\hs{X}} and \m{\hs{XY}\le\hs{X}\op{Y}}; \m{\comm{X}{Y}=XY-YX}.
+\item For an integer or sign vector $w$ on~$\Omega$, $\dg{w}$ is the diagonal matrix with entries~$w_i$.
+\item $\Us{\varepsilon}$ is the group of the invertible \m{\Omega\times\Omega} matrices $g$ with
+  $g^{*}\dg{\varepsilon}\,g=\dg{\varepsilon}$; it is a unitary group $\mathrm{U}(p,q)$ with $p$ signs~$+1$ and $q$
+  signs~$-1$. Its subgroup \m{\Ks{\varepsilon}} consists of the $g$ that are moreover unitary matrices,
+  equivalently that commute with $\dg{\varepsilon}$; it is compact, isomorphic to $\mathrm{U}(p)\times\mathrm{U}(q)$,
+  and \m{dh} denotes its Haar measure of total mass one. On $\Us{\varepsilon}$ itself, $dg$ is the Haar measure
+  that the library fixes; for \m{\varepsilon=1} it has total mass one.
+\item For an \m{\Omega\times\Omega} matrix~$X$, the matrix \m{\bd{\varepsilon}{X}} has the entries $X_{ii'}$ with
+  \m{\varepsilon_i=\varepsilon_{i'}} and zeros elsewhere; $\bd{\varepsilon}{X}=\tfrac12(X+\dg{\varepsilon}X\dg{\varepsilon})$.
+  A matrix with \m{X=\bd{\varepsilon}{X}} is called block diagonal, and the pairs \m{(i,i')} with
+  \m{\varepsilon_i=\varepsilon_{i'}} compact, the others non-compact.
+\item For a map \m{\iota\colon\Xi\to\Omega}, $\inc{\iota}$ is the \m{\Omega\times\Xi} matrix with entry $1$ at
+  \m{(\iota(\xi),\xi)} for \m{\xi\in\Xi} and $0$ elsewhere. For a \m{\Xi\times\Xi} matrix~$u$ the matrix
+  $\inc{\iota}\,u\,\inc{\iota}^{*}$ is supported on \m{\iota(\Xi)\times\iota(\Xi)}; when $\iota$ is injective it is $u$
+  placed in that block.
+\end{enumerate}
+\end{definition}
+
+\begin{definition}[the logarithm]\label{d:lg}
+For an \m{\Omega\times\Omega} matrix~$X$, $\lgo{X}=\int_0^1(1+sX)^{-1}X\,ds$, where the inverse of a singular
+matrix is read as~$0$. For \m{\hs{X}\le\tfrac12} it is the logarithm of \m{1+X}: by Input~\inp{3},
+\m{\det(1+X)=\exp\tr\lgo{X}}.
+\end{definition}
+
+\begin{definition}[coordinate projections, principal minors]\label{d:minor}
+For a subset \m{\Pi\subseteq\Omega}, $\cpr{\Pi}$ is the diagonal matrix with entries $1$ on~$\Pi$ and $0$
+elsewhere, an orthogonal projection, and for an \m{\Omega\times\Omega} matrix~$y$ the number $\pmn{\Pi}{y}$ is the
+determinant of the submatrix of~$y$ with rows and columns in~$\Pi$; so \m{\pmn{\Omega}{y}=\det y} and
+$\pmn{\Pi}{y}=\det\bigl(1+\cpr{\Pi}(y-1)\bigr)$. For an integer vector $w$ on~$\Omega$ and \m{\tau\in\ZZ} we write
+\m{\{w\ge\tau\}} for the set of the \m{i\in\Omega} with \m{w_i\ge\tau}. (The formal text speaks of decidable
+predicates on~$\Omega$ where we speak of subsets.)
+\end{definition}
+
+\subhead{Parameters and Flensted-Jensen's function.} Also from the background library.
+
+\begin{definition}[parameters]\label{d:param}
+Let $\varepsilon\colon\Omega\to\{\pm1\}$ be signs and \m{l\in\ZZ^{\Omega}}. The integer vectors $\ups{l}$ and
+$\lowk{l}$ on~$\Omega$ are
+\begin{align*}
+\ups{l}_i&=\Bigl\lfloor\tfrac12\bigl(l_i+\#\{i':l_{i'}<l_i\}-\#\{i':l_i<l_{i'}\}\bigr)\Bigr\rfloor,\\
+\lowk{l}_i&=\ups{l}_i-\#\{i':\varepsilon_{i'}=\varepsilon_i,\ l_{i'}<l_i\}+\#\{i':\varepsilon_{i'}=\varepsilon_i,\ l_i<l_{i'}\}.
+\end{align*}
+The vector $\lowk{l}$ depends on~$\varepsilon$, which the notation does not show; the statements say for which signs
+it is taken.
+\end{definition}
+
+One reads $l$ as a doubled Harish-Chandra parameter \m{l=2\lambda} of $\Us{\varepsilon}$. If $\rho$ and $\rho_c$ are
+the half sums of all roots, respectively of the compact roots, that are positive on~$\lambda$, then
+\m{\ups{l}=\lambda+\rho} and \m{\lowk{l}=\lambda+\rho-2\rho_c}: the infinitesimal character shifted to an
+integral vector, and the highest weight of the lowest $K$-type (the Blattner parameter). The comments of the
+formal text write $\mu$ for~$\ups{l}$. Since the two counted sets have at most $\abs{\Omega}$ elements,
+\begin{equation}\label{e:rhoc}
+\bigabs{\ups{l}_i-\lowk{l}_i}\le\abs{\Omega}\qquad\text{for every }i\in\Omega .
+\end{equation}
+
+\begin{definition}[gap, large gap]\label{d:gap}
+Let $\varepsilon\colon\Omega\to\{\pm1\}$ be signs, \m{l\in\ZZ^{\Omega}} and $H$ a real number. The vector $l$
+\kw{has gap~$H$ for~$\varepsilon$} if $l$ is injective, \m{l_i+\abs{\Omega}-1} is even for every~$i$, and
+\m{\abs{l_i-l_{i'}}\ge2H} whenever $\varepsilon_i\ne\varepsilon_{i'}$. For a natural number~$A$, $l$ \kw{has large
+gap~$A$ for~$\varepsilon$} if it has gap \m{500\abs{\Omega}^{3}+A} for~$\varepsilon$. If $l$ has gap~$H$ then so
+has~$-l$, and the half in the definition of $\ups{l}$ is exact.
+\end{definition}
+
+\begin{definition}[products of principal minors]\label{d:wm}
+Let $w$ be an integer vector on~$\Omega$ and $g$ an invertible \m{\Omega\times\Omega} matrix. Choose integers
+\m{c_1\le c_2} with \m{c_1\le w_i\le c_2} for all~$i$ and put
+\[\wm{w}{g}=(\det g)^{c_1}\prod_{c_1<\tau\le c_2}\pmn{\{w\ge\tau\}}{g}.\]
+This does not depend on $c_1$ and~$c_2$. (The library defines $\wm{w}{g}$ for all matrices as a product over all
+\m{\tau\in\ZZ}; for invertible $g$ it is this number, Input~\inp{4}.) On diagonal matrices $\wm{w}{\,\cdot\,}$ is the
+character \m{\prod_i g_{ii}^{w_i}}.
+\end{definition}
+
+\begin{definition}[Flensted-Jensen's function]\label{d:coeff}
+Let $\varepsilon\colon\Omega\to\{\pm1\}$ be signs and \m{l\in\ZZ^{\Omega}}; take $\lowk{l}$ for~$\varepsilon$. Put
+$\ktn{\varepsilon}{\lowk{l}}=\int_{\Ks{\varepsilon}}\abs{\wm{\lowk{l}}{h}}^{2}\,dh$, a positive number
+(Input~\inp{8}). For \m{\Omega\times\Omega} matrices $g$ and $z$,
+\[\fj{l}{g}{z}=\frac{1}{\ktn{\varepsilon}{\lowk{l}}}\int_{\Ks{\varepsilon}}
+\frac{\wm{\lowk{l}}{g\,h}\;\overline{\wm{\lowk{l}}{h}}}{\wm{-\ups{l}}{h^{*}z\,h}}\;dh,\qquad
+\dsc{l}{g}=\fj{l}{\bd{\varepsilon}{g}}{\bd{\varepsilon}{g}^{-1}g}.\]
+The \kw{formal degree} is $\fdeg{l}=\bigl(\int_{\Us{\varepsilon}}\abs{\dsc{l}{g}}^{2}\,dg\bigr)^{-1}$. Both
+$\dsc{l}{\,\cdot\,}$ and $\fdeg{l}$ depend on~$\varepsilon$.
+\end{definition}
+
+For \m{g\in\Us{\varepsilon}} the matrix $\bd{\varepsilon}{g}$ is invertible (Lemma~\ref{l:fourth}), and for $l$ with
+a gap the integrand is defined. By the header of the library's folder, $\dsc{l}{\,\cdot\,}$ restricted to
+$\Us{\varepsilon}$ is the matrix coefficient of the lowest $K$-type of the discrete series with Harish-Chandra
+parameter~$\lambda$, normalised by \m{\dsc{l}{1}=1}; this identification is a result of the background library that
+the present note does not use, and it is the reason for the name. What the note uses are the properties listed in
+§\ref{s:inputs}.
+
+\subhead{The definitions of the unit for two coefficients.}
+
+\begin{definition}[the gap-weighted square norm]\label{d:gw}
+Let $\Omega$ be a finite set, $w$ an integer vector on~$\Omega$ and $X$ an \m{\Omega\times\Omega} matrix. Then
+\[\gwn{w}{X}=\sum_{i\in\Omega}\sum_{i'\in\Omega}\abs{w_i-w_{i'}}\,\abs{X_{ii'}}^{2}.\]
+\end{definition}
+\leanline{\lean{gapWeightedNormSq}}
+
+\begin{definition}[the phase]\label{d:phase}
+Let $\Omega$, $\Omega'$ be finite sets, $\varepsilon$, $\varepsilon'$ signs on them, \m{l\in\ZZ^{\Omega}},
+\m{l'\in\ZZ^{\Omega'}}, and let \m{x=(x_1,x_2)} be a pair of an \m{\Omega\times\Omega} matrix and an
+\m{\Omega'\times\Omega'} matrix. Then
+\[\phs{l}{l'}{x}=\tr\bigl(\dg{\lowk{l}}\,x_1\bigr)-\tr\bigl(\dg{\lowk{l'}}\,x_2\bigr),\]
+with $\lowk{l}$ taken for~$\varepsilon$ and $\lowk{l'}$ for~$\varepsilon'$. It is linear in~$x$.
+\end{definition}
+\leanline{\lean{phase}}
+
+\begin{definition}[steep weights]\label{d:steep}
+Let $\Omega$ and $\Xi$ be finite sets, $\varepsilon\colon\Omega\to\{\pm1\}$ signs, \m{l\in\ZZ^{\Omega}}, $B$ a real
+number, $M$ a natural number and $e\colon\Xi\sqcup\{0,\dots,M-1\}\to\Omega$ a bijection. We say that
+\m{\steep{l}{B}{e}} \kw{holds for~$\varepsilon$} if
+\begin{enumerate}[label=\textup{(S\arabic*)},leftmargin=2.9em,itemsep=1pt]
+\item \m{\varepsilon_{e(\xi)}=1} for every \m{\xi\in\Xi}, and \m{\varepsilon_{e(n)}=(-1)^{n}} for \m{0\le n<M};
+\item \m{\lowk{l}_{e(\xi)}=0} for every \m{\xi\in\Xi};
+\item \m{n\mapsto\lowk{l}_{e(n)}} is strictly decreasing on \m{\{0,\dots,M-1\}}, and
+  \m{-3B\le\lowk{l}_{e(n)}\le-B} for \m{0\le n<M}.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{IsSteep}}
+
+\begin{definition}[the pair $j-1$]\label{d:pair}
+Let $S$ be a group, $\varepsilon$ and $\varepsilon'$ signs on finite sets $\Omega$ and~$\Omega'$,
+$j\colon S\to\Us{\varepsilon}\times\Us{\varepsilon'}$ a homomorphism of groups with components \m{j=(j_1,j_2)}, and
+\m{\sigma\in S}. The formal text abbreviates the pair of matrices $\bigl(j_1(\sigma)-1,\ j_2(\sigma)-1\bigr)$; this
+note writes the pair out.
+\end{definition}
+\leanline{\lean{subOnePair}}
+
+\begin{definition}[the integrand]\label{d:theta}
+Let $S$ be a group, $\varepsilon$ and $\varepsilon'$ signs on finite sets $\Omega$ and~$\Omega'$, \m{l\in\ZZ^{\Omega}},
+\m{l'\in\ZZ^{\Omega'}}, $j=(j_1,j_2)\colon S\to\Us{\varepsilon}\times\Us{\varepsilon'}$ a homomorphism of groups,
+\m{\phi\colon S\to\CC} a function and \m{\sigma\in S}. Then
+\[\lapint{l}{l'}{j}{\phi}{\sigma}=\dsc{l}{j_1(\sigma)}\cdot\overline{\dsc{l'}{j_2(\sigma)}}\cdot\exp\bigl(-\phi(\sigma)\bigr).\]
+\end{definition}
+\leanline{\lean{laplaceIntegrand}}
+
+\begin{definition}[two-factor data]\label{d:twofactor}
+Let $\Omega$, $\Omega'$, $\Xi$ be finite sets, $S$ a group, $\varepsilon$ and $\varepsilon'$ signs on $\Omega$ and
+$\Omega'$, \m{l\in\ZZ^{\Omega}}, \m{l'\in\ZZ^{\Omega'}},
+$j=(j_1,j_2)\colon S\to\Us{\varepsilon}\times\Us{\varepsilon'}$ a homomorphism of groups, \m{e'\colon\Xi\to\Omega'} a
+map, $B$ a real number, $M$ a natural number, $e\colon\Xi\sqcup\{0,\dots,M-1\}\to\Omega$ a bijection and
+\m{\phi\colon S\to\CC} a function. We say that $\twof{l}{l'}{j}{e'}{B}{e}{\phi}$ \kw{holds} if \m{\steep{l}{B}{e}} holds
+for~$\varepsilon$ and
+\begin{enumerate}[label=\textup{(T\arabic*)},leftmargin=2.9em,itemsep=1pt]
+\item $\phs{l}{l'}{(j_1(\sigma)-1,\ j_2(\sigma)-1)}=\phi(\sigma)$ for every \m{\sigma\in S};
+\item $\tr(j_1(\sigma)-1)=\tr(j_2(\sigma)-1)$ for every \m{\sigma\in S};
+\item $\phi(\sigma\sigma')=\phi(\sigma)+\phi(\sigma')$ for all \m{\sigma,\sigma'\in S};
+\item \m{\re\phi(\sigma)=0} for every \m{\sigma\in S};
+\item \m{\varepsilon'_{e'(\xi)}=1} and \m{\lowk{l'}_{e'(\xi)}=0} for every \m{\xi\in\Xi};
+\item \m{0\le\lowk{l'}_i} for every \m{i\in\Omega'}, and \m{\lowk{l'}_i\le3B} for every \m{i\in\Omega'} such that
+  $\varepsilon'_i\ne\varepsilon'_{i'}$ for some \m{i'\in\Omega'};
+\item for every unitary \m{\Xi\times\Xi} matrix~$u$ there is \m{\sigma\in S} with
+  \[j_1(\sigma)-1=\inc{e|_\Xi}\,(u-1)\,\inc{e|_\Xi}^{*}\qquad\text{and}\qquad
+  j_2(\sigma)-1=\inc{e'}\,(u-1)\,\inc{e'}^{*}.\]
+\end{enumerate}
+\end{definition}
+\leanline{\lean{IsTwoFactor}}
+
+In (T6) the second bound is asked of the indices whose sign differs from some other sign; if $\varepsilon'$ is
+constant, as for a compact second factor, it is empty. Condition (T7) says that $j(S)$ contains the unitary group of
+$\CC^{\Xi}$, placed in the block $e(\Xi)$ of the first factor and along $e'$ in the second. No topology on~$S$ is
+part of the definition.
+
+\subsection*{\normalsize The shape and its Bessel subgroup}\label{s:shape}
+\refstepcounter{subsection}
+The objects of the next definition belong to the background library and to the units of Chapter~VI on the real
+place; the letters are those of the notes of these units.
+
+\begin{definition}[shape]\label{d:shape}
+A \kw{shape} $\fs$ consists of a natural number $\rhs{\fs}$, a finite set $\kps{\fs}$ and an element of
+$\kps{\fs}$. Its \kw{basis index set} $\Ind{\fs}$ is the disjoint union of \m{\{0,\dots,\rhs{\fs}-1\}}, of
+\m{\kps{\fs}\sqcup\{z\}} and of a second copy of \m{\{0,\dots,\rhs{\fs}-1\}}; the standard basis of
+$\CC^{\Ind{\fs}}$ is written
+\[e_0,\dots,e_{\rhs{\fs}-1};\qquad x_i\ (i\in\kps{\fs}),\ z;\qquad e^{*}_0,\dots,e^{*}_{\rhs{\fs}-1}.\]
+Put \m{\nsh{\fs}=\rhs{\fs}+1} and $\rsh{\fs}=\abs{\Ind{\fs}}=2\rhs{\fs}+\abs{\kps{\fs}}+1$.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=1pt]
+\item $\Jone{\fs}$ is the Gram matrix of the hermitian form on $\CC^{\Ind{\fs}}$ for which $e_a$ and $e^{*}_a$ span
+  a hyperbolic plane with product~$1$, the $x_i$ are orthonormal, $z$ has square~$-1$, and all other products of
+  basis vectors vanish. $\Gone{\fs}$ is its unitary group, with the Haar measure $dg$ of the library.
+\item The \kw{level} of a basis index is \m{\lev{e_a}=a}, \m{\lev{x_i}=\lev{z}=\rhs{\fs}} and
+  \m{\lev{e^{*}_a}=2\rhs{\fs}-a}. A matrix~$X$ is \kw{block upper triangular for the levels} if \m{X_{ii'}=0} whenever
+  \m{\lev{i'}<\lev{i}}. The \kw{frame} is \m{f_a=e_a} for \m{a<\rhs{\fs}} and \m{f_{\rhs{\fs}}=z}.
+\item $\Uu{\fs}$ is the subgroup of the \m{u\in\Gone{\fs}} with \m{u_{ii'}=\delta_{ii'}} whenever
+  \m{\lev{i'}\le\lev{i}}, a unipotent group; $\sd{g}=\sum_{a<\rhs{\fs}}g_{f_a,f_{a+1}}$ is the sum of the entries
+  of~$g$ just above the diagonal on the frame.
+\item $\Us{1}$, for the signs $1$ on $\kps{\fs}$, is the group of the unitary matrices of $\CC^{\kps{\fs}}$, and
+  $\emb{\fs}{h}$, for \m{h\in\Us{1}}, is the element of $\Gone{\fs}$ that acts as $h$ on the span of the $x_i$ and
+  fixes the other basis vectors. $\Hh{\fs}$ is the image of $\emb{\fs}{\,\cdot\,}$, and $\Qq{\fs}$, the \kw{Bessel
+  subgroup}, is the group \m{\Uu{\fs}\,\Hh{\fs}}; it normalizes $\Uu{\fs}$.
+\item $\hU{\fs}$ is the Haar measure on $\Uu{\fs}$ that the library fixes, and $\hq{\fs}$ is the measure on
+  $\Gone{\fs}$ of the library that computes integrals over \m{\Uu{\fs}\backslash\Gone{\fs}}: for measurable
+  \m{f\ge0} on $\Gone{\fs}$, $\int f(g)\,dg=\iint f(u\,y)\,d\hU{\fs}(u)\,d\hq{\fs}(y)$.
+\item For \m{x\in\Gone{\fs}}, $\bsz{x}=\inf_{q\in\Qq{\fs}}\op{q\,x}+1$.
+\item Let $I$ be a finite set and $\mathrm{rep}$ a homomorphism from $\Us{1}$ to the unitary \m{I\times I}
+  matrices. A function \m{W\colon\Gone{\fs}\to\CC^{I}} is a \kw{Bessel function for $\mathrm{rep}$} if it is bounded
+  and strongly measurable, $W(u\,y)=e^{\sd{u}-\overline{\sd{u}}}\,W(y)$ for \m{u\in\Uu{\fs}}, and
+  $W(\emb{\fs}{h}\,y)=\mathrm{rep}(h)\,W(y)$ for \m{h\in\Us{1}}, for all \m{y\in\Gone{\fs}}.
+\end{enumerate}
+\end{definition}
+
+The signature of $\Jone{\fs}$ is $(\rhs{\fs}+\abs{\kps{\fs}},\,\rhs{\fs}+1)$. The function $\sd{\,\cdot\,}$ is
+additive on $\Qq{\fs}$ and vanishes on $\Hh{\fs}$ (Input~\inp{13}), so $u\mapsto e^{\sd{u}-\overline{\sd{u}}}$ is a
+unitary character of $\Uu{\fs}$, the generic character of this note. Item~(f) is a definition of the unit on
+the second moment (Filling), item~(g) one of the library.
+
+\begin{definition}[frames]\label{d:frame}
+Let $\fs$ be a shape and $\varepsilon\colon\Ind{\fs}\to\{\pm1\}$ signs. The set \m{\frm{\fs}{\varepsilon}} of the
+\kw{frames of $\fs$ for~$\varepsilon$} consists of the unitary \m{\Ind{\fs}\times\Ind{\fs}} matrices~$\fp$ with
+$\fp^{*}\,\Jone{\fs}\,\fp=\dg{\varepsilon}$. For such $\fp$, \m{g\mapsto\fp^{-1}g\,\fp} is an isomorphism of
+topological groups from $\Gone{\fs}$ to $\Us{\varepsilon}$ that preserves the Haar measures.
+\end{definition}
+\leanline{\lean{Frame}}
+
+In the formal text a frame is a structure that the declarations below take as an instance argument, and the signs
+are determined by it; here a statement names its frame. The columns of~$\fp$ are an orthonormal basis of
+$\CC^{\Ind{\fs}}$ that is also orthogonal for $\Jone{\fs}$.
+
+\begin{definition}[the Bessel graph]\label{d:graph}
+Let $\fs$ be a shape. Then $\bgr{\fs}$ is the set of the pairs \m{(g,h)\in\Gone{\fs}\times\Us{1}}, $\Us{1}$ the
+unitary group of $\CC^{\kps{\fs}}$, with \m{\emb{\fs}{h}^{-1}g\in\Uu{\fs}}. It is a subgroup, because
+$\emb{\fs}{h}$ normalizes $\Uu{\fs}$. An element is written \m{\sigma=(\sigma_1,\sigma_2)}.
+\end{definition}
+\leanline{\lean{besselGraph}}
+
+The first projection maps $\bgr{\fs}$ isomorphically onto \m{\Hh{\fs}\,\Uu{\fs}=\Qq{\fs}}; the graph records the
+factor in $\Us{1}$, which the second coefficient of the integrand needs.
+
+\begin{definition}[the chart]\label{d:chart}
+Let $\fs$ be a shape. Then $\bch{\fs}$ is the homeomorphism from \m{\Uu{\fs}\times\Us{1}} to $\bgr{\fs}$ that sends
+\m{(u,h)} to \m{(\emb{\fs}{h}\,u,\ h)}; its inverse sends \m{(g,h)} to \m{(\emb{\fs}{h}^{-1}g,\ h)}.
+\end{definition}
+\leanline{\lean{besselGraphChart}}
+
+\begin{definition}[the measure of the Bessel graph]\label{d:gmeasure}
+Let $\fs$ be a shape. Then $\bms{\fs}$ is the image under the chart $\bch{\fs}$ of the product of the measure
+$\hU{\fs}$ on $\Uu{\fs}$ and the Haar measure of total mass one on $\Us{1}$.
+\end{definition}
+\leanline{\lean{besselGraphMeasure}}
+
+\begin{definition}[the pair homomorphism]\label{d:pairhom}
+Let $\fs$ be a shape, $\varepsilon\colon\Ind{\fs}\to\{\pm1\}$ signs, \m{\fp\in\frm{\fs}{\varepsilon}} a frame and
+\m{x\in\Gone{\fs}}. For $\sigma=(\sigma_1,\sigma_2)\in\bgr{\fs}$,
+\[\bph{x}{\sigma}=\bigl(\fp^{-1}x^{-1}\sigma_1\,x\,\fp,\ \sigma_2\bigr)\ \in\ \Us{\varepsilon}\times\Us{1}.\]
+The map $\bph{x}{\,\cdot\,}$ is a homomorphism of groups. It depends on $\fs$ and on the frame~$\fp$, which the
+notation does not show (they are implicit in the formal text).
+\end{definition}
+\leanline{\lean{besselPairHom}}
+
+\begin{definition}[peak]\label{d:peak}
+Let $\fs$ be a shape, $\varepsilon\colon\Ind{\fs}\to\{\pm1\}$ signs, \m{\fp\in\frm{\fs}{\varepsilon}} a frame, $I$ a
+finite set, \m{l\in\ZZ^{\Ind{\fs}}}, $\mathrm{rep}$ a homomorphism from $\Us{1}$ (of $\CC^{\kps{\fs}}$) to the unitary
+\m{I\times I} matrices, \m{W\colon\Gone{\fs}\to\CC^{I}} a function, \m{x\in\Gone{\fs}} and $P$ a real number. We say
+that $\peak{l}{\mathrm{rep}}{W}{x}{P}$ \kw{holds} if $W$ is a Bessel function for $\mathrm{rep}$
+(Definition~\ref{d:shape}(g)) and
+\begin{enumerate}[label=\textup{(P\arabic*)},leftmargin=2.9em,itemsep=1pt]
+\item $W(y)=\int_{\Gone{\fs}}\fdeg{l}\,\dsc{l}{\fp^{-1}g^{-1}\fp}\;W(y\,g)\,dg$ for every \m{y\in\Gone{\fs}};
+\item \m{W(x)\ne0};
+\item $\nrm{W(y)}\le\int_{\bgr{\fs}}\bigabs{\dsc{l}{\fp^{-1}x^{-1}\sigma_1\,y\,\fp}}\,d\bms{\fs}(\sigma)$ for every
+  \m{y\in\Gone{\fs}};
+\item for every \m{y\in\Gone{\fs}},
+  \[\int_{\bgr{\fs}}\Bigl(\frac{2}{\op{\fp^{-1}x^{-1}\sigma_1\,y\,\fp}}\Bigr)^{8\,\rsh{\fs}^{2}+1}d\bms{\fs}(\sigma)
+  \ \le\ P\cdot\nrm{W(x)}.\]
+\end{enumerate}
+The integrals in \textup{(P3)} and \textup{(P4)} are integrals of non-negative functions, with values in
+\m{[0,\infty]}, and $\nrm{\,\cdot\,}$ is the Euclidean norm of~$\CC^{I}$.
+\end{definition}
+\leanline{\lean{HasPeakAt}}
+
+Condition (P1) says that $W$ is fixed by the right convolution with the function
+$g\mapsto\fdeg{l}\,\dsc{l}{\fp^{-1}g\,\fp}$, the kernel of the projection to the discrete series of~$l$
+(Input~\inp{12}). In the formal text the predicate has the five
+arguments \m{l,\mathrm{rep},W,x,P}, and $\fs$, $\varepsilon$, $\fp$, $I$ are implicit.
+
+\begin{definition}[type of a Bessel system]\label{d:bestype}
+Let $\fs$ be a shape, $\varepsilon\colon\Ind{\fs}\to\{\pm1\}$ signs, \m{\fp\in\frm{\fs}{\varepsilon}} a frame, $b$ a
+real number, $f$ a natural number, and $\mathcal{B}$ a Bessel system for \m{(\fs,b,f)} in the sense of the unit on
+the second moment: among its components are a finite index set $I(\mathcal{B})$, a continuous function
+$W_{\mathcal{B}}\colon\Gone{\fs}\to\CC^{I(\mathcal{B})}$ called its full Bessel function, and a positive number
+\m{\deg\mathcal{B}}. Let \m{l\in\ZZ^{\Ind{\fs}}} and let $w$ be a dominant weight of the unitary group of $\CC^{\kps{\fs}}$, in the encoding of the library. We say that
+\m{\isbes{\mathcal{B}}{l}{w}} \kw{holds} if
+\begin{enumerate}[label=\textup{(B\arabic*)},leftmargin=2.9em,itemsep=1pt]
+\item $\deg\mathcal{B}=\prod_{i,i':\,l_{i'}<l_i}\tfrac12(l_i-l_{i'})\big/\prod_{n<\rsh{\fs}}n!$, the value of Weyl's
+  dimension polynomial at~$l$;
+\item there are a matrix $Y$ with rows indexed by the standard tableaux of the weight~$w$ for $\kps{\fs}$ and
+  columns indexed by $I(\mathcal{B})$, and a matrix $Y'$ with \m{Y\,Y'=1} and \m{Y'\,Y=1}, such that
+  $Y\,W_{\mathcal{B}}(\emb{\fs}{h}\,y)=\mathbb{S}_w(h)\,Y\,W_{\mathcal{B}}(y)$ for all \m{h\in\Us{1}} and
+  \m{y\in\Gone{\fs}}, where $\mathbb{S}_w(h)$ is the matrix of $h$ in the Schur module of weight~$w$ in the basis of
+  the tableaux, as the library defines it;
+\item $\int_{\Us{\varepsilon}}\fdeg{l}\,\overline{\dsc{l}{g}}\;W_{\mathcal{B}}(y\,\fp\,g\,\fp^{-1})_i\,dg=W_{\mathcal{B}}(y)_i$
+  for every \m{y\in\Gone{\fs}} and \m{i\in I(\mathcal{B})}.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{IsBessel}}
+
+This predicate records that a Bessel system has the degree, the $\Us{1}$-type and the discrete series type that
+belong to~$l$ and~$w$. The unit proves nothing about it; the units on the second moment and on the real place use
+it (§\ref{s:use}). In (B2) the formal text writes the Schur matrix as the transpose of the Schur functor applied
+to the transpose of~$h$; we have not unfolded the library's Schur functor further than this.
+
+\subsection*{\normalsize Adelic unitary groups}\label{s:adelic}
+\refstepcounter{subsection}
+Theorem~6 uses the following objects of the background library, in its coordinates. Let $E$ be a CM field with a
+CM type: for every infinite place~$v$ an embedding \m{E\to\CC} that induces~$v$ is chosen, and \m{\abs{a}_v} is the
+absolute value of the image of \m{a\in E} under it. The number of infinite places is~$f_E$. Let $\Omega$ be a finite
+set and $\varepsilon$ signs on~$\Omega$.
+
+\begin{definition}[the adelic group and a space with a point]\label{d:adelic}
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=1pt]
+\item \m{G_\infty(E,\varepsilon)} is the product of copies of $\Us{\varepsilon}$, one for each infinite place~$v$,
+  with the product of the Haar measures; \m{G_{\mathrm f}(E,\Omega)} is the unitary group of the identity matrix
+  over the finite adeles of~$E$; and $G(E,\varepsilon)=G_\infty(E,\varepsilon)\times G_{\mathrm f}(E,\Omega)$, with
+  components \m{g=(g_\infty,g_{\mathrm f})} and the product Haar measure of the library. For an integer \m{a_0\ne0}
+  of~$E$, $K_\Omega(a_0)$ is the open compact subgroup of the \m{k\in G_{\mathrm f}(E,\Omega)} with integral entries
+  such that all entries of \m{k-1} are multiples of~$a_0$ by integral finite adeles.
+\item A \kw{hermitian space with a point over~$E$ for~$\varepsilon$} is a pair \m{V=(J_V,x_V)} of an
+  \m{\Omega\times\Omega} matrix $J_V$ over~$E$ and an invertible adelic matrix~$x_V$ with
+  \m{x_V^{*}J_Vx_V} equal to $\dg{\varepsilon}$ at the infinite places and to~$1$ at the finite places. Then
+  $\Gamma(V)=x_V^{-1}\,\mathrm{U}(J_V)(E)\,x_V$ is a discrete subgroup of $G(E,\varepsilon)$, and $\varpi_V$ is the
+  measure of the library on $G(E,\varepsilon)$ that computes integrals over $\Gamma(V)\backslash G(E,\varepsilon)$.
+  For \m{x\in G(E,\varepsilon)}, \m{V\cdot x=(J_V,x_Vx)}.
+\item The \kw{lattice} of~$V$ consists of the vectors \m{\eta\in E^{\Omega}} for which \m{x_V^{-1}\eta} is integral
+  at all finite places; the \kw{length} $\nrm{\eta}_V$ is the Euclidean norm of the vector of the components of
+  \m{x_V^{-1}\eta} at the infinite places, a vector of $\CC^{f_E\abs{\Omega}}$; and $\lambda_1(V)$ is the infimum
+  of~$1$ and of the lengths of the non-zero lattice vectors.
+\item \m{\langle1\rangle} is the positive line: the space with matrix $(1)$ and point~$1$ on the index set
+  \m{\{*\}}; \m{V\oplus\langle1\rangle} has block-diagonal matrix and point, for the signs \m{\varepsilon\oplus1} on
+  \m{\Omega\sqcup\{*\}}; and \m{g\mapsto g\oplus1} is the block-diagonal embedding of $G(E,\varepsilon)$ into
+  \m{G(E,\varepsilon\oplus1)}, of $\Us{\varepsilon}$ into \m{\Us{\varepsilon\oplus1}}, and of \m{G_\infty(E,\varepsilon)}
+  into \m{G_\infty(E,\varepsilon\oplus1)}.
+\item A function \m{F\colon G(E,\varepsilon)\to\CC} is \kw{automorphic for~$V$} if it is continuous, invariant under
+  left translations by $\Gamma(V)$, and invariant under right translations by some open subgroup of
+  \m{G_{\mathrm f}(E,\Omega)}. It \kw{has level~$K$}, for a subgroup $K$ of \m{G_{\mathrm f}(E,\Omega)}, if
+  \m{F(g\cdot(1,k))=F(g)} for all \m{g} and all \m{k\in K}.
+\end{enumerate}
+\end{definition}
+The formal text requires of~$E$, for the positive line to exist as a space with a point, that it contains a
+primitive root of unity of order~$5040$.
+
+\sect{What is taken for granted}{s:inputs}
+The proofs below use the following results of other units. All but \inp{14} are proved in the background library
+of the artifact (the unit numbers are those of the reading project's ledger); they are stated as the dossier of the
+unit reads them, and the statements \inp{7}, \inp{9}, \inp{10}, \inp{11} and \inp{14} were compared here with their
+Lean text. A reference is given where the second reader of the project or the catalogue of the write-up has one;
+``reference to be confirmed'' means that none is recorded. Facts of Mathlib (Sylvester's identity
+\m{\det(1+XY)=\det(1+YX)}, the spectral theorem for hermitian matrices, Fubini's and Tonelli's theorems, Markov's
+inequality) are used without number.
+
+\subhead{Inputs.} In \inp{1} to \inp{4}, $X$, $Y$, $D$ are
+\m{\Omega\times\Omega} matrices; in \inp{7} to \inp{10}, $\varepsilon\colon\Omega\to\{\pm1\}$ are signs,
+\m{l\in\ZZ^{\Omega}} and \m{g\in\Us{\varepsilon}}.
+\begin{enumerate}[label=\textup{(I\arabic*)},leftmargin=2.7em,itemsep=2.5pt]
+\item \emph{Hilbert--Schmidt norm} (unit 112, linear algebra; elementary). \m{\abs{\tr(XY)}\le\hs{X}\hs{Y}};
+  \m{\tr(X^{*}X)=\hs{X}^{2}}; \m{\hs{uX}=\hs{X}} if \m{u^{*}u=1}; \m{\hs{pX}\le\hs{X}} for an orthogonal projection~$p$;
+  replacing entries of~$X$ by zero does not increase $\hs{X}$.
+\item \emph{Inverses near~$1$} (unit 112; elementary). If \m{\hs{X}\le c\le\tfrac12} then \m{1+X} is invertible and
+  \m{\hs{(1+X)^{-1}-1}\le2c}.
+\item \emph{The logarithm} (unit 112; an integrated form of Jacobi's formula, elementary). If \m{\hs{X}\le\tfrac12},
+  then $s\mapsto\tr\bigl(D(1+sX)^{-1}X\bigr)$ is integrable on $[0,1]$ with integral \m{\tr(D\,\lgo{X})};
+  \m{\det(1+X)=\exp\tr\lgo{X}}; and \m{\hs{\lgo{X}}\le2\hs{X}}.
+\item \emph{Principal minors} (unit 112; elementary). (a) If \m{X_{ii'}=0} or \m{Y_{i'i''}=0} whenever \m{i,i''\in\Pi}
+  and \m{i'\notin\Pi}, then $\pmn{\Pi}{XY}=\pmn{\Pi}{X}\,\pmn{\Pi}{Y}$. (b) If \m{o\colon\Omega\to\ZZ} is injective
+  and \m{X_{ii'}=0} whenever \m{o_{i'}<o_i}, then \m{\det X=\prod_iX_{ii}}. (c) For invertible~$X$, the library's
+  product of principal minors of weight~$w$ is the number $\wm{w}{X}$ of Definition~\ref{d:wm}.
+\item \emph{Lagrange weights} (unit 112; Lagrange interpolation, elementary). For integers
+  $\tau_0>\tau_1>\dots>\tau_{n_0-1}$ there are real numbers \m{c_n\ge1} with
+  $c_n^{2}=(-1)^{n}\prod_{n'\ne n}(\tau_n-\tau_{n'})$ such that for every real polynomial $\pi$ of degree less
+  than~$n_0$ the coefficient of degree \m{n_0-1} of~$\pi$ is $\sum_n(-1)^{n}\pi(\tau_n)/c_n^{2}$.
+\item \emph{Witt's theorem} (unit 120). Let $J$ be an invertible hermitian \m{\Omega\times\Omega} matrix and $Y_1$, $Y_2$
+  matrices with $\Omega$ rows, the same set of columns, and left inverses, such that \m{Y_1^{*}JY_1=Y_2^{*}JY_2}. Then
+  \m{g\,Y_1=Y_2} for some~$g$ with \m{g^{*}Jg=J}. Reference: U.~First, \emph{Witt's extension theorem for quadratic
+  spaces over semiperfect rings}, Remark~2.1 and Corollary~4.9; relation: the theorem itself, for a field with a
+  non-trivial involution (second reader's verdict).
+\item \emph{Flensted-Jensen's formula and its invariance} (units 116 and 112). Suppose that $l$ has gap~$H$
+  for~$\varepsilon$ for some real~$H$. Call a matrix~$Y$ \kw{accretive} if \m{Y+Y^{*}} is positive definite; this
+  holds if \m{\hs{Y-1}<1}. (a) If $a$ is an \m{\Omega\times\Omega} matrix commuting with $\dg{\varepsilon}$ such that
+  \m{a^{-1}g} is accretive, then \m{\dsc{l}{g}=\fj{l}{a}{a^{-1}g}}. (b) If $u'$ is a matrix with \m{u'_{ii'}=0} unless
+  \m{l_i<l_{i'}} and \m{\varepsilon_i=\varepsilon_{i'}}, and $Y$ and \m{(1-u')Y} are accretive, then
+  $\fj{l}{1}{((1-u')Y)^{*}}=\overline{\fj{l}{1}{Y}}$. Reference for (a): M.~Flensted-Jensen, \emph{Discrete series for
+  semisimple symmetric spaces}, Ann.\ of Math.\ 111 (1980); place and relation to be confirmed. For (b): reference
+  to be confirmed.
+\item \emph{Elementary properties of the coefficient} (units 116, 100, 18). (a) \m{\ktn{\varepsilon}{w}>0} for every integer
+  vector~$w$, and $\dsc{l}{\,\cdot\,}$ is continuous on $\Us{\varepsilon}$. Suppose that $l$ has gap~$H$ for~$\varepsilon$
+  for some~$H$. Then: (b) \m{\dsc{l}{h}=\wm{\lowk{l}}{h}} for \m{h\in\Ks{\varepsilon}}; (c)
+  $\dsc{-l}{g}=\overline{\dsc{l}{g}}$ and \m{\lowk{-l}=-\lowk{l}}; (d) \m{\ups{l}_i<\ups{l}_{i'}} if and only if
+  \m{l_i<l_{i'}}.
+\item \emph{Decay} (unit 116). If $l$ has gap~$H$ for~$\varepsilon$ and $c$ is a natural number with \m{c\le H}, then
+  $\abs{\dsc{l}{g}}^{2}\,\abs{\det\bd{\varepsilon}{g}}^{c}\le1$; if moreover \m{\Omega\ne\emptyset}, then
+  $\abs{\dsc{l}{g}}\le(2/\op{g})^{c}$. In particular \m{\abs{\dsc{l}{g}}\le1}. The catalogue relates the first bound
+  to Flensted-Jensen (1980) and to B.~Sun, \emph{Matrix coefficients of cohomologically induced representations},
+  Compositio Math.\ 143 (2007), and does not identify it with a published statement: reference to be confirmed.
+\item \emph{The coefficient near~$1$} (unit 116; elementary from a Lipschitz bound of the library). Let
+  \m{\Omega\ne\emptyset}, let $l$ have large gap~$A_0$ for~$\varepsilon$ for some natural~$A_0$, and \m{\abs{l_i}\le L}
+  for all~$i$. (a) If \m{\beta_0\ge\abs{\Omega}+L+1} and $\op{g-1}\le(200\beta_0^{5})^{-1}$, then
+  \m{\abs{\dsc{l}{g}}\ge\tfrac12}. (b) If $\nu$ is a right-invariant measure on a group~$S$ with measurable
+  translations, \m{j\colon S\to\Us{\varepsilon}} a homomorphism with $\abs{\dsc{l}{j(\,\cdot\,)}}^{2}$ integrable, and
+  \m{R\ge1}, then
+  $\nu\{\op{j(\sigma)}\le R\}\le(2000(\abs{\Omega}+L+1)^{6}R^{2})^{2\abs{\Omega}^{2}}\int4\abs{\dsc{l}{j(\sigma)}}^{2}d\nu$.
+\item \emph{Balls and decay on a group over $\Us{\varepsilon}$} (unit 115, Haar measure; the catalogue cites Hua, Macdonald
+  and Gross for the volume growth and has no place: reference to be confirmed). Let \m{\Omega\ne\emptyset}, let $S$ be a
+  group with a topology, its Borel $\sigma$-algebra and measurable translations, $\nu$ a right-invariant measure
+  on~$S$, \m{j\colon S\to\Us{\varepsilon}} a homomorphism and \m{y\in\Us{\varepsilon}}. (a) For real \m{D,R\ge1} and
+  \m{K\ge3DR^{2}}:
+  $\nu\{\op{j(\sigma)y}\le R\}\le K^{2\abs{\Omega}^{2}}\,\nu\{\op{j(\sigma)-1}\le D^{-1}\}$. (b) If $j$ is proper and
+  $\nu$ is finite on compact sets, then $\nu\{\op{j(\sigma)-1}\le R\}<\infty$ for every~$R$, and for every natural
+  \m{c>8\abs{\Omega}^{2}} the function $\sigma\mapsto(2/\op{j(\sigma)y})^{c}$ is $\nu$-integrable with
+  $\int(2/\op{j(\sigma)y})^{c}\,d\nu\le16^{c}\,\nu\{\op{j(\sigma)-1}\le1\}$. (c) If $\nu$ is positive on non-empty open
+  sets and \m{f\colon S\to\RR} is continuous with \m{f(1)<R}, then \m{\nu\{f\le R\}\ne0}. (d) \m{\op{g}\ge1} and
+  \m{\op{g^{-1}}=\op{g}} for \m{g\in\Us{\varepsilon}}, and \m{g\mapsto g\oplus1} is a proper map from $\Us{\varepsilon}$ to
+  \m{\Us{\varepsilon\oplus1}} (unit 43).
+\item \emph{Schur orthogonality} (units 112 and 117). Let $\fs$ be a shape, $\fp$ a frame of~$\fs$ for signs~$\varepsilon$,
+  and let \m{l\in\ZZ^{\Ind{\fs}}} have large gap~$A$ for~$\varepsilon$, for some natural~$A$. Then
+  $k(g)=\fdeg{l}\,\dsc{l}{\fp^{-1}g\,\fp}$ is continuous and integrable on $\Gone{\fs}$, \m{\fdeg{l}>0}, and
+  $\int k(g^{-1})\,k(y_1\,g\,y_2)\,dg=k(y_1)\,k(y_2)/k(1)$ for all \m{y_1,y_2\in\Gone{\fs}}. Reference:
+  Harish-Chandra, \emph{Discrete series for semisimple Lie groups~II}, Acta Math.\ 116 (1966), pp.~87--88, for the
+  orthogonality of square-integrable coefficients with the formal degree; relation unresolved (second reader's
+  verdict): the cited pages do not give the integrability for the explicit gap nor the normalisation of the
+  measure, which the library proves.
+\item \emph{The Bessel subgroup} (units 1, 118, 119). Let $\fs$ be a shape. (a) \m{\sd{q\,q'}=\sd{q}+\sd{q'}} and
+  \m{\sd{q^{-1}}=-\sd{q}} for \m{q,q'\in\Qq{\fs}}, and \m{\sd{q}=0} for \m{q\in\Hh{\fs}}. (b) Let $C_{\fs}$ be the \kw{chain
+  matrix}: the \m{\Ind{\fs}\times\Ind{\fs}} matrix with \m{C_{\fs}e_a=f_{a+1}} for \m{a<\rhs{\fs}}, \m{C_{\fs}x_i=0},
+  \m{C_{\fs}z=-e^{*}_{\rhs{\fs}-1}} (if \m{\rhs{\fs}\ge1}), \m{C_{\fs}e^{*}_{a+1}=e^{*}_{a}} and \m{C_{\fs}e^{*}_0=0}. Then
+  $\tr(C_{\fs}\,g)=\sd{g}+\overline{\sd{g^{-1}}}$ for \m{g\in\Gone{\fs}}. (c) Conjugation by an element of $\Qq{\fs}$
+  and right translation by an element of $\Uu{\fs}$ preserve~$\hU{\fs}$. (d) The formula of
+  Definition~\ref{d:shape}(e) for~$\hq{\fs}$; it is an instance of Weil's formula for the integral over a quotient, which
+  the library proves for a measure with a cutoff function. Reference: Kallenberg, Probab.\ Theory Related Fields 139
+  (2007), as cited by Gentner and Last; relation unresolved (second reader's verdict: the library's statement is
+  more general than the cited one and follows from Tonelli's theorem and the two invariances).
+\item \emph{A bound for the size} (unit 132 of the argument, the complex chart at the real place). Let $\fs$ be a
+  shape, \m{x\in\Gone{\fs}}, \m{M_0\ge1} real, and \m{V_0,V_1,V_2,\dots} vectors of $\CC^{\Ind{\fs}}$ with
+  \m{V_a=x^{-1}f_a} for \m{a\le\rhs{\fs}}, with Euclidean norms \m{\nrm{V_a}\le M_0} for \m{a\le2\rhs{\fs}}, and with
+  \m{V_a^{*}\Jone{\fs}V_{a'}=-1} if \m{a+a'=2\rhs{\fs}} and \m{=0} if \m{a+a'<2\rhs{\fs}}. Then
+  $\bsz{x}\le8\,(\rhs{\fs}+1)\,M_0$.
+\end{enumerate}
+
+\noindent The adelic inputs of Theorem~6 are listed in §\ref{s:period}, where they are used.
+
+\sect{Determinants of compressions, to second order}{s:minors}
+In this section and the next, norms without mention are Hilbert--Schmidt norms. The first result compares
+\m{\log\det(1+pX)}, for an orthogonal projection~$p$, with \m{\tr(q\,\lgo{X})} for a second projection~$q$ close to~$p$.
+To first order the two agree when \m{q=p}; the second-order term is a quarter of the square of the commutator, and
+the error is cubic: one factor $\hs{X}$ and two factors of the size of commutators.
+
+\begin{proposition}[compressed determinants]\label{p:compress}
+Let $\Omega$ be a finite set, let $p$, $q$, $X$, $Y$ be \m{\Omega\times\Omega} matrices and $\delta$, $c$ real numbers.
+Suppose that $p$ and $q$ are orthogonal projections \textup{(}\m{p=p^{2}=p^{*}} and \m{q=q^{2}=q^{*}}\textup{)}, that
+\m{\delta\le\tfrac12}, and that
+\[\hs{X}\le\delta,\qquad \tr\bigl(\comm{p}{q}\,Y\bigr)=0,\qquad \hs{\comm{p}{X}-Y}\le\delta\,c,\qquad \hs{Y}\le c,\qquad \hs{q-p}\le c.\]
+Then there is a complex number~$\eta$ with
+\[\det(1+p\,X)=\exp\Bigl(\tr\bigl(q\,\lgo{X}\bigr)-\tfrac14\tr(Y^{2})+\eta\Bigr)\qquad\text{and}\qquad \abs{\eta}\le100\,\delta\,c^{2}.\]
+\end{proposition}
+\begin{proof}
+The numbers $\delta$ and $c$ are non-negative, being bounds of norms. Put \m{A=\comm{p}{X}} and \m{D=q-p}; then
+$\hs{A}\le\hs{Y}+\hs{A-Y}\le c+\delta c\le\tfrac32c$. Since \m{\hs{pX}\le\delta\le\tfrac12} by~\inp{1}, Input~\inp{3} gives
+\m{\det(1+pX)=\exp\tr\lgo{pX}}, and it writes \m{\tr\lgo{pX}} and \m{\tr(q\,\lgo{X})} as integrals over \m{s\in[0,1]}.
+With \m{\tfrac14=\int_0^1\tfrac s2\,ds} the claimed identity holds for
+\[\eta=\int_0^1\mathcal{I}(s)\,ds,\qquad \mathcal{I}(s)=\tr(V\,pX)-\tr(q\,W\,X)+\tfrac s2\tr(Y^{2}),\]
+where \m{W=(1+sX)^{-1}} and \m{V=(1+s\,pX)^{-1}},
+and it suffices to show $\abs{\mathcal{I}(s)}\le100\,\delta c^{2}$ for each \m{s\in[0,1]}. Fix~$s$. By~\inp{2},
+\m{\hs{W-1}\le2\delta} and \m{\hs{V-1}\le2\delta}, so \m{\op{W}\le2} and \m{\op{V}\le2}. We split
+$\mathcal{I}(s)=\mathcal{I}_1+\mathcal{I}_2+\mathcal{I}_3$ with
+\[\mathcal{I}_1=\tr(V\,pX)-\tr(p\,W\,X)+\tfrac s2\tr(A^{2}),\quad\ \mathcal{I}_2=-\tr(D\,W\,X),\quad\
+\mathcal{I}_3=-\tfrac s2\tr\bigl((A-Y)(A+Y)\bigr),\]
+using $\tr(A^{2}-Y^{2})=\tr((A-Y)(A+Y))$. At once $\abs{\mathcal{I}_3}\le\tfrac12\,\delta c\,(\tfrac32c+c)=\tfrac54\delta c^{2}$.
+
+\emph{The term $\mathcal{I}_1$: one projection.} We use
+\[pAp=0=(1-p)A(1-p),\quad\ pA=pX(1-p),\quad\ Ap=-(1-p)Xp,\quad\ \tr(pA^{2})=\tfrac12\tr(A^{2}),\]
+the last because \m{\tr(pA^{2})=\tr((1-p)A^{2})}. From \m{p(1+sX)-(1+s\,pX)p=s\,pA} we get, multiplying by $V$ on the
+left and by $W$ on the right, \m{Vp-pW=s\,V\,pA\,W}, so
+\[\tr(V\,pX)-\tr(p\,WX)=s\,\tr\bigl(pA\cdot WXV\bigr)=s\,\tr\bigl(pA\,(1-p)\,WXV\,p\bigr).\]
+Now \m{\comm{p}{W}=-s\,WAW}, so \m{(1-p)W=W(1-p)+s\,WAW}; and \m{Vp=pVp}, because \m{(1-p)V=1-p} by
+\m{V=1-s\,pXV}. Therefore
+\[(1-p)\,WXV\,p=W(1-p)Xp\,Vp+s\,WAW\,XVp=-\,WA\,Vp+s\,WAW\,XVp,\]
+and, writing \m{WAV-A=(W-1)AV+A(V-1)},
+\[\mathcal{I}_1=-s\,\tr\bigl(pA\,\bigl((W-1)AV+A(V-1)\bigr)\,p\bigr)+s^{2}\,\tr\bigl(pA\cdot WAW\cdot XV\,p\bigr).\]
+By \inp{1} and the bounds for $W$ and~$V$,
+$\abs{\mathcal{I}_1}\le\hs{A}^{2}(2\delta\cdot2+2\delta)+\hs{A}\cdot4\hs{A}\cdot\delta\cdot2=14\,\delta\hs{A}^{2}\le\tfrac{63}{2}\,\delta c^{2}$.
+
+\emph{The term $\mathcal{I}_2$: the change of projection.} A computation with \m{p^{2}=p}, \m{q^{2}=q} shows that
+$D^{2}$ commutes with~$p$ and that \m{pDp=-pD^{2}}, \m{(1-p)D(1-p)=(1-p)D^{2}}. So \m{D=D_0+D_1} with
+\[D_0=(1-2p)\,D^{2},\qquad D_1=pq(1-p)+(1-p)qp,\qquad\text{while}\quad \comm{p}{q}=pq(1-p)-(1-p)qp.\]
+For every matrix~$Z$, since \m{(1-p)Zp=-(1-p)\comm{p}{Z}p} and \m{pZ(1-p)=p\,\comm{p}{Z}(1-p)}, the cyclicity of the
+trace gives $\tr(D_1Z)=-\tr\bigl(\comm{p}{q}\,\comm{p}{Z}\bigr)$. For \m{Z=WX} we have
+\m{\comm{p}{WX}=WA-s\,WAW\,X}, and \m{\tr(\comm{p}{q}\,Y)=0} by hypothesis, so
+\[\mathcal{I}_2=-\tr(D_0\,WX)+\tr\Bigl(\comm{p}{q}\,\bigl((A-Y)+(W-1)A-s\,WAW\,X\bigr)\Bigr).\]
+Here \m{\hs{D_0}=\hs{D^{2}}\le c^{2}}, because \m{1-2p} is unitary; \m{\hs{WX}\le2\delta}; $\hs{\comm{p}{q}}=\hs{D_1}\le\hs{D}\le c$;
+and the second factor has norm at most $\delta c+2\delta\hs{A}+4\hs{A}\delta\le10\,\delta c$. Hence
+$\abs{\mathcal{I}_2}\le2\,\delta c^{2}+10\,\delta c^{2}$.
+
+Together $\abs{\mathcal{I}(s)}\le(\tfrac{63}{2}+12+\tfrac54)\,\delta c^{2}\le100\,\delta c^{2}$.
+\end{proof}
+\leanline{\lean{existsdetcompresseqexplogOneAdd}}
+
+The hypothesis \m{\tr(\comm{p}{q}Y)=0} removes the only term of second order that the change from $p$ to~$q$ could
+produce: the pairing of the off-diagonal part of \m{q-p} with the off-diagonal part of~$X$.
+
+The second result applies this to Flensted-Jensen's formula. For \m{g\in\Us{\varepsilon}} near~$1$ it finds a
+matrix~$y$ that may replace $g$ in the formula and whose principal minors, conjugated by any element of the
+maximal compact subgroup, are Gaussian in \m{g-1} with the \emph{same} sign for compact and non-compact pairs. For
+$g$ itself the signs differ, because \m{X=g-1} is, to first order, anti-hermitian on the compact pairs and
+hermitian on the non-compact ones; the passage from $g$ to~$y$ removes the triangular parts of the compact block
+of~$X$, which costs nothing in the formula and flips the sign.
+
+\begin{proposition}[principal minors for Flensted-Jensen's formula]\label{p:minors}
+Let $\Omega$ be a finite set, $\varepsilon\colon\Omega\to\{\pm1\}$ signs, $H$ a real number, \m{l\in\ZZ^{\Omega}} a
+vector that has gap~$H$ for~$\varepsilon$, and \m{g\in\Us{\varepsilon}}. Put \m{X=g-1} and suppose that
+\m{\hs{X}<\tfrac1{1000}}. Then there is an \m{\Omega\times\Omega} matrix~$y$ with \m{\dsc{l}{g}=\fj{l}{1}{y}} such that
+for every subset \m{\Pi\subseteq\Omega} with \m{l_i<l_{i'}} for all \m{i\in\Pi} and \m{i'\notin\Pi}, and for every
+\m{h\in\Ks{\varepsilon}}, there is a complex number~$\eta$ with
+\begin{gather*}
+\pmn{\Pi}{h^{*}\,y\,h}=\exp\Bigl(\tr\bigl(\cpr{\Pi}\,\lgo{X}\bigr)+\tfrac14\hs{\comm{\cpr{\Pi}}{X}}^{2}+\eta\Bigr),\\
+\abs{\eta}\le200000\,\hs{X}\,\Bigl(\hs{\comm{\cpr{\Pi}}{X}}^{2}+\hs{\comm{\cpr{\Pi}}{h}}^{2}\Bigr).
+\end{gather*}
+\end{proposition}
+\begin{proof}
+For an \m{\Omega\times\Omega} matrix~$Z$ let $Z^{\uparrow}$ be the matrix that keeps the entries $Z_{ii'}$ with
+\m{\varepsilon_i=\varepsilon_{i'}} and \m{l_i<l_{i'}} and replaces the others by zero, and $Z^{\downarrow}$ the same with
+\m{l_i>l_{i'}}. Put \m{\delta_0=\hs{X}} and
+\[y=(1-X^{\uparrow})\,g\,(1-X^{\downarrow}).\]
+With $X_1=(1-X^{\uparrow})g-1=X-X^{\uparrow}-X^{\uparrow}X$ we have $y-1=X_1-X^{\downarrow}-X_1X^{\downarrow}$, and by~\inp{1}
+$\hs{X^{\uparrow}},\hs{X^{\downarrow}}\le\delta_0$, so
+\begin{equation}\label{e:ynear}
+\hs{X_1}\le2\delta_0+\delta_0^{2},\qquad \hs{y-1}\le3\delta_0+3\delta_0^{2}+\delta_0^{3}\le4\,\delta_0<\tfrac12 .
+\end{equation}
+
+\emph{The formula.} The matrices $g$, \m{(1-X^{\uparrow})g} and $y$ are within Hilbert--Schmidt distance less
+than~$1$ of~$1$, hence accretive, as are their adjoints. By \inp{7}(a) with \m{a=1},
+\m{\dsc{l}{g}=\fj{l}{1}{g}}. By \inp{7}(b) for \m{u'=X^{\uparrow}} and \m{Y=g},
+$\fj{l}{1}{((1-X^{\uparrow})g)^{*}}=\overline{\fj{l}{1}{g}}$. The matrix \m{u'=(X^{\downarrow})^{*}} also has its non-zero
+entries at compact pairs with \m{l_i<l_{i'}}, and $(1-u')\,((1-X^{\uparrow})g)^{*}=y^{*}$; so \inp{7}(b) for this $u'$ and
+\m{Y=((1-X^{\uparrow})g)^{*}} gives $\fj{l}{1}{y}=\overline{\fj{l}{1}{((1-X^{\uparrow})g)^{*}}}=\fj{l}{1}{g}$.
+
+\emph{Upper sets.} Let \m{\Pi'\subseteq\Omega} be such that \m{l_{i'}<l_i} for all \m{i\in\Pi'}, \m{i'\notin\Pi'}. Then
+\begin{equation}\label{e:upper}
+\pmn{\Pi'}{y}=\pmn{\Pi'}{g}.
+\end{equation}
+Indeed \m{(X^{\uparrow})_{ii'}=0} for \m{i\in\Pi'}, \m{i'\notin\Pi'}, and \m{(X^{\downarrow})_{i'i}=0} for such indices, so by
+\inp{4}(a) the minor is multiplicative on the three factors of~$y$; and $\pmn{\Pi'}{1-X^{\uparrow}}=1=\pmn{\Pi'}{1-X^{\downarrow}}$
+by \inp{4}(b), these being determinants of matrices that are triangular for the injective function~$l$, or~$-l$,
+with diagonal entries~$1$. In particular \m{\det y=\det g}.
+
+Now fix $\Pi$ and $h$ as in the statement, and write \m{p=\cpr{\Pi}}, \m{A=\comm{p}{X}}, \m{\alpha_0=\hs{A}},
+\m{\kappa_0=\hs{\comm{p}{h}}}. The map \m{Z\mapsto\comm{p}{Z}} multiplies the entry at \m{(i,i')} by $1$, $-1$ or~$0$; so
+it commutes with the passage to $Z^{\uparrow}$, $Z^{\downarrow}$ and \m{\bd{\varepsilon}{Z}}, and it kills diagonal
+entries. Let $A_c=\bd{\varepsilon}{A}=A^{\uparrow}+A^{\downarrow}$ be the compact part of~$A$ and \m{A_n=A-A_c} its
+non-compact part; they have norms at most~$\alpha_0$, and \m{\tr(A_cA_n)=0}.
+
+\emph{The commutator of $y$.} From the formulas for \m{y-1} and $X_1$,
+\begin{equation}\label{e:commy}
+\comm{p}{y-1}=A_n-R,\qquad R=G+X_1A^{\downarrow}+(A-A^{\uparrow}-G)\,X^{\downarrow},\qquad G=A^{\uparrow}X+X^{\uparrow}A,
+\end{equation}
+and $\hs{R}\le2\delta_0\alpha_0+(2\delta_0+\delta_0^{2})\alpha_0+(2\alpha_0+2\delta_0\alpha_0)\delta_0\le7\,\delta_0\alpha_0$.
+
+\emph{Three expansions.} Let $p'=1-p=\cpr{\Omega\setminus\Pi}$ and \m{q=h\,p\,h^{*}}, an orthogonal projection with
+$\hs{p-q}=\hs{\comm{p}{h}h^{*}}=\kappa_0$. We apply Proposition~\ref{p:compress} three times; the six slots are
+\m{(p,q,X,Y,\delta,c)}.
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=1pt]
+\item With \m{(p',p',X,-A,\delta_0,\alpha_0)}: here \m{\comm{p'}{X}=-A}. So
+  $\det(1+p'X)=\exp\bigl(\tr(p'\lgo{X})-\tfrac14\tr(A^{2})+\eta_1\bigr)$ with $\abs{\eta_1}\le100\,\delta_0\alpha_0^{2}$.
+\item With $(p',p',y-1,-A_n,4\delta_0,4\alpha_0)$: by \eqref{e:commy}, \m{\comm{p'}{y-1}+A_n=R} has norm at most
+  \m{16\,\delta_0\alpha_0}. So $\det(1+p'(y-1))=\exp\bigl(\tr(p'\lgo{y-1})-\tfrac14\tr(A_n^{2})+\eta_2\bigr)$ with
+  $\abs{\eta_2}\le6400\,\delta_0\alpha_0^{2}$.
+\item With $(q,p,y-1,A_n,4\delta_0,4(\alpha_0+\kappa_0))$: the matrices $h$ and~$p$ commute with $\dg{\varepsilon}$, so
+  \m{\comm{q}{p}} is block diagonal, and its trace against~$A_n$, which is supported on the non-compact pairs,
+  vanishes; and $\comm{q}{y-1}-A_n=\comm{q-p}{y-1}-R$ has norm at most
+  $2\kappa_0\cdot4\delta_0+7\delta_0\alpha_0\le16\,\delta_0(\alpha_0+\kappa_0)$. So
+  $\det(1+q(y-1))=\exp\bigl(\tr(p\,\lgo{y-1})-\tfrac14\tr(A_n^{2})+\eta_3\bigr)$ with
+  $\abs{\eta_3}\le6400\,\delta_0(\alpha_0+\kappa_0)^{2}$.
+\end{enumerate}
+The left sides are minors: $\det(1+p'X)=\pmn{\Omega\setminus\Pi}{g}$, $\det(1+p'(y-1))=\pmn{\Omega\setminus\Pi}{y}$, and by
+Sylvester's identity $\det(1+q(y-1))=\det(1+p\,h^{*}(y-1)h)=\pmn{\Pi}{h^{*}yh}$. The complement of~$\Pi$ is an upper
+set, so the first two are equal by \eqref{e:upper}; and $\exp\tr\lgo{y-1}=\det y=\det g=\exp\tr\lgo{X}$ by~\inp{3}. Multiplying
+(iii) by (ii), using \m{p+p'=1}, and dividing by~(i), which is not zero, we find
+\begin{equation}\label{e:three}
+\pmn{\Pi}{h^{*}yh}=\exp\Bigl(\tr(p\,\lgo{X})+\tfrac14\tr(A^{2})-\tfrac12\tr(A_n^{2})+\eta_2+\eta_3-\eta_1\Bigr).
+\end{equation}
+
+\emph{The sign.} Put \m{V=g^{-1}-1} and \m{E=VA+AV+VAV}. Since $g^{*}=\dg{\varepsilon}g^{-1}\dg{\varepsilon}$, we have
+$X^{*}=\dg{\varepsilon}V\dg{\varepsilon}$, and
+\[\comm{p}{V}=-g^{-1}A\,g^{-1}=-(A+E),\qquad A^{*}=-\comm{p}{X^{*}}=\dg{\varepsilon}(A+E)\dg{\varepsilon}.\]
+Conjugation by $\dg{\varepsilon}$ fixes $A_c$ and changes the sign of~$A_n$, so
+\[\hs{A}^{2}=\tr(A^{*}A)=\tr\bigl((A+E)(A_c-A_n)\bigr)=\tr(A_c^{2})-\tr(A_n^{2})+\tr\bigl(E(A_c-A_n)\bigr).\]
+With $\tr(A^{2})=\tr(A_c^{2})+\tr(A_n^{2})$ this turns the exponent of \eqref{e:three} into
+$\tr(p\,\lgo{X})+\tfrac14\hs{A}^{2}+\eta$ for
+\[\eta=\eta_2+\eta_3-\eta_1+\tfrac14\tr\bigl(E\,(A_n-A_c)\bigr).\]
+By \inp{2}, \m{\hs{V}\le2\delta_0}, so $\hs{E}\le(4\delta_0+4\delta_0^{2})\alpha_0\le5\,\delta_0\alpha_0$, and \m{\hs{A_n-A_c}=\alpha_0}. Therefore
+\[\abs{\eta}\le\delta_0\bigl(6400\,\alpha_0^{2}+6400\,(\alpha_0+\kappa_0)^{2}+100\,\alpha_0^{2}+2\,\alpha_0^{2}\bigr)\le19302\,\delta_0\,(\alpha_0^{2}+\kappa_0^{2}),\]
+which is less than the bound claimed.
+\end{proof}
+\leanline{\lean{existsprincipalMinoreqexp}}
+
+\sect{The Gaussian shape: proof of Theorem 1}{s:gauss}
+For an integer vector $w$ on~$\Omega$ write \m{\abs{w}_1=\sum_i\abs{w_i}}; then \m{-\abs{w}_1\le w_i\le\abs{w}_1} for all~$i$,
+so that Definition~\ref{d:wm} applies with \m{c_1=-\abs{w}_1} and \m{c_2=\abs{w}_1}.
+
+\begin{lemma}[sums over the level sets]\label{l:levelsums}
+Let $\Omega$ be a finite set, $w$ an integer vector on~$\Omega$ and $X$ an \m{\Omega\times\Omega} matrix. Then, the sums
+being over the integers~$\tau$ with \m{-\abs{w}_1<\tau\le\abs{w}_1},
+\[\sum_{\tau}\hs{\comm{\cpr{\{w\ge\tau\}}}{X}}^{2}=\gwn{w}{X}\qquad\text{and}\qquad
+\sum_{\tau}\tr\bigl(\cpr{\{w\ge\tau\}}\,X\bigr)=\sum_{i\in\Omega}\bigl(w_i+\abs{w}_1\bigr)\,X_{ii}.\]
+\end{lemma}
+\begin{proof}
+The entry of \m{\comm{\cpr{\{w\ge\tau\}}}{X}} at \m{(i,i')} is $X_{ii'}$ times the difference of the indicators of
+\m{w_i\ge\tau} and \m{w_{i'}\ge\tau}. This difference is $\pm1$ for the integers~$\tau$ with
+$\min(w_i,w_{i'})<\tau\le\max(w_i,w_{i'})$, which are \m{\abs{w_i-w_{i'}}} in number and lie in the range of summation, and
+it is $0$ for the others. This gives the first identity. For the second, the diagonal entry of \m{\cpr{\{w\ge\tau\}}X}
+at~$i$ is $X_{ii}$ for the \m{w_i+\abs{w}_1} values \m{\tau\le w_i} of the range, and $0$ for the others.
+\end{proof}
+\leanline{\lean{sumnormliecoordProjsq}}
+
+\begin{lemma}[the products of minors decay on the compact group]\label{l:minorsK}
+Let $\Omega$ be a finite set, $\varepsilon\colon\Omega\to\{\pm1\}$ signs, $w$ an integer vector on~$\Omega$ and
+\m{h\in\Ks{\varepsilon}}. Then $\abs{\wm{w}{h}}^{2}\le\exp\bigl(-\tfrac12\,\gwn{w}{h}\bigr)$.
+\end{lemma}
+\begin{proof}
+Since \m{\abs{\det h}=1}, Definition~\ref{d:wm} and Lemma~\ref{l:levelsums} reduce the claim to one factor: for a
+subset \m{\Pi\subseteq\Omega} and \m{p=\cpr{\Pi}} we show $\abs{\pmn{\Pi}{h}}^{2}\le\exp(-\tfrac12\hs{\comm{p}{h}}^{2})$. By
+Sylvester's identity $\pmn{\Pi}{h}=\det(1-p(1-h))=\det Z$ with \m{Z=(1-p)+p\,h\,p}. A positive semidefinite
+matrix has determinant at most the exponential of its trace minus its size, by the inequality \m{a\le e^{a-1}} for its
+eigenvalues~$a$; for $Z^{*}Z$ this reads
+\[\abs{\det Z}^{2}\le\exp\bigl(\tr(Z^{*}Z)-\abs{\Omega}\bigr)=\exp\bigl(\hs{php}^{2}-\tr p\bigr).\]
+As $h$ is unitary, \m{\hs{ph}^{2}=\tr p=\hs{hp}^{2}}, hence
+$\hs{\comm{p}{h}}^{2}=\hs{ph(1-p)}^{2}+\hs{(1-p)hp}^{2}=2\,(\tr p-\hs{php}^{2})$, and the exponent is
+\m{-\tfrac12\hs{\comm{p}{h}}^{2}}.
+\end{proof}
+\leanline{\lean{normweightMinorssqleexp}}
+
+\begin{proof}[Proof of Theorem 1]
+Put \m{X=g-1}, so \m{\hs{X}\le\delta\le10^{-12}} because \m{T\ge1}, and abbreviate \m{\Lambda=\lowk{l}},
+\m{\Upsilon=\ups{l}}, $c_\Lambda=\ktn{\varepsilon}{\lowk{l}}$ and
+\[E=\tr\bigl(\dg{\Lambda}\,\lgo{X}\bigr),\qquad q_0=\tfrac14\,\gwn{-\Upsilon}{X}\ \ge0,\qquad \kappa=e^{-q_0}\in(0,1].\]
+The vector $l$ has a gap, so Proposition~\ref{p:minors} gives a matrix~$y$ with
+\m{\dsc{l}{g}=\fj{l}{1}{y}}. By Definition~\ref{d:coeff}, with the factor $\wm{\Lambda}{h}\overline{\wm{\Lambda}{h}}$ in the numerator,
+\begin{equation}\label{e:fjy}
+\dsc{l}{g}=\frac1{c_\Lambda}\int_{\Ks{\varepsilon}}\frac{\abs{\wm{\Lambda}{h}}^{2}}{\wm{-\Upsilon}{h^{*}y\,h}}\,dh .
+\end{equation}
+
+\emph{The denominator.} Fix \m{h\in\Ks{\varepsilon}}. For an integer~$\tau$ the set \m{\{-\Upsilon\ge\tau\}} satisfies the
+condition of Proposition~\ref{p:minors}: if $-\Upsilon_i\ge\tau>-\Upsilon_{i'}$ then \m{\Upsilon_i<\Upsilon_{i'}}, so
+\m{l_i<l_{i'}} by \inp{8}(d). Write $p_\tau=\cpr{\{-\Upsilon\ge\tau\}}$. The proposition gives numbers $\eta_\tau$ with
+\[\pmn{\{-\Upsilon\ge\tau\}}{h^{*}yh}=\exp\Bigl(\tr(p_\tau\lgo{X})+\tfrac14\hs{\comm{p_\tau}{X}}^{2}+\eta_\tau\Bigr),\]
+\[\abs{\eta_\tau}\le2\cdot10^{5}\,\delta\,\bigl(\hs{\comm{p_\tau}{X}}^{2}+\hs{\comm{p_\tau}{h}}^{2}\bigr),\]
+and, for the set~$\Omega$ itself, where the commutators vanish, \m{\det(h^{*}yh)=\exp\tr\lgo{X}}. We insert this into
+Definition~\ref{d:wm} for the weight~$-\Upsilon$ and sum over~$\tau$ by Lemma~\ref{l:levelsums}: the traces add up to
+$-\tr(\dg{\Upsilon}\lgo{X})+\abs{\Upsilon}_1\tr\lgo{X}$, the squares to~$4q_0$. Hence
+\begin{equation}\label{e:denominator}
+\wm{-\Upsilon}{h^{*}yh}=\exp\bigl(q_0-E-r(h)\bigr),\qquad r(h)=\tr\bigl(\dg{\Upsilon-\Lambda}\lgo{X}\bigr)-\sum_\tau\eta_\tau .
+\end{equation}
+To bound $r(h)$ we use \eqref{e:rhoc}, the bound $\abs{\lgo{X}_{ii}}\le\hs{\lgo{X}}\le2\delta$ of~\inp{3}, Lemma~\ref{l:levelsums}
+for $X$ and for~$h$, and, again by \eqref{e:rhoc},
+$\gwn{-\Upsilon}{h}\le\gwn{\Lambda}{h}+2\abs{\Omega}\hs{h}^{2}=\gwn{\Lambda}{h}+2\abs{\Omega}^{2}$:
+\begin{equation}\label{e:rbound}
+\abs{r(h)}\le2\abs{\Omega}^{2}\delta+2\cdot10^{5}\,\delta\,\bigl(4q_0+\gwn{\Lambda}{h}+2\abs{\Omega}^{2}\bigr)
+\le10^{6}\,\delta\,\bigl(G_0(h)+\abs{\Omega}^{2}\bigr),
+\end{equation}
+where $G_0(h)=q_0+\tfrac12\gwn{\Lambda}{h}$.
+
+\emph{The comparison.} By \eqref{e:fjy} and \eqref{e:denominator}, and since $\int\abs{\wm{\Lambda}{h}}^{2}dh=c_\Lambda$ and
+$dh$ has mass one,
+\begin{align*}
+\frac{\dsc{l}{g}}{e^{E}}-\kappa&=\frac1{c_\Lambda}\int_{\Ks{\varepsilon}}\abs{\wm{\Lambda}{h}}^{2}\,e^{-q_0}\bigl(e^{r(h)}-1\bigr)\,dh,\\
+\frac{\kappa}{10}+e^{-100T}&=\frac1{c_\Lambda}\int_{\Ks{\varepsilon}}\Bigl(\frac{\kappa}{10}\abs{\wm{\Lambda}{h}}^{2}+e^{-100T}c_\Lambda\Bigr)dh.
+\end{align*}
+So it suffices to show, for every \m{h\in\Ks{\varepsilon}},
+\begin{equation}\label{e:pointwise}
+\abs{\wm{\Lambda}{h}}^{2}\,e^{-q_0}\,\bigabs{e^{r(h)}-1}\ \le\ \frac{\kappa}{10}\,\abs{\wm{\Lambda}{h}}^{2}+e^{-100T}\,c_\Lambda .
+\end{equation}
+If \m{\abs{r(h)}<\tfrac1{20}}, then $\abs{e^{r(h)}-1}\le2\abs{r(h)}<\tfrac1{10}$ and \eqref{e:pointwise} holds without
+the last term. Suppose \m{\abs{r(h)}\ge\tfrac1{20}}. Since $10^{6}\delta\le10^{-6}/T\le10^{-6}$ and \m{\abs{\Omega}^{2}\le T},
+\eqref{e:rbound} gives $\tfrac1{20}\le10^{-6}(G_0(h)+T)/T$, that is \m{G_0(h)\ge(5\cdot10^{4}-1)\,T}, and also
+\m{\abs{r(h)}\le10^{-6}(G_0(h)+T)}. By Lemma~\ref{l:minorsK} and \m{\abs{e^{r}-1}\le e^{\abs{r}}} the left side of
+\eqref{e:pointwise} is at most
+\[\exp\bigl(-G_0(h)+\abs{r(h)}\bigr)\le\exp\bigl(-(1-10^{-6})\,G_0(h)+10^{-6}T\bigr)\le e^{-49998\,T}.\]
+It remains to bound $c_\Lambda$ from below. Apply \inp{10}(b) to the compact group \m{S=\Ks{\varepsilon}} with its Haar
+measure, the inclusion~$j$ and \m{R=1}: every \m{h\in\Ks{\varepsilon}} has \m{\op{h}=1}, and
+\m{\dsc{l}{h}=\wm{\Lambda}{h}} by \inp{8}(b), so
+\begin{align*}
+1&\le\bigl(2000\,(\abs{\Omega}+L+1)^{6}\bigr)^{2\abs{\Omega}^{2}}\cdot4\,c_\Lambda,\\
+\log c_\Lambda&\ge-\log4-2\abs{\Omega}^{2}\log2000-12\abs{\Omega}^{2}\log(\abs{\Omega}+L+1)\ge-30\,T,
+\end{align*}
+by the three lower bounds for~$T$. Hence $e^{-49998T}\le e^{-100T}c_\Lambda$, which proves \eqref{e:pointwise}, and the
+theorem with \m{\kappa=e^{-q_0}}.
+\end{proof}
+\leanline{\lean{dsCoeffgaussianshape}\sep \lean{gapWeightedNormSq}}
+
+\sect{Two-factor data: the integrand near the block-diagonal matrices}{s:twofactor}
+Norms without mention are Hilbert--Schmidt norms in this section too. The aim is Proposition~\ref{p:nearone}: where
+both $j_1(\sigma)$ and $j_2(\sigma)$ are close to block-diagonal matrices, the point $\sigma$ can be moved, without
+changing the integrand, to a point where both are close to~$1$.
+
+\begin{lemma}[a trace inequality]\label{l:trace}
+Let $\Omega$ be a finite set, $\varepsilon\colon\Omega\to\{\pm1\}$ signs, \m{g\in\Us{\varepsilon}}, let $c$ and $C$ be
+real numbers and $v$, $w$ integer vectors on~$\Omega$ such that, for all \m{i,i'\in\Omega},
+\[c\,v_i^{2}\le w_i,\qquad\text{and}\qquad w_i\le C\ \text{ if }\ \varepsilon_i\ne\varepsilon_{i'}.\]
+Then $c\,\hs{\dg{v}(g-1)}^{2}+2\re\tr\bigl(\dg{w}(g-1)\bigr)\le2C\,\hs{g-\bd{\varepsilon}{g}}^{2}$.
+\end{lemma}
+\begin{proof}
+Since $g^{-1}=\dg{\varepsilon}g^{*}\dg{\varepsilon}$ and $\dg{\varepsilon}$ commutes with $\dg{w}$, the number
+$\tr(\dg{w}(g^{-1}-1))=\tr(\dg{w}(g^{*}-1))$ is the complex conjugate of \m{\tr(\dg{w}(g-1))}. As
+$(g-1)(1-g^{-1})=(g-1)+(g^{-1}-1)$, this gives
+$2\re\tr(\dg{w}(g-1))=\re\tr\bigl(\dg{w}(g-1)(1-g^{-1})\bigr)=\sum_{i,i'}w_i\re\bigl((g-1)_{ii'}(1-g^{-1})_{i'i}\bigr)$. Now
+$(1-g^{-1})_{i'i}=\delta_{ii'}-\varepsilon_i\varepsilon_{i'}\overline{g_{ii'}}$: for a compact pair the term is
+\m{-w_i\abs{(g-1)_{ii'}}^{2}}, for a non-compact pair it is \m{w_i\abs{g_{ii'}}^{2}}. Hence the left side of the claim is
+\[\sum_{\varepsilon_i=\varepsilon_{i'}}(c\,v_i^{2}-w_i)\,\abs{(g-1)_{ii'}}^{2}+\sum_{\varepsilon_i\ne\varepsilon_{i'}}(c\,v_i^{2}+w_i)\,\abs{g_{ii'}}^{2}.\]
+The first sum is at most~$0$, and in the second \m{c\,v_i^{2}+w_i\le2w_i\le2C}, while
+$\hs{g-\bd{\varepsilon}{g}}^{2}=\sum_{\varepsilon_i\ne\varepsilon_{i'}}\abs{g_{ii'}}^{2}$.
+\end{proof}
+\leanline{\lean{normsqaddretracele}}
+
+\begin{lemma}[a unitary block]\label{l:block}
+Let $\Omega$, $\Xi$ and $\Xi'$ be finite sets, $\varepsilon\colon\Omega\to\{\pm1\}$ signs, $u$ a \m{\Xi\times\Xi}
+matrix, and \m{e\colon\Xi\sqcup\Xi'\to\Omega} a bijection such that \m{\varepsilon_{e(\xi)}=1} for every \m{\xi\in\Xi}.
+Suppose that \m{u^{*}u=1}. Then there is \m{g\in\Us{\varepsilon}} with $g-1=\inc{e|_\Xi}\,(u-1)\,\inc{e|_\Xi}^{*}$.
+\end{lemma}
+\begin{proof}
+Put \m{Q=\inc{e|_\Xi}}. Then \m{Q^{*}Q=1} because $e$ is injective, and \m{\dg{\varepsilon}Q=Q} because \m{\varepsilon=1}
+on~$e(\Xi)$. For \m{g=1+Q(u-1)Q^{*}} this gives
+$g^{*}\dg{\varepsilon}g=\dg{\varepsilon}+Q\bigl((u^{*}-1)+(u-1)+(u^{*}-1)(u-1)\bigr)Q^{*}=\dg{\varepsilon}+Q(u^{*}u-1)Q^{*}=\dg{\varepsilon}$.
+\end{proof}
+\leanline{\lean{existsunitarysuboneeqinclMatrix}}
+
+\begin{lemma}[a block of weight zero does not change the coefficient]\label{l:zeroblock}
+Let $\Omega$ and $\Xi$ be finite sets, $\varepsilon\colon\Omega\to\{\pm1\}$ signs, \m{l\in\ZZ^{\Omega}}, $u$ a
+\m{\Xi\times\Xi} matrix, and \m{\iota\colon\Xi\to\Omega} a map with \m{\varepsilon_{\iota(\xi)}=1} and
+\m{\lowk{l}_{\iota(\xi)}=0} for every \m{\xi\in\Xi}. Let $h,g,\tilde g\in\Us{\varepsilon}$ with
+$h-1=\inc{\iota}\,u\,\inc{\iota}^{*}$ and \m{\tilde g=h\,g}. Then
+\begin{enumerate}[label=\textup{(\arabic*)},leftmargin=2.3em,itemsep=1pt]
+\item \m{\dg{\lowk{l}}\,(h-1)=0};
+\item \m{\dsc{l}{\tilde g}=\dsc{l}{g}};
+\item $\hs{\tilde g-1}^{2}+2\re\tr(\tilde g-1)\le2\,\hs{g-\bd{\varepsilon}{g}}^{2}$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+The matrix \m{h-1} is supported on \m{\iota(\Xi)\times\iota(\Xi)}, where \m{\lowk{l}=0} and \m{\varepsilon=1}. This gives (1),
+and it shows that $h$ commutes with $\dg{\varepsilon}$; so \m{h\in\Ks{\varepsilon}}, $h$ is unitary, and
+$\bd{\varepsilon}{hg}=h\,\bd{\varepsilon}{g}$.
+
+For (2) we show $\wm{\lowk{l}}{h\,y}=\wm{\lowk{l}}{y}$ for every invertible~$y$. Let \m{\tau\in\ZZ} and
+\m{\Pi=\{\lowk{l}\ge\tau\}}. An entry $h_{ii'}$ with \m{i\ne i'} vanishes unless \m{i,i'\in\iota(\Xi)}, and then
+\m{\lowk{l}_i=0=\lowk{l}_{i'}}; so no such entry joins $\Pi$ to its complement, and $\pmn{\Pi}{hy}=\pmn{\Pi}{h}\pmn{\Pi}{y}$
+by \inp{4}(a). If \m{\tau\le0} then \m{\iota(\Xi)\subseteq\Pi} and \m{\pmn{\Pi}{h}=\det h}; if \m{\tau>0} then $\Pi$ does
+not meet $\iota(\Xi)$ and \m{\pmn{\Pi}{h}=1}. In the product of Definition~\ref{d:wm}, taken with \m{c_1\le0\le c_2}, the
+factors \m{\det h} are \m{-c_1} in number and cancel against \m{(\det h)^{c_1}}. Now
+$\bd{\varepsilon}{\tilde g}^{-1}\tilde g=\bd{\varepsilon}{g}^{-1}g$, and in the integral that defines
+$\dsc{l}{\tilde g}=\fj{l}{h\,\bd{\varepsilon}{g}}{\bd{\varepsilon}{g}^{-1}g}$ the factor
+$\wm{\lowk{l}}{h\,\bd{\varepsilon}{g}\,h_1}$, with $h_1$ the variable of integration, equals $\wm{\lowk{l}}{\bd{\varepsilon}{g}\,h_1}$. This is~(2).
+
+For (3) apply Lemma~\ref{l:trace} to~$\tilde g$ with \m{c=C=1} and \m{v=w=1}; its right side is
+$2\hs{\tilde g-\bd{\varepsilon}{\tilde g}}^{2}=2\hs{h(g-\bd{\varepsilon}{g})}^{2}=2\hs{g-\bd{\varepsilon}{g}}^{2}$ by~\inp{1}.
+\end{proof}
+\leanline{\lean{dsCoeffmuleqofzeroweightblock}}
+
+\begin{lemma}[decay away from the block-diagonal matrices]\label{l:fourth}
+Let $\Omega$ be a finite set, $\varepsilon\colon\Omega\to\{\pm1\}$ signs, \m{l\in\ZZ^{\Omega}} and $A$ a natural number
+such that $l$ has large gap~$A$ for~$\varepsilon$, and let \m{g\in\Us{\varepsilon}}. Then $\bd{\varepsilon}{g}$ is
+invertible and
+\[\abs{\dsc{l}{g}}^{4}\le\bigl(1+\hs{g-\bd{\varepsilon}{g}}^{2}\bigr)^{-A}.\]
+\end{lemma}
+\begin{proof}
+Write \m{J=\dg{\varepsilon}}, $g_0=\bd{\varepsilon}{g}=\tfrac12(g+JgJ)$ and \m{X=g-g_0=\tfrac12(g-JgJ)}. Expanding and
+using \m{g^{*}Jg=J} and \m{J^{2}=1} one finds $g_0^{*}g_0=\tfrac14(g^{*}g+Jg^{*}gJ+2)$ and
+$X^{*}X=\tfrac14(g^{*}g+Jg^{*}gJ-2)$, so
+\[g_0^{*}\,g_0=1+X^{*}X.\]
+Hence $g_0$ is invertible, and $\abs{\det g_0}^{2}=\det(1+X^{*}X)\ge1+\tr(X^{*}X)=1+\hs{X}^{2}$, the eigenvalues of
+$X^{*}X$ being non-negative. By \inp{9} with the natural number \m{A\le500\abs{\Omega}^{3}+A},
+$\abs{\dsc{l}{g}}^{2}\le\abs{\det g_0}^{-A}$; squaring gives the claim.
+\end{proof}
+\leanline{\lean{normdsCoeffpowfourle}}
+
+\begin{setting}[two-factor data]\label{set:two}
+$\Omega$, $\Omega'$ and $\Xi$ are finite sets, $S$ is a group, $\varepsilon\colon\Omega\to\{\pm1\}$ and
+$\varepsilon'\colon\Omega'\to\{\pm1\}$ are signs, \m{l\in\ZZ^{\Omega}}, \m{l'\in\ZZ^{\Omega'}},
+$j=(j_1,j_2)\colon S\to\Us{\varepsilon}\times\Us{\varepsilon'}$ is a homomorphism of groups, \m{e'\colon\Xi\to\Omega'} is
+a map, $B$ is a real number, $M$ a natural number, $e\colon\Xi\sqcup\{0,\dots,M-1\}\to\Omega$ a bijection and
+\m{\phi\colon S\to\CC} a function, and $\twof{l}{l'}{j}{e'}{B}{e}{\phi}$ holds.
+\end{setting}
+
+\begin{lemma}[the phase of the logarithms]\label{l:phaselog}
+In Setting~\ref{set:two}, let \m{\sigma\in S} with \m{\hs{j_1(\sigma)-1}\le\tfrac12} and
+\m{\hs{j_2(\sigma)-1}\le\tfrac12}. Then
+\[\phs{l}{l'}{\bigl(\lgo{j_1(\sigma)-1},\ \lgo{j_2(\sigma)-1}\bigr)}=\phi(\sigma).\]
+\end{lemma}
+\begin{proof}
+Pairs of matrices are added and multiplied componentwise, and for \m{\sigma'\in S} we write
+$Y_{\sigma'}=(j_1(\sigma')-1,\ j_2(\sigma')-1)$. Since $j$ is a homomorphism,
+$Y_\sigma(1+Y_{\sigma'})=Y_{\sigma\sigma'}-Y_{\sigma'}$. We claim that for every natural number~$n$ and every
+\m{\sigma'\in S}
+\[\phs{l}{l'}{Y_\sigma^{\,n}\,Y_\sigma\,(1+Y_{\sigma'})}=\phi(\sigma)\ \text{ if }n=0,\qquad\text{and}\quad=0\ \text{ if }n\ge1.\]
+For \m{n=0} the left side is $\phi(\sigma\sigma')-\phi(\sigma')=\phi(\sigma)$ by (T1), the linearity of the phase,
+and~(T3). For the step, $Y_\sigma^{\,n+1}Y_\sigma(1+Y_{\sigma'})=Y_\sigma^{\,n}Y_\sigma(1+Y_{\sigma\sigma'})-Y_\sigma^{\,n}Y_\sigma(1+Y_{\sigma'})$,
+and the two terms have the same phase by the claim for~$n$. With \m{\sigma'=1} the claim says that the phase of
+$Y_\sigma$ is $\phi(\sigma)$ and the phase of every higher power of~$Y_\sigma$ is~$0$. Now for \m{s\in[0,1]} the
+Neumann series $(1+sY_\sigma)^{-1}Y_\sigma=\sum_{n\ge0}(-s)^{n}Y_\sigma^{\,n+1}$ converges in both components, the norms
+being at most~$\tfrac12$; so the phase of \m{(1+sY_\sigma)^{-1}Y_\sigma} is $\phi(\sigma)$ for every~$s$. Integrating over~$s$
+and using \inp{3} for each of the two traces gives the lemma.
+\end{proof}
+\leanline{\lean{phaselogOneAdd}\sep \lean{phase}\sep \lean{subOnePair}}
+
+\begin{proposition}[moving a point near the identity]\label{p:nearone}
+In Setting~\ref{set:two}, let $\delta$ be a real number with \m{1\le B}, \m{0<\delta} and \m{\delta\le\tfrac1{100}}, and
+let \m{\sigma\in S} be such that
+\[\hs{j_1(\sigma)-\bd{\varepsilon}{j_1(\sigma)}}^{2}+\hs{j_2(\sigma)-\bd{\varepsilon'}{j_2(\sigma)}}^{2}\le\delta^{2}.\]
+Then there is \m{\sigma'\in S} with
+\[\lapint{l}{l'}{j}{\phi}{\sigma}=\lapint{l}{l'}{j}{\phi}{\sigma'},\qquad \hs{j_1(\sigma')-1}\le10\,\delta,\qquad
+\hs{j_2(\sigma')-1}\le10\,\delta .\]
+\end{proposition}
+\begin{proof}
+Write \m{g=j_1(\sigma)}, \m{g'=j_2(\sigma)}, \m{\Lambda=\lowk{l}}, \m{\Lambda'=\lowk{l'}}, and let $\chi$ be the integer vector
+on~$\Omega$ that is $0$ on $e(\Xi)$ and $1$ elsewhere. The matrix \m{c_0=\dg{\chi}(g-1)} consists of the rows of
+\m{g-1} outside~$e(\Xi)$.
+
+\emph{Step 1: \m{\hs{c_0}^{2}\le6\,\delta^{2}}.} We use Lemma~\ref{l:trace} three times. For $g$ with
+\m{(c,C,v,w)=(B,3B,\chi,-\Lambda)}: the hypothesis holds by (S2) on $e(\Xi)$ and by (S3) elsewhere, and the lemma gives
+$B\hs{c_0}^{2}-2\re\tr(\dg{\Lambda}(g-1))\le6B\,\hs{g-\bd{\varepsilon}{g}}^{2}$. For $g'$ with \m{(0,3B,0,\Lambda')}: the
+hypothesis is (T6), and $2\re\tr(\dg{\Lambda'}(g'-1))\le6B\,\hs{g'-\bd{\varepsilon'}{g'}}^{2}$. By (T1) and (T4) the two
+real parts are equal. Adding, \m{B\hs{c_0}^{2}\le6B\,\delta^{2}}, and \m{B\ge1}. For $g$ with \m{(-1,0,\chi,-\chi)} the
+lemma gives
+\begin{equation}\label{e:trc}
+-2\re\tr c_0\le\hs{c_0}^{2}.
+\end{equation}
+
+\emph{Step 2: a unitary matrix.} We write \m{\Omega\times\Omega} matrices in blocks for the partition of $\Omega$ into
+$e(\Xi)$, identified with~$\Xi$ by~$e$, and its complement~$\Omega_1$:
+\[g=\begin{pmatrix}g_{11}&g_{12}\\ g_{21}&g_{22}\end{pmatrix},\qquad
+c_0=\begin{pmatrix}0&0\\ g_{21}&g_{22}-1\end{pmatrix},\qquad
+\dg{\varepsilon}=\begin{pmatrix}1&0\\0&J_2\end{pmatrix}.\]
+By Step~1, \m{\hs{\tfrac12c_0}\le\tfrac12}; so by \inp{2} the matrix \m{W=(1+\tfrac12c_0)^{-1}} exists with
+\m{\hs{W-1}\le\hs{c_0}}, the block \m{1+g_{22}} is invertible, and
+\[W=\begin{pmatrix}1&0\\-(1+g_{22})^{-1}g_{21}&2\,(1+g_{22})^{-1}\end{pmatrix}.\]
+Let $u$ be the \m{\Xi\times\Xi} matrix with $u^{*}=g_{11}-g_{12}(1+g_{22})^{-1}g_{21}$. It is unitary: for
+\m{v\in\CC^{\Xi}} put $v'=-(1+g_{22})^{-1}g_{21}v\in\CC^{\Omega_1}$; then $g$ maps the vector \m{(v,v')} to
+\m{(u^{*}v,\,-v')}, and since $g$ preserves the form \m{\nrm{v}^{2}+v'^{*}J_2v'}, we get \m{\nrm{u^{*}v}=\nrm{v}}.
+
+\emph{Step 3: the new point.} By (T7) there is \m{\sigma_0\in S} with
+$j_1(\sigma_0)-1=\inc{e|_\Xi}(u-1)\inc{e|_\Xi}^{*}$ and $j_2(\sigma_0)-1=\inc{e'}(u-1)\inc{e'}^{*}$; put
+\m{\sigma'=\sigma_0\sigma}, \m{T=j_1(\sigma')-1} and \m{T'=j_2(\sigma')-1}. Lemma~\ref{l:zeroblock} applies to
+$(\iota,u,h,g,\tilde g)=(e|_\Xi,\,u-1,\,j_1(\sigma_0),\,g,\,j_1(\sigma'))$ by (S1) and (S2), and to
+$(e',\,u-1,\,j_2(\sigma_0),\,g',\,j_2(\sigma'))$ by (T5). Its part~(1) and (T1) give \m{\phi(\sigma_0)=0}, so
+\m{\phi(\sigma')=\phi(\sigma)} by (T3); with part~(2) for both factors, the integrand has the same value at $\sigma'$
+and at~$\sigma$. Part~(3) and (T2) give
+\begin{equation}\label{e:TT}
+\hs{T}^{2}+2\re\tr T\le2\,\hs{g-\bd{\varepsilon}{g}}^{2},\qquad \hs{T'}^{2}+2\re\tr T\le2\,\hs{g'-\bd{\varepsilon'}{g'}}^{2}.
+\end{equation}
+
+\emph{Step 4: the trace of~$T$.} In blocks \m{j_1(\sigma_0)} is $u$ on the first block and $1$ on the second, and
+$u\,g_{11}=1+u\,g_{12}(1+g_{22})^{-1}g_{21}$ by the definition of~$u$. Hence
+\begin{align*}
+T-c_0&=\begin{pmatrix}u\,g_{12}(1+g_{22})^{-1}g_{21}&u\,g_{12}\\0&0\end{pmatrix},\\
+\tr\bigl((T-c_0)(W-1)\bigr)&=-\tr\bigl(u\,g_{12}(1+g_{22})^{-1}g_{21}\bigr)=\tr c_0-\tr T,
+\end{align*}
+and by \inp{1}, $\re\tr c_0-\re\tr T\le(\hs{T}+\hs{c_0})\,\hs{c_0}$.
+
+\emph{Step 5: the bounds.} By \eqref{e:trc} and Step~4, $-2\re\tr T\le\hs{c_0}^{2}+2(\hs{T}+\hs{c_0})\hs{c_0}$. With
+\eqref{e:TT} and the hypothesis on~$\sigma$ this gives $(\hs{T}-\hs{c_0})^{2}\le2\delta^{2}+4\hs{c_0}^{2}\le26\,\delta^{2}$, so
+$\hs{T}\le(\sqrt6+\sqrt{26})\,\delta<7.6\,\delta$, and then
+$\hs{T'}^{2}\le2\delta^{2}+6\delta^{2}+2\,(7.6+2.5)\cdot2.5\,\delta^{2}<59\,\delta^{2}$. Both norms are at most~$10\,\delta$.
+\end{proof}
+\leanline{\lean{existsnearone}\sep \lean{laplaceIntegrand}}
+
+The unitary $u$ of Step~2 is the transfer matrix of the matrix~$g$ with its second block closed by the
+reflection~$-1$; the formal proof writes it as $1+\inc{e|_\Xi}^{*}W^{*}(g-1)^{*}\inc{e|_\Xi}$ and verifies its unitarity,
+and the identity of Step~4, by linear combinations of the defining relations.
+
+\sect{Laplace's method: proof of Theorem 2}{s:laplace}
+Throughout the proof the data are those of Theorem~2, and we abbreviate
+\[\mathsf{n}=(\abs{\Omega}+\abs{\Omega'})^{2},\qquad T=\mathsf{n}\,\log\beta,\qquad \gamma(\sigma)=\frac{2}{\op{j_1(\sigma)}}\qquad(\sigma\in S).\]
+Since \m{\beta\ge10^{12}} we have \m{\log\beta\ge1}, so \m{T\ge\mathsf{n}\ge4}. The map $j_1$ is continuous, being proper.
+By (T4), $\abs{\lapint{l}{l'}{j}{\phi}{\sigma}}=\abs{\dsc{l}{j_1(\sigma)}}\,\abs{\dsc{l'}{j_2(\sigma)}}$.
+
+\begin{proof}[Proof of Theorem 2]
+\emph{Step 1: decay.} For every natural number \m{c\le18\,\mathsf{n}} and every \m{\sigma\in S},
+\begin{equation}\label{e:decay}
+\abs{\lapint{l}{l'}{j}{\phi}{\sigma}}\le\gamma(\sigma)^{c}.
+\end{equation}
+Indeed \m{\abs{\dsc{l'}{\,\cdot\,}}\le1} and $\abs{\dsc{l}{g}}\le(2/\op{g})^{c}$ by \inp{9}, since \m{c\le18\,\mathsf{n}\le A}
+by hypothesis~(d), and $A$ is at most the gap of~$l$.
+
+\emph{Step 2: the real part.} For every \m{\sigma\in S},
+\begin{equation}\label{e:cone}
+4\,\abs{\lapint{l}{l'}{j}{\phi}{\sigma}}\ \le\ 8\,\Bigl(\re\lapint{l}{l'}{j}{\phi}{\sigma}+16\,\beta^{-50\mathsf{n}}\,\gamma(\sigma)^{8\mathsf{n}}\Bigr).
+\end{equation}
+Note first that an inequality $4\abs{z}\le8(\re z+16\,\epsilon)$ for a complex number~$z$ follows from
+\m{\abs{z}\le\epsilon}, because \m{\re z\ge-\abs{z}}. If $\gamma(\sigma)^{8\mathsf{n}}\le\beta^{-50\mathsf{n}}$, then
+$\beta^{-50\mathsf{n}}\gamma(\sigma)^{8\mathsf{n}}\ge\gamma(\sigma)^{16\mathsf{n}}\ge\abs{\lapint{l}{l'}{j}{\phi}{\sigma}}$ by \eqref{e:decay}, and
+\eqref{e:cone} holds. Suppose now that $\gamma(\sigma)^{8\mathsf{n}}\ge\beta^{-50\mathsf{n}}$. Then
+$\beta^{-50\mathsf{n}}\gamma(\sigma)^{8\mathsf{n}}\ge\beta^{-100\mathsf{n}}=e^{-100T}$, and it suffices to show
+\begin{equation}\label{e:cone2}
+4\,\abs{\lapint{l}{l'}{j}{\phi}{\sigma}}\le8\,\bigl(\re\lapint{l}{l'}{j}{\phi}{\sigma}+16\,e^{-100T}\bigr).
+\end{equation}
+Put \m{\delta=10^{-13}/T}, so \m{0<\delta\le\tfrac1{100}}, and let
+\[\operatorname{dist}(\sigma)^{2}=\hs{j_1(\sigma)-\bd{\varepsilon}{j_1(\sigma)}}^{2}+\hs{j_2(\sigma)-\bd{\varepsilon'}{j_2(\sigma)}}^{2}\]
+be the squared distance of $j(\sigma)$ from the block-diagonal matrices.
+
+\emph{Far from the block-diagonal matrices: $\operatorname{dist}(\sigma)^{2}\ge\delta^{2}$.} By Lemma~\ref{l:fourth} for both factors,
+$\abs{\lapint{l}{l'}{j}{\phi}{\sigma}}^{4}\le(1+\operatorname{dist}(\sigma)^{2})^{-A}\le(1+\delta^{2})^{-A}$. As $\log(1+\delta^{2})\ge\tfrac12\delta^{2}$ and
+\m{A\ge10^{30}T^{3}} by~(d), $A\log(1+\delta^{2})\ge5000\,T\ge400\,T$. So $\abs{\lapint{l}{l'}{j}{\phi}{\sigma}}\le e^{-100T}$, which gives
+\eqref{e:cone2}.
+
+\emph{Near them: $\operatorname{dist}(\sigma)^{2}\le\delta^{2}$.} By (a), \m{B\ge1} and Proposition~\ref{p:nearone} there is \m{\sigma'\in S} with
+$\lapint{l}{l'}{j}{\phi}{\sigma}=\lapint{l}{l'}{j}{\phi}{\sigma'}$ and $\hs{g_1-1},\hs{g_2-1}\le10\,\delta$, where \m{g_1=j_1(\sigma')} and \m{g_2=j_2(\sigma')}.
+Theorem~1 applies to \m{(l,g_1)} with the numbers \m{(10\delta,T,L,A)}: indeed \m{10\delta\cdot T=10^{-12}},
+\m{\abs{\Omega}^{2}\le T}, and $\abs{\Omega}^{2}\log(\abs{\Omega}+L+1)\le\mathsf{n}\log\beta$ because
+$\abs{\Omega}+L+1\le\abs{\Omega}+\abs{\Omega'}+L\le\beta$. It applies in the same way to \m{(-l',g_2)}, for the
+signs~$\varepsilon'$: the vector $-l'$ has large gap~$A$ and entries bounded by~$L$. With
+\[E_1=\tr\bigl(\dg{\lowk{l}}\lgo{g_1-1}\bigr),\qquad E_2=\tr\bigl(\dg{\lowk{l'}}\lgo{g_2-1}\bigr),\]
+and \m{\lowk{-l'}=-\lowk{l'}}, $\dsc{-l'}{g_2}=\overline{\dsc{l'}{g_2}}$ from \inp{8}(c), we get
+\m{\kappa_1,\kappa_2\in[0,1]} with
+\[\Bigabs{\frac{\dsc{l}{g_1}}{e^{E_1}}-\kappa_1}\le\frac{\kappa_1}{10}+e^{-100T},\qquad
+\Bigabs{\frac{\overline{\dsc{l'}{g_2}}}{e^{-E_2}}-\kappa_2}\le\frac{\kappa_2}{10}+e^{-100T}.\]
+By Lemma~\ref{l:phaselog}, \m{\phi(\sigma')=E_1-E_2}: the phase of the integrand cancels the two phases of the
+coefficients. So the complex number $z=\lapint{l}{l'}{j}{\phi}{\sigma'}$ is \m{(\kappa_1+z_1)(\kappa_2+z_2)} with complex numbers
+$\abs{z_n}\le\tfrac1{10}\kappa_n+\epsilon$, \m{\epsilon=e^{-100T}\le1}. Expanding,
+$\re z\ge0.79\,\kappa_1\kappa_2-3.2\,\epsilon$ and $\abs{z}\le1.21\,\kappa_1\kappa_2+3.2\,\epsilon$, whence
+$8(\re z+16\epsilon)\ge6.32\,\kappa_1\kappa_2+102\,\epsilon\ge4\abs{z}$. This is \eqref{e:cone2}, and Step~2 is
+complete.
+
+\emph{Step 3: integrability.} By \inp{11}(b) for the proper homomorphism~$j_1$, the point \m{y=1} and the exponent
+$8\,\mathsf{n}>8\abs{\Omega}^{2}$, the number $\mathsf{m}=\nu\{\sigma:\op{j_1(\sigma)-1}\le1\}$ is finite, and
+\begin{equation}\label{e:gammaint}
+\int_S\gamma(\sigma)^{8\mathsf{n}}\,d\nu(\sigma)\le16^{\,8\mathsf{n}}\,\mathsf{m} .
+\end{equation}
+The function $\lapint{l}{l'}{j}{\phi}{\,\cdot\,}$ is continuous: the coefficients are continuous by \inp{8}(a), $j_1$ and $j_2$ are continuous,
+and $\phi$ is continuous by~(T1). By \eqref{e:decay} it is dominated by~$\gamma^{8\mathsf{n}}$, so it is $\nu$-integrable.
+
+\emph{Step 4: a small ball.} Let $U_0$ be the set of the \m{\sigma\in S} with $\op{j_1(\sigma)-1}\le(200\beta^{5})^{-1}$
+and $\op{j_2(\sigma)-1}\le(200\beta^{5})^{-1}$. By \inp{10}(a), with \m{\beta_0=\beta}, both coefficients have absolute
+value at least~$\tfrac12$ on~$U_0$, so $4\abs{\lapint{l}{l'}{j}{\phi}{\sigma}}\ge1$ for \m{\sigma\in U_0}. The right side of \eqref{e:cone} is therefore a
+non-negative integrable function that is at least~$1$ on~$U_0$, and Markov's inequality with \eqref{e:gammaint} gives
+\[\nu(U_0)\le8\,\re\!\int_S\lapint{l}{l'}{j}{\phi}{\sigma}\,d\nu(\sigma)+128\,\beta^{-50\mathsf{n}}\!\int_S\gamma^{8\mathsf{n}}\,d\nu
+\le8\,\mathsf{J}+128\,\beta^{-50\mathsf{n}}\,16^{\,8\mathsf{n}}\,\mathsf{m},\]
+where $\mathsf{J}=\bigabs{\int_S\lapint{l}{l'}{j}{\phi}{\sigma}\,d\nu(\sigma)}$.
+
+\emph{Step 5: covering.} The map $\sigma\mapsto j_1(\sigma)\oplus j_2(\sigma)$ is a homomorphism from $S$ to the unitary
+group of the signs \m{\varepsilon\oplus\varepsilon'} on \m{\Omega\sqcup\Omega'}, and $U_0$ is the set where it is within
+operator distance \m{(200\beta^{5})^{-1}} of~$1$. By \inp{11}(a) with \m{y=1}, \m{D=200\beta^{5}}, \m{R=\beta+1} and
+\m{K=\beta^{8}\ge3DR^{2}},
+\[\nu\bigl\{\sigma:\op{j_1(\sigma)\oplus j_2(\sigma)}\le\beta+1\bigr\}\le\beta^{16\mathsf{n}}\,\nu(U_0).\]
+The set on the left contains $\{\sigma:\op{j_1(\sigma)-1}\le1\}$, because there \m{\op{j_1(\sigma)}\le2} and
+\m{\op{j_2(\sigma)}\le\beta+1} by~(e). Hence
+\[\mathsf{m}\le8\,\beta^{16\mathsf{n}}\,\mathsf{J}+128\cdot16^{\,8\mathsf{n}}\,\beta^{-34\mathsf{n}}\,\mathsf{m}
+\le\tfrac12\,\beta^{20\mathsf{n}}\,\mathsf{J}+\tfrac12\,\mathsf{m},\]
+using \m{\beta\ge16} twice. Since $\mathsf{m}$ is finite, this is the theorem.
+\end{proof}
+\leanline{\lean{laplacemethod}\sep \lean{IsTwoFactor}\sep \lean{IsSteep}}
+
+\sect{The restriction to a conjugate subgroup: proof of Theorem 3}{s:restriction}
+The data are those of Theorem~3. Write \m{\Lambda=\lowk{l}} for~$\varepsilon$ and \m{\Lambda'=\lowk{l'}} for
+\m{\varepsilon\oplus1}; since $l'$ has a gap, \m{\lowk{-l'}=-\Lambda'} by \inp{8}(c). Operator norms are used.
+
+\begin{proof}[Proof of Theorem 3]
+\emph{Nodes.} Define integers \m{\tau_0,\dots,\tau_{2M}} by $\tau_n=-\Lambda'_{\tilde e(M-n)}$ for \m{0\le n\le M} and
+\m{\tau_{M+1+n}=\Lambda_{e(n)}} for \m{0\le n<M}. By (S3) for $l'$ the first \m{M+1} of them decrease strictly and lie in
+\m{[B,3B]}; by (S3) for~$l$ the last $M$ decrease strictly and lie in \m{[-3B,-B]}. So the sequence is strictly
+decreasing, and \m{\abs{\tau_n-\tau_{n'}}\le6B} for all \m{n,n'}. Let \m{c_0,\dots,c_{2M}} be the weights of \inp{5} for these
+\m{2M+1} nodes. For \m{0\le a\le M} put
+\[d_a=\frac{(-1)^{a}}{c_a}\prod_{n<M}(\tau_a-\tau_{M+1+n}),\quad\
+\pi_a(\tau)=d_a\!\!\prod_{n\le M,\,n\ne a}\!\!(\tau-\tau_n),\quad\ \rho_{na}=\frac{\pi_a(\tau_{M+1+n})}{c_{M+1+n}}\ \ (n<M).\]
+The polynomial $\pi_a$ has degree~$M$ and leading coefficient~$d_a$, and by the formula for~$c_a^{2}$,
+$\pi_a(\tau_{a'})/c_{a'}=\delta_{aa'}$ for \m{a,a'\le M}. For \m{a,a'\le M} the product \m{\pi_a\pi_{a'}} has degree $2M$ and
+leading coefficient \m{d_ad_{a'}}, so \inp{5} gives $\sum_{n\le2M}(-1)^{n}\pi_a(\tau_n)\pi_{a'}(\tau_n)/c_n^{2}=d_ad_{a'}$. The terms
+with \m{n\le M} add up to \m{(-1)^{a}\delta_{aa'}}; in the others \m{(-1)^{M+1+n}=-(-1)^{n}}, because $M$ is even. Hence
+\begin{equation}\label{e:rho}
+\sum_{n<M}(-1)^{n}\rho_{na}\,\rho_{na'}+d_a\,d_{a'}=(-1)^{a}\,\delta_{aa'}\qquad(a,a'\le M).
+\end{equation}
+
+\emph{The element~$\omega$.} Let \m{(b_i)} be the standard basis of \m{\CC^{\Omega\sqcup\{*\}}}, and let $\omega$ be the
+matrix with
+\[\omega\,b_{\tilde e(\xi)}=b_{e(\xi)}\quad(\xi\in\Xi),\qquad
+\omega\,b_{\tilde e(a)}=\sum_{n<M}\rho_{n,M-a}\,b_{e(n)}+d_{M-a}\,b_{*}\quad(0\le a\le M).\]
+The signs \m{\varepsilon\oplus1} are $+1$ at $e(\xi)$, $\tilde e(\xi)$ and~$*$, \m{(-1)^{n}} at $e(n)$ and \m{(-1)^{a}} at
+$\tilde e(a)$, by (S1) for $l$ and for~$l'$. So the product of the columns \m{\tilde e(a)} and \m{\tilde e(a')} of~$\omega$ for
+the form \m{\dg{\varepsilon\oplus1}} is the left side of \eqref{e:rho} for \m{(M-a,M-a')}, that is
+$(-1)^{M-a}\delta_{aa'}=(-1)^{a}\delta_{aa'}$; the columns \m{\tilde e(\xi)} are distinct basis vectors of sign~$+1$ that do
+not occur in the other columns. Therefore $\omega^{*}\dg{\varepsilon\oplus1}\,\omega=\dg{\varepsilon\oplus1}$, and
+$\omega\in\Us{\varepsilon\oplus1}$.
+
+\emph{Property (i).} As \m{c_n\ge1} and \m{6B\ge1}, we have \m{\abs{d_a}\le(6B)^{M}} and \m{\abs{\rho_{na}}\le(6B)^{2M}}; so every
+entry of~$\omega$ has absolute value at most \m{(6B)^{2M+1}}, and the operator norm of a square matrix of
+size \m{\abs{\Omega}+1} is at most \m{(\abs{\Omega}+1)^{2}} times the largest entry.
+
+\emph{Property (iii).} $\omega^{-1}(g\oplus1)\omega-1=\omega^{-1}\bigl((g\oplus1)-1\bigr)\omega$.
+
+\emph{Property (ii).} The condition \m{\steep{l}{B}{e}} is a hypothesis. For (T1) we show that
+\begin{equation}\label{e:intertwine}
+\text{the rows of }\ \omega\,\dg{-\Lambda'}\,\omega^{-1}\ \text{ with index in }\Omega\text{ are those of }\ \bigl(\dg{\Lambda}\ \big|\ v\bigr)
+\end{equation}
+for a column~$v$ at~$*$. Then $\tr\bigl(\dg{-\Lambda'}\,\omega^{-1}(Z\oplus0)\,\omega\bigr)=\tr(\dg{\Lambda}Z)$ for every
+\m{\Omega\times\Omega} matrix~$Z$, and with (iii) the phase $\phs{l}{-l'}{(g-1,\ j^{\omega}_2(g)-1)}$ vanishes for every~$g$, as
+(T1) asks for the function \m{\phi=0}. To see \eqref{e:intertwine}, let \m{v_{e(\xi)}=0} and
+$v_{e(n)}=-\prod_{a\le M}(\tau_{M+1+n}-\tau_a)/c_{M+1+n}$, and compare the entries of \m{\omega\,\dg{-\Lambda'}} and of
+\m{(\dg{\Lambda}\,|\,v)\,\omega} in the rows of~$\Omega$. In the column \m{\tilde e(a)}, where \m{-\Lambda'=\tau_{M-a}}, and the row
+$e(n)$, where \m{\Lambda=\tau_{M+1+n}}, the difference is
+\[(\tau_{M-a}-\tau_{M+1+n})\,\rho_{n,M-a}-v_{e(n)}\,d_{M-a}=0,\]
+because $(\tau_{a'}-\tau)\,\pi_{a'}(\tau)=-d_{a'}\prod_{a\le M}(\tau-\tau_a)$. In the rows $e(\xi)$ and in the columns
+\m{\tilde e(\xi)} both sides vanish, as \m{\Lambda=0} on $e(\Xi)$ and \m{\Lambda'=0} on \m{\tilde e(\Xi)} by (S2).
+
+Conditions (T3) and (T4) hold for the function~$0$, and (T2) because a conjugation keeps the trace. For (T5) and
+(T6): the signs \m{\varepsilon\oplus1} are $+1$ on \m{\tilde e(\Xi)}, and \m{\lowk{-l'}=-\Lambda'} is $0$ there and lies in
+\m{[B,3B]} at the other indices, by (S1) to (S3) for~$l'$. For (T7), let $u$ be a unitary \m{\Xi\times\Xi} matrix.
+Lemma~\ref{l:block} gives \m{g\in\Us{\varepsilon}} with $g-1=\inc{e|_\Xi}(u-1)\inc{e|_\Xi}^{*}$. The matrix $\omega$ maps
+$b_{\tilde e(\xi)}$ to $b_{e(\xi)}$, and its row at $e(\xi)$ is the unit row at $\tilde e(\xi)$; so
+$\omega^{-1}\bigl((g-1)\oplus0\bigr)\omega=\inc{\tilde e|_\Xi}(u-1)\inc{\tilde e|_\Xi}^{*}$, which by (iii) is the second
+equation of~(T7).
+\end{proof}
+\leanline{\lean{existsisTwoFactorrestriction}}
+
+\sect{The Bessel graph: proofs of Theorems 4 and 5}{s:bessel}
+\begin{lemma}[the Bessel graph and its measure]\label{l:gmeasure}
+Let $\fs$ be a shape. Then $\bgr{\fs}$ is a closed subset of \m{\Gone{\fs}\times\Us{1}}, and the measure $\bms{\fs}$ is
+positive on non-empty open subsets of $\bgr{\fs}$, finite on its compact subsets, and invariant under right
+translations.
+\end{lemma}
+\begin{proof}
+The condition \m{\emb{\fs}{h}^{-1}g\in\Uu{\fs}} says that certain entries of \m{\emb{\fs}{h}^{-1}g} are those of the
+identity matrix, which is a closed condition on \m{(g,h)}. The chart $\bch{\fs}$ is a homeomorphism, and the product of
+the Haar measure $\hU{\fs}$ with the Haar measure of the compact group $\Us{1}$ is positive on open sets and finite
+on compact sets; so is its image. For the invariance let $\sigma'=(\emb{\fs}{h_0}u_0,\,h_0)\in\bgr{\fs}$. Then
+\[\bch{\fs}(u,h)\cdot\sigma'=\bigl(\emb{\fs}{h}\,u\,\emb{\fs}{h_0}\,u_0,\ h\,h_0\bigr)
+=\bch{\fs}\bigl(\emb{\fs}{h_0}^{-1}u\,\emb{\fs}{h_0}\cdot u_0,\ h\,h_0\bigr).\]
+In the chart, right translation by~$\sigma'$ is therefore the product of two maps: on $\Uu{\fs}$ the conjugation by
+\m{\emb{\fs}{h_0}^{-1}\in\Qq{\fs}} followed by the right translation by~$u_0$, which preserve $\hU{\fs}$ by \inp{13}(c); and on
+$\Us{1}$ the right translation by~$h_0$.
+\end{proof}
+\leanline{\lean{besselGraph}\sep \lean{besselGraphChart}\sep \lean{besselGraphMeasure}\sep
+\lean{besselGraphMeasurefiniteOnCompacts}\sep \lean{besselGraphMeasureisMulRightInvariant}}
+
+The closedness and the positivity on open sets are two unnamed instances of the formal text.
+
+\begin{lemma}\label{l:fst}
+Let $\fs$ be a shape and $\sigma=(\sigma_1,\sigma_2)\in\bgr{\fs}$. Then \m{\sigma_1\in\Qq{\fs}}.
+\end{lemma}
+\begin{proof}
+$\sigma_1=\emb{\fs}{\sigma_2}\cdot\emb{\fs}{\sigma_2}^{-1}\sigma_1$ is the product of an element of $\Hh{\fs}$ and one of $\Uu{\fs}$.
+\end{proof}
+\leanline{\lean{besselGraphfstmembesselS}}
+
+\begin{lemma}[unfolding along the Bessel graph]\label{l:unfold}
+Let $\fs$ be a shape, \m{x\in\Gone{\fs}}, and let $f$ be a function from $\Gone{\fs}$ to \m{[0,\infty]} that is
+measurable. Then
+\[\int_{\Gone{\fs}}f(g)\,dg=\int_{\Gone{\fs}}\int_{\bgr{\fs}}f\bigl(x\,\sigma_1\,y\bigr)\,d\bms{\fs}(\sigma)\,d\hq{\fs}(y).\]
+\end{lemma}
+\begin{proof}
+By the definition of $\bms{\fs}$ the inner integral is $\int_{\Us{1}}\int_{\Uu{\fs}}f(x\,\emb{\fs}{h}\,u\,y)\,d\hU{\fs}(u)\,dh$. By
+Tonelli's theorem and Definition~\ref{d:shape}(e), applied to \m{g\mapsto f(x\,\emb{\fs}{h}\,g)} for each~$h$, the right side is
+$\int_{\Us{1}}\int_{\Gone{\fs}}f(x\,\emb{\fs}{h}\,g)\,dg\,dh$. The inner integral is \m{\int f(g)\,dg} by the left invariance of
+the Haar measure, and $dh$ has mass one.
+\end{proof}
+\leanline{\lean{lintegralunfoldbesselGraphMeasure}}
+
+\begin{lemma}[traces against the graph]\label{l:gtrace}
+Let $\fs$ be a shape, $\sigma=(\sigma_1,\sigma_2)\in\bgr{\fs}$, and let $Z$ be an \m{\Ind{\fs}\times\Ind{\fs}} matrix that is
+block upper triangular for the levels. Then $\tr\bigl(Z\,(\sigma_1-\emb{\fs}{\sigma_2})\bigr)=0$.
+\end{lemma}
+\begin{proof}
+With $u=\emb{\fs}{\sigma_2}^{-1}\sigma_1\in\Uu{\fs}$ the trace is $\tr\bigl(Z\,\emb{\fs}{\sigma_2}\,(u-1)\bigr)$. The matrix
+\m{Z\,\emb{\fs}{\sigma_2}} is block upper triangular, since $\emb{\fs}{\sigma_2}$ differs from~$1$ only inside the middle
+level; and \m{(u-1)_{i'i}=0} whenever \m{\lev{i}\le\lev{i'}}. So in $\sum_{i,i'}(Z\,\emb{\fs}{\sigma_2})_{ii'}(u-1)_{i'i}$ every term
+vanishes.
+\end{proof}
+\leanline{\lean{besselGraphtracemulsubeqzero}}
+
+\begin{lemma}[properness]\label{l:proper}
+Let $\fs$ be a shape, $\varepsilon$ signs on $\Ind{\fs}$, \m{\fp\in\frm{\fs}{\varepsilon}} a frame and \m{x\in\Gone{\fs}}. Then
+the map \m{\sigma\mapsto\bph{x}{\sigma}_1} from $\bgr{\fs}$ to $\Us{\varepsilon}$ is proper.
+\end{lemma}
+\begin{proof}
+It is the first projection of the closed subset $\bgr{\fs}$ of \m{\Gone{\fs}\times\Us{1}}, which is proper because
+$\Us{1}$ is compact, followed by the homeomorphism $g\mapsto\fp^{-1}x^{-1}g\,x\,\fp$.
+\end{proof}
+\leanline{\lean{isProperMapfstbesselPairHom}\sep \lean{besselPairHom}\sep \lean{Frame}}
+
+\begin{proof}[Proof of Theorem 4]
+Write \m{\varrho=\rhs{\fs}} and \m{\Lambda=\lowk{l}}, and let \m{\fp_i} be the column of~$\fp$ at \m{i\in\Ind{\fs}}; these
+columns are orthonormal, and $\fp_i^{*}\Jone{\fs}\fp_{i'}=\varepsilon_i\delta_{ii'}$.
+
+\emph{Nodes and vectors.} Put \m{\tau_0=0} and \m{\tau_{n+1}=\Lambda_{e(n)}-a} for \m{0\le n\le2\varrho+1}. By (S3) these
+\m{2\varrho+3} integers decrease strictly, and $\abs{\tau_{n+1}}\le3B+a\le2b^{2}$, so $\tau_{n+1}^{2}\le4b^{4}\le b^{5}$. Let
+\m{c_0,\dots,c_{2\varrho+2}} be the weights of~\inp{5}, and define vectors of $\CC^{\Ind{\fs}}$
+\[V^{(0)}=c_0\sum_{n\le2\varrho+1}\frac{1}{c_{n+1}}\,\fp_{e(n)},\qquad
+V^{(k)}=\sum_{n\le2\varrho+1}\frac{\tau_{n+1}^{\,k}}{c_{n+1}}\,\fp_{e(n)}\quad(k\ge1).\]
+Since \m{\varepsilon_{e(n)}=(-1)^{n}}, the products of these vectors for $\Jone{\fs}$ are the sums
+$\sum_n(-1)^{n}\tau_{n+1}^{\,k+k'}/c_{n+1}^{2}$, up to the factors~$c_0$. Input~\inp{5} for the polynomial \m{\tau^{k+k'}}, of
+degree at most \m{2\varrho+2}, evaluates them: the node \m{\tau_0=0} contributes only for \m{k+k'=0}, and the coefficient
+of degree \m{2\varrho+2} is $1$ or~$0$. The result is, for \m{k,k'\ge1} with \m{k+k'\le2\varrho+2} and for
+\m{1\le k''\le2\varrho+1},
+\begin{equation}\label{e:gramV}
+V^{(0)*}\Jone{\fs}V^{(0)}=1,\quad\ V^{(0)*}\Jone{\fs}V^{(k'')}=0,\quad\
+V^{(k)*}\Jone{\fs}V^{(k')}=\begin{cases}-1&\text{if }k+k'=2\varrho+2,\\0&\text{otherwise.}\end{cases}
+\end{equation}
+The vectors \m{\fp_{e(\xi)}}, \m{\xi\in\Xi}, are orthonormal for $\Jone{\fs}$ with squares~$+1$ by (S1), and orthogonal to
+all~$V^{(k)}$.
+
+\emph{The point~$x$.} Consider the two families of vectors
+\[\bigl(\fp_{e(\xi)}\ (\xi\in\Xi),\ V^{(0)},\ V^{(1)},\dots,V^{(\varrho+1)}\bigr)\qquad\text{and}\qquad
+\bigl(x_{\tilde e(\xi)}\ (\xi\in\Xi),\ x_{\tilde e(*)},\ f_0,\dots,f_{\varrho}\bigr).\]
+By \eqref{e:gramV} and Definition~\ref{d:shape} they have the same Gram matrix for $\Jone{\fs}$: the identity on the
+first \m{\abs{\Xi}+1} vectors, and $-1$ at the last vector, $0$ elsewhere. The second family consists of distinct basis
+vectors. The first is linearly independent, because its matrix of products with the vectors \m{\fp_{e(\xi)}},
+\m{V^{(0)}}, $V^{(2\varrho+1)},\dots,V^{(\varrho+1)}$ is triangular with diagonal entries~$\pm1$, again by \eqref{e:gramV}. By
+Witt's theorem \inp{6} there is \m{x\in\Gone{\fs}} with
+\[x\,\fp_{e(\xi)}=x_{\tilde e(\xi)},\qquad x\,V^{(0)}=x_{\tilde e(*)},\qquad x\,V^{(a+1)}=f_a\quad(0\le a\le\varrho).\]
+
+\emph{Its size.} Apply \inp{14} to~$x$ and the vectors \m{V_a=V^{(a+1)}}, \m{a\ge0}. For \m{a\le\varrho}, \m{V_a=x^{-1}f_a}. For
+\m{a+a'\le2\varrho} the product \m{V_a^{*}\Jone{\fs}V_{a'}} is $-1$ if \m{a+a'=2\varrho} and $0$ otherwise, by \eqref{e:gramV}. As $\fp$
+is unitary and \m{c_{n+1}\ge1}, for \m{a\le2\varrho} we have
+$\nrm{V_a}^{2}\le(2\varrho+2)\,b^{5(2\varrho+1)}\le b^{10\varrho+6}$. So $\bsz{x}\le8(\varrho+1)\,b^{5\varrho+3}\le b^{5\varrho+4}\le b^{5\nsh{\fs}}$.
+
+\emph{The conjugated weight matrix.} Put \m{q=x\,\fp}, so that $q^{*}\Jone{\fs}q=\dg{\varepsilon}$ and
+$\bph{x}{\sigma}=(q^{-1}\sigma_1q,\ \sigma_2)$, and let \m{D=q\,\dg{\Lambda}\,q^{-1}}. Because \m{\Lambda_{e(\xi)}=0} and
+\m{\Lambda_{e(n)}=\tau_{n+1}+a}, the matrix \m{\fp\,\dg{\Lambda}\,\fp^{-1}} kills $\fp_{e(\xi)}$, sends $V^{(k)}$ to
+\m{a\,V^{(k)}+V^{(k+1)}} for \m{k\ge1}, and $V^{(0)}$ to \m{a\,V^{(0)}+c_0V^{(1)}}. Applying~$x$:
+\begin{equation}\label{e:Dframe}
+D\,x_{\tilde e(\xi)}=0,\qquad D\,x_{\tilde e(*)}=a\,x_{\tilde e(*)}+c_0\,f_0,\qquad D\,f_k=a\,f_k+f_{k+1}\quad(k<\varrho).
+\end{equation}
+Moreover $q^{-1}=\dg{\varepsilon}q^{*}\Jone{\fs}$, so $\Jone{\fs}D=\Jone{\fs}q\,\dg{\Lambda}\dg{\varepsilon}\,q^{*}\Jone{\fs}$ is hermitian:
+\m{\Jone{\fs}D=D^{*}\Jone{\fs}}.
+
+\emph{The matrix \m{D-C_{\fs}} is block upper triangular for the levels}, where $C_{\fs}$ is the chain matrix of \inp{13}(b).
+By \eqref{e:Dframe}, \m{(D-C_{\fs})e_k=a\,e_k}, and \m{(D-C_{\fs})x_i=D\,x_i} lies in the span of \m{x_{\tilde e(*)}} and~$f_0$, of
+levels at most~$\varrho$. The rows of level higher than that of a column $z$ or $e^{*}_{b}$ are rows $e^{*}_{c}$, and the
+coefficient of $e^{*}_{c}$ in a vector~$w$ is \m{e_c^{*}\Jone{\fs}w}. By the symmetry of~$D$ and \eqref{e:Dframe},
+$e_c^{*}\Jone{\fs}Dw=(a\,e_c+f_{c+1})^{*}\Jone{\fs}w$. For \m{w=z} this is $-1$ if \m{c=\varrho-1} and $0$ for the other
+\m{c<\varrho}; for \m{w=e^{*}_b} and \m{c<b} it is $1$ if \m{c=b-1} and $0$ otherwise. These are the coefficients of
+$e^{*}_c$ in \m{C_{\fs}z} and in \m{C_{\fs}e^{*}_b}.
+
+\emph{Conditions (T1) to (T7)}, for \m{j=\bph{x}{\,\cdot\,}} and \m{\phi=\phi_{\fs}}; \m{\steep{l}{B}{e}} is a hypothesis. Let
+\m{\sigma\in\bgr{\fs}}. By Lemma~\ref{l:gtrace}, $\tr\bigl((D-C_{\fs})(\sigma_1-\emb{\fs}{\sigma_2})\bigr)=0$. By \inp{13}(a),(b)
+and Lemma~\ref{l:fst}, $\tr(C_{\fs}\sigma_1)=\sd{\sigma_1}-\overline{\sd{\sigma_1}}$ and $\tr(C_{\fs}\emb{\fs}{\sigma_2})=0$. And
+by \eqref{e:Dframe} the block of~$D$ on the vectors~$x_i$ is diagonal, with entry $a$ at \m{\tilde e(*)} and $0$ elsewhere,
+which is \m{\dg{\lowk{l'}}} by hypothesis; so $\tr\bigl(D(\emb{\fs}{\sigma_2}-1)\bigr)=\tr\bigl(\dg{\lowk{l'}}(\sigma_2-1)\bigr)$.
+Adding the three facts,
+\[\phs{l}{l'}{\bigl(q^{-1}(\sigma_1-1)q,\ \sigma_2-1\bigr)}=\tr\bigl(D(\sigma_1-1)\bigr)-\tr\bigl(\dg{\lowk{l'}}(\sigma_2-1)\bigr)
+=\sd{\sigma_1}-\overline{\sd{\sigma_1}},\]
+which is (T1). For (T2), $\tr(q^{-1}(\sigma_1-1)q)=\tr(\sigma_1-1)=\tr(\emb{\fs}{\sigma_2}-1)=\tr(\sigma_2-1)$, by
+Lemma~\ref{l:gtrace} for \m{Z=1}. (T3) holds by \inp{13}(a) and Lemma~\ref{l:fst}, and (T4) is clear. (T5) and (T6) hold
+because the signs on $\kps{\fs}$ are~$+1$ and $\lowk{l'}$ is $0$ on \m{\tilde e(\Xi)} and \m{a\ge0} at \m{\tilde e(*)}. For
+(T7) let $u$ be a unitary \m{\Xi\times\Xi} matrix. By Lemma~\ref{l:block}, for the bijection~$\tilde e$ and the signs~$1$, there
+is \m{h\in\Us{1}} with $h-1=\inc{\tilde e|_\Xi}(u-1)\inc{\tilde e|_\Xi}^{*}$. Take $\sigma=\bch{\fs}(1,h)=(\emb{\fs}{h},h)$. Its
+second component gives the second equation of~(T7). For the first, \m{\emb{\fs}{h}-1} is \m{u-1} placed in the block
+of the vectors \m{x_{\tilde e(\xi)}}; the matrix $q$ maps the basis vector at $e(\xi)$ to \m{x_{\tilde e(\xi)}}, and
+$q^{-1}=\dg{\varepsilon}q^{*}\Jone{\fs}$ has the unit row at \m{x_{\tilde e(\xi)}} in its row $e(\xi)$; hence
+$q^{-1}(\emb{\fs}{h}-1)q=\inc{e|_\Xi}(u-1)\inc{e|_\Xi}^{*}$.
+\end{proof}
+\leanline{\lean{existsisTwoFactorbesselPairHom}}
+
+\begin{proof}[Proof of Theorem 5]
+Write $\psi^{\fp}_{l}(g)=\dsc{l}{\fp^{-1}g\,\fp}$ for \m{g\in\Gone{\fs}}, \m{\mathsf{c}=8\,\rsh{\fs}^{2}+1}, and
+$\mathsf{m}=\bms{\fs}\{\sigma:\op{\bph{x}{\sigma}_1-1}\le1\}$. For \m{y\in\Gone{\fs}} and \m{\sigma\in\bgr{\fs}} let
+\[F(y,\sigma)=\psi^{\fp}_{l}\bigl(x^{-1}\sigma_1y\bigr)\,e^{-\phi_{\fs}(\sigma)}\,\mathrm{rep}(\sigma_2)^{-1}v_0\ \in\CC^{I},\qquad
+W(y)=\int_{\bgr{\fs}}F(y,\sigma)\,d\bms{\fs}(\sigma).\]
+
+\emph{Sizes.} From the hypothesis on~$v_0$ at \m{h=1} and \m{\dsc{l'}{1}=1} (the integral of Definition~\ref{d:coeff} at
+\m{g=z=1} is the normalising constant), \m{\nrm{v_0}=1}. As $\mathrm{rep}$ is unitary and $\phi_{\fs}$ is imaginary,
+$\nrm{F(y,\sigma)}=\abs{\psi^{\fp}_{l}(x^{-1}\sigma_1y)}$. The map \m{\sigma\mapsto\bph{x}{\sigma}_1} is a proper homomorphism
+(Lemma~\ref{l:proper}), $\bms{\fs}$ is right invariant and finite on compact sets (Lemma~\ref{l:gmeasure}), and
+$\bph{x}{\sigma}_1\cdot\fp^{-1}x^{-1}y\,\fp=\fp^{-1}x^{-1}\sigma_1y\,\fp$. So \inp{11}(b), with the exponent
+$\mathsf{c}>8\abs{\Ind{\fs}}^{2}$, shows that $\mathsf{m}$ is finite and that for every~$y$
+\begin{equation}\label{e:P4}
+\int_{\bgr{\fs}}\Bigl(\frac{2}{\op{\fp^{-1}x^{-1}\sigma_1y\,\fp}}\Bigr)^{\mathsf{c}}d\bms{\fs}(\sigma)\le16^{\mathsf{c}}\,\mathsf{m} .
+\end{equation}
+By \inp{9}, with $\mathsf{c}\le500\,\rsh{\fs}^{3}+A$, the integrand of \eqref{e:P4} dominates \m{\nrm{F(y,\sigma)}}. Hence
+\m{F(y,\,\cdot\,)} is integrable, $F$ being continuous, and
+\begin{equation}\label{e:P3}
+\nrm{W(y)}\le\int_{\bgr{\fs}}\bigabs{\psi^{\fp}_{l}(x^{-1}\sigma_1y)}\,d\bms{\fs}(\sigma)\le16^{\mathsf{c}}\,\mathsf{m}\qquad\text{for every }y .
+\end{equation}
+
+\emph{$W$ is a Bessel function for $\mathrm{rep}$.} It is bounded by \eqref{e:P3} and measurable. Let
+\m{\sigma'\in\bgr{\fs}}. Replacing $\sigma$ by \m{\sigma\sigma'^{-1}} in the integral for \m{W(\sigma'_1y)}, which does not change
+the measure, and using $\phi_{\fs}(\sigma\sigma'^{-1})=\phi_{\fs}(\sigma)-\phi_{\fs}(\sigma')$ from \inp{13}(a), we get
+\[W(\sigma'_1\,y)=e^{\phi_{\fs}(\sigma')}\,\mathrm{rep}(\sigma'_2)\,W(y).\]
+For \m{\sigma'=\bch{\fs}(u,1)=(u,1)} and for $\sigma'=\bch{\fs}(1,h)=(\emb{\fs}{h},h)$, where \m{\phi_{\fs}(\sigma')=0}, these are
+the two transformation laws of Definition~\ref{d:shape}(g).
+
+\emph{The value at~$x$.} Since $\ip{v_0}{\mathrm{rep}(h)^{-1}v_0}=\overline{\ip{v_0}{\mathrm{rep}(h)v_0}}=\overline{\dsc{l'}{h}}$,
+\[\ip{v_0}{W(x)}=\int_{\bgr{\fs}}\dsc{l}{\fp^{-1}x^{-1}\sigma_1x\,\fp}\;\overline{\dsc{l'}{\sigma_2}}\;e^{-\phi_{\fs}(\sigma)}\,d\bms{\fs}(\sigma)
+=\int_{\bgr{\fs}}\lapint{l}{l'}{\bph{x}{\,\cdot\,}}{\phi_{\fs}}{\sigma}\,d\bms{\fs}(\sigma).\]
+So the hypothesis of the theorem and the Cauchy--Schwarz inequality give
+\begin{equation}\label{e:m1W}
+\mathsf{m}\le b^{\,n}\,\nrm{W(x)}.
+\end{equation}
+
+\emph{The four conditions of Definition~\ref{d:peak}.} (P3) is the first inequality of \eqref{e:P3}. (P4) follows from
+\eqref{e:P4}, \eqref{e:m1W} and \m{16\le b}, with \m{P=b^{\mathsf{c}+n}}. (P2): the set in the definition of~$\mathsf{m}$ contains a
+neighbourhood of~$1$, and $\bms{\fs}$ is positive on open sets, so \m{\mathsf{m}>0} by \inp{11}(c), and \m{W(x)\ne0} by
+\eqref{e:m1W}. (P1): by Fubini's theorem, which \eqref{e:P3} and the integrability of the kernel~$k$ of \inp{12} allow,
+\[\int_{\Gone{\fs}}\!k(g^{-1})\,W(y\,g)\,dg=\int_{\bgr{\fs}}\!\Bigl(\int_{\Gone{\fs}}\!k(g^{-1})\,\psi^{\fp}_{l}\bigl(x^{-1}\sigma_1y\,g\bigr)\,dg\Bigr)
+e^{-\phi_{\fs}(\sigma)}\,\mathrm{rep}(\sigma_2)^{-1}v_0\,d\bms{\fs}(\sigma),\]
+and the inner integral is $\psi^{\fp}_{l}(x^{-1}\sigma_1y)$ by \inp{12} with \m{y_2=1}, because \m{k=\fdeg{l}\,\psi^{\fp}_{l}} and
+\m{k(1)=\fdeg{l}}.
+\end{proof}
+\leanline{\lean{existsisBesselFunction}\sep \lean{HasPeakAt}}
+
+\sect{The period of a Poincaré series of deep level: proof of Theorem 6}{s:period}
+The data are those of Theorem~6. We abbreviate \m{G=G(E,\varepsilon)}, $G_\infty=G_\infty(E,\varepsilon)$,
+\m{V^{+}=V\oplus\langle1\rangle}, \m{\Gamma^{+}=\Gamma(V^{+})}, \m{\mathsf{K}=K_\Omega(a_0)} and $\mathsf{K}^{+}=K_{\Omega\sqcup\{*\}}(a_0)$,
+write $b_{*}$ for the basis vector of the added line, and
+\[k_\gamma(y)=\Psi\bigl(X_\gamma(y)_\infty\bigr)\,\mathbf{1}_{\mathsf{K}^{+}}\bigl(X_\gamma(y)_{\mathrm f}\bigr)\qquad(\gamma\in\Gamma^{+},\ y\in G).\]
+Norms of matrices are operator norms. Besides \inp{9} and \inp{11} the proof uses these results of the background
+library on adelic unitary groups (units 114, 120, 121, 122; all elementary except the first):
+\begin{enumerate}[label=\textup{(A\arabic*)},leftmargin=2.9em,itemsep=1pt]
+\item \emph{Unfolding.} If $f$ is integrable on~$G$ for the Haar measure, then \m{y\mapsto f(\delta y)} is
+  $\varpi_V$-integrable for every \m{\delta\in\Gamma(V)}, and
+  $\sum_{\delta\in\Gamma(V)}\int f(\delta y)\,d\varpi_V(y)=\int_Gf(y)\,dy$. (Weil's formula; reference and relation as
+  for \inp{13}(d).)
+\item \emph{The first minimum.} \m{\lambda_1(V)\le\nrm{\eta}_V} for every non-zero lattice vector~$\eta$ of~$V$; for
+  spaces $V_1$, $V_2$ and points $g_1$, $g_2$ of their groups,
+  $\min\bigl(\lambda_1(V_1\cdot g_1),\lambda_1(V_2\cdot g_2)\bigr)\le\lambda_1\bigl((V_1\oplus V_2)\cdot(g_1\oplus g_2)\bigr)$; and
+  \m{\lambda_1=1} for a positive line.
+\item \emph{Separated points.} If points $f_n$ of a real normed space of dimension~$d_0$ have norms and mutual
+  distances at least \m{m_0>0}, and \m{c\ge d_0+2} is an integer, then $\sum_n\nrm{f_n}^{-c}\le(5/m_0)^{c}$.
+\item \emph{Structure.} For \m{a_0\ne0}, $\mathsf{K}$ is an open subgroup of finite Haar measure, and $a_0$ is invertible in
+  the finite adeles. An element \m{g_1\oplus g_2} lies in \m{\Gamma(V_1\oplus V_2)} if and only if \m{g_1\in\Gamma(V_1)} and
+  \m{g_2\in\Gamma(V_2)}; and an element of the unitary group of a block-diagonal form \m{J_1\oplus J_2}, with $J_2$
+  invertible, that fixes the vectors of the second block is of the form \m{g_1\oplus1}.
+\end{enumerate}
+
+\begin{proof}[Proof of Theorem 6]
+\emph{Step 0: the decay of~$\Psi$.} Let $g\in G_\infty(E,\varepsilon\oplus1)$ and \m{t_0>0} be such that
+$t_0\le\prod_v\op{g_v(r_v\oplus1)}$ for every \m{r\in G_\infty}. Then \m{r\mapsto\Psi(g\,(r\oplus1))} is integrable on
+$G_\infty$ and
+\begin{equation}\label{e:Psidecay}
+\int_{G_\infty}\bigabs{\Psi\bigl(g\,(r\oplus1)\bigr)}\,dr\le L_{*}\,t_0^{-A}.
+\end{equation}
+Indeed, for \m{h\in\Us{\varepsilon\oplus1}} and a place~$v$, \inp{9} with the exponent \m{2A}, which is at most the gap
+of~$l_v$, and $\op{h}\le\op{\alpha_v}\,\op{\alpha_v^{-1}h\,\omega_v}\,\op{\omega_v}$ from \inp{11}(d) give
+\[\bigabs{\dsc{l_v}{\alpha_v^{-1}h\,\omega_v}}\le\Bigl(\frac{2\op{\alpha_v}\op{\omega_v}}{\op{h}}\Bigr)^{2A}
+=\bigl(2(\op{\alpha_v}\op{\omega_v})^{2}\bigr)^{A}\Bigl(\frac{2}{\op{h}}\Bigr)^{A}\op{h}^{-A}.\]
+Take \m{h=g_v(r_v\oplus1)} and multiply over~$v$: the last factors give at most~$t_0^{-A}$, and the integral over
+$G_\infty$ of the product of the middle factors is the product over~$v$ of the integrals
+$\int_{\Us{\varepsilon}}(2/\op{g_v(r\oplus1)})^{A}dr$. By \inp{11}(d) and the invariance of~$dr$ under inversion, such an
+integral equals $\int(2/\op{(r\oplus1)g_v^{-1}})^{A}dr$, which by \inp{11}(b), for the proper homomorphism
+\m{r\mapsto r\oplus1} and the exponent \m{A>8(\abs{\Omega}+1)^{2}}, is at most
+\m{16^{A}\vol\{r:\op{r-1}\le1\}}. This proves \eqref{e:Psidecay}. Since \m{\op{h}\ge1} on unitary groups, it applies with
+\m{t_0=1} to every~$g$; for \m{g=1} this is the first assertion of the theorem.
+
+\emph{Step 1: the vector of a class.} Let \m{\gamma\in\Gamma^{+}}, say $\gamma=x_{V^{+}}^{-1}\gamma_0\,x_{V^{+}}$ with a rational
+isometry~$\gamma_0$, and put $\eta_\gamma=\gamma_0\,b_{*}\in E^{\Omega\sqcup\{*\}}$. As the point of the positive line is~$1$
+and \m{y\oplus1} fixes~$b_*$, the adelic vector of~$\eta_\gamma$ at the point of \m{V^{+}\cdot(x\oplus1)} is
+\[\bigl(x_{V^{+}}(x\oplus1)\bigr)^{-1}\eta_\gamma=X_\gamma(y)\,b_{*}\qquad\text{for every }y\in G:\]
+the last column of $X_\gamma(y)$, which does not depend on~$y$. Let $f(\gamma)\in\CC^{f_E(\abs{\Omega}+1)}$ be the vector of
+its components at the infinite places; its Euclidean norm is the length of~$\eta_\gamma$ for \m{V^{+}\cdot(x\oplus1)}.
+
+\emph{Step 2: representatives.} By (A4), \m{\Gamma(V)\oplus1} is the subgroup of the elements of~$\Gamma^{+}$ of the form
+\m{g\oplus1}. Choose a set \m{\mathcal{C}\subseteq\Gamma^{+}} of representatives of the cosets \m{\gamma\,(\Gamma(V)\oplus1)}, with
+\m{1\in\mathcal{C}}. Every element of $\Gamma^{+}$ is \m{\gamma(\delta\oplus1)} for unique \m{\gamma\in\mathcal{C}} and
+\m{\delta\in\Gamma(V)}, and $X_{\gamma(\delta\oplus1)}(y)=X_\gamma(\delta y)$. As $F$ is invariant under~$\Gamma(V)$,
+\begin{equation}\label{e:reindex}
+\sum_{\gamma'\in\Gamma^{+}}k_{\gamma'}(y)\,F(y)=\sum_{\gamma\in\mathcal{C}}\ \sum_{\delta\in\Gamma(V)}k_\gamma(\delta y)\,F(\delta y),
+\end{equation}
+as soon as one side converges absolutely. Let $\mathcal{W}$ be the set of the \m{\gamma\in\mathcal{C}} for which
+$X_\gamma(y)_{\mathrm f}\in\mathsf{K}^{+}$ for some~$y$; for the other~$\gamma$ the function $k_\gamma$ vanishes. For
+\m{\gamma\in\mathcal{W}} fix such a point~$y_\gamma$, with \m{y_1=x}, for which \m{X_1(x)=1}.
+
+\emph{Step 3: one class.} Let \m{\gamma\in\mathcal{W}}. Since $X_\gamma(y_\gamma y)=X_\gamma(y_\gamma)\,(y\oplus1)$, since
+$\mathsf{K}^{+}$ is a group, and since $y_{\mathrm f}\oplus1\in\mathsf{K}^{+}$ if and only if \m{y_{\mathrm f}\in\mathsf{K}},
+\[k_\gamma(y_\gamma\,y)=\Psi\bigl(X_\gamma(y_\gamma)_\infty\,(y_\infty\oplus1)\bigr)\cdot\mathbf{1}_{\mathsf{K}}(y_{\mathrm f})\qquad(y\in G).\]
+By Step~0 and the left invariance of the Haar measure, $k_\gamma$ is integrable on~$G$, and
+\begin{equation}\label{e:oneclass}
+\int_G\abs{k_\gamma(y)}\,dy=\vol(\mathsf{K})\int_{G_\infty}\bigabs{\Psi\bigl(X_\gamma(y_\gamma)_\infty(r\oplus1)\bigr)}\,dr .
+\end{equation}
+For \m{\gamma=1}, the same substitution \m{y\mapsto x\,y} and the level of~$F$ give the main term:
+\begin{equation}\label{e:main}
+\int_Gk_1(y)\,F(y)\,dy=\int_{G_\infty}\int_{\mathsf{K}}\Psi(r\oplus1)\,F\bigl(x\cdot(r,k)\bigr)\,dk\,dr
+=\vol(\mathsf{K})\int_{G_\infty}\Psi(r\oplus1)\,F\bigl(x\cdot(r,1)\bigr)\,dr .
+\end{equation}
+
+\emph{Step 4: the vectors $f(\gamma)$, \m{\gamma\in\mathcal{W}}, are pairwise at distance at least~$Q^{2}$.} Let
+\m{\gamma\ne\gamma'} in~$\mathcal{W}$. The matrices \m{X_\gamma(y_\gamma)_{\mathrm f}} and $X_{\gamma'}(y_{\gamma'})_{\mathrm f}$ lie
+in~$\mathsf{K}^{+}$, so their last columns, which by Step~1 are the finite components of the adelic vectors of
+$\eta_\gamma$ and $\eta_{\gamma'}$, are congruent to~$b_*$ modulo~$a_0$. Hence, $a_0$ being invertible in the finite adeles,
+$\eta_\gamma-\eta_{\gamma'}=a_0\,\eta$ for a lattice vector~$\eta$ of \m{V^{+}\cdot(x\oplus1)}. It is not zero: otherwise
+\m{\gamma_0^{-1}\gamma'_0} would fix~$b_*$ and by (A4) be of the form \m{g\oplus1}, so that $\gamma$ and $\gamma'$ would represent
+the same coset. At an infinite place~$v$ the components of \m{a_0\eta} are those of~$\eta$ times the image of~$a_0$ under
+the embedding chosen for~$v$, of absolute value \m{\abs{a_0}_v\ge\rho\ge0}. With (A2), hypothesis~(f), and
+\m{\lambda_1(V\cdot x)\le1}:
+\[\nrm{f(\gamma)-f(\gamma')}\ \ge\ \rho\,\nrm{\eta}_{V^{+}\cdot(x\oplus1)}\ \ge\ \rho\,\lambda_1\bigl(V^{+}\cdot(x\oplus1)\bigr)
+\ \ge\ \rho\,\min\bigl(\lambda_1(V\cdot x),1\bigr)=\rho\,\lambda_1(V\cdot x)\ \ge\ Q^{2}.\]
+
+\emph{Step 5: the lattice sum.} The vector $f(1)$ has the component~$b_*$ at each infinite place, so
+$\nrm{f(1)}=\sqrt{f_E}\le f_E\le Q$. By Step~4, $\nrm{f(\gamma)}\ge Q^{2}-Q\ge\tfrac12Q^{2}$ for
+$\gamma\in\mathcal{W}\setminus\{1\}$. The real dimension of \m{\CC^{f_E(\abs{\Omega}+1)}} is \m{2f_E(\abs{\Omega}+1)\le A-2}, so
+by (A3) with \m{m_0=\tfrac12Q^{2}}
+\begin{equation}\label{e:latticesum}
+\sum_{\gamma\in\mathcal{W}\setminus\{1\}}\nrm{f(\gamma)}^{-A}\le\Bigl(\frac{10}{Q^{2}}\Bigr)^{A}.
+\end{equation}
+
+\emph{Step 6: the other classes.} Let $\gamma\in\mathcal{W}\setminus\{1\}$, and let \m{g=X_\gamma(y_\gamma)_\infty}. For
+\m{r\in G_\infty} the matrix \m{g_v(r_v\oplus1)} is the component at~$v$ of \m{X_\gamma(y_\gamma\cdot(r,1))}, whose last column
+is the component $f(\gamma)_v$ of~$f(\gamma)$. Hence $\nrm{f(\gamma)_v}\le\op{g_v(r_v\oplus1)}$, and, these norms being at
+least~$1$,
+\[\nrm{f(\gamma)}\le\sqrt{f_E}\,\prod_v\op{g_v(r_v\oplus1)}\le Q\,\prod_v\op{g_v(r_v\oplus1)}.\]
+So \eqref{e:Psidecay} applies with \m{t_0=\nrm{f(\gamma)}/Q}, and with \eqref{e:oneclass} and \m{\abs{F}\le C},
+\begin{equation}\label{e:otherclass}
+\int_G\abs{k_\gamma(y)\,F(y)}\,dy\le C\cdot\vol(\mathsf{K})\cdot L_{*}\cdot Q^{A}\,\nrm{f(\gamma)}^{-A}.
+\end{equation}
+
+\emph{Step 7: conclusion.} For \m{\gamma\in\mathcal{W}} the function \m{k_\gamma F} is integrable on~$G$, so by (A1) the family
+$\delta\mapsto\int k_\gamma(\delta y)F(\delta y)\,d\varpi_V(y)$ sums to \m{\int_Gk_\gamma F}, and the same holds for the
+absolute values. By \eqref{e:otherclass} and \eqref{e:latticesum} the numbers \m{\int_G\abs{k_\gamma F}}, \m{\gamma\in\mathcal{W}},
+have a finite sum. So the double family of \eqref{e:reindex} is absolutely summable in the norm of $L^{1}(\varpi_V)$,
+the sum and the integral may be exchanged, and
+\[\int\sum_{\gamma'\in\Gamma^{+}}k_{\gamma'}(y)\,F(y)\,d\varpi_V(y)=\sum_{\gamma\in\mathcal{W}}\int_Gk_\gamma(y)\,F(y)\,dy .\]
+The term \m{\gamma=1} is the main term, by \eqref{e:main}. The others are bounded by \eqref{e:otherclass} and
+\eqref{e:latticesum}: their sum has absolute value at most
+\[C\cdot\vol(\mathsf{K})\cdot L_{*}\cdot Q^{A}\Bigl(\frac{10}{Q^{2}}\Bigr)^{A}=C\cdot\vol(\mathsf{K})\cdot L_{*}\Bigl(\frac{10}{Q}\Bigr)^{A}
+\le C\cdot\vol(\mathsf{K})\cdot L_{*}\cdot\frac{10}{Q},\]
+because \m{10/Q\le1} and \m{A\ge1}.
+\end{proof}
+\leanline{\lean{normpoincareperiodsuble}}
+
+\sect{Where the results are used}{s:use}
+The six theorems are consumed by three other units of the argument; the places were found by a search of the
+source for the formal names, and the statements of the consumers are those of their own notes.
+\begin{itemize}[leftmargin=1.6em,itemsep=2pt]
+\item \emph{Theorem C, the exchange step} (unit 147). The proof that every row pairs with a restriction of explicit
+  level uses Theorem~6 for the unfolding of a period, and Theorem~2 for the data of Theorem~3, placed at every
+  infinite place, to bound the main term of that period from below. There the exponent~$A$ of Theorem~2 is a power
+  of the rank~$r$ of the rows.
+\item \emph{Theorem B, the Bessel systems at the real places} (unit 148). The existence of a Bessel system at an
+  infinite place uses Theorem~4 for a point~$x$ of size at most \m{b^{5\nsh{\fs}}}, Theorem~2 on the Bessel graph, with
+  the measure of Definition~\ref{d:gmeasure} and Lemmas \ref{l:gmeasure} and~\ref{l:proper}, for a parameter~$\beta$ that
+  is a power of the third scale~$b$, and Theorem~5 for the Bessel function. The predicate of
+  Definition~\ref{d:bestype} is the conclusion of that statement.
+\item \emph{Theorem B, the cut of a Bessel function} (unit 132). A peaked Bessel function, in the sense of
+  Definition~\ref{d:peak} with a point of size at most \m{b^{5\nsh{\fs}}}, is cut to a pair of a full and a cut Bessel
+  function; the proof integrates by Lemma~\ref{l:unfold}.
+\end{itemize}
+Theorem~1 is used only inside this unit, in the proof of Theorem~2.
+
+\sect{Notes on the formal text}{s:notes}
+\subhead{Two norms.} The formal text uses two norms on matrices through scoped instances, and a statement does not
+show which one it means. The files on two-factor data and on minors use the Hilbert--Schmidt norm throughout; the
+files with Theorems 2, 3, 6 and with the second half of the Bessel statements use the operator norm; the file with
+Theorem~1 opens both. That the hypothesis \m{\hs{g-1}\le\delta} of Theorem~1 is a Hilbert--Schmidt bound is forced by
+the text: the proof of Theorem~2 passes the conclusion of Proposition~\ref{p:nearone}, which is elaborated with the
+Hilbert--Schmidt norm, to Theorem~1 as this hypothesis, and the proof of Theorem~1 passes it on to
+Proposition~\ref{p:minors}. The second reader of the project reached the same conclusion. Nothing was compiled for
+this note, so this is a reading of the source, not Lean's answer.
+
+\subhead{Statements.} (1) In Theorem~1 the last three hypotheses carry default proofs in the formal text, so that a
+caller may omit them; they are hypotheses all the same. (2) The formal Theorem~2 asserts only the inequality,
+with the measure of the ball read as a real number; that the ball has finite measure and that the integrand is
+integrable is shown in its proof and added to the statement here. (3) In Theorem~3 the hypothesis that $M$ is
+even follows from the other hypotheses: $e$ and $\tilde e$ are bijections, so the numbers of positive signs counted
+through them, \m{\abs{\Xi}+\lceil M/2\rceil+1} and \m{\abs{\Xi}+\lceil(M+1)/2\rceil}, agree, which forces $M$ to be even.
+The gap of~$l'$ enters only through \m{\lowk{-l'}=-\lowk{l'}}, and its size~$H$ is arbitrary. (4) In
+Proposition~\ref{p:compress} and Proposition~\ref{p:minors} the constants $100$ and $200000$ are not sharp; the
+proofs above give $45$ and $19302$. (5) In Lemma~\ref{l:fourth} the formal text takes the gap as an instance
+argument, and it does not state the invertibility of the block-diagonal part. (6) In Lemma~\ref{l:unfold} the
+point~$x$ is an implicit argument. (7) In Definition~\ref{d:twofactor} the formal text writes (T6) as a statement
+about all pairs of indices; the form above is equivalent. (8) In Theorem~6 the six auxiliary objects ($\Psi$, its
+restriction, $L_*$, the sum of spaces, the embedding, the volume, $X_\gamma$ and the summand) are bound by
+\lf{let} inside the statement; the final step loses a factor \m{(10/Q)^{A-1}}. The sum over~$\gamma$ is Lean's
+unconditional sum, which is $0$ where the family is not summable; by Step~7 this happens at most on a null set.
+(9) The definitions of a frame, of a peak and of the type of a Bessel system are structures; the frame is a
+type class, and the signs are an output parameter of it.
+
+\subhead{The arguments as the census reads them.} The reading project's census records the arguments of each
+declaration from the text. For ten declarations of this unit its list differs from the one Lean must have, because
+a name bound inside the statement coincides with a variable of the file, or because a \lf{let} or an arrow of
+homomorphisms was misread: the pair $j-1$, two-factor data, Lemmas \ref{l:trace}, \ref{l:levelsums} and
+\ref{l:unfold}, Proposition~\ref{p:minors}, the pair homomorphism, the peak, and Theorems 4 and~5. The statements
+above follow Lean's text, as the first reader's notes describe the expected lists; a confirmation by Lean itself
+(\lf{\#check}) is pending. In particular the measure of the Bessel graph and the peak do not depend on an element of
+the graph, and Theorem~4 does not take a point~$x$ as an argument: it provides one.
+
+\subhead{The dossier.} The first reader's text for the right invariance of the measure of the Bessel graph named
+only the conjugation; the second reader pointed out the right translation by~$u_0$, and Lemma~\ref{l:gmeasure} has
+both. In the proof of Theorem~2 the source leaves the two quantities of the case distinction to unification;
+they are \m{\gamma(\sigma)^{8\mathsf{n}}} and \m{\beta^{-50\mathsf{n}}}, which is the only choice for which the next rewriting
+steps of the source apply (the second reader's message makes the arithmetic explicit in a slightly different
+way; both lead to the same statement).
+
+\subhead{How this note was written.} From the dossier of the unit, after its program check passed: all
+\UnitProofs{} structured proofs were read, and all five Lean files of the unit were read in full.
+Line by line, against the structured proofs, we read the proofs of Propositions \ref{p:compress}, \ref{p:minors}
+and~\ref{p:nearone} and of Theorems 1, 2, 3, 4 and~5. For Theorem~6 the statement was read in full and the proof
+once; in its steps on the choice of representatives and on the exchange of sum and integral we follow the first
+reader's reconstruction and the second reader's verdict, and did not trace every rewriting. The four statements
+that the census cuts at a \lf{let} (Lemma~\ref{l:levelsums}, Proposition~\ref{p:minors}, Theorems 3 and~6) were read
+in full in the source. The definitions of the background library that the statements rest on (parameters,
+Flensted-Jensen's function, the shape and its groups, frames, Bessel functions, the size) were read in the
+source; those of the adelic groups are taken from the dossier's readings. No Lean was run.
+
+Several arguments here are shorter than, or different from, the formal ones. In Proposition~\ref{p:compress} the
+formal proof verifies one identity between traces by a linear combination of the hypotheses; the three terms
+$\mathcal{I}_1$, $\mathcal{I}_2$, $\mathcal{I}_3$ above are a derivation of that identity. In
+Proposition~\ref{p:nearone} the formal proof checks the unitarity of~$u$ and the trace identity of Step~4 by linear
+combinations; the block form and the argument with the vector \m{(v,v')} are ours. Both identities, and the two
+of Proposition~\ref{p:compress}, were also tested numerically on random matrices, which is a check of the
+transcription and no proof. The numerical estimates in Theorems 1 and~2 and in Proposition~\ref{p:minors} are done
+by hand here with other intermediate constants than the formal ones. In Theorem~4 the vectors $V^{(k)}$ and the
+description of the chain matrix are our reading of the matrices of the formal proof. The program check of the
+unit's dossier covered \UnitSteps{} leaf steps of \UnitProofs{} proofs.
+
+\head{Appendix A. Concordance with the Lean artifact}
+{\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}\setlength{\tabcolsep}{0pt}
+\begin{longtable}{@{}p{30mm}p{56mm}p{43mm}r@{}}
+\textbf{In this note} & \textbf{Lean declaration} & \textbf{File} & \textbf{Lines}\\\midrule\endhead
+\ConcordanceRows
+\end{longtable}}
+
+\subhead{Legend.} The formal names of the variables, and the letters of this note. Index types \lf{n}, \lf{m},
+\lf{X}: $\Omega$, $\Omega'$, $\Xi$. Signs \lf{ε}, \lf{η}: $\varepsilon$, $\varepsilon'$. Parameters \lf{l}, \lf{k}: $l$, $l'$; in
+the Bessel statements \lf{u} is~$l'$. The map \lf{τ} of two-factor data: $e'$; the bijections \lf{e'} of Theorem~3
+and \lf{τ} of Theorem~4: $\tilde e$. Elements \lf{s}, \lf{t} of~$S$: $\sigma$, $\sigma'$. The radius \lf{r}: $\delta$. Gaps
+\lf{h}: $H$ if real, $A$ if natural. Projections \lf{P}, \lf{Q}: $p$, $q$; errors \lf{r}: $\eta$; elements \lf{k} of the
+maximal compact subgroup: $h$. The frame \lf{p}: $\fp$; the vector \lf{v}: $v_0$. In Theorem~6, \lf{n}, \lf{s}:
+$\Omega$, $\varepsilon$; \lf{S}, \lf{a}, \lf{R}, \lf{d}: $C$, $a_0$, $\rho$, $Q$; places \lf{w}: $v$; \lf{φ}: $\Psi$; \lf{L}:
+$L_*$; \lf{h}: $y$. Objects of the background library: \lf{USign}, \lf{maxCompactU}, \lf{blockDiagPart},
+\lf{inclMatrix}, \lf{logOneAdd}, \lf{coordProj}, \lf{principalMinor} are $\Us{\varepsilon}$, $\Ks{\varepsilon}$,
+$\bd{\varepsilon}{\,\cdot\,}$, $\inc{\iota}$, $\lgo{\,\cdot\,}$, $\cpr{\Pi}$, $\pmn{\Pi}{\,\cdot\,}$; \lf{paramAddRho},
+\lf{lowestKType}, \lf{weightMinors}, \lf{flenstedJensen}, \lf{dsCoeff}, \lf{formalDegree} are $\ups{l}$, $\lowk{l}$,
+$\wm{w}{\,\cdot\,}$, $\fj{l}{\,\cdot\,}{\,\cdot\,}$, $\dsc{l}{\,\cdot\,}$, $\fdeg{l}$; \lf{besselU}, \lf{besselH}, \lf{besselS},
+\lf{embedH}, \lf{simpleRootSum}, \lf{besselHaar}, \lf{besselQuotMeasure}, \lf{besselSize} are $\Uu{\fs}$, $\Hh{\fs}$,
+$\Qq{\fs}$, $\emb{\fs}{\,\cdot\,}$, $\sd{\,\cdot\,}$, $\hU{\fs}$, $\hq{\fs}$, $\bsz{\,\cdot\,}$.
+
+\subhead{Two statements, as the artifact has them.} Theorem~1:
+\quoted{dsCoeffgaussianshape}
+Theorem~2:
+\quoted{laplacemethod}
+
+\head{Notation}
+\begingroup\fontsize{8.6}{10.9}\selectfont\raggedright
+\setlength{\columnsep}{9mm}\setlength{\parskip}{0pt}
+\begin{multicols}{2}
+\nt{$\Omega$, $\Omega'$, $\Xi$, $\Xi'$; $i$, $i'$, $i''$; $\xi$}{finite index sets; elements of $\Omega$ or $\Omega'$; an element of~$\Xi$}
+\nt{$\Omega_1$, $\Pi$, $\Pi'$}{subsets of~$\Omega$ (the complement of $e(\Xi)$; lower and upper sets)}
+\nt{$\varepsilon$, $\varepsilon'$, $\varepsilon\oplus1$, $1$}{families of signs; $\varepsilon$ extended by $+1$ at~$*$; the constant family}
+\nt{$X$, $Y$, $Z$, $D$; $X^{*}$, $\comm{X}{Y}$}{matrices; conjugate transpose; commutator}
+\nt{$\hs{X}$, $\op{X}$, $\nrm{v}$, $\tr$}{Hilbert--Schmidt norm, operator norm, Euclidean norm of a vector; trace}
+\nt{$\dg{w}$, $\bd{\varepsilon}{X}$, $\inc{\iota}$, $\iota$}{diagonal matrix; block-diagonal part; the matrix of a map $\iota\colon\Xi\to\Omega$}
+\nt{$\Us{\varepsilon}$, $\Ks{\varepsilon}$; $g$, $\tilde g$, $g_0$, $g_1$, $g_2$; $h$, $h_0$, $h_1$}{unitary group and its maximal compact subgroup; their elements}
+\nt{$dg$, $dh$, $dr$, $dk$, $\vol$}{Haar measures; volume}
+\nt{$\lgo{X}$, $s$}{the logarithm of \m{1+X}; a real variable of integration in $[0,1]$ (not the complex variable of the write-up)}
+\nt{$p$, $q$, $p'$, $\cpr{\Pi}$, $p_\tau$; $\pmn{\Pi}{y}$}{orthogonal projections; coordinate projections; principal minor}
+\nt{$w$, $v$; $\abs{w}_1$; $\tau$, $c_1$, $c_2$}{integer vectors (in Definition~\ref{d:bestype}, $w$ is a weight); sum of absolute values; integers}
+\nt{$l$, $l'$, $l_v$; $\lambda$, $\rho$, $\rho_c$, $\mu$}{integer vectors, read as doubled Harish-Chandra parameters; $l/2$, half sums of roots, and the name of $\ups{l}$ in the source (§\ref{s:setting} only)}
+\nt{$\ups{l}$, $\lowk{l}$; $\Upsilon$, $\Lambda$, $\Lambda'$}{$\lambda+\rho$ and the lowest $K$-type; their values in a proof}
+\nt{$H$, $A$, $A_0$, $L$}{a real gap; natural numbers: large gaps, a bound for the entries of~$l$}
+\nt{$\wm{w}{g}$, $\ktn{\varepsilon}{w}$, $c_\Lambda$}{product of principal minors; its square norm on $\Ks{\varepsilon}$}
+\nt{$\fj{l}{g}{z}$, $\dsc{l}{g}$, $\fdeg{l}$, $\psi^{\fp}_{l}$}{Flensted-Jensen's integral, his function, the formal degree; the function in a frame}
+\nt{$\gwn{w}{X}$}{the gap-weighted square norm}
+\nt{$\phs{l}{l'}{x}$; $x=(x_1,x_2)$}{the phase of a pair of matrices}
+\nt{$\steep{l}{B}{e}$; $B$, $M$, $e$}{steep weights; a real number, a natural number, a bijection onto~$\Omega$}
+\nt{$S$; $\sigma$, $\sigma'$, $\sigma_0$; $j=(j_1,j_2)$}{a group; its elements (in §\ref{s:bessel}, \m{\sigma=(\sigma_1,\sigma_2)}); a homomorphism}
+\nt{$\phi$, $\phi_{\fs}$, $e'$, $\tilde e$}{phase functions; a map \m{\Xi\to\Omega'}; a bijection extending such a map}
+\nt{$\lapint{l}{l'}{j}{\phi}{\sigma}$}{the integrand of two coefficients}
+\nt{$\twof{l}{l'}{j}{e'}{B}{e}{\phi}$}{two-factor data}
+\nt{$\nu$, $\beta$, $\beta_0$, $T$, $\delta$, $\delta_0$, $\kappa$, $\kappa_0$, $\kappa_1$, $\kappa_2$}{a measure; real parameters; a radius; Gaussian factors ($\kappa_0$ a norm in §\ref{s:minors})}
+\nt{$c$, $C$, $R$, $K$, $D$, $P$, $t_0$, $m_0$, $d_0$, $n_0$}{real numbers and bounds, natural numbers, as each statement says}
+\nt{$\eta$, $\eta_1$, $\eta_2$, $\eta_3$, $\eta_\tau$, $r(h)$, $\epsilon$}{error terms (in §\ref{s:period}, $\eta$, $\eta_\gamma$ are vectors)}
+\nt{$\mathcal{I}(s)$, $\mathcal{I}_n$, $W$, $V$, $A$, $A_c$, $A_n$, $E$, $R$, $G$, $X_1$, $X^{\uparrow}$, $X^{\downarrow}$, $\alpha_0$}{in §\ref{s:minors}: integrands, inverses, commutators and their parts, a norm}
+\nt{$E$, $q_0$, $G_0(h)$, $a$}{in §\ref{s:gauss}: the exponent of the phase, the exponent of~$\kappa$, a sum; an eigenvalue}
+\nt{$\chi$, $c_0$, $J$, $J_2$, $g_{11},\dots,g_{22}$, $u$, $T$, $T'$, $Q$, $Y_\sigma$, $v'$}{in §\ref{s:twofactor}: an indicator, rows of \m{g-1}, sign matrices, blocks, a unitary matrix, \m{j(\sigma')-1}, $\inc{e|_\Xi}$, a pair}
+\nt{$\mathsf{n}$, $\gamma(\sigma)$, $\operatorname{dist}(\sigma)$, $\mathsf{m}$, $\mathsf{J}$, $U_0$, $z$, $z_n$, $E_1$, $E_2$}{in §\ref{s:laplace}: $(\abs{\Omega}+\abs{\Omega'})^{2}$, \m{2/\op{j_1(\sigma)}}, a distance, the measure of the ball, the integral, a small ball, complex numbers}
+\nt{$\tau_n$, $c_n$, $\pi$, $\pi_a$, $d_a$, $\rho_{na}$, $\omega$, $j^{\omega}$, $b_i$, $b_*$, $v$}{nodes, Lagrange weights, polynomials and their values; the element of Theorem~3 and its homomorphism; standard basis vectors; a column}
+\nt{$\fs$; $\rhs{\fs}$, $\kps{\fs}$, $\nsh{\fs}$, $\rsh{\fs}$, $\Ind{\fs}$, $\varrho$}{a shape and its numbers and index sets}
+\nt{$e_a$, $x_i$, $z$, $e^{*}_a$, $f_a$; $a$, $a'$, $b$, $c$, $k$}{basis and frame of a shape; indices of basis vectors (also: $a$ a weight, $b$ a real number)}
+\nt{$\Jone{\fs}$, $\Gone{\fs}$, $\lev{i}$, $\Uu{\fs}$, $\Hh{\fs}$, $\Qq{\fs}$, $\emb{\fs}{h}$, $\sd{g}$}{Gram matrix, unitary group, level, unipotent group, embedded compact group, Bessel subgroup, embedding, sum above the diagonal}
+\nt{$\hU{\fs}$, $\hq{\fs}$, $\bsz{x}$, $C_{\fs}$}{Haar measure of $\Uu{\fs}$, quotient measure, size, chain matrix}
+\nt{$\frm{\fs}{\varepsilon}$, $\fp$, $\fp_i$, $q$}{frames; a frame, its columns; in §\ref{s:bessel}, \m{q=x\,\fp}}
+\nt{$\bgr{\fs}$, $\bch{\fs}$, $\bms{\fs}$, $\bph{x}{\sigma}$}{the Bessel graph, its chart, its measure, the pair homomorphism}
+\nt{$I$, $\mathrm{rep}$, $W$, $v_0$, $x$, $y$, $n$}{an index set, a unitary representation, a Bessel function, a unit vector, points of $\Gone{\fs}$, an exponent}
+\nt{$\peak{l}{\mathrm{rep}}{W}{x}{P}$}{peak}
+\nt{$\isbes{\mathcal{B}}{l}{w}$; $\mathcal{B}$, $I(\mathcal{B})$, $W_{\mathcal{B}}$, $\mathbb{S}_w$, $f$}{type of a Bessel system; its components; a Schur matrix}
+\nt{$V^{(k)}$, $V_a$, $M_0$, $D$, $F(y,\sigma)$, $k(g)$, $\mathsf{c}$, $y_1$, $y_2$}{in §\ref{s:bessel}: vectors, a bound, a conjugated weight matrix, an integrand, a kernel, an exponent, points}
+\nt{$E$, $f_E$, $v$, $\abs{a}_v$, $a_0$}{in Theorem~6: a CM field, its number of infinite places, such a place, its absolute value, the level}
+\nt{$G(E,\varepsilon)$, $G_\infty$, $G_{\mathrm f}$, $K_\Omega(a_0)$, $\mathsf{K}$, $\mathsf{K}^{+}$}{adelic groups and congruence subgroups}
+\nt{$V$, $J_V$, $x_V$, $V\cdot x$, $V^{+}$, $\langle1\rangle$, $\Gamma(V)$, $\Gamma^{+}$, $\varpi_V$, $\lambda_1$, $\nrm{\eta}_V$}{a space with a point, its parts, its translates and sum, discrete groups, quotient measure, first minimum, length}
+\nt{$F$, $C$, $\rho$, $Q$, $\alpha$, $\omega$, $\Psi$, $L_*$, $X_\gamma$, $k_\gamma$, $\gamma$, $\gamma_0$, $\delta$, $r$, $k$}{in Theorem~6: an automorphic form, bounds, positions, the test function, a constant, group elements}
+\nt{$\mathcal{C}$, $\mathcal{W}$, $y_\gamma$, $f(\gamma)$, $f_n$, $\eta_\gamma$, $g$, $o$}{representatives, points, vectors; in \inp{4}, $o$ is an ordering function}
+\end{multicols}
+\endgroup
+
+\head{References}
+{\fontsize{9.4}{12.6}\selectfont\raggedright
+References are given as the second reader of the project and the catalogue of the write-up record them; none
+was typed from memory, and the places not marked as confirmed there are to be confirmed.
+\begin{itemize}[leftmargin=1.6em,itemsep=1pt]
+\item U.~A.~First, \emph{Witt's extension theorem for quadratic spaces over semiperfect rings}, J.~Pure Appl.\ Algebra
+  219 (2015); Remark~2.1 and Corollary~4.9 (preprint arXiv:1408.0522). For \inp{6}.
+\item M.~Flensted-Jensen, \emph{Discrete series for semisimple symmetric spaces}, Ann.\ of Math.\ 111 (1980). For
+  \inp{7}; place to be confirmed.
+\item B.~Sun, \emph{Matrix coefficients of cohomologically induced representations}, Compositio Math.\ 143 (2007).
+  Named by the catalogue for \inp{9}; not identified with it.
+\item Harish-Chandra, \emph{Discrete series for semisimple Lie groups~II}, Acta Math.\ 116 (1966), pp.~87--88. For
+  \inp{12}; relation unresolved.
+\item O.~Kallenberg, \emph{Invariant measures and disintegrations with applications to Palm and related kernels},
+  Probab.\ Theory Related Fields 139 (2007), 285--310; D.~Gentner and G.~Last, \emph{Palm pairs and the general
+  mass-transport principle}, §2. For \inp{13}(d) and (A1); relation unresolved.
+\item The header of the formal text of the unit names as related work: P.~Nelson and A.~Venkatesh, \emph{The orbit
+  method and analysis of automorphic forms} (2021); H.~He, \emph{On the Gan--Gross--Prasad conjecture for
+  $\mathrm{U}(p,q)$} (2017); B.~Sun (2007), as above. We have not compared them with the statements of this note.
+\end{itemize}}
+
+\end{document}

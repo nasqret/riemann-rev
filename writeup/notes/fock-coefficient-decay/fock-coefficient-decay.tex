@@ -1,0 +1,579 @@
+% !TEX program = lualatex
+% ---------------------------------------------------------------------------------------------
+%  Readback note 8: Decay of Heisenberg matrix coefficients of homogeneous Fock vectors, uniform in the degree
+%
+%  Build:  python3 tools/rb.py note <slug>
+%
+%  One unit of a Lean artifact, rewritten as ordinary mathematics. The prose is hand-written. Lean names,
+%  line ranges and counts come from data.tex; quoted Lean statements are copied from the artifact by the build.
+%
+%  Rules of the text: standard terminology; every symbol is explained where it first appears and listed again
+%  in the notation at the end; no letter has two meanings; a proof is complete or says what it takes for granted;
+%  Lean names appear only in the LEAN lines and in the concordance.
+%
+%  The signature rule (the build enforces it): a function, relation or predicate that the artifact defines is
+%  written only through its notation macro, which the build makes from the spec (`notation`) with one slot for
+%  each explicit argument of the Lean definition. No argument is fixed and dropped, also not "for brevity" and
+%  not for one section. Every argument and every hypothesis of a stated declaration stands inside its
+%  statement, or in a Setting that the statement cites by number; only implicit and instance arguments (the
+%  ambient objects) may stand in the conventions.
+% ---------------------------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\ifdefined\pdfvariable\pdfvariable suppressoptionalinfo \numexpr 1+2+4+8\relax\fi
+\usepackage[a4paper,hmargin=35mm,top=22mm,bottom=27mm,footskip=12mm,nohead]{geometry}
+
+\usepackage{fontspec}
+\directlua{
+  luaotfload.add_fallback("gfallback", {"STIXTwoMath-Regular.otf:mode=node;", "DejaVuSans.ttf:mode=node;"})
+  luaotfload.add_fallback("gmonofallback", {"DejaVuSansMono.ttf:mode=node;", "STIXTwoMath-Regular.otf:mode=node;"})
+}
+\setmainfont{NewCM10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookItalic,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldItalic,SmallCapsFont=*-Book,SmallCapsFeatures={Letters=SmallCaps},
+  RawFeature={fallback=gfallback}]
+\setsansfont{NewCMSans10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookOblique,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldOblique,RawFeature={fallback=gfallback}]
+\setmonofont{JetBrainsMono}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,Scale=MatchLowercase,
+  RawFeature={-calt;-liga;fallback=gmonofallback}]
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage[math-style=TeX]{unicode-math}
+\setmathfont{NewCMMath-Book.otf}
+\emergencystretch=2.5em\relax
+
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows.meta,positioning,backgrounds}
+\usepackage[protrusion=true,expansion=true]{microtype}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{multicol}
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+
+\definecolor{ink}{HTML}{0F172A}
+\definecolor{inksoft}{HTML}{475569}
+\definecolor{inkfaint}{HTML}{94A3B8}
+\definecolor{rulegrey}{HTML}{CBD5E1}
+\definecolor{arith}{HTML}{C2410C}
+\definecolor{est}{HTML}{7C3AED}
+\definecolor{ana}{HTML}{0891B2}
+\definecolor{ok}{HTML}{047857}
+\definecolor{leancol}{HTML}{3730A3}
+
+\title{Decay of Heisenberg matrix coefficients of homogeneous Fock vectors, uniform in the degree}
+\author{grh-compact}
+\date{}
+
+% ------------------------------------------------------------------------------------- macros
+\newcommand{\leanfont}{\ttfamily\fontsize{8.6}{10.5}\selectfont\color{leancol}}
+\newcommand{\lean}[1]{\csname LN@#1\endcsname}
+\newcommand{\fillin}[1]{{\color{arith}\itshape[#1]}}  % a place of the template that is not written yet; the build reports every one that is left
+\newcommand{\leanquote}[1]{\csname LQ@#1\endcsname}
+\input{data.tex}
+
+\linespread{1.08}                       % 11 pt on 14.7 pt
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt plus 1.5pt minus 0.5pt}
+\setlength{\abovedisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\belowdisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\abovedisplayshortskip}{3pt plus 2pt}
+\setlength{\belowdisplayshortskip}{6pt plus 2pt minus 2pt}
+\emergencystretch=1.5em
+\clubpenalty=10000 \widowpenalty=10000 \displaywidowpenalty=10000
+\relpenalty=7000 \binoppenalty=9000
+\raggedbottom
+\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\sffamily\fontsize{7.6}{9}\selectfont\color{inkfaint}\thepage\,/\,\pageref*{LastPage}}
+\setlist{topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=4pt,leftmargin=2.1em,labelsep=0.55em}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\len}{\operatorname{len}}
+\newcommand{\cok}{\operatorname{cok}}
+\newcommand{\End}{\operatorname{End}}
+\newcommand{\Hom}{\operatorname{Hom}}
+\newcommand{\Gal}{\operatorname{Gal}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\kw}[1]{\emph{#1}}
+\newcommand{\m}[1]{\mbox{$#1$}}        % a short formula that must not be broken across lines
+\newcommand{\head}[1]{\par\addvspace{17pt plus 4pt minus 2pt}\Needspace{6\baselineskip}%
+  \noindent{\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\sect}[2]{\refstepcounter{section}\label{#2}\par\addvspace{19pt plus 4pt minus 2pt}\Needspace{7\baselineskip}%
+  \noindent\llap{{\fontsize{13.2}{16}\selectfont\bfseries\color{inkfaint}\thesection}\hspace{9pt}}%
+  {\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\subhead}[1]{\par\addvspace{9pt plus 2pt}\Needspace{4\baselineskip}\noindent\textbf{#1}\enspace\ignorespaces}
+% where a statement lives in the Lean archive
+\newcommand{\leantag}{{\sffamily\bfseries\fontsize{6.3}{8}\selectfont\color{leancol}\addfontfeatures{LetterSpace=7}LEAN}}
+\newcommand{\sep}{\unskip\nobreak\hspace{5pt}{\color{inkfaint}\textperiodcentered}\hspace{5pt plus 2pt}\ignorespaces}
+\newcommand{\leanline}[1]{\par\nopagebreak\vspace{-2.5pt}{\fontsize{8.9}{12.4}\selectfont\color{inksoft}\raggedright
+  \noindent\llap{\leantag\hspace{9pt}}#1\par}\vspace{1pt}}
+% a displayed statement in a tinted box: #1 colour, #2 text
+\newcommand{\statement}[2]{\par\addvspace{7pt}\begingroup\setlength{\fboxsep}{8.5pt}\setlength{\fboxrule}{0.6pt}%
+  \noindent\fcolorbox{#1!30!white}{#1!3!white}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{#2}}%
+  \endgroup\par\addvspace{7pt}}
+\newcommand{\nt}[2]{\par\noindent\hangindent=1.1em\hangafter=1 #1\enspace{\color{inksoft}#2}\par\vspace{1pt}}
+\newcommand{\legdot}[1]{\tikz[baseline=-0.62ex]\fill[#1] (0,0) circle (2.5pt);\hspace{3pt}}
+\newcommand{\crow}[4]{\csname CS@#1\endcsname & #2 & \textcolor{inksoft}{#3} & \textcolor{inksoft}{#4}\\}
+\newcommand{\leanquoteline}[2]{\par\noindent\hangindent=\dimexpr#1\fontdimen2\font+2.2em\relax\hangafter=1
+  \hspace*{#1\fontdimen2\font}#2}
+\newcommand{\quoted}[1]{\par\vspace{3pt}{\ttfamily\fontsize{7.5}{10.4}\selectfont\color{leancol}\raggedright
+  \setlength{\parskip}{0pt}\leanquote{#1}\par}\vspace{4pt}}
+\newcommand{\bx}[3]{{\sffamily\bfseries\fontsize{7.3}{9.2}\selectfont\color{#1!82!black}#2}\\[1.5pt]#3}
+\newcommand{\cs}[2]{\expandafter\newcommand\csname CS@#1\endcsname{#2}}
+
+% theorems
+\newtheoremstyle{plainx}{7pt plus 2pt}{7pt plus 2pt}{\itshape}{}{\bfseries}{.}{0.5em}{}
+\newtheoremstyle{uprightx}{7pt plus 2pt}{7pt plus 2pt}{}{}{\bfseries}{.}{0.5em}{}
+\theoremstyle{plainx}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{uprightx}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{setting}[theorem]{Setting}          % hypotheses shared by several statements; each of them cites it by number
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\renewcommand{\qedsymbol}{{\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.5pt}\fbox{\rule{0pt}{0.46em}\hspace{0.46em}}}}
+% what holds throughout the note: the ambient objects only (implicit and instance arguments), never a hypothesis
+\newenvironment{conventions}{\par\addvspace{5pt}\noindent\textbf{Conventions.}\enspace\ignorespaces}{\par\addvspace{3pt}}
+\makeatletter
+\renewenvironment{proof}[1][Proof]{\par\pushQED{\qed}\normalfont\topsep0pt\partopsep0pt
+  \trivlist\item[\hskip\labelsep\itshape #1.]\ignorespaces}{\popQED\endtrivlist\@endpefalse}
+\makeatother
+
+% where each declaration of the concordance is treated: \cs{key}{place}, the place naming a \label or a lettered item
+\cs{normrealInnerrealHeisOple}{Theorem 1}
+% notation of this note (objects of the background library are written with all their arguments)
+\newcommand{\CC}{\mathbb{C}}
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\Fock}[1]{\mathcal{F}(#1)}                 % the Fock space of signature #1
+\newcommand{\heis}[2]{\varrho_{#1}(#2)}                % the Heisenberg operator of the vector #2
+\newcommand{\weil}[2]{\omega_{#1}(#2)}                 % the oscillator representation at #2
+\newcommand{\inn}[3]{\langle #2,#3\rangle_{#1}}        % the inner product of the Fock space
+\newcommand{\pv}[2]{v_{#1,#2}}                         % the Fock vector of the polynomial #2
+\newcommand{\hol}[2]{\operatorname{hol}_{#1}(#2)}      % conjugation of the positive coordinates
+\newcommand{\vac}{\varphi_0}                           % the Gaussian
+\newcommand{\bich}[3]{\beta_{#1}(#2,#3)}               % the bicharacter
+\newcommand{\mult}[2]{\Delta_{#1}(#2)}                 % the multiplier
+\newcommand{\opn}[1]{\lVert #1\rVert}                  % operator norm
+\newcommand{\lone}[1]{\lVert #1\rVert_{1}}             % L^1 norm
+\newcommand{\ee}{\mathrm{e}}
+\newcommand{\dd}{\mathrm{d}}
+\newcommand{\dg}{\mathrm{dg}}                           % the degree of the homogeneous polynomial
+\newcommand{\lnm}[1]{{\leanfont #1}}
+
+\begin{document}
+\color{ink}
+
+{\raggedright
+{\sffamily\bfseries\fontsize{7.2}{9}\selectfont\color{leancol}\addfontfeatures{LetterSpace=8}READBACK NOTE 8\par}
+\vspace{5pt}
+{\fontsize{21.5}{25.5}\selectfont\bfseries Decay of Heisenberg matrix coefficients of homogeneous Fock vectors, uniform in the degree\par}
+\vspace{5pt}
+{\fontsize{12.4}{16}\selectfont\itshape\color{inksoft} One unit of the Lean artifact \ArtifactName, read back into
+mathematics\par}}
+\vspace{8pt}
+{\color{rulegrey}\hrule height 0.6pt}
+\vspace{7pt}
+\thispagestyle{empty}
+
+\textbf{Summary.} In the Fock model of the oscillator representation of a unitary group $U(\varepsilon)$ of any
+signature, let $v$ be the vector of a homogeneous polynomial. The matrix coefficient of~$v$ against its image
+under a group element followed by a Heisenberg translation by a vector~$y$ decays faster than every power
+of~$|y|$. The unit proves this with explicit constants that depend on the degree of the polynomial only through
+a bound \m{A\ge\text{degree}+\text{number of variables}}: the decay of order \m{|y|^{-2\nu}} costs the factor
+\m{(4(A+\nu))^{\nu}}. This is the sense of ``uniform in the degree'' in the title: no feature of the polynomial
+other than~$A$ enters the constants. The bound itself is not independent of the degree: for fixed~$\nu$ the factor
+grows like the $\nu$-th power of~$A$. The proof writes the coefficient as an integral, compares $v$ with a dilate of itself, and
+uses three elementary inequalities. This is the first of three notes on the theta correspondence behind
+Theorem~C; it is used where a theta kernel is compared with a matrix coefficient.
+
+\statement{leancol}{\fontsize{9.6}{13.2}\selectfont\textbf{What this note is.} The artifact \ArtifactName{} is a
+body of Lean code: the compact edition of a formal proof, due to L.~Alpöge with the AI system Claude, whose final
+theorems are the Riemann hypothesis and its generalisation to Dirichlet \emph{L}-functions. That headline is a claim.
+The authors report that every file compiles and that Lean's kernel accepted the proofs; an independent build is
+recorded in the handout's record of checks when it reports. No mathematician has read the argument through, and
+nothing here says that the Riemann hypothesis is proved. This note treats one unit of the artifact,
+which consists of a single lemma (\UnitInNote{} of \UnitMembers{} declarations). Its proof is given in full. The Fock model
+itself (the space, the Heisenberg operators, the oscillator representation) belongs to the background library of
+the artifact and is quoted in §\ref{s:setting}, with the few properties that the proof uses. The statement was
+compared with its Lean text, argument by argument. The Lean text read is \PinText; Appendix~A is the concordance
+of \ConcDecls{} declaration.}
+
+\sect{The statement}{s:intro}
+The objects are defined in §\ref{s:setting}: $U(\varepsilon)$ is the unitary group of the diagonal hermitian form
+with entries~$\varepsilon$, the space $\Fock{\varepsilon}$ is the Fock space of signature~$\varepsilon$ with its
+inner product \m{\inn{\varepsilon}{\,\cdot\,}{\,\cdot\,}}, the operators \m{\heis{\varepsilon}{y}} and
+\m{\weil{\varepsilon}{u}} are the Heisenberg translation by~$y$ and the oscillator representation at~$u$, and
+\m{\pv{\varepsilon}{p}} is the vector of the polynomial~$p$. Norms of vectors of $\CC^I$ are Euclidean, and
+\m{\opn{u}} is the operator norm of the matrix~$u$ for these norms.
+
+\statement{arith}{\phantomsection\label{t:1}\textbf{Theorem 1} (decay of matrix coefficients, with explicit
+dependence on the degree).\enspace \emph{Let $I$ be a non-empty finite set, \m{\varepsilon\colon I\to\{1,-1\}} a family of signs,
+\m{u\in U(\varepsilon)}, $p$ a complex polynomial in the variables $X_i$, \m{i\in I}, and $v$ an element of the
+Fock space $\Fock{\varepsilon}$ with \m{v=\pv{\varepsilon}{p}}. Let $\dg$, $A$ and $\nu$ be natural numbers and
+let \m{y\in\CC^I}. Suppose that $p$ is homogeneous of degree~$\dg$, in the sense that
+\m{p(cz)=c^{\dg}p(z)} for every real number~$c$ and every \m{z\in\CC^I}; that \m{\dg+|I|\le A}; that
+\m{A\ne0}; and that \m{|y|>0}. Then}
+\[
+\bigl|\inn{\varepsilon}{v}{\heis{\varepsilon}{y}\,\weil{\varepsilon}{u}\,v}\bigr|
+\ \le\ \opn{u}^{\,|I|+2\nu}\cdot\operatorname{Re}\inn{\varepsilon}{v}{v}\cdot\bigl(4(A+\nu)\bigr)^{\nu}\cdot\bigl(|y|^{-1}\bigr)^{2\nu}.
+\]}
+\leanline{\lean{normrealInnerrealHeisOple}}
+
+The number \m{\inn{\varepsilon}{v}{v}} is the integral of \m{|v|^2}, so it is real and its real part is itself.
+For \m{\nu=0} the bound reads \m{\opn{u}^{|I|}\inn{\varepsilon}{v}{v}}, which is weaker than the bound
+\m{\inn{\varepsilon}{v}{v}} that the Cauchy--Schwarz inequality gives together with the unitarity in (Q6), a fact
+this note does not use; the content lies in large~$\nu$. If \m{\nu\le|y|^2/(4\ee\opn{u}^2)-A}, then
+\m{4(A+\nu)\opn{u}^2|y|^{-2}\le\ee^{-1}} and the right side is at most
+\m{\opn{u}^{|I|}\inn{\varepsilon}{v}{v}\,\ee^{-\nu}}; so the theorem gives a bound of Gaussian type in~$|y|$. What
+matters in the application is that the constant \m{(4(A+\nu))^{\nu}} depends on the polynomial only through the
+bound~$A$ for its degree plus the number of variables. The theorem is a quantitative form, with the dependence on
+the degree made explicit, of the rapid decay in~$y$ of such coefficients.
+
+\sect{The setting}{s:setting}
+\begin{conventions}\phantomsection\label{c:conventions}
+The natural numbers are \m{0,1,2,\dots}. Throughout, $I$ is a non-empty finite set and \m{\varepsilon\colon
+I\to\{1,-1\}} a family of signs; \m{|I|} is the number of elements of~$I$. Vectors of $\CC^I$ are columns indexed
+by~$I$, with the Euclidean norm \m{|z|=(\sum_{i\in I}|z_i|^2)^{1/2}}, and for \m{z,w\in\CC^I} we put
+\m{w^{*}\varepsilon z=\sum_{i\in I}\overline{w_i}\,\varepsilon_i\,z_i}. Integrals over $\CC^I$ are taken with
+respect to the Lebesgue measure divided by \m{\pi^{|I|}}, written~\m{\dd z}; so
+\m{\int_{\CC^I}\exp(-|z|^2)\,\dd z=1}, and the substitution \m{z\mapsto z/c}, for a real number \m{c>0}, multiplies
+integrals by \m{c^{2|I|}}. For a
+square matrix~$u$ indexed by~$I$, \m{\opn{u}} is its operator norm on $\CC^I$ with the Euclidean norm. The
+objects of this section are those of the background library of the artifact; they are recalled here because the
+statement of Theorem~1 uses them. Letters of the handout's overview that are not displayed with the data as an
+argument (among them $\varepsilon$, $\beta$, $\nu$ and~$j$) have, in this note, only the meaning given in its
+notation list; the degree is written~$\dg$, because $\delta$ is the bound of Theorem~C in the overview.
+\end{conventions}
+
+\begin{definition}[the Heisenberg bicharacter and the Fock space]\label{d:fock}
+For \m{z,w\in\CC^I} put
+\[
+\bich{\varepsilon}{z}{w}=\exp\Bigl(\tfrac12\bigl(w^{*}\varepsilon z-z^{*}\varepsilon w\bigr)\Bigr)
+=\exp\bigl(\mathrm{i}\operatorname{Im}(w^{*}\varepsilon z)\bigr),\qquad \vac(z)=\exp\bigl(-\tfrac12|z|^2\bigr).
+\]
+So \m{\beta_{\varepsilon}} has absolute value~$1$, is multiplicative in each variable, and
+\[\bich{\varepsilon}{w}{z}=\bich{\varepsilon}{z}{w}^{-1}=\overline{\bich{\varepsilon}{z}{w}};\] the Gaussian
+$\vac$ is real, even, and \m{0<\vac\le1}. The \kw{Fock space} $\Fock{\varepsilon}$ is the space of all integrable
+functions \m{v\colon\CC^I\to\CC} that satisfy the reproducing identity
+\[
+v(w)=\int_{\CC^I}v(z)\,\bich{\varepsilon}{z}{w}\,\vac(w-z)\,\dd z\qquad\text{for every } w\in\CC^I,
+\]
+with the norm \m{\lone{v}=\int|v(z)|\,\dd z}. For \m{v,w\in\Fock{\varepsilon}} the \kw{inner product} is
+\[
+\inn{\varepsilon}{v}{w}=\int_{\CC^I}\overline{v(z)}\,w(z)\,\dd z ;
+\]
+it is conjugate-linear in the first variable. For
+\m{y\in\CC^I} the \kw{Heisenberg operator} \m{\heis{\varepsilon}{y}} sends \m{v\in\Fock{\varepsilon}} to the function
+\[
+\bigl(\heis{\varepsilon}{y}v\bigr)(z)=\bich{\varepsilon}{y}{z}\,v(z-y).
+\]
+\end{definition}
+\leanline{in the background library: \lnm{realHeis}, \lnm{realVac}, \lnm{realMeasure}, \lnm{fockSpace},
+\lnm{realInner}, \lnm{realHeisOp}\sep the general construction is \lnm{Heisenberg.IsVacuum.Model} with
+\lnm{heisOp} and \lnm{modelInner}}
+
+The elements of $\Fock{\varepsilon}$ are functions, not classes of functions: the reproducing identity determines
+the values. It also gives \m{|v(w)|\le\lone{v}} for all~$w$, because \m{|\beta_{\varepsilon}|=1} and
+\m{\vac\le1}. So every \m{v\in\Fock{\varepsilon}} is bounded, \m{|v|^2\le\lone{v}\,|v|} is integrable, and the inner
+product is defined and bounded: \m{|\inn{\varepsilon}{v}{w}|\le\lone{v}\lone{w}}. The Heisenberg operators map
+$\Fock{\varepsilon}$ to itself, preserve the norm and the inner product, and satisfy
+\begin{equation}\label{e:heis}
+\heis{\varepsilon}{y}\,\heis{\varepsilon}{w}=\bich{\varepsilon}{y}{w}\,\heis{\varepsilon}{y+w}\qquad(y,w\in\CC^I).
+\end{equation}
+The Gaussian $\vac$ belongs to $\Fock{\varepsilon}$; it is called the \kw{vacuum vector}. For \m{\varepsilon=1}
+the functions \m{z\mapsto v(z)/\vac(z)}, \m{v\in\Fock{\varepsilon}}, are antiholomorphic, and one has the
+integrable functions of the classical Fock space; in general the positive coordinates enter through their
+conjugates and the negative ones directly, as the next definition shows. The background library works with this
+space of integrable functions and its norm of integrable functions, and not with the Hilbert space completion.
+
+\begin{definition}[polynomial vectors]\label{d:poly}
+For \m{z\in\CC^I} let \m{\hol{\varepsilon}{z}\in\CC^I} be the vector with coordinates \m{\overline{z_i}} for
+\m{\varepsilon_i=1} and \m{z_i} for \m{\varepsilon_i=-1}. For a complex polynomial~$p$ in the variables $X_i$,
+\m{i\in I}, the \kw{Fock vector of~$p$} is the function
+\[
+\pv{\varepsilon}{p}(z)=p\bigl(\hol{\varepsilon}{z}\bigr)\,\vac(z)\qquad(z\in\CC^I).
+\]
+\end{definition}
+\leanline{in the background library: \lnm{holCoord}, \lnm{polyVector}}
+
+\begin{definition}[the unitary group, its multiplier, the oscillator representation]\label{d:weil}
+The group $U(\varepsilon)$ consists of the invertible complex matrices~$u$ indexed by~$I$ with
+\m{u^{*}\operatorname{diag}(\varepsilon)\,u=\operatorname{diag}(\varepsilon)}, where $u^{*}$ is the conjugate
+transpose; it acts on $\CC^I$ by \m{z\mapsto uz}. For \m{u\in U(\varepsilon)} let $u_{--}$ be the square block
+of~$u$ whose rows and columns are the indices~$i$ with \m{\varepsilon_i=-1}, and put
+\m{\mult{\varepsilon}{u}=\overline{\det u_{--}}}, the \kw{multiplier} (it is~$1$ if no sign is~$-1$). The
+\kw{oscillator representation} of \m{u\in U(\varepsilon)} is the operator on $\Fock{\varepsilon}$
+\[
+\weil{\varepsilon}{u}\,v=\mult{\varepsilon}{u}\int_{\CC^I}v(z)\;\heis{\varepsilon}{uz}\,\vac\;\dd z ,
+\]
+an integral of a function with values in the Banach space $\Fock{\varepsilon}$.
+\end{definition}
+\leanline{in the background library: \lnm{USign}, \lnm{realMultiplier}, \lnm{realAction}, \lnm{realWeil}\sep the
+general construction is \lnm{Heisenberg.IsVacuum.weilOp}, \lnm{weilRep}}
+
+\statement{inksoft}{\textbf{Quoted from the background library.} These facts about the Fock model are taken for
+granted. Facts (Q2) to (Q5) have proofs of a line, which are indicated; (Q1) and (Q6) are part of the classical
+theory of the Fock model of the oscillator representation of unitary groups of any signature (references in §\ref{s:notes}, note~5).
+
+\vspace{3pt}\textbf{(Q1)} For every complex polynomial~$p$ in the variables $X_i$, \m{i\in I}, the function
+\m{\pv{\varepsilon}{p}} belongs to $\Fock{\varepsilon}$; in particular it is integrable and satisfies the reproducing
+identity.
+
+\vspace{3pt}\textbf{(Q2)} \emph{Reproducing property.} For \m{v\in\Fock{\varepsilon}} and \m{w\in\CC^I}:
+\m{\inn{\varepsilon}{\heis{\varepsilon}{w}\vac}{v}=v(w)}. Indeed the left side is
+\m{\int\overline{\bich{\varepsilon}{w}{z}}\,\vac(z-w)\,v(z)\,\dd z}, which is the right side of the reproducing
+identity because \m{\overline{\bich{\varepsilon}{w}{z}}=\bich{\varepsilon}{z}{w}} and $\vac$ is real and even.
+
+\vspace{3pt}\textbf{(Q3)} For \m{u\in U(\varepsilon)}: \m{\bich{\varepsilon}{uz}{uw}=\bich{\varepsilon}{z}{w}} for all
+\m{z,w\in\CC^I}, and \m{z\mapsto uz} preserves the measure~\m{\dd z}. The first holds because
+\m{(uw)^{*}\varepsilon(uz)=w^{*}\varepsilon z}, the second because \m{|\det u|=1}.
+
+\vspace{3pt}\textbf{(Q4)} For \m{u\in U(\varepsilon)}: \m{\opn{u}\ge1} and
+\m{|\mult{\varepsilon}{u}|\le\opn{u}^{|I|}}. Indeed \m{u^{-1}=\operatorname{diag}(\varepsilon)\,u^{*}\operatorname{diag}(\varepsilon)}
+has the norm of~$u$, so \m{1=\opn{u^{-1}u}\le\opn{u}^2}; and a principal minor of size~$j$ of a matrix~$u$ has absolute
+value at most \m{\opn{u}^{j}\le\opn{u}^{|I|}}.
+
+\vspace{3pt}\textbf{(Q5)} A bounded linear map~$T$ from $\Fock{\varepsilon}$ to~$\CC$ commutes with the integral of
+Definition~\ref{d:weil}: \m{T\bigl(\int v(z)\,\heis{\varepsilon}{uz}\vac\,\dd z\bigr)=\int v(z)\,T(\heis{\varepsilon}{uz}\vac)\,\dd z}.
+
+\vspace{3pt}\textbf{(Q6)} \emph{Not used in this note.} The map \m{u\mapsto\weil{\varepsilon}{u}} is a
+homomorphism from $U(\varepsilon)$ to the bounded invertible operators of $\Fock{\varepsilon}$, it preserves the
+inner product, and \m{\weil{\varepsilon}{u}\,\heis{\varepsilon}{y}=\heis{\varepsilon}{uy}\,\weil{\varepsilon}{u}}.
+This is the statement that the oscillator representation splits over $U(\varepsilon)$ with the multiplier
+\m{\Delta_{\varepsilon}}.}
+\leanline{in the background library: (Q1) is part of \lnm{polyVector}\sep (Q2) \lnm{Heisenberg.IsVacuum.modelInner\_heisOp\_vacElem}\sep
+(Q3) is part of \lnm{realAction}\sep (Q4) \lnm{U.one\_le\_norm}, \lnm{norm\_realMultiplier\_le}\sep
+(Q5) \lnm{Heisenberg.Rep.map\_integrated\_eq\_integral}\sep (Q6) is part of \lnm{realAction}, with \lnm{weilRep},
+\lnm{modelInner\_weilRep}, \lnm{weilRep\_heisOp}}
+
+\sect{Proof of Theorem 1}{s:proofs}
+Three lemmas prepare the proof. In all of them $I$ and $\varepsilon$ are as in the conventions.
+
+\begin{lemma}[the coefficient as an integral]\label{l:integral}
+Let \m{u\in U(\varepsilon)}, \m{v\in\Fock{\varepsilon}} and \m{y\in\CC^I}. Then
+\begin{align*}
+\inn{\varepsilon}{v}{\heis{\varepsilon}{y}\,\weil{\varepsilon}{u}\,v}
+&=\mult{\varepsilon}{u}\int_{\CC^I}v(z)\,\bich{\varepsilon}{y}{uz}\,\overline{v(uz+y)}\;\dd z ,\qquad\text{and so}\\
+\bigl|\inn{\varepsilon}{v}{\heis{\varepsilon}{y}\,\weil{\varepsilon}{u}\,v}\bigr|
+&\le\opn{u}^{|I|}\int_{\CC^I}|v(z)|\,|v(uz+y)|\;\dd z .
+\end{align*}
+\end{lemma}
+\begin{proof}
+The map \m{T\colon w\mapsto\inn{\varepsilon}{v}{\heis{\varepsilon}{y}w}} is linear and bounded on
+$\Fock{\varepsilon}$. By Definition~\ref{d:weil} and (Q5),
+\[
+T\bigl(\weil{\varepsilon}{u}v\bigr)=\mult{\varepsilon}{u}\int v(z)\;\inn{\varepsilon}{v}{\heis{\varepsilon}{y}\,\heis{\varepsilon}{uz}\,\vac}\;\dd z .
+\]
+By \eqref{e:heis} and by (Q2), for every \m{w\in\CC^I},
+\[
+\heis{\varepsilon}{y}\,\heis{\varepsilon}{uz}\,\vac=\bich{\varepsilon}{y}{uz}\,\heis{\varepsilon}{uz+y}\,\vac ,\qquad
+\inn{\varepsilon}{v}{\heis{\varepsilon}{w}\vac}=\overline{\inn{\varepsilon}{\heis{\varepsilon}{w}\vac}{v}}=\overline{v(w)} .
+\]
+This is the identity. The inequality follows from \m{|\beta_{\varepsilon}|=1} and (Q4).
+\end{proof}
+
+\begin{lemma}[dilation of the vector of a homogeneous polynomial]\label{l:dilate}
+Let $p$ be a complex polynomial in the variables $X_i$, \m{i\in I}, and $\dg$ a natural number with
+\m{p(cz)=c^{\dg}p(z)} for every real~$c$ and every \m{z\in\CC^I}. Then for every real \m{c>0} and every
+\m{z\in\CC^I}
+\[
+\bigl|\pv{\varepsilon}{p}(z)\bigr|=c^{\dg}\,\exp\Bigl(-\tfrac12\bigl(1-c^{-2}\bigr)|z|^2\Bigr)\,\bigl|\pv{\varepsilon}{p}(z/c)\bigr| .
+\]
+\end{lemma}
+\begin{proof}
+The map \m{z\mapsto\hol{\varepsilon}{z}} is linear over the real numbers, so
+\[
+p\bigl(\hol{\varepsilon}{z/c}\bigr)=c^{-\dg}\,p\bigl(\hol{\varepsilon}{z}\bigr),\qquad
+\vac(z/c)=\vac(z)\exp\bigl(\tfrac12(1-c^{-2})|z|^2\bigr).
+\]
+Multiply the two.
+\end{proof}
+
+\begin{lemma}[three elementary inequalities]\label{l:elementary}
+\textup{(i)} \m{1+B\le\ee^{B}} for real~$B$. \textup{(ii)} \m{\ee^{1-B}\le B^{-1}} for real \m{B>0}.
+\textup{(iii)} For \m{u\in U(\varepsilon)} and \m{y,z\in\CC^I}:
+\[
+|y|^2\le2\opn{u}^2\bigl(|z|^2+|uz+y|^2\bigr).
+\]
+\end{lemma}
+\begin{proof}
+(i) is the convexity of the exponential function, and (ii) is (i) applied to \m{B-1}: \m{B\le\ee^{B-1}}. For
+(iii), the triangle inequality and (Q4) give
+\[
+|y|\le|uz+y|+\opn{u}|z|\le\opn{u}\bigl(|uz+y|+|z|\bigr),
+\]
+and \m{(\alpha+\gamma)^2\le2(\alpha^2+\gamma^2)} for real \m{\alpha,\gamma}.
+\end{proof}
+
+\begin{proof}[Proof of Theorem 1]
+Since $I$ is not empty and \m{\dg+|I|\le A}, we have \m{A\ge1}. Put \m{c=\sqrt{\nu/A+1}}, so that \m{c\ge1} and
+\m{1-c^{-2}=\nu/(\nu+A)}. By (Q1), \m{v=\pv{\varepsilon}{p}} lies in $\Fock{\varepsilon}$, so $|v|^2$ is
+integrable; hence so are \m{z\mapsto|v(z/c)|^2} and, by (Q3), \m{z\mapsto|v((uz+y)/c)|^2}, with
+\begin{equation}\label{e:two}
+\int_{\CC^I}|v(z/c)|^2\,\dd z=\int_{\CC^I}\bigl|v\bigl((uz+y)/c\bigr)\bigr|^2\,\dd z=c^{2|I|}\,\inn{\varepsilon}{v}{v}.
+\end{equation}
+Fix \m{z\in\CC^I} and put \m{B=(|z|^2+|uz+y|^2)/(2(\nu+A))}. If $B$ were~$0$, then \m{z=0} and \m{uz+y=0}, so
+\m{y=0}, which is excluded; hence \m{B>0}. Lemma~\ref{l:dilate}, applied at the points $z$ and \m{uz+y}, gives
+\[
+|v(z)|\,|v(uz+y)|=c^{2\dg}\,\ee^{-\nu B}\;|v(z/c)|\,\bigl|v\bigl((uz+y)/c\bigr)\bigr| .
+\]
+Now \m{c^2=1+\nu/A\le\ee^{\nu/A}} by Lemma~\ref{l:elementary}(i), and \m{(\dg+|I|)/A\le1}, so
+\[c^{2\dg}=c^{2(\dg+|I|)}\,c^{-2|I|}\le\ee^{\nu}\,c^{-2|I|}.\]
+By Lemma~\ref{l:elementary}(ii) and~(iii),
+\[
+\ee^{\nu}\,\ee^{-\nu B}=\bigl(\ee^{1-B}\bigr)^{\nu}\le B^{-\nu}
+\le\Bigl(\frac{4(A+\nu)\opn{u}^2}{|y|^2}\Bigr)^{\nu}.
+\]
+With \m{2\alpha\gamma\le\alpha^2+\gamma^2} for the last two factors this gives, for every~$z$,
+\[
+|v(z)|\,|v(uz+y)|\ \le\ \frac{1}{2\,c^{2|I|}}\Bigl(\frac{4(A+\nu)\opn{u}^2}{|y|^2}\Bigr)^{\nu}
+\Bigl(|v(z/c)|^2+\bigl|v\bigl((uz+y)/c\bigr)\bigr|^2\Bigr).
+\]
+Integrate over~$z$ and use \eqref{e:two}: the integral of the left side is at most
+\[
+\bigl(4(A+\nu)\bigr)^{\nu}\,\opn{u}^{2\nu}\,|y|^{-2\nu}\,\inn{\varepsilon}{v}{v}.
+\]
+Lemma~\ref{l:integral} multiplies this by \m{\opn{u}^{|I|}}.
+\end{proof}
+\leanline{\lean{normrealInnerrealHeisOple}\sep the formal proof is one chain of the same steps: the constant~$c$,
+the two integrable functions, the integral formula, the bound of the multiplier, the pointwise inequality}
+
+\sect{Where the result is used}{s:use}
+The theorem has one consumer, in the unit on the rows (the forms on the indefinite unitary group). There a theta
+kernel for a pair of unitary groups, formed with a datum that is a character on the matrices modulo a
+modulus, is compared with the matrix coefficient \m{\inn{\varepsilon}{v}{\weil{\varepsilon}{u}v}} of a
+homogeneous polynomial vector~$v$ for real points~$u$ of the two groups. The difference is a sum, over the non-zero
+vectors~$y$ of a lattice, of the coefficients \m{\inn{\varepsilon}{v}{\heis{\varepsilon}{y}\weil{\varepsilon}{u}v}}.
+Theorem~1 is applied to each term, with \m{A=\dg+|I|}; the vectors~$y$ have norm at least a quantity fixed by
+the first minimum of the lattice, and the sum of \m{|y|^{-2\nu}} over the lattice converges when $2\nu$ exceeds
+its real rank. The outcome is a bound for the difference whose dependence on the degree~$\dg$ is explicit, through the factor
+\m{(4(\dg+|I|+\nu))^{\nu}}, polynomial in~$\dg$ for fixed~$\nu$; this is what allows degrees that grow with the
+data. That unit states the result as an Input.
+
+\sect{Notes on the formal text}{s:notes}
+\begin{enumerate}[label=\textup{\arabic*.},leftmargin=1.6em,itemsep=5pt]
+\item \emph{A hypothesis that follows from the others.} The formal statement assumes \m{A\ne0}. Since $I$ is not
+empty and \m{\dg+|I|\le A}, this follows from the other hypotheses; the formal proof uses it where the
+proof above uses \m{A\ge1}, namely for the identity \m{1-c^{-2}=\nu/(\nu+A)}. Theorem~1 keeps the hypothesis because
+the formal statement has it.
+\item \emph{Homogeneity.} The formal statement does not use the notion of a homogeneous polynomial of its
+library. It asks for \m{p(cz)=c^{\dg}p(z)} for all real~$c$, zero and negative values included, and all
+\m{z\in\CC^I}. For a polynomial this is the same as homogeneity of degree~$\dg$; only positive~$c$ is used.
+\item \emph{The form of the bound.} The right side is written in the formal text as the product
+\m{\opn{u}^{|I|+2\nu}\cdot\operatorname{Re}\inn{\varepsilon}{v}{v}\cdot(4(A+\nu))^{\nu}\cdot(|y|^{-1})^{2\nu}},
+with the real part and with the inverse of~$|y|$ raised to the power~$2\nu$; Theorem~1 reproduces this form. The
+vector~$v$ is an argument of its own, tied to~$p$ by the hypothesis \m{v=\pv{\varepsilon}{p}}.
+\item \emph{Steps carried out by automation.} The reader of the unit marked the last four steps of the
+structured proof (the dilation identity, the collection of powers, the two chains of inequalities) as claims
+about the mathematical content, not replayed goal by goal. I read these lines in the Lean text. The dilation
+identity is stated there explicitly, as
+\m{|v(z/c)|=|v(z)|\exp(|z|^2/(\nu+A)/2)^{\nu}/|c|^{\dg}}, which is Lemma~\ref{l:dilate} for the chosen~$c$. The
+chains then use, in this order: the square of the square root, \m{1+B\le\ee^{B}}, the hypothesis
+\m{\dg+|I|\le A}, \m{A/A\le1}, \m{\ee\cdot B\le\ee^{B}}; then the triangle inequality, the bound of \m{|uz|} by
+\m{\opn{u}|z|}, \m{\opn{u}\ge1}, and \m{(\alpha+\gamma)^2\le2(\alpha^2+\gamma^2)}. These are the steps of the proof
+above. What the automation proves between them was not replayed by me either: no Lean was run for this note.
+\item \emph{One place where the dossier's words differ from the Lean text.} The structured proof describes the
+second integrable function as \m{z\mapsto|v(uz+y)|^2} and says that it integrates to \m{\inn{\varepsilon}{v}{v}}. In
+the Lean text it is the composite of \m{z\mapsto|v(z/c)|^2} with the measure-preserving map \m{z\mapsto uz+y}, that
+is \m{z\mapsto|v((uz+y)/c)|^2}, and both functions integrate to \m{c^{2|I|}\inn{\varepsilon}{v}{v}}, as in
+\eqref{e:two}. With the dilated second function the constants match exactly; with the undilated one the
+two integrals would have different scales. The quotations of the dossier are exact; only its words are
+affected. The second reader of the artifact, who read the unit independently, reports the same reading of these
+two lines.
+\item \emph{References for the quoted facts.} The catalogue of the handout records no confirmed place for the
+facts (Q1) to (Q6): \emph{reference to be confirmed}. The files of the background library name their sources in
+their headers, for the Fock model of the oscillator representation of the indefinite unitary groups: M.~G.~Davidson, \emph{The
+harmonic representation of U(p,q) and its connection with the generalized unit disk}, Pacific J.~Math.~129
+(1987), §1 and Prop.~2.2; G.~B.~Folland, \emph{Harmonic Analysis in Phase Space} (1989), ch.~1 and~4; H.~Reiter,
+\emph{Metaplectic Groups and Segal Algebras}, Lecture Notes in Math.~1382 (1989). The artifact's own list of
+references marks the first as ``work found, no place given'' and the second as ``place confirmed at second
+hand''. The same headers say how the formal text differs from these sources: the space is the space of
+integrable functions with the reproducing identity, not the Hilbert space, and no kernel formula for
+\m{\weil{\varepsilon}{u}} is proved. For (Q6) the catalogue notes that the formal definition of the action
+contains the proof that the cocycle is trivial, by a Gaussian integral. The second reader located the classical
+statement in Davidson's paper, §1, formula (1.9a), Lemma~1.11 and Theorem~1.12, pp.~39--40, where the phases of
+the Fock intertwiners are fixed and shown to give a continuous representation of the indefinite unitary group; the
+relation of the two is \emph{unresolved}: the conversion of Davidson's kernel scalar into the multiplier
+\m{\Delta_{\varepsilon}} of the formal text has not been verified.
+\end{enumerate}
+
+\subhead{How this note was written.} From the dossier of the unit: one structured proof of ten steps. The
+program check of the unit's dossier covered \UnitSteps{} leaf steps of \UnitProofs{} proof, found the statement
+at its lines and compared the quotations of the imported declarations with the source. I read the whole Lean file
+of the unit, statement and proof, and compared the statement with Theorem~1 argument by argument, in Lean's order:
+the index set with its two instance arguments, the signs, the polynomial, the vector, the translation, the group
+element, the equation \m{v=\pv{\varepsilon}{p}}, the three natural numbers, and the four hypotheses. In the
+background library I read the definitions quoted in Definitions \ref{d:fock} to~\ref{d:weil} (the bicharacter, the
+Gaussian, the normalised measure, the space with its reproducing identity, the Heisenberg operators, the inner
+product, the polynomial vectors, the multiplier, the operators \m{\weil{\varepsilon}{u}}) and the statements of
+the lemmas behind (Q2), (Q4), (Q5) and (Q6); I did not read the proof that polynomial vectors lie in the space
+(Q1), nor the proof of the cocycle identity (Q6). The proof above follows the formal one step by step; its
+arrangement into three lemmas, the remark on the best~$\nu$ and §\ref{s:use} are mine. For §\ref{s:use} I read the
+statement of the consuming lemma and the lines where Theorem~1 is applied.
+
+\head{Appendix A. Concordance with the Lean artifact}
+{\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}\setlength{\tabcolsep}{0pt}
+\begin{longtable}{@{}p{30mm}p{56mm}p{43mm}r@{}}
+\textbf{In this note} & \textbf{Lean declaration} & \textbf{File} & \textbf{Lines}\\\midrule\endhead
+\ConcordanceRows
+\end{longtable}}
+
+\subhead{The statement as it is written in the artifact.}
+\quoted{normrealInnerrealHeisOple}
+In this text {\leanfont ι} is the index set~$I$, {\leanfont σ} the group element~$u$, {\leanfont P} the
+polynomial~$p$, {\leanfont d} the degree~$\dg$, {\leanfont n} the exponent~$\nu$; {\leanfont USign ε} is
+$U(\varepsilon)$, {\leanfont polyVector ε P} is \m{\pv{\varepsilon}{p}}, {\leanfont realInner} is the inner
+product, {\leanfont realHeisOp y} is \m{\heis{\varepsilon}{y}} and {\leanfont realWeil σ} is
+\m{\weil{\varepsilon}{u}}; {\leanfont ‖toLp 2 y‖} is the Euclidean norm~$|y|$, and {\leanfont ‖σ.1.1‖} the operator
+norm of the matrix of~$u$. The letters of the formal text were changed where the write-up reserves them for other
+objects (the letters \emph{d}, \emph{P} and \emph{n}).
+
+\head{Notation}
+\begingroup\fontsize{8.6}{10.9}\selectfont\raggedright
+\setlength{\columnsep}{9mm}\setlength{\parskip}{0pt}
+\begin{multicols}{2}
+\nt{$I$, $|I|$, $i$}{a non-empty finite set, its number of elements, an element of it}
+\nt{$\varepsilon$}{a family of signs \m{\varepsilon_i\in\{1,-1\}}, \m{i\in I}}
+\nt{$\CC^I$, $|z|$}{the vectors indexed by~$I$; the Euclidean norm}
+\nt{$z$, $w$, $y$}{vectors of $\CC^I$; $y$ is the translation of Theorem~1; $w$ also denotes an element of the
+Fock space}
+\nt{$w^{*}\varepsilon z$}{the hermitian form \m{\sum_i\overline{w_i}\varepsilon_iz_i}}
+\nt{$\dd z$}{Lebesgue measure on $\CC^I$ divided by \m{\pi^{|I|}}}
+\nt{$\beta_{\varepsilon}$, $\bich{\varepsilon}{z}{w}$}{the bicharacter \m{\exp(\mathrm{i}\operatorname{Im}(w^{*}\varepsilon z))}}
+\nt{$\vac$}{the Gaussian \m{\exp(-|z|^2/2)}, the vacuum vector}
+\nt{$\Fock{\varepsilon}$, $\lone{v}$}{the Fock space of signature~$\varepsilon$; its norm}
+\nt{$\inn{\varepsilon}{v}{w}$}{the inner product \m{\int\overline{v}\,w\,\dd z} of $\Fock{\varepsilon}$}
+\nt{$\heis{\varepsilon}{y}$}{the Heisenberg operator of \m{y\in\CC^I}}
+\nt{$U(\varepsilon)$, $u$, $u^{*}$}{the unitary group of \m{\operatorname{diag}(\varepsilon)}; an element; its
+conjugate transpose}
+\nt{$u_{--}$, $\Delta_{\varepsilon}$, $\mult{\varepsilon}{u}$}{the block of~$u$ at the negative signs; the multiplier
+\m{\overline{\det u_{--}}}}
+\nt{$\opn{u}$}{the operator norm of a matrix for the Euclidean norm}
+\nt{$\weil{\varepsilon}{u}$}{the oscillator representation at~$u$}
+\nt{$X_i$, $p$}{the variables; a complex polynomial in them}
+\nt{$\hol{\varepsilon}{z}$}{$z$ with its coordinates at positive signs conjugated}
+\nt{$\pv{\varepsilon}{p}$, $v$}{the Fock vector of~$p$; an element of the Fock space}
+\nt{$\dg$}{the degree of the homogeneous polynomial~$p$ (a natural number)}
+\nt{$\delta$}{the bound of Theorem~C in the overview; not used for an object of this note}
+\nt{$A$}{a natural number with \m{\dg+|I|\le A}}
+\nt{$\nu$}{a natural number: the decay is of order \m{|y|^{-2\nu}}}
+\nt{$c$}{a real number; in the proof \m{c=\sqrt{\nu/A+1}}}
+\nt{$B$}{a real number; in the proof \m{(|z|^2+|uz+y|^2)/(2(\nu+A))}}
+\nt{$T$}{a bounded linear map on the Fock space}
+\nt{$j$}{the size of a minor}
+\nt{$\alpha$, $\gamma$}{real numbers in elementary inequalities}
+\nt{$\ee$, $\pi$}{the base of the natural logarithm; the area of the unit disc}
+\end{multicols}
+\endgroup
+
+\end{document}

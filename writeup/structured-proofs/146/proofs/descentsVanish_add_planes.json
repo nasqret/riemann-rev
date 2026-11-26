@@ -1,0 +1,554 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.SiegelWeil.DescentsVanishPlanes:49:7",
+ "name": "descentsVanish_add_planes",
+ "summary": "Induction on |p|. For p empty the descent is the integral of the source term (integral_sourceTerm_eq_zero). For |p| = l + 1: by density it suffices to treat polynomial data; the descent F to W' is spherical at w and, by Hecke transfer and adjointness, killed by a Hecke polynomial with a small root (the transfer factor is a unit); so F = 0 by the maximum principle (eq_zero_of_heckePolyOp_eq_zero) once F is bounded. Boundedness: F(g) = F(gamma g) for a rational gamma; split theta into ell = theta - theta o zeroTerm (the zero term along one plane) and the zero term. ell(omega(gamma g, h) f) is bounded uniformly in g and h by the decay estimate exists_norm_name_le with N = 0 (the definite side V has height 1 at every h; moderate growth and averaging over the translates along the frame k give its norm hypotheses; when the height of W' at g exceeds 2, a short isotropic vector xi at g and gamma with gamma xi = k (Witt) supply the short isotropic frame it requires), Y is bounded on the definite quotient, and the integral of the zero term vanishes by the induction hypothesis for l planes. No fundamental domain is used.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Induction on |p| (generalizing m, p, W' and D); in each case let f be a datum vacuum at S and g a point; show the descent of Y with datum f vanishes at g.",
+   "lines": [
+    54,
+    109
+   ],
+   "lean": "  induction' hl : card p with l ih generalizing m p <;> intro f hf <;> ext g\n  rw [card_eq_zero_iff] at hl\n  simpa [univ_eq_empty, mulVec_eq_sum] using! h0.integral_sourceTerm_eq_zero D hf g\n  set χ := a * _\n  let Θ := (pairThetaKer W' V χ 1).swap\n  obtain _ := D.card_eq, (by simpa using pow_mul √w.q 2 · |>.symm)\n  refine (Θ.exists_clm_lift hY.mem_rapidFunctions).elim fun L e ↦\n    e .. ▸ ext_integrated _ hf fun P y _ ↦ e .. ▸ ?_\n  set f := integrated _ (polyVector _ P) _\n  replace hf : projOn _ S f = f := by simp +contextual [f, finHeisOp, finVec, *]\n  obtain ⟨⟨C, A, h₀⟩, ⟨c, u⟩, ⟨D', _, -⟩, K, h₅, H⟩ := Θ.moderate_growth,\n    V.exists_short_basis_matrix, exists_isBaseAdapted_stage D (equivOfCardEq (α := Unit ⊕ Fin l)\n    (by simp; omega)), hecke_transfer_of_equivariant (k := card n - card m) (by omega) (a :=\n    χ) (by simp_all [χ, charUnramifiedAt_upsilon ..]) (b := 1) (by simp) hw.star (f := f) (hf\n    ▸ by simp [← projOn_union, hw']) Θ.liftBilin (.linHom 1 (finRightRep ..))\n    (rapidFunctions.toRepresentation.linHom 1) fun g h ↦ by ext y; simpa [mul_assoc] using!\n    (Θ.lift_equivariant (y.2.1.comp_mul_right h⁻¹) f h ..).symm\n  rw [sphericalAt, maxCompactAt,\n    Gf.supportedOn_star] at *; simp at H; lift Y to V.rapidFunctions.1 using hY.mem_rapidFunctions\n  have J := heckePolyOp_adjoint hw («π» := V.rapidFunctions.toRepresentation) .applyₗ\n    (Subtype.ext <| hK ·) h₅ (by simp) X\n  rw [Submodule.coe_eq_zero.1 ((map_heckePolyOp (Submodule.subtype _) _).trans hP), map_zero, H,\n    map_smul, map_heckePolyOp _ (π' := finRightRep ..) _] at J\n  refine congr($(eq_zero_of_heckePolyOp_eq_zero hw (by apply congr($(K ·) Y))\n    ((IsUnit.prod_iff.2 fun i ↦ isUnit_one_sub_of_norm_lt_one ∘ ?_).smul_eq_zero.1 J.symm) ?_ ?_) g)\n  any_goals simp [*, field, ← pow_add, pow_lt_pow_iff_right₀, pow_le_pow_iff_right₀]; omega\n  let ℓ := θ _ - θ _ ∘L (D'.homSource V).zeroTerm\n  have cov {φ B} (h : ∀ b, ‖θ _ φ - θ _ (ϱ _ ((D'.homSource V).kAdelic *ᵥ b) φ)‖ ≤ B) : ‖ℓ φ‖ ≤\n    B := by simpa [ℓ, quotMean, integral_sub, by simpa using ((D'.homSource\n    V).isContPeriodic_along_k φ 0).integrable_out] using! norm_quotMean_le (_root_.ratVectors ..) h\n  constructor; rintro _ ⟨g, ⟨⟩⟩\n  choose! ξ h1 i e using W'.exists_short_isotropic\n  choose! γ hγ using fun l ↦ W'.witt (.of_ne_zero (h1 l <| ext_col fun () ↦ ·)) ⟨_,\n    D'.gram_lk⟩ (D'.gram_kk ▸ i l)\n  have b := ae_of_all V.quotMeasure fun h ↦ norm_mul_le_of_le (by\n    simpa only [height, (V.move h).firstMinimum_le_one.antisymm one_le_firstMinimum, pow_zero,\n      mul_one] using (exists_norm_name_le χ 1 disjoint_bot_left (Ψ :=\n      boxIndicator _ ⊥) (finHeisOp_mem_finitePart y vacElem_mem_finitePart) 0 A (C + C)\n    c).choose_spec _ (W'.ratEmbed γ * g) h ℓ _ _ (weightedNorm_polyVector_ne_top _ P)\n      (one_le_height ..) (W'.height_pos g) (fun _ ↦ cov fun b ↦ by grw (transparency :=\n      .default) [varrho_pairWeil, norm_sub_le, Θ.swap.theta_rat_mul, h₀, Θ.swap.theta_rat_mul,\n      h₀] <;> simp [Γ, add_mul]) fun l ↦ (u h).rec fun Y u ↦ ⟨_, _, _, _, u,\n      fun j ↦ by simpa [baseLattice, ↓move_vecAtPoint, ← hγ l, ← replicateCol_mulVec, col_apply', ←\n      mat_mul, ← ratEmbed_mulVec_vecAtPoint, archCoords] using e l j, le_rfl, .inr D'.gram_kk,\n      fun z φ ↦ congr($(by simp [← vecAtPoint_hom]) - θ _ $(by simp [← zeroTerm_rho_kAdelic\n      (matToVec (V.dualFrame.1 * V.coordMatrix 1 z)) φ, ↓homSource_kAdelic,\n      -transpose_mul, Space.ratMap, W'.map_J])), .inr fun φ B H ↦ cov fun b ↦ by\n    simpa [ℓ, ← (Y.1.map _).mul_assoc, ← zeroTerm_rho_kAdelic b (ω _ _ φ), ↓homSource_kAdelic,\n      ← mat_mul, ← h.mat.mul_assoc, ↓mat_preserves_stdForm, pairWeil, ω_ϱ,\n      ← mul_sub, -transpose_mul, -θ_apply] using H (matToVec (Y⁻¹.1.map toAdele * V.x.1 *\n      V.dualFrame⁻¹.1 * vecToMat b))⟩) (Y.2.2.bounded.choose_spec h)\n  refine (Θ.fixesLeft_lift _ ⟨γ, rfl⟩ g).symm.trans (sub_eq_zero.1 ((integral_sub\n    (Θ.integrable_theta_mul Y.2 ..) (.of_bound (hY.rec (by simp; fun_prop)) _ b)).symm.trans ?_)) ▸\n    norm_integral_le_of_norm_le_const b\n  simpa +zetaDelta [mul_assoc, sub_mul] using! (ih (removePlanes ..) (by simp; omega)\n    (by simp)).integral_sourceTerm_eq_zero D' hf _",
+   "head_lines": [
+    54,
+    54
+   ],
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "1.1",
+   "parent": "1",
+   "kind": "case",
+   "claim": "|p| = 0: p is empty, the source term is the whole datum, and the descent at g is the integral of the source term, which vanishes by integral_sourceTerm_eq_zero (from h0).",
+   "lines": [
+    55,
+    56
+   ],
+   "lean": "  rw [card_eq_zero_iff] at hl\n  simpa [univ_eq_empty, mulVec_eq_sum] using! h0.integral_sourceTerm_eq_zero D hf g",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "DescentsVanish.integral_sourceTerm_eq_zero"
+    }
+   ]
+  },
+  {
+   "id": "1.2",
+   "parent": "1",
+   "kind": "case",
+   "claim": "|p| = l + 1, with the induction hypothesis ih for l planes.",
+   "lines": [
+    57,
+    109
+   ],
+   "lean": "  set χ := a * _\n  let Θ := (pairThetaKer W' V χ 1).swap\n  obtain _ := D.card_eq, (by simpa using pow_mul √w.q 2 · |>.symm)\n  refine (Θ.exists_clm_lift hY.mem_rapidFunctions).elim fun L e ↦\n    e .. ▸ ext_integrated _ hf fun P y _ ↦ e .. ▸ ?_\n  set f := integrated _ (polyVector _ P) _\n  replace hf : projOn _ S f = f := by simp +contextual [f, finHeisOp, finVec, *]\n  obtain ⟨⟨C, A, h₀⟩, ⟨c, u⟩, ⟨D', _, -⟩, K, h₅, H⟩ := Θ.moderate_growth,\n    V.exists_short_basis_matrix, exists_isBaseAdapted_stage D (equivOfCardEq (α := Unit ⊕ Fin l)\n    (by simp; omega)), hecke_transfer_of_equivariant (k := card n - card m) (by omega) (a :=\n    χ) (by simp_all [χ, charUnramifiedAt_upsilon ..]) (b := 1) (by simp) hw.star (f := f) (hf\n    ▸ by simp [← projOn_union, hw']) Θ.liftBilin (.linHom 1 (finRightRep ..))\n    (rapidFunctions.toRepresentation.linHom 1) fun g h ↦ by ext y; simpa [mul_assoc] using!\n    (Θ.lift_equivariant (y.2.1.comp_mul_right h⁻¹) f h ..).symm\n  rw [sphericalAt, maxCompactAt,\n    Gf.supportedOn_star] at *; simp at H; lift Y to V.rapidFunctions.1 using hY.mem_rapidFunctions\n  have J := heckePolyOp_adjoint hw («π» := V.rapidFunctions.toRepresentation) .applyₗ\n    (Subtype.ext <| hK ·) h₅ (by simp) X\n  rw [Submodule.coe_eq_zero.1 ((map_heckePolyOp (Submodule.subtype _) _).trans hP), map_zero, H,\n    map_smul, map_heckePolyOp _ (π' := finRightRep ..) _] at J\n  refine congr($(eq_zero_of_heckePolyOp_eq_zero hw (by apply congr($(K ·) Y))\n    ((IsUnit.prod_iff.2 fun i ↦ isUnit_one_sub_of_norm_lt_one ∘ ?_).smul_eq_zero.1 J.symm) ?_ ?_) g)\n  any_goals simp [*, field, ← pow_add, pow_lt_pow_iff_right₀, pow_le_pow_iff_right₀]; omega\n  let ℓ := θ _ - θ _ ∘L (D'.homSource V).zeroTerm\n  have cov {φ B} (h : ∀ b, ‖θ _ φ - θ _ (ϱ _ ((D'.homSource V).kAdelic *ᵥ b) φ)‖ ≤ B) : ‖ℓ φ‖ ≤\n    B := by simpa [ℓ, quotMean, integral_sub, by simpa using ((D'.homSource\n    V).isContPeriodic_along_k φ 0).integrable_out] using! norm_quotMean_le (_root_.ratVectors ..) h\n  constructor; rintro _ ⟨g, ⟨⟩⟩\n  choose! ξ h1 i e using W'.exists_short_isotropic\n  choose! γ hγ using fun l ↦ W'.witt (.of_ne_zero (h1 l <| ext_col fun () ↦ ·)) ⟨_,\n    D'.gram_lk⟩ (D'.gram_kk ▸ i l)\n  have b := ae_of_all V.quotMeasure fun h ↦ norm_mul_le_of_le (by\n    simpa only [height, (V.move h).firstMinimum_le_one.antisymm one_le_firstMinimum, pow_zero,\n      mul_one] using (exists_norm_name_le χ 1 disjoint_bot_left (Ψ :=\n      boxIndicator _ ⊥) (finHeisOp_mem_finitePart y vacElem_mem_finitePart) 0 A (C + C)\n    c).choose_spec _ (W'.ratEmbed γ * g) h ℓ _ _ (weightedNorm_polyVector_ne_top _ P)\n      (one_le_height ..) (W'.height_pos g) (fun _ ↦ cov fun b ↦ by grw (transparency :=\n      .default) [varrho_pairWeil, norm_sub_le, Θ.swap.theta_rat_mul, h₀, Θ.swap.theta_rat_mul,\n      h₀] <;> simp [Γ, add_mul]) fun l ↦ (u h).rec fun Y u ↦ ⟨_, _, _, _, u,\n      fun j ↦ by simpa [baseLattice, ↓move_vecAtPoint, ← hγ l, ← replicateCol_mulVec, col_apply', ←\n      mat_mul, ← ratEmbed_mulVec_vecAtPoint, archCoords] using e l j, le_rfl, .inr D'.gram_kk,\n      fun z φ ↦ congr($(by simp [← vecAtPoint_hom]) - θ _ $(by simp [← zeroTerm_rho_kAdelic\n      (matToVec (V.dualFrame.1 * V.coordMatrix 1 z)) φ, ↓homSource_kAdelic,\n      -transpose_mul, Space.ratMap, W'.map_J])), .inr fun φ B H ↦ cov fun b ↦ by\n    simpa [ℓ, ← (Y.1.map _).mul_assoc, ← zeroTerm_rho_kAdelic b (ω _ _ φ), ↓homSource_kAdelic,\n      ← mat_mul, ← h.mat.mul_assoc, ↓mat_preserves_stdForm, pairWeil, ω_ϱ,\n      ← mul_sub, -transpose_mul, -θ_apply] using H (matToVec (Y⁻¹.1.map toAdele * V.x.1 *\n      V.dualFrame⁻¹.1 * vecToMat b))⟩) (Y.2.2.bounded.choose_spec h)\n  refine (Θ.fixesLeft_lift _ ⟨γ, rfl⟩ g).symm.trans (sub_eq_zero.1 ((integral_sub\n    (Θ.integrable_theta_mul Y.2 ..) (.of_bound (hY.rec (by simp; fun_prop)) _ b)).symm.trans ?_)) ▸\n    norm_integral_le_of_norm_le_const b\n  simpa +zetaDelta [mul_assoc, sub_mul] using! (ih (removePlanes ..) (by simp; omega)\n    (by simp)).integral_sourceTerm_eq_zero D' hf _",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "1.2.1",
+   "parent": "1.2",
+   "kind": "setup",
+   "claim": "Let chi = a upsilon^|p|.",
+   "lines": [
+    57,
+    57
+   ],
+   "lean": "  set χ := a * _",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "1.2.2",
+   "parent": "1.2",
+   "kind": "setup",
+   "claim": "Let Theta be the theta kernel of (W', V) with characters chi, 1, groups exchanged.",
+   "lines": [
+    58,
+    58
+   ],
+   "lean": "  let Θ := (pairThetaKer W' V χ 1).swap",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "pairThetaKer"
+    }
+   ]
+  },
+  {
+   "id": "1.2.3",
+   "parent": "1.2",
+   "kind": "fact",
+   "claim": "|m| = |r| + 2|p| (the splitting adds 2|p| to the rank), and sqrt(q)^(2k) = q^k.",
+   "lines": [
+    59,
+    59
+   ],
+   "lean": "  obtain _ := D.card_eq, (by simpa using pow_mul √w.q 2 · |>.symm)",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "1.2.4",
+   "parent": "1.2",
+   "kind": "reduction",
+   "claim": "The descent at a point is a continuous linear functional L of the datum; by ext_integrated it suffices to treat f = v_P tensor rho_f(y) vac for polynomials P and finite vectors y zero above S.",
+   "lines": [
+    60,
+    61
+   ],
+   "lean": "  refine (Θ.exists_clm_lift hY.mem_rapidFunctions).elim fun L e ↦\n    e .. ▸ ext_integrated _ hf fun P y _ ↦ e .. ▸ ?_",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "ThetaKernel.exists_clm_lift"
+    },
+    {
+     "decl": "Space.ext_integrated"
+    }
+   ]
+  },
+  {
+   "id": "1.2.5",
+   "parent": "1.2",
+   "kind": "setup",
+   "claim": "Let f be this datum.",
+   "lines": [
+    62,
+    62
+   ],
+   "lean": "  set f := integrated _ (polyVector _ P) _",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "1.2.6",
+   "parent": "1.2",
+   "kind": "fact",
+   "claim": "f is the vacuum at S.",
+   "lines": [
+    63,
+    63
+   ],
+   "lean": "  replace hf : projOn _ S f = f := by simp +contextual [f, finHeisOp, finVec, *]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "1.2.7",
+   "parent": "1.2",
+   "kind": "fact",
+   "claim": "Collect: moderate growth of Theta (C, A); a short basis for V (c, u); an adapted splitting D' of W' over W plus l planes, removing one plane (exists_isBaseAdapted_stage); and the Hecke transfer for the descent F = Lambda f (rank difference n - m, chi unramified at conj(w), f the vacuum at conj(w) in S): F is spherical at w (K, h5), and H relates the Hecke polynomial of V at conj(w) with that of W' at w, up to a product of factors (1 - q^(l + .) chi X).",
+   "lines": [
+    64,
+    70
+   ],
+   "lean": "  obtain ⟨⟨C, A, h₀⟩, ⟨c, u⟩, ⟨D', _, -⟩, K, h₅, H⟩ := Θ.moderate_growth,\n    V.exists_short_basis_matrix, exists_isBaseAdapted_stage D (equivOfCardEq (α := Unit ⊕ Fin l)\n    (by simp; omega)), hecke_transfer_of_equivariant (k := card n - card m) (by omega) (a :=\n    χ) (by simp_all [χ, charUnramifiedAt_upsilon ..]) (b := 1) (by simp) hw.star (f := f) (hf\n    ▸ by simp [← projOn_union, hw']) Θ.liftBilin (.linHom 1 (finRightRep ..))\n    (rapidFunctions.toRepresentation.linHom 1) fun g h ↦ by ext y; simpa [mul_assoc] using!\n    (Θ.lift_equivariant (y.2.1.comp_mul_right h⁻¹) f h ..).symm",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "ThetaKernel.moderate_growth"
+    },
+    {
+     "decl": "Space.exists_short_basis_matrix"
+    },
+    {
+     "decl": "exists_isBaseAdapted_stage"
+    },
+    {
+     "decl": "hecke_transfer_of_equivariant"
+    },
+    {
+     "decl": "WeilData.charUnramifiedAt_upsilon"
+    },
+    {
+     "decl": "ThetaKernel.lift_equivariant"
+    }
+   ]
+  },
+  {
+   "id": "1.2.8",
+   "parent": "1.2",
+   "kind": "setup",
+   "claim": "Unfold sphericalAt, and regard Y as an automorphic function of rapid decay.",
+   "lines": [
+    71,
+    72
+   ],
+   "lean": "  rw [sphericalAt, maxCompactAt,\n    Gf.supportedOn_star] at *; simp at H; lift Y to V.rapidFunctions.1 using hY.mem_rapidFunctions",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "sphericalAt"
+    },
+    {
+     "decl": "maxCompactAt"
+    },
+    {
+     "decl": "Gf.supportedOn_star"
+    }
+   ]
+  },
+  {
+   "id": "1.2.9",
+   "parent": "1.2",
+   "kind": "fact",
+   "claim": "J: adjointness of the Hecke polynomials for the pairing of Y with the lift: <H_w(X) Y, .> = <Y, H_{conj w}(conj X) .>.",
+   "lines": [
+    73,
+    74
+   ],
+   "lean": "  have J := heckePolyOp_adjoint hw («π» := V.rapidFunctions.toRepresentation) .applyₗ\n    (Subtype.ext <| hK ·) h₅ (by simp) X",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "heckePolyOp_adjoint"
+    }
+   ]
+  },
+  {
+   "id": "1.2.10",
+   "parent": "1.2",
+   "kind": "computation",
+   "claim": "As H_w(X) Y = 0 (hP), J gives: the transfer factor times the Hecke polynomial of W' at w applied to F vanishes.",
+   "lines": [
+    75,
+    76
+   ],
+   "lean": "  rw [Submodule.coe_eq_zero.1 ((map_heckePolyOp (Submodule.subtype _) _).trans hP), map_zero, H,\n    map_smul, map_heckePolyOp _ (π' := finRightRep ..) _] at J",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1.2.9"
+    }
+   ]
+  },
+  {
+   "id": "1.2.11",
+   "parent": "1.2",
+   "kind": "reduction",
+   "claim": "By eq_zero_of_heckePolyOp_eq_zero for F (spherical at w; killed by the Hecke polynomial because each factor 1 - q^(l + .) chi X) of the transfer has a term of absolute value < 1, hence is a unit) it suffices to check the size conditions and that F is bounded.",
+   "lines": [
+    77,
+    78
+   ],
+   "lean": "  refine congr($(eq_zero_of_heckePolyOp_eq_zero hw (by apply congr($(K ·) Y))\n    ((IsUnit.prod_iff.2 fun i ↦ isUnit_one_sub_of_norm_lt_one ∘ ?_).smul_eq_zero.1 J.symm) ?_ ?_) g)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1.2.10"
+    },
+    {
+     "decl": "eq_zero_of_heckePolyOp_eq_zero"
+    }
+   ]
+  },
+  {
+   "id": "1.2.12",
+   "parent": "1.2",
+   "kind": "computation",
+   "claim": "The size conditions follow from |X| = (sqrt(q)^r q^(n-r-1))^(-1), |m| = r + 2|p| and 2r + 2|p| + 3 < n.",
+   "lines": [
+    79,
+    79
+   ],
+   "lean": "  any_goals simp [*, field, ← pow_add, pow_lt_pow_iff_right₀, pow_le_pow_iff_right₀]; omega",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "1.2.13",
+   "parent": "1.2",
+   "kind": "setup",
+   "claim": "Let ell = theta - theta composed with the zero term of the splitting homSource(D', V).",
+   "lines": [
+    80,
+    80
+   ],
+   "lean": "  let ℓ := θ _ - θ _ ∘L (D'.homSource V).zeroTerm",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Space.Splitting.homSource"
+    },
+    {
+     "decl": "Space.Splitting.zeroTerm"
+    }
+   ]
+  },
+  {
+   "id": "1.2.14",
+   "parent": "1.2",
+   "kind": "fact",
+   "claim": "cov: if |theta(phi) - theta(rho(k b) phi)| <= B for all b, then |ell(phi)| <= B (the zero term is a mean over the translates along k).",
+   "lines": [
+    81,
+    83
+   ],
+   "lean": "  have cov {φ B} (h : ∀ b, ‖θ _ φ - θ _ (ϱ _ ((D'.homSource V).kAdelic *ᵥ b) φ)‖ ≤ B) : ‖ℓ φ‖ ≤\n    B := by simpa [ℓ, quotMean, integral_sub, by simpa using ((D'.homSource\n    V).isContPeriodic_along_k φ 0).integrable_out] using! norm_quotMean_le (_root_.ratVectors ..) h",
+   "typed_fact": "‖ℓ φ‖ ≤\n    B",
+   "uses": [
+    {
+     "step": "1.2.13"
+    },
+    {
+     "decl": "norm_quotMean_le"
+    }
+   ]
+  },
+  {
+   "id": "1.2.15",
+   "parent": "1.2",
+   "kind": "setup",
+   "claim": "Boundedness of F: give a bound valid at every point g.",
+   "lines": [
+    84,
+    84
+   ],
+   "lean": "  constructor; rintro _ ⟨g, ⟨⟩⟩",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "1.2.16",
+   "parent": "1.2",
+   "kind": "setup",
+   "claim": "For a point of W' whose height exceeds 2 choose a nonzero isotropic vector xi of its lattice with coordinates of norm at most 2/height (exists_short_isotropic); xi, and the facts h1 (xi != 0), i (xi is isotropic) and e (xi is short), are available from a proof of 'height > 2'.",
+   "lines": [
+    85,
+    85
+   ],
+   "lean": "  choose! ξ h1 i e using W'.exists_short_isotropic",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Space.exists_short_isotropic"
+    }
+   ]
+  },
+  {
+   "id": "1.2.17",
+   "parent": "1.2",
+   "kind": "setup",
+   "claim": "Witt's theorem: given a proof l that the height exceeds 2, choose gamma in U(W')(E) with gamma xi = k, the isotropic frame column of D' (xi is left invertible as it is nonzero, k is left invertible as l'^H J k = 1 for the other frame column l' of D' (gram_lk), and xi^H J xi = 0 = k^H J k by i and gram_kk) (hgamma).",
+   "lines": [
+    86,
+    87
+   ],
+   "lean": "  choose! γ hγ using fun l ↦ W'.witt (.of_ne_zero (h1 l <| ext_col fun () ↦ ·)) ⟨_,\n    D'.gram_lk⟩ (D'.gram_kk ▸ i l)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1.2.16"
+    },
+    {
+     "decl": "Space.witt"
+    }
+   ]
+  },
+  {
+   "id": "1.2.18",
+   "parent": "1.2",
+   "kind": "fact",
+   "claim": "b: for (almost) every h, |ell(omega(gamma g, h) f) Y(h)| is at most a bound independent of g and h: the product of the bound of the decay estimate for ell and the bound of |Y|.",
+   "lines": [
+    88,
+    104
+   ],
+   "lean": "  have b := ae_of_all V.quotMeasure fun h ↦ norm_mul_le_of_le (by\n    simpa only [height, (V.move h).firstMinimum_le_one.antisymm one_le_firstMinimum, pow_zero,\n      mul_one] using (exists_norm_name_le χ 1 disjoint_bot_left (Ψ :=\n      boxIndicator _ ⊥) (finHeisOp_mem_finitePart y vacElem_mem_finitePart) 0 A (C + C)\n    c).choose_spec _ (W'.ratEmbed γ * g) h ℓ _ _ (weightedNorm_polyVector_ne_top _ P)\n      (one_le_height ..) (W'.height_pos g) (fun _ ↦ cov fun b ↦ by grw (transparency :=\n      .default) [varrho_pairWeil, norm_sub_le, Θ.swap.theta_rat_mul, h₀, Θ.swap.theta_rat_mul,\n      h₀] <;> simp [Γ, add_mul]) fun l ↦ (u h).rec fun Y u ↦ ⟨_, _, _, _, u,\n      fun j ↦ by simpa [baseLattice, ↓move_vecAtPoint, ← hγ l, ← replicateCol_mulVec, col_apply', ←\n      mat_mul, ← ratEmbed_mulVec_vecAtPoint, archCoords] using e l j, le_rfl, .inr D'.gram_kk,\n      fun z φ ↦ congr($(by simp [← vecAtPoint_hom]) - θ _ $(by simp [← zeroTerm_rho_kAdelic\n      (matToVec (V.dualFrame.1 * V.coordMatrix 1 z)) φ, ↓homSource_kAdelic,\n      -transpose_mul, Space.ratMap, W'.map_J])), .inr fun φ B H ↦ cov fun b ↦ by\n    simpa [ℓ, ← (Y.1.map _).mul_assoc, ← zeroTerm_rho_kAdelic b (ω _ _ φ), ↓homSource_kAdelic,\n      ← mat_mul, ← h.mat.mul_assoc, ↓mat_preserves_stdForm, pairWeil, ω_ϱ,\n      ← mul_sub, -transpose_mul, -θ_apply] using H (matToVec (Y⁻¹.1.map toAdele * V.x.1 *\n      V.dualFrame⁻¹.1 * vecToMat b))⟩) (Y.2.2.bounded.choose_spec h)",
+   "head_lines": [
+    88,
+    88
+   ],
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1.2.14"
+    },
+    {
+     "step": "1.2.17"
+    }
+   ]
+  },
+  {
+   "id": "1.2.18.1",
+   "parent": "1.2.18",
+   "kind": "fact",
+   "claim": "The bound for |ell| at (gamma g, h) is the decay estimate exists_norm_name_le with N = 0, the moderate-growth exponent A, the constant C + C and Z = c (the short-basis constant of V), at the point gamma g of W' with H = the height of W' at g (> 0) and rho = the height of V at h: V is definite, so its first minimum at h is 1 and its height is 1. With N = 0 and rho = 1 the bound C' mom_A(v_P) does not depend on g or h.",
+   "lines": [
+    89,
+    93
+   ],
+   "span": [
+    89,
+    5,
+    93,
+    44
+   ],
+   "lean": "simpa only [height, (V.move h).firstMinimum_le_one.antisymm one_le_firstMinimum, pow_zero,\n      mul_one] using (exists_norm_name_le χ 1 disjoint_bot_left (Ψ :=\n      boxIndicator _ ⊥) (finHeisOp_mem_finitePart y vacElem_mem_finitePart) 0 A (C + C)\n    c).choose_spec _ (W'.ratEmbed γ * g) h ℓ _ _ (weightedNorm_polyVector_ne_top _ P)\n      (one_le_height ..) (W'.height_pos g) ",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "exists_norm_name_le"
+    },
+    {
+     "decl": "weightedNorm_polyVector_ne_top"
+    },
+    {
+     "decl": "Space.one_le_height"
+    },
+    {
+     "decl": "Space.height_pos"
+    }
+   ]
+  },
+  {
+   "id": "1.2.18.2",
+   "parent": "1.2.18",
+   "kind": "fact",
+   "claim": "The norm hypothesis of the estimate, |ell(omega(gamma g, h) phi)| <= (C + C) |phi| (rho H)^A for every phi: by cov it suffices to bound |theta(phi') - theta(rho(k b) phi')| for every b, and each of the two theta values is at most C |phi'| (rho H)^A by moderate growth, after moving the rational points (theta_rat_mul).",
+   "lines": [
+    93,
+    95
+   ],
+   "span": [
+    93,
+    44,
+    95,
+    34
+   ],
+   "lean": "(fun _ ↦ cov fun b ↦ by grw (transparency :=\n      .default) [varrho_pairWeil, norm_sub_le, Θ.swap.theta_rat_mul, h₀, Θ.swap.theta_rat_mul,\n      h₀] <;> simp [Γ, add_mul]) ",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Space.varrho_pairWeil"
+    },
+    {
+     "decl": "ThetaKernel.theta_rat_mul"
+    }
+   ]
+  },
+  {
+   "id": "1.2.18.3",
+   "parent": "1.2.18",
+   "kind": "fact",
+   "claim": "The large-height hypothesis of the estimate. Its argument l is a proof that the height H of W' at g exceeds 2 (not the index of a plane). Given l: d is the short basis matrix of V at h (u h) and c the frame column k of D'; the column of c is short at gamma g because gamma xi = k with xi short at g (hgamma l, e l); the product of the two radii is the required Z rho (2/H) (le_rfl); c is isotropic (gram_kk); and ell is invariant under the rational maps z c^H J (theta under rational points, the zero term by zeroTerm_rho_kAdelic).",
+   "lines": [
+    95,
+    100
+   ],
+   "span": [
+    95,
+    34,
+    100,
+    48
+   ],
+   "lean": "fun l ↦ (u h).rec fun Y u ↦ ⟨_, _, _, _, u,\n      fun j ↦ by simpa [baseLattice, ↓move_vecAtPoint, ← hγ l, ← replicateCol_mulVec, col_apply', ←\n      mat_mul, ← ratEmbed_mulVec_vecAtPoint, archCoords] using e l j, le_rfl, .inr D'.gram_kk,\n      fun z φ ↦ congr($(by simp [← vecAtPoint_hom]) - θ _ $(by simp [← zeroTerm_rho_kAdelic\n      (matToVec (V.dualFrame.1 * V.coordMatrix 1 z)) φ, ↓homSource_kAdelic,\n      -transpose_mul, Space.ratMap, W'.map_J]))",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Space.Splitting.zeroTerm_rho_kAdelic"
+    }
+   ]
+  },
+  {
+   "id": "1.2.18.4",
+   "parent": "1.2.18",
+   "kind": "fact",
+   "claim": "The last alternative of the estimate: if |L(phi - rho(d' z c'^H eps) phi)| <= B for every adelic z, then |L phi| <= B. This is cov: the translates rho(d' z c'^H eps) are the translates along the frame k (homSource_kAdelic), under which the zero term is invariant (zeroTerm_rho_kAdelic).",
+   "lines": [
+    100,
+    104
+   ],
+   "span": [
+    100,
+    48,
+    104,
+    39
+   ],
+   "lean": ", .inr fun φ B H ↦ cov fun b ↦ by\n    simpa [ℓ, ← (Y.1.map _).mul_assoc, ← zeroTerm_rho_kAdelic b (ω _ _ φ), ↓homSource_kAdelic,\n      ← mat_mul, ← h.mat.mul_assoc, ↓mat_preserves_stdForm, pairWeil, ω_ϱ,\n      ← mul_sub, -transpose_mul, -θ_apply] using H (matToVec (Y⁻¹.1.map toAdele * V.x.1 *\n      V.dualFrame⁻¹.1 * vecToMat b))⟩)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Space.Splitting.zeroTerm_rho_kAdelic"
+    }
+   ]
+  },
+  {
+   "id": "1.2.18.5",
+   "parent": "1.2.18",
+   "kind": "fact",
+   "claim": "|Y| is bounded (Y is automorphic on the definite space V, whose quotient is compact).",
+   "lines": [
+    104,
+    104
+   ],
+   "span": [
+    104,
+    39,
+    104,
+    69
+   ],
+   "lean": " (Y.2.2.bounded.choose_spec h)",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "1.2.19",
+   "parent": "1.2",
+   "kind": "deduction",
+   "claim": "F(g) = F(gamma g) (left invariance under rational points) = integral of ell(omega(gamma g, h) f) Y(h) dh + integral of theta(zero term of omega(gamma g, h) f) Y(h) dh; if the second integral is 0, |F(g)| is at most the integral of the bound b, a constant independent of g. This is the boundedness that the maximum principle needs; no fundamental domain is supplied separately.",
+   "lines": [
+    105,
+    107
+   ],
+   "lean": "  refine (Θ.fixesLeft_lift _ ⟨γ, rfl⟩ g).symm.trans (sub_eq_zero.1 ((integral_sub\n    (Θ.integrable_theta_mul Y.2 ..) (.of_bound (hY.rec (by simp; fun_prop)) _ b)).symm.trans ?_)) ▸\n    norm_integral_le_of_norm_le_const b",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1.2.18"
+    },
+    {
+     "decl": "ThetaKernel.fixesLeft_lift"
+    },
+    {
+     "decl": "ThetaKernel.integrable_theta_mul"
+    }
+   ],
+   "ambient_uses": [
+    "MeasureTheory.integral_sub",
+    "MeasureTheory.norm_integral_le_of_norm_le_const"
+   ]
+  },
+  {
+   "id": "1.2.20",
+   "parent": "1.2",
+   "kind": "deduction",
+   "claim": "The integral of the zero term vanishes: it is the integral of the source term for the stage D' (one plane removed, W' over W plus l planes), and DescentsVanish for W plus l planes holds by the induction hypothesis applied to removePlanes; so integral_sourceTerm_eq_zero applies.",
+   "lines": [
+    108,
+    109
+   ],
+   "lean": "  simpa +zetaDelta [mul_assoc, sub_mul] using! (ih (removePlanes ..) (by simp; omega)\n    (by simp)).integral_sourceTerm_eq_zero D' hf _",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "1.2.7"
+    },
+    {
+     "decl": "removePlanes"
+    },
+    {
+     "decl": "DescentsVanish.integral_sourceTerm_eq_zero"
+    }
+   ]
+  }
+ ]
+}

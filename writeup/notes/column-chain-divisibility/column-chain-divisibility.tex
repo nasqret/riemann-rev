@@ -1,0 +1,2327 @@
+% !TEX program = lualatex
+% ---------------------------------------------------------------------------------------------
+%  Readback note 25: Columns on a definite unitary group: divisibility and size of the chain of theta lifts
+%
+%  Build:  python3 tools/rb.py note <slug>
+%
+%  One unit of a Lean artifact, rewritten as ordinary mathematics. The prose is hand-written. Lean names,
+%  line ranges and counts come from data.tex; quoted Lean statements are copied from the artifact by the build.
+%
+%  Rules of the text: standard terminology; every symbol is explained where it first appears and listed again
+%  in the notation at the end; no letter has two meanings; a proof is complete or says what it takes for granted;
+%  Lean names appear only in the LEAN lines and in the concordance.
+%
+%  The signature rule (the build enforces it): a function, relation or predicate that the artifact defines is
+%  written only through its notation macro, which the build makes from the spec (`notation`) with one slot for
+%  each explicit argument of the Lean definition. No argument is fixed and dropped, also not "for brevity" and
+%  not for one section. Every argument and every hypothesis of a stated declaration stands inside its
+%  statement, or in a Setting that the statement cites by number; only implicit and instance arguments (the
+%  ambient objects) may stand in the conventions.
+% ---------------------------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\ifdefined\pdfvariable\pdfvariable suppressoptionalinfo \numexpr 1+2+4+8\relax\fi
+\usepackage[a4paper,hmargin=35mm,top=22mm,bottom=27mm,footskip=12mm,nohead]{geometry}
+
+\usepackage{fontspec}
+\directlua{
+  luaotfload.add_fallback("gfallback", {"STIXTwoMath-Regular.otf:mode=node;", "DejaVuSans.ttf:mode=node;"})
+  luaotfload.add_fallback("gmonofallback", {"DejaVuSansMono.ttf:mode=node;", "STIXTwoMath-Regular.otf:mode=node;"})
+}
+\setmainfont{NewCM10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookItalic,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldItalic,SmallCapsFont=*-Book,SmallCapsFeatures={Letters=SmallCaps},
+  RawFeature={fallback=gfallback}]
+\setsansfont{NewCMSans10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookOblique,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldOblique,RawFeature={fallback=gfallback}]
+\setmonofont{JetBrainsMono}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,Scale=MatchLowercase,
+  RawFeature={-calt;-liga;fallback=gmonofallback}]
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage[math-style=TeX]{unicode-math}
+\setmathfont{NewCMMath-Book.otf}
+\emergencystretch=2.5em\relax
+
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows.meta,positioning,backgrounds}
+\usepackage[protrusion=true,expansion=true]{microtype}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{multicol}
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+
+\definecolor{ink}{HTML}{0F172A}
+\definecolor{inksoft}{HTML}{475569}
+\definecolor{inkfaint}{HTML}{94A3B8}
+\definecolor{rulegrey}{HTML}{CBD5E1}
+\definecolor{arith}{HTML}{C2410C}
+\definecolor{est}{HTML}{7C3AED}
+\definecolor{ana}{HTML}{0891B2}
+\definecolor{ok}{HTML}{047857}
+\definecolor{leancol}{HTML}{3730A3}
+
+\title{Columns on a definite unitary group: divisibility and size of the chain of theta lifts}
+\author{grh-compact}
+\date{}
+
+% ------------------------------------------------------------------------------------- macros
+\newcommand{\leanfont}{\ttfamily\fontsize{8.6}{10.5}\selectfont\color{leancol}}
+\newcommand{\lean}[1]{\csname LN@#1\endcsname}
+\newcommand{\fillin}[1]{{\color{arith}\itshape[#1]}}  % a place of the template that is not written yet; the build reports every one that is left
+\newcommand{\leanquote}[1]{\csname LQ@#1\endcsname}
+\input{data.tex}
+
+\linespread{1.08}                       % 11 pt on 14.7 pt
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt plus 1.5pt minus 0.5pt}
+\setlength{\abovedisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\belowdisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\abovedisplayshortskip}{3pt plus 2pt}
+\setlength{\belowdisplayshortskip}{6pt plus 2pt minus 2pt}
+\emergencystretch=1.5em
+\clubpenalty=10000 \widowpenalty=10000 \displaywidowpenalty=10000
+\relpenalty=7000 \binoppenalty=9000
+\raggedbottom
+\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\sffamily\fontsize{7.6}{9}\selectfont\color{inkfaint}\thepage\,/\,\pageref*{LastPage}}
+\setlist{topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=4pt,leftmargin=2.1em,labelsep=0.55em}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\len}{\operatorname{len}}
+\newcommand{\cok}{\operatorname{cok}}
+\newcommand{\End}{\operatorname{End}}
+\newcommand{\Hom}{\operatorname{Hom}}
+\newcommand{\Gal}{\operatorname{Gal}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\kw}[1]{\emph{#1}}
+\newcommand{\m}[1]{\mbox{$#1$}}        % a short formula that must not be broken across lines
+\newcommand{\head}[1]{\par\addvspace{17pt plus 4pt minus 2pt}\Needspace{6\baselineskip}%
+  \noindent{\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\sect}[2]{\refstepcounter{section}\label{#2}\par\addvspace{19pt plus 4pt minus 2pt}\Needspace{7\baselineskip}%
+  \noindent\llap{{\fontsize{13.2}{16}\selectfont\bfseries\color{inkfaint}\thesection}\hspace{9pt}}%
+  {\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\subhead}[1]{\par\addvspace{9pt plus 2pt}\Needspace{4\baselineskip}\noindent\textbf{#1}\enspace\ignorespaces}
+% where a statement lives in the Lean archive
+\newcommand{\leantag}{{\sffamily\bfseries\fontsize{6.3}{8}\selectfont\color{leancol}\addfontfeatures{LetterSpace=7}LEAN}}
+\newcommand{\sep}{\unskip\nobreak\hspace{5pt}{\color{inkfaint}\textperiodcentered}\hspace{5pt plus 2pt}\ignorespaces}
+\newcommand{\leanline}[1]{\par\nopagebreak\vspace{-2.5pt}{\fontsize{8.9}{12.4}\selectfont\color{inksoft}\raggedright
+  \noindent\llap{\leantag\hspace{9pt}}#1\par}\vspace{1pt}}
+% a displayed statement in a tinted box: #1 colour, #2 text
+\newcommand{\statement}[2]{\par\addvspace{7pt}\begingroup\setlength{\fboxsep}{8.5pt}\setlength{\fboxrule}{0.6pt}%
+  \noindent\fcolorbox{#1!30!white}{#1!3!white}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{#2}}%
+  \endgroup\par\addvspace{7pt}}
+\newcommand{\nt}[2]{\par\noindent\hangindent=1.1em\hangafter=1 #1\enspace{\color{inksoft}#2}\par\vspace{1pt}}
+\newcommand{\legdot}[1]{\tikz[baseline=-0.62ex]\fill[#1] (0,0) circle (2.5pt);\hspace{3pt}}
+\newcommand{\crow}[4]{\csname CS@#1\endcsname & #2 & \textcolor{inksoft}{#3} & \textcolor{inksoft}{#4}\\}
+\newcommand{\leanquoteline}[2]{\par\noindent\hangindent=\dimexpr#1\fontdimen2\font+2.2em\relax\hangafter=1
+  \hspace*{#1\fontdimen2\font}#2}
+\newcommand{\quoted}[1]{\par\vspace{3pt}{\ttfamily\fontsize{7.5}{10.4}\selectfont\color{leancol}\raggedright
+  \setlength{\parskip}{0pt}\leanquote{#1}\par}\vspace{4pt}}
+\newcommand{\bx}[3]{{\sffamily\bfseries\fontsize{7.3}{9.2}\selectfont\color{#1!82!black}#2}\\[1.5pt]#3}
+\newcommand{\cs}[2]{\expandafter\newcommand\csname CS@#1\endcsname{#2}}
+
+% theorems
+\newtheoremstyle{plainx}{7pt plus 2pt}{7pt plus 2pt}{\itshape}{}{\bfseries}{.}{0.5em}{}
+\newtheoremstyle{uprightx}{7pt plus 2pt}{7pt plus 2pt}{}{}{\bfseries}{.}{0.5em}{}
+\theoremstyle{plainx}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{uprightx}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{setting}[theorem]{Setting}          % hypotheses shared by several statements; each of them cites it by number
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\renewcommand{\qedsymbol}{{\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.5pt}\fbox{\rule{0pt}{0.46em}\hspace{0.46em}}}}
+% what holds throughout the note: the ambient objects only (implicit and instance arguments), never a hypothesis
+\newenvironment{conventions}{\par\addvspace{5pt}\noindent\textbf{Conventions.}\enspace\ignorespaces}{\par\addvspace{3pt}}
+\makeatletter
+\renewenvironment{proof}[1][Proof]{\par\pushQED{\qed}\normalfont\topsep0pt\partopsep0pt
+  \trivlist\item[\hskip\labelsep\itshape #1.]\ignorespaces}{\popQED\endtrivlist\@endpefalse}
+\makeatother
+
+% ---------------------------------------------------------------------- macros of this note
+\newcommand{\lnm}[1]{{\leanfont #1}}
+\newcommand{\CC}{\mathbb{C}}
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\NN}{\mathbb{N}}
+\newcommand{\OO}{\mathcal{O}}
+\newcommand{\Af}[1]{\mathbb{A}_{#1,\mathrm{f}}}
+\newcommand{\cj}[1]{\overline{#1}}
+\newcommand{\Aut}{\operatorname{Aut}(\CC)}
+\newcommand{\GL}{\operatorname{GL}}
+\newcommand{\Oj}{O_{j}}                                   % the complex numbers integral at j
+\newcommand{\op}{\mathfrak{o}_{p}}                         % the valuation ring of C_p
+\newcommand{\ee}{\mathrm{e}}
+% objects of other units, written with all their arguments (the forms of the overview and of the note on the CM field)
+\newcommand{\KP}[1]{K(#1)}
+\newcommand{\chiK}[1]{\chi_{\KP{#1}}}
+\newcommand{\ED}[1]{E(#1)}
+\newcommand{\Dmu}[1]{\mu(#1)}
+\newcommand{\NnD}[1]{N_1(#1)}
+\newcommand{\PlD}[1]{\operatorname{Pl}(#1)}
+\newcommand{\fD}[1]{f(#1)}
+\newcommand{\kD}[1]{k(#1)}
+\newcommand{\tD}[1]{t(#1)}
+\newcommand{\aD}[1]{a(#1)}
+\newcommand{\tops}[1]{\mathrm{tops}(#1)}
+\newcommand{\thick}[1]{\mathrm{thick}(#1)}
+\newcommand{\nomW}[2]{w_{#1}(#2)}
+\newcommand{\bud}[1]{\mathrm{budget}(#1)}
+\newcommand{\pin}[2]{[#2]_{#1}}
+\newcommand{\nD}[2]{n_{#2}(#1)}
+\newcommand{\wtD}[3]{\mathrm{wt}_{#1}(#2,#3)}
+\newcommand{\gap}[1]{\mathrm{gap}(#1)}
+\newcommand{\emb}[1]{\iota_{#1}}
+\newcommand{\ND}[1]{N(#1)}
+\newcommand{\piN}[1]{\pi_N(#1)}
+\newcommand{\gD}[1]{g(#1)}
+\newcommand{\pig}[1]{\pi_g(#1)}
+\newcommand{\XD}[2]{X_{#2}(#1)}
+\newcommand{\YD}[2]{Y_{#2}(#1)}
+\newcommand{\OmP}[2]{\Omega(#1,#2)}
+\newcommand{\Ask}[3]{\mathrm{Ask}_{#1}(#2,#3)}
+\newcommand{\jsz}[2]{\mathrm{st}_{#1}(#2)}
+\newcommand{\dirc}[1]{\mathsf{U}(#1)}
+\newcommand{\lamd}[3]{\lambda_{#1,#2}(#3)}
+% objects of the unit on the CM curve (unit 150), in the forms of its note
+\newcommand{\ask}[4]{\mathrm{ask}_{#1,#2}(#3,#4)}
+\newcommand{\forced}[2]{\mathrm{forced}(#1,#2)}
+\newcommand{\gain}[2]{\mathrm{gain}(#1,#2)}
+\newcommand{\loss}[2]{\mathrm{loss}(#1,#2)}
+\newcommand{\rr}[2]{\mathfrak{r}(#1,#2)}
+\newcommand{\DeltaP}[2]{\Delta(#1,#2)}
+\newcommand{\jc}[2]{\mathrm{jc}(#1,#2)}
+\newcommand{\oz}[2]{o_0(#1,#2)}
+\newcommand{\coll}[3]{\mathrm{coll}(#1,#2,#3)}
+\newcommand{\cc}[7]{\mathrm{cc}_{#1}(#2,#3;#4;#5,#6;#7)}
+\newcommand{\kap}[3]{\varkappa_{#1}(#2,#3)}
+\newcommand{\kapD}[1]{\varkappa_{#1}}
+\newcommand{\last}[3]{\mathrm{last}_{#1}(#2,#3)}
+\newcommand{\lastD}[2]{\mathrm{last}_{#1}(#2,\,\cdot\,)}
+\newcommand{\kept}[2]{\mathrm{kept}_{#1}(#2)}
+\newcommand{\kapY}[3]{\varkappa^{Y}_{#1}(#2,#3)}
+\newcommand{\kapYD}[1]{\varkappa^{Y}_{#1}}
+\newcommand{\nsw}[2]{\varrho_{#1}(#2)}
+\newcommand{\per}[2]{\mathrm{per}(#1,#2)}
+\newcommand{\Std}[2]{\mathrm{Std}_{#1}(#2)}
+\newcommand{\raises}[4]{\mathrm{raises}(#1,#2,#3,#4)}
+\newcommand{\intvac}[1]{\theta^{\circ}_{#1}}
+\newcommand{\intafter}[2]{\mathrm{IntAfter}(#1,#2)}
+\newcommand{\ThProd}[5]{\mathrm{ThProd}(#1,#2,#3,#4,#5)}
+% objects of the units on the seesaw (141) and on the exchange (147)
+\newcommand{\Bch}[3]{\mathrm{B}_{#1}(#2,#3)}
+\newcommand{\td}[3]{\mathrm{td}_{#1}(#2,#3)}
+\newcommand{\lk}[3]{\mathrm{k}_{#1,#2,#3}}
+\newcommand{\lkom}[3]{\omega_{#1,#2,#3}}
+\newcommand{\lkjm}[3]{\mathrm{jm}_{#1,#2,#3}}
+\newcommand{\lklift}[3]{\operatorname{lift}_{#1,#2,#3}}
+\newcommand{\chn}[4]{\mathrm{C}_{#1,#2}(#3)_{#4}}
+\newcommand{\chnn}[4]{\mathrm{C}^{(2)}_{#1,#2}(#3)_{#4}}
+\newcommand{\ind}[1]{\mathfrak{l}_{j}(#1)}
+\newcommand{\mexp}[2]{A_{#1}(#2)}
+\newcommand{\lc}[3]{\mathrm{lc}_{#1}(#2,#3)}
+\newcommand{\lb}[3]{\mathrm{lb}_{#1}(#2,#3)}
+\newcommand{\even}[1]{\Xi_{j}(#1)}
+\newcommand{\Colint}[1]{\mathrm{Col}_{j}(#1)}
+\newcommand{\nrm}[1]{\mathrm{nrm}(#1)}
+\newcommand{\Kch}[2]{K^{\mathrm{ch}}_{#2}(#1)}
+\newcommand{\Wfin}[2]{\mathcal{W}_{#2}(#1)}
+% objects of the background library
+\newcommand{\Alg}[3]{\mathrm{Alg}_{#1}(#2,#3)}
+\newcommand{\Wy}[2]{\mathrm{Wy}_{#1}(#2)}
+\newcommand{\rhow}[2]{\rho_{#1,#2}}
+\newcommand{\gauge}[4]{\operatorname{gauge}^{#1,#2}_{j}(#3;#4)}
+\newcommand{\Gf}[1]{G_{#1}}
+\newcommand{\Kf}[1]{K_{#1}}
+\newcommand{\Gam}[1]{\Gamma_{#1}}
+\newcommand{\Kmax}[2]{K_{#1}[#2]}
+\newcommand{\Kprin}[2]{K_{#1}(#2)}
+\newcommand{\Cl}[1]{\mathrm{Cl}(#1)}
+\newcommand{\Tl}[2]{T_{#1,#2}}
+\newcommand{\boxes}[2]{\operatorname{boxes}(#1,#2)}
+\newcommand{\wn}[1]{\|#1\|^{2}}
+% the operator of Definition (ramified columns): two arguments, as Lean takes them (the census lists a third)
+\newcommand{\ramop}[2]{\operatorname{ram}_{#1}(#2)}
+
+% where each declaration of the concordance is treated: \cs{key}{place}, the place naming a \label or a lettered item
+\cs{detKernel}{Definition~\ref{d:det}}
+\cs{detPeriod}{Definition~\ref{d:det}}
+\cs{detKernelembFinmul}{Lemma~\ref{l:det}}
+\cs{detPeriodeqstdClassSumsum}{Lemma~\ref{l:det}}
+\cs{detPeriodinsert}{Proposition~\ref{p:detins}}
+\cs{IsShort}{Definition~\ref{d:short}}
+\cs{subtranslate}{Lemma~\ref{l:sub}}
+\cs{spanisShorteqtop}{Proposition~\ref{p:span}}
+\cs{algFormCentralRep}{Definition~\ref{d:central}}
+\cs{notisChosenofNmem}{Lemma~\ref{l:level}}
+\cs{memcolumnLevel}{Lemma~\ref{l:level}}
+\cs{memchosenLevelofsupportedOn}{Lemma~\ref{l:level}}
+\cs{existscentralGen}{Lemma~\ref{l:cgen}}
+\cs{centralGen}{Definition~\ref{d:central}}
+\cs{scalarFincentralGenmem}{Lemma~\ref{l:cgenmem}}
+\cs{centralRep}{Definition~\ref{d:central}}
+\cs{ramifyingOp}{Definition~\ref{d:central}}
+\cs{ramifiedColumns}{Definition~\ref{d:central}}
+\cs{existseqsubcentralGen}{Lemma~\ref{l:cgenmem}}
+\cs{sumheightmulkappale}{Lemma~\ref{l:branch}}
+\cs{finrankkeronesubcentralGenle}{Lemma~\ref{l:ker}}
+\cs{ramifyingOpfinrankcomapandshort}{Proposition~\ref{p:ram}}
+\cs{spanshortramifiedColumns}{Theorem A}
+\cs{pairTranslates}{Definition~\ref{d:good}}
+\cs{admissibleTranslations}{Definition~\ref{d:good}}
+\cs{IsGoodDatum}{Definition~\ref{d:good}}
+\cs{notMempiPlacesofne}{Lemma~\ref{l:level}}
+\cs{memintegralAfter}{Lemma~\ref{l:intafter}}
+\cs{projOntranslateDatum}{Lemma~\ref{l:intafter}}
+\cs{existschaineqsum}{Lemma~\ref{l:chainsum}}
+\cs{translateDatummemstandardData}{Lemma~\ref{l:tdstd}}
+\cs{gaugeLechain}{Proposition~\ref{p:gchain}}
+\cs{normstarpiGleone}{Lemma~\ref{l:level}}
+\cs{nezero}{Lemma~\ref{l:pi}}
+\cs{piPlaces}{Definition~\ref{d:pi}}
+\cs{mempiPlaces}{Lemma~\ref{l:pi}}
+\cs{isSplitLevelpiPlaces}{Lemma~\ref{l:pi}}
+\cs{cardpiPlaces}{Lemma~\ref{l:pi}}
+\cs{columnLevel}{Definition~\ref{d:pi}}
+\cs{principalLevellecolumnLevel}{Lemma~\ref{l:level}}
+\cs{isLevelcolumnLevel}{Lemma~\ref{l:level}}
+\cs{lastIndexEquiv}{Definition~\ref{d:branch}}
+\cs{branching}{Definition~\ref{d:branch}}
+\cs{cardX}{Lemma~\ref{l:level}}
+\cs{classAutcolumnLeveleqbot}{Lemma~\ref{l:level}}
+\cs{Column}{Definition~\ref{d:pi}}
+\cs{Stage}{Definition~\ref{d:pi}}
+\cs{branchExp}{Definition~\ref{d:branch}}
+\cs{lebranchExp}{Lemma~\ref{l:branch}}
+\cs{borderU}{Definition~\ref{d:branch}}
+\cs{restrictToY}{Definition~\ref{d:branch}}
+\cs{instUbCastRealRrLogLx}{Lemma~\ref{l:served}}
+\cs{mdvdorderOf}{Lemma~\ref{l:served}}
+\cs{leloss}{Lemma~\ref{l:served}}
+\cs{placeOfIntmulmemtopsiff}{Lemma~\ref{l:served}}
+\cs{pmeminducedPlace}{Lemma~\ref{l:ind}}
+\cs{inducedPlacemul}{Lemma~\ref{l:ind}}
+\cs{inducedPlacenegpowmulofodd}{Lemma~\ref{l:ind}}
+\cs{existsisMarked}{Lemma~\ref{l:exmark}}
+\cs{inducedPlaceeqorstariff}{Lemma~\ref{l:ind}}
+\cs{cardle}{Lemma~\ref{l:markprop}}
+\cs{notdvdgProdmulN}{Lemma~\ref{l:markprop}}
+\cs{notMemthick}{Lemma~\ref{l:thick}}
+\cs{suminducedPlacesubstareqzero}{Lemma~\ref{l:thick}}
+\cs{pmem}{Lemma~\ref{l:markprop}}
+\cs{valuationp}{Lemma~\ref{l:markprop}}
+\cs{starne}{Lemma~\ref{l:markprop}}
+\cs{maxCompactAtlecolumnLevel}{Lemma~\ref{l:markprop}}
+\cs{markOperator}{Definition~\ref{d:mark}}
+\cs{jetExponent}{Definition~\ref{d:mark}}
+\cs{neandoddanddvd}{Lemma~\ref{l:coll}}
+\cs{collisionSumle}{Lemma~\ref{l:coll}}
+\cs{mulcollisionSumleloss}{Lemma~\ref{l:coll}}
+\cs{collisionSumevenPlaceseqzero}{Lemma~\ref{l:coll}}
+\cs{lowColumnslowBoxesbounds}{Lemma~\ref{l:low}}
+\cs{lejetExponent}{Proposition~\ref{p:jet}}
+\cs{sumlowColumnsle}{Lemma~\ref{l:lowsum}}
+\cs{liftLoss}{Definition~\ref{d:mark}}
+\cs{existshecketransfer}{Proposition~\ref{p:hecke}}
+\cs{memraises}{Proposition~\ref{p:raise}}
+\cs{existsmovemarkOperator}{Proposition~\ref{p:move}}
+\cs{gaugeLemarkOperatorpow}{Proposition~\ref{p:markpow}}
+\cs{weylNormSqBmule}{Theorem C}
+\cs{hasTypeprodmarkOperatorpow}{Corollary~\ref{c:typepow}}
+\cs{gaugeLeone}{Lemma~\ref{l:four}}
+\cs{gaugeLeBmuofisMarked}{Lemma~\ref{l:four}}
+\cs{gaugeLecollisionSum}{Lemma~\ref{l:four}}
+\cs{gaugeLepowjetCeilsmul}{Lemma~\ref{l:four}}
+\cs{existsindexDvdBmudivisible}{Theorem B}
+\cs{hasTypemarkOperator}{Proposition~\ref{p:type}}
+\cs{heightPerRow}{Definition~\ref{d:size}}
+\cs{nonsplitPrimes}{Definition~\ref{d:size}}
+\cs{primeSumeqsumlocalAsk}{Lemma~\ref{l:prime}}
+\cs{diagramWeightlebyindex}{Lemma~\ref{l:rows}}
+\cs{normmapstarpiGsq}{Lemma~\ref{l:sizes}}
+\cs{jetSizeleadd}{Lemma~\ref{l:sizes}}
+\cs{cardstdClassesleexpmullog}{Lemma~\ref{l:classes}}
+\cs{cardstdClassesleexp}{Lemma~\ref{l:classes}}
+\cs{allowedLoss}{Definition~\ref{d:size}}
+\cs{sumallowedLossmullogle}{Theorem D}
+\cs{normdetCharAtdiagNle}{Lemma~\ref{l:detchar}}
+\cs{namelastColDatummemraises}{Lemma~\ref{l:lastcol}}
+\cs{chainpairTranslateseqsmulchain}{Proposition~\ref{p:pairs}}
+\cs{gaugeLeBmuatN}{Proposition~\ref{p:atN}}
+\cs{hasTypemarkOperatora}{Proposition~\ref{p:typez}}
+
+\begin{document}
+\color{ink}
+
+{\raggedright
+{\sffamily\bfseries\fontsize{7.2}{9}\selectfont\color{leancol}\addfontfeatures{LetterSpace=8}READBACK NOTE \textperiodcentered{} CHAPTER V, THE COLUMNS\par}
+\vspace{5pt}
+{\fontsize{21.5}{25.5}\selectfont\bfseries Columns on a definite unitary group: divisibility and size of the chain of theta lifts\par}
+\vspace{5pt}
+{\fontsize{12.4}{16}\selectfont\itshape\color{inksoft} One unit of the Lean artifact \ArtifactName, read back into
+mathematics\par}}
+\vspace{8pt}
+{\color{rulegrey}\hrule height 0.6pt}
+\vspace{7pt}
+\thispagestyle{empty}
+
+\textbf{Summary.} A \emph{column} is an algebraic modular form on a definite unitary group of rank $\kD{D}$ over the
+CM field $\ED{D}$, of a fixed weight and of a level that is principal at the chosen primes and of mirabolic type at
+the primes dividing an element $\piN{D}$ of norm the level prime $\ND{D}$. A chain of $m$ theta lifts between
+definite groups, followed by a restriction, sends columns to forms on a group of larger rank; by the seesaw
+identity of another unit this map computes the chain of lifts of Poincar\'e series. This unit proves the three
+facts about columns that Theorem~A of the handout needs. First, the columns that are \emph{ramified} at the
+primes dividing $\piN{D}$ are spanned by forms that are integral at all primes and whose conjugates are all small.
+Second, at every prime $p$ the chain is divisible by $p^{\gain{D}{p}}$, up to an allowed error, on a submodule of
+the integral columns of small index; at an inert prime that pairs two of the top places, the divisibility is
+regained on the image of scaled Hecke operators. Third, the untwisted chain enlarges the norms of all conjugates
+by at most an explicit factor. The allowed errors, weighted by $\log p$, sum to at most the budget.
+
+\statement{leancol}{\fontsize{9.6}{13.2}\selectfont\textbf{What this note is.} The artifact \ArtifactName{} is a
+body of Lean code: the compact edition of a formal proof whose final theorems state the Riemann hypothesis and its
+analogue for Dirichlet \emph{L}-functions. That headline is a claim. Its authors report that every file compiles
+and that Lean's kernel accepts the proofs; a replay of that check is recorded in the handout when it reports;
+nothing was compiled for this note, and no mathematician has read the argument through. Nothing here says that the
+Riemann hypothesis is proved. This note treats one unit of the artifact, the folder of the columns: all
+\UnitInNote{} of its \UnitMembers{} declarations. Every statement below was compared with its Lean text, argument
+by argument. The proofs are given at the level of the structured proofs of the unit's dossier, which were read
+together with the Lean text; results of other units and of the background library are stated as \emph{Inputs}
+with their owners, and steps that the formal text leaves to automation and that could not be replayed without
+Lean are named in §\ref{s:notes}. The Lean text read is \PinText; Appendix~A is the concordance of \ConcDecls{}
+declarations.}
+
+\sect{The statements}{s:intro}
+The objects are defined in §\ref{s:setting}. In short: $D$ is a record of admissible data for parameters
+$P=(N_0,d)$, with scales $x$, $x_1$, $b$ and numbers $m$, $r$; $\Col{D}$ is the space of columns and
+$\Colram{D}$ its subspace of ramified columns (Definitions \ref{d:pi} and~\ref{d:central}); for a twist $\vartheta$
+of~$D$ and a finitely supported function $\Psi$ on tuples of translations, $\Bch{D}{\vartheta}{\Psi}$ is the chain
+of $m$ theta lifts with data given by~$\Psi$, followed by the restriction to the index set $\YD{D}{m}$ (Input~I4);
+$\gain{D}{p}$ and $\loss{D}{p}$ are the divisibility asked at~$p$ and the unit of allowed loss (unit~150), and
+$\bud{D}=\fD{D}\,\aD{D}\,(\log b)^3$.
+
+\statement{arith}{\phantomsection\label{t:A}\textbf{Theorem A (short ramified columns span).}\enspace In
+Setting~\ref{set:D}, the complex vector space $\Colram{D}$ is spanned by the ramified columns $\varphi$ such that
+$\short{\exp(\bud{D})}{\varphi}$: the values of $\varphi$ are integral at every $p$-adic place, and
+$\wn{\sigma\circ\varphi(g)}\le\exp(\bud{D})$ for every automorphism $\sigma$ of\/ $\CC$ and every point~$g$.}
+
+\statement{arith}{\phantomsection\label{t:B}\textbf{Theorem B (divisibility of the chain at each prime).}\enspace In
+Settings \ref{set:D} and~\ref{set:p}, let $\beta$ be an integer with
+\[\beta\ <\ [\,p\in\nsp{D}\,]\cdot\gain{D}{p}-\err{D}{p}+1 .\]
+Then there are a natural number $l\le\err{D}{p}\cdot\dim_{\CC}\Col{D}$ and an $\Oj$-submodule $S$ of\/ $\Col{D}$
+such that
+\begin{enumerate}[label=(\roman*)]
+\item $S$ has index dividing $p^{\,l}$ in the module $\Colint{D}$ of $j$-integral columns (Input~I2), and
+\item for every twist $\vartheta$ of~$D$, every finitely supported complex function $\Psi$ on the tuples of
+translations of~$D$ such that $\good{\vartheta}{\Psi}$ and $p$ is prime to $\nrm{\vartheta}$, and every
+$\varphi\in S$ that is a ramified column, the form $p^{-\beta}\cdot\Bch{D}{\vartheta}{\Psi}\varphi$ has $j$-gauge
+at most~$1$ at~$1$.
+\end{enumerate}}
+
+\statement{arith}{\phantomsection\label{t:C}\textbf{Theorem C (size of all conjugates of the untwisted chain).}\enspace
+In Setting~\ref{set:D}, let $\Psi$ be a finitely supported complex function on the tuples of translations of~$D$
+such that $\good{1}{\Psi}$ for the trivial twist~$1$; let $\sigma$ be an automorphism of\/ $\CC$, $\varphi\in\Col{D}$
+and $B$ a real number with $\wn{\sigma\circ\varphi(g)}\le\ee^{B}$ for every $g\in\Gf{\XD{D}{0}}$. Then for every
+$h\in\Gf{\YD{D}{m}}$
+\[
+\wn{\sigma\circ\bigl(\Bch{D}{1}{\Psi}\varphi\bigr)(h)}\ \le\ \exp\Bigl(B+\hrow{D}+2\sum_{p\in\nsp{D}}\gain{D}{p}\,\log p+\bud{D}\Bigr).
+\]}
+
+\statement{arith}{\phantomsection\label{t:D}\textbf{Theorem D (the allowed losses fit the budget).}\enspace In
+Setting~\ref{set:D}, for every finite set $U$ of natural numbers,
+$\ \sum_{p\in U}\err{D}{p}\cdot\log p\ \le\ \bud{D}$.}
+\leanline{\lean{spanshortramifiedColumns}\sep\lean{existsindexDvdBmudivisible}\sep\lean{weylNormSqBmule}\sep\lean{sumallowedLossmullogle}}
+
+\textbf{How the four fit together.} The explanations of this paragraph are orientation; the deduction belongs to
+the unit of the endgame, which uses these four results, and was not read for this note. A row of the handout's Theorem~A is,
+after the seesaw identity, of the form $\Bch{D}{\vartheta}{\Psi}\psi$ for a ramified column~$\psi$, divided by a
+rational number that collects the powers $p^{\gain{D}{p}}$ and a power of~$\ND{D}$. Theorem~A provides the
+columns~$\psi$, Theorem~C bounds the size of the rows at every conjugate, and Theorem~B bounds their
+denominators: at each prime the rows built from a submodule $S$ of index $p^{\,l}$ are integral after division
+by $p^{\beta}$, and the exponents~$l$, weighted by $\log p$, add up to at most
+$\dim\Col{D}\cdot\bud{D}$ by Theorem~D. The number $\hrow{D}$ of Theorem~C contains the term
+$-\#\tops{D}\cdot\aD{D}\log\ND{D}$: the restriction divides by a power of~$\cj{\piN{D}}$, and this is how the
+level prime pays for the excess of size over divisibility. The error at a prime is three units of loss; one unit
+is $\fD{D}(\log b)^2\aD{D}/p$, multiplied by~$m$ when $p\equiv\pm1$ modulo~$m$.
+
+\textbf{The mechanism at a prime.} Let $p<x_1$ be inert or ramified in $\KP{P}$. A single lift is a finite sum of
+jets of theta series with complex multiplication, and by the unit on the CM curve a jet along a Schur matrix with
+$L$ boxes is divisible by $p$ to an exponent of the shape $(1/(p-1)-\nsw{d}{p})L$ minus a sum of
+\emph{coupling counts} (Input~I9). Proposition~\ref{p:jet} shows that this exponent, summed over the $m$ lifts,
+is at least $\gain{D}{p}$ up to one unit of loss, except for the \emph{collisions}: pairs of top places exchanged
+by an odd power of $-p$. A collision with a small exponent can only occur when $p$ is \emph{served}
+(inert, not $\equiv\pm1$ modulo~$m$, and $-p$ of small odd order modulo~$N_0$). For such $p$ one chooses a set
+$\mathcal{L}$ of primes of $\ED{D}$ above~$p$, one from each conjugate pair met by the tops, and applies at each
+of them the Hecke operator of $\diag(p,\dots,p,1,\dots,1)$ scaled by a power of~$p$. On the image the
+divisibility is restored (Proposition~\ref{p:markpow}), because the Hecke operator moves through every lift
+(Proposition~\ref{p:hecke}) and changes the datum by a diagonal matrix that the jet bound absorbs
+(Proposition~\ref{p:raise}); and the image has small index (Proposition~\ref{p:type}, whose content is a theorem
+of the unit on twisted Hecke operators). At the level prime itself the data of the chain have denominator~$N$,
+and a Fourier transform on the columns removes it (§\ref{s:N}).
+
+\sect{The setting}{s:setting}
+\begin{conventions}\phantomsection\label{c:conventions}
+$\NN=\{0,1,2,\dots\}$. Where the formal text subtracts or divides natural numbers, the subtraction is truncated
+at~$0$ and the division is rounded down; such places are marked. $[\,\mathcal{C}\,]$ is $1$ if the condition
+$\mathcal{C}$ holds and $0$ otherwise. Throughout, $E$ is a CM field with its complex conjugation $x\mapsto\cj{x}$,
+a CM type and Weil data (the idele and the splitting character that the Weil representation over $E$ needs; they
+are those of the note on the CM field when $E=\ED{D}$). $\operatorname{Pl}(E)$ is the set of infinite places
+of~$E$, and $\emb{\tau}\colon E\to\CC$ is the embedding of the CM type at $\tau\in\operatorname{Pl}(E)$. A
+\emph{finite place} $w$ is a non-zero prime ideal of the ring of integers $\OO_E$; $\cj{w}$ is its conjugate,
+$E_w$ the completion, and $\mathrm{q}_w$ the number of elements of the residue field. $\Af{E}$ is the ring of
+finite adeles and $\widehat{\OO}_E$ its subring of integral adeles. $I$ and $I'$ are finite index sets, and $K$ denotes a subgroup of the group $\Gf{I}$ of Input~I1; a
+family $\varkappa$ of \emph{column counts} is a function $(\tau,h)\mapsto\varkappa(\tau,h)\in\NN$ on
+$\operatorname{Pl}(E)\times\NN$, and a family $\mathfrak{e}$ of \emph{determinant exponents} is a function
+$\operatorname{Pl}(E)\to\Z$. $\Aut$ is the group of all field automorphisms of~$\CC$. For parameters
+$P=(N_0,d)$, $\KP{P}=\Q(\sqrt{-d})$ and $\chiK{P}$ is its quadratic character, the Legendre symbol modulo~$d$. A \emph{$p$-adic place} is a prime number $p$ with a ring homomorphism $j\colon\CC\to\CC_p$ (Setting~\ref{set:p}). In a
+statement about a commutative ring $R$ or a normed field, that structure is part of the statement.
+\end{conventions}
+
+\begin{setting}[the data]\label{set:D}
+$P=(N_0,d)$ are parameters and $D$ is a record of admissible data for~$P$ (the note on the admissible data), with
+real scales $x$, $x_1$, $b$ and natural numbers $m$, $r$ among its components. The functions of $D$ are written
+with their argument: the exponent $\Dmu{D}$, the CM field $\ED{D}$ with its group $\PlD{D}$ of infinite places,
+$\NnD{D}$, the number $\fD{D}$ of infinite places, $\kD{D}=r+1-m$, $\tD{D}=5r$, $\aD{D}$, the sets $\tops{D}$ and
+$\thick{D}$, the nominal weight $\nomW{D}{\tau}$, the place $\pin{D}{\nu}\in\PlD{D}$ named by an integer~$\nu$,
+the ranks $\nD{D}{i}=\kD{D}+i(\tD{D}+1)$, the weights $\wtD{D}{i}{\tau}$ and
+$\bud{D}=\fD{D}\,\aD{D}\,(\log b)^3$. \emph{Size comparisons} between such quantities (inequalities that hold
+because of the scale conditions $(\log b)^{100}\le x$, $x^{10^6}\le x_1$, $x_1^{10^6}\le b$ of the data) are
+quoted from the note on the admissible data as ``by size''.
+\end{setting}
+
+\begin{setting}[a $p$-adic place]\label{set:p}
+$p$ is a prime number and $j\colon\CC\to\CC_p$ is a ring homomorphism into the completion $\CC_p$ of an algebraic
+closure of $\Q_p$, with absolute value $|\cdot|_p$, $|p|_p=p^{-1}$, and valuation ring $\op$. Put
+$\Oj=\{z\in\CC:\ |j(z)|_p\le1\}$, a valuation ring of~$\CC$.
+\end{setting}
+
+\subhead{Inputs: the objects.} The definitions of this unit rest on objects of the background library and of
+other units. They are recalled here, in the words of the dossier's readings, which were compared with the Lean
+definitions named in the LEAN lines.
+
+\statement{inksoft}{\textbf{Input I1 (algebraic forms; background library).}\enspace Let $I$ be a finite set.
+$\Gf{I}=\{g\in\GL_I(\Af{E}):\ g^{*}g=1\}$ is the group of finite adelic points of the unitary group of the
+standard definite hermitian space $E^{I}$ ($g^{*}$ the conjugate transpose); $\Gam{I}\subset\Gf{I}$ is the subgroup of
+its rational points, the unitary matrices over~$E$; $\Kf{I}=\Gf{I}\cap\GL_I(\widehat{\OO}_E)$. For an integer $a$
+of~$E$, $\Kprin{I}{a}$ is the principal level, the $k\in\Kf{I}$ with all entries of $k-1$ in
+$a\widehat{\OO}_E$; for a finite place~$w$, $\Kmax{I}{w}$ is the group of the $k\in\Kf{I}$ whose components
+away from $w$ and $\cj{w}$ are~$1$. A \emph{level} is an open subgroup $K$ of~$\Kf{I}$; $\Cl{K}$ is the finite
+set of classes $\Gam{I}\backslash\Gf{I}/K$; $K$ is \emph{free} if $\Gam{I}\cap gKg^{-1}=\{1\}$ for every
+$g\in\Gf{I}$.
+
+$\Wy{I}{\varkappa}$ is the finite set of \emph{Weyl indices}: the families, over $\tau\in\operatorname{Pl}(E)$,
+of standard fillings with entries in~$I$ of the diagram with $\varkappa(\tau,h)$ columns of height~$h$. The
+\emph{weight representation} $\rhow{\varkappa}{\mathfrak{e}}$ sends a family $(g_\tau)$ of invertible matrices
+indexed by~$I$ to $\prod_\tau\det(g_\tau)^{\mathfrak{e}(\tau)}$ times the Schur matrix of~$(g_\tau)$, a square
+matrix indexed by $\Wy{I}{\varkappa}$; $\Gam{I}$ acts on $\CC^{\Wy{I}{\varkappa}}$ by
+$\gamma\mapsto\rhow{\varkappa}{\mathfrak{e}}\bigl((\emb{\tau}(\cj{\gamma}))_\tau\bigr)$. The number of boxes below
+height~$n'$ is $\boxes{\varkappa}{n'}=\sum_\tau\sum_{h<n'}h\,\varkappa(\tau,h)$, and the row of index~$\nu$ of
+the diagram at $\tau$, for rank~$n'$, has length $\sum_{\nu<h<n'}\varkappa(\tau,h)$.
+
+$\Alg{I}{\varkappa}{\mathfrak{e}}$ is the space of \emph{algebraic forms} of weight
+$(\varkappa,\mathfrak{e})$: the functions $\varphi\colon\Gf{I}\to\CC^{\Wy{I}{\varkappa}}$ with open stabiliser
+under right translation and
+$\varphi(\gamma g)=\rhow{\varkappa}{\mathfrak{e}}(\gamma)\varphi(g)$ for $\gamma\in\Gam{I}$. $\Gf{I}$ acts on it
+by right translation, $(\mathrm{R}(g)\varphi)(g')=\varphi(g'g)$. For a free level~$K$, evaluation at
+representatives of the classes is an isomorphism from the $K$-fixed forms onto the functions
+$\Cl{K}\to\CC^{\Wy{I}{\varkappa}}$; the form that takes the value $v$ at the representative of one class and $0$
+at the others is a \emph{delta form}.
+
+\emph{Gauge.} In Setting~\ref{set:p}, for $g\in\Gf{I}$ and $\xi\in\CC^{\Wy{I}{\varkappa}}$, the number
+$\gauge{\varkappa}{\mathfrak{e}}{g}{\xi}$ is the largest $p$-adic absolute value of a coordinate of
+$\rhow{\varkappa}{\mathfrak{e}}\bigl((g_\tau^{-1})_\tau\bigr)\,j(\xi)$, where $g_\tau\in\GL_I(\CC_p)$ is the image
+of~$g$ under the continuous extension to $\Af{E}$ of the embedding $x\mapsto j(\emb{\tau}(\cj{x}))$. A form
+$\varphi$ \emph{has $j$-gauge at most $c$ at} $d\in\Gf{I}$ if
+$\gauge{\varkappa}{\mathfrak{e}}{gd}{\varphi(g)}\le c$ for every $g\in\Gf{I}$. The gauge is an ultrametric norm in
+$\xi$ with $\gauge{\varkappa}{\mathfrak{e}}{g}{z\xi}=|j(z)|_p\gauge{\varkappa}{\mathfrak{e}}{g}{\xi}$, it does not
+change when $g$ is multiplied on the right by an element that is integral and invertible at all primes above~$p$,
+and for such~$g$ it is at most~$1$ exactly when all coordinates of $j(\xi)$ are integral.
+
+\emph{Gram norm.} $\wn{\xi}$ is the real part of $\xi^{*}G\xi$, where $G$ is the integer Gram matrix of Weyl's
+lattice in the weight $\varkappa$; it is positive definite, and its square root is a norm. Automorphisms of\/
+$\CC$ act on vectors coordinate by coordinate.}
+\leanline{in the background library: \lnm{Gf}, \lnm{stdRatPoints}, \lnm{Kf}, \lnm{principalLevel},
+\lnm{maxCompactAt}, \lnm{IsLevel}, \lnm{StdClasses}, \lnm{classAut}, \lnm{WeylIndex}, \lnm{weylRep},
+\lnm{Space.weightRep}, \lnm{boxes}, \lnm{diagramWeight}, \lnm{AlgForm}, \lnm{algFormRep}, \lnm{levelSpace},
+\lnm{freeLevelEquiv}, \lnm{weylGauge}, \lnm{GaugeLe}, \lnm{integralFormsAt}, \lnm{embValRing}, \lnm{weylNormSq}}
+
+\statement{inksoft}{\textbf{Input I2 (index and type; unit 149, the core).}\enspace Let $O$ be a commutative ring, $V$
+an $O$-module, $M$ and $S$ submodules of~$V$ and $z\in O$. \emph{$S$ has index dividing $z$ in $M$} if for every
+natural number $n$ and all $\Phi_1,\dots,\Phi_n\in M$ there is an $n\times n$ matrix $u$ over $O$ whose
+determinant divides~$z$ and with $\sum_{c}u_{ac}\Phi_c\in S$ for every~$a$. An $O$-linear endomorphism $y$ of~$V$
+\emph{has type $(z,s,c)$ on $M$}, for $z\in O$, a natural number $s$ and a real number~$c$, if $y(M)\subseteq M$
+and there is a natural number $l\le c$ such that $y(M)+z^{s}M$ has index dividing $z^{\,l}$ in~$M$.
+\emph{Types add}: if $y_1,\dots,y_n$ have types $(z,s,c_1),\dots,(z,s,c_n)$ on~$M$, then $y_1\cdots y_n$ has type
+$(z,s,c_1+\dots+c_n)$ on~$M$.}
+\leanline{unit 149: \lnm{IndexDvd}, \lnm{HasType}, \lnm{HasType.prod}}
+
+\statement{inksoft}{\textbf{Input I3 (objects of the data; units 152 and 141).}\enspace In Setting~\ref{set:D}: for
+each natural number $i$, $\XD{D}{i}$ is an index set with $\nD{D}{i}$ elements, one of them distinguished as the
+\emph{last}; $\YD{D}{m}$ is an index set with $\nD{D}{m}-1$ elements. $\ND{D}$ is a prime number with
+$\ND{D}\equiv1$ modulo $\NnD{D}\,d$ and $m\log b\le\log\ND{D}\le30\,m\log b$, and $\piN{D}$ is an integer of
+$\ED{D}$ with $\piN{D}\,\cj{\piN{D}}=\ND{D}$. $\gD{D}=g_0g_1$ is the product of the two primes of the data, and
+$\pig{D}$ is the integer of $\KP{P}$ in the data, with $\pig{D}\,\cj{\pig{D}}=\gD{D}$. A finite place $w$ of
+$\ED{D}$ is \emph{chosen} if $\cj{\pig{D}}\in w$. For a finite set $I$, the \emph{chosen level}
+$\Kch{D}{I}$ is the group of the $k\in\Kf{I}$ that are congruent to~$1$ modulo every chosen place; it
+contains $\Kprin{I}{\cj{\pig{D}}}$, and if $|I|\le2\,\nD{D}{m}$, every subgroup of\/ $\Kch{D}{I}$ is free. The column
+counts $\kapD{D}$, the determinant exponents $\lastD{D}{i}$, the counts $\kept{D}{h}$ and $\kapYD{D}$ are those
+of the unit on the CM curve (Input~I6).
+
+A \emph{twist} of $D$ is a continuous character $\vartheta$ of the norm-one adeles of $\ED{D}$, trivial on the
+norm-one elements of $\ED{D}$ and of weight~$0$ at the infinite places, together with a finite set $Q(\vartheta)$
+of finite places and characters $\vartheta_w$ of the residue fields (its \emph{tame part}) such that
+$\vartheta(y)=\prod_w\vartheta_w(y\bmod w)$ for $y$ with integral finite part and trivial infinite part;
+$\vartheta_w=1$ for $w\notin Q(\vartheta)$ and $\vartheta_w\ne1$ for $w\in Q(\vartheta)$; $\cj{w}\notin Q(\vartheta)$ for
+$w\in Q(\vartheta)$; and $\nrm{\vartheta}=\prod_{w\in Q(\vartheta)}\mathrm{q}_w$ is prime to $\gD{D}\,\ND{D}$. The
+trivial character with $Q=\emptyset$ is the trivial twist~$1$, and $\nrm{1}=1$.}
+\leanline{unit 141: \lnm{Data.X}, \lnm{Data.Y}, \lnm{Data.N}, \lnm{Data.N\_modEq\_one}, \lnm{Data.log\_N\_mem\_Icc},
+\lnm{Data.π}, \lnm{Data.piGBar}, \lnm{Data.IsChosen}, \lnm{Data.TameChar}, \lnm{Data.Twist},
+\lnm{Data.TameChar.levelNorm}\sep unit 152: \lnm{Data.chosenLevel}, \lnm{Data.classAut\_eq\_bot\_of\_le\_chosenLevel}}
+
+\statement{inksoft}{\textbf{Input I4 (kernels, data and the chain; background library, units 141, 147, 150).}\enspace In
+Setting~\ref{set:D}, let $\vartheta$ be a twist of~$D$ and $i$ a natural number. $\Wfin{D}{i}$ is the
+\emph{finite part} of the model of the Weil representation for the space of homomorphisms from $E^{\XD{D}{i}}$
+to $E^{\XD{D}{i+1}}$: the complex span of the translates $\mathrm{U}(y)\,\mathrm{vac}$ of the vacuum vector by the
+finite Heisenberg operators $\mathrm{U}(y)$, where $y$ is a matrix with rows $\XD{D}{i+1}$ and columns
+$\XD{D}{i}$ over $\Af{\ED{D}}$. It contains the \emph{integral vacuum} $\intvac{D,i}$, a scalar multiple of the
+vacuum (unit~150). For a set $\Sigma$ of finite places, $\mathrm{P}^{\Sigma}$ is the projection of $\Wfin{D}{i}$
+onto the vectors that are vacua at the places of $\Sigma$ and their conjugates.
+
+The \emph{lift kernel} $\lk{D}{\vartheta}{i}$ consists of a representation $\lkom{D}{\vartheta}{i}$ of
+$\Gf{\XD{D}{i}}\times\Gf{\XD{D}{i+1}}$ on $\Wfin{D}{i}$ (the Weil representation of the pair, with the characters
+of the $(i+1)$-st lift twisted by $\vartheta$) and of a linear map $\Phi\mapsto\lkjm{D}{\vartheta}{i}(\Phi)$ from
+$\Wfin{D}{i}$ to the linear maps $\CC^{\Wy{\XD{D}{i}}{\kapD{D}}}\to\CC^{\Wy{\XD{D}{i+1}}{\kapD{D}}}$: the matrix of
+the jets, along the Schur matrix of~$\kapD{D}$, of the Taylor series of the theta function of~$\Phi$ at the scale
+$\cj{\pig{D}}\cdot\per{P}{\Dmu{D}}$. The \emph{lift} with datum~$\Phi$ is the map
+$\lklift{D}{\vartheta}{i}(\Phi)\colon\Stg{D}{i}\to\Stg{D}{i+1}$,
+\[
+\bigl(\lklift{D}{\vartheta}{i}(\Phi)\varphi\bigr)(h)=\int_{\Gam{\XD{D}{i}}\backslash\Gf{\XD{D}{i}}}\lkjm{D}{\vartheta}{i}\bigl(\lkom{D}{\vartheta}{i}(g,h)\Phi\bigr)\varphi(g)\,\mathrm{d}g ,
+\]
+a finite sum over classes, the measure giving volume~$1$ to $\colL{D}{i}$. It is equivariant:
+$\lklift{D}{\vartheta}{i}(\lkom{D}{\vartheta}{i}(a,b)\Phi)\,\mathrm{R}(a)=\mathrm{R}(b)\,\lklift{D}{\vartheta}{i}(\Phi)$.
+For points $d\in\Gf{\XD{D}{i}}$, $d'\in\Gf{\XD{D}{i+1}}$ and a real number~$c$, in Setting~\ref{set:p},
+$\raises{\lk{D}{\vartheta}{i}}{d}{d'}{c}$ is the set of the $\Phi\in\Wfin{D}{i}$ with
+\[\gauge{\kapD{D}}{\lastD{D}{i+1}}{hd'}{\lkjm{D}{\vartheta}{i}(\lkom{D}{\vartheta}{i}(g,h)\Phi)\xi}\ \le\ \max(c,0)\cdot\gauge{\kapD{D}}{\lastD{D}{i}}{gd}{\xi}\]
+for all $g$, $h$ and~$\xi$; it is closed under addition, and $z\Phi$ lies in
+$\raises{\lk{D}{\vartheta}{i}}{d}{d'}{c'}$ when $\Phi$ lies in $\raises{\lk{D}{\vartheta}{i}}{d}{d'}{c}$ and
+$|j(z)|_p\,c\le c'$ (unit~150).
+
+A \emph{tuple of translations} of $D$ is a family $\mathsf{x}=(\mathsf{x}_i)_{i\in\NN}$ of matrices
+$\mathsf{x}_i$ with rows $\XD{D}{i+1}$ and columns $\XD{D}{i}$ over $\Af{\ED{D}}$; its $i$-th datum is
+$\td{D}{\mathsf{x}}{i}=\mathrm{U}(\mathsf{x}_i)\,\intvac{D,i}\in\Wfin{D}{i}$. For a family
+$\Phi=(\Phi_i)_{i}$ with $\Phi_i\in\Wfin{D}{i}$, the \emph{chain} of $n$ lifts is
+\[\chn{D}{\vartheta}{\Phi}{n}=\lklift{D}{\vartheta}{n-1}(\Phi_{n-1})\circ\dots\circ\lklift{D}{\vartheta}{0}(\Phi_0)\colon\ \Stg{D}{0}\to\Stg{D}{n},\]
+and for a family $\Phi^{(2)}=(\Phi^{(2)}_\nu)_\nu$ with $\Phi^{(2)}_\nu\in\Wfin{D}{2\nu}\otimes\Wfin{D}{2\nu+1}$ the
+\emph{chain of $n$ pairs} $\chnn{D}{\vartheta}{\Phi^{(2)}}{n}\colon\Stg{D}{0}\to\Stg{D}{2n}$ is the composite, for $\nu<n$, of
+the maps that depend linearly on $\Phi^{(2)}_\nu$ and equal
+$\lklift{D}{\vartheta}{2\nu+1}(\Phi')\circ\lklift{D}{\vartheta}{2\nu}(\Phi)$ for $\Phi^{(2)}_\nu=\Phi\otimes\Phi'$. For
+a finitely supported complex function $\Psi$ on the tuples of translations,
+\[
+\Bch{D}{\vartheta}{\Psi}=\resY{D}\circ\Bigl(\sum_{\mathsf{x}}\Psi(\mathsf{x})\cdot\chn{D}{\vartheta}{\td{D}{\mathsf{x}}{\,\cdot\,}}{m}\Bigr)\Big|_{\Col{D}}
+\]
+with the restriction $\resY{D}$ of Definition~\ref{d:branch}. In Setting~\ref{set:p}, $\Colint{D}$ is the
+$\Oj$-module of the columns that have $j$-gauge at most~$1$ at~$1$.}
+\leanline{background library: \lnm{Space.finitePart}, \lnm{Space.finHeisOp}, \lnm{Space.heisFinPart},
+\lnm{Space.projOn}, \lnm{Kernel}, \lnm{Kernel.lift}, \lnm{Kernel.lift\_equivariant}, \lnm{thetaKernel}\sep unit 141:
+\lnm{chain}, \lnm{chain₂}, \lnm{projOnFinPart}\sep unit 147: \lnm{Data.homX}, \lnm{Data.liftKernel},
+\lnm{Data.Translations}, \lnm{Data.translateDatum}, \lnm{Data.chainComb}, \lnm{Data.Bμ}, \lnm{Data.integralColumns}\sep
+unit 150: \lnm{Parameters.intVacuum}, \lnm{Kernel.raises}, \lnm{Kernel.smul\_mem\_raises}}
+
+\statement{inksoft}{\textbf{Input I5 (induced primes and marked sets; unit 147).}\enspace In Settings \ref{set:D}
+and~\ref{set:p}, for $\tau\in\PlD{D}$ the prime $\ind{\tau}$ of $\ED{D}$ \emph{induced} by~$\tau$ is the set of
+the integers $y$ of $\ED{D}$ with $|j(\emb{\tau}(y))|_p<1$; it lies above~$p$. A finite set $\mathcal{L}$ of finite
+places of $\ED{D}$ is \emph{marked} (for $D$, $p$ and~$j$) if \textup{(M1)} $\cj{\mathfrak{l}}\notin\mathcal{L}$ for
+every $\mathfrak{l}\in\mathcal{L}$; \textup{(M2)} if $\mathcal{L}$ is not empty, then $p$ is served for~$D$;
+\textup{(M3)} every $\mathfrak{l}\in\mathcal{L}$ is $\ind{\tau}$ for some $\tau\in\tops{D}$; \textup{(M4)} $p$ is
+small and not split for~$D$. It is a \emph{full mark} if moreover, for every $\tau\in\tops{D}$, one of
+$\ind{\tau}$, $\cj{\ind{\tau}}$ lies in~$\mathcal{L}$. For a finite set $\mathcal{L}$ of finite places put
+\[
+\even{\mathcal{L}}=\{\tau\in\PlD{D}:\ \ind{\tau}\in\mathcal{L}\},\qquad
+\mexp{D}{\mathfrak{l}}=\aD{D}\cdot\#\{\tau\in\tops{D}:\ \ind{\tau}=\mathfrak{l}\},
+\]
+and for a natural number~$i$ and $\tau\in\PlD{D}$
+\[\lc{D}{i}{\tau}=\sum_{h<\nD{D}{i+1},\,h\ne1}\kap{D}{\tau}{h},\qquad\lb{D}{i}{\tau}=\sum_{h<\nD{D}{i+1},\,h\ne1}h\,\kap{D}{\tau}{h}.\]}
+\leanline{unit 147: \lnm{Data.inducedPlace}, \lnm{Data.IsMarked}, \lnm{Data.IsFullMark}, \lnm{Data.evenPlaces},
+\lnm{Data.markExponent}, \lnm{Data.lowColumns}, \lnm{Data.lowBoxes}}
+
+\statement{inksoft}{\textbf{Input I6 (the bookkeeping of the unit on the CM curve; unit 150).}\enspace In
+Setting~\ref{set:D}, for natural numbers $p$, $h$, $i$, $e$, a real number $y$, places $\tau,\tau'\in\PlD{D}$ and
+a finite set $\Xi\subseteq\PlD{D}$; a pair $(e,p)$ is \emph{live} if $e\ge1$ and ($e$ is odd or $p=d$):
+\begin{gather*}
+\ask{D}{p}{y}{\tau}=\frac{1-\chiK{P}(p)}{2}\sum_{e:\ (e,p)\text{ live}}\Bigl(\frac{y}{p^{e}}-\nomW{D}{\pin{D}{-p^{e}}\cdot\tau}\Bigr)_{+},\\
+\forced{D}{p}=\sum_{\tau\in\PlD{D}}\ask{D}{p}{\nomW{D}{\tau}}{\tau},\\
+\gain{D}{p}=m\Bigl(\sum_{\tau\in\tops{D}}\ask{D}{p}{\aD{D}}{\tau}+\kD{D}\,\forced{D}{p}\Bigr),\\
+\loss{D}{p}=\fD{D}\,(\log b)^2\,\frac{\aD{D}}{p}\cdot\mu_p,
+\end{gather*}
+where $(\,\cdot\,)_+$ is the positive part, and $\mu_p=m$ if $p$ is short for~$D$, $\mu_p=1$ otherwise; $p$ \emph{is short for $D$} if $m$ divides $p-1$ (truncated) or
+$p+1$; $p$ \emph{is small and not split for $D$} if $p<x_1$ and $\chiK{P}(p)\ne1$; $\rr{D}{p}$ is the least
+natural number with $m\le p^{\rr{D}{p}}$ (for $p>1$);
+$\DeltaP{D}{p}=\rr{D}{p}\,\fD{D}\,(\nD{D}{m}+\rr{D}{p})$; $\jc{D}{p}=\lceil2m\fD{D}\aD{D}/p\rceil$;
+$\oz{D}{p}$ is the order of the class modulo $N_0$ of the place $\pin{D}{-p}$; $p$ \emph{is served for $D$} if
+$\chiK{P}(p)=-1$, $p$ is not short for~$D$, and $\oz{D}{p}$ is odd and at most $\rr{D}{p}$. The pair $(\tau,e)$
+\emph{is a collision of $p$ outside $\Xi$ for $D$} if $(e,p)$ is live and both $\tau$ and
+$\pin{D}{-p^{e}}\cdot\tau$ lie in $\tops{D}\setminus\Xi$, and $\coll{D}{p}{\Xi}$ is the sum of the numbers
+$\aD{D}/p^{e}$ over all the pairs $(\tau,e)$ that are collisions of $p$ outside $\Xi$ for~$D$.
+For column counts $\varkappa$ on a set of places and a natural number~$n'$, with
+$\mathrm{one}_\tau=[\tau\notin\Xi]\,[1<n']\,\varkappa(\tau,1)$, $\mathrm{low}_\tau=\sum_{h<n',h\ne1}\varkappa(\tau,h)$ and
+$\mathrm{bx}_\tau=\sum_{h<n',h\ne1}h\,\varkappa(\tau,h)$,
+\[\cc{p}{\varkappa}{n'}{\Xi}{\tau}{\tau'}{e}=\min\Bigl(\frac{\mathrm{one}_\tau}{p^{e}},\,\mathrm{low}_{\tau'}+\mathrm{one}_{\tau'}\Bigr)+\frac{\mathrm{low}_\tau}{p^{e}}+\min\Bigl(\frac{\mathrm{bx}_\tau}{p^{e}},\,\mathrm{bx}_{\tau'}\Bigr).\]
+The column counts of the data are $\kap{D}{\tau}{1}=[\tau\in\tops{D}]\,\aD{D}$,
+$\kap{D}{\tau}{\kD{D}}=\wtD{D}{1}{\tau}-\lfloor(\kD{D}+\tD{D}+1)/2\rfloor$ (truncated; for $\kD{D}\ne1$),
+$\kap{D}{\tau}{h}=\gap{D}-(\tD{D}+1)$ for $h>\kD{D}$ with $h\equiv\kD{D}$ modulo $\tD{D}+1$, and
+$\kap{D}{\tau}{h}=0$ otherwise, where $\gap{D}=2r^{8}$; $\last{D}{0}{\tau}=0$ and
+$\last{D}{i}{\tau}=\lfloor\nD{D}{i-1}/2\rfloor-\wtD{D}{i}{\tau}$ for $i\ge1$;
+$\kept{D}{h}=r^{8}-\lfloor(\tD{D}+1)/2\rfloor$ (truncated) if $h\ge\kD{D}$ and $h\equiv\kD{D}$ modulo
+$\tD{D}+1$, and $0$ otherwise; $\kapY{D}{\tau}{h}=\kept{D}{h}+(\kap{D}{\tau}{h+1}-\kept{D}{h+1})$. Finally
+$\nsw{d}{p}$ is $1/(p^2-1)$ if $\chiK{P}(p)=-1$, $1/(2(p-1))$ if $p=d$, and $1/(p-1)$ otherwise; for a prime $p$
+with $\chiK{P}(p)\ne1$ and a real number~$c$,
+\begin{equation}\label{e:live}
+\sum_{e:\ (e,p)\text{ live}}\frac{c}{p^{e}}=\frac{2}{1-\chiK{P}(p)}\;c\,\Bigl(\frac{1}{p-1}-\nsw{d}{p}\Bigr),
+\end{equation}
+and the series defining $\ask{D}{p}{y}{\tau}$ converges.}
+\leanline{unit 150: \lnm{Data.localAsk}, \lnm{Data.forcedPart}, \lnm{Data.gain}, \lnm{Data.loss},
+\lnm{Data.IsShortPrime}, \lnm{Data.IsSmallNonsplit}, \lnm{Data.ceilLogM}, \lnm{Data.deltaP}, \lnm{Data.jetCeil},
+\lnm{Data.o₀}, \lnm{Data.IsServed}, \lnm{Data.IsCollision}, \lnm{Data.collisionSum}, \lnm{couplingCount},
+\lnm{Data.κ}, \lnm{Data.lastEntry}, \lnm{Data.keptColumns}, \lnm{Data.columnsY}, \lnm{hasSum\_live\_inv\_pow},
+\lnm{Data.summable\_localAsk}\sep background library: \lnm{nonsplitWeight}}
+
+\subhead{The definitions of this unit.}
+
+\begin{definition}[the primes dividing $\piN{D}$; levels, columns, stages]\label{d:pi}
+In Setting~\ref{set:D}, let $i$ be a natural number.
+\begin{enumerate}[label=(\alph*)]
+\item $\piPl{D}$ is the finite set of the finite places $\mathfrak{p}$ of $\ED{D}$ with $\piN{D}\in\mathfrak{p}$.
+\item The \emph{column level} $\colL{D}{i}$ is the group of the elements $k$ of the chosen level
+$\Kch{D}{\XD{D}{i}}$ whose last row is congruent to $(0,\dots,0,1)$ modulo~$\piN{D}$: every entry of the last row
+of $k-1$ lies in $\piN{D}\,\widehat{\OO}_{\ED{D}}$.
+\item The space of \emph{columns} $\Col{D}$ is the space of the forms in
+$\Alg{\XD{D}{0}}{\kapD{D}}{\lastD{D}{0}}$ that are fixed under right translation by $\colL{D}{0}$.
+\item The \emph{stage} $\Stg{D}{i}$ is the space $\Alg{\XD{D}{i}}{\kapD{D}}{\lastD{D}{i}}$.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{piPlaces}\sep\lean{columnLevel}\sep\lean{Column}\sep\lean{Stage}}
+
+\begin{definition}[branching and the restriction]\label{d:branch}
+In Setting~\ref{set:D}, let $\tau\in\PlD{D}$.
+\begin{enumerate}[label=(\alph*)]
+\item $\lstEq{D}$ is a chosen bijection from $\YD{D}{m}$ onto the set of the elements of $\XD{D}{m}$ other than
+the last; both sets have $\nD{D}{m}-1$ elements.
+\item $\bdU{D}\colon\Gf{\YD{D}{m}}\to\Gf{\XD{D}{m}}$ is the homomorphism $h\mapsto\diag(h,1)$, the block $h$ being
+placed through $\lstEq{D}$ and the $1$ at the last index.
+\item The \emph{branching exponent} is the integer
+$\brexp{D}{\tau}=\sum_{0<h<\nD{D}{m}}\bigl(\kap{D}{\tau}{h}-\kept{D}{h}\bigr)+\last{D}{m}{\tau}$.
+\item $\Brm{D}$ is a chosen matrix with integer entries, with rows indexed by $\Wy{\YD{D}{m}}{\kapYD{D}}$ and
+columns by $\Wy{\XD{D}{m}}{\kapD{D}}$, that has the properties provided by the branching theorem of the
+background library (branching from $\GL_{n+1}$ to $\GL_n$ with multiplicity one): \textup{(Br1)} over every
+field of characteristic~$0$, for families $(g_\tau)$ of invertible matrices indexed by $\YD{D}{m}$ and of units
+$(s_\tau)$,
+\[\Brm{D}\cdot\rhow{\kapD{D}}{\lastD{D}{m}}\bigl((\diag(g_\tau,s_\tau))_\tau\bigr)=\prod_{\tau}s_\tau^{\,\brexp{D}{\tau}}\cdot\rhow{\kapYD{D}}{\lastD{D}{m}}\bigl((g_\tau)_\tau\bigr)\cdot\Brm{D};\]
+\textup{(Br2)} $\wn{\Brm{D}\xi}\le L^{6L}\,\wn{\xi}$ for every vector $\xi$ and every natural number
+$L\ge\sum_\tau\sum_{\kD{D}\le h<\nD{D}{m}-1}h\,\kapY{D}{\tau}{h}$; \textup{(Br3)} a spanning property of the
+library, which this unit does not use.
+\item The \emph{restriction} $\resY{D}\colon\Stg{D}{m}\to\Alg{\YD{D}{m}}{\kapYD{D}}{\lastD{D}{m}}$ is the
+$\CC$-linear map
+\[
+\bigl(\resY{D}\varphi\bigr)(h)=\prod_{\tau'\in\PlD{D}}\emb{\tau'}\bigl(\cj{\piN{D}}\bigr)^{-\brexp{D}{\tau'}}\cdot\Brm{D}\,\varphi\bigl(\bdU{D}(h)\bigr)\qquad(h\in\Gf{\YD{D}{m}}).
+\]
+\end{enumerate}
+\end{definition}
+\leanline{\lean{lastIndexEquiv}\sep\lean{borderU}\sep\lean{branchExp}\sep\lean{branching}\sep\lean{restrictToY}\sep
+the branching theorem is \lnm{exists\_branching\_matrix} of the background library; the catalogue of the handout
+records it as a known result (branching from $\GL(n+1)$ to $\GL(n)$ with multiplicity one), \emph{reference to be
+confirmed}}
+
+That $\resY{D}\varphi$ is again an algebraic form follows from (Br1), applied to a rational point $\gamma$ of
+$\Gf{\YD{D}{m}}$ and the units $s_\tau=1$; the formal definition contains this verification.
+
+\begin{definition}[short forms]\label{d:short}
+Let $E$ be a CM field with a CM type, $I$ a finite set, $\varkappa$ column counts and $\mathfrak{e}$ determinant
+exponents. For a real number $B$ and a form $\varphi\in\Alg{I}{\varkappa}{\mathfrak{e}}$ we say that
+$\short{B}{\varphi}$ if
+\begin{enumerate}[label=(\roman*)]
+\item for every prime number $p$ and every ring homomorphism $j\colon\CC\to\CC_p$, $\varphi$ has $j$-gauge at
+most~$1$ at~$1$; and
+\item $\wn{\sigma\circ\varphi(g)}\le B$ for every $\sigma\in\Aut$ and every $g\in\Gf{I}$.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{IsShort}}
+
+\begin{lemma}[a central element at a prime dividing $\piN{D}$]\label{l:cgen}
+In Setting~\ref{set:D}, let $\mathfrak{p}\in\piPl{D}$. There is a finite adele $c$ of $\ED{D}$ with
+$c\,\cj{c}=1$ such that: $c$ is integral; $c_w=1$ at every finite place $w$ with $w\ne\mathfrak{p}$ and
+$\cj{w}\ne\mathfrak{p}$; and every natural number $n$ for which $c_{\mathfrak{p}}^{\,n}-1$ has
+$\mathfrak{p}$-adic absolute value less than~$1$ is divisible by $\ND{D}-1$.
+\end{lemma}
+\leanline{\lean{existscentralGen}\sep proof in §\ref{s:short}}
+
+\begin{definition}[central translations and ramified columns]\label{d:central}
+\begin{enumerate}[label=(\alph*)]
+\item Let $E$ be a CM field with a CM type, $I$ a finite set, $\varkappa$ column counts, $\mathfrak{e}$
+determinant exponents, $J$ a level of~$\Gf{I}$ and $\chi$ a character of~$J$. The \emph{central representation}
+is the representation $z\mapsto\mathrm{R}(z\cdot1_I)$, by right translation by scalar matrices, of the group of
+the finite adeles $z$ of $E$ with $z\cj{z}=1$ on the space of the forms
+$\varphi\in\Alg{I}{\varkappa}{\mathfrak{e}}$ with $\mathrm{R}(k)\varphi=\chi(k)\varphi$ for all $k\in J$. (Scalar
+matrices commute with~$J$, so this space is stable.)
+\item In Setting~\ref{set:D}, for $\mathfrak{p}\in\piPl{D}$, $\cgen{D}{\mathfrak{p}}$ is a chosen adele $c$ with
+the properties of Lemma~\ref{l:cgen}.
+\item In Setting~\ref{set:D}, $\cenrep{D}$ is the central representation of (a) on $\Col{D}$, that is, for
+$E=\ED{D}$, $I=\XD{D}{0}$, the weight $(\kapD{D},\lastD{D}{0})$, $J=\colL{D}{0}$ and $\chi=1$.
+\item In Setting~\ref{set:D}, for a finite set $\Sigma\subseteq\piPl{D}$, the endomorphism
+$\ramop{D}{\Sigma}=\prod_{\mathfrak{p}\in\Sigma}\bigl(1-\cenrep{D}(\cgen{D}{\mathfrak{p}})\bigr)$ of\/ $\Col{D}$; the
+factors commute.
+\item In Setting~\ref{set:D}, the space of \emph{ramified columns} $\Colram{D}$ is the image of
+$\ramop{D}{\piPl{D}}$.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{algFormCentralRep}\sep\lean{centralGen}\sep\lean{centralRep}\sep\lean{ramifyingOp}\sep\lean{ramifiedColumns}}
+
+\begin{definition}[admissible translations, paired translates, good data]\label{d:good}
+In Setting~\ref{set:D}:
+\begin{enumerate}[label=(\alph*)]
+\item For a natural number $q$, $\admT{q}$ is the set of the tuples of translations $\mathsf{x}$ such that, for
+every~$i$, every entry of $\pig{D}\cdot\mathsf{x}_i$ is integral at every finite place $w$ with $q\notin w$.
+\item For a family $v=(v_i)_{i\in\NN}$ with $v_i\in\Wfin{D}{i}$ and a natural number~$\nu$,
+\[\pairT{v}{\nu}=\sum_{y}\mathrm{U}\bigl(\mathrm{col}(-y/N)\bigr)v_{2\nu}\otimes\mathrm{U}\bigl(\mathrm{row}(-\cj{y/N})\bigr)v_{2\nu+1}\ \in\ \Wfin{D}{2\nu}\otimes\Wfin{D}{2\nu+1},\]
+where $N=\ND{D}$; $y$ runs over the vectors indexed by $\XD{D}{2\nu+1}$ with entries in
+$(\Z/N)^{\piPl{D}}$; $y/N$ is the vector of finite adeles whose component at $\mathfrak{p}\in\piPl{D}$ is the least
+non-negative representative of $y_{\mathfrak{p}}$ divided by~$N$, and $0$ at the other places;
+$\mathrm{col}(z)$ is the matrix with rows $\XD{D}{2\nu+1}$ and columns $\XD{D}{2\nu}$ whose last column is $z$ and
+whose other columns are~$0$; and $\mathrm{row}(z)$ is the matrix with rows $\XD{D}{2\nu+2}$ and columns
+$\XD{D}{2\nu+1}$ whose last row is $z$ and whose other rows are~$0$.
+\item Let $\vartheta$ be a twist of~$D$ and $\Psi$ a finitely supported complex function on the tuples of
+translations of~$D$. We say that $\good{\vartheta}{\Psi}$ if the following three conditions hold.
+
+\textup{(G1)} The support of $\Psi$ lies in $\admT{\nrm{\vartheta}\cdot\ND{D}}$; for every $\mathsf{x}$, every
+prime number $\ell$ prime to $\nrm{\vartheta}$ and every ring homomorphism $\iota\colon\CC\to\CC_\ell$,
+$|\iota(\Psi(\mathsf{x}))|_\ell\le1$; and if $Q(\vartheta)=\emptyset$, then
+$\sum_{\mathsf{x}}|\sigma(\Psi(\mathsf{x}))|\le\exp(x^{60})$ for every $\sigma\in\Aut$.
+
+\textup{(G2)} (\emph{joint invariance}) For every family $(a_i)_{i\in\NN}$ with $a_i\in\colL{D}{i}$ and $a_i=1$
+for $i\ge m$, the tensor
+$\sum_{\mathsf{x}}\Psi(\mathsf{x})\cdot\bigotimes_{i<m}\td{D}{\mathsf{x}}{i}$ in $\bigotimes_{i<m}\Wfin{D}{i}$ is
+fixed by $\bigotimes_{i<m}\lkom{D}{\vartheta}{i}(a_i,a_{i+1})$; in the formal text: the two tensors have the same
+image under every linear map.
+
+\textup{(G3)} (\emph{the shape at $N$}) For every form $\varphi\in\Stg{D}{0}$,
+\[
+\sum_{\mathsf{x}}\Psi(\mathsf{x})\cdot\chn{D}{\vartheta}{\td{D}{\mathsf{x}}{\,\cdot\,}}{m}\,\varphi
+=\sum_{\mathsf{x}}\Psi(\mathsf{x})\cdot\chnn{D}{\vartheta}{\nu\mapsto\pairT{\mathrm{P}^{\piPl{D}}\td{D}{\mathsf{x}}{\,\cdot\,}}{\nu}}{m/2}\,\varphi .
+\]
+\end{enumerate}
+\end{definition}
+\leanline{\lean{admissibleTranslations}\sep\lean{pairTranslates}\sep\lean{IsGoodDatum}\sep with
+\lnm{IsAdmissibleCoeffs}, \lnm{IsJointlyInvariant}, \lnm{translateSum} of unit 141}
+
+In (G3) the formal text writes the number of pairs as $\lfloor m/2\rfloor-1+1$ and the number of lifts on the
+left as twice that; $m$ is a power of~$2$ with $m\ge2$, so these are $m/2$ and~$m$. That good data exist, and
+that the rows of the handout are of the form $\Bch{D}{\vartheta}{\Psi}\psi$ for good~$\Psi$, is proved in the
+unit on the seesaw; this unit only uses the three conditions.
+
+\begin{definition}[the jet exponent, the loss of a lift, the mark operators]\label{d:mark}
+In Setting~\ref{set:D}:
+\begin{enumerate}[label=(\alph*)]
+\item For natural numbers $p$ and $i$ and a finite set $\Xi\subseteq\PlD{D}$, put $n'=\nD{D}{i+1}$,
+$L=\boxes{\kapD{D}}{n'}$ and $l=\lfloor\log_pL\rfloor$ (which is $0$ if $p\le1$ or $L=0$). The \emph{jet
+exponent} is the real number
+\begin{multline*}
+\jetexp{p}{i}{\Xi}=\Bigl(\frac{1}{p-1}-\nsw{d}{p}\Bigr)L-\fD{D}\,n'^{\,3}\,(l+1)\\
++\frac{\chiK{P}(p)-1}{2}\sum_{\substack{0\le e\le l\\ e\text{ odd or }p=d}}\ \sum_{\tau\in\PlD{D}}\cc{p}{\kapD{D}}{n'}{\Xi}{\tau}{\pin{D}{-p^{e}}\cdot\tau}{e}.
+\end{multline*}
+\item In Setting~\ref{set:p}, for a finite set $\mathcal{L}$ of finite places of $\ED{D}$ and a natural
+number~$i$, the \emph{loss of the lift $i$} is
+$\liftloss{\mathcal{L}}{i}=\rr{D}{p}\sum_{\tau\in\even{\mathcal{L}}}\lc{D}{i}{\tau}-\jetexp{p}{i}{\even{\mathcal{L}}}$.
+\item In Setting~\ref{set:p}, for a marked set $\mathcal{L}$ and $\mathfrak{l}\in\mathcal{L}$, the \emph{mark
+operator} $\markop{\mathcal{L}}{\mathfrak{l}}$ is the $\Oj$-linear endomorphism
+$\varphi\mapsto p^{\mexp{D}{\mathfrak{l}}}\cdot\Tl{\mathfrak{l}}{\rr{D}{p}}\varphi$ of\/ $\Col{D}$, where
+$\Tl{\mathfrak{l}}{s}$ is the Hecke operator of the double coset of $\diag(\varpi1_s,1)$ at the split
+place~$\mathfrak{l}$ (Input~I8); columns are fixed by $\Kmax{\XD{D}{0}}{\mathfrak{l}}$, and the operator preserves
+$\Col{D}$ (Lemma~\ref{l:markprop}).
+\end{enumerate}
+\end{definition}
+\leanline{\lean{jetExponent}\sep\lean{liftLoss}\sep\lean{markOperator}}
+
+For $p=d$ the sum over $e$ in (a) contains $e=0$; the
+formal text has it so.
+
+\begin{definition}[the height per row, the non-split primes, the allowed loss]\label{d:size}
+In Setting~\ref{set:D}:
+\begin{enumerate}[label=(\alph*)]
+\item $\hrow{D}=m\Bigl(\sum_{\tau\in\tops{D}}\bigl(\jsz{D}{\aD{D}}-\Ask{D}{\aD{D}}{\tau}\bigr)+\kD{D}\,\dirc{D}\Bigr)-\#\tops{D}\cdot\aD{D}\cdot\log\ND{D}$,
+where for a natural number~$n$, $\jsz{D}{n}=\log n!-n\log\bigl(\OmP{P}{\Dmu{D}}/\gD{D}\bigr)$, for a real $y$ and a
+place~$\tau$,
+$\Ask{D}{y}{\tau}=\sum_{\nu=1}^{\aD{D}}\lamd{d}{1}{\nu}\bigl(y/\nu-\nomW{D}{\pin{D}{-\nu}\cdot\tau}\bigr)_{+}$, and
+$\dirc{D}=\sum_{\tau\in\PlD{D}}\bigl(\jsz{D}{\wtD{D}{0}{\tau}}-\Ask{D}{\nomW{D}{\tau}}{\tau}\bigr)$ is the cost of
+one direction (objects of unit~152 and of the overview).
+\item $\nsp{D}$ is the finite set of the prime numbers $p<\lceil x_1\rceil$ with $\chiK{P}(p)\ne1$.
+\item For a natural number~$p$, the \emph{allowed loss} $\err{D}{p}$ is $3\,\loss{D}{p}$ if $p\in\nsp{D}$;
+$4\,m\,\fD{D}\,b$ if $p\notin\nsp{D}$ and $p=\ND{D}$; and $0$ otherwise.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{heightPerRow}\sep\lean{nonsplitPrimes}\sep\lean{allowedLoss}\sep unit 152: \lnm{Data.jetSize},
+\lnm{Data.primeSum}, \lnm{Data.dirCost}}
+
+\sect{Levels and columns}{s:levels}
+\begin{lemma}[the primes dividing $\piN{D}$]\label{l:pi}
+In Setting~\ref{set:D}:
+\begin{enumerate}[label=(\alph*)]
+\item $\piN{D}\ne0$.
+\item A finite place $w$ of $\ED{D}$ lies in $\piPl{D}$ if and only if $\piN{D}\in w$.
+\item For every $\mathfrak{p}\in\piPl{D}$: $\cj{\mathfrak{p}}\notin\piPl{D}$, the residue field of $\mathfrak{p}$ has
+$\ND{D}$ elements, and $\ND{D}$ is a uniformiser at~$\mathfrak{p}$. For every finite place $w$ of $\ED{D}$:
+$\ND{D}\in w$ if and only if $w\in\piPl{D}$ or $\cj{w}\in\piPl{D}$.
+\item $\#\piPl{D}=\fD{D}$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) and (b) follow from $\piN{D}\cj{\piN{D}}=\ND{D}\ne0$ and the definition. (c) Since $\ND{D}\equiv1$ modulo
+$\NnD{D}\,d$, the prime $\ND{D}$ splits completely in $\ED{D}$ (unit~152): every place above it has residue
+field of $\ND{D}$ elements and is different from its conjugate, and a place above it contains exactly one of
+$\piN{D}$, $\cj{\piN{D}}$. (d) The same input gives a bijection between $\PlD{D}$ and the primes that contain
+$\piN{D}$.
+\end{proof}
+\leanline{\lean{nezero}\sep\lean{mempiPlaces}\sep\lean{isSplitLevelpiPlaces}\sep\lean{cardpiPlaces}\sep inputs of
+unit 152: \lnm{Parameters.q\_eq\_of\_modEq\_one}, \lnm{Parameters.star\_mem\_iff},
+\lnm{Parameters.nonempty\_infinitePlace\_equiv\_finPlace}}
+
+\begin{lemma}[the column levels]\label{l:level}
+In Setting~\ref{set:D}, let $i$ be a natural number.
+\begin{enumerate}[label=(\alph*)]
+\item $\Kprin{\XD{D}{i}}{\cj{\pig{D}}\,\piN{D}}\subseteq\colL{D}{i}$.
+\item $\colL{D}{i}$ is a level: an open subgroup of\/ $\Kf{\XD{D}{i}}$.
+\item $\XD{D}{i}$ has $\nD{D}{i}$ elements.
+\item $\colL{D}{0}$ is free: $\Gam{\XD{D}{0}}\cap g\,\colL{D}{0}\,g^{-1}=\{1\}$ for every $g\in\Gf{\XD{D}{0}}$.
+\item An element $k$ of\/ $\Gf{\XD{D}{i}}$ lies in $\colL{D}{i}$ if and only if $k\in\Kch{D}{\XD{D}{i}}$ and, for
+every $\mathfrak{p}\in\piPl{D}$ and every index~$c$, the entry of $k_{\mathfrak{p}}-1$ in the last row and the
+column~$c$ lies in the maximal ideal at~$\mathfrak{p}$.
+\item If $w$ is a finite place of $\ED{D}$ with $\ND{D}\in w$, then neither $w$ nor $\cj{w}$ is chosen.
+\item If $S$ is a set of finite places of $\ED{D}$ such that $\ND{D}\in w$ for every $w\in S$, then every element
+of\/ $\Kf{\XD{D}{i}}$ whose components away from the places of $S$ and their conjugates are~$1$ lies in
+$\Kch{D}{\XD{D}{i}}$.
+\item If $\ell$ is a prime number with $\ell\ne\ND{D}$ and $w$ a finite place of $\ED{D}$ with $\ell\in w$, then
+$\ND{D}\notin w$ and $\cj{w}\notin\piPl{D}$.
+\item In Setting~\ref{set:p}, $|j(\cj{\pig{D}})|_p\le1$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) An element of the principal level of $\cj{\pig{D}}\piN{D}$ is congruent to~$1$ modulo the chosen places and
+modulo~$\piN{D}$. (b) $\colL{D}{i}$ lies in $\Kf{\XD{D}{i}}$ and contains the open group of~(a). (c) is the
+definition of the index sets. (d) $\colL{D}{0}$ is a subgroup of the chosen level and
+$\nD{D}{0}\le2\nD{D}{m}$ (Input~I3). (e) unfolds Definition~\ref{d:pi}(b) place by place: by
+Lemma~\ref{l:pi}(c), $\piN{D}$ is a uniformiser at the places of $\piPl{D}$ and a unit elsewhere. (f) A chosen
+place lies above $g_0$ or $g_1$, and these primes differ from $\ND{D}$ by size. (g) follows from (f): such an
+element is $1$ at every chosen place. (h) A prime ideal contains only one prime number; the second claim is
+Lemma~\ref{l:pi}(c). (i) $\pig{D}$ is an algebraic integer, and ring homomorphisms preserve integrality.
+\end{proof}
+\leanline{\lean{principalLevellecolumnLevel}\sep\lean{isLevelcolumnLevel}\sep\lean{cardX}\sep\lean{classAutcolumnLeveleqbot}\sep
+\lean{memcolumnLevel}\sep\lean{notisChosenofNmem}\sep\lean{memchosenLevelofsupportedOn}\sep\lean{notMempiPlacesofne}\sep\lean{normstarpiGleone}}
+
+\begin{lemma}[two bounds for the weight]\label{l:branch}
+In Setting~\ref{set:D}, let $\tau\in\PlD{D}$.
+\begin{enumerate}[label=(\alph*)]
+\item $\kap{D}{\tau}{1}-2b\le\brexp{D}{\tau}$, as real numbers.
+\item $\sum_{h<\#\XD{D}{0}}h\,\kap{D}{\tau}{h}\le\aD{D}$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) In $\brexp{D}{\tau}$ the term $h=1$ of the sum is $\kap{D}{\tau}{1}$, the other terms are non-negative, and
+$\last{D}{m}{\tau}\ge-\wtD{D}{m}{\tau}\ge-2b$ by the bound $\wtD{D}{i}{\tau}\le2b$ for $i\le2m$ of unit~152.
+(b) $\XD{D}{0}$ has $\kD{D}$ elements, and among the heights $h<\kD{D}$ only $h=1$ has columns, namely
+$\aD{D}$ at the tops and none elsewhere.
+\end{proof}
+\leanline{\lean{lebranchExp}\sep\lean{sumheightmulkappale}\sep input of unit 152: \lnm{Data.w\_le\_two\_mul\_b}}
+
+\sect{Short forms span}{s:short}
+\begin{lemma}[differences of translates]\label{l:sub}
+Let $E$ be a CM field with a CM type, $I$ a finite set, $\varkappa$ column counts and
+$\mathfrak{e}$ determinant exponents. Let $B$ be a real number, $k\in\Kf{I}$ and
+$\varphi\in\Alg{I}{\varkappa}{\mathfrak{e}}$. If $\short{B}{\varphi}$, then
+$\short{4B}{(\varphi-\mathrm{R}(k)\varphi)}$.
+\end{lemma}
+\begin{proof}
+At a $p$-adic place the forms of gauge at most~$1$ at~$1$ form a module, and the translate
+$\mathrm{R}(k)\varphi$ is one of them: its value at $g$ is $\varphi(gk)$, and the gauge of a vector at $g$ equals
+its gauge at $gk$, because the gauge is invariant under $\Kf{I}$ (Input~I1). For $\sigma\in\Aut$ and a point~$g$ put
+$\xi=\sigma\circ\varphi(g)$, $\xi'=\sigma\circ\varphi(gk)$; by the parallelogram law for the Gram form,
+$\wn{\xi-\xi'}\le\wn{\xi-\xi'}+\wn{\xi+\xi'}=2\wn{\xi}+2\wn{\xi'}\le4B$.
+\end{proof}
+\leanline{\lean{subtranslate}}
+
+\statement{inksoft}{\textbf{Input I7 (short bases, delta forms, Schur matrices; background library).}\enspace Let $E$
+be a CM field with $f$ infinite places, $I$ a finite set and $N\ge1$ a natural number that lies in the different of
+$E$ over~$\Q$. \textup{(i)} For every $g\in\Gf{I}$ there is an invertible matrix $Y(g)$ over $E$, indexed
+by~$I$, such that $g^{-1}Y(g)$ has entries in $\widehat{\OO}_E$ and every entry of $Y(g)$ has absolute value at
+most $6N(f|I|)^2$ at every embedding $E\to\CC$. \textup{(ii)} For a free level~$K$ the delta form with value
+$v$ at the representative $g_c$ of a class has, at every point, $j$-gauge at most
+$\gauge{\varkappa}{\mathfrak{e}}{g_c}{v}$, and its values $\xi$ satisfy
+$\wn{\sigma\circ\xi}\le\wn{\sigma\circ v}$ for $\sigma\in\Aut$. \textup{(iii)} The \emph{evaluation vectors}
+$\mathrm{ev}(y)\in\CC^{\Wy{I}{\varkappa}}$, the values at a point $y$ of the basis polynomials of the weight
+$\varkappa$, span $\CC^{\Wy{I}{\varkappa}}$ when $y$ runs over the points whose coordinates are roots of unity; they
+have integer polynomial coordinates, and
+$\rhow{\varkappa}{0}(z)\,\mathrm{ev}(y)$ is an evaluation vector at the transformed point. \textup{(iv)} For
+families $z=(z_\tau)$ of complex matrices indexed by~$I$ there are real numbers $c_{\tau,\nu}\ge0$, with
+$\sum_{\nu}c_{\tau,\nu}$ at most the sum of the squares of the absolute values of the entries of $z_\tau$,
+such that the Schur matrix of $z$ multiplies $\wn{\,\cdot\,}$ by at most
+$\prod_{\tau}\prod_{\nu<|I|}c_{\tau,\nu}^{\,l(\tau,\nu)}$, where $l(\tau,\nu)$ is the length of the row of
+index~$\nu$ at~$\tau$.}
+\leanline{background library: \lnm{Space.exists\_short\_basis\_stdSpace}, \lnm{weylGauge\_deltaForm\_le},
+\lnm{weylNormSq\_deltaForm\_le}, \lnm{PolyRep.ext\_weylEval}, \lnm{weylNormSq\_schur\_le}; the catalogue classes
+them as elementary and gives no reference for them: \emph{reference to be confirmed}; the header of the file of
+the last one names the contravariant form on Weyl's lattice}
+
+\begin{proposition}[short forms span the forms of a free level]\label{p:span}
+Let $E$ be a CM field with a CM type, $I$ a non-empty finite set, $\varkappa$ column counts and
+$\mathfrak{e}$ determinant exponents. Let $K$ be a level of\/ $\Gf{I}$ that is free, $N\ge1$ a natural number that
+lies in the different of the ring of integers of $E$ over~$\Z$, $M$ a natural number with
+\[|I|\cdot\#\operatorname{Pl}(E)+\boxes{\varkappa}{|I|}\ \le\ M ,\]
+and $B$ a real number with $\bigl(6N(\#\operatorname{Pl}(E)\cdot|I|)^2\bigr)^{6M}\le B$. Then the space of the
+$K$-fixed forms in $\Alg{I}{\varkappa}{\mathfrak{e}}$ is spanned over $\CC$ by its elements $\varphi$ with
+$\short{B}{\varphi}$.
+\end{proposition}
+\begin{proof}
+Put $R=6N(f|I|)^2$ with $f=\#\operatorname{Pl}(E)$. By Input~I1 every $K$-fixed form is a sum of delta forms, so
+it suffices to treat the delta forms at one class, with representative~$g$. Take the matrices $Y(\,\cdot\,)$ of
+Input~I7(i). For a ring homomorphism $\phi$ from $\CC$ to a normed field, write $\phi_\tau$ for the embedding
+$y\mapsto\phi(\emb{\tau}(\cj{y}))$ of~$E$ and put
+\[A_\phi=\prod_{\tau}\det\phi_\tau\bigl(Y(g^{\mathfrak{e}(\tau)})\bigr)\cdot\rhow{\varkappa}{0}\bigl((\phi_\tau(Y(g)))_\tau\bigr).\]
+The matrix $A=A_{\mathrm{id}}$ is invertible, so by Input~I7(iii) the vectors $A\,\mathrm{ev}(y)$, $y$ with
+coordinates roots of unity, span $\CC^{\Wy{I}{\varkappa}}$; and
+$\phi\circ(A\,\mathrm{ev}(y))=A_\phi\,\mathrm{ev}(\phi\circ y)$. It remains to show that the delta form with
+value $A\,\mathrm{ev}(y)$ is $B$-short. \emph{At a $p$-adic place $j$:} by Input~I7(ii) its gauge is at most
+$\gauge{\varkappa}{\mathfrak{e}}{g}{A\,\mathrm{ev}(y)}$, the largest absolute value of a coordinate of
+\[\prod_\tau\det\bigl((g^{\mathfrak{e}(\tau)})_\tau^{-1}\,j_\tau Y(g^{\mathfrak{e}(\tau)})\bigr)\cdot\rhow{\varkappa}{0}\bigl((g_\tau^{-1}\,j_\tau Y(g))_\tau\bigr)\,\mathrm{ev}(j\circ y).\]
+The matrices $g^{-1}Y(g)$ are integral, so the determinants and the Schur matrix have integral entries, and
+$\mathrm{ev}(j\circ y)$ is integral because $j$ maps roots of unity to units. \emph{At $\sigma\in\Aut$:} by
+Input~I7(ii) the values $\xi$ of the delta form have
+$\wn{\sigma\circ\xi}\le\wn{A_\sigma\,\mathrm{ev}(\sigma\circ y)}$. Each determinant has absolute value at most
+$(|I|R)^{|I|}\le R^{2|I|}$, the sums $\sum_\nu c_{\tau,\nu}$ of Input~I7(iv) are at most $|I|^2R^2\le R^4$,
+the row lengths at all places add up to $\boxes{\varkappa}{|I|}$, and the evaluation vector at a point with
+coordinates of absolute value~$1$ is bounded in terms of $|I|$ and the boxes. The formal text collects these
+bounds into $R^{6M}$, using the hypothesis on~$M$; this is at most~$B$.
+\end{proof}
+\leanline{\lean{spanisShorteqtop}}
+
+\begin{proof}[Proof of Lemma~\ref{l:cgen}]
+By Lemma~\ref{l:pi}(c) the residue field at $\mathfrak{p}$ has $\ND{D}$ elements, so its group of units is cyclic
+of order $\ND{D}-1$. Choose a unit $y$ of the ring of integers of the completion at~$\mathfrak{p}$ whose residue
+generates this group, regard it as an idele with component $y$ at $\mathfrak{p}$ and $1$ elsewhere, and put
+$c=y/\cj{y}$. Then $c\,\cj{c}=1$, $c$ is integral, and $c$ is $1$ away from $\mathfrak{p}$ and
+$\cj{\mathfrak{p}}$. Since $\cj{\mathfrak{p}}\ne\mathfrak{p}$, the component of $c$ at $\mathfrak{p}$ is~$y$; if
+$y^{\,n}-1$ lies in the maximal ideal, the residue of $y$ has order dividing~$n$, so $\ND{D}-1$ divides~$n$.
+\end{proof}
+
+\begin{lemma}[the central elements act on columns]\label{l:cgenmem}
+In Setting~\ref{set:D}, let $\mathfrak{p}\in\piPl{D}$.
+\begin{enumerate}[label=(\alph*)]
+\item For every finite set $I$, the scalar matrix $\cgen{D}{\mathfrak{p}}\cdot1_I$ lies in
+$\Kmax{I}{\mathfrak{p}}$.
+\item For every $\varphi\in\Colram{D}$ there is a column $\varphi'\in\Col{D}$ with
+$\varphi=\varphi'-\mathrm{R}\bigl(\cgen{D}{\mathfrak{p}}\cdot1_{\XD{D}{0}}\bigr)\varphi'$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) $\cgen{D}{\mathfrak{p}}$ is integral of norm one and is $1$ away from $\mathfrak{p}$, $\cj{\mathfrak{p}}$
+(Lemma~\ref{l:cgen}). (b) $\varphi=\ramop{D}{\piPl{D}}\varphi_0$ for a column $\varphi_0$; split off the factor at
+$\mathfrak{p}$ and take $\varphi'=\ramop{D}{\piPl{D}\setminus\{\mathfrak{p}\}}\varphi_0$.
+\end{proof}
+\leanline{\lean{scalarFincentralGenmem}\sep\lean{existseqsubcentralGen}}
+
+\begin{lemma}[few columns are fixed by a central element]\label{l:ker}
+In Setting~\ref{set:D}, for every $\mathfrak{p}\in\piPl{D}$,
+\[\dim_{\CC}\ker\bigl(1-\cenrep{D}(\cgen{D}{\mathfrak{p}})\bigr)\ \le\ (\ND{D}-1)^{-1}\cdot\dim_{\CC}\Col{D}.\]
+\end{lemma}
+\begin{proof}
+Let $z$ be the scalar matrix of $\cgen{D}{\mathfrak{p}}$ and $K$ the group generated by $\colL{D}{0}$ and~$z$. By
+Lemma~\ref{l:cgenmem}(a) and Lemma~\ref{l:level}(g), $K$ lies in the chosen level; so $K$ is a level, and both
+$K$ and $\colL{D}{0}$ are free (Input~I3). A column fixed by $z$ is fixed by~$K$. For free levels the dimension of
+the space of fixed forms is the number of classes times the dimension of the weight (Input~I1), and each class
+of $K$ consists of $[K:\colL{D}{0}]$ classes of $\colL{D}{0}$. Hence the kernel has dimension at most
+$\dim\Col{D}/[K:\colL{D}{0}]$. Some power $z^{\,n}$ with $1\le n\le[K:\colL{D}{0}]$ lies in $\colL{D}{0}$; by
+Lemma~\ref{l:level}(e) its component at $\mathfrak{p}$ is congruent to~$1$ modulo~$\mathfrak{p}$, so
+$\ND{D}-1$ divides~$n$ by Lemma~\ref{l:cgen}. Therefore $[K:\colL{D}{0}]\ge\ND{D}-1$.
+\end{proof}
+\leanline{\lean{finrankkeronesubcentralGenle}}
+
+\begin{proposition}[the ramifying operator]\label{p:ram}
+In Setting~\ref{set:D}, let $\Sigma$ be a finite subset of $\piPl{D}$ and $W$ a complex subspace of\/ $\Col{D}$.
+Then
+\[\dim_{\CC}\ramop{D}{\Sigma}^{-1}(W)\ \le\ \dim_{\CC}W+\#\Sigma\cdot(\ND{D}-1)^{-1}\cdot\dim_{\CC}\Col{D},\]
+and for every real number $B$ and every $\varphi\in\Col{D}$ with $\short{B}{\varphi}$,
+\[\short{4^{\#\Sigma}B}{\ramop{D}{\Sigma}\varphi}.\]
+\end{proposition}
+\begin{proof}
+Induction on $\Sigma$; for $\Sigma=\emptyset$ the operator is the identity. Adding a place $\mathfrak{p}$ composes
+with $1-\cenrep{D}(\cgen{D}{\mathfrak{p}})$. The preimage of a subspace under a linear map has dimension at most
+the dimension of the subspace plus that of the kernel, which Lemma~\ref{l:ker} bounds; and by
+Lemmas \ref{l:cgenmem}(a) and~\ref{l:sub} the new factor multiplies the bound of shortness by~$4$.
+\end{proof}
+\leanline{\lean{ramifyingOpfinrankcomapandshort}}
+
+For $W=0$ and $\Sigma=\piPl{D}$ the first claim says that the kernel of $\ramop{D}{\piPl{D}}$ has dimension at most
+$\fD{D}\dim\Col{D}/(\ND{D}-1)$: the ramified columns have nearly full dimension. The unit on the filling (Theorem~B of the handout) uses the
+proposition for its count of dimensions.
+
+\begin{proof}[Proof of Theorem A]
+Put $B'=\exp(\bud{D})/4^{\fD{D}}$. Apply Proposition~\ref{p:span} to $E=\ED{D}$, $I=\XD{D}{0}$, the weight
+$(\kapD{D},\lastD{D}{0})$, the level $\colL{D}{0}$, which is free by Lemma~\ref{l:level}(d), the number
+$N=\NnD{D}\,d$, which lies in the different of $\ED{D}$ (unit~152), and
+$M=\kD{D}\,\fD{D}+\fD{D}\,\aD{D}$, which is admissible by Lemma~\ref{l:branch}(b). The inequality
+$(6N(\fD{D}\kD{D})^2)^{6M}\le B'$ holds by size. So $\Col{D}$ is spanned by columns $\varphi$ with
+$\short{B'}{\varphi}$. The operator $\ramop{D}{\piPl{D}}$ maps $\Col{D}$ onto $\Colram{D}$, and by
+Proposition~\ref{p:ram} and Lemma~\ref{l:pi}(d) it maps such $\varphi$ to ramified columns that are
+$4^{\fD{D}}B'$-short, that is, $\exp(\bud{D})$-short. The image of a spanning set spans the image.
+\end{proof}
+\leanline{\lean{spanshortramifiedColumns}\sep input of unit 152: \lnm{Parameters.cycloConductor\_mem\_different}}
+
+\sect{The chain as a sum over classes}{s:chain}
+\begin{setting}[a good datum at a $p$-adic place]\label{set:good}
+Settings \ref{set:D} and~\ref{set:p} hold; $\vartheta$ is a twist of~$D$, and $\Psi$ is a finitely supported complex
+function on the tuples of translations of~$D$ such that $\good{\vartheta}{\Psi}$; and $p$ is prime to
+$\nrm{\vartheta}$.
+\end{setting}
+
+\statement{inksoft}{\textbf{Input I8 (standard data, Hecke operators, sums over classes; units 150, 141 and the
+background library).}\enspace \textup{(i)} In Settings \ref{set:D} and~\ref{set:p}, for an integer $\delta$ of
+$\KP{P}$ and a set $S$ of finite places of $\ED{D}$, $\intafter{\delta}{S}$ is the group of the matrices $y$ over
+$\Af{\ED{D}}$ (of any fixed shape) such that every entry of $\delta y$ is integral at every place of~$S$; and
+$\Std{\delta}{D,i}$ is the $\Oj$-submodule, of the model that contains $\Wfin{D}{i}$, generated by
+the vectors $\mathrm{U}(y)\intvac{D,i}$ with $y\in\intafter{\delta}{\{w:\ p\in w\}}$. If $\delta\ne0$ and
+$\Phi\in\Std{\delta}{D,i}$, then for every complex number~$c$, with the kernel taken at the scale
+$c\cdot\per{P}{\Dmu{D}}$, $\Phi$ multiplies gauges at the point~$1$ by at most
+$\bigl(|j(c)|_p/|j(\cj{\delta}\,d)|_p\bigr)^{L}$, $L=\boxes{\kapD{D}}{\nD{D}{i+1}}$; for the lift kernel
+($c=\cj{\pig{D}}$) this reads
+$\Phi\in\raises{\lk{D}{\vartheta}{i}}{1}{1}{(|j(\cj{\pig{D}})|_p/|j(\cj{\delta}d)|_p)^{L}}$.
+
+\textup{(ii)} Let $w$ be a finite place of $E$ with $\cj{w}\ne w$ and $I$ a finite set. The group $\GL_I(E_w)$
+embeds in $\Gf{I}$, an element $g$ going to the point with component $g$ at~$w$, the component at $\cj{w}$ that
+unitarity forces, and $1$ elsewhere; for a family $(g_w)_{w\in S}$ over a set $S$ of such places, no two
+conjugate, $\mathrm{at}(g)$ is the product of these points. For a natural number~$s$, the \emph{basic double
+coset of index $s$} at $w$ is the set of the $g\in\GL_I(E_w)$ such that $g$ and $\varpi g^{-1}$ are integral
+and $\det g$ has valuation~$s$ ($\varpi$ a uniformiser); for $s\le|I|$ it is the double coset of
+$\diag(\varpi1_s,1)$ under the integral invertible matrices. On the vectors of a representation of $\Gf{I}$ that
+are fixed by $\Kmax{I}{w}$, the Hecke operator $\Tl{w}{s}$ is the sum of the translates by representatives of
+the left cosets of the integral invertible matrices in this double coset; it preserves the vectors fixed by a
+group that contains $\Kmax{I}{w}$ and commutes with every operator that commutes with the group at~$w$.
+
+\textup{(iii)} In Setting~\ref{set:D}, let $\vartheta$ be a twist, $\Psi$ a finitely supported function on the
+tuples of translations, and $\Phi=(\Phi_{\mathsf{x},i})$ a family with $\Phi_{\mathsf{x},i}\in\Wfin{D}{i}$. The
+combination $\sum_{\mathsf{x}}\Psi(\mathsf{x})\bigotimes_{i<m}\Phi_{\mathsf{x},i}$ is \emph{jointly invariant}
+if it satisfies condition \textup{(G2)} of Definition~\ref{d:good} with $\Phi_{\mathsf{x},i}$ in place of
+$\td{D}{\mathsf{x}}{i}$. Suppose that it is, that $\varphi$ is a column, and that
+$\mathcal{C}_0,\dots,\mathcal{C}_m$ are properties of pairs (point, vector) such that $\mathcal{C}_0(g,\varphi(g))$
+holds for all~$g$ and $\mathcal{C}_i(g,\xi)$ implies
+$\mathcal{C}_{i+1}\bigl(h,\lkjm{D}{\vartheta}{i}(\lkom{D}{\vartheta}{i}(g,h)\Phi_{\mathsf{x},i})\xi\bigr)$ for
+$\mathsf{x}$ in the support, $i<m$ and all $g,h$. Then for every point~$h$, the vector
+$\sum_{\mathsf{x}}\Psi(\mathsf{x})\bigl(\chn{D}{\vartheta}{\Phi_{\mathsf{x}}}{m}\varphi\bigr)(h)$ is a sum of
+$\prod_{i<m}\#\Cl{\colL{D}{i}}$ vectors of the form
+$\sum_{\mathsf{x}}\Psi(\mathsf{x})\beta(\bigotimes_{i<m}\Phi_{\mathsf{x},i})$, with $\beta$ linear and
+$\mathcal{C}_m\bigl(h,\beta(\bigotimes_{i<m}\Phi_{\mathsf{x},i})\bigr)$ for every $\mathsf{x}$ in the support.}
+\leanline{unit 150: \lnm{Parameters.integralAfter}, \lnm{Parameters.standardData},
+\lnm{Parameters.mem\_raises\_of\_standardData}\sep background library: \lnm{atSplit}, \lnm{atSplits},
+\lnm{basicDoubleCoset}, \lnm{heckeSplit}, \lnm{map\_heckeSplit}\sep unit 141: \lnm{IsJointlyInvariant},
+\lnm{IsJointlyInvariant.sum\_chain\_mem\_nsmul}}
+
+The reason for (iii) is that a lift is a finite sum over the classes of its level, each term being linear in the
+datum; $m$ lifts give a sum over tuples of classes, and joint invariance makes the sum of the terms independent
+of the representatives, which is what allows one linear map $\beta$ for all~$\mathsf{x}$. The levels are free
+because they lie in the chosen level (Input~I3).
+
+\begin{lemma}[integrality of translations]\label{l:intafter}
+In Setting~\ref{set:D}:
+\begin{enumerate}[label=(\alph*)]
+\item Let $q$ and $i$ be natural numbers, $\mathsf{x}\in\admT{q}$, $\delta$ an integer of $\KP{P}$, and $S$ a
+set of finite places of $\ED{D}$ such that every $w\in S$ satisfies $q\notin w$ and
+($\delta=\pig{D}$ or $\cj{w}$ is not chosen). Then $\mathsf{x}_i\in\intafter{\delta}{S}$.
+\item Let $\mathsf{x}$ be a tuple of translations, $i$ a natural number and $S$ a set of finite places of
+$\ED{D}$ such that $\mathsf{x}_i\in\intafter{1}{S\cup\cj{S}}$, where $\cj{S}$ is the set of the conjugates of the
+places of~$S$. Then $\mathrm{P}^{S}\td{D}{\mathsf{x}}{i}=\td{D}{\mathsf{x}}{i}$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) At $w\in S$ the entries of $\pig{D}\mathsf{x}_i$ are integral, by the definition of $\admT{q}$. If
+$\delta=\pig{D}$ this is the claim. Otherwise $\cj{\pig{D}}\notin\cj{w}$, that is, $\pig{D}\notin w$: so
+$\pig{D}$ is a unit at~$w$, the entries of $\mathsf{x}_i$ are integral at~$w$, and so are those of
+$\delta\mathsf{x}_i$. (b) The datum is the translate of a multiple of the vacuum by a matrix that is integral
+at $S\cup\cj{S}$, and such a translate is again a vacuum at these places (a property of the projection, from
+the library).
+\end{proof}
+\leanline{\lean{memintegralAfter}\sep\lean{projOntranslateDatum}}
+
+\begin{lemma}[the data of a good datum are standard]\label{l:tdstd}
+In Setting~\ref{set:good}, assume $p\ne\ND{D}$. Let $\mathsf{x}$ be in the support of~$\Psi$, $i$ a natural
+number and $\delta$ an integer of $\KP{P}$ such that $\delta=\pig{D}$ or $p$ does not divide $\gD{D}$. Then
+$\td{D}{\mathsf{x}}{i}\in\Std{\delta}{D,i}$.
+\end{lemma}
+\begin{proof}
+By (G1), $\mathsf{x}\in\admT{\nrm{\vartheta}\ND{D}}$. Let $w$ be a place above~$p$. Then
+$\nrm{\vartheta}\ND{D}\notin w$, because $p$ is prime to $\nrm{\vartheta}$ and $p\ne\ND{D}$. If $p$ does not
+divide $\gD{D}$, then $\cj{w}$, which also lies above~$p$, is not chosen. So Lemma~\ref{l:intafter}(a) gives
+$\mathsf{x}_i\in\intafter{\delta}{\{w:\ p\in w\}}$, and the datum is one of the generators of
+$\Std{\delta}{D,i}$.
+\end{proof}
+\leanline{\lean{translateDatummemstandardData}}
+
+\begin{lemma}[the chain is a plain sum]\label{l:chainsum}
+In Setting~\ref{set:D}, let $\vartheta$ be a twist of~$D$, $\Psi$ a finitely supported complex function on the
+tuples of translations of~$D$, and $\Phi=(\Phi_{\mathsf{x},i})$ a family of data
+$\Phi_{\mathsf{x},i}\in\Wfin{D}{i}$ such that $\sum_{\mathsf{x}}\Psi(\mathsf{x})\bigotimes_{i<m}\Phi_{\mathsf{x},i}$
+is jointly invariant. For every natural number $i$ let $\mathrm{N}_i$ be a real function of a point of\/
+$\Gf{\XD{D}{i}}$ and a vector, and $r_i\ge0$ a real number, such that for every $\mathsf{x}$ in the support
+of~$\Psi$, every $i<m$ and all $g$, $h$, $\xi$
+\[\mathrm{N}_{i+1}\bigl(h,\lkjm{D}{\vartheta}{i}(\lkom{D}{\vartheta}{i}(g,h)\Phi_{\mathsf{x},i})\xi\bigr)\ \le\ r_i\cdot\mathrm{N}_i(g,\xi).\]
+Let $\varphi\in\Col{D}$ and let $B$ be a real number with $\mathrm{N}_0(g,\varphi(g))\le B$ for all~$g$, and let
+$g$ be a point of\/ $\Gf{\XD{D}{m}}$. Then there are linear maps $\beta_c$, for
+$1\le c\le\prod_{i<m}\#\Cl{\colL{D}{i}}$, from $\bigotimes_{i<m}\Wfin{D}{i}$ to
+$\CC^{\Wy{\XD{D}{m}}{\kapD{D}}}$ such that
+$\mathrm{N}_m\bigl(g,\beta_c(\bigotimes_{i<m}\Phi_{\mathsf{x},i})\bigr)\le\prod_{i<m}r_i\cdot B$ for every $c$ and
+every $\mathsf{x}$ in the support, and
+\[\sum_{c}\sum_{\mathsf{x}}\Psi(\mathsf{x})\,\beta_c\Bigl(\bigotimes_{i<m}\Phi_{\mathsf{x},i}\Bigr)=\Bigl(\sum_{\mathsf{x}}\Psi(\mathsf{x})\,\chn{D}{\vartheta}{\Phi_{\mathsf{x}}}{m}\varphi\Bigr)(g).\]
+\end{lemma}
+\begin{proof}
+Input~I8(iii) with the properties $\mathcal{C}_i(g,\xi)$: $\mathrm{N}_i(g,\xi)\le\prod_{i'<i}r_{i'}\cdot B$. They
+propagate by the hypothesis on the kernels and $r_i\ge0$.
+\end{proof}
+\leanline{\lean{existschaineqsum}}
+
+\begin{proposition}[gains of the lifts add along the chain]\label{p:gchain}
+In Setting~\ref{set:good}, for every natural number $i$ let $t_i$ be a $\CC$-linear endomorphism of\/
+$\Wfin{D}{i}$ such that
+$\lkom{D}{\vartheta}{i}(a,a')\,t_i\,\td{D}{\mathsf{x}}{i}=t_i\,\lkom{D}{\vartheta}{i}(a,a')\,\td{D}{\mathsf{x}}{i}$
+for every $\mathsf{x}$ in the support of~$\Psi$, every $a\in\colL{D}{i}$ and every $a'\in\colL{D}{i+1}$; let
+$d_i\in\Gf{\XD{D}{i}}$ be points and $r_i$ real numbers such that
+\[t_i\,\td{D}{\mathsf{x}}{i}\in\raises{\lk{D}{\vartheta}{i}}{d_i}{d_{i+1}}{p^{\,r_i}}\qquad\text{for every }\mathsf{x}\text{ in the support of }\Psi\text{ and every }i<m.\]
+Let $\varphi\in\Col{D}$ have $j$-gauge at most~$1$ at~$d_0$. Then the form
+$\sum_{\mathsf{x}}\Psi(\mathsf{x})\cdot\chn{D}{\vartheta}{(t_i\td{D}{\mathsf{x}}{i})_i}{m}\varphi$ has $j$-gauge
+at most $p^{\sum_{i<m}r_i}$ at~$d_m$.
+\end{proposition}
+\begin{proof}
+The combination of the data $t_i\td{D}{\mathsf{x}}{i}$ is jointly invariant: it is the image of the tensor of
+(G2) under $\bigotimes_it_i$, which commutes with the action of the levels on the data in the support. Apply
+Lemma~\ref{l:chainsum} with $\mathrm{N}_i(g,\xi)=\gauge{\kapD{D}}{\lastD{D}{i}}{gd_i}{\xi}$, the numbers
+$p^{\,r_i}$ and $B=1$. The value of the form at a point is a sum of terms $\Psi(\mathsf{x})\beta_c(\dots)$; the
+gauge is ultrametric, the gauge of each $\beta_c(\dots)$ is at most $p^{\sum r_i}$, and
+$|j(\Psi(\mathsf{x}))|_p\le1$ by (G1), since $p$ is prime to $\nrm{\vartheta}$.
+\end{proof}
+\leanline{\lean{gaugeLechain}}
+
+\sect{Served primes, induced primes and marked sets}{s:marks}
+\begin{lemma}[orders and losses]\label{l:served}
+In Setting~\ref{set:D}:
+\begin{enumerate}[label=(\alph*)]
+\item For every prime number $p$, $\rr{D}{p}\le\log x_1$.
+\item If $p$ is a prime number that is served for $D$, then $m$ divides the order of the place $\pin{D}{-p}$ in
+the group $\PlD{D}$.
+\item For every natural number $p$, $\ \fD{D}\,(\log b)^2\cdot\aD{D}/p\ \le\ \loss{D}{p}$.
+\item For natural numbers $p$ and $e$ with $e$ odd and every $\tau\in\tops{D}$: the place
+$\pin{D}{-p^{e}}\cdot\tau$ lies in $\tops{D}$ if and only if $\oz{D}{p}$ divides~$e$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) $m\le2^{\Dmu{D}}\le p^{\Dmu{D}}$, so $\rr{D}{p}\le\Dmu{D}$, and $\Dmu{D}\le\log x_1$ by size. (c) The last
+factor of $\loss{D}{p}$ is $m\ge1$ or~$1$. (d) Since $e$ is odd, $\pin{D}{-p^{e}}=\pin{D}{-p}^{\,e}$; the tops
+are the places of class $1$ modulo~$N_0$, so the product is a top exactly when the class of $\pin{D}{-p}$ has
+order dividing~$e$. (b) The data have $m=2^{c+1}$ and $\Dmu{D}=22(c+1)$ for a natural number~$c$, and
+$2^{\Dmu{D}+1}$ divides $\NnD{D}$. Let $n\ge1$ be the order of $\pin{D}{-p}$. The class of this place modulo
+$2^{\Dmu{D}+1}$ is that of $-p$ (unit~152; $p$ is prime to $N_0$ because $\chiK{P}(p)\ne1$), so
+$(-p)^{n}\equiv1$ modulo $2^{\Dmu{D}+1}$. By lifting the exponent at~$2$ (background library),
+$2^{\Dmu{D}}$ divides $(-p-1)n$ or $(-p+1)n$. Since $p$ is not short, $2^{c+1}$ divides neither $p+1$ nor $p-1$;
+so $2^{\Dmu{D}-c}$ divides~$n$, and $\Dmu{D}-c\ge c+1$.
+\end{proof}
+\leanline{\lean{instUbCastRealRrLogLx}\sep\lean{mdvdorderOf}\sep\lean{leloss}\sep\lean{placeOfIntmulmemtopsiff}\sep
+background library: \lnm{two\_pow\_dvd\_or\_of\_pow\_eq\_one}\sep unit 152: \lnm{Parameters.placeClass\_placeOfInt}}
+
+\begin{lemma}[induced primes]\label{l:ind}
+In Settings \ref{set:D} and~\ref{set:p}, let $\tau,\tau'\in\PlD{D}$.
+\begin{enumerate}[label=(\alph*)]
+\item $p\in\ind{\tau}$.
+\item $\ind{\tau\cdot\tau'}=\tau'\cdot\ind{\tau}$, where a place acts on the primes through the automorphism of
+$\ED{D}$ over $\KP{P}$ that it names.
+\item If $\chiK{P}(p)=-1$ and $e$ is an odd natural number, then
+$\ind{\pin{D}{-p^{e}}\cdot\tau}=\cj{\ind{\tau}}$.
+\item If $\chiK{P}(p)=-1$, then $\ind{\tau}$ is equal to $\ind{\tau'}$ or to $\cj{\ind{\tau'}}$ if and only if
+$\tau=\pin{D}{-p}^{\,n}\cdot\tau'$ for some natural number~$n$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) $|j(p)|_p<1$. (b) The embedding at $\tau\tau'$ is the embedding at $\tau$ composed with the automorphism
+named by~$\tau'$ (unit~152). (c), (d) For $p$ inert in $\KP{P}$ and prime to $\NnD{D}\,d$, the decomposition of
+$p$ in $\ED{D}$ is described in the note on the CM field: a place $v$ maps a prime above $p$ to itself or to its
+conjugate exactly when $v$ is a power of $\pin{D}{-p}$, to the conjugate for odd powers. With (b) this gives
+both claims.
+\end{proof}
+\leanline{\lean{pmeminducedPlace}\sep\lean{inducedPlacemul}\sep\lean{inducedPlacenegpowmulofodd}\sep\lean{inducedPlaceeqorstariff}\sep
+unit 152: \lnm{Parameters.phi\_mul}, \lnm{Parameters.smul\_eq\_star\_iff\_inert}, \lnm{Parameters.smul\_eq\_iff\_inert}}
+
+\begin{lemma}[a full mark exists at a served prime]\label{l:exmark}
+In Settings \ref{set:D} and~\ref{set:p}, assume that $p<x_1$ and that $p$ is served for~$D$. Then there is a
+finite set $\mathcal{L}$ of finite places of $\ED{D}$ that is a full mark.
+\end{lemma}
+\begin{proof}
+Fix a well-ordering of the finite places and let $\mathcal{L}$ be the set of the primes $\mathfrak{l}=\ind{\tau}$,
+$\tau\in\tops{D}$, that are smaller than their conjugate. Then (M1) and (M3) hold by construction, and (M2),
+(M4) by hypothesis, a served prime being inert. For the covering, let $\tau$ be a top. By Lemma~\ref{l:served}(d)
+the place $\tau'=\pin{D}{-p}^{\,\oz{D}{p}}\cdot\tau$ is a top, and it induces $\cj{\ind{\tau}}$ by
+Lemma~\ref{l:ind}(c), $\oz{D}{p}$ being odd. Moreover $\ind{\tau}\ne\cj{\ind{\tau}}$: by
+Lemma~\ref{l:served}(b) the order of $\pin{D}{-p}$ is even, so its odd powers do not fix a prime above~$p$. Hence
+one of the two primes is the smaller and lies in~$\mathcal{L}$.
+\end{proof}
+\leanline{\lean{existsisMarked}}
+
+\begin{setting}[a marked set]\label{set:mark}
+Settings \ref{set:D} and~\ref{set:p} hold, and $\mathcal{L}$ is a finite set of finite places of $\ED{D}$ that is
+marked for $D$, $p$ and~$j$ (Input~I5).
+\end{setting}
+
+\begin{lemma}[marked sets]\label{l:markprop}
+In Setting~\ref{set:mark}:
+\begin{enumerate}[label=(\alph*)]
+\item $\#\mathcal{L}\le\fD{D}$.
+\item $p$ does not divide $\gD{D}$, $p\ne\ND{D}$, and $p$ does not divide $\gD{D}\,\ND{D}$.
+\item For every $\mathfrak{l}\in\mathcal{L}$: $p\in\mathfrak{l}$; $p$ is a uniformiser at~$\mathfrak{l}$;
+$\cj{\mathfrak{l}}\ne\mathfrak{l}$; and $\Kmax{\XD{D}{0}}{\mathfrak{l}}\subseteq\colL{D}{0}$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) $\mathcal{L}$ lies in the image of $\tau\mapsto\ind{\tau}$. (b) $p<x_1$, and the primes $g_0$, $g_1$, $\ND{D}$
+are larger than $x_1$ by size. (c) The first claim is Lemma~\ref{l:ind}(a). $p$ is unramified in $\ED{D}$, being
+prime to $\NnD{D}\,d$ (an inert or ramified $p$ does not divide $\NnD{D}$, and if $\mathcal{L}\ne\emptyset$ then
+$p$ is served, so $p\ne d$). The third claim is (M1). For the last, by (b) the element $\cj{\pig{D}}\piN{D}$ is a unit at $\mathfrak{l}$ and
+$\cj{\mathfrak{l}}$, so $\Kmax{\XD{D}{0}}{\mathfrak{l}}$ lies in the principal level of this element, and
+Lemma~\ref{l:level}(a) applies.
+\end{proof}
+\leanline{\lean{cardle}\sep\lean{notdvdgProdmulN}\sep\lean{pmem}\sep\lean{valuationp}\sep\lean{starne}\sep\lean{maxCompactAtlecolumnLevel}}
+
+\begin{lemma}[marked primes avoid the thick places; a balance]\label{l:thick}
+In Setting~\ref{set:mark}:
+\begin{enumerate}[label=(\alph*)]
+\item If $\tau\in\PlD{D}$ is such that $\ind{\tau}\in\mathcal{L}$ or $\cj{\ind{\tau}}\in\mathcal{L}$, then
+$\tau\notin\thick{D}$.
+\item For every natural number $i$ and every real function $G$ of a natural number and a finite place,
+\[\sum_{\tau\in\PlD{D}}\Bigl([\ind{\tau}\in\mathcal{L}]\,G\bigl(\wtD{D}{i}{\tau},\ind{\tau}\bigr)-[\cj{\ind{\tau}}\in\mathcal{L}]\,G\bigl(\wtD{D}{i}{\tau},\cj{\ind{\tau}}\bigr)\Bigr)=0 .\]
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) $\mathcal{L}$ is not empty, so $p$ is served: $\chiK{P}(p)=-1$ and $\oz{D}{p}$ is odd. By (M3) and
+Lemma~\ref{l:ind}(d), $\tau=\pin{D}{-p}^{\,n}\cdot\tau_0$ for a top $\tau_0$ and some~$n$, so the class of $\tau$
+modulo $N_0$ is that of $(-p)^{n}$. A thick place has class~$-1$ modulo~$N_0$ (a condition of the data). If
+$\tau$ were thick, raising $(-p)^{n}\equiv-1$ to the odd power $\oz{D}{p}$ would give $1\equiv-1$ modulo~$N_0$.
+(b) If $\mathcal{L}$ is empty both sums vanish. Otherwise $p$ is inert; substitute
+$\tau\mapsto\pin{D}{-p}\cdot\tau$ in the second sum. By Lemma~\ref{l:ind}(c) the prime induced by the new place
+is $\cj{\ind{\tau}}$, so the condition becomes $\ind{\tau}\in\mathcal{L}$ and the place argument of $G$ becomes
+$\ind{\tau}$; and the weight is unchanged, because by (a) neither $\tau$ nor $\pin{D}{-p}\cdot\tau$ is thick,
+and $\wtD{D}{i}{\,\cdot\,}$ takes one value on the places that are not thick.
+\end{proof}
+\leanline{\lean{notMemthick}\sep\lean{suminducedPlacesubstareqzero}}
+
+\sect{The jet exponent}{s:jet}
+\begin{lemma}[collisions]\label{l:coll}
+In Setting~\ref{set:D}, let $\Xi$ be a finite subset of\/ $\PlD{D}$.
+\begin{enumerate}[label=(\alph*)]
+\item Let $p$ and $e$ be natural numbers and $\tau\in\PlD{D}$. If $(\tau,e)$ is a collision of $p$ outside $\Xi$
+for~$D$, then $p\ne d$, $e$ is odd, and $\oz{D}{p}$ divides~$e$.
+\item Let $p$ be a prime number and $o$ a natural number such that $o\le e$ for every collision $(\tau,e)$ of
+$p$ outside $\Xi$ for~$D$. Then $\coll{D}{p}{\Xi}\le2\,\fD{D}\,\aD{D}/p^{\,o}$.
+\item Let $p$ be a prime number that is small and not split for~$D$ and is not served for~$D$. Then
+$m\cdot\coll{D}{p}{\emptyset}\le\loss{D}{p}$.
+\item In Setting~\ref{set:p}, if $\mathcal{L}$ is a full mark, then $\coll{D}{p}{\even{\mathcal{L}}}=0$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) Both $\tau$ and $\pin{D}{-p^{e}}\cdot\tau$ are tops, so they have the same class modulo~$N_0$; by a lemma
+of unit~150 this excludes $p=d$ (no power of $d$ is $\equiv-1$ modulo~$N_0$). Then $e$ is odd because $(e,p)$ is
+live, and Lemma~\ref{l:served}(d) applies. (b) For each $\tau$ the terms are $\aD{D}/p^{e}$ with $e\ge o$; they
+are bounded by the geometric series $\sum_{n\ge0}(\aD{D}/p^{\,o})2^{-n}=2\aD{D}/p^{\,o}$, since $p\ge2$; sum over
+the $\fD{D}$ places. (c) By $(\log b)^2\ge2$, $\loss{D}{p}\ge2\fD{D}(\aD{D}/p)\cdot(m\text{ or }1)$. If $p$ is short,
+use (b) with $o=1$. If not, every collision has $e\ge\rr{D}{p}+1$: by (a), $e$ is odd, $\oz{D}{p}$ divides~$e$,
+hence $\oz{D}{p}$ is odd, and $\chiK{P}(p)=-1$; if $\oz{D}{p}\le e\le\rr{D}{p}$, then $p$ would be served. So
+$\coll{D}{p}{\emptyset}\le2\fD{D}\aD{D}/p^{\rr{D}{p}+1}$ by (b), and $m\le p^{\rr{D}{p}}$. (d) Suppose
+$(\tau,e)$ is a collision outside $\even{\mathcal{L}}$. Then $\mathcal{L}$ is not empty, since it covers the
+top~$\tau$; so $p$ is inert, $e$ is odd by (a), and $\pin{D}{-p^{e}}\cdot\tau$ induces $\cj{\ind{\tau}}$
+(Lemma~\ref{l:ind}(c)). As $\mathcal{L}$ covers~$\tau$, one of $\tau$, $\pin{D}{-p^{e}}\cdot\tau$ lies in
+$\even{\mathcal{L}}$, a contradiction.
+\end{proof}
+\leanline{\lean{neandoddanddvd}\sep\lean{collisionSumle}\sep\lean{mulcollisionSumleloss}\sep\lean{collisionSumevenPlaceseqzero}\sep
+unit 150: \lnm{Data.ne\_d\_of\_placeClass\_eq}}
+
+\begin{lemma}[low columns and low boxes]\label{l:low}
+In Setting~\ref{set:D}, let $i<m$ be a natural number and $\tau\in\PlD{D}$. Then
+\[\kD{D}\cdot\nomW{D}{\tau}\le\lb{D}{i}{\tau},\qquad\lc{D}{i}{\tau}\le\nomW{D}{\tau}+x^{60},\qquad\lb{D}{i}{\tau}\le\kD{D}\cdot\nomW{D}{\tau}+x^{60}.\]
+\end{lemma}
+\begin{proof}
+The term $h=\kD{D}$ of $\lb{D}{i}{\tau}$ is
+$\kD{D}\bigl(\wtD{D}{1}{\tau}-\lfloor(\kD{D}+\tD{D}+1)/2\rfloor\bigr)\ge\kD{D}\,\nomW{D}{\tau}$ (unit~152). For the
+upper bounds, each $\kap{D}{\tau}{h}$ with $h\ne1$ is at most $[h=\kD{D}]\wtD{D}{1}{\tau}+\gap{D}$ (unit~150),
+$\wtD{D}{1}{\tau}$ exceeds $\nomW{D}{\tau}$ by a small amount (unit~152), and the sums of the remaining terms
+over $h<\nD{D}{i+1}\le\nD{D}{m}$ are at most $x^{60}$ by size.
+\end{proof}
+\leanline{\lean{lowColumnslowBoxesbounds}\sep unit 152: \lnm{Data.nominalWeight\_le\_w\_sub},
+\lnm{Data.w\_le\_nominalWeight\_add}\sep unit 150: \lnm{Data.κ\_le}}
+
+\begin{proposition}[the jet exponent is at least the gain of one lift, up to collisions]\label{p:jet}
+In Setting~\ref{set:D}, let $p$ be a prime number that is small and not split for~$D$, $i<m$ a natural number
+and $\Xi$ a finite subset of\/ $\PlD{D}$. Then
+\begin{multline*}
+\frac{\gain{D}{p}}{m}-\coll{D}{p}{\Xi}+\frac{1-\chiK{P}(p)}{2}\cdot\#\bigl(\tops{D}\cap\Xi\bigr)\cdot\frac{\aD{D}}{x_1}\\
+-\fD{D}\,(\log b)^2\,\frac{\aD{D}}{p}\cdot\frac1m\ \le\ \jetexp{p}{i}{\Xi}.
+\end{multline*}
+\end{proposition}
+\begin{proof}
+Write $c=(1-\chiK{P}(p))/2\in\{\tfrac12,1\}$, $n'=\nD{D}{i+1}$, $L=\boxes{\kapD{D}}{n'}$,
+$l=\lfloor\log_pL\rfloor$, $\eta=\aD{D}/(pm)$, and $\tau_e=\pin{D}{-p^{e}}\cdot\tau$. Since $n'>1$, the columns
+of height one contribute $\aD{D}$ at each top, so $L=\sum_\tau\bigl(\kap{D}{\tau}{1}+\lb{D}{i}{\tau}\bigr)$, and
+by \eqref{e:live}
+\[\Bigl(\frac1{p-1}-\nsw{d}{p}\Bigr)L=c\sum_{\tau}\ \sum_{e:\ (e,p)\text{ live}}\frac{\kap{D}{\tau}{1}+\lb{D}{i}{\tau}}{p^{e}}.\]
+By the definitions of Input~I6,
+$\gain{D}{p}/m=c\sum_\tau\sum_{e\text{ live}}\bigl([\tau\in\tops{D}](\aD{D}/p^{e}-\nomW{D}{\tau_e})_++\kD{D}(\nomW{D}{\tau}/p^{e}-\nomW{D}{\tau_e})_+\bigr)$.
+For a place $\tau$ and a natural number $e$ let $\mathrm{lv}_e$ be $1$ if $(e,p)$ is live and $0$ otherwise,
+and $\mathrm{cl}_{\tau,e}$ be $1$ if $(\tau,e)$ is a collision of $p$ outside $\Xi$ for $D$ and $0$ otherwise.
+The claim follows by summation over $\tau$ and~$e$ from the following inequality, for each $\tau$ and~$e$:
+\begin{multline}\label{e:term}
+[e\le l]\Bigl([e\text{ odd or }p=d]\;\cc{p}{\kapD{D}}{n'}{\Xi}{\tau}{\tau_e}{e}-4\eta\Bigr)+[e=1]\,[\tau\in\tops{D}\cap\Xi]\,\frac{\aD{D}}{x_1}\\
++\mathrm{lv}_e\Bigl([\tau\in\tops{D}]\bigl(\tfrac{\aD{D}}{p^{e}}-\nomW{D}{\tau_e}\bigr)_++\kD{D}\bigl(\tfrac{\nomW{D}{\tau}}{p^{e}}-\nomW{D}{\tau_e}\bigr)_+\Bigr)\\
+\le\ \mathrm{lv}_e\,\frac{\kap{D}{\tau}{1}+\lb{D}{i}{\tau}}{p^{e}}+\mathrm{cl}_{\tau,e}\,\frac{\aD{D}}{p^{e}} .
+\end{multline}
+Indeed, multiply \eqref{e:term} by $c$ and sum: the right side gives
+$(1/(p-1)-\nsw{d}{p})L+c\,\coll{D}{p}{\Xi}$, the left side gives
+$c\sum\cc{p}{\kapD{D}}{n'}{\Xi}{\tau}{\tau_e}{e}-4c\,\eta\,\fD{D}(l+1)+\gain{D}{p}/m+c\#(\tops{D}\cap\Xi)\aD{D}/x_1$,
+and therefore
+\[\jetexp{p}{i}{\Xi}\ \ge\ \frac{\gain{D}{p}}{m}+c\,\#(\tops{D}\cap\Xi)\frac{\aD{D}}{x_1}-c\,\coll{D}{p}{\Xi}-\bigl(4c\,\eta+n'^{\,3}\bigr)\fD{D}(l+1).\]
+Now $c\le1$, the collision sum is non-negative, $n'^{\,3}\le x^{60}\le\eta$ by size (here $p<x_1$ is used), and
+$5(l+1)\le(\log b)^2$, because $l\le\log L/\log2$ and $L\le\gD{D}\le b^{22}$ by Lemma~\ref{l:low}
+and by size. This gives the proposition.
+
+\emph{Proof of \eqref{e:term}.} The facts used are: $\aD{D}/x_1\le\nomW{D}{\tau'}\le\aD{D}/x$ for every
+place~$\tau'$, with $\nomW{D}{\tau'}=\aD{D}/x_1$ when $\tau'$ is not thick; Lemma~\ref{l:low}; and the sizes
+$x^{60}\le\eta$, $\aD{D}/(xp)+x^{60}/p\le\eta$. Put $\tau'=\tau_e$ and recall that in the coupling count
+$\mathrm{one}_\tau=[\tau\in\tops{D}\setminus\Xi]\,\aD{D}$, the count of the other columns is $\lc{D}{i}{\tau}$ and their boxes
+are $\lb{D}{i}{\tau}$.
+
+\emph{The pair $(e,p)$ is live and $e\le l$.} Three bounds add up to \eqref{e:term}.
+(1) $\lc{D}{i}{\tau}/p^{e}\le\eta$.
+(2) $\min\bigl(\lb{D}{i}{\tau}/p^{e},\lb{D}{i}{\tau'}\bigr)+\kD{D}\bigl(\nomW{D}{\tau}/p^{e}-\nomW{D}{\tau'}\bigr)_+\le\lb{D}{i}{\tau}/p^{e}+x^{60}$:
+if the positive part vanishes this is clear; otherwise bound the minimum by
+$\lb{D}{i}{\tau'}\le\kD{D}\nomW{D}{\tau'}+x^{60}$ and use $\kD{D}\nomW{D}{\tau}\le\lb{D}{i}{\tau}$.
+(3) $\min\bigl(\mathrm{one}_\tau/p^{e},\lc{D}{i}{\tau'}+\mathrm{one}_{\tau'}\bigr)+[\tau\in\tops{D}]\bigl(\aD{D}/p^{e}-\nomW{D}{\tau'}\bigr)_++[e=1][\tau\in\tops{D}\cap\Xi]\aD{D}/x_1$
+is at most $\kap{D}{\tau}{1}/p^{e}+x^{60}$ plus $\aD{D}/p^{e}$ if $(\tau,e)$ is a collision. If $\tau$ is not a
+top, the left side is~$0$. If $\tau\in\tops{D}\cap\Xi$, then $\mathrm{one}_\tau=0$ and
+$(\aD{D}/p^{e}-\nomW{D}{\tau'})_+\le\aD{D}/p^{e}-\aD{D}/x_1$ whenever it is positive; for $e=1$ it is, since
+$p<x_1$. If $\tau\in\tops{D}\setminus\Xi$ and $(\tau,e)$ is a collision, both terms are at most $\aD{D}/p^{e}$.
+If $\tau\in\tops{D}\setminus\Xi$ and it is not a collision, then $\mathrm{one}_{\tau'}=0$, and either the positive part
+vanishes, or the minimum is at most $\lc{D}{i}{\tau'}\le\nomW{D}{\tau'}+x^{60}$ and the sum is at most
+$\aD{D}/p^{e}+x^{60}$. Altogether the loss is at most $\eta+2x^{60}\le4\eta$.
+
+\emph{The pair $(e,p)$ is live and $e>l$.} Only the second and third groups of the left side occur, and
+$\kD{D}(\nomW{D}{\tau}/p^{e}-\nomW{D}{\tau'})_+\le\lb{D}{i}{\tau}/p^{e}$,
+$[\tau\in\tops{D}]\bigl((\aD{D}/p^{e}-\nomW{D}{\tau'})_++[e=1][\tau\in\Xi]\aD{D}/x_1\bigr)\le\kap{D}{\tau}{1}/p^{e}$,
+as before.
+
+\emph{The pair is not live.} Then $e=0$, or $e$ is even and $p\ne d$, and the right side is~$0$. For $e\ge2$
+the left side is $-4\eta$ or~$0$. For $e=0$ and $p\ne d$ likewise. For $e=0$ and $p=d$ the place
+$\tau'=\pin{D}{-1}\cdot\tau$ has the class of $\tau$ times~$-1$ modulo~$N_0$, so at most one of $\tau$, $\tau'$ is
+a top and at most one is thick; hence the first minimum is at most $\lc{D}{i}{\tau'}$ or~$0$, the second is at
+most $\lb{D}{i}{\,\cdot\,}$ at a place that is not thick, which is at most $\kD{D}\aD{D}/x_1+x^{60}$, and with
+$p=d$ these three terms are at most $\eta$ each by size. So the coupling count is at most $3\eta$.
+\end{proof}
+\leanline{\lean{lejetExponent}\sep unit 150: \lnm{hasSum\_live\_inv\_pow}, \lnm{Data.summable\_localAsk}\sep unit 152:
+\lnm{Data.nominalWeight\_mem\_Icc}, \lnm{Parameters.placeClass\_of\_thick}}
+
+\begin{lemma}[the cost of the marks is within the loss]\label{l:lowsum}
+In Setting~\ref{set:mark}, let $i<m$ be a natural number. Then
+\[\#\mathcal{L}\cdot\DeltaP{D}{p}+\rr{D}{p}\sum_{\tau\in\even{\mathcal{L}}}\lc{D}{i}{\tau}\ \le\ \frac{\loss{D}{p}}{m}+\#\bigl(\tops{D}\cap\even{\mathcal{L}}\bigr)\cdot\frac{\aD{D}}{x_1}.\]
+\end{lemma}
+\begin{proof}
+It suffices to show $\rr{D}{p}\,\lc{D}{i}{\tau}\le\aD{D}/(pm)+[\tau\in\tops{D}]\,\aD{D}/x_1$ for
+$\tau\in\even{\mathcal{L}}$: then the left side is at most
+$\fD{D}\rr{D}{p}\fD{D}(\nD{D}{m}+\rr{D}{p})+\fD{D}\aD{D}/(pm)+\#(\tops{D}\cap\even{\mathcal{L}})\aD{D}/x_1$ by
+Lemma~\ref{l:markprop}(a), and the first two terms are at most $\fD{D}(\log b)^2\aD{D}/(pm)\le\loss{D}{p}/m$ by
+size and Lemma~\ref{l:served}(c). Let $\tau\in\even{\mathcal{L}}$. By Lemma~\ref{l:thick}(a), $\tau$ is not
+thick, so $\lc{D}{i}{\tau}\le\aD{D}/x_1+x^{60}$ by Lemma~\ref{l:low}. If $p\le m$, then
+$\rr{D}{p}(\aD{D}/x_1+x^{60})\le\aD{D}/(pm)$ by size, using Lemma~\ref{l:served}(a). If $m\le p$, then
+$\rr{D}{p}=1$; $p$ is served because $\mathcal{L}$ is not empty, so $\oz{D}{p}\le1$, that is, $-p\equiv1$
+modulo~$N_0$; by (M3) and Lemma~\ref{l:ind}(d), $\tau$ is a power of $\pin{D}{-p}$ times a top, hence a top; and
+$x^{60}\le\aD{D}/(pm)$ by size.
+\end{proof}
+\leanline{\lean{sumlowColumnsle}}
+
+\sect{Hecke operators through the chain}{s:hecke}
+\statement{inksoft}{\textbf{Input I9 (divisibility of jets; unit 150, and the Hecke transfer of the background
+library).}\enspace \textup{(i)} (\emph{Gauges from a jet bound.}) In Settings \ref{set:D} and~\ref{set:p}, let
+$\vartheta$ be a twist, $i$ a natural number, $\delta$ an integer of $\KP{P}$ and $\Phi'\in\Std{\delta}{D,i}$.
+Let $y,y'\in\Gf{\XD{D}{i+1}}$ be integral and invertible at all primes above~$p$, and let $y''$ be a point
+of\/ $\Gf{\XD{D}{i+1}}$ whose image under $x\mapsto j(\emb{\tau}(\cj{x}))$ is, for every $\tau$, a diagonal
+matrix $\diag(u_\tau)$. Let $B$ be a real number such that for every $\Phi\in\Std{\delta}{D,i}$ and all Weyl
+indices $c'$, $c$ the entry $(c',c)$ of the jet matrix of~$\Phi$ at the scale of the lift kernel, multiplied by
+$\prod_\tau(\prod_{a}|u_\tau(a)|_p)^{\last{D}{i+1}{\tau}}$ and by the product of $|u_\tau(a)|_p$ over the
+entries $a$ of the tableau $c'$ at~$\tau$, has $p$-adic absolute value at most~$B$. Then
+$\lkom{D}{\vartheta}{i}(1,yy''y')\Phi'\in\raises{\lk{D}{\vartheta}{i}}{1}{1}{B}$.
+
+\textup{(ii)} (\emph{Jets of standard data are governed by theta products.}) For $\Phi\in\Std{\delta}{D,i}$, a
+complex number $c$ and a $\CC$-linear form $\mathrm{lf}$ on power series: if $|j(\mathrm{lf}(\Theta))|_p\le r$ for
+every power series $\Theta$ whose image under $j$ lies in the set
+$\ThProd{P}{\Dmu{D}}{\delta}{|j(c\,s_1)|_p}{\XD{D}{i+1}\times\XD{D}{i}}$ of theta products of the CM curve
+($s_1$ the period factor), then $|j(\mathrm{lf}(T))|_p\le r$ for the Taylor series $T$ of the theta function of
+$\Phi$ at the scale $c\cdot\per{P}{\Dmu{D}}$. If $p$ does not divide $\NnD{D}$, then $|j(s_1)|_p=1$.
+
+\textup{(iii)} (\emph{Normal form and divisibility of Schur jets.}) Let $\chiK{P}(p)\ne1$. Every theta product
+$\Theta$ in $\ThProd{P}{\Dmu{D}}{1}{r}{I}$ with $r\le1$ is \emph{integral on the null cone} in every degree,
+for the maps $\tau\mapsto\pin{D}{-p^{e}}\cdot\tau$, the exponents $e\le\lfloor\log_pL\rfloor$ with $e$ odd or
+$p=d$, and elements $\varpi$, $\theta$ of $\CC_p$ with $|\varpi|_p=p^{-\nsw{d}{p}}$ and
+$|\theta|_p=p^{(\chiK{P}(p)-1)/2}$. For a series $\Theta$ that is integral on the null cone up to the degree
+$L=\boxes{\varkappa}{n'}$, a finite set $\Xi$ of places and a family of \emph{charges}, natural numbers
+$\mathrm{ch}(\tau,h,a)$ attached to a place, a height and an index, such that for every exponent $e$ as above,
+every place $\tau$, height $h$ and index~$a$
+\begin{equation}\label{e:charge}
+\tau\in\Xi\ \text{ or }\ (h=1\text{ and }\pin{D}{-p^{e}}\cdot\tau\in\Xi)\quad\Longrightarrow\quad\mathrm{ch}(\tau,1,a)\ne0\ \text{ or }\ \mathrm{ch}(\pin{D}{-p^{e}}\cdot\tau,h,a)\ne0,
+\end{equation}
+the entry $(c',c)$ of the matrix of jets of $\Theta$ along the Schur matrix of $\varkappa$ has absolute value
+at most $p$ to the power: the total charge of the boxes of the tableau $c'$, minus
+\[\bigl(\tfrac1{p-1}-\nsw{d}{p}\bigr)L-\tfrac{1-\chiK{P}(p)}{2}\sum_{e,\tau}\cc{p}{\varkappa}{n'}{\Xi}{\tau}{\pin{D}{-p^{e}}\cdot\tau}{e}-\#\PlD{D}\,n'^{\,3}\bigl(\lfloor\log_pL\rfloor+1\bigr).\]
+For $\varkappa=\kapD{D}$ and $n'=\nD{D}{i+1}$ the subtracted number is $\jetexp{p}{i}{\Xi}$.
+
+\textup{(iv)} (\emph{Hecke transfer.}) Let $w$ be a finite place with $\cj{w}\ne w$; consider a theta lift from
+rank $n$ to rank $n+k'$ whose two characters are unramified at~$w$ and whose datum is a vacuum at $w$
+and~$\cj{w}$. Then the lift of a form $\varphi$ fixed by the group at~$w$ is fixed by the group at~$w$, and the
+Hecke polynomials $\mathrm{H}_w(X)=\sum_{n''}(-X)^{n''}\mathrm{q}_w^{\,n''(n''-1)/2}\,\Tl{w}{n''}$ satisfy
+\[\mathrm{H}_w(X)\,\mathrm{lift}(\varphi)=\prod_{l<k'}\bigl(1-\mathrm{q}_w^{\,l}\,\alpha X\bigr)\cdot\mathrm{lift}\bigl(\mathrm{H}_w(\mathrm{q}_w^{\,k'}\alpha\alpha'^{-1}X)\varphi\bigr),\]
+where $\alpha$ and $\alpha'$ are the values at a uniformiser of~$w$ of the Hecke characters of the two
+characters, normalised by $\mathrm{q}_w^{\,n/2}$ and $\mathrm{q}_w^{\,(n+k')/2}$.}
+\leanline{unit 150: \lnm{Parameters.mem\_raises\_of\_jet\_bound}, \lnm{Parameters.norm\_jetSeries\_le},
+\lnm{Parameters.norm\_iota\_periodFactor\_eq\_one}, \lnm{Parameters.thetaProducts\_normal\_form},
+\lnm{norm\_schurJet\_le}\sep background library: \lnm{hecke\_transfer\_of\_pairing}, a form of
+\lnm{hecke\_transfer\_of\_equivariant}, which the catalogue records as the Eichler commutation relation through
+the theta correspondence (S.~Rallis, \emph{Langlands' functoriality and the Weil representation}, Amer.\ J.\
+Math.\ 104 (1982); R.~Howe, \emph{$\theta$-series and invariant theory}, Proc.\ Sympos.\ Pure Math.\ 33 (1979);
+T.~Tamagawa, Ann.\ of Math.\ 77 (1963)), place not confirmed, relation: a special case (split places of unitary
+groups, unramified characters, the unramified vacuum)}
+
+\begin{proposition}[Hecke transfer along the chain]\label{p:hecke}
+In Settings \ref{set:good} and~\ref{set:mark}, let $\mathfrak{l}\in\mathcal{L}$ with
+$\cj{\mathfrak{l}}\ne\mathfrak{l}$, and let $i$ be a natural number. There are complex numbers $c_n$,
+$n\in\NN$, with $c_n\in\Oj$ for all $n$ if $i<m$, such that for every $\mathsf{x}$ in the support of~$\Psi$:
+\begin{enumerate}[label=(\alph*)]
+\item $\lkom{D}{\vartheta}{i}(1,a)\,\td{D}{\mathsf{x}}{i}=\td{D}{\mathsf{x}}{i}$ for every
+$a\in\Kmax{\XD{D}{i+1}}{\mathfrak{l}}$; and
+\item for every form $\varphi\in\Stg{D}{0}$ that is fixed by $\Kmax{\XD{D}{0}}{\mathfrak{l}}$, with
+$C=\chn{D}{\vartheta}{\td{D}{\mathsf{x}}{\,\cdot\,}}{i+1}$,
+\[\sum_{n\le\rr{D}{p}}c_n\,\Tl{\mathfrak{l}}{n}\bigl(C\varphi\bigr)=p^{\DeltaP{D}{p}}\cdot C\bigl(\Tl{\mathfrak{l}}{\rr{D}{p}}\varphi\bigr).\]
+\end{enumerate}
+\end{proposition}
+\begin{proof}
+By Lemma~\ref{l:markprop}, $p$ does not divide $\gD{D}\ND{D}$ and $p\in\mathfrak{l}$; by hypothesis $p$ is prime
+to $\nrm{\vartheta}$. So $\mathfrak{l}$ and $\cj{\mathfrak{l}}$ are not chosen, do not divide $\piN{D}$ and do not
+lie in $Q(\vartheta)$ or its conjugate, and the characters of all the lifts are unramified at~$\mathfrak{l}$.
+Since $\mathcal{L}$ is not empty, $p$ is served; by Lemma~\ref{l:served}(b) the order of $\pin{D}{-p}$ is even,
+say $2o'$, and the residue field of $\mathfrak{l}$ has $\mathrm{q}=p^{2o'}$ elements (the decomposition of an inert
+prime, unit~152). For $\mathsf{x}$ in the support, Lemma~\ref{l:intafter} shows that every datum
+$\td{D}{\mathsf{x}}{i'}$ is a vacuum at $\mathfrak{l}$ and~$\cj{\mathfrak{l}}$; an element $a$ as in (a) then
+acts on it through a value of an unramified character, which is~$1$. This is (a).
+
+For (b), Input~I9(iv) applies to each of the lifts of~$C$, with $k'=\tD{D}+1$. By induction on the number $e$
+of lifts, for the chain $C_e$ of the first $e$ lifts and all complex $U$,
+\[\mathrm{H}_{\mathfrak{l}}\bigl(-U\,y_e\bigr)\,C_e\varphi=\prod_{e'<e}\ \prod_{l\le\tD{D}}\bigl(1+U\,\mathrm{q}^{\,l}\,p^{\,o'\nD{D}{i}}\,\alpha_{e'}\bigr)\cdot C_e\bigl(\mathrm{H}_{\mathfrak{l}}(-U\,y_0)\varphi\bigr),\qquad y_e=p^{\,o'(\nD{D}{i+1}-\nD{D}{e})},\]
+where $\alpha_{e'}$ is the value at the uniformiser of the character of the lift~$e'$. These values are
+integral at~$j$: the character of the lift $e'$ has weights $-\wtD{D}{e'}{\tau}$, so $|j(\alpha_{e'})|_p$ is a
+product over $\tau$ of powers of~$p$ whose exponents are $\wtD{D}{e'}{\tau}$ at the places inducing
+$\mathfrak{l}$ and $-\wtD{D}{e'}{\tau}$ at those inducing $\cj{\mathfrak{l}}$, up to a common sign, and by
+Lemma~\ref{l:thick}(b), with $G(c,w)=-c\,[w=\mathfrak{l}]$, the exponents cancel. Taking $e=i+1$, the product is
+a polynomial $\Pi(U)$ with coefficients in $\Oj$ and constant term~$1$. Comparing the coefficients of
+$U^{\rr{D}{p}}$ after multiplication by the inverse power series $\Pi(U)^{-1}$, which again has coefficients in
+$\Oj$, expresses $C(\Tl{\mathfrak{l}}{\rr{D}{p}}\varphi)$, times a power of $p$ coming from $y_0$ and from
+$\mathrm{q}^{\rr{D}{p}(\rr{D}{p}-1)/2}$, as a combination of the $\Tl{\mathfrak{l}}{n}(C\varphi)$,
+$n\le\rr{D}{p}$, with coefficients that are elements of $\Oj$ times powers of~$p$; the identity needs
+$\rr{D}{p}\le\kD{D}$, which holds by size. Multiplying by $p^{\DeltaP{D}{p}}$ and dividing by the power of $p$ on
+the left gives the numbers~$c_n$. For $i<m$ they are integral: the exponents of $p$ that are divided out are at
+most $2o'\,\rr{D}{p}\,(\nD{D}{m}+\rr{D}{p})$, and $2o'\le\fD{D}$ because the order of an element of $\PlD{D}$ is at
+most $\fD{D}$; this is the definition of $\DeltaP{D}{p}$.
+\end{proof}
+\leanline{\lean{existshecketransfer}\sep unit 152: \lnm{Parameters.q\_eq\_inert}\sep unit 141: \lnm{Data.hasWeight\_liftChar}}
+
+\begin{proposition}[Hecke translates of the data raise gauges by a controlled amount]\label{p:raise}
+In Settings \ref{set:good} and~\ref{set:mark}, let $\mathsf{x}$ be in the support of~$\Psi$, $i$ a natural
+number, and $g=(g_{\mathfrak{l}})_{\mathfrak{l}\in\mathcal{L}}$ a family with
+$g_{\mathfrak{l}}\in\GL_{\XD{D}{i+1}}(\ED{D}_{\mathfrak{l}})$ such that every $g_{\mathfrak{l}}$ lies in the basic
+double coset of some index $n\le\rr{D}{p}$ at~$\mathfrak{l}$. Then
+\[\lkom{D}{\vartheta}{i}\bigl(1,\mathrm{at}(g)\bigr)\,\td{D}{\mathsf{x}}{i}\ \in\ \raises{\lk{D}{\vartheta}{i}}{1}{1}{p^{\,\sum_{\mathfrak{l}\in\mathcal{L}}\mexp{D}{\mathfrak{l}}+\liftloss{\mathcal{L}}{i}}}.\]
+\end{proposition}
+\begin{proof}
+By Lemma~\ref{l:markprop}, $p$ is a uniformiser at each $\mathfrak{l}\in\mathcal{L}$, so $g_{\mathfrak{l}}$ is the product of an integral invertible matrix $y_{\mathfrak{l}}$, the diagonal matrix
+with entries $p$ at the indices of a set $J_{\mathfrak{l}}$ and $1$ elsewhere, and an integral invertible matrix
+$y'_{\mathfrak{l}}$; the set $J_{\mathfrak{l}}$ has at most $\rr{D}{p}$ elements. Thus $\mathrm{at}(g)=y\,y''\,y'$
+with $y,y'\in\Kf{\XD{D}{i+1}}$ and a point $y''$ whose image at~$\tau$ is the diagonal matrix with entries
+$p^{\,\epsilon_\tau(a)}$,
+\[\epsilon_\tau(a)=[\ind{\tau}\in\mathcal{L},\,a\in J_{\ind{\tau}}]-[\cj{\ind{\tau}}\in\mathcal{L},\,a\in J_{\cj{\ind{\tau}}}]\]
+(the second term is the component at the conjugate place). By Lemma~\ref{l:tdstd} with $\delta=1$ (recall
+$p\nmid\gD{D}$ and $p\ne\ND{D}$), the datum lies in $\Std{1}{D,i}$, and Input~I9(i) reduces the claim to a bound
+for the jets of all $\Phi\in\Std{1}{D,i}$.
+
+Let $\mathrm{ch}(\tau,h,a)=1$ if ($\ind{\tau}\in\mathcal{L}$, $h=1$ and $a\notin J_{\ind{\tau}}$) or
+($\cj{\ind{\tau}}\in\mathcal{L}$ and $a\in J_{\cj{\ind{\tau}}}$), and $0$ otherwise. Condition~\eqref{e:charge}
+holds for $\Xi=\even{\mathcal{L}}$: if $\tau\in\Xi$ and $a\notin J_{\ind{\tau}}$, then $\mathrm{ch}(\tau,1,a)=1$;
+if $\tau\in\Xi$ and $a\in J_{\ind{\tau}}$, then the place $\pin{D}{-p^{e}}\cdot\tau$ induces
+$\cj{\ind{\tau}}$ (Lemma~\ref{l:ind}(c); $p$ is inert and $e$ is odd), so its charge at~$a$ is~$1$; the case
+$h=1$, $\pin{D}{-p^{e}}\cdot\tau\in\Xi$ is symmetric. By Input~I9(ii) and (iii), applied with $c=\cj{\pig{D}}$,
+for which $|j(c\,s_1)|_p\le1$ by Lemma~\ref{l:level}(i), every entry $(c',c)$ of the jet matrix of
+$\Phi\in\Std{1}{D,i}$ has absolute value at most $p$ to the power (charges of $c'$)
+$-\jetexp{p}{i}{\even{\mathcal{L}}}$.
+
+It remains to count the exponent of $p$ in the bound $B$ of Input~I9(i). The determinant factors contribute
+$\sum_\tau\last{D}{i+1}{\tau}\cdot\bigl(-\sum_a\epsilon_\tau(a)\bigr)$, and
+$\last{D}{i+1}{\tau}=\lfloor\nD{D}{i}/2\rfloor-\wtD{D}{i+1}{\tau}$; by Lemma~\ref{l:thick}(b) with
+$G(c,w)=\#J_w\cdot(\lfloor\nD{D}{i}/2\rfloor-c)$ this sum is~$0$. For a box of $c'$ at~$\tau$ with entry~$a$,
+the factor $|u_\tau(a)|_p$ and the charge together contribute at most $1$ if $\ind{\tau}\in\mathcal{L}$ and the
+box lies in a column of height one; at most $1$ if $\ind{\tau}\in\mathcal{L}$, the box lies in a higher column
+and $a\in J_{\ind{\tau}}$; and at most~$0$ in the other cases (a charge $1$ at a place inducing a conjugate of a
+marked prime is cancelled by $|u_\tau(a)|_p=p$). The entries of a column of a tableau are distinct, so a
+higher column at $\tau\in\even{\mathcal{L}}$ contributes at most $\#J_{\ind{\tau}}\le\rr{D}{p}$. Summing: the
+columns of height one give at most $\sum_{\tau\in\even{\mathcal{L}}}\kap{D}{\tau}{1}=\sum_{\mathfrak{l}}\mexp{D}{\mathfrak{l}}$,
+the others at most $\rr{D}{p}\sum_{\tau\in\even{\mathcal{L}}}\lc{D}{i}{\tau}$. With the jet exponent this is
+$\sum_{\mathfrak{l}}\mexp{D}{\mathfrak{l}}+\liftloss{\mathcal{L}}{i}$.
+\end{proof}
+\leanline{\lean{memraises}}
+
+\begin{proposition}[moving mark operators into the data]\label{p:move}
+In Settings \ref{set:good} and~\ref{set:mark}, let $i$ be a natural number and
+$\mathfrak{l}_1,\dots,\mathfrak{l}_n$ a list of distinct elements of~$\mathcal{L}$. There is a $\CC$-linear
+endomorphism $t$ of\/ $\Wfin{D}{i}$ such that for every $\mathsf{x}$ in the support of~$\Psi$, with
+$\Phi=t\,\td{D}{\mathsf{x}}{i}$:
+\begin{enumerate}[label=(\alph*)]
+\item $\lkom{D}{\vartheta}{i}(a,a')\Phi=t\,\lkom{D}{\vartheta}{i}(a,a')\td{D}{\mathsf{x}}{i}$ for all
+$a\in\Gf{\XD{D}{i}}$ and $a'\in\Kf{\XD{D}{i+1}}$;
+\item for every column $\varphi\in\Col{D}$,
+\[\lklift{D}{\vartheta}{i}(\Phi)\,\chn{D}{\vartheta}{\td{D}{\mathsf{x}}{\,\cdot\,}}{i}\,\varphi=\chn{D}{\vartheta}{\td{D}{\mathsf{x}}{\,\cdot\,}}{i+1}\,\markop{\mathcal{L}}{\mathfrak{l}_1}\cdots\markop{\mathcal{L}}{\mathfrak{l}_n}\varphi ;\]
+\item if $i<m$: for every family $g=(g_{\mathfrak{l}})_{\mathfrak{l}\in\mathcal{L}}$ with $g_{\mathfrak{l}}=1$
+for $\mathfrak{l}$ in the list and $g_{\mathfrak{l}}$ in the basic double coset of some index at most
+$\rr{D}{p}$ for the other~$\mathfrak{l}$,
+\[\lkom{D}{\vartheta}{i}\bigl(1,\mathrm{at}(g)\bigr)\Phi\ \in\ \raises{\lk{D}{\vartheta}{i}}{1}{1}{p^{\,\sum_{c=1}^{n}(\DeltaP{D}{p}-\mexp{D}{\mathfrak{l}_c})+\sum_{\mathfrak{l}\in\mathcal{L}}\mexp{D}{\mathfrak{l}}+\liftloss{\mathcal{L}}{i}}}.\]
+\end{enumerate}
+\end{proposition}
+\begin{proof}
+Induction on the list. For the empty list take $t=1$; (a), (b) are trivial and (c) is
+Proposition~\ref{p:raise}. Let the claim hold for $\mathfrak{l}_2,\dots,\mathfrak{l}_n$ with the operator~$t'$,
+and write $\mathfrak{l}=\mathfrak{l}_1$. Take the numbers $c_n$ of Proposition~\ref{p:hecke} for $\mathfrak{l}$
+and~$i$, put $z=p^{\mexp{D}{\mathfrak{l}}}/p^{\DeltaP{D}{p}}$ and
+\[t=\Bigl(\sum_{n\le\rr{D}{p}}c_n\,z\,\Tl{\mathfrak{l}}{n}\Bigr)\circ t',\]
+the Hecke operators acting on $\Wfin{D}{i}$ through $a'\mapsto\lkom{D}{\vartheta}{i}(1,a')$; by (a) for $t'$ and
+Proposition~\ref{p:hecke}(a), $t'\td{D}{\mathsf{x}}{i}$ is fixed by $\Kmax{\XD{D}{i+1}}{\mathfrak{l}}$. (a) The
+Hecke operators at $\mathfrak{l}$ commute with $\lkom{D}{\vartheta}{i}(a,a')$ for $a'\in\Kf{\XD{D}{i+1}}$
+(Input~I8(ii)). (b) By the equivariance of the lift (Input~I4), Hecke operators on the datum become Hecke
+operators on the lifted form. With $C_i$, $C_{i+1}$ the chains of the statement and
+$\varphi'=\markop{\mathcal{L}}{\mathfrak{l}_2}\cdots\markop{\mathcal{L}}{\mathfrak{l}_n}\varphi$, which is fixed
+by $\Kmax{\XD{D}{0}}{\mathfrak{l}}$ by Lemma~\ref{l:markprop}(c),
+\[\lklift{D}{\vartheta}{i}(\Phi)\,C_i\varphi=z\sum_{n}c_n\Tl{\mathfrak{l}}{n}\bigl(C_{i+1}\varphi'\bigr)=z\,p^{\DeltaP{D}{p}}\,C_{i+1}\bigl(\Tl{\mathfrak{l}}{\rr{D}{p}}\varphi'\bigr)=C_{i+1}\,\markop{\mathcal{L}}{\mathfrak{l}}\varphi',\]
+by the induction hypothesis, Proposition~\ref{p:hecke}(b) and the definition of the mark operator. (c) Expand
+each $\Tl{\mathfrak{l}}{n}$ as a sum over coset representatives; each term is
+$\lkom{D}{\vartheta}{i}(1,\mathrm{at}(g'))\,t'\td{D}{\mathsf{x}}{i}$ for a family $g'$ that agrees with $g$
+except at~$\mathfrak{l}$, where it is a representative of a basic double coset of index $n\le\rr{D}{p}$. The
+induction hypothesis applies to~$g'$, and the scalar $c_nz$ has $|j(c_nz)|_p\le p^{\DeltaP{D}{p}-\mexp{D}{\mathfrak{l}}}$
+because $c_n\in\Oj$ for $i<m$; conclude by Input~I4.
+\end{proof}
+\leanline{\lean{existsmovemarkOperator}}
+
+\begin{proposition}[the chain after the mark operators]\label{p:markpow}
+In Settings \ref{set:good} and~\ref{set:mark}, let $Y$ be the product of the operators
+$\markop{\mathcal{L}}{\mathfrak{l}}$ over all $\mathfrak{l}\in\mathcal{L}$, in a chosen order, and let
+$v\in\Colint{D}$. Then the form $\Bch{D}{\vartheta}{\Psi}\bigl(Y^{m}v\bigr)$ has $j$-gauge at most
+$p^{\,\sum_{i<m}(\#\mathcal{L}\cdot\DeltaP{D}{p}+\liftloss{\mathcal{L}}{i})}$ at~$1$.
+\end{proposition}
+\begin{proof}
+For each $i$ take the operator $t_i$ of Proposition~\ref{p:move} for the list of all elements
+of~$\mathcal{L}$. By (b) and induction on~$i$, the chain of $i$ lifts with the data $t_{i'}\td{D}{\mathsf{x}}{i'}$
+applied to $v$ equals the chain with the data $\td{D}{\mathsf{x}}{i'}$ applied to $Y^{i}v$. By (a) the $t_i$
+commute with the levels, and by (c) for the family $g=1$ the datum $t_i\td{D}{\mathsf{x}}{i}$ lies in
+$\raises{\lk{D}{\vartheta}{i}}{1}{1}{p^{\,\#\mathcal{L}\DeltaP{D}{p}+\liftloss{\mathcal{L}}{i}}}$. So
+Proposition~\ref{p:gchain}, with $d_i=1$, bounds the gauge of the chain combination at $Y^{m}v$. The restriction
+$\resY{D}$ does not increase gauges at~$1$ when $p\ne\ND{D}$ (unit~141), and $p\ne\ND{D}$ by
+Lemma~\ref{l:markprop}(b).
+\end{proof}
+\leanline{\lean{gaugeLemarkOperatorpow}\sep unit 141: \lnm{Data.GaugeLe.restrictToY}}
+
+\sect{The image of the mark operators has small index}{s:type}
+\statement{inksoft}{\textbf{Input I10 (twisted Hecke operators; unit 144).}\enspace Let $n\ge1$ be a natural number,
+$W$ a valuation ring and $R$ a commutative ring. \emph{Twisting data} $T$ for $(n,W,R)$ are a prime number
+$p_T$, a natural number $o$, ring homomorphisms $\phi_s\colon W\to R$ for $s\in\Z/n$ (the \emph{letters}), a
+parity (even or odd) for each $s\in\Z/n$, and an element of $R$ with square $p_T$, such that $5\le p_T^{\,o}$,
+$p_T$ divides $\phi_{s+1}(y)-\phi_s(y)^{p_T^{o}}$ for all $s$ and~$y$, the parities of $s$ and $s+1$
+differ, and the residue field of $W$ has $(p_T^{\,o})^{n}$ elements. For natural numbers $q'$, $o$, $n$, $k'$,
+$a'$, $r'$, $l'$ and real numbers $c_1$, $c_2$, $c_3$, the \emph{Hecke sizes} are the conditions: $0<r'$,
+$2r'\le k'$, $c_1\le1\le c_2$, $2l'=n$, $n\,a'k'(l'+2)+a'+k'<q'^{\,l'}$,
+$6(2(k'+k'^2)o\,n^2+2)+2\le c_2$, $2(n+2)k'/c_2\le c_1$,
+$(c_2+n(k'+1))\,k'\,q'^{\,3r'}+k'+2\le a'/c_2$ and $n\,a'\,(q'^{-2r'}+r'^2/(k'q'))\le c_3$. The theorem of
+unit~144 on the elementary divisors of a Frobenius-twisted Hecke operator says: under the Hecke sizes and if
+$p_T$ is not a unit of~$R$, an operator given on the image $M$ of an $R$-linear map from functions on a finite
+set of classes by the twisted formula of that unit, with an injective source map, has type
+$(p_T,s,(c_3+c_1s+c_2)\cdot n_M)$ on $M$ for every natural number~$s$, where $n_M$ is the number of classes times
+the number of Weyl indices.}
+\leanline{unit 144: \lnm{TwistingData}, \lnm{HeckeSizes}, \lnm{TwistingData.hasType\_twisted\_hecke}}
+
+\begin{proposition}[the type of a mark operator, from twisting data]\label{p:typez}
+In Setting~\ref{set:mark}, let $\mathfrak{l}\in\mathcal{L}$, let $W$ be the valuation ring of $\ED{D}$
+at~$\mathfrak{l}$, $n\ge1$ a natural number, and $T$ twisting data for $(n,W,\Oj)$ with prime $p_T$, exponent
+$o$ and letters $\phi_s$, such that $p_T$ is not a unit of\/ $\Oj$ and $p_T=p$. Let $t$ be a bijection from
+$\Z/n$ onto the set of the places $\tau\in\tops{D}$ with $\ind{\tau}=\mathfrak{l}$ or
+$\ind{\tau}=\cj{\mathfrak{l}}$, such that $\phi_s$ is the restriction of $\emb{t(s)}$ to $W$ if $s$ is even
+and of $y\mapsto\emb{t(s)}(\cj{y})$ if $s$ is odd; assume
+$\mexp{D}{\mathfrak{l}}=\aD{D}\cdot\#\{s\in\Z/n:\ s\text{ even}\}$, and let $l'$ be a natural number and $c_1$,
+$c_2$, $c_3$ real numbers such that the Hecke sizes hold for
+$(p^{\,o},o,n,\kD{D},\aD{D},\rr{D}{p},l';c_1,c_2,c_3)$. Then for every natural number~$s$ the mark operator
+$\markop{\mathcal{L}}{\mathfrak{l}}$ has type $(p,s,(c_3+c_1s+c_2)\cdot\dim_{\CC}\Col{D})$ on $\Colint{D}$.
+\end{proposition}
+\begin{proof}
+This is a translation into the terms of Input~I10. By Lemma~\ref{l:level}(d) and Input~I1, evaluation at
+representatives $g_c$ of the classes of $\colL{D}{0}$, chosen integral above~$p$, identifies $\Col{D}$ with the
+functions on the classes with values in $\CC^{\Wy{\XD{D}{0}}{\kapD{D}}}$, and $\Colint{D}$ with the functions
+with values in $\Oj^{\Wy{\XD{D}{0}}{\kapD{D}}}$ (Input~I1, last property of the gauge); this is the map of
+Input~I10, and $\dim\Col{D}$ is the number~$n_M$. The Hecke operator $\Tl{\mathfrak{l}}{\rr{D}{p}}$ on a form fixed
+by $\Kmax{\XD{D}{0}}{\mathfrak{l}}$ is the sum, over the cosets $\beta$ of the parahoric subgroup of
+$\GL_{\kD{D}}(W)$ of block sizes $(\rr{D}{p},\kD{D}-\rr{D}{p})$, of the translates by
+$\beta\cdot\diag(p1_{\rr{D}{p}},1)$. Write $g_c\cdot\mathrm{at}(\beta\,\diag(p1_{\rr{D}{p}},1))=\gamma\,g_{c'}\,a$
+with $\gamma$ rational and $a$ in the level; then the translate of the form at $g_c$ is
+$\rhow{\kapD{D}}{\lastD{D}{0}}(\gamma)$ applied to its value at~$g_{c'}$. At the places $t(s)$ this matrix is,
+since the weight there is a single row of length $\aD{D}$, a symmetric power of the image of $\gamma$ under the
+letter $\phi_s$, or of its inverse transpose for odd~$s$ (unitarity); together with the factor
+$p^{\mexp{D}{\mathfrak{l}}}=p^{\aD{D}\#\{s\text{ even}\}}$ this is the twisted formula. At the other places
+$\tau$, either $\tau$ is not a top and the weight is trivial below the rank $\kD{D}$, or $\tau$ induces neither
+$\mathfrak{l}$ nor $\cj{\mathfrak{l}}$ and $\gamma$ is integral and invertible there, so the matrix is integral
+and invertible. The source map $(c,\beta)\mapsto c'$ together with the coset is injective because the level is
+free. The formal proof checks these points in 35 steps, of which the last fifteen (the identification of the
+letter matrices and of the powers of~$p$) were read and not replayed.
+\end{proof}
+\leanline{\lean{hasTypemarkOperatora}}
+
+\begin{proposition}[the type of a mark operator]\label{p:type}
+In Setting~\ref{set:mark}, let $s$ be a natural number and $\mathfrak{l}\in\mathcal{L}$. Then
+$\markop{\mathcal{L}}{\mathfrak{l}}$ has type
+\[\Bigl(p,\ s,\ \bigl(128\,\mexp{D}{\mathfrak{l}}\cdot\frac{\log b}{m\,p}+\frac{s}{x^{14}}+x^{40}\bigr)\cdot\dim_{\CC}\Col{D}\Bigr)\quad\text{on }\Colint{D}.\]
+\end{proposition}
+\begin{proof}
+$\mathcal{L}$ is not empty, so $p$ is served: $p$ is inert, $o=\oz{D}{p}$ is odd and $o\le\rr{D}{p}$; moreover
+$p\ge13$ (unit~152). Let $\tau_0$ be a top inducing $\mathfrak{l}$ (M3) and $v=\pin{D}{-p}^{\,o}$, of order~$n$;
+then $o\,n$ is the order of $\pin{D}{-p}$, which $m$ divides (Lemma~\ref{l:served}(b)), so $n$ is even. Put
+$t(s)=v^{s}\tau_0$ for $s\in\Z/n$. By Lemmas \ref{l:ind}(d) and~\ref{l:served}(d), $t$ is a bijection onto the
+tops that induce $\mathfrak{l}$ or $\cj{\mathfrak{l}}$, and by Lemma~\ref{l:ind}(c) consecutive places induce
+conjugate primes; call $s$ even if $t(s)$ induces~$\mathfrak{l}$. The letters $\phi_s$ of
+Proposition~\ref{p:typez} map $W$ into $\Oj$, and $\phi_{s+1}\equiv\phi_s^{\,p^{o}}$ modulo~$p$: both
+sides are ring homomorphisms from $W$ to $\Oj/p$ that agree on a root of unity of order $\NnD{D}$ and on
+$\sqrt{-d}$, by the Frobenius criterion of unit~152. The residue field of $\mathfrak{l}$ has
+$p^{\,o\,n}$ elements (unit~152, as $on$ is even), a square root of $p$ lies in~$\Oj$, and
+$\mexp{D}{\mathfrak{l}}=\aD{D}\cdot\#\{s\text{ even}\}=\aD{D}\,n/2$. These are twisting data. The Hecke sizes
+hold with $l'=n/2$, $c_1=x^{-14}$, $c_2=x^{40}$ and $c_3=128\,\mexp{D}{\mathfrak{l}}\log b/(mp)$: the formal
+text derives the three conditions that are not immediate size comparisons from $p\ge9$, from
+$o\,n\ge m\ge2\log b$, from $p^{\,o\cdot3\rr{D}{p}}\le b^{1/2}$ (as $p<x_1$) and from
+$p^{\,2\rr{D}{p}}\ge m^2$. Proposition~\ref{p:typez} gives the claim.
+\end{proof}
+\leanline{\lean{hasTypemarkOperator}\sep unit 152: \lnm{Parameters.frob\_ext}, \lnm{Parameters.q\_eq\_inert},
+\lnm{Parameters.thirteen\_le\_of\_chiK\_ne\_one}}
+
+\begin{corollary}[the type of the product]\label{c:typepow}
+In Setting~\ref{set:mark}, let $Y$ be the product of the operators $\markop{\mathcal{L}}{\mathfrak{l}}$ over all
+$\mathfrak{l}\in\mathcal{L}$, in a chosen order. Then $Y^{m}$ has type
+$\bigl(p,\ \jc{D}{p},\ 3\,\loss{D}{p}\cdot\dim_{\CC}\Col{D}\bigr)$ on $\Colint{D}$.
+\end{corollary}
+\begin{proof}
+Types add (Input~I2), so by Proposition~\ref{p:type} the operator $Y^{m}$ has type $(p,\jc{D}{p},c\cdot\dim\Col{D})$ with
+\[c=m\sum_{\mathfrak{l}\in\mathcal{L}}\Bigl(128\,\mexp{D}{\mathfrak{l}}\frac{\log b}{mp}+\frac{\jc{D}{p}}{x^{14}}+x^{40}\Bigr).\]
+Now the sum of the numbers $\mexp{D}{\mathfrak{l}}$ is at most $\aD{D}\,\#\tops{D}\le\aD{D}\fD{D}$, the set
+$\mathcal{L}$ has at most $\fD{D}$ elements, $\jc{D}{p}\le2m\fD{D}\aD{D}/p+1$, and
+$\fD{D}(\log b)^2\aD{D}/p\le\loss{D}{p}$ (Lemma~\ref{l:served}(c)); by size, $c\le3\loss{D}{p}$.
+\end{proof}
+\leanline{\lean{hasTypeprodmarkOperatorpow}}
+
+\sect{The level prime}{s:N}
+\begin{setting}[the level prime as $p$]\label{set:N}
+Setting~\ref{set:D} holds, and Setting~\ref{set:p} holds with $p=\ND{D}$: $j\colon\CC\to\CC_{\ND{D}}$ is a ring
+homomorphism; we write $N$ for $\ND{D}$ and $|\cdot|_N$ for the absolute value of\/ $\CC_N$. $\vartheta$ is a twist of~$D$. The set $\mathcal{N}$ of the conjugates $\cj{\ind{\tau}}$,
+$\tau\in\PlD{D}$, of the induced primes is a \emph{split level} for $\ND{D}$ in the sense of unit~141 (the
+properties of Lemma~\ref{l:pi}(c)), and this fact is an argument of the statements below.
+\end{setting}
+
+\statement{inksoft}{\textbf{Input I11 (names at the level prime; unit 141).}\enspace In Setting~\ref{set:N}:
+for a function $F$ on matrices over $\prod_{w\in\mathcal{N}}\ED{D}_w$ and a datum $v$, the \emph{name}
+$F\otimes v$ is the datum obtained from $v$ by replacing its component at the places of $\mathcal{N}$ and their
+conjugates by~$F$; $\mathbf{1}_{\mathrm{lc}}$ is the indicator function of the integral matrices whose last
+column is congruent to $(0,\dots,0,1)$ modulo~$N$. For a natural number~$i$, $d_i\in\Gf{\XD{D}{i}}$ is the point
+with component $\diag(1,\dots,1,N)$ at the places of $\mathcal{N}\cap\piPl{D}$ and $1$ at the other places of
+$\mathcal{N}$; it has the property that $\resY{D}$ maps forms of $j$-gauge at most $c$ at $d_m$ to forms of
+$j$-gauge at most $c$ at~$1$. $\mathrm{F}$ is the \emph{Fourier operator} on $\Stg{D}{0}$: a sum, over the
+vectors $y$ modulo $N$ with unit last entry, of an additive character of the last entry times the translate
+by an integral matrix with last row and last column $y$, followed by the translate by the inverse of
+$\diag(1,\dots,1,N)$, all through the embedding of the general linear group at $\mathcal{N}$ conjugated by~$d_0$.
+A pair of general linear elements at $\mathcal{N}$ acts on a name through the function, up to the values
+$\det\nolimits_{\chi,n}(g)=\prod_{w\in\mathcal{N}}\chi_w(\det g_w)\,|\det g_w|_w^{-n/2}$ of the characters $\chi$ of
+the lifts. \textup{(i)} A chain of pairs of lifts whose steps are equivariant up to characters equals a scalar
+times the chain of the modified data applied to a power of the Fourier operator; the scalar is a product of
+values $\det_{\chi,n}$ at the matrices $\diag(1,\dots,1,N)$, of an integer, and of inverses of such values.
+\textup{(ii)} There is a natural number $e'\le4\,m\,\fD{D}\,b\cdot\dim_{\CC}\Col{D}$ such that the module of the
+$\varphi\in\Col{D}$ for which $\mathrm{F}^{m/2}\varphi$ is a column of $j$-gauge at most~$1$ at $d_0$ has index
+dividing $N^{e'}$ in $\Colint{D}$. \textup{(iii)} The components at $\mathcal{N}$ of the elements of the column
+levels, conjugated by the points $d_i$, are integral with last column congruent to $(0,\dots,0,1)$ modulo~$N$.
+\textup{(iv)} For a modulus $\mathfrak{m}$ of $\ED{D}$ and an integer $g'$ with $g'\in\mathfrak{m}$, the name of a
+function modulo $\mathfrak{m}$ with integral values, applied to a datum $u$, is a finite combination
+$\sum_yc_y\mathrm{U}(y)\mathrm{P}u$ of translates of the projection of~$u$, with $\cj{g'}y$ integral and
+$\mathrm{N}(g')^{\,\mathrm{rank}}c_y$ integral (unit~150).}
+\leanline{unit 141: \lnm{IsSplitLevel}, \lnm{Data.nonInducedPlaces}, \lnm{IsSplitLevel.name},
+\lnm{IsSplitLevel.lastColDatum}, \lnm{Data.diagPointN}, \lnm{Data.GaugeLe.restrictToY\_of\_diag},
+\lnm{IsSplitLevel.fourierOp}, \lnm{Data.nonInducedRep}, \lnm{detCharAt}, \lnm{IsSplitLevel.compUpTo\_pairs\_eq\_smul},
+\lnm{Data.exists\_indexDvd\_fourierOp\_pow}, \lnm{Data.atPlaces\_conj\_mem\_mirabolic}\sep unit 150:
+\lnm{isAdmissibleComb\_name}}
+
+\begin{lemma}[character values at the level prime]\label{l:detchar}
+In Setting~\ref{set:N}, let $i\le2m$, $n$ and $i'$ be natural numbers and $S$ a set of finite places. Let $\chi$
+be the character of the lift $i$ twisted by $\vartheta$, after base change, and $\delta_S$ the matrix over
+$\prod_{w\in\mathcal{N}}\ED{D}_w$, indexed by the elements of $\XD{D}{i'}$ other than the last, with component
+$\diag(1,\dots,1,N)$ at the places of $S$ and $1$ elsewhere. Then
+$|j(\det\nolimits_{\chi,n}(\delta_S))|_N\le\ND{D}^{\,2\fD{D}b}$.
+\end{lemma}
+\begin{proof}
+The norm increases with $S$ (unit~141), so let $S$ be everything. The character has weights
+$-\wtD{D}{i}{\tau}$, so $|j(\chi(u))|_N$ is the product over $\tau$ of the absolute values of the components
+of~$u$ at the induced primes to the powers $\pm\wtD{D}{i}{\tau}$; for the determinant of $\delta_S$ each
+component is $N$ or~$1$. Hence each factor is at most $N^{\wtD{D}{i}{\tau}}\le N^{2b}$, by the bound of unit~152
+for $i\le2m$, and there are $\fD{D}$ factors.
+\end{proof}
+\leanline{\lean{normdetCharAtdiagNle}}
+
+\begin{lemma}[the indicator of the last column raises gauges little]\label{l:lastcol}
+In Setting~\ref{set:N}, let $\mathsf{x}$ be a tuple of translations and $i<m$ a natural number. Then
+\[\mathbf{1}_{\mathrm{lc}}\otimes\td{D}{\mathsf{x}}{i}\ \in\ \raises{\lk{D}{\vartheta}{i}}{1}{1}{\ND{D}^{\,\fD{D}b}}.\]
+\end{lemma}
+\begin{proof}
+Let $c_0=(1+\sqrt{-d})/2$. The residue field of the prime induced at the unit place has $N$ elements, so $c_0$
+is congruent to an integer $n$ modulo it; put $y_0=c_0-n\in\OO_{\KP{P}}$. Then $j(y_0)$ is not a unit, and
+$j(\cj{y_0}\,d)$ is a unit: $\cj{y_0}=1-2n-y_0$ and $(2c_0-1)^2=-d$ is not zero modulo~$N$. By Input~I11(iv),
+with a modulus whose places are those of $\mathcal{N}$ and $g'=\cj{y_0}$, the name is a combination of
+translates $\mathrm{U}(y)\mathrm{P}\td{D}{\mathsf{x}}{i}$ with $y_0y$ integral and coefficients whose
+multiples by $\mathrm{N}(y_0)^{\,\mathrm{rank}}$ are integral; each translate lies in $\Std{y_0}{D,i}$ (the
+projection of the datum is a generator, and translations by such $y$ preserve the module, unit~150). So
+$\mathrm{N}(y_0)^{\,\mathrm{rank}}$ times the name lies in $\Std{y_0}{D,i}$ and, by Input~I8(i), raises gauges by
+at most $(|j(\cj{\pig{D}})|_N/|j(\cj{y_0}d)|_N)^{L}\le1$. Dividing by $\mathrm{N}(y_0)^{\,\mathrm{rank}}$ costs
+$|\mathrm{N}(y_0)|_N^{-\mathrm{rank}}$; the rank of the space of homomorphisms is
+$\nD{D}{i}\nD{D}{i+1}\le\nD{D}{m}^2$ and the norm is taken in a field of degree $2\fD{D}$, and by size the result
+is at most $N^{\fD{D}b}$.
+\end{proof}
+\leanline{\lean{namelastColDatummemraises}\sep unit 150: \lnm{Parameters.finHeisOp\_mem\_standardData}}
+
+\begin{proposition}[the paired chain at ramified columns]\label{p:pairs}
+In Setting~\ref{set:N} there is a complex number $z$ with $|j(z)|_N\le\ND{D}^{\,2m\fD{D}b}$ such that for every
+family $v=(v_i)_{i\in\NN}$ with $v_i\in\Wfin{D}{i}$ and every $\varphi\in\Colram{D}$
+\[\chnn{D}{\vartheta}{\nu\mapsto\pairT{\mathrm{P}^{\piPl{D}}v}{\nu}}{m/2}\,\varphi=z\cdot\chn{D}{\vartheta}{\bigl(\lkom{D}{\vartheta}{i}(d_i,d_{i+1})(\mathbf{1}_{\mathrm{lc}}\otimes v_i)\bigr)_i}{m}\,\mathrm{F}^{m/2}\varphi .\]
+\end{proposition}
+\begin{proof}
+The sum over $y$ in Definition~\ref{d:good}(b) is a sum of names: translating by $-y/N$ in the last column, or
+its conjugate in the last row, multiplies the component at $\mathcal{N}$ by a character of the last column,
+respectively row, and $\diag(1,\dots,1,N)$ splits off the places of $\piPl{D}$. Each pair of lifts is then
+equivariant, up to the values $\det_{\chi,n}$, under the general linear groups at~$\mathcal{N}$; the characters
+are unramified at the places above~$N$. Input~I11(i) gives the identity for ramified~$\varphi$ (ramified columns
+are ramified in the sense of unit~141, by Lemma~\ref{l:cgenmem}(b)). The scalar $z$ is a product, over the $m/2$
+pairs, of two values bounded by Lemma~\ref{l:detchar}, of an integer and of an inverse value, which is bounded in
+the same way; so $|j(z)|_N\le(N^{2\fD{D}b})^{2\cdot m/2}$.
+\end{proof}
+\leanline{\lean{chainpairTranslateseqsmulchain}}
+
+\begin{proposition}[the chain at the level prime]\label{p:atN}
+In Setting~\ref{set:N}, let $\Psi$ be a finitely supported complex function on the tuples of translations
+of~$D$ such that $\good{\vartheta}{\Psi}$, and let $\varphi\in\Colram{D}$ be such that $\mathrm{F}^{m/2}\varphi$ is
+a column of $j$-gauge at most~$1$ at~$d_0$. Then $\Bch{D}{\vartheta}{\Psi}\varphi$ has $j$-gauge at most
+$\ND{D}^{\,3m\fD{D}b}$ at~$1$.
+\end{proposition}
+\begin{proof}
+By (G3) and Proposition~\ref{p:pairs} with $v_i=\td{D}{\mathsf{x}}{i}$, the chain combination at $\varphi$ is $z$
+times the chain combination with the data
+$t_i\td{D}{\mathsf{x}}{i}$, $t_i=\lkom{D}{\vartheta}{i}(d_i,d_{i+1})(\mathbf{1}_{\mathrm{lc}}\otimes\,\cdot\,)$, at
+$\mathrm{F}^{m/2}\varphi$. The operators $t_i$ commute with the levels on these data: by Input~I11(iii) the
+level elements, conjugated by the $d_i$, preserve the last column modulo~$N$, hence the indicator. By
+Lemma~\ref{l:lastcol} and the definition of the set of raising data,
+$t_i\td{D}{\mathsf{x}}{i}\in\raises{\lk{D}{\vartheta}{i}}{d_i}{d_{i+1}}{N^{\fD{D}b}}$. Now $N$ is prime to
+$\nrm{\vartheta}$ (Input~I3), so Proposition~\ref{p:gchain} applies and gives gauge at most $N^{m\fD{D}b}$
+at~$d_m$; multiply by $|j(z)|_N\le N^{2m\fD{D}b}$ and restrict (Input~I11).
+\end{proof}
+\leanline{\lean{gaugeLeBmuatN}}
+
+\sect{Proof of Theorem B}{s:B}
+\begin{lemma}[four gauge bounds for the chain]\label{l:four}
+In Setting~\ref{set:good}, let $v\in\Colint{D}$.
+\begin{enumerate}[label=(\alph*)]
+\item If $p\ne\ND{D}$ and $p\ne d$, then $\Bch{D}{\vartheta}{\Psi}v$ has $j$-gauge at most~$1$ at~$1$.
+\item If $\mathcal{L}$ is a full mark and $Y$ is the product of the operators
+$\markop{\mathcal{L}}{\mathfrak{l}}$ over all $\mathfrak{l}\in\mathcal{L}$, in a chosen order, then
+$\Bch{D}{\vartheta}{\Psi}(Y^{m}v)$ has $j$-gauge at most $p^{\,2\loss{D}{p}-\gain{D}{p}}$ at~$1$.
+\item If $p$ is small and not split for $D$, then $\Bch{D}{\vartheta}{\Psi}v$ has $j$-gauge at most $p^{\,c}$
+at~$1$, where $c=m\cdot\coll{D}{p}{\emptyset}+\loss{D}{p}-\gain{D}{p}$.
+\item If $p$ is small and not split for $D$, then $\Bch{D}{\vartheta}{\Psi}\bigl(p^{\jc{D}{p}}\cdot v\bigr)$ has
+$j$-gauge at most $p^{\,\loss{D}{p}-\gain{D}{p}}$ at~$1$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) By Lemma~\ref{l:tdstd} with $\delta=\pig{D}$ every datum lies in $\Std{\pig{D}}{D,i}$, so by Input~I8(i) it
+lies in $\raises{\lk{D}{\vartheta}{i}}{1}{1}{c}$ with
+$c=(|j(\cj{\pig{D}})|_p/|j(\cj{\pig{D}}d)|_p)^{L}=|j(d)|_p^{-L}=1$, as $p\ne d$. Proposition~\ref{p:gchain}
+with $t_i=1$, $d_i=1$, $r_i=0$ and the restriction (unit~141, $p\ne\ND{D}$) give the claim.
+
+(b) By Proposition~\ref{p:markpow} the exponent is at most
+$\sum_{i<m}\bigl(\#\mathcal{L}\DeltaP{D}{p}+\rr{D}{p}\sum_{\tau\in\even{\mathcal{L}}}\lc{D}{i}{\tau}-\jetexp{p}{i}{\even{\mathcal{L}}}\bigr)$.
+The place~$1$ is a top, so $\mathcal{L}$ is not empty and $p$ is served, $\chiK{P}(p)=-1$. By
+Lemma~\ref{l:lowsum}, Proposition~\ref{p:jet} with $\Xi=\even{\mathcal{L}}$ and Lemma~\ref{l:coll}(d), each
+summand is at most
+\[\frac{\loss{D}{p}}{m}-\frac{\gain{D}{p}}{m}+\fD{D}(\log b)^2\frac{\aD{D}}{pm}\ \le\ \frac{2\loss{D}{p}-\gain{D}{p}}{m}:\]
+the two terms $\#(\tops{D}\cap\even{\mathcal{L}})\,\aD{D}/x_1$ cancel, and the last step is
+Lemma~\ref{l:served}(c).
+
+(c) The empty set is marked, by (M4); for it $Y=1$, $\even{\emptyset}=\emptyset$ and
+$\liftloss{\emptyset}{i}=-\jetexp{p}{i}{\emptyset}$. By Propositions \ref{p:markpow} and~\ref{p:jet}, the exponent
+is at most $\sum_{i<m}\bigl(-\gain{D}{p}/m+\coll{D}{p}{\emptyset}+\fD{D}(\log b)^2\aD{D}/(pm)\bigr)$, and
+Lemma~\ref{l:served}(c) applies again.
+
+(d) $\Bch{D}{\vartheta}{\Psi}$ is linear, so the gauge of (c) is multiplied by $p^{-\jc{D}{p}}$. By
+Lemma~\ref{l:coll}(b) with $o=1$, $m\,\coll{D}{p}{\emptyset}\le2m\fD{D}\aD{D}/p\le\jc{D}{p}$.
+\end{proof}
+\leanline{\lean{gaugeLeone}\sep\lean{gaugeLeBmuofisMarked}\sep\lean{gaugeLecollisionSum}\sep\lean{gaugeLepowjetCeilsmul}}
+
+\begin{proof}[Proof of Theorem B]
+If a form has $j$-gauge at most $p^{\,c}$ at~$1$ with $c\le-\beta$, then its multiple by $p^{-\beta}$ has
+$j$-gauge at most~$1$ at~$1$. Three cases, following the definition of $\err{D}{p}$.
+
+\emph{$p\in\nsp{D}$.} Then $p$ is a prime below $x_1$ with $\chiK{P}(p)\ne1$, $\err{D}{p}=3\loss{D}{p}$,
+$\loss{D}{p}\ge1$ by size and Lemma~\ref{l:served}(c), and the hypothesis reads
+$\beta<\gain{D}{p}-3\loss{D}{p}+1$; so $2\loss{D}{p}-\gain{D}{p}\le-\beta$. If $p$ is served, take a full mark
+$\mathcal{L}$ (Lemma~\ref{l:exmark}), the operator $Y$ of Lemma~\ref{l:four}(b) and
+\[S=Y^{m}\,\Colint{D}+p^{\jc{D}{p}}\,\Colint{D}.\]
+By Corollary~\ref{c:typepow} there is a natural number $l\le3\loss{D}{p}\dim\Col{D}$ such that $S$ has index
+dividing $p^{\,l}$ in $\Colint{D}$. An element of $S$ is $Y^{m}u+p^{\jc{D}{p}}v$ with $u,v\in\Colint{D}$, and by
+Lemma~\ref{l:four}(b) and~(d) both parts are mapped to forms of gauge at most $p^{-\beta}$. If $p$ is not
+served, take $l=0$ and $S=\Colint{D}$: by Lemma~\ref{l:four}(c) and Lemma~\ref{l:coll}(c) the gauge is at most
+$p^{\,2\loss{D}{p}-\gain{D}{p}}$. In this case the columns need not be ramified.
+
+\emph{$p\notin\nsp{D}$ and $p=\ND{D}$.} Then $\err{D}{p}=4m\fD{D}b$ and $\beta<1-4m\fD{D}b$, so
+$3m\fD{D}b\le-\beta$, as $m\fD{D}b\ge1$. Take for $S$ the module of Input~I11(ii) and $l=e'$. For a ramified
+column $\varphi\in S$, Proposition~\ref{p:atN} gives gauge at most $N^{3m\fD{D}b}$. (Here $\ND{D}$ is prime to
+$\nrm{\vartheta}$ for every twist, and Setting~\ref{set:N} holds with the given~$j$.)
+
+\emph{The other primes.} Then $\err{D}{p}=0$, $\beta\le0$, and we take $l=0$, $S=\Colint{D}$. Since
+$p\ne\ND{D}$, and $p\ne d$ because $d$ is a prime below $x_1$ with $\chiK{P}(d)=0$ and so belongs to
+$\nsp{D}$, Lemma~\ref{l:four}(a) applies.
+\end{proof}
+\leanline{\lean{existsindexDvdBmudivisible}}
+
+\sect{Sizes: Theorems C and D}{s:size}
+\begin{lemma}[the prime sum, prime by prime]\label{l:prime}
+In Setting~\ref{set:D}, let $U$ be a natural number with $\lceil x_1\rceil\le U$, $y$ a real number with
+$y\le\aD{D}$ and $\tau\in\PlD{D}$. Then
+\[\Ask{D}{y}{\tau}=\sum_{p<U,\ p\text{ prime}}2\,\ask{D}{p}{y}{\tau}\cdot\log p .\]
+\end{lemma}
+\begin{proof}
+The weight is $\lamd{d}{1}{\nu}=\Lambda(\nu)(1-\chiK{P}(\nu))$, with $\Lambda$ the von Mangoldt function. The term
+of index $\nu\ge\lceil x_1\rceil$ of $\Ask{D}{y}{\tau}$ vanishes, because $y/\nu\le\aD{D}/x_1$ and every nominal
+weight is at least $\aD{D}/x_1$; and $\lceil x_1\rceil\le\aD{D}$ by size. So the sum may be taken over all
+$\nu\ge1$, and since $\Lambda$ is supported on the prime powers it is
+$\sum_p\sum_{e\ge1}\log p\,(1-\chiK{P}(p)^{e})\,(y/p^{e}-\nomW{D}{\pin{D}{-p^{e}}\cdot\tau})_+$. In each of the
+cases $p=d$, $\chiK{P}(p)=1$, $\chiK{P}(p)=-1$ one has
+$1-\chiK{P}(p)^{e}=2\cdot\tfrac{1-\chiK{P}(p)}{2}\cdot[e\text{ odd or }p=d]$ for $e\ge1$. The primes $p\ge\lceil
+x_1\rceil$ contribute~$0$.
+\end{proof}
+\leanline{\lean{primeSumeqsumlocalAsk}}
+
+\begin{lemma}[row lengths]\label{l:rows}
+In Setting~\ref{set:D}, let $i<m$ and $\nu$ be natural numbers and $\tau\in\PlD{D}$. The row of index~$\nu$ at
+$\tau$ of the diagram of\/ $\kapD{D}$ for the rank $\nD{D}{i+1}$ has length
+\[\sum_{\nu<h<\nD{D}{i+1}}\kap{D}{\tau}{h}\ \le\ \bigl([\nu=0]\,\kap{D}{\tau}{1}+[0<\nu<\kD{D}]\,\wtD{D}{0}{\tau}\bigr)+\bigl([\nu=0]\,(b_1+b_2)+r^{16}\bigr),\]
+where $b_1$ and $b_2$ are the least multiples of $\NnD{D}$ that are at least $\aD{D}/x$ and $\aD{D}/x_1$.
+\end{lemma}
+\begin{proof}
+Bound each $\kap{D}{\tau}{h}$ with $h\ne1$ by $[h=\kD{D}]\wtD{D}{1}{\tau}+\gap{D}$ (unit~150); here
+$\wtD{D}{1}{\tau}=\wtD{D}{0}{\tau}+\gap{D}$, $\wtD{D}{0}{\tau}\le b_1+b_2+r^{8}$, the height $\kD{D}$ occurs only
+for $\nu<\kD{D}$, and $(\nD{D}{m}+2)\gap{D}\le r^{16}$ by size.
+\end{proof}
+\leanline{\lean{diagramWeightlebyindex}}
+
+\begin{lemma}[two sizes]\label{l:sizes}
+In Setting~\ref{set:D}:
+\begin{enumerate}[label=(\alph*)]
+\item For every $\sigma\in\Aut$, $|\sigma(\cj{\pig{D}})|^2=\gD{D}$.
+\item For natural numbers $n$, $n'$, $e$ with $n\le n'+e$,
+$\ \jsz{D}{n}\le\jsz{D}{n'}+\bigl(\log(n'+e+1)-\log(\OmP{P}{\Dmu{D}}/\gD{D})\bigr)\cdot e$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) $\sigma$ maps $\KP{P}$ to itself, by the identity or by conjugation, and $\pig{D}\cj{\pig{D}}=\gD{D}$.
+(b) $n!\le(n'+e)!\le n'!\,(n'+e+1)^{e}$, and $-\log(\OmP{P}{\Dmu{D}}/\gD{D})\ge0$ by size, so
+$-n\log(\dots)\le-(n'+e)\log(\dots)$.
+\end{proof}
+\leanline{\lean{normmapstarpiGsq}\sep\lean{jetSizeleadd}}
+
+\begin{lemma}[the number of classes]\label{l:classes}
+In Setting~\ref{set:D}, let $I$ be a finite set and $K$ a subgroup of\/ $\Gf{I}$.
+\begin{enumerate}[label=(\alph*)]
+\item If $G\ge1$ is a natural number, $|I|\le2\,\nD{D}{m}$ and $\Kprin{I}{G}\subseteq K$, then
+$\#\Cl{K}\le\exp\bigl(x^{29}(1+\log G)\bigr)$.
+\item If $\Kprin{I}{\cj{\pig{D}}\,\piN{D}}\subseteq K$ and $|I|\le\nD{D}{m}$, then $\#\Cl{K}\le\exp(x^{30})$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) The classes of $K$ map onto those of $\Kf{I}$ with fibres of at most $[\Kf{I}:K]\le[\Kf{I}:\Kprin{I}{G}]$
+elements; this index is at most a power of the norm of~$G$, with exponent $|I|^2$ (background library), and the
+number of classes of $\Kf{I}$ is at most $(1+2(6N(\fD{D}|I|)^2)^3)^{4\fD{D}|I|^2}$ for $N=\NnD{D}\,d$, a number
+in the different (unit~149, from the short bases of Input~I7). Take logarithms and compare by size. (b) Apply
+(a) with $G=\gD{D}\,\ND{D}$, which $\cj{\pig{D}}\piN{D}$ divides, and $x^{29}(1+\log(\gD{D}\ND{D}))\le x^{30}$
+by size.
+\end{proof}
+\leanline{\lean{cardstdClassesleexpmullog}\sep\lean{cardstdClassesleexp}\sep unit 149: \lnm{Space.card\_classes\_le}\sep
+background library: \lnm{relIndex\_principalLevel\_le}}
+
+\statement{inksoft}{\textbf{Input I12 (sizes of one lift and of the restriction; units 143 and 141).}\enspace In
+Setting~\ref{set:D}, let $\sigma\in\Aut$. \textup{(i)} For every form $\varphi\in\Stg{D}{m}$ and every
+$h\in\Gf{\YD{D}{m}}$,
+$\wn{\sigma\circ(\resY{D}\varphi)(h)}\le\exp\bigl(x^{70}-\sum_{\tau}\brexp{D}{\tau}\cdot\log\ND{D}\bigr)\cdot\wn{\sigma\circ\varphi(\bdU{D}(h))}$.
+\textup{(ii)} Let $i$ be a natural number, $\Phi=\mathrm{U}(y)\intvac{D,i}$ a translate of the integral vacuum,
+$g$, $h$ points and $L\ge1$ a natural number. Then for every vector~$\xi$, with $l(\tau,\nu)$ the length of the
+row $\nu$ at $\tau$ for the rank $\nD{D}{i+1}$,
+\[\sqrt{\wn{\sigma\circ\lkjm{D}{1}{i}(\lkom{D}{1}{i}(g,h)\Phi)\xi}}\ \le\ \exp\Bigl(c_i+\tfrac12\sum_{\tau}\sum_{\nu<\nD{D}{i}}\bigl(\tfrac{l(\tau,\nu)}{L}+\jsz{D}{l(\tau,\nu)}\bigr)\Bigr)\cdot\sqrt{\wn{\sigma\circ\xi}},\]
+where $c_i$ is the constant of the parameters times $(\NnD{D}\,\nD{D}{i}\nD{D}{i+1}+1)^2$, plus
+$\fD{D}\,\nD{D}{i}\nD{D}{i+1}\log(2L+2)$.}
+\leanline{unit 141: \lnm{Data.weylNormSq\_restrictToY\_le}\sep unit 143:
+\lnm{Parameters.norm\_jet\_le\_of\_isAdmissibleComb}, second part, for an admissible combination of one term}
+
+\begin{proof}[Proof of Theorem C]
+\emph{The claim without prime sums.} By Lemma~\ref{l:prime} with $U=\lceil x_1\rceil$ and the definitions of
+$\gain{D}{p}$ and $\forced{D}{p}$, and because $\gain{D}{p}=0$ when $\chiK{P}(p)=1$,
+\[2\sum_{p\in\nsp{D}}\gain{D}{p}\log p=m\Bigl(\sum_{\tau\in\tops{D}}\Ask{D}{\aD{D}}{\tau}+\kD{D}\sum_{\tau}\Ask{D}{\nomW{D}{\tau}}{\tau}\Bigr).\]
+These are exactly the prime sums of $\hrow{D}$, so the exponent in Theorem~C is
+\[B+m\Bigl(\#\tops{D}\cdot\jsz{D}{\aD{D}}+\kD{D}\sum_{\tau}\jsz{D}{\wtD{D}{0}{\tau}}\Bigr)-\#\tops{D}\cdot\aD{D}\log\ND{D}+\bud{D},\]
+a statement about sizes only.
+
+\emph{The restriction.} By Input~I12(i) and Lemma~\ref{l:branch}(a), the restriction costs the factor
+$\exp(x^{70}-\sum_\tau(\kap{D}{\tau}{1}-2b)\log\ND{D})=\exp(x^{70}+2b\fD{D}\log\ND{D}-\#\tops{D}\aD{D}\log\ND{D})$.
+
+\emph{The chain.} Apply Lemma~\ref{l:chainsum} to the data $\td{D}{\mathsf{x}}{i}$, jointly invariant by (G2),
+with $\mathrm{N}_i(g,\xi)=\sqrt{\wn{\sigma\circ\xi}}$ and with $r_i$ the factor of Input~I12(ii) for
+$L=\aD{D}+1$. The value of the chain combination at a point is a sum of at most
+$\prod_{i<m}\#\Cl{\colL{D}{i}}\le\exp(m\,x^{30})$ terms (Lemmas \ref{l:classes}(b) and~\ref{l:level}(a)) for each
+$\mathsf{x}$, each of norm at most $|\sigma(\Psi(\mathsf{x}))|\cdot\prod_ir_i\cdot\ee^{B/2}$; the norm
+$\sqrt{\wn{\sigma\circ\,\cdot\,}}$ satisfies the triangle inequality, and
+$\sum_{\mathsf{x}}|\sigma(\Psi(\mathsf{x}))|\le\exp(x^{60})$ by (G1), since $Q(1)=\emptyset$.
+
+\emph{The exponent.} It remains to bound $\prod_ir_i^2$. In stage $i<m$ the rows are bounded by
+Lemma~\ref{l:rows}: the row $\nu=0$ at a top has length at most $\aD{D}+e$ with $e=b_1+b_2+r^{16}$, the rows
+$0<\nu<\kD{D}$ have length at most $\wtD{D}{0}{\tau}+r^{16}$, and the other rows have length at most
+$r^{16}$ (and $b_1+b_2+r^{16}$ for $\nu=0$ off the tops). By Lemma~\ref{l:sizes}(b) each
+$\jsz{D}{l(\tau,\nu)}$ exceeds $\jsz{D}{\aD{D}}$, $\jsz{D}{\wtD{D}{0}{\tau}}$ or $\jsz{D}{0}=0$ by at most the
+excess times $\log(2\aD{D}+1)-\log(\OmP{P}{\Dmu{D}}/\gD{D})$, which is at most~$m$ by size. Summing over
+$\nu<\nD{D}{i}$, over $\tau$ and over the $m$ stages gives the main term of the display above. The remaining
+terms, namely $c_i$, $l/L\le2$, the excesses, $m\,x^{30}$, $x^{60}$, $x^{70}$ and $2b\fD{D}\log\ND{D}$, are
+bounded by $\bud{D}$; the formal text does this by a chain of size comparisons (through $b$ and $\sqrt b$)
+that was read and not replayed.
+\end{proof}
+\leanline{\lean{weylNormSqBmule}}
+
+\begin{proof}[Proof of Theorem D]
+Let $p\in U$. If $p\in\nsp{D}$ then $p\le\lfloor x_1\rfloor$, $\log p\le\log x_1$ and
+$\err{D}{p}\log p\le3\fD{D}(\log b)^2\aD{D}\log x_1\cdot\mu_p/p$, where $\mu_p=m$ if $p$ is short for $D$ and
+$1$ otherwise. If $p$ is short, $p=mc\pm1$ for a natural number $c$ with $1\le c\le x_1$, and
+$m/p\le2/c$; if not, $\mu_p/p=1/p$, and put $c=p$. If $p=\ND{D}\notin\nsp{D}$, the term is
+$4m\fD{D}b\log\ND{D}$. So every term is bounded by a term attached to a pair $(c,n)$, $1\le c\le\lfloor
+x_1\rfloor$, $n\in\{0,1,2,3\}$, namely $3\fD{D}\aD{D}(\log b)^2\log x_1\cdot2/c$, the prime $p$ being the
+$n$-th entry of $(\ND{D},mc-1,c,mc+1)$; different primes of $U$ have different pairs. Summing over all pairs,
+with $\sum_{c\le x_1}1/c\le1+\log x_1$,
+\[\sum_{p\in U}\err{D}{p}\log p\ \le\ 4\cdot6\,\fD{D}\aD{D}(\log b)^2\log x_1\,(1+\log x_1)\ \le\ \fD{D}\aD{D}(\log b)^3,\]
+the last step by the condition $(\log x_1)^6\le\log b$ of the data and by size; the term of $\ND{D}$ is bounded
+by the term of the pair $(1,0)$, by $m\log\ND{D}\le30m^2\log b$, $m^2\le4x$ and $x\,b\le\aD{D}$.
+\end{proof}
+\leanline{\lean{sumallowedLossmullogle}}
+
+\sect{A by-product: the determinant period}{s:det}
+The first part of the file on the chain serves another unit (the value families of the unit on Selmer groups).
+It is independent of the data~$D$.
+
+\begin{definition}[determinant kernel and determinant period]\label{d:det}
+Let $E$ be a CM field with a CM type and Weil data, $I$ a finite set, $\alpha$ a continuous character of the
+norm-one adeles of $E$ that is trivial on the norm-one elements of~$E$, $c$ a function
+$\operatorname{Pl}(E)\to\NN$, $\mathfrak{m}$ a modulus of~$E$ (a non-zero ideal divisible by no prime together
+with its conjugate), $\Psi'$ a complex function on the matrices indexed by $I$ over $\OO_E/\mathfrak{m}$, and
+$(\psi_w)_w$ a family of characters of the residue fields of the finite places.
+\begin{enumerate}[label=(\alph*)]
+\item $\detK{I}{\alpha}{c}{\mathfrak{m}}{\Psi'}$ is the function $h\mapsto\theta_{\alpha,\alpha}[\Psi',\prod_\tau\det\nolimits_\tau^{\,c(\tau)}](1,h)$
+on $\Gf{I}$: the theta kernel of the pair $(E^{I},E^{I})$ with both characters equal to~$\alpha$, the finite datum
+given by $\Psi'$ modulo~$\mathfrak{m}$ and the polynomial $\prod_\tau\det_\tau^{c(\tau)}$ ($\det_\tau$ the determinant
+of the matrix of variables at~$\tau$), at the points $(1,h)$.
+\item $\detP{I}{\alpha}{c}{\mathfrak{m}}{\psi}$ is the sum over the classes of $\Kf{I}$, weighted by the inverses
+of the orders of their stabilisers, of the function
+$\detK{I}{\alpha}{c}{\mathfrak{m}}{\chi_{\mathfrak{m},\psi}\circ\det}$, where
+$\chi_{\mathfrak{m},\psi}(y)=\prod_{w\mid\mathfrak{m}}\psi_w(y\bmod w)$.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{detKernel}\sep\lean{detPeriod}\sep background library: \lnm{modKernelI}, \lnm{letterMinor},
+\lnm{stdClassSum}, \lnm{Modulus.charOfTamePart}}
+
+\begin{lemma}[invariance and expansion]\label{l:det}
+In the situation of Definition~\ref{d:det}, assume that $\alpha$ has weight $-c$ at the infinite places and tame
+part $(\psi_w)_w$.
+\begin{enumerate}[label=(\alph*)]
+\item For every $\Psi'$, every $\gamma\in\Gam{I}$ and every $g\in\Gf{I}$:
+$\detK{I}{\alpha}{c}{\mathfrak{m}}{\Psi'}(\gamma g)=\detK{I}{\alpha}{c}{\mathfrak{m}}{\Psi'}(g)$.
+\item If $\psi_w=1$ for every $w$ that does not divide~$\mathfrak{m}$, then
+$\detP{I}{\alpha}{c}{\mathfrak{m}}{\psi}$ is the weighted sum over the classes of $\Kf{I}$ of the function
+$g\mapsto\sum_{y}\detK{I}{\alpha}{c}{\mathfrak{m}}{\mathbf{1}_1}(g\tilde y)$, where $y$ runs over the invertible
+matrices over $\OO_E/\mathfrak{m}$, $\tilde y\in\Kf{I}$ is a chosen lift of~$y$, and $\mathbf{1}_1$ is the
+indicator function of the unit matrix.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) The polynomial is a product of determinants of the stacked matrix of variables, and for such polynomials
+the kernel is invariant under the rational points on the left (unit~143), the characters having the weight $-c$.
+(b) Expand $\chi_{\mathfrak{m},\psi}\circ\det$, which vanishes on the singular matrices, as
+$\sum_y\chi_{\mathfrak{m},\psi}(\det y)\mathbf{1}_y$; right translation by $\tilde y$ moves $\mathbf{1}_1$ to
+$\mathbf{1}_y$ and multiplies by $\alpha(\det\tilde y)$, which is $\chi_{\mathfrak{m},\psi}(\det y)$ by the
+hypothesis on the tame part (background library).
+\end{proof}
+\leanline{\lean{detKernelembFinmul}\sep\lean{detPeriodeqstdClassSumsum}\sep unit 143: \lnm{modKernel\_embFin\_mul}\sep
+background library: \lnm{modKernel\_mul\_Kf\_right}}
+
+\begin{proposition}[adding a place to the modulus]\label{p:detins}
+In the situation of Definition~\ref{d:det}, assume that $\alpha$ has weight $-c$ at the infinite places and tame
+part $(\psi_w)_w$, and that $\psi_w=1$ for every $w$ that does not divide~$\mathfrak{m}$. Let $v$ be a finite
+place that does not divide~$\mathfrak{m}$ and $\mathfrak{m}'$ a modulus whose places are those of $\mathfrak{m}$
+together with~$v$. Then
+\[\detP{I}{\alpha}{c}{\mathfrak{m}'}{\psi}=\prod_{l<|I|}\bigl(1-\mathrm{q}_v^{\,l}\,\alpha_v^{-1}\bigr)\cdot\detP{I}{\alpha}{c}{\mathfrak{m}}{\psi},\]
+where $\alpha_v$ is the value at a uniformiser of $v$ of the Hecke character of~$\alpha$, normalised by
+$\mathrm{q}_v^{\,|I|/2}$.
+\end{proposition}
+\begin{proof}
+$\alpha$ is unramified at~$v$, and $v$ is not conjugate to a place of~$\mathfrak{m}'$. The local computation
+behind Input~I9(iv), which the catalogue marks as substantial (the action of the Hecke coset sums on the
+unramified vacuum, by counting subspaces of the residue space), shows that the datum for $\mathfrak{m}'$, which
+differs from that for $\mathfrak{m}$ by the indicator of the invertible matrices at~$v$, is obtained from it by
+the Hecke polynomial at $X=\alpha_v^{-1}$ acting through the Weil representation. Both class sums are class
+integrals of functions that are invariant on the left by Lemma~\ref{l:det}(a) and on the right under $\Kf{I}$;
+the Hecke polynomial then becomes a sum over coset representatives, each contributing the same integral, and
+the count of the cosets is the $q$-binomial theorem
+$\sum_{V}(-X)^{\dim V}\mathrm{q}_v^{\binom{\dim V}{2}}=\prod_{l<|I|}(1-\mathrm{q}_v^{\,l}X)$, the sum over the
+subspaces $V$ of the residue space.
+\end{proof}
+\leanline{\lean{detPeriodinsert}\sep background library: \lnm{sum\_heckePolyCoeff\_smul\_pairWeil},
+\lnm{q\_binomial\_submodule} (the $q$-binomial theorem; the catalogue: the theorem itself, place not confirmed)}
+
+\sect{Where the results are used}{s:use}
+By a search of the sources for the names of the declarations: Theorems A, B, C and D, with the definitions of
+$\hrow{D}$, $\nsp{D}$ and $\err{D}{p}$, are used in the file of the endgame that proves Theorem~A of the handout
+(short forms). Proposition~\ref{p:ram} is used by the unit on the filling, for the dimension of the ramified
+columns in Theorem~B of the handout. Proposition~\ref{p:span} is used by the unit on the exchange, for its crude
+rows; Lemma~\ref{l:prime} by the unit on the rows; the determinant period of §\ref{s:det} by the unit on Selmer
+groups (its value families). The definitions of the columns, of the levels, of the restriction and of good data
+(Definitions \ref{d:pi}, \ref{d:branch}, \ref{d:central}, \ref{d:good}) are used by the units on the seesaw and
+on the exchange; the seesaw unit proves that good data exist and that the rows of the handout are of the form
+$\Bch{D}{\vartheta}{\Psi}\psi$. I read the statements of these consumers only where this note quotes them.
+
+\sect{Notes on the formal text}{s:notes}
+\begin{enumerate}[label=\textup{\arabic*.},leftmargin=1.6em,itemsep=5pt]
+\item \emph{Arguments: the text reading and Lean.} Nothing was compiled, so the argument lists of the
+declarations are those that a program reads from the text, and in this folder they differ from Lean's in
+several places, because section variables are declared again and included or omitted by commands. The
+statements above follow the Lean text, as I read it; the points that only Lean can settle are these.
+\emph{Entries of the text reading that are not arguments}: a place $w$ dividing $\piN{D}$ in
+Definition~\ref{d:central}(d) (the operator takes the data and a set of places; the note writes
+$\ramop{D}{\Sigma}$ through a macro of its own with these two arguments), in Lemma~\ref{l:level}(e), (g) and in
+Lemma~\ref{l:intafter}(a); a number called $j$ with its primality in Definition~\ref{d:good}(b),
+Lemma~\ref{l:chainsum} and Proposition~\ref{p:gchain} (in Lemma~\ref{l:level}(h) the same variable is the prime
+that the note calls~$\ell$); the exponent $e$ in Definition~\ref{d:mark}(a) and Lemma~\ref{l:coll}(b); the set
+$\mathcal{L}$ in Lemma~\ref{l:exmark}; the prime $p$ and its place in Theorem~C; $\vartheta$ and $\Psi$ in
+Theorem~B, which the statement binds; a second record of data in Lemma~\ref{l:intafter}(a), where the formal
+statement names only one; the Weil data and other instances of variables that were declared again, in
+Definition~\ref{d:short}, Lemma~\ref{l:sub}, Proposition~\ref{p:span} and Definition~\ref{d:central}(a).
+\emph{Arguments that the text reading does not show}: that $\Psi$ is good and $p$ is prime to
+$\nrm{\vartheta}$ in the four parts of Lemma~\ref{l:four} (a command includes these hypotheses again); that
+$\mathcal{L}$ is marked in Proposition~\ref{p:move} (used after the first local definition of the statement);
+the prime $p$ and the homomorphism $j$ in Lemma~\ref{l:level}(i), Lemma~\ref{l:ind}(b),
+Lemma~\ref{l:markprop}(a), (c) and Lemma~\ref{l:thick}. The note states all of them, through the Settings.
+\item \emph{Statements that the line reading cuts.} The formal statements of Propositions \ref{p:hecke}
+and~\ref{p:move} contain local definitions, and the program takes their first sign of definition for the end of
+the statement; the two propositions were compared with the full Lean text. The same program counts the command
+that follows Lemma~\ref{l:lastcol} and the one that follows Theorem~C into these declarations; they make some
+definitions opaque and are no part of the proofs.
+\item \emph{Hypotheses that follow from others, or are used in one case only.} In Proposition~\ref{p:hecke} the
+hypothesis $\cj{\mathfrak{l}}\ne\mathfrak{l}$ follows from (M1). In Theorem~B the columns have to be ramified
+only for $p=\ND{D}$. In the definition of $\err{D}{p}$ the case $p=\ND{D}$ is tested after $p\in\nsp{D}$; by
+size $\ND{D}\ge x_1$, so the order does not matter. Lemma~\ref{l:chainsum} takes functions $\mathrm{N}_i$ and
+numbers $r_i$ for all $i$ and uses those with $i\le m$. In Proposition~\ref{p:typez} the equalities ``$W$ is the
+valuation ring at $\mathfrak{l}$'' and $p_T=p$ are hypotheses of the formal statement.
+\item \emph{Forms of the statements.} Integrality of a column is the condition ``$j$-gauge at most $1$ at~$1$'';
+Theorem~B(ii) is, in the formal text, membership of $p^{-\beta}\Bch{D}{\vartheta}{\Psi}\varphi$ in the module of
+such forms on $\YD{D}{m}$. Theorem~B(i) uses the notion of index of unit~149 (Input~I2), which is stated without quotient
+modules. In (G3) the numbers of pairs and of lifts
+are written with $\lfloor m/2\rfloor-1$. The jet exponent contains the term $e=0$ for $p=d$. The definition of
+the restriction contains the proof that it maps forms to forms. Lemma~\ref{l:level}(b) and
+Lemma~\ref{l:served}(a) are instances in the formal text: the first is found by Lean whenever a level is needed,
+the second feeds the tactic of size comparisons.
+\item \emph{What was not replayed.} The dossier marks as of lower confidence the claims made for dense
+automatic steps, whose intermediate goals are not visible without Lean. I read these lines; I could not replay
+them. They are: the collection of the exponents into $R^{6M}$ in Proposition~\ref{p:span}; the extraction of
+the coefficients and the exponent count in Proposition~\ref{p:hecke}; the count of the exponents in
+Proposition~\ref{p:raise}; the identification of the letter matrices in Proposition~\ref{p:typez}; which of
+the Hecke sizes each line proves in Proposition~\ref{p:type}; the rewriting of the paired chain in
+Proposition~\ref{p:pairs}; the size comparisons at the end of the proofs of Theorems C and~D; and the two
+computations in Proposition~\ref{p:detins}. For Proposition~\ref{p:jet} the formal text proves the termwise
+inequality \eqref{e:term} by one automatic step after a case split; the proof given above is mine and was
+checked against the formal definitions, not against the automatic step.
+\item \emph{Size comparisons.} Many steps are comparisons of sizes of the data, proved in the formal text by a
+tactic from the scale conditions; the dossier does not record the exponents, and the note says ``by size''.
+They belong to the note on the admissible data.
+\item \emph{What the final theorems use.} The dossier found no member of the unit that is evidently unused;
+the count of the members reached from the final theorems by name alone is not meaningful here, and a kernel
+export will decide.
+\item \emph{References.} For the inputs from the background library the catalogue of the handout gives a
+reference only for the Hecke transfer (Input~I9(iv), place not confirmed, a special case) and for the
+$q$-binomial theorem (the theorem, place not confirmed); for the others: \emph{reference to be confirmed}. The
+headers of the files of this folder name as related work, without places: for the scaled Hecke operators,
+Rallis (1982), V.~Lafforgue (2011) and Z.~Liu (2025); for the divisibility of theta lifts, X.~Zhang (2022),
+Berger (2009) and Prasanna (2006); for short columns, Gross (1999), Greenberg--Voight (2014) and the geometry of
+numbers of Minkowski and Mahler; for the elementary divisors of twisted Hecke operators, Arsovski (2019),
+Liu--Truong--Xiao--Zhao (2023) and Fakhruddin--Pilloni (2021). I did not check these.
+\end{enumerate}
+
+\subhead{How this note was written.} From the dossier of the unit: the readings of its \UnitMembers{}
+declarations and its \UnitProofs{} structured proofs, all of which I read, with the reader's list of doubts. The
+program check of the dossier covered \UnitSteps{} leaf steps of \UnitProofs{} proofs. I read the seven Lean
+files of the folder completely, statements and proofs, and compared every statement of this note with its Lean
+text, argument by argument, with the program's list of arguments beside it. Outside the folder I read the Lean
+definitions of the objects of Inputs I2 to~I6 (index and type, the level prime and the twists, the lift kernel,
+the data and the chain, induced primes and marked sets, the bookkeeping of unit~150 in its file), the
+definitions of gauges, levels, classes, kernels, lifts and Hecke operators at split places in the background
+library, and the statements, not the proofs, of the results quoted in Inputs I7 to~I12. The arrangement into
+sections, the remark that the prime sums cancel in Theorem~C, the proof of \eqref{e:term} and the presentation
+of the proof of Theorem~D are mine; elsewhere the proofs follow the structured proofs, with bookkeeping steps
+merged.
+
+\head{Appendix A. Concordance with the Lean artifact}
+{\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}\setlength{\tabcolsep}{0pt}
+\begin{longtable}{@{}p{30mm}p{56mm}p{43mm}r@{}}
+\textbf{In this note} & \textbf{Lean declaration} & \textbf{File} & \textbf{Lines}\\\midrule\endhead
+\ConcordanceRows
+\end{longtable}}
+
+\subhead{Four statements as they are written in the artifact.}
+\quoted{spanshortramifiedColumns}
+\quoted{existsindexDvdBmudivisible}
+\quoted{weylNormSqBmule}
+\quoted{sumallowedLossmullogle}
+In these texts {\leanfont D.ramifiedColumns} is $\Colram{D}$, {\leanfont IsShort} the notion of
+Definition~\ref{d:short}, {\leanfont D.budget} is $\bud{D}$, {\leanfont integralColumns} is $\Colint{D}$,
+{\leanfont IndexDvd} the index of Input~I2, {\leanfont Bμ ϑ Ψ} is $\Bch{D}{\vartheta}{\Psi}$,
+{\leanfont IsGoodDatum ϑ Ψ} says that $\Psi$ is good for $(D,\vartheta)$, {\leanfont ϑ.levelNorm} is
+$\nrm{\vartheta}$, {\leanfont integralFormsAt ⊤ 1} is the module of the forms of gauge at most $1$ at~$1$,
+{\leanfont weylNormSq} is the Gram norm, {\leanfont D.heightPerRow} is $\hrow{D}$, {\leanfont D.nonsplitPrimes} is
+$\nsp{D}$ and {\leanfont D.allowedLoss} is $\err{D}{p}$. Elsewhere the letters of the formal text were changed
+where the write-up reserves them: the stage {\leanfont j} is~$i$ and the homomorphism {\leanfont ιₚ} is~$j$; the
+exponent {\leanfont s} of the data is $\Dmu{D}$; a place {\leanfont σ} is~$\tau$; a marked set {\leanfont Λ} is
+$\mathcal{L}$ and its elements {\leanfont l} are~$\mathfrak{l}$; a prime {\leanfont w} dividing {\leanfont D.π} is
+$\mathfrak{p}$; a tuple of translations {\leanfont x} is~$\mathsf{x}$; the set {\leanfont ev} is~$\Xi$;
+{\leanfont κ} is $\varkappa$; the number of boxes {\leanfont N} is~$L$; {\leanfont D.ϱ + 1} is $m/2$.
+
+\head{Notation}
+\begingroup\fontsize{8.6}{10.9}\selectfont\raggedright
+\setlength{\columnsep}{9mm}\setlength{\parskip}{0pt}
+\begin{multicols}{2}
+\nt{$P=(N_0,d)$, $D$}{parameters; admissible data for $P$ (Setting~\ref{set:D})}
+\nt{$x$, $x_1$, $b$, $m$, $r$}{components of $D$: the three scales, the number of lifts, the rank of the rows}
+\nt{$\Dmu{D}$, $\ED{D}$, $\NnD{D}$, $\fD{D}$}{the exponent, the CM field, the order of its roots of unity, the
+number of its infinite places}
+\nt{$\KP{P}$, $\chiK{P}$}{$\Q(\sqrt{-d})$ and its quadratic character}
+\nt{$\PlD{D}$, $\tau$, $\tau'$, $\tau_0$, $\tau_e$}{the group of infinite places of $\ED{D}$; places;
+$\tau_e=\pin{D}{-p^{e}}\cdot\tau$}
+\nt{$\emb{\tau}$, $\pin{D}{\nu}$}{the embedding at $\tau$; the place named by the integer~$\nu$}
+\nt{$\kD{D}$, $\tD{D}$, $\aD{D}$, $\nD{D}{i}$}{$r+1-m$; $5r$; the order of the jets; the ranks
+$\kD{D}+i(\tD{D}+1)$}
+\nt{$\tops{D}$, $\thick{D}$, $\nomW{D}{\tau}$, $\wtD{D}{i}{\tau}$, $\gap{D}$}{tops, thick places, nominal weight,
+weights, the gap $2r^8$}
+\nt{$\bud{D}$}{$\fD{D}\aD{D}(\log b)^3$}
+\nt{$E$, $\operatorname{Pl}(E)$, $\OO_E$, $\widehat{\OO}_E$, $\Af{E}$}{a CM field; its infinite places, integers,
+integral adeles, finite adeles}
+\nt{$w$, $\cj{w}$, $E_w$, $\mathrm{q}_w$, $v$}{a finite place, its conjugate, the completion, the size of the
+residue field; $v$ also a finite place, or a column, or a family of data, where said}
+\nt{$p$, $j$, $\CC_p$, $|\cdot|_p$, $\op$, $\Oj$}{a prime (a natural number where said); a ring homomorphism
+$\CC\to\CC_p$; the absolute value; the valuation rings (Setting~\ref{set:p})}
+\nt{$\ell$, $\iota$}{a prime number; a ring homomorphism $\CC\to\CC_\ell$}
+\nt{$\sigma$, $\Aut$}{an automorphism of $\CC$; the group of all of them}
+\nt{$I$, $I'$}{finite index sets}
+\nt{$f$}{the number of infinite places of a CM field $E$}
+\nt{$\varkappa$, $\mathfrak{e}$, $h$, $c$, $c'$}{column counts; determinant exponents; a height; Weyl indices
+(tableaux); $c$ also a real or complex constant, a class, a list index, a function $\operatorname{Pl}(E)\to\NN$,
+where said}
+\nt{$\Gf{I}$, $\Gam{I}$, $\Kf{I}$, $\Kprin{I}{a}$, $\Kmax{I}{w}$}{finite adelic unitary group, its rational
+points, the standard level, principal levels, the group at $w$ (Input~I1)}
+\nt{$K$, $J$, $\Cl{K}$, $\chi$}{levels; classes; a character of a level, or of a lift}
+\nt{$g$, $h$, $k$, $a$, $a'$, $d$, $d'$, $d_i$, $y$, $y'$, $y''$}{points of the groups; $y$ also a matrix over the
+adeles, a vector of residues, a real number, or an integer, where said}
+\nt{$\Wy{I}{\varkappa}$, $\rhow{\varkappa}{\mathfrak{e}}$, $\xi$, $\xi'$}{Weyl indices, the weight representation,
+vectors of the weight}
+\nt{$\Alg{I}{\varkappa}{\mathfrak{e}}$, $\varphi$, $\varphi'$, $\varphi_0$, $\psi$, $\mathrm{R}(g)$}{algebraic forms;
+forms and columns; right translation}
+\nt{$\gauge{\varkappa}{\mathfrak{e}}{g}{\xi}$, $\wn{\xi}$, $G$}{the gauge at $j$; the Gram norm and its matrix}
+\nt{$\boxes{\varkappa}{n'}$, $L$, $l(\tau,\nu)$}{numbers of boxes; row lengths}
+\nt{$O$, $V$, $M$, $S$, $u$, $z$, $s$, $l$}{Input~I2: a ring, a module, submodules, a matrix, a scalar, an
+exponent, a natural number; $S$ also a set of places, $M$ a natural number, $z$ a complex number, $s$ a number
+of lifts or an element of $\Z/n$, $V$ a subspace, where said}
+\nt{$\XD{D}{i}$, $\YD{D}{m}$, $i$, $i'$}{index sets of the definite spaces; stages}
+\nt{$\ND{D}$, $N$, $\piN{D}$, $\gD{D}$, $g_0$, $g_1$, $\pig{D}$}{the level prime (written $N$ where said), an integer
+of norm $N$, the product of the two primes of the data, an integer of $\KP{P}$ of norm $\gD{D}$}
+\nt{$\Kch{D}{I}$}{the chosen level}
+\nt{$\vartheta$, $Q(\vartheta)$, $\psi_w$, $\nrm{\vartheta}$}{a twist, its set of places, its tame part, the
+product of the norms}
+\nt{$\Wfin{D}{i}$, $\mathrm{U}(y)$, $\intvac{D,i}$, $\mathrm{P}^{\Sigma}$}{finite data, Heisenberg operators,
+the integral vacuum, a projection (Input~I4)}
+\nt{$\lk{D}{\vartheta}{i}$, $\lkom{D}{\vartheta}{i}$, $\lkjm{D}{\vartheta}{i}$, $\lklift{D}{\vartheta}{i}$}{the lift
+kernel, its representation, its jet matrix, the lift}
+\nt{$\raises{k}{d}{d'}{c}$}{data that multiply gauges by at most $c$ from $d$ to $d'$}
+\nt{$\mathsf{x}$, $\td{D}{\mathsf{x}}{i}$, $\Phi$, $\Phi'$, $\Phi^{(2)}$, $\Psi$, $\Psi'$}{tuples of translations,
+their data; data; a function on tuples; a function on matrices}
+\nt{$\chn{D}{\vartheta}{\Phi}{s}$, $\chnn{D}{\vartheta}{\Phi}{s}$, $C$, $C_i$, $\Bch{D}{\vartheta}{\Psi}$}{chains
+of lifts and of pairs; the chain followed by the restriction}
+\nt{$\Col{D}$, $\Colram{D}$, $\Colint{D}$, $\Stg{D}{i}$}{columns, ramified columns, $j$-integral columns, stages}
+\nt{$\piPl{D}$, $\mathfrak{p}$, $\Sigma$, $\colL{D}{i}$}{the primes dividing $\piN{D}$, one of them, a set of
+them; the column levels}
+\nt{$\lstEq{D}$, $\bdU{D}$, $\brexp{D}{\tau}$, $\Brm{D}$, $\resY{D}$}{Definition~\ref{d:branch}}
+\nt{$\short{B}{\varphi}$, $B$, $B'$}{short forms; real bounds}
+\nt{$\cgen{D}{\mathfrak{p}}$, $\cenrep{D}$, $\ramop{D}{\Sigma}$, $\nu$}{Definition~\ref{d:central}; $\nu$ an
+adele, an integer, or the index of a row or of a pair, where said}
+\nt{$\admT{q}$, $q$, $\pairT{v}{\nu}$, $\good{\vartheta}{\Psi}$}{Definition~\ref{d:good}}
+\nt{$\ind{\tau}$, $\mathcal{L}$, $\mathfrak{l}$, $\even{\mathcal{L}}$, $\mexp{D}{\mathfrak{l}}$,
+$\lc{D}{i}{\tau}$, $\lb{D}{i}{\tau}$}{Input~I5}
+\nt{$\ask{D}{p}{y}{\tau}$, $\forced{D}{p}$, $\gain{D}{p}$, $\loss{D}{p}$, $\rr{D}{p}$, $\DeltaP{D}{p}$,
+$\jc{D}{p}$, $\oz{D}{p}$, $\coll{D}{p}{\Xi}$, $\Xi$, $e$,
+$\cc{p}{\varkappa}{n'}{\Xi}{\tau}{\tau'}{e}$, $\kap{D}{\tau}{h}$, $\last{D}{i}{\tau}$, $\kept{D}{h}$,
+$\kapY{D}{\tau}{h}$, $\nsw{d}{p}$}{Input~I6}
+\nt{$\jetexp{p}{i}{\Xi}$, $\liftloss{\mathcal{L}}{i}$, $\markop{\mathcal{L}}{\mathfrak{l}}$, $\Tl{w}{s}$, $Y$}{Definition~\ref{d:mark};
+Hecke operators; the product of the mark operators}
+\nt{$\hrow{D}$, $\nsp{D}$, $\err{D}{p}$, $\jsz{D}{n}$, $\Ask{D}{y}{\tau}$, $\dirc{D}$, $\lamd{d}{1}{\nu}$,
+$\OmP{P}{\Dmu{D}}$, $\Lambda$}{Definition~\ref{d:size}; $\Lambda$ the von Mangoldt function}
+\nt{$\beta$, $U$, $\eta$, $\delta$, $\delta_S$, $\omega$}{an integer; a finite set of numbers, a natural number or a
+complex variable; $\aD{D}/(pm)$; an integer of $\KP{P}$; a diagonal matrix; in $\lkom{D}{\vartheta}{i}$}
+\nt{$\intafter{\delta}{S}$, $\Std{\delta}{D,i}$, $\ThProd{P}{\mu}{\delta}{r}{I}$, $s_1$, $\per{P}{\mu}$,
+$\Theta$, $\theta$, $\varpi$, $T$}{objects of unit~150 (Inputs I8, I9); $T$ also twisting data}
+\nt{$\mathrm{N}_i$, $r_i$, $t_i$, $t$, $t'$, $\beta_c$, $\mathcal{C}_i$}{sizes, factors, operators on the data, linear
+maps, properties (Inputs I8, Lemma~\ref{l:chainsum}); $t$ also a bijection, $r$ a real number}
+\nt{$n$, $n'$, $n''$, $o$, $o'$, $k'$, $a'$, $r'$, $l'$, $q'$, $c_0$, $c_1$, $c_2$, $c_3$, $c_n$, $e'$}{natural numbers
+and constants defined where they occur}
+\nt{$\mathrm{one}_\tau$, $\mathrm{low}_\tau$, $\mathrm{bx}_\tau$; $\mathrm{lv}_e$, $\mathrm{cl}_{\tau,e}$}{the three counts in the coupling count (Input~I6); the indicators of live pairs and of collisions (proof of Proposition~\ref{p:jet})}
+\nt{$\mathrm{col}(z)$, $\mathrm{row}(z)$, $\mathrm{at}(g)$, $\mathrm{ev}(y)$}{matrices with one non-zero column or row; the point of a family of local matrices; evaluation vectors}
+\nt{$\mathrm{ch}$, $\epsilon_\tau$, $J_{\mathfrak{l}}$, $u_\tau$}{charges; exponents of a diagonal point; sets
+of indices; diagonal entries}
+\nt{$p_T$, $\phi_s$, $\phi$, $W$, $R$, $X$, $\Pi$, $\alpha$, $\alpha'$, $\alpha_v$, $\alpha_{e}$, $H$}{twisting
+data and Hecke polynomials: a prime, the letters, ring homomorphisms, a valuation ring (also a subspace), a ring
+or a bound, a variable, a polynomial, values of characters; $\alpha$ also a character}
+\nt{$\mathcal{N}$, $\mathbf{1}_{\mathrm{lc}}$, $F$, $\mathrm{F}$, $\mathfrak{m}$, $\mathfrak{m}'$, $g'$, $y_0$}{Setting~\ref{set:N} and Input~I11:
+the split level, an indicator, a function, the Fourier operator, moduli, integers}
+\nt{$b_1$, $b_2$, $\mu_p$, $\gamma$, $A$, $A_\phi$, $Y(g)$, $c_{\tau,\nu}$}{multiples of $\NnD{D}$; a factor of the
+loss; a rational point; matrices of the proof of Proposition~\ref{p:span}}
+\nt{$\detK{I}{\alpha}{c}{\mathfrak{m}}{\Psi'}$, $\detP{I}{\alpha}{c}{\mathfrak{m}}{\psi}$,
+$\chi_{\mathfrak{m},\psi}$, $\tilde y$}{Definition~\ref{d:det}}
+\nt{$\ee$, $\pi$}{the base of the natural logarithm; in $\piN{D}$, $\pig{D}$}
+\end{multicols}
+\endgroup
+
+\end{document}

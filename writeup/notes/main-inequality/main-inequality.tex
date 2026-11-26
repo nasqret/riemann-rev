@@ -1,0 +1,1084 @@
+% !TEX program = lualatex
+% ---------------------------------------------------------------------------------------------
+%  Readback note 4: The main inequality, the bound for the primes, and the zero-free half-plane
+%
+%  Build:  python3 tools/rb.py note <slug>
+%
+%  One unit of a Lean artifact, rewritten as ordinary mathematics. The prose is hand-written. Lean names,
+%  line ranges and counts come from data.tex; quoted Lean statements are copied from the artifact by the build.
+%
+%  Rules of the text: standard terminology; every symbol is explained where it first appears and listed again
+%  in the notation at the end; no letter has two meanings; a proof is complete or says what it takes for granted;
+%  Lean names appear only in the LEAN lines and in the concordance.
+%
+%  The signature rule (the build enforces it): a function, relation or predicate that the artifact defines is
+%  written only through its notation macro, which the build makes from the spec (`notation`) with one slot for
+%  each explicit argument of the Lean definition. No argument is fixed and dropped, also not "for brevity" and
+%  not for one section. Every argument and every hypothesis of a stated declaration stands inside its
+%  statement, or in a Setting that the statement cites by number; only implicit and instance arguments (the
+%  ambient objects) may stand in the conventions.
+% ---------------------------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\ifdefined\pdfvariable\pdfvariable suppressoptionalinfo \numexpr 1+2+4+8\relax\fi
+\usepackage[a4paper,hmargin=35mm,top=22mm,bottom=27mm,footskip=12mm,nohead]{geometry}
+
+\usepackage{fontspec}
+\directlua{
+  luaotfload.add_fallback("gfallback", {"STIXTwoMath-Regular.otf:mode=node;", "DejaVuSans.ttf:mode=node;"})
+  luaotfload.add_fallback("gmonofallback", {"DejaVuSansMono.ttf:mode=node;", "STIXTwoMath-Regular.otf:mode=node;"})
+}
+\setmainfont{NewCM10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookItalic,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldItalic,SmallCapsFont=*-Book,SmallCapsFeatures={Letters=SmallCaps},
+  RawFeature={fallback=gfallback}]
+\setsansfont{NewCMSans10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookOblique,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldOblique,RawFeature={fallback=gfallback}]
+\setmonofont{JetBrainsMono}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,Scale=MatchLowercase,
+  RawFeature={-calt;-liga;fallback=gmonofallback}]
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage[math-style=TeX]{unicode-math}
+\setmathfont{NewCMMath-Book.otf}
+\emergencystretch=2.5em\relax
+
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows.meta,positioning,backgrounds}
+\usepackage[protrusion=true,expansion=true]{microtype}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{multicol}
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+
+\definecolor{ink}{HTML}{0F172A}
+\definecolor{inksoft}{HTML}{475569}
+\definecolor{inkfaint}{HTML}{94A3B8}
+\definecolor{rulegrey}{HTML}{CBD5E1}
+\definecolor{arith}{HTML}{C2410C}
+\definecolor{est}{HTML}{7C3AED}
+\definecolor{ana}{HTML}{0891B2}
+\definecolor{ok}{HTML}{047857}
+\definecolor{leancol}{HTML}{3730A3}
+
+\title{The main inequality, the bound for the primes, and the zero-free half-plane}
+\author{grh-compact}
+\date{}
+
+% ------------------------------------------------------------------------------------- macros
+\newcommand{\leanfont}{\ttfamily\fontsize{8.6}{10.5}\selectfont\color{leancol}}
+\newcommand{\lean}[1]{\csname LN@#1\endcsname}
+\newcommand{\fillin}[1]{{\color{arith}\itshape[#1]}}  % a place of the template that is not written yet; the build reports every one that is left
+\newcommand{\leanquote}[1]{\csname LQ@#1\endcsname}
+\input{data.tex}
+
+\linespread{1.08}                       % 11 pt on 14.7 pt
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt plus 1.5pt minus 0.5pt}
+\setlength{\abovedisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\belowdisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\abovedisplayshortskip}{3pt plus 2pt}
+\setlength{\belowdisplayshortskip}{6pt plus 2pt minus 2pt}
+\emergencystretch=1.5em
+\clubpenalty=10000 \widowpenalty=10000 \displaywidowpenalty=10000
+\relpenalty=7000 \binoppenalty=9000
+\raggedbottom
+\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\sffamily\fontsize{7.6}{9}\selectfont\color{inkfaint}\thepage\,/\,\pageref*{LastPage}}
+\setlist{topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=4pt,leftmargin=2.1em,labelsep=0.55em}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\len}{\operatorname{len}}
+\newcommand{\cok}{\operatorname{cok}}
+\newcommand{\End}{\operatorname{End}}
+\newcommand{\Hom}{\operatorname{Hom}}
+\newcommand{\Gal}{\operatorname{Gal}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\kw}[1]{\emph{#1}}
+\newcommand{\m}[1]{\mbox{$#1$}}        % a short formula that must not be broken across lines
+\newcommand{\head}[1]{\par\addvspace{17pt plus 4pt minus 2pt}\Needspace{6\baselineskip}%
+  \noindent{\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\sect}[2]{\refstepcounter{section}\label{#2}\par\addvspace{19pt plus 4pt minus 2pt}\Needspace{7\baselineskip}%
+  \noindent\llap{{\fontsize{13.2}{16}\selectfont\bfseries\color{inkfaint}\thesection}\hspace{9pt}}%
+  {\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\subhead}[1]{\par\addvspace{9pt plus 2pt}\Needspace{4\baselineskip}\noindent\textbf{#1}\enspace\ignorespaces}
+% where a statement lives in the Lean archive
+\newcommand{\leantag}{{\sffamily\bfseries\fontsize{6.3}{8}\selectfont\color{leancol}\addfontfeatures{LetterSpace=7}LEAN}}
+\newcommand{\sep}{\unskip\nobreak\hspace{5pt}{\color{inkfaint}\textperiodcentered}\hspace{5pt plus 2pt}\ignorespaces}
+\newcommand{\leanline}[1]{\par\nopagebreak\vspace{-2.5pt}{\fontsize{8.9}{12.4}\selectfont\color{inksoft}\raggedright
+  \noindent\llap{\leantag\hspace{9pt}}#1\par}\vspace{1pt}}
+% a displayed statement in a tinted box: #1 colour, #2 text
+\newcommand{\statement}[2]{\par\addvspace{7pt}\begingroup\setlength{\fboxsep}{8.5pt}\setlength{\fboxrule}{0.6pt}%
+  \noindent\fcolorbox{#1!30!white}{#1!3!white}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{#2}}%
+  \endgroup\par\addvspace{7pt}}
+\newcommand{\nt}[2]{\par\noindent\hangindent=1.1em\hangafter=1 #1\enspace{\color{inksoft}#2}\par\vspace{1pt}}
+\newcommand{\legdot}[1]{\tikz[baseline=-0.62ex]\fill[#1] (0,0) circle (2.5pt);\hspace{3pt}}
+\newcommand{\crow}[4]{\csname CS@#1\endcsname & #2 & \textcolor{inksoft}{#3} & \textcolor{inksoft}{#4}\\}
+\newcommand{\leanquoteline}[2]{\par\noindent\hangindent=\dimexpr#1\fontdimen2\font+2.2em\relax\hangafter=1
+  \hspace*{#1\fontdimen2\font}#2}
+\newcommand{\quoted}[1]{\par\vspace{3pt}{\ttfamily\fontsize{7.5}{10.4}\selectfont\color{leancol}\raggedright
+  \setlength{\parskip}{0pt}\leanquote{#1}\par}\vspace{4pt}}
+\newcommand{\bx}[3]{{\sffamily\bfseries\fontsize{7.3}{9.2}\selectfont\color{#1!82!black}#2}\\[1.5pt]#3}
+\newcommand{\cs}[2]{\expandafter\newcommand\csname CS@#1\endcsname{#2}}
+
+% theorems
+\newtheoremstyle{plainx}{7pt plus 2pt}{7pt plus 2pt}{\itshape}{}{\bfseries}{.}{0.5em}{}
+\newtheoremstyle{uprightx}{7pt plus 2pt}{7pt plus 2pt}{}{}{\bfseries}{.}{0.5em}{}
+\theoremstyle{plainx}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{uprightx}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{setting}[theorem]{Setting}          % hypotheses shared by several statements; each of them cites it by number
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\renewcommand{\qedsymbol}{{\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.5pt}\fbox{\rule{0pt}{0.46em}\hspace{0.46em}}}}
+% what holds throughout the note: the ambient objects only (implicit and instance arguments), never a hypothesis
+\newenvironment{conventions}{\par\addvspace{5pt}\noindent\textbf{Conventions.}\enspace\ignorespaces}{\par\addvspace{3pt}}
+\makeatletter
+\renewenvironment{proof}[1][Proof]{\par\pushQED{\qed}\normalfont\topsep0pt\partopsep0pt
+  \trivlist\item[\hskip\labelsep\itshape #1.]\ignorespaces}{\popQED\endtrivlist\@endpefalse}
+\makeatother
+
+% where each declaration of the concordance is treated: \cs{key}{place}, the place naming a \label or a lettered item
+\cs{star}{Theorem 1}
+\cs{primeBound}{Theorem 2}
+\cs{grh}{Theorem 3}
+\cs{zerosOnLine}{Theorem 4}
+\cs{zetaZerosOnLine}{Theorem 5}
+\cs{rh}{Definition~\ref{d:statements}}
+\cs{halfPlane}{Definition~\ref{d:statements}}
+\cs{strip}{Definition~\ref{d:statements}}
+\cs{params}{Definition~\ref{d:params}}
+\cs{adm}{Definition~\ref{d:data}}
+\cs{cP}{Definition~\ref{d:data}}
+\cs{None}{Definition~\ref{d:data}}
+\cs{ED}{Definition~\ref{d:data}}
+\cs{aD}{Definition~\ref{d:derived}}
+\cs{fD}{Definition~\ref{d:derived}}
+\cs{tops}{Definition~\ref{d:derived}}
+\cs{budget}{Definition~\ref{d:derived}}
+\cs{lam}{Definition~\ref{d:R}}
+\cs{entireL}{Definition~\ref{d:R}}
+\cs{R}{Definition~\ref{d:R}}
+\cs{nomW}{Definition~\ref{d:rem}}
+\cs{Ask}{Definition~\ref{d:rem}}
+\cs{chowla}{Definition~\ref{d:rem}}
+\cs{mainAsk}{Definition~\ref{d:rem}}
+\cs{rem}{Definition~\ref{d:rem}}
+\cs{rows}{Definition~\ref{d:later}}
+\cs{rowDim}{Definition~\ref{d:later}}
+\cs{Lift}{Definition~\ref{d:later}}
+\cs{covol}{Definition~\ref{d:later}}
+\cs{indexLe}{Definition~\ref{d:later}}
+\cs{hmain}{Definition~\ref{d:later}}
+\cs{familyAB}{Input 1}
+\cs{longC}{Input 2}
+\cs{crude}{Input 3}
+\cs{rowsNe}{Input 4}
+\cs{cGe}{Input 5}
+\cs{cardPlaces}{Input 5}
+\cs{cardTops}{Input 5}
+\cs{remEq}{Input 6}
+\cs{existsData}{Input 7}
+\cs{isPolar}{Definition~\ref{d:polar}}
+\cs{polarR}{Input 8}
+\cs{window}{Input 9}
+\cs{criterion}{Input 10}
+\cs{symm}{Input 11}
+\cs{heeg}{Lemma~\ref{l:params}}
+\cs{coprime}{Lemma~\ref{l:params}}
+\cs{sizeLe}{Lemma~\ref{l:sizes}}
+\newcommand{\CC}{\mathbb{C}}
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\QQ}{\mathbb{Q}}
+\newcommand{\ZZ}{\mathbb{Z}}
+\newcommand{\re}{\operatorname{Re}}
+\newcommand{\cl}[2]{\operatorname{cl}_{#1}(#2)}
+\newcommand{\thick}[1]{\mathrm{thick}(#1)}
+\newcommand{\kap}[2]{\kappa_{#1,#2}}
+\newcommand{\res}[3]{\operatorname{res}_{#1,#2}(#3)}
+\newcommand{\ord}{\operatorname{ord}}
+\newcommand{\cE}{\mathcal{E}}
+\newcommand{\hA}{h_{\mathrm{A}}}
+\newcommand{\mlib}[1]{\leavevmode{\leanfont #1}}
+\newcommand{\mrow}[2]{#1 & \mlib{#2}\\[1.5pt]}
+
+\begin{document}
+\color{ink}
+
+{\raggedright
+{\sffamily\bfseries\fontsize{7.2}{9}\selectfont\color{leancol}\addfontfeatures{LetterSpace=8}READBACK NOTE 4\par}
+\vspace{5pt}
+{\fontsize{21.5}{25.5}\selectfont\bfseries The main inequality, the bound for the primes, and the zero-free
+half-plane\par}
+\vspace{5pt}
+{\fontsize{12.4}{16}\selectfont\itshape\color{inksoft} One unit of the Lean artifact \ArtifactName, read back into
+mathematics\par}}
+\vspace{8pt}
+{\color{rulegrey}\hrule height 0.6pt}
+\vspace{7pt}
+\thispagestyle{empty}
+
+\textbf{Summary.} This unit is the top of the argument. Its first result, the main inequality, bounds a
+remainder of weighted sums over primes: \m{m\cdot\rem{D}\le(\log b)^2\cdot\bud{D}} for all admissible data~$D$ of
+the proof. It comes from bounding one covolume from two sides: Theorems A and~B of the argument give many
+independent automorphic forms with short theta lifts, Theorem~C says that such lifts cannot be that short, and in the comparison the main amounts cancel. Letting the data grow, with the second scale at a good point of a long
+window, one gets the one-sided bound \m{\R{d}{N_0}{x}\le x^{8\varepsilon-1/2}} for the remainder of a smoothed sum over the
+prime powers \m{\nu\equiv1} modulo~$N_0$, weighted by \m{\Lambda(\nu)\bigl(1-\chi_K(\nu)\bigr)} (Definition~\ref{d:R}); the saving \m{x^{-1/2}} is the reciprocal of the
+number~$m$ of lifts. A criterion of Landau turns this bound, for all primes~$d$ of one residue class, into the
+absence of zeros of Dirichlet $L$-functions in the half-plane \m{\re s>\tfrac12}, and the functional equations put
+the nontrivial zeros on the critical line.
+
+\statement{leancol}{\fontsize{9.6}{13.2}\selectfont\textbf{What this note is.} The artifact \ArtifactName{} is a
+body of Lean code: the compact edition of a formal proof, due to L.~Alpöge with the AI system Claude, whose final
+theorems are the Riemann hypothesis and its generalisation to Dirichlet $L$-functions. That headline is a claim.
+The authors report that every file compiles with Lean v4.35.0 against a pinned version of the library Mathlib and
+that Lean's kernel accepted the proofs; an independent build is recorded in the handout's record of checks when it
+reports. No mathematician has read the argument through, and nothing here says that the Riemann hypothesis is
+proved. This note treats one unit of the artifact: all \UnitInNote{} of its \UnitMembers{} declarations, Theorems 1
+to~5 below. Their proofs are complete \emph{given} eleven results of other units, which are stated as Inputs~1
+to~11 with the unit that owns each and are not proved here; among them are the three main theorems of the argument
+(Inputs 1 and~2) and Landau's criterion (Input~10). Every statement of the unit and of the Inputs was compared with
+its Lean text, argument by argument. The Lean text read is \PinText; Appendix~A is the concordance of \ConcDecls{}
+declarations.}
+
+\sect{The statements}{s:intro}
+The objects in the five theorems are defined in §\ref{s:setting}: parameters and admissible data in
+Definitions \ref{d:params} to~\ref{d:derived}, the remainders $\R{d}{M}{x}$ and $\rem{D}$ in
+Definitions \ref{d:R} and~\ref{d:rem}, the three statements in Definition~\ref{d:statements}.
+
+\statement{arith}{\phantomsection\label{t:1}\textbf{Theorem 1} (the main inequality).\enspace
+\emph{Let $P$ be parameters and $D$ admissible data for~$P$, with number of lifts~$m$ and third scale~$b$. Then}
+\[
+m\cdot\rem{D}\;\le\;(\log b)^2\cdot\bud{D}.
+\]
+\emph{Here $\rem{D}$ is the remainder of the weighted prime sums of~$D$, and
+\m{\bud{D}=\fD{D}\cdot\aD{D}\cdot(\log b)^3} is its budget.}}
+\leanline{\lean{star}}
+
+\statement{arith}{\phantomsection\label{t:2}\textbf{Theorem 2} (the bound for the primes).\enspace
+\emph{Let \m{P=(N_0,d)} be parameters and $\varepsilon$ a real number with \m{0<\varepsilon/6} and
+\m{\varepsilon<\tfrac1{100}}. Then for every sufficiently large real number~$x$,}
+\[
+\R{d}{N_0}{x}\;\le\;x^{\,8\varepsilon+\frac12-1}.
+\]}
+\leanline{\lean{primeBound}}
+
+\statement{arith}{\phantomsection\label{t:3}\textbf{Theorem 3} (the zero-free half-plane).\enspace
+\emph{The half-plane statement holds: for every integer \m{M\ge1}, every Dirichlet character~$\chi$ modulo~$M$ and
+every complex number~$s$ with \m{\re s>\tfrac12}, if $\chi$ is not the principal character modulo~$M$ or
+\m{s\ne1}, then \m{L(s,\chi)\ne0}.}
+
+\vspace{4pt}\phantomsection\label{t:4}\textbf{Theorem 4} (from the half-plane to the strip).\enspace
+\emph{If the half-plane statement holds, then the strip statement holds: for every integer \m{M\ge1}, every
+Dirichlet character~$\chi$ modulo~$M$ and every complex number~$s$ with \m{0<\re s}, \m{\re s<1} and
+\m{L(s,\chi)=0}, one has \m{\re s=\tfrac12}.}
+
+\vspace{4pt}\phantomsection\label{t:5}\textbf{Theorem 5} (from the half-plane to $\zeta$).\enspace
+\emph{If the half-plane statement holds, then the Riemann hypothesis for~$\zeta$ holds: every complex number~$s$
+with \m{\zeta(s)=0}, such that there is no natural number~$n$ with \m{s=-2(n+1)}, and with \m{s\ne1}, has
+\m{\re s=\tfrac12}.}}
+\leanline{\lean{grh}\sep \lean{zerosOnLine}\sep \lean{zetaZerosOnLine}}
+
+Theorem~3 is the main theorem of the artifact. Theorems 3, 4 and~5 together give the five final theorems, which are
+the subject of the note \emph{The five final theorems, and what one must trust}.
+
+\subhead{The plan of the proof.} The argument attaches to the data~$D$ a finite-dimensional space of automorphic
+forms, the \emph{rows}, and a linear map on it, the composite of $m$ theta lifts. Theorems A and~B of the
+argument, taken together (Input~1), give linearly independent rows that almost span, have small index with respect
+to the integral structures, and have short lifts: the squared covolume of the lifts is at most
+\m{\exp\bigl(n\,(\hmain{D}-m\cdot\rem{D}+\text{error})\bigr)} at every conjugate, where $n$ is the number of the
+rows and $\hmain{D}$ is the main amount. Theorem~C (Input~2) is a bound in the other direction, a consequence of the
+product formula: integral forms are long. If the squared covolumes of the lifts of such rows are at most
+\m{\exp(V)} at every conjugate, then $V$, plus twice a bound for the index, is at least
+\m{\rowDim{D}\cdot(\hmain{D}-\text{error})}. The two bounds can hold together only if \m{m\cdot\rem{D}} is at most
+the sum of the errors. This is Theorem~1, and it is all that the rest of the argument
+needs from the automorphic side.
+
+The remainder $\rem{D}$ is a combination of remainders of weighted prime sums at the first two scales of the
+data (Input~6). For large~$x$ there are data with first scale~$x$ (Input~7), and the second scale can be moved to a
+point where the unwanted values are negligible (Input~9). Then Theorem~1, divided by~$m$ and by the other
+positive factors, is Theorem~2. Landau's criterion (Input~10) gives Theorem~3, and the functional equations give
+Theorems 4 and~5.
+
+\sect{The setting}{s:setting}
+\begin{conventions}\phantomsection\label{c:conventions}
+The natural numbers are \m{0,1,2,\dots}; $\re s$ is the real part of a complex number~$s$; $\log$ is the natural
+logarithm, and powers of positive real numbers with real exponents are defined through it; $\varphi$ is Euler's
+function and $\Lambda$ von Mangoldt's function. A statement holds \kw{for every sufficiently large} real number
+if there is a real number such that it holds for every real number at least as large. The Riemann zeta
+function~$\zeta$, Dirichlet characters and their $L$-functions \m{L(s,\chi)} are those of Mathlib, the mathematical
+library of Lean, at the commit that the artifact pins; the note \emph{The four statements: the Riemann hypothesis
+and its generalisation to Dirichlet $L$-functions} says what determines them. A modulus is an integer \m{M\ge1}.
+Parameters are called~$P$ and admissible data for~$P$ are called~$D$; a statement about~$D$ is a statement for
+every~$P$ and all such~$D$, and the components of $P$ and of~$D$ are named where they are used.
+\end{conventions}
+
+\subhead{The three statements.}
+\begin{definition}[three propositions]\label{d:statements}
+\textup{(1)} The \kw{Riemann hypothesis for $\zeta$}: for every complex number~$s$, if \m{\zeta(s)=0}, if there
+is no natural number~$n$ with \m{s=-2(n+1)}, and if \m{s\ne1}, then \m{\re s=\tfrac12}.
+\textup{(2)} The \kw{half-plane statement}: for every integer \m{M\ge1}, every Dirichlet character~$\chi$ modulo~$M$
+and every complex number~$s$ with \m{\re s>\tfrac12}, if $\chi$ is not the principal character modulo~$M$ or
+\m{s\ne1}, then \m{L(s,\chi)\ne0}.
+\textup{(3)} The \kw{strip statement}: for every integer \m{M\ge1}, every Dirichlet character~$\chi$ modulo~$M$ and
+every complex number~$s$, if \m{0<\re s}, \m{\re s<1} and \m{L(s,\chi)=0}, then \m{\re s=\tfrac12}.
+\end{definition}
+\leanline{\lean{rh}\sep \lean{halfPlane}\sep \lean{strip}\sep another unit; see the note \emph{The four statements}}
+
+\subhead{Parameters and data.}
+\begin{definition}[parameters]\label{d:params}
+\kw{Parameters} are a pair \m{P=(N_0,d)} of natural numbers such that $18480$ divides~$N_0$, $d$ is a prime number,
+$N_0$ divides \m{2(d+1)}, and $N_0$ does not divide \m{d+1}. For parameters \m{P=(N_0,d)} we write
+\m{K=\QQ(\sqrt{-d})}, a subfield of~$\CC$, and $\chi_K$ for the quadratic character of the field \m{\ZZ/d}, a
+Dirichlet character modulo~$d$; it is the Legendre symbol \m{(\,\cdot\,/d)} when $d$ is odd, as it is for all
+parameters (Lemma~\ref{l:params}).
+\end{definition}
+\leanline{\lean{params}\sep unit 152}
+
+The last two conditions say that \m{d\equiv N_0/2-1} modulo~$N_0$; they force \m{N_0\ge1}. Since
+\m{18480=2^4\cdot3\cdot5\cdot7\cdot11}, one has \m{d\equiv7} modulo~$8$ (Lemma~\ref{l:params}); so $K$ is an
+imaginary quadratic field in which $2$ splits, and $\chi_K$ is its quadratic character.
+
+\begin{definition}[admissible data]\label{d:data}
+Let \m{P=(N_0,d)} be parameters. The artifact attaches to~$P$ a real number~$\cP{P}$, of which this note uses only
+Input~5. \kw{Admissible data for~$P$} are a record~$D$ with the following components.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item Three real numbers \m{\log x}, \m{\log x_1} and \m{\log b}. Their exponentials $x$, $x_1$ and~$b$ are the
+first, second and third \kw{scale} of~$D$.
+\item Two natural numbers: $m$, the \kw{number of lifts}, and $r$, a rank. By condition~(ii) below, $m$ is a power
+of~$2$; put
+\[
+\None{D}=N_0\cdot m^{22}\cdot3^{\lfloor\log_3(22\log_2m)\rfloor+5},
+\]
+and let $\ED{D}$ be the field generated over~$K$ by the roots of unity of order~$\None{D}$.
+\item A finite set $\thick{D}$ of infinite places of the field~$\ED{D}$, the \kw{thick} places.
+\item Two prime numbers and an element of the ring of integers of~$K$.
+\end{enumerate}
+They are subject to the following conditions.
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=2pt]
+\item \emph{The scales.}
+\[
+\begin{gathered}
+10^{12}\,\cP{P}\le\log\log b,\qquad 100\,\log\log b\le\log x,\qquad 10^{6}\,\log x\le\log x_1,\\
+10^{6}\,\log x_1\le\log b,\qquad 6\,\log\log x_1\le\log\log b.
+\end{gathered}
+\]
+\item \emph{The number of lifts and the rank.} $m$ is a power of~$2$ with exponent at least~$1$,
+\m{\sqrt{x}\le m\le2\sqrt{x}} and \m{22\log_2m\le32\log x}; $r$ is a power of~$3$ with exponent at least~$1$, and
+\m{x^{5}\le r\le3\,x^{5}}.
+\item \emph{Further conditions,} on the classes of the thick places (a congruence, and the absence of certain
+relations between three of them), on the two primes and the integer of~(d) (the primes are distinct, satisfy
+congruences and lie between $b^{10}$ and~$b^{11}$, and the norm of the integer is their product), and the existence
+of primes in certain short intervals.
+\end{enumerate}
+The conditions~(iii) are stated in full in the note on the data of the proof. In this note they matter only through
+the Inputs, and through one fact that was checked in the Lean text: \m{\log x_1} occurs in the conditions~(i) and
+nowhere else.
+\end{definition}
+\leanline{\lean{adm}\sep \lean{cP}\sep \lean{None}\sep \lean{ED}\sep unit 152}
+
+The conditions~(i) put the scales far apart, \m{(\log b)^{100}\le x}, \m{x^{10^6}\le x_1}, \m{x_1^{10^6}\le b},
+and make all of them very large (Lemma~\ref{l:sizes}). The number $\None{D}$ and the field $\ED{D}$ depend only
+on $P$ and~$m$. The formal record has one more component, a natural number called the exponent, which a condition
+makes equal to \m{22\log_2m}; this note does not give it a letter (§\ref{s:notes}, note~3). In the formal text the
+quotient \m{\None{D}/N_0} is the degree of a tower of fields, a function of the exponent.
+
+\begin{definition}[quantities derived from the data]\label{d:derived}
+Let \m{P=(N_0,d)} be parameters and $D$ admissible data for~$P$, with scales $x$, $x_1$,~$b$.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item Every infinite place of~$\ED{D}$ is the place of exactly one embedding \m{\ED{D}\to\CC} that is the identity
+on~$K$. The Galois group of $\ED{D}$ over~$K$ permutes these embeddings simply transitively, and its action on the
+roots of unity identifies it with \m{(\ZZ/\None{D})^{\times}}. (Restriction to the field generated over~$\QQ$ by these roots of unity is an isomorphism onto the Galois group
+of that field over~$\QQ$, because the quadratic field~$K$ is not contained in it: the prime~$d$ ramifies in~$K$,
+and it does not ramify in a field of roots of unity of order prime to~$d$. And $d$ is prime to~$\None{D}$: it is
+prime to~$N_0$ by Lemma~\ref{l:params}, and $\None{D}$ has the same prime divisors as~$N_0$, since $m$ is a power
+of~$2$ and $6$ divides~$N_0$.) The artifact chooses one of the embeddings once.
+Each infinite place~$\tau$ of~$\ED{D}$ then has a \kw{class} \m{\cl{D}{\tau}\in(\ZZ/\None{D})^{\times}}, the chosen
+embedding has class~$1$, and \m{\tau\mapsto\cl{D}{\tau}} is a bijection. For an integer~$\nu$ prime to~$\None{D}$,
+\m{\nu\cdot\tau} is the place whose class is $\nu$ times that of~$\tau$; for the other integers~$\nu$ we put
+\m{\nu\cdot\tau=\tau}.
+\item $\tops{D}$, the set of \kw{tops}, is the set of the infinite places~$\tau$ of~$\ED{D}$ whose class
+\m{\cl{D}{\tau}} is congruent to~$1$ modulo~$N_0$.
+\item $\fD{D}$ is the number of infinite places of the field~$\ED{D}$.
+\item $\aD{D}$ is the least multiple of~$\None{D}$ that is at least \m{x\,b}; it is a natural number.
+\item \m{\bud{D}=\fD{D}\cdot\aD{D}\cdot(\log b)^{3}} is the \kw{budget}.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{tops}\sep \lean{fD}\sep \lean{aD}\sep \lean{budget}\sep unit 152}
+
+\subhead{The weighted prime sums.}
+\begin{definition}[the weight, and the remainder of the prime sum]\label{d:R}
+Let $d$ be a prime number and \m{M\ge1} an integer; \m{K=\QQ(\sqrt{-d})}, and $\chi_K$ is the quadratic
+character of the field \m{\ZZ/d}, a Dirichlet character modulo~$d$ (the Legendre symbol \m{(\,\cdot\,/d)} when $d$
+is odd).
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item For a natural number~$\nu$ put \m{\lam{d}{M}{\nu}=\Lambda(\nu)\bigl(1-\chi_K(\nu)\bigr)} if \m{\nu\equiv1}
+modulo~$M$, and \m{\lam{d}{M}{\nu}=0} otherwise.
+\item For a Dirichlet character~$\chi$ modulo an integer \m{M\ge1}, let \m{s\mapsto\entireLs{\chi}} be the
+following entire function: \m{\entireLs{\chi}=L(s,\chi)} if $\chi$ is not principal; if $\chi$ is principal,
+\m{\entireLs{\chi}=(s-1)L(s,\chi)} for \m{s\ne1}, and \m{\entireLone{\chi}=\prod_{p\mid M}(1-p^{-1})}, the
+product over the primes~$p$ dividing~$M$.
+\item Put
+\[
+\kap{d}{M}=\frac1{\varphi(M)}\,\re\Bigl(\sum_{\xi}\Bigl(\frac{\tilde L'}{\tilde L}(1,\xi\chi_K)
+-\frac{\tilde L'}{\tilde L}(1,\xi)\Bigr)-1\Bigr),
+\]
+where $\xi$ runs over the Dirichlet characters modulo~$M$, \m{\xi\chi_K} is the character modulo~$Md$ with the
+values \m{\xi(\nu)\chi_K(\nu)}, and \m{\frac{\tilde L'}{\tilde L}(s,\chi)} is the logarithmic derivative of
+\m{s\mapsto\entireLs{\chi}}.
+\item For a real number \m{x>0} put
+\[
+\R{d}{M}{x}=\sum_{1\le\nu\le x}\lam{d}{M}{\nu}\Bigl(\frac1\nu-\frac1x\Bigr)-\frac{\log x}{\varphi(M)}-\kap{d}{M}.
+\]
+\end{enumerate}
+\end{definition}
+\leanline{\lean{lam}\sep \lean{R}\sep unit 151\sep \lean{entireL}\sep unit 106, background}
+
+The weight $\lam{d}{M}{\nu}$ is never negative, and it vanishes unless $\nu$ is a power of a prime~$p$ with
+\m{\chi_K(p)\ne1}; when \m{d\equiv3} modulo~$4$, as for every prime~$d$ to which the theorems below are applied, these
+are the primes that do not split in~$K$. The sum in~(d) is a smoothed count of such prime powers in the class of~$1$ modulo~$M$; the term
+\m{\log x/\varphi(M)+\kap{d}{M}} is its expected value, and $\R{d}{M}{x}$ is the \kw{remainder}. That it tends
+to~$0$ is a form of the prime number theorem in progressions; under the generalised Riemann hypothesis it is
+bounded by a constant times \m{x^{-1/2}}, by the explicit formula, and Theorem~2 is an upper bound of nearly this
+strength.
+
+\begin{definition}[the remainder of the data]\label{d:rem}
+Let \m{P=(N_0,d)} be parameters and $D$ admissible data for~$P$, with scales $x$, $x_1$,~$b$; in this definition
+$\tau$ is an infinite place of~$\ED{D}$.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item The \kw{nominal weight} of~$\tau$ is \m{\nomW{D}{\tau}=\aD{D}/x} if \m{\tau\in\thick{D}}, and
+\m{\nomW{D}{\tau}=\aD{D}/x_1} otherwise.
+\item For a real number~$z$,
+\[
+\Ask{D}{z}{\tau}=\sum_{\nu=1}^{\aD{D}}\lam{d}{1}{\nu}\,\Bigl(\frac{z}{\nu}-\nomW{D}{(-\nu)\cdot\tau}\Bigr)_{\!+},
+\]
+where \m{(\,\cdot\,)_{+}} is the positive part of a real number.
+\item For the prime number~$d$, \m{\chowla{d}} is Euler's constant minus the real part of the logarithmic
+derivative of \m{s\mapsto\entireLs{\chi_K}} at \m{s=1}. Here $\chi_K$ is not principal, so this is the real part of
+\m{(L'/L)(1,\chi_K)}.
+\item \m{\mainAsk{D}=\aD{D}\cdot\bigl(\log\aD{D}-1-\chowla{d}-\fD{D}^{-1}\sum_{\tau'}\log\nomW{D}{\tau'}\bigr)},
+where $\tau'$ runs over all infinite places of~$\ED{D}$; it is the \kw{expected value} of the sums in~(b) for
+\m{z=\aD{D}}.
+\item The \kw{remainder} of~$D$ is
+\[
+\rem{D}=\sum_{\tau\in\tops{D}}\bigl(\Ask{D}{\aD{D}}{\tau}-\mainAsk{D}\bigr).
+\]
+\end{enumerate}
+\end{definition}
+\leanline{\lean{nomW}\sep \lean{Ask}\sep unit 152\sep \lean{mainAsk}\sep \lean{rem}\sep unit 151\sep
+\lean{chowla}\sep unit 106, background}
+
+So $\rem{D}$ compares weighted prime sums at the tops with their expected value. A lemma of unit~151 shows that
+\m{-1-\chowla{d}=\kap{d}{1}}; the overview of this handout writes the expected value with~$\kap{d}{1}$. Input~6
+expresses $\rem{D}$ through the remainders of Definition~\ref{d:R}, and nothing else about
+Definition~\ref{d:rem} is used in this note.
+
+\subhead{Notions of later chapters.} Theorem~1 mentions none of the following notions, but its proof passes
+through them. They are named here with all their arguments; their constructions belong to later chapters and are
+not needed, because the proof only uses that the conclusion of Input~1 fits the hypothesis of Input~2.
+
+\begin{definition}[rows, lifts, covolume, index, main amount]\label{d:later}
+Let $P$ be parameters and $D$ admissible data for~$P$, with number of lifts~$m$ and rank~$r$.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item $\rows{D}$ is a complex vector space, the space of \kw{rows}: certain cusp forms on a unitary group of
+rank~$r$ attached to the field~$\ED{D}$. Its dimension over~$\CC$ is \m{\rowDim{D}}; in the library the dimension
+of a space that is not finite-dimensional is~$0$.
+\item The data have \kw{$m$-fold twists}~$\vartheta$: certain characters, defined in later chapters, each with a
+finite set of primes of~$\ED{D}$ at which it ramifies. Among them is the trivial twist~$1$, which ramifies at no
+prime. For an $m$-fold twist~$\vartheta$, \m{\Lift{D}{\vartheta}} is a $\CC$-linear map from $\rows{D}$ to a space
+of algebraic modular forms: the composite of $m$ theta lifts, formed with the first $m$ powers of~$\vartheta$,
+restricted to the rows.
+\item A space of algebraic modular forms of the kind in~(b) is given by a CM field, a rank, a set of level places,
+a level subgroup with a character of it, and weights at the infinite places. For forms \m{F_1,\dots,F_n} in one
+such space and an automorphism~$\sigma$ of the field~$\CC$, the \kw{squared covolume}
+\m{\covol{F_1,\dots,F_n}{\sigma}} is the absolute value of the determinant of the matrix of the pairings of the
+$\sigma$-conjugates of \m{F_1,\dots,F_n}; it is a real number \m{\ge0}.
+\item For a natural number~$n$, rows \m{y_1,\dots,y_n} in~$\rows{D}$ and a real number~$\delta$, the relation
+\m{\indexLe{D}{y_1,\dots,y_n}{\delta}} means: there are real numbers~$\eta_\ell$, one for each natural
+number~$\ell$, with \m{\sum_{\ell\in J}\eta_\ell\le\delta} for every finite set~$J$ of natural numbers, such that
+for every prime number~$\ell$, every $\ell$-adic place of~$\CC$ and every $m$-fold twist~$\vartheta$ to which
+$\ell$ is prime (that is, $\ell$ is prime to the norms of the primes at which $\vartheta$ ramifies), some
+\m{n\times n} matrix over the valuation ring of that place, with determinant of absolute value at least
+\m{\exp(-\eta_\ell)}, transforms \m{y_1,\dots,y_n} into rows all of whose images under \m{\Lift{D}{\vartheta}} are
+integral at that place.
+\item $\hmain{D}$ is a real number, the \kw{main amount}: the product of $m$, of the rank \m{r+1-m}, and of a
+real number called the cost of one direction, which is defined from the weights and the prime sums of~$D$.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{rows}\sep \lean{rowDim}\sep unit 140\sep \lean{Lift}\sep unit 143\sep \lean{covol}\sep unit 102,
+background\sep \lean{indexLe}\sep \lean{hmain}\sep unit 151}
+
+\sect{The main inequality}{s:star}
+The proof compares two bounds for one quantity. For rows \m{y_1,\dots,y_n} as in Input~1 below, let $V$ be the
+logarithm of a bound for the squared covolumes of their lifts at all automorphisms of~$\CC$, and $\delta$ a bound
+for their index. Input~1 bounds \m{V+2\delta} from above, Input~2 bounds it from below, and up to errors that are
+multiples of the budget,
+\[
+\hmain{D}\;\le\;\frac{V+2\delta}{\rowDim{D}}\;\le\;\hmain{D}-m\cdot\rem{D}.
+\]
+The inequality between the two ends is Theorem~1. This display is a guide only; it stands in a comment at the head
+of the file of the unit, in which the authors also list the inputs and the sizes of the errors. The proof follows
+the Inputs.
+
+\statement{inksoft}{\textbf{Inputs from other units.} The following results are taken for granted. They are stated
+as the dossier of this unit reads them, and each was compared with its Lean text.
+
+\vspace{4pt}\phantomsection\label{i:1}\textbf{Input 1} (Theorems A and B together; unit 151).\enspace
+\emph{Let $P$ be parameters and $D$ admissible data for~$P$, with number of lifts~$m$ and third scale~$b$. Then
+there are a natural number~$n$ and rows \m{y_1,\dots,y_n} in~$\rows{D}$ such that: \m{y_1,\dots,y_n} are linearly
+independent over~$\CC$; \m{(1-4/b^{2})\cdot\rowDim{D}\le n}; there is a real number~$\delta$ with
+\m{\delta\le5\cdot\rowDim{D}\cdot\log(1+b^{2})\cdot\bud{D}} such that \m{\indexLe{D}{y_1,\dots,y_n}{\delta}}; and
+for every automorphism~$\sigma$ of~$\CC$,}
+\[
+\covol{\Lift{D}{1}y_1,\dots,\Lift{D}{1}y_n}{\sigma}\;\le\;\exp\bigl(n\cdot(\hmain{D}-m\cdot\rem{D}+\log b\cdot\bud{D})\bigr).
+\]
+
+\vspace{4pt}\phantomsection\label{i:2}\textbf{Input 2} (Theorem C: integral forms are long; unit 151).\enspace
+\emph{Let $P$ be parameters, $D$ admissible data for~$P$ with third scale~$b$, $n$ a natural number,
+\m{y_1,\dots,y_n} rows in~$\rows{D}$, and $\delta$ and~$V$ real numbers. Assume that \m{y_1,\dots,y_n} are linearly
+independent over~$\CC$, that \m{(1-4/b^{2})\cdot\rowDim{D}\le n}, that \m{\indexLe{D}{y_1,\dots,y_n}{\delta}}, and
+that \m{\covol{\Lift{D}{1}y_1,\dots,\Lift{D}{1}y_n}{\sigma}\le\exp(V)} for every automorphism~$\sigma$ of~$\CC$.
+Then}
+\[
+\rowDim{D}\cdot\bigl(\hmain{D}-3\cdot\log b\cdot\bud{D}\bigr)\;\le\;V+2\delta.
+\]}
+\leanline{\lean{familyAB}\sep \lean{longC}}
+
+In the words of the argument, Input~1 puts together Theorem~A (short forms: there are integral forms whose lifts
+are short, with a bound for the index) and Theorem~B (enough forms: few translates of them almost span the rows).
+Input~2 is Theorem~C. Three smaller inputs are needed as well.
+
+\statement{inksoft}{\phantomsection\label{i:3}\textbf{Input 3} (a crude bound; unit 151).\enspace
+\emph{Let $P$ be parameters and $D$ admissible data for~$P$, with number of lifts~$m$ and scales $x$ and~$b$. Then
+\m{|\hmain{D}|+m\cdot|\rem{D}|\le b^{2}\cdot x^{99}}.}
+
+\vspace{4pt}\phantomsection\label{i:4}\textbf{Input 4} (there are rows; unit 148).\enspace
+\emph{Let $P$ be parameters and $D$ admissible data for~$P$. Then \m{\rowDim{D}\ne0}; in particular $\rows{D}$ has
+finite dimension.}
+
+\vspace{4pt}\phantomsection\label{i:5}\textbf{Input 5} (the constant and the places; unit 152).\enspace
+\emph{Let \m{P=(N_0,d)} be parameters. Then \m{64\le\cP{P}}, \m{N_0\le\cP{P}}, \m{d\le\cP{P}} and
+\m{\varphi(N_0)\le\cP{P}}. Let moreover $D$ be admissible data for~$P$. Then $N_0$ divides~$\None{D}$,}
+\[
+\fD{D}=\frac{\None{D}}{N_0}\cdot\varphi(N_0)\qquad\text{\emph{and}}\qquad\#\tops{D}=\frac{\None{D}}{N_0}.
+\]
+\emph{The formal text states the two equations for every exponent of the tower; they are used here for the
+exponent of~$D$.}}
+\leanline{\lean{crude}\sep \lean{rowsNe}\sep \lean{cGe}\sep \lean{cardPlaces}\sep \lean{cardTops}}
+
+\begin{lemma}[sizes]\label{l:sizes}
+Let \m{P=(N_0,d)} be parameters and $D$ admissible data for~$P$, with scales $x$, $x_1$,~$b$. Then
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item \m{\log b\ge10^{6}\log x_1\ge10^{12}\log x}, \m{\log x\ge100\log\log b\ge10^{14}\,\cP{P}} and
+\m{\cP{P}\ge64}; in particular \m{x\ge2}, \m{\log b\ge35}, \m{x^{99}\le b} and \m{\log b\le x^{1/100}};
+\item \m{\aD{D}\ge x\,b}, \m{\fD{D}\ge1}, and \m{\bud{D}\ge b\,(\log b)^{3}>0};
+\item \m{4\cdot\log b\cdot\bud{D}+4\,x^{99}+10\cdot\log(1+b^{2})\cdot\bud{D}\;\le\;(\log b)^{2}\cdot\bud{D}}.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) The four inequalities between the logarithms are conditions~(i) of Definition~\ref{d:data}, and
+\m{\cP{P}\ge64} is in Input~5. Hence \m{\log x\ge64\cdot10^{14}}, which gives \m{x\ge2}; then
+\m{\log b\ge10^{12}\log x\ge35}; \m{99\log x\le10^{12}\log x\le\log b} gives \m{x^{99}\le b}; and
+\m{100\log\log b\le\log x} gives \m{\log b\le x^{1/100}}.
+
+(b) The first inequality is the definition of~$\aD{D}$. A number field has an infinite place, so \m{\fD{D}\ge1}.
+With \m{x\ge1} this gives \m{\bud{D}=\fD{D}\cdot\aD{D}\cdot(\log b)^{3}\ge b\,(\log b)^{3}}, which is positive
+by~(a).
+
+(c) By (a) and~(b), $4x^{99}\le4b\le b\,(\log b)^{3}\le\bud{D}$. As \m{b\ge1} and \m{\log b\ge\log2}, also
+$\log(1+b^{2})\le\log(2b^{2})\le3\log b$. So the left side of~(c) is at most
+\[
+(4\log b+1+30\log b)\cdot\bud{D}\;\le\;35\,\log b\cdot\bud{D},
+\]
+and \m{35\le\log b}.
+\end{proof}
+\leanline{in the formal text these comparisons are made by a calculus of sizes of unit 152, \lean{sizeLe}; see
+§\ref{s:notes}, note~5}
+
+\begin{proof}[Proof of Theorem 1]
+Let $n$, \m{y_1,\dots,y_n} and~$\delta$ be as in Input~1, and put
+\[
+\hA{}=\hmain{D}-m\cdot\rem{D}+\log b\cdot\bud{D}.
+\]
+The last property in Input~1 says that the squared covolumes of \m{\Lift{D}{1}y_1,\dots,\Lift{D}{1}y_n} are at most
+\m{\exp(n\,\hA{})}. So Input~2 applies to $n$, \m{y_1,\dots,y_n}, $\delta$ and \m{V=n\,\hA{}}, and gives
+\begin{equation}\label{e:both}
+\begin{aligned}
+&\rowDim{D}\cdot\bigl(\hmain{D}-3\cdot\log b\cdot\bud{D}\bigr)\;\le\;n\,\hA{}+2\delta\\
+&\qquad=\;\rowDim{D}\cdot\hA{}+\bigl(\rowDim{D}-n\bigr)\cdot(-\hA{})+2\delta .
+\end{aligned}
+\end{equation}
+The two bounds are compared on families of different sizes, $n$ and $\rowDim{D}$, and the middle term on the
+right pays for the difference. It is small for the following reasons. By Input~4 the space of rows has finite
+dimension, so the linearly independent rows \m{y_1,\dots,y_n} are at most $\rowDim{D}$ in number, and with the
+second property in Input~1,
+\[
+0\;\le\;\rowDim{D}-n\;\le\;\frac{4}{b^{2}}\cdot\rowDim{D}.
+\]
+By Lemma~\ref{l:sizes}(b), \m{\log b\cdot\bud{D}>0}. With Input~3 and \m{m\ge0},
+\[
+-\hA{}=-\hmain{D}+m\cdot\rem{D}-\log b\cdot\bud{D}\;\le\;|\hmain{D}|+m\cdot|\rem{D}|\;\le\;b^{2}\,x^{99}.
+\]
+Hence \m{(\rowDim{D}-n)\cdot(-\hA{})\le4\,x^{99}\cdot\rowDim{D}}. The bound for~$\delta$ in Input~1 gives
+\m{2\delta\le10\cdot\log(1+b^{2})\cdot\bud{D}\cdot\rowDim{D}}. Putting these into~\eqref{e:both},
+\[
+\hmain{D}-3\cdot\log b\cdot\bud{D}\;\le\;\hA{}+4\,x^{99}+10\cdot\log(1+b^{2})\cdot\bud{D},
+\]
+after division by \m{\rowDim{D}}, which is positive by Input~4.
+Inserting the definition of~$\hA{}$, the main amount $\hmain{D}$ cancels, and
+\[
+\begin{aligned}
+m\cdot\rem{D}\;&\le\;4\cdot\log b\cdot\bud{D}+4\,x^{99}+10\cdot\log(1+b^{2})\cdot\bud{D}\\
+&\le\;(\log b)^{2}\cdot\bud{D},
+\end{aligned}
+\]
+the last step by Lemma~\ref{l:sizes}(c).
+\end{proof}
+\leanline{\lean{star}}
+
+The three terms of the error have separate sources: \m{4\cdot\log b\cdot\bud{D}} is the error of length in Input~1
+and the error of covolume in Input~2, \m{4x^{99}} pays for the dimensions that the rows do not span, and the last
+term is the index. All three are far below \m{(\log b)^{2}\cdot\bud{D}}; the exponents $99$ and~$2$ are slack.
+
+\sect{The bound for the primes}{s:primes}
+\begin{definition}[polar functions]\label{d:polar}
+Let \m{\cE\colon\RR\to\RR} and \m{\omega\colon\CC\to\CC} be functions. We say that
+\polarWords{\cE}{\omega}, and write \m{\polar{\cE}{\omega}}, if $\cE$ is measurable and there is a function
+\m{\Phi\colon\CC\to\CC}, meromorphic on~$\CC$ and defined at every point (at a pole its value is arbitrary), such
+that:
+the function \m{v\mapsto|\cE{}(v)|\exp(-v)} is bounded on \m{v\ge0};
+\m{\Phi(s)=\int_0^{\infty}\cE{}(v)\exp((1-s)v)\,dv} for \m{\re s>2};
+the function \m{s\mapsto(s-1)\Phi(s)}, whose value at \m{s=1} is~$0$ whatever $\Phi(1)$ is, is analytic at every
+point of the closed half-plane \m{\re s\ge1}; and for every complex number~$\rho$ with \m{\re\rho>0},
+\m{(s-\rho)\Phi(s)\to\omega(\rho)} as \m{s\to\rho}, \m{s\ne\rho}.
+\end{definition}
+\leanline{\lean{isPolar}\sep unit 107, background}
+
+So $\Phi$ continues the Laplace transform of~$\cE$. The third condition is to be read with its clause on the value
+at~$1$: it says that $\Phi$ is analytic at every point \m{s\ne1} of \m{\re s\ge1}, and that near \m{s=1} it is the
+quotient by \m{s-1} of an analytic function that vanishes at~$1$. So the singularity at~$1$ is removable, $\Phi$
+has no pole on \m{\re s\ge1}, and \m{\omega(\rho)=0} for \m{\re\rho\ge1}. The clause cannot be dropped. Without
+it the constant function~$1$, whose transform is \m{1/(s-1)}, would be polar, and Input~9 below would be false
+for the constant functions $1$ and~$0$: it would give \m{1\le\exp(-v_0)} for large~$v_0$. In the half-plane
+\m{\re s>0} the poles of $\Phi$ are at most simple, with residue~$\omega(\rho)$ at~$\rho$. The definition, with a
+remark that derives these consequences, is also in Chapter~II of this handout, the note \emph{From a one-sided
+bound for primes to a zero-free half-plane}, in the same letters.
+
+\statement{inksoft}{\textbf{Inputs from other units.}
+
+\vspace{4pt}\phantomsection\label{i:6}\textbf{Input 6} (the remainder of the data, through the remainders of the prime sums; unit 151).\enspace
+\emph{Let \m{P=(N_0,d)} be parameters and $D$ admissible data for~$P$, with first scale~$x$ and second
+scale~$x_1$. Then}
+\[
+\rem{D}=\aD{D}\cdot\Bigl(\#\thick{D}\cdot\bigl(\R{d}{N_0}{x}-\R{d}{N_0}{x_1}\bigr)
++\#\tops{D}\cdot\R{d}{1}{x_1}\Bigr).
+\]
+
+\vspace{4pt}\phantomsection\label{i:7}\textbf{Input 7} (data exist; unit 152).\enspace
+\emph{Let \m{P=(N_0,d)} be parameters and $\varepsilon$ a real number with \m{0<\varepsilon/6} and
+\m{\varepsilon<\tfrac1{100}}. Then for every sufficiently large real number~$x$ there are admissible data~$D$
+for~$P$ with first scale~$x$, whose second scale~$x_1$ and third scale~$b$ satisfy}
+\[
+\begin{gathered}
+\log x_1=x^{\varepsilon/6},\qquad (10^{6}\log x)^{2}\le\log x_1,\\
+\log\log b=\varepsilon\log x,\qquad \frac{\None{D}/N_0}{\log b}\le\#\thick{D}.
+\end{gathered}
+\]}
+\leanline{\lean{remEq}\sep \lean{existsData}}
+
+Input~6 is where the prime sums of Definition~\ref{d:rem} become the remainders of Definition~\ref{d:R}: as
+$\tau$ runs over the tops, the places \m{(-\nu)\cdot\tau} run over the classes \m{\equiv-\nu} modulo~$N_0$, which
+contain the thick places exactly when \m{\nu\equiv1} modulo~$N_0$. So the thick places see the weight
+\m{\lam{d}{N_0}{\nu}} at the first scale, every place sees \m{\lam{d}{1}{\nu}} at the second scale, and the main
+terms are the expected values. Input~7 provides the data, and the next two inputs make it possible to move the second scale.
+
+\statement{inksoft}{\phantomsection\label{i:8}\textbf{Input 8} (the remainders are polar; unit 151).\enspace
+\emph{Let $d$ be a prime number and \m{M\ge1} an integer such that \m{d\equiv7} modulo~$8$ and $M$ is prime
+to~$d$. For a complex number \m{\rho\ne0,1} let}
+\[
+\res{d}{M}{\rho}=\frac{1}{\varphi(M)\,\rho\,(1-\rho)}\sum_{\xi}\bigl(\ord_{\rho}\entireL{\xi}
+-\ord_{\rho}\entireL{\xi\chi_K}\bigr),
+\]
+\emph{where $\xi$ runs over the Dirichlet characters modulo~$M$, \m{\xi\chi_K} is as in Definition~\ref{d:R}, and
+$\ord_{\rho}$ is the order of vanishing at~$\rho$ of an entire function that is not zero; and let
+\m{\res{d}{M}{0}=\res{d}{M}{1}=0}. Then, as a function of the real variable~$v$,
+\polarWords{v\mapsto\R{d}{M}{\exp(v)}}{\rho\mapsto\res{d}{M}{\rho}}.}
+
+\vspace{4pt}\phantomsection\label{i:9}\textbf{Input 9} (a good point in every long window; unit 151).\enspace
+\emph{Let $\cE_1$, $\cE_2$ be functions from $\RR$ to~$\RR$ and $\omega_1$, $\omega_2$ functions from $\CC$
+to~$\CC$ such that \polarWords{\cE_1}{\omega_1} and \polarWords{\cE_2}{\omega_2}. Then for every sufficiently
+large real number~$v_0$ and every real number~$X$ with \m{0\le X\le\exp(v_0)} there is a real number~$v_1$ with
+\m{v_0\le v_1\le v_0^{2}} and}
+\[
+\cE_1(v_1)-X\cdot\cE_2(v_1)\;\le\;\exp(-v_0).
+\]}
+\leanline{\lean{polarR}\sep \lean{window}}
+
+In Input~8 the formal text gives the residue function by the one formula, for every complex~$\rho$; a quotient
+by~$0$ is~$0$ in Lean, which is the value at \m{\rho=0} and \m{\rho=1} stated above. The values of the residue
+function play no role in this note, which uses only that the remainders are polar.
+
+\begin{lemma}[the parameters]\label{l:params}
+Let \m{P=(N_0,d)} be parameters. Then \m{d\equiv7} modulo~$8$, and $N_0$ is prime to~$d$.
+\end{lemma}
+\begin{proof}
+As $16$ divides $18480$, which divides~$N_0$, and $N_0$ divides \m{2(d+1)}, the number~$8$ divides \m{d+1}. Let
+$p$ be a prime that divides~$N_0$. Then $p$ divides \m{2(d+1)}. If \m{p=d}, then $d$ divides~$2$, which is
+impossible since \m{d\equiv7} modulo~$8$. Hence no prime divides both $N_0$ and~$d$.
+\end{proof}
+\leanline{\lean{heeg}\sep \lean{coprime}\sep unit 152; the proof here is direct}
+
+\begin{lemma}[moving the second scale]\label{l:move}
+Let $P$ be parameters, $D$ admissible data for~$P$ with scales $x$, $x_1$,~$b$, and $v_1$ a real number with
+\m{10^{6}\log x\le v_1\le\log x_1}. Let $D'$ be the record whose second scale is \m{\exp(v_1)} and whose other
+components are those of~$D$. Then $D'$ are admissible data for~$P$. Moreover \m{\None{D'}=\None{D}},
+\m{\ED{D'}=\ED{D}}, \m{\thick{D'}=\thick{D}}, \m{\tops{D'}=\tops{D}}, \m{\fD{D'}=\fD{D}}, \m{\aD{D'}=\aD{D}} and
+\m{\bud{D'}=\bud{D}}.
+\end{lemma}
+\begin{proof}
+Only the conditions~(i) of Definition~\ref{d:data} mention \m{\log x_1}, and of these the last three. For~$D'$
+the first of the three is the lower bound for~$v_1$. Since \m{0<v_1\le\log x_1}, the other two follow from those
+for~$D$: \m{10^{6}v_1\le10^{6}\log x_1\le\log b} and \m{6\log v_1\le6\log\log x_1\le\log\log b}. The quantities
+listed do not involve the second scale.
+\end{proof}
+
+\begin{proof}[Proof of Theorem 2]
+By Lemma~\ref{l:params}, \m{d\equiv7} modulo~$8$ and $N_0$ is prime to~$d$; also $1$ is prime to~$d$. So Input~8
+applies with \m{M=N_0} and with \m{M=1}: the functions \m{\cE_1(v)=\R{d}{N_0}{\exp(v)}} and
+\m{\cE_2(v)=\R{d}{1}{\exp(v)}} are polar, and Input~9 applies to them. Let $x$ be so large that
+Input~7 gives admissible data~$D$ for~$P$ with first scale~$x$ and the properties stated there, and that
+\m{v_0=10^{6}\log x} is large enough for the conclusion of Input~9. Let $x_1$ and~$b$ be the second and third
+scale of~$D$ and $m$ its number of lifts. We show that \m{\R{d}{N_0}{x}\le x^{8\varepsilon+\frac12-1}}.
+
+\emph{The window.} Put $X=(\None{D}/N_0)/\#\thick{D}$. The last property in Input~7, with
+\m{\None{D}/N_0\ge1} and \m{\log b>0}, shows that \m{\#\thick{D}>0} and that \m{0\le X\le\log b}. By
+Lemma~\ref{l:sizes}(a), $\log b\le x^{1/100}\le\exp(v_0)$. So Input~9 gives a real number~$v_1$ with
+\begin{equation}\label{e:window}
+v_0\le v_1\le v_0^{2}\qquad\text{and}\qquad\R{d}{N_0}{\exp(v_1)}-X\cdot\R{d}{1}{\exp(v_1)}\;\le\;\exp(-v_0)=x^{-10^{6}}.
+\end{equation}
+
+\emph{The new data.} By Input~7, \m{v_0^{2}\le\log x_1}. So \m{10^{6}\log x=v_0\le v_1\le\log x_1}, and
+Lemma~\ref{l:move} gives admissible data~$D'$ for~$P$ with second scale \m{\exp(v_1)}, which agree with~$D$ in
+the first and third scale, the number of lifts, the thick places, the tops, and in $\fD{D}$, $\aD{D}$ and the
+budget.
+
+\emph{The identity.} Input~6 for~$D'$, with \m{\#\tops{D}=\None{D}/N_0} from Input~5, reads
+\[
+\rem{D'}=\aD{D}\cdot\Bigl(\#\thick{D}\cdot\bigl(\R{d}{N_0}{x}-\R{d}{N_0}{\exp(v_1)}\bigr)
++\frac{\None{D}}{N_0}\cdot\R{d}{1}{\exp(v_1)}\Bigr).
+\]
+Solving for \m{\R{d}{N_0}{x}}, which is possible because $\aD{D}$ and $\#\thick{D}$ are positive,
+\begin{equation}\label{e:identity}
+\R{d}{N_0}{x}=\frac{m\cdot\rem{D'}}{m\cdot\aD{D}\cdot\#\thick{D}}
++\Bigl(\R{d}{N_0}{\exp(v_1)}-X\cdot\R{d}{1}{\exp(v_1)}\Bigr).
+\end{equation}
+
+\emph{The two bounds.} The bracket in~\eqref{e:identity} is at most \m{x^{-10^{6}}} by~\eqref{e:window}.
+Theorem~1 for~$D'$ gives \m{m\cdot\rem{D'}\le(\log b)^{2}\cdot\bud{D}=\fD{D}\cdot\aD{D}\cdot(\log b)^{5}}. So the
+first term of~\eqref{e:identity} is at most
+\[
+\frac{\fD{D}\cdot(\log b)^{5}}{m\cdot\#\thick{D}}
+\;\le\;\frac{\varphi(N_0)\,(\log b)^{6}}{\sqrt{x}}
+\;=\;\varphi(N_0)\,x^{6\varepsilon-\frac12},
+\]
+where the inequality uses the value $\fD{D}=(\None{D}/N_0)\cdot\varphi(N_0)$ from Input~5, the bound
+$\None{D}/N_0\le\log b\cdot\#\thick{D}$ of Input~7, and \m{m\ge\sqrt{x}}; the equality is
+\m{\log b=x^{\varepsilon}}, again from Input~7.
+
+\emph{The sizes.} By Input~5 and the conditions~(i),
+\m{\varphi(N_0)\le\cP{P}\le10^{-12}\log\log b=10^{-12}\,\varepsilon\log x}, and
+\m{\varepsilon\log x\le\tfrac12\exp(2\varepsilon\log x)=\tfrac12x^{2\varepsilon}}. So the first term is at most
+\m{\tfrac12x^{8\varepsilon-\frac12}}. As \m{x\ge2} by Lemma~\ref{l:sizes}(a) and \m{\varepsilon>0},
+\m{x^{-10^{6}}\le\tfrac12x^{8\varepsilon-\frac12}}. Therefore
+\m{\R{d}{N_0}{x}\le x^{8\varepsilon-\frac12}=x^{8\varepsilon+\frac12-1}}.
+\end{proof}
+\leanline{\lean{primeBound}}
+
+The saving \m{x^{-1/2}} comes from the division by~$m$: Theorem~1 bounds \m{m\cdot\rem{D'}}, not $\rem{D'}$, by a
+quantity of the size of the trivial bound for the remainder, and $m$ is about \m{\sqrt{x}}. The number of lifts is
+in this sense the source of the exponent~$\tfrac12$.
+
+\sect{The zero-free half-plane}{s:grh}
+\statement{inksoft}{\textbf{Input from another unit.}
+
+\vspace{4pt}\phantomsection\label{i:10}\textbf{Input 10} (the one-sided criterion, after Landau; unit 151).\enspace
+\emph{Let \m{M\ge1} be an integer, $c$ an element of \m{\ZZ/M} and $\beta$ a real number, with
+\m{\tfrac12<\beta} and $c$ a unit of the ring \m{\ZZ/M}. Assume that for every prime number~$d$ whose class
+modulo~$M$ is~$c$: \m{d\equiv7} modulo~$8$, $M$ is prime to~$d$, and \m{\R{d}{M}{x}\le x^{\beta-1}} for every
+sufficiently large real number~$x$. Then for every complex number~$\rho$ with \m{\beta<\re\rho} and every Dirichlet
+character~$\chi$ modulo~$M$, \m{\entireLrho{\chi}\ne0}.}}
+\leanline{\lean{criterion}}
+
+The criterion is read in the note on the endgame. Its proof takes one suitable prime~$d$ of the class; by Input~8
+the Laplace transform of \m{v\mapsto\R{d}{M}{\exp(v)}} has a pole at every zero of an $L$-function modulo~$M$ that
+is not cancelled by a zero of a twisted $L$-function, and Landau's theorem on integrals of functions of one sign
+excludes poles to the right of~$\beta$ once the one-sided bound holds.
+
+In the proof of Theorem~3 two facts of the library about characters are used. Let \m{M\ge1} be an integer, $\chi$
+a Dirichlet character modulo~$M$, and $M'$ a multiple of~$M$ with \m{M'\ge1}; let $\chi'$ be the character
+modulo~$M'$ induced by~$\chi$. First, $\chi'$ is principal if and only if $\chi$ is. Second, for every complex
+number~$s$ such that $\chi$ is not principal or \m{s\ne1},
+\begin{equation}\label{e:euler}
+L(s,\chi')=L(s,\chi)\cdot\prod_{p\mid M'}\bigl(1-\chi(p)\,p^{-s}\bigr),
+\end{equation}
+the product over the primes~$p$ dividing~$M'$.
+
+\begin{proof}[Proof of Theorem 3]
+Let \m{M\ge1} be an integer, $\chi$ a Dirichlet character modulo~$M$ and $s$ a complex number with
+\m{\re s>\tfrac12}, such that $\chi$ is not principal or \m{s\ne1}. Assume that \m{L(s,\chi)=0}; we derive a
+contradiction. Put
+\[
+\varepsilon=\frac{\min(\re s,1)-\tfrac12}{51},\qquad\beta=8\varepsilon+\tfrac12 .
+\]
+Then \m{0<\varepsilon\le\tfrac1{102}<\tfrac1{100}} and \m{\tfrac12<\beta}, and
+\m{\beta<\re s} because \m{8\varepsilon<\min(\re s,1)-\tfrac12}.
+
+\emph{The modulus.} Let \m{N_0=18480\,M}, and let $\chi'$ be the character modulo~$N_0$ induced by~$\chi$. Then
+\m{\entireLs{\chi'}=0}. Indeed, if $\chi$ is not principal, then $\chi'$ is not principal, and
+\m{\entireLs{\chi'}=L(s,\chi')=0} by~\eqref{e:euler}. If $\chi$ is principal, then $\chi'$ is principal and
+\m{s\ne1}, so \m{\entireLs{\chi'}=(s-1)L(s,\chi')=0}, again by~\eqref{e:euler}.
+
+\emph{The class.} Let $c$ be the class of \m{9240\,M-1} modulo~$N_0$, that is, of \m{N_0/2-1}. It is a unit,
+because \m{(9240\,M-1)^{2}=18480\,M\cdot(4620\,M-1)+1}. Let $d$ be a prime number in the class~$c$. Then
+\m{P=(N_0,d)} are parameters: $18480$ divides~$N_0$; and \m{d+1\equiv N_0/2} modulo~$N_0$, so $N_0$ divides
+\m{2(d+1)} and does not divide \m{d+1}. By Lemma~\ref{l:params}, \m{d\equiv7} modulo~$8$ and $N_0$ is prime to~$d$.
+By Theorem~2 for $P$ and~$\varepsilon$,
+\m{\R{d}{N_0}{x}\le x^{8\varepsilon+\frac12-1}=x^{\beta-1}} for every sufficiently large real number~$x$.
+
+\emph{The criterion.} So the hypotheses of Input~10 hold for the modulus~$N_0$, the class~$c$ and~$\beta$. As
+\m{\beta<\re s}, it gives \m{\entireLs{\chi'}\ne0}. This contradicts the first step.
+\end{proof}
+\leanline{\lean{grh}}
+
+Theorem~2 is used here for every prime~$d$ of one residue class modulo~$N_0$, with one~$\varepsilon$ that depends
+on~$s$; how large $x$ has to be may depend on~$d$. The modulus $18480\,M$ is chosen so that it can be the first
+component of parameters, and the passage from $M$ to it costs nothing, because~\eqref{e:euler} is needed only in
+one direction: a zero of \m{L(\,\cdot\,,\chi)} is a zero of \m{L(\,\cdot\,,\chi')}.
+
+\sect{The critical line}{s:line}
+\statement{inksoft}{\textbf{Input from another unit.}
+
+\vspace{4pt}\phantomsection\label{i:11}\textbf{Input 11} (symmetry of the zeros; unit 106, background).\enspace
+\emph{Let \m{M\ge1} be an integer, $\chi$ a Dirichlet character modulo~$M$, and $s$ a complex number with
+\m{\re s\ne0}, \m{s\ne1} and \m{L(s,\chi)=0}. Then \m{\Gamma_{\chi}(s)=0} or \m{L(1-s,\chi^{-1})=0}.}}
+\leanline{\lean{symm}}
+
+Here \m{\Gamma_{\chi}} is the gamma factor of~$\chi$ in the library: \m{\Gamma_{\chi}(s)=\Gamma_{\RR}(s)} if
+\m{\chi(-1)=1} and \m{\Gamma_{\chi}(s)=\Gamma_{\RR}(s+1)} otherwise, where
+\m{\Gamma_{\RR}(s)=\pi^{-s/2}\,\Gamma(s/2)}. The library's function~$\Gamma$ takes the value~$0$ at its poles
+\m{0,-1,-2,\dots}, so \m{\Gamma_{\chi}(s)=0} says that $s$ is a pole of the gamma factor. Input~11 is the
+functional equation of the completed $L$-function, in the form that it takes for the zeros and for characters
+that need not be primitive. It is a classical result; the catalogue of quoted results of this write-up records it
+with its reference still to be confirmed. The library also provides the following facts, in which $\zeta^{*}$ is its
+completed zeta function.
+\begin{enumerate}[label=\textup{(Z\arabic*)},leftmargin=2.9em,itemsep=2pt]
+\item For the Dirichlet character~$\chi$ modulo~$1$, \m{L(s,\chi)=\zeta(s)} for every complex number~$s$.
+\item \m{\zeta(0)=-\tfrac12}.
+\item For \m{s\ne0}, \m{\zeta(s)=\zeta^{*}(s)/\Gamma_{\RR}(s)}, where a quotient by~$0$ is~$0$.
+\item \m{\zeta^{*}(1-s)=\zeta^{*}(s)} for every complex number~$s$.
+\item \m{\Gamma_{\RR}(s)=0} if and only if \m{s=-2n} for a natural number~$n$; in particular
+\m{\Gamma_{\RR}(s)\ne0} when \m{\re s>0}.
+\end{enumerate}
+
+\begin{proof}[Proof of Theorem 4]
+Assume the half-plane statement. Let \m{M\ge1} be an integer, $\chi$ a Dirichlet character modulo~$M$ and $s$ a
+complex number with \m{0<\re s<1} and \m{L(s,\chi)=0}. If \m{\re s>\tfrac12}, the half-plane statement gives
+\m{L(s,\chi)\ne0}, since \m{s\ne1}; so \m{\re s\le\tfrac12}. Suppose that \m{\re s<\tfrac12}. Input~11 applies,
+because \m{\re s\ne0} and \m{s\ne1}. The gamma factor does not vanish at~$s$, by (Z5): \m{\re s>0} and
+\m{\re(s+1)>0}. Hence \m{L(1-s,\chi^{-1})=0}. But \m{\re(1-s)>\tfrac12} and \m{1-s\ne1}, so the half-plane
+statement for the character~$\chi^{-1}$ gives \m{L(1-s,\chi^{-1})\ne0}, a contradiction. Therefore
+\m{\re s=\tfrac12}.
+\end{proof}
+\leanline{\lean{zerosOnLine}}
+
+\begin{proof}[Proof of Theorem 5]
+Assume the half-plane statement, and let $s$ be a complex number with \m{\zeta(s)=0}, not of the form
+\m{-2(n+1)} with $n$ a natural number, and with \m{s\ne1}. By (Z1), the half-plane statement for \m{M=1} says:
+\m{\zeta(\rho)\ne0} for every complex number~$\rho$ with \m{\re\rho>\tfrac12} and \m{\rho\ne1}. With \m{\rho=s} this
+gives \m{\re s\le\tfrac12}.
+
+By (Z2), \m{s\ne0}. So $s$ is not of the form \m{-2n} with $n$ a natural number, and \m{\Gamma_{\RR}(s)\ne0} by
+(Z5). By (Z3), \m{0=\zeta(s)=\zeta^{*}(s)/\Gamma_{\RR}(s)}, hence \m{\zeta^{*}(s)=0}, and \m{\zeta^{*}(1-s)=0} by
+(Z4). As \m{1-s\ne0}, (Z3) gives \m{\zeta(1-s)=\zeta^{*}(1-s)/\Gamma_{\RR}(1-s)=0}. Now \m{1-s\ne1}; so if
+\m{\re(1-s)>\tfrac12}, the half-plane statement with \m{\rho=1-s} would give \m{\zeta(1-s)\ne0}. Hence
+\m{\re(1-s)\le\tfrac12}, that is, \m{\re s\ge\tfrac12}, and so \m{\re s=\tfrac12}.
+\end{proof}
+\leanline{\lean{zetaZerosOnLine}}
+
+\sect{Where the results are used}{s:used}
+Theorem~1 is used only in the proof of Theorem~2, and Theorem~2 only in the proof of Theorem~3. Theorems 3, 4
+and~5 are the three inputs of the unit that holds the five final theorems: the third final theorem is Theorem~3,
+the fourth is Theorem~4 applied to Theorem~3, and the first two are Theorem~5 applied to Theorem~3. Nothing else in
+the artifact uses this unit.
+
+\sect{Notes on the formal text}{s:notes}
+\begin{enumerate}[label=\textup{\arabic*.},leftmargin=1.6em,itemsep=5pt]
+\item \emph{Names.} The authors call Theorem~1 the inequality~$(\star)$ and Theorem~2 the one-sided bound. In the
+formal text the parameters and the data of Theorem~1 are implicit arguments.
+\item \emph{Theorem~2.} The two inequalities for~$\varepsilon$ form one hypothesis, a conjunction, written
+\m{0<\varepsilon/6} and \m{\varepsilon<\tfrac1{100}}; the exponent is written \m{8\varepsilon+2^{-1}-1}. ``For
+every sufficiently large real number'' renders Lean's ``eventually, as the number tends to infinity''. In
+Definition~\ref{d:R}(d) the formal definition is made for every real~$x$; only large~$x$ matters. The constant
+$\kap{d}{M}$ is the real part of the value at~$1$ of a function that the formal text defines for every complex
+argument.
+\item \emph{The record of the data.} The formal record stores the three logarithms, not the scales, and its
+conditions~(i) are written with the library's logarithm, which is defined for all real numbers as the logarithm of
+the absolute value. The conditions force \m{\log x}, \m{\log x_1} and \m{\log b} to be positive
+(Lemma~\ref{l:sizes}(a) is proved from them in the order in which (i) lists them), so the iterated logarithms are
+the usual ones. The record has one more component, a natural number that the formal text calls the exponent; a
+condition makes it equal to \m{22\log_2m}. This write-up keeps the formal text's letter for it free for the
+complex variable and does not name it: the degree of the tower, a function of the exponent in the formal text, is
+\m{\None{D}/N_0} here, and the conditions on the exponent are those on \m{22\log_2m} in~(ii).
+\item \emph{Input~7 is not used in full.} The proof of Theorem~2 does not use the equation
+\m{\log x_1=x^{\varepsilon/6}}; it uses the inequality \m{(10^{6}\log x)^{2}\le\log x_1}, which leaves room for the
+window.
+\item \emph{The comparisons of sizes.} The formal text does not carry out the estimates of
+Lemma~\ref{l:sizes}(c) and of the last step of the proof of Theorem~2. It proves them by a calculus of unit~152:
+every quantity built from the data carries an upper or a lower bound that is the exponential of a real number,
+found by Lean's search for instances, and an inequality between two quantities is reduced to an inequality
+between two such exponents, which a decision procedure proves from the conditions~(i). The estimates in this note
+are explicit, and they are mine; they use the same facts, which are the conditions (i) and~(ii), the definition
+of~$\aD{D}$ and Input~5. Of Input~5 the formal proofs of this unit cite by name only the number of the tops; the
+bounds for~$\cP{P}$ and the number of the infinite places enter through the calculus. All three statements were
+read in the Lean text.
+\item \emph{The new data.} Lemma~\ref{l:move} is not a declaration. The formal text builds $D'$ inside the proof of
+Theorem~2 by replacing one component, and proves the conditions~(i) on the spot.
+\item \emph{Lemma~\ref{l:params}.} The formal text cites two declarations of unit~152. The second says that the
+order of the roots of unity, for every exponent of the tower, is prime to~$d$, and deduces this from the fact
+that $\chi_K$ takes the value~$1$ at every prime dividing that order; the formal proofs of Theorems 2 and~3 use
+it for the exponent~$0$ and keep the factor~$N_0$. The proof given here is direct.
+\item \emph{The constant~$51$.} In the proof of Theorem~3 the formal text defines~$\varepsilon$ with the same
+divisor~$51$; any divisor larger than~$50$ would do.
+\item \emph{Theorems 4 and~5.} Each of the two formal proofs is one call of an automatic procedure that is given
+the facts used above: Input~11 and (Z5) for Theorem~4, (Z1) to (Z5) for Theorem~5. The case distinctions written
+out here are what that procedure has to find. They depend on the library's conventions, which are part of the
+statements (Z3) and (Z5): a quotient by~$0$ is~$0$, and $\Gamma$ is~$0$ at its poles.
+\item \emph{What the unit does not use.} Every declaration of the unit is used by the five final theorems.
+\end{enumerate}
+
+\subhead{How this note was written.} From the structured proofs of the unit: the program check of the dossier
+covered \UnitSteps{} leaf steps of \UnitProofs{} proofs and compared the quotations of the imported declarations
+with the source. In the Lean text I read the whole file of the unit, with the long comment at its head in which
+the authors list the inputs, the scales and the errors. I read the statements of all eleven Inputs, and the
+definitions behind every notion of §\ref{s:setting}: the parameters, the tower, the field, its places and their
+classes, every field of the record of admissible data, the derived quantities, the weight, the remainder of the prime sum with
+the functions it is built from, the prime sums and the remainder of the data, the polar functions, and the lines that
+define the rows, the lifts, the index, the squared covolume and the main amount. I read the proof of Input~11, which
+is short, and did not study the proofs of the other Inputs. In the library, at the pinned commit of its public repository, I read
+the statements listed in the second table of Appendix~A. The letters and the forms of the notations are those of
+the overview of this handout. The proofs follow the structured proofs, with these differences, which are mine:
+Lemma~\ref{l:sizes} and the estimates at the end of the proof of Theorem~2 replace the calculus of sizes;
+Lemma~\ref{l:params} is proved directly; the proofs of Theorems 4 and~5 are written out; and the explanations
+between the proofs are mine.
+
+\head{Appendix A. Concordance with the Lean artifact}
+{\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}\setlength{\tabcolsep}{0pt}
+\begin{longtable}{@{}p{30mm}p{56mm}p{43mm}r@{}}
+\textbf{In this note} & \textbf{Lean declaration} & \textbf{File} & \textbf{Lines}\\\midrule\endhead
+\ConcordanceRows
+\end{longtable}}
+
+\subhead{The five statements of the unit as they are written in the artifact.} Theorems 1 to~5:
+\quoted{star}
+\quoted{primeBound}
+\quoted{grh}
+\quoted{zerosOnLine}
+\quoted{zetaZerosOnLine}
+Inputs 1 and~2:
+\quoted{familyAB}
+\quoted{longC}
+Input~2 is stated in a part of its file where the rows, the two real numbers and its four hypotheses are declared
+beforehand; the hypotheses are the arguments {\leanfont i}, {\leanfont hn}, {\leanfont I} and {\leanfont hV}.
+
+\subhead{Legend.} For data {\leanfont D} of the formal text: {\leanfont D.logX}, {\leanfont D.logX₁},
+{\leanfont D.logB} are \m{\log x}, \m{\log x_1}, \m{\log b}, and {\leanfont D.x}, {\leanfont D.x₁}, {\leanfont D.b}
+are the scales; {\leanfont D.m} and {\leanfont D.r} are $m$ and~$r$; {\leanfont D.s} is the exponent
+\m{22\log_2m}, and {\leanfont towerDeg D.s} is \m{\None{D}/N_0}; {\leanfont D.thick} is $\thick{D}$;
+{\leanfont D.Φ} is the set of infinite places of~$\ED{D}$; {\leanfont P.N₀}, {\leanfont P.d} and {\leanfont P.c}
+are $N_0$, $d$ and~$\cP{P}$. The class of a place is given by {\leanfont Parameters.placeMulEquiv} and, modulo a
+divisor, by {\leanfont Parameters.placeClass}; the place \m{\nu\cdot\tau} is the product of
+{\leanfont D.placeOfInt ν} and~$\tau$. The character \m{\xi\chi_K} is {\leanfont quadTwist ξ d}, and $\chi_K$ is
+{\leanfont chiK d}; $\kap{d}{M}$ is the real part of {\leanfont logDerivMean d M 1}. In the formal proofs of this
+unit the modulus of Theorem~3 is~{\leanfont q} and the complex number is~{\leanfont ρ}; in the file of the
+statements they are {\leanfont N} and~{\leanfont s}. The window of Input~9 is written there with {\leanfont t},
+{\leanfont u}, {\leanfont E} and {\leanfont E'} for $v_0$, $v_1$, $\cE_1$ and~$\cE_2$, and the class of Input~10 with
+{\leanfont a} for~$c$. In the proof of Theorem~1 the formal text writes {\leanfont d} for \m{\rowDim{D}},
+{\leanfont L} for \m{\log b\cdot\bud{D}} and {\leanfont h} for~$\hA$.
+
+\subhead{The facts of the library.} The library is Mathlib at the commit that the artifact pins in its manifest.
+
+{\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}\setlength{\tabcolsep}{0pt}
+\begin{longtable}{@{}p{50mm}@{\hspace{4mm}}>{\raggedright\arraybackslash}p{86mm}@{}}
+\textbf{In this note} & \textbf{Declaration of the library}\\\midrule\endhead
+\mrow{induced character, principal or not}{DirichletCharacter.changeLevel, changeLevel\_eq\_one\_iff}
+\mrow{the product formula \eqref{e:euler}}{DirichletCharacter.LFunction\_changeLevel}
+\mrow{\m{\entireLs{\chi}} for principal~$\chi$}{DirichletCharacter.LFunctionTrivChar₁}
+\mrow{the gamma factors \m{\Gamma_{\chi}} and \m{\Gamma_{\RR}}}{DirichletCharacter.gammaFactor, Complex.Gammaℝ}
+\mrow{(Z1)}{DirichletCharacter.LFunction\_modOne\_eq}
+\mrow{(Z2)}{riemannZeta\_zero}
+\mrow{(Z3)}{riemannZeta\_def\_of\_ne\_zero}
+\mrow{(Z4)}{completedRiemannZeta\_one\_sub}
+\mrow{(Z5)}{Complex.Gammaℝ\_eq\_zero\_iff, Complex.Gammaℝ\_ne\_zero\_of\_re\_pos}
+\end{longtable}}
+
+\head{Notation}
+\begingroup\fontsize{8.6}{10.9}\selectfont\raggedright
+\setlength{\columnsep}{9mm}\setlength{\parskip}{0pt}
+\begin{multicols}{2}
+\nt{$P=(N_0,d)$}{parameters: $18480$ divides~$N_0$, $d$ is a prime \m{\equiv N_0/2-1} modulo~$N_0$}
+\nt{$K$, $\chi_K$}{the field \m{\QQ(\sqrt{-d})}; the quadratic character of \m{\ZZ/d}, the Legendre symbol for odd~$d$}
+\nt{$D$, $D'$}{admissible data for~$P$}
+\nt{$x$, $x_1$, $b$}{the three scales of~$D$; $x$ also a real variable}
+\nt{$m$, $r$}{the number of lifts and the rank of~$D$}
+\nt{$\cP{P}$}{a constant attached to~$P$}
+\nt{$\None{D}$, $\ED{D}$}{the order of the roots of unity; the field they generate over~$K$}
+\nt{$\tau$, $\tau'$, $\cl{D}{\tau}$}{infinite places of~$\ED{D}$; the class in \m{(\ZZ/\None{D})^{\times}}}
+\nt{$\thick{D}$, $\tops{D}$}{the thick places; the tops}
+\nt{$\fD{D}$, $\aD{D}$}{the number of infinite places of~$\ED{D}$; the least multiple of $\None{D}$ that is
+\m{\ge xb}}
+\nt{$\bud{D}$}{the budget \m{\fD{D}\cdot\aD{D}\cdot(\log b)^3}}
+\nt{$M$, $M'$}{moduli, integers \m{\ge1}}
+\nt{$\nu$, $n$, $p$}{an integer; a natural number; a prime number}
+\nt{$\Lambda$, $\varphi$}{von Mangoldt's function; Euler's function}
+\nt{$\lam{d}{M}{\nu}$}{the weight \m{\Lambda(\nu)(1-\chi_K(\nu))} on \m{\nu\equiv1} modulo~$M$}
+\nt{$\chi$, $\chi'$, $\xi$}{Dirichlet characters; $\chi'$ induced by~$\chi$}
+\nt{$s$, $\rho$}{complex numbers}
+\nt{$L(s,\chi)$, $\entireLs{\chi}$}{the $L$-function; the entire function equal to it, or to
+\m{(s-1)L(s,\chi)} for principal~$\chi$}
+\nt{$\zeta$, $\zeta^{*}$}{the zeta function; the completed zeta function}
+\nt{$\Gamma$, $\Gamma_{\RR}$, $\Gamma_{\chi}$, $\pi$}{the gamma function; \m{\pi^{-s/2}\Gamma(s/2)}; the gamma
+factor of~$\chi$}
+\nt{$\kap{d}{M}$, $\R{d}{M}{x}$}{a constant; the remainder of the weighted prime sum}
+\nt{$\nomW{D}{\tau}$, $z$}{the nominal weight; a real number}
+\nt{$\Ask{D}{z}{\tau}$, $\mainAsk{D}$}{a weighted prime sum; its expected value}
+\nt{$\chowla{d}$}{Euler's constant minus \m{\re(L'/L)(1,\chi_K)}}
+\nt{$\rem{D}$}{the remainder of the data~$D$}
+\nt{$\rows{D}$, $\rowDim{D}$}{the space of rows; its dimension}
+\nt{$\vartheta$, $\Lift{D}{\vartheta}$}{an $m$-fold twist; the composite of the lifts}
+\nt{$F_1,\dots,F_n$, $\sigma$}{algebraic modular forms; an automorphism of~$\CC$}
+\nt{$\covol{F_1,\dots,F_n}{\sigma}$}{the squared covolume}
+\nt{$y_1,\dots,y_n$}{rows}
+\nt{$\delta$, $V$}{real numbers: a bound for the index, the logarithm of a bound for the covolume}
+\nt{$\ell$, $\eta_\ell$, $J$}{a natural number, mostly a prime; real numbers indexed by~$\ell$; a finite set of natural numbers (in the definition of the index)}
+\nt{$\hmain{D}$, $h_{\mathrm{A}}$}{the main amount; the bound of Input~1 for one row, \m{\hmain{D}-m\cdot\rem{D}+\log b\cdot\bud{D}}}
+\nt{$\varepsilon$, $\beta$}{real numbers; \m{\beta=8\varepsilon+\tfrac12} in §\ref{s:grh}}
+\nt{$\cE$, $\cE_1$, $\cE_2$; $\omega$, $\omega_1$, $\omega_2$; $\Phi$}{functions \m{\RR\to\RR}; functions \m{\CC\to\CC}, residue functions; the transform, in the definition of polar functions}
+\nt{$\res{d}{M}{\rho}$, $\ord_{\rho}$}{the residue of Input~8; the order of vanishing at~$\rho$}
+\nt{$v$, $v_0$, $v_1$, $X$}{real numbers in the window of Input~9}
+\nt{$c$}{a class modulo~$M$}
+\end{multicols}
+\endgroup
+
+\end{document}

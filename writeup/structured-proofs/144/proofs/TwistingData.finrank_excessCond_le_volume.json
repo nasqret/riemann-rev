@@ -1,0 +1,463 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.TwistedHecke.Counting:49:7",
+ "name": "TwistingData.finrank_excessCond_le_volume",
+ "summary": "Volume as the limit of lattice-point counts (the set is convex and bounded) along m = q^t. For such m, Frobenius amplification p(F) = Σ_u x^{γ(u)}·F_u(x^m) sends m^{kN} copies of excessCond injectively to polynomials, and the coefficients at the points ⌊mλ⌋ (λ a lattice point) of the translates by representatives R of L/(L ∩ ℐ) determine p(F): a monomial of least w-weight among all translates is m·λ for a lattice point λ of the excess cone — at b' = a' because F_u is in excessCond, at the other pairs by the root lemma.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "The volume of the bounded convex measurable set C = excessCone ∩ slab is the limit of #(C ∩ (1/m)ℤ^{kN})/m^{kN} (its frontier is null, being convex); so it suffices that for infinitely many m, namely m = q^t, dim·m^{kN} ≤ [L : L ∩ ℐ]·#(C ∩ (1/m)ℤ^{kN}). Boundedness (?B) is left as a goal.",
+   "lines": [
+    53,
+    58
+   ],
+   "lean": "  refine ge_of_tendsto_of_frequently (.const_mul _ (tendsto_card_div_pow_atTop_volume _ ?B (by\n    unfold excessCone slab dotProduct; measurability) (Convex.addHaar_frontier _\n    (by exact fun _ ⟨X, _, A⟩\n    _ ⟨Y, _, B⟩ _ _ s t e ↦ ⟨fun _ _ _ _ ↦ by simp; grw [X .., Y ..] <;> simp [↓← add_mul, *],\n    by positivity, fun j ↦ by simpa [univ.mul_sum] using convex_Icc _ _ (A j) (B j) s t e⟩))))\n    (frequently_atTop'.2 fun t ↦ let m := T.q ^ t; ⟨m, t.lt_pow_self (mod_cast T.one_lt_q), ?_⟩)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "TwistingData.excessCone"
+    },
+    {
+     "decl": "slab"
+    },
+    {
+     "decl": "TwistingData.one_lt_q"
+    }
+   ],
+   "ambient_uses": [
+    "tendsto_card_div_pow_atTop_volume",
+    "Convex.addHaar_frontier",
+    "ge_of_tendsto_of_frequently",
+    "Filter.frequently_atTop'"
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Boundedness: isBounded_inter_slab.",
+   "lines": [
+    59,
+    59
+   ],
+   "lean": "  apply isBounded_inter_slab",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "isBounded_inter_slab"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Record that the residue field is finite, p is prime, p = 0 in K (p0), and choose a set R of representatives of the cosets of L ∩ ℐ in L containing 1 (hR, h1).",
+   "lines": [
+    60,
+    61
+   ],
+   "lean": "  obtain ⟨_, _, p0, R, hR, h1⟩ := T.finite_residueField, Fact.mk T.prime, CharP.cast_eq_zero K _,\n    ((parahoric W (↑)).subgroupOf (levi W (twoBlock k a'))).exists_isComplement_right 1",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "TwistingData.finite_residueField"
+    }
+   ],
+   "ambient_uses": [
+    "Subgroup.exists_isComplement_right",
+    "CharP.cast_eq_zero"
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let Λ = C ∩ (1/m)ℤ^{kN}, the lattice points.",
+   "lines": [
+    62,
+    62
+   ],
+   "lean": "  set Λ := @Inter.inter ..",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "fact",
+   "claim": "0 < m; R is finite; Λ is finite (lattice points in a bounded set).",
+   "lines": [
+    63,
+    64
+   ],
+   "lean": "  obtain ⟨m1, _, _⟩ := NeZero.pos m, hR.finite_right.fintype, ((ZSpan.setFinite_inter _ ?B).subset\n    (inf_le_inf_left _ (ZSpan.smul _ (NeZero.ne _)).le) : Λ.Finite).fintype",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "step": "4"
+    }
+   ],
+   "ambient_uses": [
+    "ZSpan.setFinite_inter"
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Clear denominators: the goal is dim·m^{kN} ≤ [L : L ∩ ℐ]·#Λ in ℕ.",
+   "lines": [
+    65,
+    66
+   ],
+   "lean": "  field_simp\n  norm_cast",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "setup",
+   "claim": "For u : Fin k × ℤ/N → {0, …, m−1} let γ(u) be the exponent u(x) + m·[x.1 = a]·(k − ⌊Σ_b u(b, x.2)/m⌋): γ(u) ≡ u mod m, of letter degrees in [km, (k+1)m).",
+   "lines": [
+    68,
+    69
+   ],
+   "lean": "  let γ (u : _ × ZMod N → Fin m) := equivFunOnFinite.symm fun x ↦\n    u x + m * ite (x.1 = a) (k - (∑ b, (u (b, x.2)).1) / m) 0",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let p send a tuple (F_u)_u of elements of excessCond to Σ_u x^{γ(u)}·(polyOfCoeffs F_u)(x^m) (Frobenius amplification by expand m).",
+   "lines": [
+    70,
+    71
+   ],
+   "lean": "  let p := ∑ u, .mulRight K (monomial (γ u) 1) ∘ₗ (expand m).toLinearMap ∘ₗ polyOfCoeffs ∘ₗ\n    (T.excessCond n a a' ⊥ h).subtype ∘ₗ .proj u",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "7"
+    },
+    {
+     "decl": "polyOfCoeffs"
+    },
+    {
+     "decl": "TwistingData.excessCond"
+    }
+   ]
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "Consider the linear map sending a tuple F to the family, over (r, λ) ∈ R × Λ, of the coefficients of x^{⌊mλ⌋} in polyAction(r)(p F). If it is injective (the kernel goal), the dimension of the tuples, m^{kN}·dim excessCond, is at most |R|·|Λ|.",
+   "lines": [
+    73,
+    74
+   ],
+   "lean": "  convert (LinearMap.pi fun x : R × Λ ↦ lcoeff K (equivFunOnFinite.symm (⌊x.2.1 · * m⌋₊)) ∘ₗ\n    (T.polyAction x.1).toLinearMap ∘ₗ p).finrank_le_finrank_of_injective (.of_ker _ fun F f0 ↦ ?_)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "step": "8"
+    },
+    {
+     "decl": "TwistingData.polyAction"
+    }
+   ],
+   "ambient_uses": [
+    "LinearMap.finrank_le_finrank_of_injective",
+    "LinearMap.ker_eq_bot"
+   ]
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Identify the two dimensions and |R| = [L : L ∩ ℐ].",
+   "lines": [
+    75,
+    75
+   ],
+   "lean": "  iterate 2 simp [relIndex, ← hR.card_right, mul_comm]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "3"
+    }
+   ]
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Kernel: let F be in it (f0) and suppose, for a contradiction, F_u(β) ≠ 0 for some u, β.",
+   "lines": [
+    76,
+    76
+   ],
+   "lean": "  ext u β; by_contra",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Let w(b, s) = b if s is even and −b if s is odd (weights of the variables).",
+   "lines": [
+    78,
+    78
+   ],
+   "lean": "  let w (x : Fin k × _) : ℝ := ite (T.isEven x.2) x.1 (-x.1)",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Among the pairs (r ∈ R, α in the support of polyAction(r)(p F)) choose one (x, α) minimising the w-weight of α (H); the set is nonempty: r = 1 and α = m·exponentOf β + γ(u) (only the summand u contributes there, as the γ(u) are distinct modulo m).",
+   "lines": [
+    79,
+    83
+   ],
+   "lean": "  have ⟨⟨x, α⟩, hα, H⟩ := (univ.sigma fun x : R ↦ (T.polyAction x (p F)).support).exists_min_image\n    (weight w ·.2) ⟨⟨⟨1, h1⟩, m • exponentOf β + γ u⟩, by\n    simp [p, polyOfCoeffs, coeff_sum]\n    rw [Fintype.sum_eq_single u fun v n ↦ Finset.sum_eq_zero fun _ _ ↦ ite_eq_right fun e ↦ n (by\n    ext x; simpa [γ, mod_eq_of_lt, -mul_ite] using congr($e x % m))]; simpa [m1.ne']⟩",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "7"
+    },
+    {
+     "step": "8"
+    },
+    {
+     "step": "11"
+    },
+    {
+     "step": "12"
+    }
+   ],
+   "ambient_uses": [
+    "Finset.exists_min_image",
+    "Fintype.sum_eq_single"
+   ]
+  },
+  {
+   "id": "14",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "The coefficient at (x, α/m) of the image of F is the coefficient of x^α in polyAction(x)(p F), nonzero (hα), against f0 — provided α/m ∈ C (the remaining goal; α/m lies in (1/m)ℤ^{kN}).",
+   "lines": [
+    84,
+    85
+   ],
+   "lean": "  refine absurd (congrFun f0 ⟨x, (α · / m), ?_, BoxIntegral.unitPartition.mem_smul_span_iff.2\n    (⟨α ·, by simp [field]⟩)⟩) (by simpa using hα); clear f0",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "9"
+    },
+    {
+     "step": "13"
+    }
+   ],
+   "ambient_uses": [
+    "BoxIntegral.unitPartition.mem_smul_span_iff"
+   ]
+  },
+  {
+   "id": "15",
+   "parent": null,
+   "kind": "fact",
+   "claim": "polyAction commutes with expand m (m = q^t: in characteristic p the m-th power of ι_s(c) is ι_{s+Nt}(c) = ι_s(c) modulo p = 0, by frobenius_pow_congr), so polyAction(x)(p F) = Σ_u polyAction(x)(x^{γ(u)})·(polyOfCoeffs(ρ(x)F_u))(x^m); hence α = m·δ + ε with δ an exponent of ρ(x)F_u (hu) and ε an exponent of polyAction(x)(x^{γ(u)}) (hv).",
+   "lines": [
+    87,
+    93
+   ],
+   "lean": "  obtain ⟨u, δ, ⟨ε, ⟨⟩⟩, hu, hv⟩ := by\n    simp [p, ← AlgHom.mul_apply, (algHom_ext\n      (by simp [m, ↓← pow_mul, polyAction_X, sum_pow_char_pow, mul_pow, ← C_pow, letterMatrix,\n      ← (by simpa [← pow_mul, p0] using T.frobenius_pow_congr (N * t))]) : Commute (T.polyAction _)\n      (expand m)), (expand m).mul_apply, polyAction_polyOfCoeffs, monomial_eq, polyAction_X] at hα\n    simp [coeff_sum, polyOfCoeffs, univ.sum_mul, ← sum_prod_type'] at hα\n    simpa [coeff_monomial_mul', le_iff_exists_add] using exists_ne_zero_of_sum_ne_zero hα",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "step": "8"
+    },
+    {
+     "step": "13"
+    },
+    {
+     "decl": "TwistingData.polyAction_polyOfCoeffs"
+    },
+    {
+     "decl": "TwistingData.polyAction_X"
+    },
+    {
+     "decl": "TwistingData.frobenius_pow_congr"
+    },
+    {
+     "decl": "TwistingData.letterMatrix"
+    }
+   ],
+   "ambient_uses": [
+    "sum_pow_char_pow",
+    "MvPolynomial.expand",
+    "Finset.exists_ne_zero_of_sum_ne_zero"
+   ]
+  },
+  {
+   "id": "16",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Claim he: for every letter s, the letter-s degree of ε lies in [mk, mk + m]: polyAction(x) preserves letter degrees (each variable goes to a combination of variables of the same letter), so ε has the letter degrees of γ(u).",
+   "lines": [
+    94,
+    100
+   ],
+   "lean": "  have he s : ∑ b, ε (b, s) ∈ Set.Icc (m * k) (m * k + m) := by\n    apply IsWeightedHomogeneous.prod _ _ _ fun j _ ↦ .pow (.sum _ _ (ite (j.2 = s) 1 0) fun b _ ↦\n      (isWeightedHomogeneous_X K (if ·.2 = s then 1 else 0) (b, _)).C_mul (T.letterMatrix _ x b _))\n      _ at hv\n    simp [γ, weight_eq_sum, sum_prod_type, Nat.mul_sub] at hv\n    grind [(by grw [Fin.is_le']; simp : ∑ b, (u (b, s)).1 ≤ k * m), mul_div_self_eq_mod_sub_self,\n      mod_lt (∑ b, (u (b, s)).1) m1]",
+   "typed_fact": "∑ b, ε (b, s) ∈ Set.Icc (m * k) (m * k + m)",
+   "uses": [
+    {
+     "step": "7"
+    },
+    {
+     "step": "15"
+    },
+    {
+     "decl": "TwistingData.letterMatrix"
+    }
+   ],
+   "ambient_uses": [
+    "MvPolynomial.IsWeightedHomogeneous.prod",
+    "MvPolynomial.isWeightedHomogeneous_X"
+   ]
+  },
+  {
+   "id": "17",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "α/m ∈ C: nonnegativity is clear, and the column sums Σ_b α(b, s)/m = n + (letter degree of ε)/m lie in [n + k, n + k + 1] (|δ_s| = n and he); the excess inequalities remain.",
+   "lines": [
+    101,
+    102
+   ],
+   "lean": "  refine ⟨fun i b b' e ↦ ?_, fun _ ↦ by positivity, fun s ↦ by simp [← univ.mul_sum, exponentOf,\n    field, ← cast_sum, ← degree_eq_sum, Monomials.degree_eq, ← sum_div]; norm_cast; grind [he s]⟩",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "15"
+    },
+    {
+     "step": "16"
+    },
+    {
+     "decl": "Monomials.degree_eq"
+    },
+    {
+     "decl": "exponentOf"
+    }
+   ]
+  },
+  {
+   "id": "18",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Write the excess of α/m for (i, b, b' = b + 1) as a weight of α divided by m and split on b' = a'.",
+   "lines": [
+    103,
+    104
+   ],
+   "lean": "  simp_rw [dotProduct, mul_div, ← sum_div, ← nsmul_eq_mul', ← weight_eq_sum, field, mul_ite_zero]\n  split",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "19",
+   "parent": null,
+   "kind": "case",
+   "claim": "Case b' = a' (so b = a): the excess of α is m·(excess of δ) + (excess of ε). The first is ≤ m·h: ρ(x)F_u has a nonzero coefficient at δ (hu) and F_u ∈ excessCond with x ∈ L, so δ cannot have excess > h at the letter i. The second is ≤ m·N(k+1): every excessWeight is ≤ 1 (excessWeight_mem_Icc) and ε has letter degrees ≤ m(k+1) (he).",
+   "lines": [
+    105,
+    107
+   ],
+   "lean": "  grw [map_add, map_nsmul, (by omega : b = a), ‹b' = _›, not_lt.1 (hu <| (F u).2 _ x.1.2 δ ⟨i, ·⟩),\n    weight_eq_sum, T.excessWeight_mem_Icc.2, ← univ.sum_smul, sum_prod_type_right,\n    (he _).2]; simp [field]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "15"
+    },
+    {
+     "step": "16"
+    },
+    {
+     "decl": "TwistingData.excessWeight_mem_Icc"
+    },
+    {
+     "decl": "TwistingData.excessCond"
+    }
+   ]
+  },
+  {
+   "id": "20",
+   "parent": null,
+   "kind": "case",
+   "claim": "Case b' ≠ a': the excess of α at i for (b, b') is ≤ 0 by the root lemma, with τ = twoBlock k a' (b and b' lie in the same block), weights w, l = 0 and f = polyAction(x)(p F): every Levi translate g·f equals the translate by a representative r ∈ R composed with an element of L ∩ ℐ; the latter acts on a variable by its own variable plus combinations whose coefficients are divisible by p (p_dvd_letterMatrix_of_mem_parahoric) where the w-weight decreases, so by minimality (H) the translate lies in the 0-adic Gauss filtration at level w·α (w = 0 in K as w² = p = 0); and the coefficient of x^α is nonzero (hα).",
+   "lines": [
+    109,
+    115
+   ],
+   "lean": "  apply T.root_lemma i _ _ w 0 (fun g hg ↦ (hR.2 (⟨g, hg⟩⁻¹ * x)).elim fun b hb ↦\n    Set.mem_of_eq_of_mem (by simpa using congr(T.polyAction ($hb.symm).1 (p F)))\n    (aeval_sub_mem_of_gaussFiltration _ _ (mem_adicFiltration_of_nonpos <| by\n    simpa using H ⟨_, ·⟩) fun y ↦ by simpa [polyAction_X, C_mul_X_eq_monomial] using\n    (sum_mem fun i _ ↦ monomial_mem_gaussFiltration (mem_adicFiltration_of_nonpos (by\n    unfold w; split <;> simpa [weight_single, *] using (T.p_dvd_letterMatrix_of_mem_parahoric y.2\n      b.1.2 i _).mt)))).1) <;> grind [w_sq, dvd_def, twoBlock, rootVar, congr(($e : ℝ))]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "step": "12"
+    },
+    {
+     "step": "13"
+    },
+    {
+     "decl": "TwistingData.root_lemma"
+    },
+    {
+     "decl": "aeval_sub_mem_of_gaussFiltration"
+    },
+    {
+     "decl": "mem_adicFiltration_of_nonpos"
+    },
+    {
+     "decl": "monomial_mem_gaussFiltration"
+    },
+    {
+     "decl": "TwistingData.p_dvd_letterMatrix_of_mem_parahoric"
+    },
+    {
+     "decl": "twoBlock"
+    },
+    {
+     "decl": "TwistingData.rootVar"
+    },
+    {
+     "decl": "TwistingData.polyAction_X"
+    }
+   ]
+  }
+ ]
+}

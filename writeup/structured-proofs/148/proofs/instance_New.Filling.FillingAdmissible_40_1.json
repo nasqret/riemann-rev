@@ -1,0 +1,167 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Filling.FillingAdmissible:40:1",
+ "summary": "Collect the size facts of D (log-bounds) and the computations of the counts, then verify the fields of IsAdmissible: the column level and the surjectivity of the reduction directly; every size inequality, after taking logarithms, is a linear inequality in the log-scales, closed by linear arithmetic.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Positivity facts: mass > 0, monotonicity of n·x, N^k − 1 > 0, g > 0, deg > 0, rd_E > 0, frameScaleProd > 0, #reducedImage(𝖧) > 0, #BesselCoord > 0, N ≥ 2, N ≤ N^k (Nat.le_self_pow with base N, as k ≠ 0), log N in its interval, k ≤ r, k > 0, log #BesselCoord ≥ 0, and the identity k·m·(Σ log w).",
+   "lines": [
+    41,
+    46
+   ],
+   "lean": "  obtain ⟨m, f, p, _⟩ := @mass_pos D.E, @nsmul_le_nsmul_right ℝ, sub_pos.2 (one_lt_pow₀\n    (D.lt_of_hasLogBound (G := D.N)) D.k_pos.ne'), pos D.gProd, D.filling.besselDegree_pos,\n    rootDiscr_pos D.E, D.filling.frameScaleProd_pos, @Nat.card_pos (D.filling.reducedImage besselH)\n    _ _, @card_pos D.filling.BesselCoord _ _, D.N_prime.two_le, Nat.le_self_pow D.k_pos.ne'\n    D.N, D.log_N_mem_Icc, D.k_le_r, D.k_pos, log_natCast_nonneg (card D.filling.BesselCoord),\n    congr(D.k * D.m * $(mul_div_cancel₀ (∑ v, log (D.nominalWeight v)) (ne ↑D.f)))"
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The analytic inputs: the BesselCoord bound, the masses at k and r, the factorial and g bounds (b¹⁹ ≤ g), the bound on log(N^k − 1),",
+   "lines": [
+    47,
+    52
+   ],
+   "lean": "  obtain _ := D.card_besselCoord_mul_factorial_le, m D.k, m D.r,\n    f (log_natCast_nonneg (D.k - 1).factorial) D.f, f (log_le_log (by positivity)\n    (D.le_of_hasLogBound : D.b ^ 19 ≤ D.gProd)) (D.f * D.k), f (log_le_log p (sub_one_lt\n    _).le) D.f, (nsmul_right_mono D.f).mapsTo_Icc ⟨(log_le_sub_one_of_pos (div_pos (p.trans\n    (sub_one_lt _)) p)).trans (by field_simp; norm_cast; lia),\n    (D.le_of_hasLogBound : 2 / D.N ≤ D.logB)⟩, D.log_filling_besselDegree_mem_Icc,",
+   "uses": [
+    {
+     "decl": "Data.card_besselCoord_mul_factorial_le"
+    },
+    {
+     "decl": "Data.le_of_hasLogBound"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "the log of the Bessel degree (log_filling_besselDegree_mem_Icc), the window for log N, the mass-ratio bounds,",
+   "lines": [
+    53,
+    57
+   ],
+   "lean": "    congr(D.f * ∑ i ∈ $(D.k.Ico_pred_singleton ‹_›), log i.factorial), (nsmul_right_mono (D.f *\n    D.k)).mapsTo_Icc D.log_N_mem_window, ((abs_sum_le_sum_abs _ (Ico D.k D.r)).trans (sum_le_sum\n    fun i _ ↦ abs_log_mass_ratio_sub_le D.E i D.ϱ D.nat_le_of_hasLogBound (by grind))).trans (by\n    grw [le_sub_iff_add_le, ← le_log_one_add_of_nonneg (by positivity)]; simp [*]; use\n      D.le_of_hasLogBound : _ ≤ log (1 + D.b⁻¹ ^ 9) - D.f * (2 / D.N)),",
+   "uses": [
+    {
+     "decl": "Data.log_filling_besselDegree_mem_Icc"
+    },
+    {
+     "decl": "abs_log_mass_ratio_sub_le"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "and two log-size comparisons between the error terms and f·k·log b/4, f·k·log b.",
+   "lines": [
+    58,
+    63
+   ],
+   "lean": "    le_sub_iff_add_le.2 (D.le_of_hasLogBound : |D.f * (D.m - 1) * (D.ϱ *\n    log (D.gProd * D.rootDisc / 2 / π) + log (√D.rootDisc / 2 / π)) - D.m * ∑ v,\n    log (D.nominalWeight v)| + (log 2 + log (1 + D.b⁻¹ ^ 9) + D.m * (D.m * ∑ v, log (D.nominalWeight\n    v) + D.f * D.r * D.x⁻¹) + D.f * D.k * √D.logB) ≤ D.f * D.k * D.logB / 4), (D.le_of_hasLogBound :\n    D.f * ((D.m - 1) * (D.ϱ * log (2 / D.rootDisc / D.gProd) - log √D.rootDisc) - (D.ϱ + 1) ^ 7 *\n    ((D.m - 1) * log (D.gProd * D.rootDisc / 2 / π) - log (D.gProd * D.N))) ≤ D.f * D.k * D.logB)"
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The structure: column level = ι⁻¹(K(g)), and the reduction is onto (every element of 𝖦 is the reduction of an integral element: lifting the residues).",
+   "lines": [
+    64,
+    66
+   ],
+   "lean": "  apply (by simpa only [← and_imp] using IsAdmissible.mk D.columnLevel_zero_eq_comap (⟨_,\n    D.filling_fits.reduction_finiteEquiv_iff _ · |>.2 ⟨_, reduceFamily_liftResidue\n    (w := D.chosen) _⟩ |>.2⟩) : _ → _)",
+   "uses": [
+    {
+     "decl": "Data.columnLevel_zero_eq_comap"
+    },
+    {
+     "decl": "Filling.Fits.reduction_finiteEquiv_iff"
+    },
+    {
+     "decl": "Data.filling_fits"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Unfold all quantities (energies, scales, packet constant, counts via card_reducedImage_besselS and card_classes_filling, volumes) into real expressions.",
+   "lines": [
+    67,
+    71
+   ],
+   "lean": "  rify [card_X₀, @id (D.filling.g = D.gProd) rfl, abs_kappa_eq, ← InfinitePlace.apply, mk_Φ,\n    besselEnergy, codimFactor, columnDim, tailScale, packetConst, card_reducedImage_besselS,\n    card_classes_filling, D.relIndex_latStabilizer, siegelConst, Filling.unipCovolume,\n    openCellConst, bandConst, ↓card_rowIndex, volU, Shape.k, mainEnergy, volÔ_eq,\n    abs_discr_eq_rootDiscr_pow, prod_mul_distrib, prod_div_distrib, prod_pow, prod_pow_eq_pow_sum]",
+   "uses": [
+    {
+     "decl": "Filling.card_reducedImage_besselS"
+    },
+    {
+     "decl": "Data.card_classes_filling"
+    },
+    {
+     "decl": "Data.relIndex_latStabilizer"
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Unfold filling; ∏_v |ϖ_v| = rd_E^{…}; r = k + 2ϱ + 1.",
+   "lines": [
+    72,
+    72
+   ],
+   "lean": "  simp only [filling, P.prod_varpi_eq_rootDiscr_pow, eq_tsub_of_add_eq D.r_add] at *"
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Three fields follow from log-bounds directly.",
+   "lines": [
+    73,
+    73
+   ],
+   "lean": "  iterate 3 use fun _ ↦ D.le_of_hasLogBound"
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Take logarithms of the remaining inequalities (all quantities positive).",
+   "lines": [
+    74,
+    78
+   ],
+   "lean": "  simp (disch := intros; first | positivity | omega) only [← log_le_log_iff, log_div, log_mul,\n    log_pow, log_sqrt, log_rpow, log_exp, log_inv, log_prod, log_one, sum_add_distrib, sum_const,\n    card_range, nsmul_eq_mul, sum_range_id, ← Nat.choose_two_right, card_univ, logLevelTarget,\n    abs_le, ↓sum_Ico_eq_sub, Set.mem_Icc, sum_sub_distrib, ← mul_sum, sum_singleton, ← sum_mul, ←\n    Nat.cast_sum _ (·), ↓sum_range_sub (log <| mass D.E ·)] at *"
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Cast the counts (binomial coefficients, m = 2ϱ + 2).",
+   "lines": [
+    79,
+    80
+   ],
+   "lean": "  push_cast (disch := apply D.nat_le_of_hasLogBound) [Nat.cast_choose_two, ← add_assoc,\n    m_eq_two_mul_varrho_add_two] at *"
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Each remaining inequality is a linear combination of the collected facts (linear arithmetic with log 2 > 0.69).",
+   "lines": [
+    81,
+    81
+   ],
+   "lean": "  and_intros <;> linarith [log_two_gt_d9]"
+  }
+ ]
+}

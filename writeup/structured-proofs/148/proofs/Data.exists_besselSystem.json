@@ -1,0 +1,368 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Filling.FillingData:56:7",
+ "summary": "Build the representation Sym^{κ_v} of U(X₀) in an orthonormal basis, a Bessel function of that type for the doubled parameter (Laplace method), its cut (cut pair), Schur and band-limit bounds, and check the degree and type conditions.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "w = the column numbers κ(v).",
+   "lines": [
+    58,
+    58
+   ],
+   "lean": "  let w (_ : Unit) := D.κ v"
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "#κ = k, J₁ involution, k ≤ a, 1 ≤ b, the parameter u of the lowest K-type.",
+   "lines": [
+    59,
+    61
+   ],
+   "lean": "  obtain ⟨ck : Fintype.card D.shape.κ = _, _, _ : D.k ≤ D.a, b1 : 1 ≤ D.b, u, h⟩ := D.card_X₀,\n    @isHermInvolution_J₁ D.shape, D.nat_le_of_hasLogBound, D.le_of_hasLogBound,\n    Exists.intro _ (isHCParam_hcParameter D.shape.κ w 0)",
+   "uses": [
+    {
+     "decl": "Data.le_of_hasLogBound"
+    },
+    {
+     "decl": "Data.nat_le_of_hasLogBound"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "hL: |paramW(D, v)_i| ≤ 3a(D) for every i: |gridParam| ≤ ⌈20b(D)⌉ (abs_gridParam_le) and ⌈20b(D)⌉ ≤ 3a(D) by a size comparison.",
+   "lines": [
+    62,
+    63
+   ],
+   "lean": "  have hL i : |D.paramW v i| ≤ ↑(3 * D.a) :=\n    (D.abs_gridParam_le (z := false) v bot_le bot_le i).trans (mod_cast D.nat_le_of_hasLogBound)",
+   "uses": [
+    {
+     "decl": "Data.abs_gridParam_le"
+    }
+   ],
+   "typed_fact": "|D.paramW v i| ≤ ↑(3 * D.a)"
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The parameter has a large gap (r⁷) and the position i of the lowest K-type,",
+   "lines": [
+    64,
+    65
+   ],
+   "lean": "  obtain ⟨hg : HCParam.HasLargeGap _ (D.r ^ 7), i, _⟩ := (D.hasGap_signsY_paramW v).mono\n    D.le_of_hasLogBound, h.exists_decrPosition_eq () Fintype.card_pos",
+   "uses": [
+    {
+     "decl": "Data.hasGap_signsY_paramW"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "with lowest K-type (κ(v,1) at i, 0 elsewhere) and |u_j| ≤ 3a.",
+   "lines": [
+    66,
+    68
+   ],
+   "lean": "  have L j : (toHCParam 1 (u ())).lowestKType j = ite (j = i) (D.κ v 1) 0 ∧ |u () j| ≤\n    ↑(3 * D.a) := by have := h.eq_hcParameter () j; rw [h.lowestKType_eq, hcParameter,\n    diagramWeight_apply, sum_eq_ite 1, Pi.zero_apply] at * <;> grind [κ, (h ()).1, decrPosition]",
+   "typed_fact": "(toHCParam 1 (u ())).lowestKType j = ite (j = i) (D.κ v 1) 0 ∧ |u () j| ≤\n    ↑(3 * D.a)"
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Formal degree d > 0, the equivalence, the positive definite Weyl Gram matrix B (with B*B), the idempotent kernel K,",
+   "lines": [
+    69,
+    72
+   ],
+   "lean": "  obtain ⟨d1, ⟨p, q⟩, ⟨_, ⟨B, rfl⟩, hG⟩, K, ⟨dq⟩, _, _, x, hR, T⟩ := _root_.formalDegree_pos hg,\n    exists_equiv_decrPosition (h ()).1,\n    CStarAlgebra.isStrictlyPositive_iff_eq_star_mul_self.1 (weylGram_posDef.isStrictlyPositive\n    (n := WeylIndex D.shape.κ w)), isIdempotentKernel_psiInFrame (p := D.unitarySignFrameY.1) hg,",
+   "uses": [
+    {
+     "decl": "formalDegree_pos"
+    },
+    {
+     "decl": "isIdempotentKernel_psiInFrame"
+    }
+   ]
+  },
+  {
+   "id": "6b",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "(Harish-Chandra's identities, the measure invariance, and the steep two-factor Bessel pair for the parameter)",
+   "lines": [
+    73,
+    77
+   ],
+   "span": [
+    73,
+    5,
+    77,
+    14
+   ],
+   "lean": "Orbital.harish_chandra_degree_and_orbital (hg.mono D.le_of_hasLogBound),\n    D.shape.besselGraphMeasure_isMulRightInvariant, D.shape.besselGraphMeasure_finiteOnCompacts,\n    ((D.exists_isSteep false).choose_spec v).exists_isTwoFactor_besselPairHom (b :=\n    D.b) (.swap (.inr ()) i) (by simpa using (L · |>.1)) D.le_of_hasLogBound\n    (by grw [",
+   "uses": [
+    {
+     "decl": "Orbital.harish_chandra_degree_and_orbital"
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "κ(v) ≤ a.",
+   "lines": [
+    77,
+    77
+   ],
+   "span": [
+    77,
+    14,
+    77,
+    91
+   ],
+   "lean": "show D.κ .. ≤ D.a by grind [κ]]; use D.le_of_hasLogBound) D.le_of_hasLogBound",
+   "typed_fact": "D.κ .. ≤ D.a"
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "φ = conjugation by B.",
+   "lines": [
+    78,
+    79
+   ],
+   "lean": "  let φ := MulSemiringAction.toAlgEquiv ℂ (type_of% B.1) (ConjAct.toConjAct B)\n  -- `rep` is Sym^(κ v 1) in an orthonormal basis for the Gram form"
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "rep = Sym^{κ(v)} (the Schur matrix of w) in the orthonormal basis for the Gram form.",
+   "lines": [
+    80,
+    84
+   ],
+   "lean": "  let rep : U (1 : Matrix D.shape.κ _ ℂ) →* unitaryGroup _ ℂ := .mk' (fun h ↦ ⟨φ (schur w fun _ ↦\n    h), by simpa [mem_unitaryGroup_iff', φ, hG, star, ← U.inv_val_eq_conjTranspose,\n    conjTranspose_nonsing_inv, mul_assoc]\n    using congr(B.1ᴴ⁻¹ * $(PolyRep.schur_conjTranspose_weylGram_schur .refl (κ := w) (fun _ ↦ h.1.1)\n             fun _ ↦ h) * B⁻¹)⟩) (by simp [schur_mul_left])"
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "A Bessel function Y of type rep (exists_isBesselFunction) with the coefficient identity,",
+   "lines": [
+    85,
+    90
+   ],
+   "span": [
+    85,
+    3,
+    90,
+    48
+   ],
+   "lean": "obtain ⟨Y, hS⟩ := exists_isBesselFunction (rep := rep) (by simp [rep, φ]; fun_prop) (v :=\n    .toLp ..) (fun k ↦ (dotProduct_comm (_ *ᵥ B.1 *ᵥ highestVector w u) (star (_ *ᵥ _))).trans (by\n    simpa [weylRep, hG, q, rep, φ, ↓star_mulVec, ↓star_highestVector, highestVector,\n      dotProduct_mulVec, mul_assoc, dsCoeff_of_mem_maxCompactU (h.hasGap () 0) (k := ⟨k, _⟩) k.2,\n      _root_.funext (h.lowestKType_eq _)] using! weylRep_coeff_eq_prod_weightMinors (κ := w) (e :=\n      0) (fun _ ↦ p) _)) hg D.le_of_hasLogBound",
+   "uses": [
+    {
+     "decl": "exists_isBesselFunction"
+    }
+   ]
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "and the Laplace-method bounds.",
+   "lines": [
+    90,
+    93
+   ],
+   "span": [
+    90,
+    49,
+    93,
+    101
+   ],
+   "lean": "(T.laplace_method (β := D.b ^ 3) _ hg (h.hasGap ..)\n    D.le_of_hasLogBound hL (L · |>.2) D.le_of_hasLogBound (ck ▸ D.le_of_hasLogBound) (ck ▸\n    D.le_of_hasLogBound) (isProperMap_fst_besselPairHom x) (.subtype_mk (by simp; fun_prop) _) fun s\n    _ ↦ (CStarRing.norm_of_mem_unitary (U_one_mem_unitaryGroup s.1.2)).trans_le D.le_of_hasLogBound)"
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Its cut: a cut pair (F, V, fx, t).",
+   "lines": [
+    94,
+    95
+   ],
+   "lean": "  obtain ⟨F, V, fx, t⟩ := (pow_mul D.b .. ▸ hS).exists_cut_isCutPair hg hL D.f hR\n    D.le_of_hasLogBound (ck ▸ D.nat_le_of_hasLogBound) D.le_of_hasLogBound D.nat_le_of_hasLogBound"
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The full function is a Bessel function.",
+   "lines": [
+    96,
+    96
+   ],
+   "lean": "  have s := t.isBesselFunction .full"
+  },
+  {
+   "id": "14",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Schur bounds for the derivatives.",
+   "lines": [
+    97,
+    97
+   ],
+   "lean": "  have k B := t.lintegral_sq_full_eq ▸ s.hasSchurBound_of_convolve_eq hg hL t.integrable B fx"
+  },
+  {
+   "id": "15",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The Bessel system: degree d, cut pair t, irreducibility (scalars commuting with Sym), Schur bounds, 8r ≤ b, band limits;",
+   "lines": [
+    98,
+    100
+   ],
+   "lean": "  use ⟨_, _, _, d1, _, t, fun M H ↦ (scalar_of_commute_schur fun g a ↦ by\n    simpa [rep] using! (H (U.of isUnit_one (g ()) (by simp [a]))).map φ.symm).imp (φ.commutes · ▸\n    φ.eq_symm_apply.1 ·), (k · ∘ D.le_of_hasLogBound.trans), D.le_of_hasLogBound, _,",
+   "uses": [
+    {
+     "decl": "hasBandLimits_of_isCutBessel"
+    }
+   ]
+  },
+  {
+   "id": "16",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "band limits from the cut Bessel data (steepness, sizes);",
+   "lines": [
+    101,
+    105
+   ],
+   "span": [
+    101,
+    5,
+    105,
+    78
+   ],
+   "lean": "(hasBandLimits_of_isCutBessel ⟨t, rfl, D.le_of_hasLogBound.trans (le_self_pow₀ b1 nofun),\n    (Nat.sub_add_cancel (m := _ + 2) (ck.ge.trans' D.nat_le_of_hasLogBound)).symm,\n    lt_tsub_iff_right.2 (ck.ge.trans_lt' D.nat_lt_of_hasLogBound),\n    ck.ge.trans' D.nat_le_of_hasLogBound, D.nat_le_of_hasLogBound, D.le_of_hasLogBound⟩ d1 ((k _\n    le_rfl).elim fun _ j ↦ by simpa [j] using (j.2 []).2.2) ?_).choose_spec⟩,"
+  },
+  {
+   "id": "17",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "IsBessel: degree via dq, the Schur transformation through B*, and the kernel fixing (fx and K).",
+   "lines": [
+    105,
+    108
+   ],
+   "span": [
+    105,
+    79,
+    108,
+    98
+   ],
+   "lean": "dq, ⟨star B, (star\n    B)⁻¹.1, by simp [s.3, rep, φ, w, ← mul_assoc, hG ▸ weylGram_mul_schur _, ← star_mul]⟩,\n    fun y i ↦ by simpa [← integral_comp_frameEquiv (p := D.unitarySignFrameY.1), K.3] using!\n    (eval_integral_piLp (s.integrable_smul K.2.comp_inv y).eval_piLp i).symm.trans congr($fx y i)"
+  },
+  {
+   "id": "18",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The remaining band-limit constant inequality:",
+   "lines": [
+    109,
+    109
+   ],
+   "lean": "  rify at hL"
+  },
+  {
+   "id": "19",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "unfold the band constant and the Weyl dimension,",
+   "lines": [
+    110,
+    111
+   ],
+   "lean": "  simp [-prod_mul_distrib, Shape.bandConst, dq, volU, ↓card_rowIndex, ck]; rw [weylDimensionPoly,\n    card_rowIndex]; field_simp",
+   "uses": [
+    {
+     "decl": "weylDimensionPoly"
+    }
+   ]
+  },
+  {
+   "id": "20",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "bound each factor |l_i − l_j|/2 of the Weyl dimension polynomial: the bound 3a holds for each parameter entry separately (|paramW(v)_i| ≤ 3a, hL), so the triangle inequality gives |l_i − l_j| ≤ 6a before the division by 2; and the factorials, r² and k ≤ r,",
+   "lines": [
+    112,
+    114
+   ],
+   "lean": "  grw [le_abs_self (∏ _, _), abs_prod, (abs_prod ..).le, (abs_div ..).le, abs_sub, hL, hL, abs_two,\n    (D.le_of_hasLogBound : _ / 2 ≤ D.b ^ 3), filter_subset, ← Nat.factorial_le bot_le,\n    (D.nat_le_of_hasLogBound : _ * _ ≤ D.r ^ 2), k_le_r]"
+  },
+  {
+   "id": "21",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Clear the denominators of the band-limit inequality (simp with field).",
+   "lines": [
+    115,
+    115
+   ],
+   "lean": "  simp [field, ↓card_rowIndex]"
+  },
+  {
+   "id": "22",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "π ≤ b(D) (a size comparison of the data).",
+   "lines": [
+    116,
+    116
+   ],
+   "lean": "  grw [(D.le_of_hasLogBound : .pi ≤ D.b)]"
+  },
+  {
+   "id": "23",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Normalise the polynomial inequality (ring_nf).",
+   "lines": [
+    117,
+    117
+   ],
+   "lean": "  ring_nf"
+  },
+  {
+   "id": "24",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Close by monotonicity (bound, with 2 ≤ π).",
+   "lines": [
+    118,
+    118
+   ],
+   "lean": "  repeat bound [Real.two_le_pi]"
+  }
+ ]
+}

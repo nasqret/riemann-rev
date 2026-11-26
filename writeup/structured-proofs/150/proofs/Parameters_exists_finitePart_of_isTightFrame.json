@@ -1,0 +1,362 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Curve.FrameSections:89:7",
+ "summary": "Put b = a/δ̄ and A_i(z) = ∑_τ (b/areaScale)·conj Φ_τ(w_{i.1})·z_{(τ,i.2)}. The tight-frame identity and the area hypothesis make ∑_i m_{i.1}·(pull-back of the hermitian form of C along A_i) the standard form. The entire function S = ∏_i (monomial section of C at x_i)∘A_i then has the transformation law of a theta function under the translations by the lattice, so it is Θ_F for some F ∈ 𝒲_f with a vacuum expansion (`Space.exists_entireTheta_eq`). Translates give the product formulas by `jetSeries_eq_prod`, and integrality follows from the naive height bound for translates of monomial sections.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Write b = a/δ̄.",
+   "lines": [
+    99,
+    99
+   ],
+   "lean": "  generalize e : a / _ = b",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Then a = b·δ̄ (δ̄ ≠ 0 as N ≠ 0), and the signs of V are 1 (V standard).",
+   "lines": [
+    100,
+    100
+   ],
+   "lean": "  obtain ⟨⟨⟩, ⟨⟩⟩ := (div_eq_iff (by grind [Nat.cast_ne_zero])).1 e, i.1",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Construction of F and verification of (1)–(3).",
+   "lines": [
+    101,
+    126
+   ],
+   "span": [
+    101,
+    3,
+    126,
+    98
+   ],
+   "lean": "exact have hl i {y} h := mul_comm _ (b * _) ▸ C.5 (herm_mem_quadInt y h (hw.1 i)) ha\n    let A (i : I × n) : _ →L[ℂ] ℂ := ∑ τ, (b / P.areaScale * conj (Φ τ (w i.1))) • .proj (τ, i.2)\n    have B u v : (∑ i, (m i.1 • C.hermitianForm).pullForm (A i)) u v = star u ⬝ᵥ v := by\n      have := by simpa [*] using (area_pos C.1).ne'\n      convert congr(∑ k, ∑ σ, ∑ τ, conj (u (τ, k)) * v (σ, k) / M * $(hw.2 τ σ)) <;>\n        simp [A, *, mul_pow, ← mul_conj', mul_sum, sum_prod_type_right, @sum_comm I]\n      congr! 4\n      simp [← ofReal_pow √_, field, Real.pi_nonneg, *]\n    have R γ i : A i (realImage γ) = b * ∑ τ, Φ τ (γ i.2) * conj (Φ τ (w i.1)) := by\n      simp [A, mul_sum, realImage, realCoord, val_scaleIdele_fst, Real.sqrt_div_self]\n      have := NeZero.ne P.d; congr; simp [field, *]\n    (V.exists_entireTheta_eq (b := conj (quadGen P.d) • 1) (S := ∏ i, C.monomialSection (x i) ∘ A i)\n      (by simp [traceOne, quadGen, map_ofNat]) B (by exact coe_mem_Ô (algebraMap _ _ δ)) h0 ((Φ\n      1).injective (by simpa)) (by rw [prod_fn]; fun_prop) fun γ hγ ↦ by simp [R, normalizedShift,\n      riemannForm_pullForm, ← mul_sum, canonicalMultiplier, multiplier_eq_canonicalMultiplier,\n      by simpa using (hl · <| hγ ·), ← Complex.exp_sum, hx _ ▸ thetaShift_of_mem\n      (monomialSection_mem ..), ← Complex.exp_nsmul, mul_left_comm (m _ : ℂ)]).imp fun F ⟨hF, _,\n      D⟩ ↦ (fun H ↦ ⟨hF, H, fun _ _ _ x ↦ (exists_finiteImage_approx hF x).elim fun γ e ↦\n      (exists_forall_mul_mem_Ô (finiteImage γ)).elim fun M h ↦ by\n    grw [← θ_ϱ, ← e.2, (H γ).1, map_prod, norm_prod, Finset.prod_le_one₀ (by simp) fun i _ ↦ ?_]\n    grw [← hx, ← mul_zero 0, C.norm_translate_le_naiveHeight_pow (N := 0) _ _ (N * M) _ _\n      (C.norm_monomialSection_le _)] <;> simp [*]\n    simpa [← hN, mul_left_comm b, ← mul_sum] using! C.latticeModule.smul_mem δ (@hl _ (M * _) (by\n      simpa [finiteImage, mul_left_comm] using h.2 _)), D⟩) fun γ ↦\n      jetSeries_eq_prod (rho_finVec_mem_finitePart _ hF) (by fun_prop) (by\n      simp [entireTheta_translate_finiteImage _ V B, *]; simp [A, sum_prod_type, mul_sum]; grind)",
+   "head_lines": [
+    101,
+    101
+   ],
+   "head_span": [
+    101,
+    3,
+    101,
+    8
+   ],
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "3.1",
+   "parent": "3",
+   "kind": "deduction",
+   "claim": "hl: for every i and every y ∈ E with α⁻¹y integral, (∑_τ Φ_τ(y)·conj Φ_τ(w_{i.1}))·b·δ̄ ∈ Λ(C): the sum lies in 𝓞_K (`herm_mem_quadInt`, w_{i.1} ∈ αÔ by the frame), Λ is an 𝓞_K-module, and bδ̄ = a ∈ Λ.",
+   "lines": [
+    101,
+    101
+   ],
+   "span": [
+    101,
+    9,
+    101,
+    87
+   ],
+   "lean": "have hl i {y} h := mul_comm _ (b * _) ▸ C.5 (herm_mem_quadInt y h (hw.1 i)) ha",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Parameters.herm_mem_quadInt"
+    }
+   ]
+  },
+  {
+   "id": "3.2",
+   "parent": "3",
+   "kind": "setup",
+   "claim": "Define the continuous linear forms A_i(z) = ∑_τ (b/areaScale)·conj Φ_τ(w_{i.1})·z_{(τ, i.2)} for i ∈ I × n.",
+   "lines": [
+    102,
+    102
+   ],
+   "lean": "    let A (i : I × n) : _ →L[ℂ] ℂ := ∑ τ, (b / P.areaScale * conj (Φ τ (w i.1))) • .proj (τ, i.2)",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "3.3",
+   "parent": "3",
+   "kind": "deduction",
+   "claim": "B: for all u, v: ∑_i (m_{i.1}·H_C)(A_i u, A_i v) = ū·v, i.e. the weighted pull-backs of the hermitian form H_C of C along the A_i sum to the standard hermitian form.",
+   "lines": [
+    103,
+    108
+   ],
+   "lean": "    have B u v : (∑ i, (m i.1 • C.hermitianForm).pullForm (A i)) u v = star u ⬝ᵥ v := by\n      have := by simpa [*] using (area_pos C.1).ne'\n      convert congr(∑ k, ∑ σ, ∑ τ, conj (u (τ, k)) * v (σ, k) / M * $(hw.2 τ σ)) <;>\n        simp [A, *, mul_pow, ← mul_conj', mul_sum, sum_prod_type_right, @sum_comm I]\n      congr! 4\n      simp [← ofReal_pow √_, field, Real.pi_nonneg, *]",
+   "head_lines": [
+    103,
+    103
+   ],
+   "typed_fact": "(∑ i, (m i.1 • C.hermitianForm).pullForm (A i)) u v = star u ⬝ᵥ v",
+   "uses": []
+  },
+  {
+   "id": "3.3.1",
+   "parent": "3.3",
+   "kind": "fact",
+   "claim": "The area of C is nonzero (it is positive).",
+   "lines": [
+    104,
+    104
+   ],
+   "lean": "      have := by simpa [*] using (area_pos C.1).ne'",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "3.3.2",
+   "parent": "3.3",
+   "kind": "computation",
+   "claim": "Insert the tight-frame identity ∑_j m_j Φ_σ(w_j)conj Φ_τ(w_j) = M·[σ = τ] into ∑_k∑_σ∑_τ conj(u_{(τ,k)})·v_{(σ,k)}/M and expand both sides.",
+   "lines": [
+    105,
+    106
+   ],
+   "lean": "      convert congr(∑ k, ∑ σ, ∑ τ, conj (u (τ, k)) * v (σ, k) / M * $(hw.2 τ σ)) <;>\n        simp [A, *, mul_pow, ← mul_conj', mul_sum, sum_prod_type_right, @sum_comm I]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "2"
+    }
+   ]
+  },
+  {
+   "id": "3.3.3",
+   "parent": "3.3",
+   "kind": "reduction",
+   "claim": "Reduce to the equality of the scalar factors in front of each term.",
+   "lines": [
+    107,
+    107
+   ],
+   "lean": "      congr! 4",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "3.3.4",
+   "parent": "3.3",
+   "kind": "computation",
+   "claim": "The scalar factors agree: they reduce to the area hypothesis area(C) = |a|²·M·√d/(2N), with a = b·δ̄, |δ|² = N and |areaScale|² = 2π/√d.",
+   "lines": [
+    108,
+    108
+   ],
+   "lean": "      simp [← ofReal_pow √_, field, Real.pi_nonneg, *]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "3.4",
+   "parent": "3",
+   "kind": "deduction",
+   "claim": "R: for γ : n → E and every i: A_i(realImage γ) = b·∑_τ Φ_τ(γ_{i.2})·conj Φ_τ(w_{i.1}).",
+   "lines": [
+    109,
+    111
+   ],
+   "lean": "    have R γ i : A i (realImage γ) = b * ∑ τ, Φ τ (γ i.2) * conj (Φ τ (w i.1)) := by\n      simp [A, mul_sum, realImage, realCoord, val_scaleIdele_fst, Real.sqrt_div_self]\n      have := NeZero.ne P.d; congr; simp [field, *]",
+   "head_lines": [
+    109,
+    109
+   ],
+   "typed_fact": "A i (realImage γ) = b * ∑ τ, Φ τ (γ i.2) * conj (Φ τ (w i.1))",
+   "uses": []
+  },
+  {
+   "id": "3.4.1",
+   "parent": "3.4",
+   "kind": "computation",
+   "claim": "Unfold A_i and the real image of γ (coordinates scaled by the square roots of the archimedean normalizations).",
+   "lines": [
+    110,
+    110
+   ],
+   "lean": "      simp [A, mul_sum, realImage, realCoord, val_scaleIdele_fst, Real.sqrt_div_self]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "3.4.2",
+   "parent": "3.4",
+   "kind": "computation",
+   "claim": "The scale factors cancel (d ≠ 0).",
+   "lines": [
+    111,
+    111
+   ],
+   "lean": "      have := NeZero.ne P.d; congr; simp [field, *]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "3.5",
+   "parent": "3",
+   "kind": "deduction",
+   "claim": "There is F ∈ 𝒲_f with Θ_F = S := ∏_i (monomialSection_C(x_i) ∘ A_i) and a vacuum expansion for δ and N, by `Space.exists_entireTheta_eq` with the hermitian identity B: S is entire, and for every γ with α⁻¹γ integral the normalized shift of S by −realImage(δ̄γ) is S itself, because each factor is a monomial section of C, which is invariant (with the canonical multiplier) under translation by lattice vectors (`thetaShift_of_mem`, applicable by hl and monomialDeg(x_i) = m_{i.1}), and the multipliers combine by R.",
+   "lines": [
+    112,
+    117
+   ],
+   "span": [
+    112,
+    1,
+    117,
+    79
+   ],
+   "lean": "    (V.exists_entireTheta_eq (b := conj (quadGen P.d) • 1) (S := ∏ i, C.monomialSection (x i) ∘ A i)\n      (by simp [traceOne, quadGen, map_ofNat]) B (by exact coe_mem_Ô (algebraMap _ _ δ)) h0 ((Φ\n      1).injective (by simpa)) (by rw [prod_fn]; fun_prop) fun γ hγ ↦ by simp [R, normalizedShift,\n      riemannForm_pullForm, ← mul_sum, canonicalMultiplier, multiplier_eq_canonicalMultiplier,\n      by simpa using (hl · <| hγ ·), ← Complex.exp_sum, hx _ ▸ thetaShift_of_mem\n      (monomialSection_mem ..), ← Complex.exp_nsmul, mul_left_comm (m _ : ℂ)])",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Space.exists_entireTheta_eq"
+    },
+    {
+     "step": "3.1"
+    },
+    {
+     "step": "3.3"
+    },
+    {
+     "step": "3.4"
+    }
+   ]
+  },
+  {
+   "id": "3.6",
+   "parent": "3",
+   "kind": "assembly",
+   "claim": "Assemble: F, hF and the vacuum expansion D give (3); (1) is shown last (H); for (2) let x be a finite adelic vector: approximate it by α⁻¹γ for some γ : n → E with ϱ(finVec x)F = ϱ(finVec(α⁻¹γ))F (`exists_finiteImage_approx`), and choose M′ ∈ ℕ with M′·α⁻¹γ integral (`exists_forall_mul_mem_Ô`).",
+   "lines": [
+    117,
+    119
+   ],
+   "span": [
+    117,
+    79,
+    119,
+    66
+   ],
+   "lean": ".imp fun F ⟨hF, _,\n      D⟩ ↦ (fun H ↦ ⟨hF, H, fun _ _ _ x ↦ (exists_finiteImage_approx hF x).elim fun γ e ↦\n      (exists_forall_mul_mem_Ô (finiteImage γ)).elim fun M h ↦ by",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "exists_finiteImage_approx"
+    },
+    {
+     "decl": "exists_forall_mul_mem_Ô"
+    }
+   ]
+  },
+  {
+   "id": "3.7",
+   "parent": "3",
+   "kind": "reduction",
+   "claim": "F(finVec x) = θ(ϱ(finVec x)F) = ∏_i G_i(0) by (1); so it suffices that |ιₚ(G_i(0))| ≤ 1 for each i.",
+   "lines": [
+    120,
+    120
+   ],
+   "lean": "    grw [← θ_ϱ, ← e.2, (H γ).1, map_prod, norm_prod, Finset.prod_le_one₀ (by simp) fun i _ ↦ ?_]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "3.6"
+    }
+   ]
+  },
+  {
+   "id": "3.8",
+   "parent": "3",
+   "kind": "deduction",
+   "claim": "|ιₚ(G_i(0))| ≤ 1 by the bound for twisted translates of monomial sections (`CMLattice.norm_translate_le_naiveHeight_pow` with N = 0 and `norm_monomialSection_le`), provided the translation vector, multiplied by N·M′, lies in Λ.",
+   "lines": [
+    121,
+    122
+   ],
+   "lean": "    grw [← hx, ← mul_zero 0, C.norm_translate_le_naiveHeight_pow (N := 0) _ _ (N * M) _ _\n      (C.norm_monomialSection_le _)] <;> simp [*]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "CMLattice.norm_translate_le_naiveHeight_pow"
+    },
+    {
+     "decl": "CMLattice.norm_monomialSection_le"
+    }
+   ]
+  },
+  {
+   "id": "3.9",
+   "parent": "3",
+   "kind": "deduction",
+   "claim": "That translation vector times N·M′ lies in Λ: it is δ times a vector covered by hl (M′·α⁻¹γ integral), and Λ is stable under multiplication by δ ∈ 𝓞_K; this completes (2), and (3) is D.",
+   "lines": [
+    123,
+    124
+   ],
+   "span": [
+    123,
+    1,
+    124,
+    60
+   ],
+   "lean": "    simpa [← hN, mul_left_comm b, ← mul_sum] using! C.latticeModule.smul_mem δ (@hl _ (M * _) (by\n      simpa [finiteImage, mul_left_comm] using h.2 _)), D⟩)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "step": "3.1"
+    }
+   ]
+  },
+  {
+   "id": "3.10",
+   "parent": "3",
+   "kind": "deduction",
+   "claim": "(1), for every γ: ϱ(finVec(α⁻¹γ))F ∈ 𝒲_f, and its theta function is Θ_F translated, which by `entireTheta_translate_finiteImage` and B is ∏_i G_i(μ_{c,i}·z) with the linear forms of the statement; `Space.jetSeries_eq_prod` gives both product formulas.",
+   "lines": [
+    124,
+    126
+   ],
+   "span": [
+    124,
+    61,
+    126,
+    98
+   ],
+   "lean": "fun γ ↦\n      jetSeries_eq_prod (rho_finVec_mem_finitePart _ hF) (by fun_prop) (by\n      simp [entireTheta_translate_finiteImage _ V B, *]; simp [A, sum_prod_type, mul_sum]; grind)",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Space.jetSeries_eq_prod"
+    },
+    {
+     "decl": "entireTheta_translate_finiteImage"
+    },
+    {
+     "step": "3.3"
+    }
+   ]
+  }
+ ]
+}

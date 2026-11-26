@@ -1,0 +1,2170 @@
+% !TEX program = lualatex
+% ---------------------------------------------------------------------------------------------
+%  Readback note 40: Elementary divisors of a Frobenius-twisted Hecke operator
+%
+%  Build:  python3 tools/rb.py note <slug>
+%
+%  One unit of a Lean artifact, rewritten as ordinary mathematics. The prose is hand-written. Lean names,
+%  line ranges and counts come from data.tex; quoted Lean statements are copied from the artifact by the build.
+%
+%  Rules of the text: standard terminology; every symbol is explained where it first appears and listed again
+%  in the notation at the end; no letter has two meanings; a proof is complete or says what it takes for granted;
+%  Lean names appear only in the LEAN lines and in the concordance.
+%
+%  The signature rule (the build enforces it): a function, relation or predicate that the artifact defines is
+%  written only through its notation macro, which the build makes from the spec (`notation`) with one slot for
+%  each explicit argument of the Lean definition. No argument is fixed and dropped, also not "for brevity" and
+%  not for one section. Every argument and every hypothesis of a stated declaration stands inside its
+%  statement, or in a Setting that the statement cites by number; only implicit and instance arguments (the
+%  ambient objects) may stand in the conventions.
+% ---------------------------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\ifdefined\pdfvariable\pdfvariable suppressoptionalinfo \numexpr 1+2+4+8\relax\fi
+\usepackage[a4paper,hmargin=35mm,top=22mm,bottom=27mm,footskip=12mm,nohead]{geometry}
+
+\usepackage{fontspec}
+\directlua{
+  luaotfload.add_fallback("gfallback", {"STIXTwoMath-Regular.otf:mode=node;", "DejaVuSans.ttf:mode=node;"})
+  luaotfload.add_fallback("gmonofallback", {"DejaVuSansMono.ttf:mode=node;", "STIXTwoMath-Regular.otf:mode=node;"})
+}
+\setmainfont{NewCM10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookItalic,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldItalic,SmallCapsFont=*-Book,SmallCapsFeatures={Letters=SmallCaps},
+  RawFeature={fallback=gfallback}]
+\setsansfont{NewCMSans10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookOblique,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldOblique,RawFeature={fallback=gfallback}]
+\setmonofont{JetBrainsMono}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,Scale=MatchLowercase,
+  RawFeature={-calt;-liga;fallback=gmonofallback}]
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage[math-style=TeX]{unicode-math}
+\setmathfont{NewCMMath-Book.otf}
+\emergencystretch=2.5em\relax
+
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows.meta,positioning,backgrounds}
+\usepackage[protrusion=true,expansion=true]{microtype}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{multicol}
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+
+\definecolor{ink}{HTML}{0F172A}
+\definecolor{inksoft}{HTML}{475569}
+\definecolor{inkfaint}{HTML}{94A3B8}
+\definecolor{rulegrey}{HTML}{CBD5E1}
+\definecolor{arith}{HTML}{C2410C}
+\definecolor{est}{HTML}{7C3AED}
+\definecolor{ana}{HTML}{0891B2}
+\definecolor{ok}{HTML}{047857}
+\definecolor{leancol}{HTML}{3730A3}
+
+\title{Elementary divisors of a Frobenius-twisted Hecke operator}
+\author{grh-compact}
+\date{}
+
+% ------------------------------------------------------------------------------------- macros
+\newcommand{\leanfont}{\ttfamily\fontsize{8.6}{10.5}\selectfont\color{leancol}}
+\newcommand{\lean}[1]{\csname LN@#1\endcsname}
+\newcommand{\fillin}[1]{{\color{arith}\itshape[#1]}}  % a place of the template that is not written yet; the build reports every one that is left
+\newcommand{\leanquote}[1]{\csname LQ@#1\endcsname}
+\input{data.tex}
+
+\linespread{1.08}                       % 11 pt on 14.7 pt
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt plus 1.5pt minus 0.5pt}
+\setlength{\abovedisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\belowdisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\abovedisplayshortskip}{3pt plus 2pt}
+\setlength{\belowdisplayshortskip}{6pt plus 2pt minus 2pt}
+\emergencystretch=1.5em
+\clubpenalty=10000 \widowpenalty=10000 \displaywidowpenalty=10000
+\relpenalty=7000 \binoppenalty=9000
+\raggedbottom
+\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\sffamily\fontsize{7.6}{9}\selectfont\color{inkfaint}\thepage\,/\,\pageref*{LastPage}}
+\setlist{topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=4pt,leftmargin=2.1em,labelsep=0.55em}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\len}{\operatorname{len}}
+\newcommand{\cok}{\operatorname{cok}}
+\newcommand{\End}{\operatorname{End}}
+\newcommand{\Hom}{\operatorname{Hom}}
+\newcommand{\Gal}{\operatorname{Gal}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\kw}[1]{\emph{#1}}
+\newcommand{\m}[1]{\mbox{$#1$}}        % a short formula that must not be broken across lines
+\newcommand{\head}[1]{\par\addvspace{17pt plus 4pt minus 2pt}\Needspace{6\baselineskip}%
+  \noindent{\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\sect}[2]{\refstepcounter{section}\label{#2}\par\addvspace{19pt plus 4pt minus 2pt}\Needspace{7\baselineskip}%
+  \noindent\llap{{\fontsize{13.2}{16}\selectfont\bfseries\color{inkfaint}\thesection}\hspace{9pt}}%
+  {\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\subhead}[1]{\par\addvspace{9pt plus 2pt}\Needspace{4\baselineskip}\noindent\textbf{#1}\enspace\ignorespaces}
+% where a statement lives in the Lean archive
+\newcommand{\leantag}{{\sffamily\bfseries\fontsize{6.3}{8}\selectfont\color{leancol}\addfontfeatures{LetterSpace=7}LEAN}}
+\newcommand{\sep}{\unskip\nobreak\hspace{5pt}{\color{inkfaint}\textperiodcentered}\hspace{5pt plus 2pt}\ignorespaces}
+\newcommand{\leanline}[1]{\par\nopagebreak\vspace{-2.5pt}{\fontsize{8.9}{12.4}\selectfont\color{inksoft}\raggedright
+  \noindent\llap{\leantag\hspace{9pt}}#1\par}\vspace{1pt}}
+% a displayed statement in a tinted box: #1 colour, #2 text
+\newcommand{\statement}[2]{\par\addvspace{7pt}\begingroup\setlength{\fboxsep}{8.5pt}\setlength{\fboxrule}{0.6pt}%
+  \noindent\fcolorbox{#1!30!white}{#1!3!white}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{#2}}%
+  \endgroup\par\addvspace{7pt}}
+\newcommand{\nt}[2]{\par\noindent\hangindent=1.1em\hangafter=1 #1\enspace{\color{inksoft}#2}\par\vspace{1pt}}
+\newcommand{\legdot}[1]{\tikz[baseline=-0.62ex]\fill[#1] (0,0) circle (2.5pt);\hspace{3pt}}
+\newcommand{\crow}[4]{\csname CS@#1\endcsname & #2 & \textcolor{inksoft}{#3} & \textcolor{inksoft}{#4}\\}
+\newcommand{\leanquoteline}[2]{\par\noindent\hangindent=\dimexpr#1\fontdimen2\font+2.2em\relax\hangafter=1
+  \hspace*{#1\fontdimen2\font}#2}
+\newcommand{\quoted}[1]{\par\vspace{3pt}{\ttfamily\fontsize{7.5}{10.4}\selectfont\color{leancol}\raggedright
+  \setlength{\parskip}{0pt}\leanquote{#1}\par}\vspace{4pt}}
+\newcommand{\bx}[3]{{\sffamily\bfseries\fontsize{7.3}{9.2}\selectfont\color{#1!82!black}#2}\\[1.5pt]#3}
+\newcommand{\cs}[2]{\expandafter\newcommand\csname CS@#1\endcsname{#2}}
+
+% theorems
+\newtheoremstyle{plainx}{7pt plus 2pt}{7pt plus 2pt}{\itshape}{}{\bfseries}{.}{0.5em}{}
+\newtheoremstyle{uprightx}{7pt plus 2pt}{7pt plus 2pt}{}{}{\bfseries}{.}{0.5em}{}
+\theoremstyle{plainx}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{uprightx}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{setting}[theorem]{Setting}          % hypotheses shared by several statements; each of them cites it by number
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\renewcommand{\qedsymbol}{{\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.5pt}\fbox{\rule{0pt}{0.46em}\hspace{0.46em}}}}
+% what holds throughout the note: the ambient objects only (implicit and instance arguments), never a hypothesis
+\newenvironment{conventions}{\par\addvspace{5pt}\noindent\textbf{Conventions.}\enspace\ignorespaces}{\par\addvspace{3pt}}
+\makeatletter
+\renewenvironment{proof}[1][Proof]{\par\pushQED{\qed}\normalfont\topsep0pt\partopsep0pt
+  \trivlist\item[\hskip\labelsep\itshape #1.]\ignorespaces}{\popQED\endtrivlist\@endpefalse}
+\makeatother
+
+% where each declaration of the concordance is treated: \cs{key}{place}, the place naming a \label or a lettered item
+\cs{rootlemma}{Theorem 1}
+\cs{prodvol}{Theorem 2}
+\cs{dimex}{Theorem 3}
+\cs{dimdeep}{Theorem 3}
+\cs{projector}{Theorem 4}
+\cs{hecke}{Theorem 5}
+\cs{TwD}{Definition~\ref{d:T}}
+\cs{PT}{Definition~\ref{d:T}}
+\cs{qT}{Definition~\ref{d:T}}
+\cs{Tmap}{Definition~\ref{d:T}}
+\cs{twoBlock}{Definition~\ref{d:action}}
+\cs{letterMatrix}{Definition~\ref{d:action}}
+\cs{polyAction}{Definition~\ref{d:action}}
+\cs{letterRep}{Definition~\ref{d:action}}
+\cs{dpi}{Definition~\ref{d:depth}}
+\cs{depth}{Definition~\ref{d:depth}}
+\cs{rootVar}{Definition~\ref{d:excess}}
+\cs{exw}{Definition~\ref{d:excess}}
+\cs{translatesIn}{Definition~\ref{d:spaces}}
+\cs{excessCond}{Definition~\ref{d:spaces}}
+\cs{deepForms}{Definition~\ref{d:spaces}}
+\cs{IsRF}{Definition~\ref{d:filt}}
+\cs{adic}{Definition~\ref{d:filt}}
+\cs{gauss}{Definition~\ref{d:filt}}
+\cs{permStep}{Definition~\ref{d:cones}}
+\cs{slab}{Definition~\ref{d:cones}}
+\cs{pieri}{Definition~\ref{d:cones}}
+\cs{exCone}{Definition~\ref{d:cones}}
+\cs{HeckeSizes}{Definition~\ref{d:sizes}}
+\cs{frobX}{Definition~\ref{d:frob}}
+\cs{frobOperator}{Definition~\ref{d:frob}}
+\cs{letterConj}{Definition~\ref{d:frob}}
+\cs{idxw}{Definition~\ref{d:frob}}
+\cs{conjSubst}{Definition~\ref{d:frob}}
+\cs{IndexDvd}{Input 1}
+\cs{HasType}{Input 1}
+\cs{ofdetdvd}{Input 1}
+\cs{idtrans}{Input 1}
+\cs{idmap}{Input 1}
+\cs{idcomp}{Input 1}
+\cs{hermite}{Input 2}
+\cs{smith}{Input 2}
+\cs{valtop}{Input 2}
+\cs{nullst}{Input 3}
+\cs{cardGL}{Input 4}
+\cs{frobpow}{Lemma~\ref{l:basic}}
+\cs{polyActionX}{Lemma~\ref{l:basic}}
+\cs{polyOfCoeffs}{Lemma~\ref{l:basic}}
+\cs{letterRepmap}{Lemma~\ref{l:basic}}
+\cs{diagdepth}{Lemma~\ref{l:basic}}
+\cs{oneltP}{Lemma~\ref{l:basic}}
+\cs{oneltq}{Lemma~\ref{l:basic}}
+\cs{wnezero}{Lemma~\ref{l:basic}}
+\cs{finres}{Lemma~\ref{l:basic}}
+\cs{pdvdpar}{Lemma~\ref{l:par}}
+\cs{exwIcc}{Lemma~\ref{l:exIcc}}
+\cs{oneaddval}{Lemma~\ref{l:exIcc}}
+\cs{fivemul}{Lemma~\ref{l:exIcc}}
+\cs{sumdeep}{Lemma~\ref{l:sumdeep}}
+\cs{stepanov}{Lemma~\ref{l:stepanov}}
+\cs{aevalsub}{Lemma~\ref{l:subst}}
+\cs{memadic}{Lemma~\ref{l:subst}}
+\cs{monomialmem}{Lemma~\ref{l:subst}}
+\cs{Xmem}{Lemma~\ref{l:subst}}
+\cs{detinter}{Lemma~\ref{l:interlace}}
+\cs{signedsum}{Proposition~\ref{p:signed}}
+\cs{isBounded}{Proposition~\ref{p:signed}}
+\cs{borel}{Lemma~\ref{l:borel}}
+\cs{exdot}{Lemma~\ref{l:exdot}}
+\cs{conepoint}{Lemma~\ref{l:conepoint}}
+\cs{simplex}{Lemma~\ref{l:simplex}}
+\cs{dimvol}{Proposition~\ref{p:dimvol}}
+\cs{deepweight}{Proposition~\ref{p:deepweight}}
+\cs{zariski}{Lemma~\ref{l:zariski}}
+\cs{diagform}{Lemma~\ref{l:diagform}}
+\cs{mean}{Proposition~\ref{p:mean}}
+\cs{mapC}{Theorem 4}
+\cs{frobmap}{Lemma~\ref{l:frobmap}}
+\cs{frobmem}{Lemma~\ref{l:frobmem}}
+\cs{cjfrob}{Lemma~\ref{l:cjfrob}}
+\cs{powdvd}{Proposition~\ref{p:powdvd}}
+\cs{degle}{Lemma~\ref{l:degle}}
+\cs{tensordual}{Lemma~\ref{l:tensor}}
+\cs{cardle}{Lemma~\ref{l:cardle}}
+\cs{pairing}{Proposition~\ref{p:pairing}}
+\cs{depthfact}{Proposition~\ref{p:depthfact}}
+\newcommand{\cO}{\mathcal{O}}
+\newcommand{\FF}{\mathbb{F}}
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\cF}{\mathcal{F}}
+\newcommand{\cG}{\mathcal{G}}
+\newcommand{\cA}{\mathcal{A}}
+\newcommand{\cR}{\mathcal{R}}
+\newcommand{\cX}{\mathcal{X}}
+\newcommand{\cE}{\mathcal{E}}
+\newcommand{\cH}{\mathcal{H}}
+\newcommand{\cI}{\mathcal{I}}
+\newcommand{\cV}{\mathcal{V}}
+\newcommand{\cC}{\mathcal{C}}
+\newcommand{\cL}{\mathcal{L}}
+\newcommand{\cM}{\mathcal{M}}
+\newcommand{\cQ}{\mathcal{Q}}
+\newcommand{\cS}{\mathcal{S}}
+\newcommand{\cK}{\mathcal{K}}
+\newcommand{\cN}{\mathcal{N}}
+\newcommand{\fm}{\mathfrak{m}}
+\newcommand{\fx}{\mathfrak{x}}
+\newcommand{\fq}{\mathfrak{q}}
+\newcommand{\fh}{\mathfrak{h}}
+\newcommand{\fii}{\mathfrak{i}}
+\newcommand{\fe}{\mathfrak{e}}
+\newcommand{\fs}{\mathfrak{s}}
+\newcommand{\GLk}{\mathrm{GL}_{k}}
+\newcommand{\Mk}{\mathrm{M}_{k}}
+\newcommand{\Lev}{\mathrm{Lev}}
+\newcommand{\Par}{\mathrm{Par}}
+\newcommand{\Mon}{\mathrm{Mon}}
+\newcommand{\Fam}{\mathrm{Mon}_{k,n}^{L}}
+\newcommand{\ZL}{\mathbb{Z}/L}
+\newcommand{\vol}{\operatorname{vol}}
+\newcommand{\sgn}{\operatorname{sgn}}
+\newcommand{\pr}[2]{\langle#1,#2\rangle}
+\newcommand{\tp}{\mathsf{T}}
+% the four definitions whose reading by program lists a bound variable as an argument, and the predicate of ten
+% arguments: written with the arguments that Lean takes (see the spec, `notation: none`)
+\newcommand{\dep}[5]{\mathrm{depth}_{#1,#4}^{#2,#3}(#5)}
+\newcommand{\trl}[5]{\mathrm{Tr}_{#1,#2}(#3;#4,#5)}
+\newcommand{\exc}[6]{\mathrm{Ex}_{#1,#2}^{#3,#4}(#5;#6)}
+\newcommand{\frob}[5]{\mathrm{Fr}_{#1,#2,#3,#4}(#5)}
+\newcommand{\Sz}[2]{\mathrm{Sz}(#1;#2)}
+
+\begin{document}
+\color{ink}
+
+{\raggedright
+{\sffamily\bfseries\fontsize{7.2}{9}\selectfont\color{leancol}\addfontfeatures{LetterSpace=8}READBACK NOTE 40\par}
+\vspace{5pt}
+{\fontsize{21.5}{25.5}\selectfont\bfseries Elementary divisors of a Frobenius-twisted Hecke operator\par}
+\vspace{5pt}
+{\fontsize{12.4}{16}\selectfont\itshape\color{inksoft} One unit of the Lean artifact \ArtifactName, read back into
+mathematics\par}}
+\vspace{8pt}
+{\color{rulegrey}\hrule height 0.6pt}
+\vspace{7pt}
+\thispagestyle{empty}
+
+\textbf{Summary.} A group \m{\GLk(W)} over a local ring with finite residue field acts on forms in $L$ sets of
+$k$ variables, through $L$ ring homomorphisms that are linked in a circle by a power of Frobenius modulo a
+prime~$p$, alternately directly and by the inverse transpose. A Hecke operator of this action, scaled by powers
+of~$p$ so as to be integral, is shown to have small elementary divisors: modulo~\m{p^{e}} its cokernel has length at
+most a small share of the rank times~$e$, plus a constant. Four ideas carry the proof. A \emph{root lemma}: a
+term of a form that is least, for valuation plus a weight, among all translates under a Levi subgroup has
+exponents that obey linear inequalities, by a count of zeros against degree. Two \emph{dimension bounds}
+modulo~$p$: forms whose exponents nearly obey these inequalities in all frames fill about one part in the degree
+of the operator, by a count of flags against the volume of a cone of cyclically interlacing vectors; and forms
+that the scaling makes divisible in all frames are rare. An \emph{approximate projector} onto the first kind of
+forms, made from conjugation-invariant means on polynomials in generic matrices. And normal forms of matrices
+over a valuation ring, which turn the three into a statement about indices.
+
+\statement{leancol}{\fontsize{9.6}{13.2}\selectfont\textbf{What this note is.} The artifact \ArtifactName{} is a
+body of Lean code: the compact edition of a formal proof, due to L.~Alpöge with the AI system Claude, of the
+Riemann hypothesis and of its generalisation to Dirichlet $L$-functions. That headline is a claim. The authors
+report that every file compiles with Lean v4.35.0 against a pinned version of the library Mathlib and that Lean's
+kernel accepted the proofs; an independent build is recorded in the handout's record of checks when it reports.
+No mathematician has read the argument through, and nothing here says that the Riemann hypothesis is proved. This
+note treats one unit of the artifact, the folder on the twisted Hecke operator: \UnitInNote{} of its \UnitMembers{}
+declarations, which are all that carry a name (the others are three instances, described in §\ref{s:notes}).
+Proofs are given in full, \emph{given} four inputs from other units: the calculus of index divisibility
+(unit~149), the Hermite and Smith normal forms over a valuation ring, a combinatorial Nullstellensatz with
+multiplicity, and the order of the general linear group of a finite field. Every statement of the unit and of
+the Inputs was compared with its Lean text, argument by argument. The Lean text read is \PinText; Appendix~A is
+the concordance of \ConcDecls{} declarations.}
+
+\sect{The statements}{s:intro}
+The notions are defined in §\ref{s:setting}; here is what is needed to read the five theorems. \emph{Twisting
+data}~$T$ of length~$L$ over a local ring~$W$ and a ring~$\cO$ are a prime~$p$, a power \m{\PT{T}=p^{o}\ge5}, ring
+homomorphisms \m{\iota_s\colon W\to\cO} for \m{s\in\ZL} (the \emph{letters}) with
+\m{\iota_{s+1}(\upsilon)\equiv\iota_s(\upsilon)^{\PT{T}}} modulo~$p$ for $\upsilon$ in~$W$, a parity of the letters that alternates, and an element
+$\varpi$ of~$\cO$ with \m{\varpi^{2}=p}; the residue field of~$W$ has \m{\qT{T}=\PT{T}^{L}} elements. An element
+$\gamma$ of \m{\GLk(W)} acts on the variables \m{x_{i,s}} (\m{0\le i<k}, \m{s\in\ZL}) of letter~$s$ through the
+matrix \m{\letterMatrix{T}{\gamma}{s}}, which is \m{\iota_s(\gamma)} for even~$s$ and
+\m{\iota_s((\gamma^{-1})^{\tp})} for odd~$s$; \m{\polyAction{T}{\gamma}} is this action on polynomials, and
+\m{\letterRep{T}{n}{\gamma}} its matrix on the forms of degree~$n$ in each letter, in the basis of the monomials
+\m{x^{\beta}}, \m{\beta\in\Fam}. For a pair of indices \m{(i_0,i_1)} and a letter~$s_0$,
+\m{\exw{T}{s_0}{i_0}{i_1}{\cdot}} is a real weight on the variables, the \emph{excess weight}; for a
+threshold~$\mu$, \m{\dep{T}{k}{n}{\mu}{\beta}} is the degree of \m{x^{\beta}} in the variables that are
+\emph{deep} for~$\mu$. \m{\exc{T}{n}{i_0}{i_1}{I}{h}} is the module of the forms~$F$ such that every translate
+of~$F$ by a block diagonal element has, modulo the ideal~$I$, only monomials of excess at most~$h$ at every
+letter; \m{\deepForms{T}{k}{n}{\mu}{j}} is the module of the forms all of whose translates have only monomials
+of depth at least~$j$. \m{\Sz{\PT{T},o,L,k,n,\mu}{\lambda,\kappa,y,z}} is a list of ten inequalities between
+sizes (Definition~\ref{d:sizes}).
+
+\statement{arith}{\phantomsection\label{t:1}\textbf{Theorem 1} (the root lemma).\enspace
+\emph{In Setting~\ref{set:T}, let $s_0$ be a letter, let \m{i_0\ne i_1} be indices, let $\tau$ be a labelling of
+the indices with \m{\tau(i_0)=\tau(i_1)}, and let $\omega$ be a real weight on the variables with}
+\[0.4\ \le\ \omega\bigl(\rootVar{T}{i_0}{i_1}{s}\bigr)-\omega\bigl(\rootVar{T}{i_1}{i_0}{s}\bigr)\ \le\ 1.6
+\qquad\text{\emph{for every letter} } s .\]
+\emph{Let $\Phi$ be a polynomial in the variables \m{x_v} over~$\cO$, let $\alpha$ be an exponent and $e$ a
+natural number. Suppose that \m{\polyAction{T}{\gamma^{-1}}\Phi} lies in
+\m{\gauss{\adic{\varpi}{\cdot}}{\omega}{e+\pr{\omega}{\alpha}}} for every $\gamma$ in \m{\Lev_{\tau}(W)}: the
+coefficient of \m{x^{\alpha'}} in every such translate is divisible by~$\varpi$ to the power
+\m{\max(\lceil e+\pr{\omega}{\alpha}-\pr{\omega}{\alpha'}\rceil,0)}. Suppose that \m{\varpi^{e+1}} does not
+divide the coefficient of \m{x^{\alpha}} in~$\Phi$. Then}
+\[\pr{\exw{T}{s_0}{i_0}{i_1}{\cdot}}{\alpha}\ \le\ 0 .\]}
+\leanline{\lean{rootlemma}}
+
+\statement{arith}{\phantomsection\label{t:2}\textbf{Theorem 2} (the cyclic interlacing cone fills the share of
+one flag).\enspace
+\emph{Let \m{k\ge0} and \m{L\ge1} be integers, $\varsigma$ a map from \m{\ZL} to the signs \m{\{+,-\}}, and
+$\varrho$ a real number with \m{1<\varrho}. Let \m{\delta=(\delta_s)_{s\in\ZL}} be real numbers and $\cC$ a subset
+of \m{\RR^{k\times L}} such that, for every $\xi$ in \m{\RR^{k\times L}}: \m{\permStep{\varsigma}{\varrho}{1}(\xi)}
+lies in~$\cC$ if and only if $\xi$ lies in \m{\pieri{\varsigma}{\varrho}}. Then}
+\[\prod_{l=1}^{k}\frac{\varrho^{Ll}-1}{\varrho^{L}-1}\ \cdot\ \vol\bigl(\cC\cap\slab{k}{\delta}\bigr)\ =\
+\vol\bigl(\slab{k}{\delta}\bigr).\]}
+\leanline{\lean{prodvol}}
+
+The identity holds for every real \m{\varrho>1}. When \m{\varrho^{L}} is the number~$q$ of elements of a finite
+field, the product is the number of full flags in a vector space of dimension~$k$ over that field.
+
+\statement{arith}{\phantomsection\label{t:3}\textbf{Theorem 3} (two dimension bounds in
+characteristic~$p$).\enspace
+\emph{In Setting~\ref{set:T}, let the ring of~$T$ be a field~$\FF$ of characteristic~$p$, the prime of~$T$. Let
+$n$, $\lambda$ be natural numbers and $\kappa$, $z$ real numbers.}
+
+\emph{\textup{(a)} Let \m{i_0}, \m{i_1} be indices with \m{i_0+1=i_1}, and $h$ a real number such that
+\m{\Sz{\PT{T},o,L,k,n,i_1}{\lambda,\kappa,h,z}}. Then}
+\[\bigl[\GLk(W):\Par_{\twoBlock{k}{i_1}{\cdot}}(W)\bigr]\cdot\dim_{\FF}\exc{T}{n}{i_0}{i_1}{0}{h}\ \le\
+(1+\kappa)\cdot\bigl(\#\Mon_{k,n}\bigr)^{L}.\]
+
+\emph{\textup{(b)} Let $\mu$ be a natural number and $y$ a real number such that
+\m{\Sz{\PT{T},o,L,k,n,\mu}{\lambda,\kappa,y,z}}, and let $j_0$ be a natural number. Then}
+\[\sum_{j<j_0}\dim_{\FF}\deepForms{T}{k}{n}{\mu}{j}\ \le\ (1+z)\cdot\bigl(\#\Mon_{k,n}\bigr)^{L}.\]}
+\leanline{\lean{dimex}\sep \lean{dimdeep}}
+
+Here \m{(\#\Mon_{k,n})^{L}} is the number of the monomials \m{x^{\beta}}, the rank of the module of forms. In~(a)
+the index of the parahoric subgroup is the number of cosets over which a Hecke operator sums, its degree; so the
+forms obeying the excess condition fill about one part in the degree.
+
+\statement{arith}{\phantomsection\label{t:4}\textbf{Theorem 4} (an approximate projector).\enspace
+\emph{In Setting~\ref{set:T}, let $\cO$ be a valuation domain of characteristic zero in which the prime~$p$
+of~$T$ is not a unit. Let $c$, $n$, $\lambda$ be natural numbers, \m{i_0}, \m{i_1} indices with \m{i_0+1=i_1},
+and $h$ a real number. Suppose that \m{\lambda+\lambda=L} and
+\m{L\,n\,k\,(\lambda+2)+n+k<\PT{T}^{\lambda}}. Then there are a function $w$ from \m{\Fam} to~$\cO$ and a square
+matrix~$Z$ over~$\cO$ indexed by \m{\Fam} such that:}
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=1pt,topsep=2pt]
+\item \emph{\m{ZF} lies in \m{\exc{T}{n}{i_0}{i_1}{\varpi^{c}\cO}{h}} for every $F$ in \m{\cO^{\Fam}};}
+\item \emph{for every $F'$ in \m{\exc{T}{n}{i_0}{i_1}{\varpi^{c}\cO}{h-(4c+2)}} and every $F$ in
+\m{\cO^{\Fam}}, \m{\varpi^{c}} divides}
+\[\sum_{\beta}F'(\beta)\,w(\beta)\,(ZF)(\beta)\ -\ p^{(k+k^{2})\,oL\cdot L}\sum_{\beta}F'(\beta)\,F(\beta);\]
+\item \emph{\m{w(\beta)\,\letterRep{T}{n}{\gamma^{\tp}}_{\beta,\beta'}=w(\beta')\,\letterRep{T}{n}{\gamma}_{\beta',\beta}}
+for every $\gamma$ in \m{\GLk(W)} and all \m{\beta,\beta'} in \m{\Fam}.}
+\end{enumerate}}
+\leanline{\lean{projector}}
+
+\statement{arith}{\phantomsection\label{t:5}\textbf{Theorem 5} (elementary divisors of the twisted Hecke
+operator).\enspace
+\emph{In Setting~\ref{set:T}, let $\cO$ be a valuation domain of characteristic zero in which the prime~$p$
+of~$T$ is not a unit. Let $n$, $\mu$, $\lambda$ be natural numbers and $\kappa$, $y$, $z$ real numbers with
+\m{\Sz{\PT{T},o,L,k,n,\mu}{\lambda,\kappa,y,z}}. Let $\cX$, $\cH$, $\cI$ be finite sets, write
+\m{\cQ=\GLk(W)/\Par_{\twoBlock{k}{\mu}{\cdot}}(W)} for the finite set of left cosets, and \m{\cE=\cX\times\cQ}. Let $V$
+be an $\cO$-module, \m{\Psi\colon\cO^{\cX\times\cI}\to V} an $\cO$-linear map, and $Y$ an $\cO$-linear endomorphism
+of~$V$. Let \m{\mathrm{src}\colon\cE\to\cX} be a map, \m{(\gamma_{\fe})_{\fe\in\cE}} elements of
+\m{\GLk(W)}, \m{(u_{\fe})_{\fe\in\cE}} elements of \m{\mathrm{GL}_{\cH}(\cO)}, and
+\m{\jmath\colon\cI\to\Fam\times\cH}, \m{\fii\mapsto(\beta_{\fii},\fh_{\fii})}, a bijection. Suppose that the map
+\m{\fe\mapsto\bigl(\mathrm{src}(\fe),\,(\gamma_{\fe}^{\tp})^{-1}\Par_{\twoBlock{k}{\mu}{\cdot}}(W)\bigr)}
+from $\cE$ to~$\cE$ is injective, and that for every $F$ in \m{\cO^{\cX\times\cI}}}
+\[Y(\Psi(F))=\Psi(F^{\flat}),\qquad
+F^{\flat}(\fx,\fii)=\sum_{\fq\in\cQ}\,\sum_{\fii'\in\cI}(u_{(\fx,\fq)})_{\fh_{\fii},\fh_{\fii'}}\,
+\bigl(H_{(\fx,\fq)}\bigr)_{\beta_{\fii'},\beta_{\fii}}\;F\bigl(\mathrm{src}(\fx,\fq),\fii'\bigr),\]
+\emph{where
+\m{H_{(\fx,\fq)}=\letterRep{T}{n}{\gamma_{(\fx,\fq)}}\cdot\operatorname{diag}\bigl(p^{\dep{T}{k}{n}{\mu}{\beta}}\bigr)_{\beta}\cdot\letterRep{T}{n}{\tilde{\fq}^{-1}}}
+and \m{\tilde{\fq}} is the chosen representative of the coset~$\fq$. Then, for every natural number~$e$:}
+
+\vspace{2pt}\centerline{\HasType{p}{\Psi(\cO^{\cX\times\cI})}{e}{Y}{(z+\kappa e+y)\cdot\#\cX\cdot\#\cI}.}}
+\leanline{\lean{hecke}}
+
+The last line says (Input~1): $Y$ maps the image of~$\Psi$ into itself, and the index of
+\m{Y(\operatorname{im}\Psi)+p^{e}\operatorname{im}\Psi} in \m{\operatorname{im}\Psi} divides \m{p^{l}} for a natural number
+\m{l\le(z+\kappa e+y)\,\#\cX\,\#\cI}. The rank of \m{\cO^{\cX\times\cI}} is \m{\#\cX\cdot\#\cI}; so of the
+\m{e\cdot\#\cX\cdot\#\cI} units of length that \m{p^{e}} could cost, the operator loses the share~$\kappa$, and a
+constant \m{z+y} for each basis vector. The size conditions make $\kappa$ small when~$y$ is large and $n$ larger
+still. The operator \m{F\mapsto F^{\flat}} is a sum over the cosets of the parahoric subgroup, as a Hecke operator
+is, of the scaling \m{p^{\mathrm{depth}}} between two translations, twisted by the matrices~$u_{\fe}$ on an
+auxiliary space and by the map~\m{\mathrm{src}} on the points.
+
+\begin{center}
+\begin{tikzpicture}[x=1mm,y=1mm,>={Stealth[length=1.6mm]},
+  bx/.style={draw=rulegrey,line width=0.5pt,rounded corners=1.2pt,fill=arith!3!white,inner xsep=4pt,inner ysep=3.5pt,
+    align=center,font=\fontsize{7.9}{9.8}\selectfont},
+  gx/.style={bx,fill=inksoft!5!white}]
+\node[gx] (st) at (0,0) {count of zeros\\(Lemma~\ref{l:stepanov})};
+\node[bx] (rl) at (36,0) {Theorem 1\\root lemma};
+\node[gx] (df) at (76,0) {depth factorisation\\(Proposition~\ref{p:depthfact})};
+\node[bx] (vol) at (0,-15) {Theorem 2\\cone volume};
+\node[bx] (ta) at (36,-15) {Theorem 3(a)\\excess forms};
+\node[bx] (t5) at (116,-22) {Theorem 5};
+\node[gx] (ns) at (0,-30) {Nullstellensatz\\(Input~3)};
+\node[bx] (tb) at (36,-30) {Theorem 3(b)\\deep forms};
+\node[gx] (mean) at (0,-45) {invariant means\\(Proposition~\ref{p:mean})};
+\node[bx] (pj) at (36,-45) {Theorem 4\\projector};
+\node[gx] (pa) at (76,-45) {pairing\\(Proposition~\ref{p:pairing})};
+\draw[->,inksoft] (st) -- (rl);
+\draw[->,inksoft] (rl) -- (ta);
+\draw[->,inksoft] (vol) -- (ta);
+\draw[->,inksoft] (ns) -- (tb);
+\draw[->,inksoft] (mean) -- (pj);
+\draw[->,inksoft] (rl) -- (df);
+\draw[->,inksoft] (df.east) -- (t5.north west);
+\draw[->,inksoft] (ta.east) -- (t5.west);
+\draw[->,inksoft] (tb.east) -- (t5.west);
+\draw[->,inksoft] (pj.east) -- (t5.south west);
+\draw[->,inksoft] (pa.east) -- (t5.south);
+\end{tikzpicture}
+\end{center}
+\vspace{-4pt}
+{\fontsize{8.9}{12}\selectfont\color{inksoft}\noindent How the five theorems depend on each other and on the main
+intermediate results.\par}
+
+\sect{The setting}{s:setting}
+\begin{conventions}\phantomsection\label{c:conventions}
+The natural numbers are \m{0,1,2,\dots}. Every ring is a commutative ring with~$1$. A \kw{local ring}~$W$ has
+one maximal ideal~$\fm_W$ and the residue field \m{\FF_W=W/\fm_W}. A \kw{valuation domain} is an integral domain
+in which, of any two elements, one divides the other; it is a local ring, and its maximal ideal is written~$\fm$.
+The number of elements of a finite set~$\cS$ is \m{\#\cS}; for the residue field of a local ring the formal
+text uses a count that is~$0$ for an infinite field (§\ref{s:notes}, note~5).
+
+\emph{Indices, letters, variables.} $k$ and $L$ are natural numbers, \m{L\ge1} unless said otherwise. The
+\kw{indices} are \m{0,\dots,k-1}, written $i$, $i'$, $l$. The \kw{letters} are the elements of \m{\ZL}, written
+$s$, $s'$, $s_0$; \m{s+1} is the next letter. A \kw{variable} is a pair \m{v=(i,s)} of an index and a letter; the
+set of variables is finite. A \kw{labelling} is a map~$\tau$ from the indices to the natural numbers. For a
+labelling~$\tau$ and a local ring~$W$, \m{\Lev_{\tau}(W)} is the \kw{Levi subgroup}, of the $\gamma$ in
+\m{\GLk(W)} with \m{\gamma_{ii'}=0} whenever \m{\tau(i)\ne\tau(i')}, and \m{\Par_{\tau}(W)} is the \kw{parahoric
+subgroup}, of the $\gamma$ with \m{\gamma_{ii'}\in\fm_W} whenever \m{\tau(i)<\tau(i')}. For the constant labelling
+\m{\Lev_{\tau}(W)=\GLk(W)}; for the labelling \m{i\mapsto i}, \m{\Par_{\tau}(W)} consists of the matrices that are
+lower triangular modulo~$\fm_W$ (the lower Iwahori subgroup).
+
+\emph{Polynomials.} For a set $\cV$ of variables and a ring~$\cO$, \m{\cO[x_{\cV}]} is the polynomial ring in
+the variables \m{x_v}, \m{v\in\cV}. An \kw{exponent} is a function~$\alpha$ from $\cV$ to the natural numbers
+with finite support; \m{x^{\alpha}=\prod_vx_v^{\alpha(v)}}, \m{|\alpha|=\sum_v\alpha(v)} is its degree, and for a
+real function~$\omega$ on~$\cV$, a \kw{weight}, \m{\pr{\omega}{\alpha}=\sum_v\omega(v)\alpha(v)}. The same
+notation is used for vectors~$\alpha$ with real coordinates. For a square matrix~$G$ over~$\cO$ indexed by a
+finite set~$\cV$, the \kw{linear substitution} of~$G$ is the endomorphism of the $\cO$-algebra \m{\cO[x_{\cV}]}
+with \m{x_{v'}\mapsto\sum_vG_{vv'}x_v}; it is multiplicative in~$G$. \m{\Mon_{k,n}} is the set of the exponents of
+degree~$n$ on the indices, and \m{\mathrm{Sym}^{n}(G)}, for $G$ in \m{\Mk(\cO)}, is the matrix indexed by
+\m{\Mon_{k,n}} whose \m{(\beta,\beta')} entry is the coefficient of \m{x^{\beta}} in the linear substitution of~$G$
+applied to \m{x^{\beta'}}. A \kw{family} is an element \m{\beta=(\beta_s)_{s}} of
+\m{\Fam=(\Mon_{k,n})^{\ZL}}; it is also read as the exponent \m{(i,s)\mapsto\beta_s(i)} on the variables, of
+degree~$n$ in each letter. A \kw{form} is a vector \m{F=(F(\beta))_{\beta}} in \m{\cO^{\Fam}}, also read as the
+polynomial \m{\sum_{\beta}F(\beta)x^{\beta}}. For matrices \m{G_s} indexed by \m{\Mon_{k,n}}, one for each letter,
+\m{\bigotimes_sG_s} is the matrix indexed by \m{\Fam} with entries \m{\prod_s(G_s)_{\beta_s,\beta'_s}}. Matrices
+act on column vectors; \m{G^{\tp}} is the transpose.
+
+\emph{Volumes.} \m{\RR^{k\times L}} is the space of the real functions on the variables, with Lebesgue
+measure~\m{\vol}; a volume is a real number, finite in all cases that occur.
+\end{conventions}
+
+\begin{definition}[twisting data]\label{d:T}
+Let $L$ be a natural number, $W$ a local ring and $\cO$ a ring. \kw{Twisting data of length~$L$ over $W$
+and~$\cO$} are a tuple \m{T=(p,o,(\iota_s)_{s\in\ZL},\varsigma_T,\varpi)} of natural numbers $p$ and~$o$, ring
+homomorphisms \m{\iota_s\colon W\to\cO}, a map $\varsigma_T$ from \m{\ZL} to the signs \m{\{+,-\}} (the
+letter~$s$ is \kw{even} if \m{\varsigma_T(s)=+} and \kw{odd} otherwise) and an element~$\varpi$ of~$\cO$, such
+that: $p$ is prime; \m{5\le p^{o}}; \m{\varpi^{2}=p} in~$\cO$; $p$ divides \m{\iota_{s+1}(\upsilon)-\iota_s(\upsilon)^{p^{o}}}
+in~$\cO$ for every letter~$s$ and every $\upsilon$ in~$W$; \m{\varsigma_T(s+1)\ne\varsigma_T(s)} for every letter~$s$; and
+\m{\#\FF_W=(p^{o})^{L}}. The set of all twisting data is \m{\TwD{L}{W}{\cO}}. For $T$ in it we put
+\[\PT{T}=p^{o},\qquad \qT{T}=\PT{T}^{L},\]
+and for a ring homomorphism \m{\chi\colon\cO\to\cO'}, \m{\Tmap{\chi}{T}} is the element
+\m{(p,o,(\chi\circ\iota_s)_s,\varsigma_T,\chi(\varpi))} of \m{\TwD{L}{W}{\cO'}}.
+\end{definition}
+\leanline{\lean{TwD}\sep \lean{PT}\sep \lean{qT}\sep \lean{Tmap}}
+
+For \m{L=0} there are no twisting data, as a field has at least two elements. For \m{L\ge1} the alternation
+forces $L$ to be even. The components of~$T$ keep their names: $p$, $o$, $\iota_s$, $\varsigma_T$ and~$\varpi$
+always belong to the twisting data called~$T$ in the statement at hand, and those of \m{\Tmap{\chi}{T}} are as
+just said.
+
+\begin{setting}\label{set:T}
+\m{L\ge1} and \m{k\ge0} are integers, $W$ is a local ring, $\cO$ is a ring, and $T$ is an element of
+\m{\TwD{L}{W}{\cO}}, with components \m{p,o,(\iota_s)_s,\varsigma_T,\varpi}. Indices, letters and variables are
+those of the conventions, for this $k$ and~$L$.
+\end{setting}
+
+\begin{definition}[the action on forms]\label{d:action}
+In Setting~\ref{set:T}, let $\gamma$ be an element of \m{\GLk(W)}, $s$ a letter and $n$ a natural number.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item \m{\letterMatrix{T}{\gamma}{s}} is the matrix in \m{\Mk(\cO)} obtained by applying $\iota_s$ to the entries
+of~$\gamma$ if $s$ is even, and of \m{(\gamma^{-1})^{\tp}} if $s$ is odd. The map
+\m{\gamma\mapsto\letterMatrix{T}{\gamma}{s}} is multiplicative.
+\item \m{\polyAction{T}{\gamma}} is the endomorphism of the $\cO$-algebra of polynomials in the variables
+\m{x_{i,s}} that acts on the variables of each letter~$s$ by the linear substitution of
+\m{\letterMatrix{T}{\gamma}{s}}. The map \m{\gamma\mapsto\polyAction{T}{\gamma}} is multiplicative: \m{\GLk(W)}
+acts on the left.
+\item \m{\letterRep{T}{n}{\gamma}=\bigotimes_{s}\mathrm{Sym}^{n}\bigl(\letterMatrix{T}{\gamma}{s}\bigr)}, a square
+matrix over~$\cO$ indexed by \m{\Fam}, multiplicative in~$\gamma$.
+\item For natural numbers $k$, $\mu$ and an index~$i$, \m{\twoBlock{k}{\mu}{i}} is $0$ if \m{i<\mu} and $1$
+otherwise. The labelling \m{\twoBlock{k}{\mu}{\cdot}} has the two blocks \m{\{i<\mu\}} and \m{\{i\ge\mu\}}.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{letterMatrix}\sep \lean{polyAction}\sep \lean{letterRep}\sep \lean{twoBlock}}
+
+\begin{definition}[deep variables and depth]\label{d:depth}
+In Setting~\ref{set:T}, let $\mu$ and $n$ be natural numbers. For a variable \m{v=(i,s)} put
+\m{\dpi{T}{\mu}{v}=1} if $s$ is even and \m{i\ge\mu}, or $s$ is odd and \m{i<\mu}, and \m{\dpi{T}{\mu}{v}=0}
+otherwise; in the first case $v$ is \kw{deep} for~$\mu$. For a family~$\beta$ in \m{\Fam}, its \kw{depth} is
+\[\dep{T}{k}{n}{\mu}{\beta}=\sum_{v=(i,s)}\beta_s(i)\,\dpi{T}{\mu}{v}=\pr{\dpi{T}{\mu}{\cdot}}{\beta},\]
+the degree of \m{x^{\beta}} in the deep variables. (A reading of the formal text by program gives the depth a
+sixth argument: it takes the name under which the degree is passed on for a further one.)
+\end{definition}
+\leanline{\lean{dpi}\sep \lean{depth}}
+
+The scaling of the Hecke operator is the diagonal matrix \m{\operatorname{diag}(p^{\dep{T}{k}{n}{\mu}{\beta}})_{\beta}}.
+It is the action on forms of the diagonal matrix with entries $1$ at the indices \m{i<\mu} and $p$ at the
+others, read through the letters: directly at the even ones, and by the inverse transpose, up to the scalar~$p$,
+at the odd ones.
+
+\begin{definition}[root variables and excess]\label{d:excess}
+In Setting~\ref{set:T}, let \m{i_0}, \m{i_1} be indices and $s$, $s_0$ letters. The \kw{root variable} is
+\[\rootVar{T}{i_0}{i_1}{s}=(i_1,s)\ \text{ if $s$ is even},\qquad\rootVar{T}{i_0}{i_1}{s}=(i_0,s)\ \text{ if $s$ is odd}.\]
+For a letter~$s$ let \m{[s-s_0]} be the representative of \m{s-s_0} in \m{\{0,\dots,L-1\}}. The \kw{excess
+weight} at~$s_0$ is the real function on the variables \m{v=(i,s)} given by
+\[\exw{T}{s_0}{i_0}{i_1}{v}=\frac{1}{\qT{T}}\Bigl(\bigl[v=\rootVar{T}{i_0}{i_1}{s}\bigr]\cdot\PT{T}^{\,1+[s-1-s_0]}
+-\bigl[v=\rootVar{T}{i_1}{i_0}{s}\bigr]\cdot\PT{T}^{\,[s-s_0]}\Bigr),\]
+where a bracket around a statement is $1$ if it holds and $0$ if not. The \kw{excess} of an
+exponent~$\alpha$ at~$s_0$ is \m{\pr{\exw{T}{s_0}{i_0}{i_1}{\cdot}}{\alpha}}.
+\end{definition}
+\leanline{\lean{rootVar}\sep \lean{exw}}
+
+Since \m{1+[s-1-s_0]} is $L$ for \m{s=s_0} and \m{[s-s_0]} otherwise, the excess of~$\alpha$ at~$s_0$ is, for
+\m{i_0\ne i_1} and with \m{\alpha^{+}_s=\alpha(\rootVar{T}{i_0}{i_1}{s})} and
+\m{\alpha^{-}_s=\alpha(\rootVar{T}{i_1}{i_0}{s})},
+\begin{equation}\label{e:excess}
+\pr{\exw{T}{s_0}{i_0}{i_1}{\cdot}}{\alpha}=\alpha^{+}_{s_0}-\frac{\alpha^{-}_{s_0}}{\qT{T}}
++\sum_{s\ne s_0}\frac{\PT{T}^{[s-s_0]}}{\qT{T}}\,\bigl(\alpha^{+}_s-\alpha^{-}_s\bigr).
+\end{equation}
+The two root variables of a letter are the two variables that the elementary matrix \m{1+\upsilon E_{i_0i_1}}, $\upsilon$ in~$W$, couples at
+that letter: at an even letter it adds a multiple of \m{x_{i_0,s}} to \m{x_{i_1,s}}, at an odd letter a multiple
+of \m{x_{i_1,s}} to \m{x_{i_0,s}}.
+
+\begin{definition}[conditions on forms]\label{d:spaces}
+In Setting~\ref{set:T}, let $n$ be a natural number.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item For a labelling~$\tau$, an ideal~$I$ of~$\cO$ and a subset $\mathcal{B}$ of \m{\Fam},
+\m{\trl{T}{n}{\tau}{I}{\mathcal{B}}} is
+the $\cO$-submodule of the forms $F$ in \m{\cO^{\Fam}} such that
+\m{(\letterRep{T}{n}{\gamma}F)(\beta)\in I} for every $\gamma$ in \m{\Lev_{\tau}(W)} and every $\beta$ in~$\mathcal{B}$.
+\item For indices \m{i_0}, \m{i_1}, an ideal~$I$ of~$\cO$ and a real number~$h$,
+\[\exc{T}{n}{i_0}{i_1}{I}{h}=\trl{T}{n}{\twoBlock{k}{i_1}{\cdot}}{I}{\mathcal{B}},\qquad
+\mathcal{B}=\bigl\{\beta:\ h<\pr{\exw{T}{s_0}{i_0}{i_1}{\cdot}}{\beta}\ \text{for some letter } s_0\bigr\}.\]
+\item For natural numbers $k$, $\mu$ and $j$,
+\m{\deepForms{T}{k}{n}{\mu}{j}=\trl{T}{n}{0}{0}{\{\beta:\dep{T}{k}{n}{\mu}{\beta}<j\}}}, with the constant
+labelling~$0$ and the zero ideal.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{translatesIn}\sep \lean{excessCond}\sep \lean{deepForms}}
+
+So $F$ lies in \m{\exc{T}{n}{i_0}{i_1}{I}{h}} when, for every $\gamma$ that is block diagonal with the blocks
+\m{\{i<i_1\}} and \m{\{i\ge i_1\}}, the form \m{\letterRep{T}{n}{\gamma}F} has modulo~$I$ only monomials whose
+excess is at most~$h$ at every letter; and $F$ lies in \m{\deepForms{T}{k}{n}{\mu}{j}} when every translate of~$F$
+under \m{\GLk(W)} has only monomials of depth at least~$j$.
+
+\begin{definition}[filtrations]\label{d:filt}
+Let $\cO$ be a ring.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item Let \m{\cF=(\cF(\theta))_{\theta\in\RR}} be a family of additive subgroups of~$\cO$. We say that
+\IsRF{\cF} if \m{1\in\cF(0)}, if \m{\cF(\theta)\cdot\cF(\theta')\subseteq\cF(\theta+\theta')} for all
+\m{\theta,\theta'}, and if \m{\cF(\theta')\subseteq\cF(\theta)} whenever \m{\theta\le\theta'}.
+\item For $\varpi$ in~$\cO$ and a real number~$\theta$, \m{\adic{\varpi}{\theta}} is the additive group of the
+elements of~$\cO$ divisible by \m{\varpi^{\max(\lceil\theta\rceil,0)}}.
+\item For a family $\cF$ of additive subgroups of~$\cO$, a set $\cV$ of variables, a weight~$\omega$ on~$\cV$ and
+a real number~$\theta$, \m{\gauss{\cF}{\omega}{\theta}} is the additive group of the polynomials in
+\m{\cO[x_{\cV}]} whose coefficient at each \m{x^{\alpha}} lies in \m{\cF(\theta-\pr{\omega}{\alpha})}.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{IsRF}\sep \lean{adic}\sep \lean{gauss}}
+
+In the sense of~(a), \IsRF{\adic{\varpi}{\cdot}}, because
+\m{\lceil\theta+\theta'\rceil\le\lceil\theta\rceil+\lceil\theta'\rceil}; and if \IsRF{\cF}, then
+\IsRF{\gauss{\cF}{\omega}{\cdot}}, on the polynomial ring, because the coefficient of \m{x^{\alpha}} in a product is a
+sum of products of coefficients at exponents with sum~$\alpha$. These are the two instances of the unit
+(§\ref{s:notes}, note~1). In \m{\gauss{\adic{\varpi}{\cdot}}{\omega}{\theta}} a variable \m{x_v} sits at
+level~\m{\omega(v)}: the level of a polynomial is the least value of \emph{valuation plus weight} over its terms.
+For \m{\varpi=0} the group \m{\adic{0}{\theta}} is~$\cO$ for \m{\theta\le0} and $0$ for \m{\theta>0}.
+
+\begin{definition}[cones and slabs]\label{d:cones}
+Let \m{k\ge0}, \m{L\ge1}, let $\varsigma$ be a map from \m{\ZL} to the signs, $\varrho$ a real number, and
+\m{\sigma=(\sigma_s)_{s\in\ZL}} permutations of the indices.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item \m{\permStep{\varsigma}{\varrho}{\sigma}} is the linear endomorphism of \m{\RR^{k\times L}} sending $\xi$ to
+the vector with the coordinates
+\m{\varsigma(s)\cdot\bigl(\varrho\,\xi(i,s+1)-\xi(\sigma_s(i),s)\bigr)} at \m{(i,s)}. For the identity
+permutations we write \m{\permStep{\varsigma}{\varrho}{1}}.
+\item For reals \m{\delta=(\delta_s)_s}, \m{\slab{k}{\delta}} is the set of the $\eta$ in \m{\RR^{k\times L}} with
+all coordinates \m{\ge0} and \m{\delta_s-1\le\sum_i\eta(i,s)\le\delta_s} for every letter~$s$.
+\item \m{\pieri{\varsigma}{\varrho}} is the set of the $\xi$ in \m{\RR^{k\times L}} such that for every
+letter~$s$ and all indices \m{i}, \m{i+1}: \m{\varrho\,\xi(i+1,s+1)\le\xi(i,s)} if \m{\varsigma(s)=+}, and
+\m{\xi(i+1,s)\le\varrho\,\xi(i,s+1)} if \m{\varsigma(s)=-}.
+\item In Setting~\ref{set:T} with $\cO$ a field, for an index~$i_1$ and a real number~$h$,
+\m{\exCone{T}{i_1}{h}} is the set of the $\eta$ in \m{\RR^{k\times L}} such that for every letter~$s_0$ and all
+indices \m{i}, \m{i+1}: \m{\pr{\exw{T}{s_0}{i}{i+1}{\cdot}}{\eta}\le h} if \m{i+1=i_1}, and
+\m{\pr{\exw{T}{s_0}{i}{i+1}{\cdot}}{\eta}\le0} otherwise.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{permStep}\sep \lean{slab}\sep \lean{pieri}\sep \lean{exCone}}
+
+With \m{\eta=\permStep{\varsigma}{\varrho}{1}(\xi)}, the condition of~(c) at an even letter, together with
+\m{\eta(i,s)>0}, reads \m{\varrho\,\xi(i,s+1)>\xi(i,s)\ge\varrho\,\xi(i+1,s+1)}: the column \m{\xi(\cdot,s)}
+interlaces the column \m{\varrho\,\xi(\cdot,s+1)} from below. At an odd letter the roles are exchanged. Hence
+the name: a cone of cyclically interlacing columns.
+
+\begin{definition}[the size conditions]\label{d:sizes}
+For natural numbers $P$, $o$, $L$, $k$, $n$, $\mu$, $\lambda$ and real numbers $\kappa$, $y$, $z$ we write
+\m{\Sz{P,o,L,k,n,\mu}{\lambda,\kappa,y,z}} for the conjunction of the ten conditions
+\begin{gather*}
+0<\mu,\qquad 2\mu\le k,\qquad \kappa\le1,\qquad 1\le y,\qquad \lambda+\lambda=L,\qquad
+L\,n\,k\,(\lambda+2)+n+k<P^{\lambda},\\
+6\bigl(2(k+k^{2})\,oL\cdot L+2\bigr)+2\le y,\qquad \frac{2(L+2)k}{y}\le\kappa,\qquad
+\bigl(y+L(k+1)\bigr)\,k\,P^{3\mu}+k+2\le\frac{n}{y},\\
+L\,n\,\Bigl(\frac{1}{P^{2\mu}}+\frac{\mu^{2}}{kP}\Bigr)\le z .
+\end{gather*}
+\end{definition}
+\leanline{\lean{HeckeSizes}\sep in the formal text the ten arguments are called $P$, $d$, $N$, $k$, $n$, $r$, $\ell$,
+$\kappa$, $y$, $z$}
+
+\begin{definition}[Frobenius operators and conjugations]\label{d:frob}
+In Setting~\ref{set:T}, let $\mu$, $\lambda$, $n$, $j$ be natural numbers, $s$ a letter, $\gamma$ an element of
+\m{\GLk(W)}, and \m{i_0}, \m{i_1}, $i$ indices.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item The \kw{generic variables} are \m{x_{s,i,i'}}, for a letter and two indices; \m{X_s=(x_{s,i,i'})_{i,i'}} is
+the generic matrix of the letter~$s$. \m{\frobX{T}{s}{j}} is the matrix over the polynomial ring in the generic
+variables over~$\cO$ whose \m{(i,i')} entry is \m{x_{s-j,i,i'}^{\,\PT{T}^{j}}}: the generic matrix of the letter
+\m{s-j} with its entries raised to the power \m{\PT{T}^{j}}.
+\item Let $\cR$ be a ring and \m{\psi=(\psi(s,j))} matrices in \m{\Mk(\cR)}, for $s$ a letter and $j$ a natural
+number. For a letter~$s$ and a natural number~$m$ put \m{\Pi_s^{m}=\psi(s,m-1)\cdots\psi(s,1)\,\psi(s,0)}, and
+let $B_s$ be the matrix in \m{\Mk(\cR)} whose row~$i$ is row~$i$ of \m{\Pi_s^{m}} if $s$ is even, and of the
+transpose of the adjugate of \m{\Pi_s^{m}} if $s$ is odd, where \m{m=\lambda+\dpi{T}{\mu}{(i,s)}}. Then
+\[\frob{T}{\mu}{\lambda}{n}{\psi}=\bigotimes_{s}\mathrm{Sym}^{n}(B_s),\]
+a square matrix over~$\cR$ indexed by \m{\Fam}.
+\item \m{\letterConj{T}{\gamma}{s}} is the multiplicative map
+\m{G\mapsto\iota_s(\gamma)\,G\,\iota_s(\gamma^{-1})} of \m{\Mk(\cO)}.
+\item \m{\idxw{T}{\lambda}{i_0}{i_1}{i}=\bigl([i=i_1]-[i=i_0]\bigr)/\PT{T}^{\lambda}}, a real number.
+\item For a ring homomorphism \m{\chi\colon W\to\cO}, \m{\conjSubst{\chi}{\gamma}} is the endomorphism of the
+$\cO$-algebra of polynomials in the entries \m{x_{i,i'}} of one generic matrix~$X$ that substitutes the entries
+of \m{\chi(\gamma^{-1})\,X\,\chi(\gamma)} for those of~$X$.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{frobX}\sep \lean{frobOperator}\sep \lean{letterConj}\sep \lean{idxw}\sep \lean{conjSubst}}
+
+If the generic matrix of every letter~$s$ is specialised to \m{\iota_s(\gamma)}, for one $\gamma$ in
+\m{\GLk(W)}, then \m{\frobX{T}{s}{j}} becomes congruent to \m{\iota_s(\gamma)} modulo~$p$, and the matrices $B_s$ of~(b),
+for \m{\psi=\frobX{T}{\cdot}{\cdot}}, become congruent to matrices whose rows are rows of
+\m{\iota_s(\gamma)^{\lambda}} or of \m{\iota_s(\gamma)^{\lambda+1}} (for odd letters, of their transposed
+adjugates). The operator on generic matrices keeps more: the exponents of the generic variables of each letter.
+
+\statement{inksoft}{\textbf{Inputs from other units.} The results below are taken for granted in this note.
+
+\vspace{4pt}\phantomsection\label{i:1}\textbf{Input 1} (index divisibility; unit 149).\enspace
+\emph{Let $\cO$ be a commutative ring, $V$ and $V'$ modules over~$\cO$, let $M_1$, $M_2$, $M_3$ be submodules
+of~$V$ and $M'_1$, $M'_2$ submodules of~$V'$, and let $\pi$, $\pi'$, $\pi_0$ be elements of~$\cO$. One writes
+\m{\IndexDvd{M_1}{M_2}{\pi}}, the index of $M_2$ in $M_1$ divides~$\pi$, if for every natural number~$n'$ and every
+family of $n'$ elements of~$M_1$ there is a square matrix of size~$n'$ over~$\cO$ whose determinant
+divides~$\pi$ and whose rows, used as coefficients of combinations of the family, give $n'$ elements of~$M_2$.
+For an element~$p$ of~$\cO$, a natural number~$e$, an $\cO$-linear endomorphism~$Y$ of~$V$ and a real
+number~$\theta$ one says that \HasType{p}{M_1}{e}{Y}{\theta} if \m{Y(M_1)\subseteq M_1} and
+\m{\IndexDvd{M_1}{Y(M_1)+p^{e}M_1}{p^{l}}} for some natural number \m{l\le\theta}. Then:}
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=1pt,topsep=2pt]
+\item \emph{if $\cO$ is a valuation domain, $\mathcal{J}$ a finite set, $G$ a square matrix over~$\cO$ indexed
+by~$\mathcal{J}$ whose determinant divides~$\pi$, and $M_2$ a submodule of \m{\cO^{\mathcal{J}}} that contains
+\m{G(\cO^{\mathcal{J}})}, then \m{\IndexDvd{\cO^{\mathcal{J}}}{M_2}{\pi}};}
+\item \emph{if \m{\IndexDvd{M_1}{M_2}{\pi}} and \m{\IndexDvd{M_2}{M_3}{\pi'}}, then
+\m{\IndexDvd{M_1}{M_3}{\pi\pi'}};}
+\item \emph{if \m{\Psi\colon V\to V'} is an $\cO$-linear map, \m{\IndexDvd{M_1}{M_2}{\pi}},
+\m{M'_1\subseteq\Psi(M_1)+M'_2} and \m{\Psi(M_2)\subseteq M'_2}, then \m{\IndexDvd{M'_1}{M'_2}{\pi}};}
+\item \emph{if \m{Y\colon V\to V} is an $\cO$-linear map with \m{Y(M_1)\subseteq M_1}, if
+\m{\IndexDvd{M_1}{Y(M_1)+\pi_0M_1}{\pi}} and \m{\IndexDvd{M_1}{M_2+\pi_0M_1}{\pi'}}, then
+\m{\IndexDvd{M_1}{Y(M_2)+\pi_0M_1}{\pi\pi'}}.}
+\end{enumerate}
+
+\vspace{3pt}\phantomsection\label{i:2}\textbf{Input 2} (normal forms over a valuation ring; units 120 and~112,
+background).\enspace
+\emph{Let $\cA$ be a commutative ring and $\cR$ a subring such that \m{(\cA,\cR)} is a valuation pair: for any
+two elements of~$\cA$ there is an idempotent of~$\cR$ such that the $\cR$-module spanned by the two elements
+lies in the $\cR$-multiples of the first element minus the idempotent times the difference of the first and the
+second. If $\cA$ is a valuation domain, then \m{(\cA,\cA)} is a valuation pair. Let $\cN$ be a finite set.}
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=1pt,topsep=2pt]
+\item \emph{\textup{(Hermite)} Let $\cK$ be a finite set with an injective map to~$\cN$, by which $\cK$ is
+regarded as a subset of~$\cN$, let $X$ be a matrix over~$\cA$ with rows indexed by~$\cN$ and columns by~$\cK$, and
+let weights, natural numbers, be given on~$\cK$. Then there are an invertible matrix~$U$ over~$\cA$ indexed
+by~$\cN$, with the entries of $U$ and of \m{U^{-1}} in~$\cR$, and a square matrix~$\Delta$ over~$\cA$ indexed
+by~$\cK$, whose entry at \m{(l,l')} vanishes whenever the weight of~$l'$ is less than that of~$l$, such that
+\m{X=U_{\cdot,\cK}\,\Delta} and \m{(U^{-1})_{\cK,\cdot}\,X=\Delta}; here \m{U_{\cdot,\cK}} consists of the columns
+of~$U$ in~$\cK$ and \m{(U^{-1})_{\cK,\cdot}} of the rows of \m{U^{-1}} in~$\cK$.}
+\item \emph{\textup{(Smith)} Every square matrix $X$ over~$\cA$ indexed by~$\cN$ is a product
+\m{U\operatorname{diag}(\varepsilon_l)_{l\in\cN}\,U'} with $U$, $U'$ invertible, the entries of $U$, \m{U^{-1}},
+$U'$, \m{U'^{-1}} in~$\cR$, and \m{\varepsilon_l} in~$\cA$.}
+\end{enumerate}
+(The reading of the Hermite form by program also lists a ring with involution, from an earlier part of its
+file; the statement does not involve it.)}
+\leanline{\lean{IndexDvd}\sep \lean{HasType}\sep \lean{ofdetdvd}\sep \lean{idtrans}\sep \lean{idmap}\sep
+\lean{idcomp}\sep \lean{hermite}\sep \lean{smith}\sep \lean{valtop}}
+
+\statement{inksoft}{\phantomsection\label{i:3}\textbf{Input 3} (a combinatorial Nullstellensatz with
+multiplicity; unit 57, background).\enspace
+\emph{Let $\FF$ be a field, $\cV$ and $\cS$ finite sets, and $\varkappa$ a map from $\cV$ to the natural numbers
+with \m{0<\varkappa(v)} for every~$v$; the \kw{cost} of an exponent~$\alpha'$ on~$\cV$ is
+\m{\sum_v\alpha'(v)/\varkappa(v)}. Let \m{(\upsilon_{\fs})_{\fs\in\cS}} be pairwise distinct points of
+\m{\FF^{\cV}} with \m{\prod_v\varkappa(v)\le\#\cS}. Suppose that for every $v$ in~$\cV$ there is a polynomial
+\m{\Phi_v} in \m{\FF[x_{\cV}]}, all of whose monomials \m{x^{\alpha'}} have cost less than~$1$, with
+\m{\Phi_v(\upsilon_{\fs})=\upsilon_{\fs}(v)^{\varkappa(v)}} for every~$\fs$. Let $j$ be a natural number and
+$\Phi$ a nonzero polynomial in \m{\FF[x_{\cV}]} that lies, for every~$\fs$, in the $j$-th power of the ideal of
+the polynomials vanishing at~\m{\upsilon_{\fs}}. Then $\Phi$ has a monomial \m{x^{\alpha}}, with nonzero
+coefficient, of cost at least~$j$.} (The reading by program also lists a polynomial and an exponent of an earlier
+part of the file; they are the bound objects \m{\Phi_v} and \m{x^{\alpha}} of the statement.)
+
+\vspace{3pt}\phantomsection\label{i:4}\textbf{Input 4} (the order of the general linear group; unit 24,
+background).\enspace
+\emph{For a finite field~$\FF$ and a finite set of \m{k'} elements, the group of the invertible matrices
+over~$\FF$ indexed by the set has \m{\prod_{l=0}^{k'-1}(\#\FF)^{l}\bigl((\#\FF)^{l+1}-1\bigr)} elements; the formal
+text states this as an equation in an arbitrary field.}}
+\leanline{\lean{nullst}\sep \lean{cardGL}}
+
+Input~1 is the subject of the note on unit~149 of this write-up; there the definitions are stated with their
+arguments in the formal order and the four properties are proved. Input~2 is treated there as well. Input~3 is
+called a known result by the artifact (a combinatorial Nullstellensatz with multiplicity: a nonzero polynomial
+that vanishes to high order on a large grid-like set of points has a term of large cost); Input~4 is classical. The
+catalogue of quoted results of this write-up records no confirmed place in the literature for Inputs 2 and~3:
+\emph{reference to be confirmed}. The background library also supplies the vocabulary of the conventions (linear
+substitutions, symmetric powers, Kronecker products, Levi and parahoric subgroups; units 57 and~112).
+
+\sect{First properties}{s:first}
+\begin{lemma}[elementary properties]\label{l:basic}
+In Setting~\ref{set:T}:
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=1pt,topsep=2pt]
+\item for every natural number~$j$, every letter~$s$ and every $\upsilon$ in~$W$, $p$ divides
+\m{\iota_{s+j}(\upsilon)-\iota_s(\upsilon)^{\PT{T}^{j}}};
+\item for $\gamma$ in \m{\GLk(W)} and a variable \m{v=(i',s)},
+\m{\polyAction{T}{\gamma}x_{v}=\sum_{i}(\letterMatrix{T}{\gamma}{s})_{ii'}\,x_{i,s}};
+\item for a natural number~$n$, $\gamma$ in \m{\GLk(W)} and a form $F$ in \m{\cO^{\Fam}},
+\m{\polyAction{T}{\gamma}} sends the polynomial \m{\sum_{\beta}F(\beta)x^{\beta}} to the polynomial of the form
+\m{\letterRep{T}{n}{\gamma}F};
+\item for a ring homomorphism \m{\chi\colon\cO\to\cO'}, a natural number~$n$ and $\gamma$ in \m{\GLk(W)}, the
+matrix \m{\letterRep{\Tmap{\chi}{T}}{n}{\gamma}} is obtained by applying $\chi$ to the entries of
+\m{\letterRep{T}{n}{\gamma}};
+\item for natural numbers $n$, $\mu$ and an element $\pi$ of~$\cO$, the diagonal matrix with the entries
+\m{\pi^{\dep{T}{k}{n}{\mu}{\beta}}}, \m{\beta\in\Fam}, equals
+\m{\bigotimes_s\mathrm{Sym}^{n}\bigl(\operatorname{diag}(\pi^{\dpi{T}{\mu}{(i,s)}})_{i}\bigr)}.
+\end{enumerate}
+Moreover \m{1<\PT{T}} and \m{1<\qT{T}}; the residue field of~$W$ is finite; and \m{\varpi\ne0} if $\cO$ has
+characteristic zero.
+\end{lemma}
+\begin{proof}
+(a) By induction on~$j$: if \m{\iota_{s+j}(\upsilon)\equiv\iota_s(\upsilon)^{\PT{T}^{j}}} modulo~$p$, then
+\m{\iota_{s+j+1}(\upsilon)\equiv\iota_{s+j}(\upsilon)^{\PT{T}}\equiv\iota_s(\upsilon)^{\PT{T}^{j+1}}}, because
+congruent elements have congruent powers. (b) is the definition of the linear substitution. (c) By~(b) and the
+definition of \m{\mathrm{Sym}^{n}}, \m{\polyAction{T}{\gamma}} sends the monomial \m{\prod_sx^{\beta_s}}, with
+\m{x^{\beta_s}} in the variables of the letter~$s$, to
+\m{\prod_s\sum_{\beta'_s}\mathrm{Sym}^{n}(\letterMatrix{T}{\gamma}{s})_{\beta'_s,\beta_s}x^{\beta'_s}
+=\sum_{\beta'}\letterRep{T}{n}{\gamma}_{\beta',\beta}\,x^{\beta'}}. (d) The entries of \m{\mathrm{Sym}^{n}(G)} are
+polynomials with integer coefficients in the entries of~$G$. (e) The linear substitution of a diagonal matrix
+multiplies each monomial by the product of the diagonal entries to the powers of the exponent. The last
+assertions: \m{\PT{T}\ge5}; \m{\#\FF_W=\qT{T}} is a positive natural number; and \m{\varpi^{2}=p\ne0}.
+\end{proof}
+\leanline{\lean{frobpow}\sep \lean{polyActionX}\sep \lean{polyOfCoeffs}\sep \lean{letterRepmap}\sep
+\lean{diagdepth}\sep \lean{oneltP}\sep \lean{oneltq}\sep \lean{finres}\sep \lean{wnezero}}
+
+\begin{lemma}[entries of parahoric elements]\label{l:par}
+In Setting~\ref{set:T}, let $\tau$ be a labelling, $\gamma$ an element of \m{\Par_{\tau}(W)}, $s$ a letter, and
+$i$, $i'$ indices such that \m{\tau(i)<\tau(i')} if $s$ is even and \m{\tau(i')<\tau(i)} if $s$ is odd. Then $p$
+divides the entry \m{(\letterMatrix{T}{\gamma}{s})_{ii'}} in~$\cO$.
+\end{lemma}
+\begin{proof}
+Let $\upsilon$ be the \m{(i,i')} entry of $\gamma$ if $s$ is even and of \m{(\gamma^{-1})^{\tp}} if $s$ is odd, so
+that the entry in question is \m{\iota_s(\upsilon)}. In both cases $\upsilon$ lies in~$\fm_W$: for even~$s$ by
+the definition of the parahoric subgroup, for odd~$s$ because \m{\gamma^{-1}} lies in it and
+\m{\upsilon=(\gamma^{-1})_{i'i}}. Hence \m{1-\upsilon^{\qT{T}-1}} is a unit of~$W$ and its image under~$\iota_s$ a
+unit of~$\cO$. By Lemma~\ref{l:basic}(a) with \m{j=L}, where \m{s+L=s} and \m{\PT{T}^{L}=\qT{T}}, the prime $p$
+divides \m{\iota_s(\upsilon)-\iota_s(\upsilon)^{\qT{T}}=\iota_s(\upsilon)\cdot\iota_s(1-\upsilon^{\qT{T}-1})}, hence
+\m{\iota_s(\upsilon)}.
+\end{proof}
+\leanline{\lean{pdvdpar}}
+
+\begin{lemma}[size of the excess weights]\label{l:exIcc}
+In Setting~\ref{set:T}, for a letter~$s_0$, indices \m{i_0}, \m{i_1} and a variable~$v$:
+\m{-\tfrac15\le\exw{T}{s_0}{i_0}{i_1}{v}\le1}.
+\end{lemma}
+\begin{proof}
+Let \m{v=(i,s)}. As \m{[s-s_0]\le L-1} and \m{\PT{T}\ge5},
+\[5\,\PT{T}^{[s-s_0]}\le\qT{T};\]
+and \m{1+[s-1-s_0]} is $L$ if \m{s=s_0} and \m{[s-s_0]} otherwise. So the first term of the definition is $0$, or
+$1$, or lies in \m{(0,\tfrac15]}, and the second is $0$ or lies in \m{[-\tfrac15,0)}.
+\end{proof}
+\leanline{\lean{exwIcc}\sep \lean{oneaddval}\sep \lean{fivemul}}
+
+\begin{lemma}[half of the letters are deep]\label{l:sumdeep}
+In Setting~\ref{set:T}, let $\mu$ be a natural number and $i$ an index. Then
+\m{\sum_{s}\dpi{T}{\mu}{(i,s)}=L/2}. (The formal statement asks that $\cO$ be a field and does not use it; it
+writes the quotient of natural numbers.)
+\end{lemma}
+\begin{proof}
+The parity alternates, so \m{\dpi{T}{\mu}{(i,s)}+\dpi{T}{\mu}{(i,s+1)}=1} for every letter; summing over the
+letters gives twice the sum on the left and $L$ on the right.
+\end{proof}
+\leanline{\lean{sumdeep}}
+
+\sect{The root lemma}{s:root}
+\begin{lemma}[a count of zeros against degree]\label{l:stepanov}
+Let $W$ be a local ring, $\cO$ a ring, \m{\chi\colon W\to\cO} a ring homomorphism, $\Phi$ a nonzero polynomial in
+one variable~$X$ over~$\cO$, and $e$ a natural number. Suppose that \m{(X-\chi(\upsilon))^{e}} divides~$\Phi$ for
+every $\upsilon$ in~$W$; equivalently, \m{X^{e}} divides \m{\Phi(X+\chi(\upsilon))}. Then
+\m{e\cdot\#\FF_W\le\deg\Phi}.
+\end{lemma}
+\begin{proof}
+If \m{\FF_W} is infinite the count on the left is~$0$. Otherwise choose one element of~$W$ in each residue class.
+The difference of two of them is a unit of~$W$, so its image is a unit of~$\cO$, and the polynomials
+\m{(X-\chi(\upsilon))^{e}} for the chosen~$\upsilon$ are pairwise coprime. Each divides~$\Phi$; so does their
+product, which is monic of degree \m{e\cdot\#\FF_W}. A nonzero polynomial is not divisible by a monic polynomial
+of larger degree.
+\end{proof}
+\leanline{\lean{stepanov}}
+
+\begin{lemma}[filtrations under substitution]\label{l:subst}
+Let $\cO$ be a ring, $\cA$ a commutative $\cO$-algebra, $\cV$ a set of variables, \m{\cF=(\cF(\theta))_{\theta}} a
+family of additive subgroups of~$\cO$, $\omega$ a weight on~$\cV$ and $\theta$ a real number. Let $\chi$ and
+$\chi'$ be homomorphisms of $\cO$-algebras from \m{\cO[x_{\cV}]} to~$\cA$, and let \m{\cG=(\cG(\theta))_{\theta}} be
+a family of additive subgroups of~$\cA$ such that \IsRF{\cG}. Let $\Phi$ be a polynomial in
+\m{\gauss{\cF}{\omega}{\theta}}. Suppose that
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=1pt,topsep=2pt]
+\item \m{\chi(x_v)\in\cG(\omega(v))} for every $v$ in~$\cV$;
+\item \m{\chi'(x_v)-\chi(x_v)\in\cG(\omega(v)+\tfrac1{20})} for every $v$ in~$\cV$;
+\item the image in~$\cA$ of every element of \m{\cF(\theta')} lies in \m{\cG(\theta')}, for every real~$\theta'$.
+\end{enumerate}
+Then \m{\chi'(\Phi)\in\cG(\theta)} and \m{\chi'(\Phi)-\chi(\Phi)\in\cG(\theta+\tfrac1{20})}.
+\end{lemma}
+\begin{proof}
+It suffices to treat one term \m{\pi x^{\alpha}} with $\pi$ in \m{\cF(\theta-\pr{\omega}{\alpha})}. By (i) and~(ii)
+and since $\cG$ is decreasing, \m{\chi'(x_v)} and \m{\chi(x_v)} lie in \m{\cG(\omega(v))}; so \m{\chi'(x^{\alpha})}
+lies in \m{\cG(\pr{\omega}{\alpha})}, and with~(iii) \m{\chi'(\pi x^{\alpha})} lies in \m{\cG(\theta)}. The
+difference \m{\chi'(x^{\alpha})-\chi(x^{\alpha})}, expanded as a product of sums
+\m{\chi(x_v)+(\chi'(x_v)-\chi(x_v))} less the product of the first summands, is a sum of products of
+\m{|\alpha|} factors of which at least one is a difference; each such product lies in
+\m{\cG(\pr{\omega}{\alpha}+\tfrac1{20})}.
+\end{proof}
+\leanline{\lean{aevalsub}\sep used with it: \lean{memadic} (an element lies in \m{\adic{\varpi}{\theta}} if it is $0$ or
+\m{\theta\le0}), \lean{monomialmem} (a term \m{\pi x^{\alpha}} with $\pi$ in \m{\cF(\theta-\pr{\omega}{\alpha})} lies in
+\m{\gauss{\cF}{\omega}{\theta}}), \lean{Xmem} (\m{x_v} lies in \m{\gauss{\adic{\varpi}{\cdot}}{\omega}{\omega(v)}})}
+
+\begin{proof}[Proof of Theorem 1]
+Throughout, $s$ runs over the letters, and we write
+\[x^{+}_s=x_{\rootVar{T}{i_0}{i_1}{s}},\qquad x^{-}_s=x_{\rootVar{T}{i_1}{i_0}{s}},\]
+and \m{\omega^{\pm}_s}, \m{\alpha'^{\pm}_s} for the values of $\omega$ and of an exponent~$\alpha'$ at these two
+variables. For every letter the two variables differ, as \m{i_0\ne i_1}. Put
+\[\mathrm{w}^{+}(\alpha')=\qT{T}\,\alpha'^{+}_{s_0}+\sum_{s\ne s_0}\PT{T}^{[s-s_0]}\alpha'^{+}_s,\qquad
+\mathrm{w}^{-}(\alpha')=\qT{T}\,\alpha'^{-}_{s_0}+\sum_{s\ne s_0}\qT{T}\,\PT{T}^{[s-s_0]}\alpha'^{-}_s .\]
+By~\eqref{e:excess}, \m{\qT{T}^{2}\cdot\pr{\exw{T}{s_0}{i_0}{i_1}{\cdot}}{\alpha}=\qT{T}\,\mathrm{w}^{+}(\alpha)-\mathrm{w}^{-}(\alpha)},
+so the claim is \m{\qT{T}\,\mathrm{w}^{+}(\alpha)\le\mathrm{w}^{-}(\alpha)}. Put
+\m{\epsilon=(\omega^{+}_{s_0}-\omega^{-}_{s_0})/\qT{T}}; then \m{\epsilon>0}. The hypothesis on~$\omega$, with
+\m{\PT{T}^{[s-s_0]}\ge5} and \m{5\,\PT{T}^{[s-s_0]}\le\qT{T}} for \m{s\ne s_0}, gives for these letters
+\begin{equation}\label{e:consts}
+\epsilon\,\qT{T}\,\PT{T}^{[s-s_0]}\ \ge\ 2,\qquad \epsilon\,\PT{T}^{[s-s_0]}\ \le\ 0.32,\qquad
+0.4\le\omega^{+}_s-\omega^{-}_s\le1.6 .
+\end{equation}
+
+\emph{Step 1: the elements of the Levi subgroup.} For $\upsilon$ in~$W$ let \m{\gamma_{\upsilon}} be the product of
+the permutation matrix that exchanges \m{i_0} and~\m{i_1} with the elementary matrix
+\m{1\mp\upsilon E_{i_0i_1}}, the sign being $-$ if $s_0$ is even. It lies in \m{\Lev_{\tau}(W)} because
+\m{\tau(i_0)=\tau(i_1)}. Let \m{\mathrm{sg}_s=-1} if $s$ has the parity of~$s_0$ and \m{\mathrm{sg}_s=+1} otherwise.
+A computation with Lemma~\ref{l:basic}(b), separately for even and odd letters, gives
+\begin{equation}\label{e:action}
+\polyAction{T}{\gamma_{\upsilon}}x^{+}_s=x^{-}_s+\mathrm{sg}_s\,\iota_s(\upsilon)\,x^{+}_s,\qquad
+\polyAction{T}{\gamma_{\upsilon}}x^{-}_s=x^{+}_s ,
+\end{equation}
+and \m{\polyAction{T}{\gamma_{\upsilon}}} fixes the other variables.
+
+\emph{Step 2: two substitutions.} Let \m{\cA=\cO[x_v][X]}, with one further variable~$X$. Let \m{\chi_0} be the
+homomorphism of $\cO$-algebras from \m{\cO[x_v]} to~$\cA$ with
+\[\chi_0(x^{+}_{s_0})=x^{-}_{s_0},\qquad\chi_0(x^{-}_s)=x^{-}_s\,X^{\mathrm{w}^{-}(s)}\ \text{ for all } s,\qquad
+\chi_0(x_v)=x_v\ \text{ otherwise},\]
+where \m{\mathrm{w}^{-}(s)=\qT{T}\,\PT{T}^{[s-s_0]}} is the coefficient of \m{\alpha'^{-}_s} in
+\m{\mathrm{w}^{-}(\alpha')}; and let \m{\chi_1} agree with \m{\chi_0} except that, for \m{s\ne s_0},
+\[\chi_1(x^{+}_s)=x^{+}_s-\mathrm{sg}_s\,x^{-}_s,\qquad
+\chi_1(x^{-}_s)=x^{-}_s\,X^{\mathrm{w}^{-}(s)}-\mathrm{sg}_s\,x^{+}_s\,X^{\PT{T}^{[s-s_0]}}.\]
+For an exponent~$\alpha'$ let \m{\alpha'^{*}} be the exponent obtained by moving the value at
+\m{\rootVar{T}{i_0}{i_1}{s_0}} onto \m{\rootVar{T}{i_1}{i_0}{s_0}}; then
+\m{\chi_0(x^{\alpha'})=x^{\alpha'^{*}}X^{\mathrm{w}^{-}(\alpha')}}.
+
+On~$\cA$ consider two families of additive subgroups. An element lies in \m{\cG_{-}(\theta)} if its
+coefficient at each \m{x^{\alpha'}X^{j}} is divisible by~$\varpi$ to the power
+\m{\max(\lceil\theta-\pr{\omega}{\alpha'}-\epsilon\,\mathrm{w}^{-}(\alpha')+\epsilon j\rceil,0)}, and in
+\m{\cG_{+}(\theta)} if it is divisible by~$\varpi$ to the power
+\m{\max(\lceil\theta-\pr{\omega}{\alpha'}+\epsilon\,\mathrm{w}^{+}(\alpha')-\epsilon j\rceil,0)}. Both are of the
+kind of Definition~\ref{d:filt}(c), with a weight on the variables \m{x_v} and~$X$, so each has the three properties of
+Definition~\ref{d:filt}(a), and each contains the image of \m{\adic{\varpi}{\theta}} at level~$\theta$. Since
+\m{\epsilon\qT{T}=\omega^{+}_{s_0}-\omega^{-}_{s_0}}, moving the exponent does not change the two weights:
+\begin{equation}\label{e:star}
+\pr{\omega}{\alpha'^{*}}+\epsilon\,\mathrm{w}^{-}(\alpha'^{*})=\pr{\omega}{\alpha'}+\epsilon\,\mathrm{w}^{-}(\alpha'),\qquad
+\pr{\omega}{\alpha'^{*}}-\epsilon\,\mathrm{w}^{+}(\alpha'^{*})=\pr{\omega}{\alpha'}-\epsilon\,\mathrm{w}^{+}(\alpha') .
+\end{equation}
+
+\emph{Step 3: the degree.} Put \m{\theta_0=e+\pr{\omega}{\alpha}}. We apply Lemma~\ref{l:subst} to $\Phi$, which
+lies in \m{\gauss{\adic{\varpi}{\cdot}}{\omega}{\theta_0}} by the hypothesis for \m{\gamma=1}, with
+\m{\chi=\chi_0}, \m{\chi'=\chi_1} and \m{\cG=\cG_{-}}. A term \m{x_{v'}X^{j}} lies in \m{\cG_{-}(\theta)} when
+\m{\theta\le\omega(v')+\epsilon(\mathrm{w}^{-}(v')-j)}, with \m{\mathrm{w}^{-}(v')} the coefficient of~$v'$.
+Condition~(i) holds with equality in each case, for \m{x^{+}_{s_0}} by the choice of~$\epsilon$. Condition~(ii)
+concerns the letters \m{s\ne s_0}: for \m{x^{+}_s} it reads
+\m{\omega^{+}_s+\tfrac1{20}\le\omega^{-}_s+\epsilon\,\qT{T}\PT{T}^{[s-s_0]}}, and for \m{x^{-}_s} it reads
+\m{\omega^{-}_s+\tfrac1{20}\le\omega^{+}_s-\epsilon\,\PT{T}^{[s-s_0]}}; both follow from~\eqref{e:consts}. The
+lemma gives
+\begin{equation}\label{e:AD}
+\chi_1(\Phi)\in\cG_{-}(\theta_0),\qquad\chi_1(\Phi)-\chi_0(\Phi)\in\cG_{-}(\theta_0+\tfrac1{20}).
+\end{equation}
+
+\emph{Step 4: the zeros.} Fix $\upsilon$ in~$W$, write \m{\pi=\iota_{s_0}(\upsilon)}, and let \m{\mathrm{t}_{\upsilon}}
+be the automorphism \m{X\mapsto X+\pi} of~$\cA$. By hypothesis the polynomial
+\m{\Phi_{\upsilon}=\polyAction{T}{\gamma_{\upsilon}^{-1}}\Phi} lies in \m{\gauss{\adic{\varpi}{\cdot}}{\omega}{\theta_0}},
+and \m{\mathrm{t}_{\upsilon}(\chi_1(\Phi))=\chi_{\upsilon}(\Phi_{\upsilon})} for the homomorphism
+\m{\chi_{\upsilon}=\mathrm{t}_{\upsilon}\circ\chi_1\circ\polyAction{T}{\gamma_{\upsilon}}}. We apply
+Lemma~\ref{l:subst} with \m{\chi=\chi'=\chi_{\upsilon}} and \m{\cG=\cG_{+}}, and have to check that
+\m{\chi_{\upsilon}(x_v)} lies in \m{\cG_{+}(\omega(v))} for every variable. A term \m{\pi'x_{v'}X^{j}} lies in
+\m{\cG_{+}(\theta)} when $\varpi$ to the power
+\m{\max(\lceil\theta-\omega(v')+\epsilon(\mathrm{w}^{+}(v')-j)\rceil,0)} divides~$\pi'$, with
+\m{\mathrm{w}^{+}(v')} the coefficient of~$v'$ in~\m{\mathrm{w}^{+}}. By
+Lemma~\ref{l:basic}(a), \m{\iota_s(\upsilon)\equiv\pi^{\PT{T}^{[s-s_0]}}} and \m{\pi^{\qT{T}}\equiv\pi}
+modulo~$p$, and \m{(X+\pi)^{\PT{T}^{j}}\equiv X^{\PT{T}^{j}}+\pi^{\PT{T}^{j}}} modulo~$p$ because \m{\PT{T}} is a
+power of~$p$. From \eqref{e:action} and the definition of~\m{\chi_1} one finds, with \m{P'=\PT{T}^{[s-s_0]}}:
+\begin{align*}
+\chi_{\upsilon}(x^{+}_{s_0})&=x^{-}_{s_0}\bigl((X+\pi)^{\qT{T}}-\pi\bigr)=x^{-}_{s_0}\bigl(X^{\qT{T}}+p\,(\dots)\bigr),\qquad
+\chi_{\upsilon}(x^{-}_{s_0})=x^{-}_{s_0},\\
+\chi_{\upsilon}(x^{+}_s)&=x^{-}_s\bigl((X+\pi)^{\qT{T}P'}-\iota_s(\upsilon)\bigr)-\mathrm{sg}_s\,x^{+}_s\bigl((X+\pi)^{P'}-\iota_s(\upsilon)\bigr)\\
+&=x^{-}_s\bigl(X^{\qT{T}P'}+p\,(\dots)\bigr)-\mathrm{sg}_s\,x^{+}_s\bigl(X^{P'}+p\,(\dots)\bigr)\qquad(s\ne s_0),\\
+\chi_{\upsilon}(x^{-}_s)&=x^{+}_s-\mathrm{sg}_s\,x^{-}_s\qquad(s\ne s_0),
+\end{align*}
+where the dots are polynomials in~$X$ of degree less than that of the leading power, and \m{\chi_{\upsilon}}
+fixes the other variables. In the third line \m{\mathrm{sg}_s^{2}=1} was used. Now each term is checked against
+the criterion. The leading terms: \m{x^{-}_{s_0}X^{\qT{T}}} is at level \m{\omega^{-}_{s_0}+\epsilon\qT{T}=\omega^{+}_{s_0}};
+\m{x^{+}_sX^{P'}} is at level \m{\omega^{+}_s}; \m{x^{-}_sX^{\qT{T}P'}} is at level
+\m{\omega^{-}_s+\epsilon\qT{T}P'\ge\omega^{+}_s} by~\eqref{e:consts}; \m{x^{+}_s} is at level
+\m{\omega^{+}_s-\epsilon P'\ge\omega^{-}_s} by~\eqref{e:consts}, and \m{x^{-}_s} and \m{x^{-}_{s_0}} are at their own
+levels. The terms with the factor \m{p=\varpi^{2}}
+need the power of~$\varpi$ to be at most~$2$: for \m{x^{-}_{s_0}X^{j}} it is at most
+\m{\lceil\omega^{+}_{s_0}-\omega^{-}_{s_0}\rceil\le2}; for \m{x^{-}_sX^{j}} at most
+\m{\lceil\omega^{+}_s-\omega^{-}_s\rceil\le2}; for \m{x^{+}_sX^{j}} with \m{j<P'} at most
+\m{\lceil\epsilon P'\rceil\le1}. So the lemma applies:
+\begin{equation}\label{e:S}
+\mathrm{t}_{\upsilon}(\chi_1(\Phi))\in\cG_{+}(\theta_0)\qquad\text{for every } \upsilon \text{ in } W.
+\end{equation}
+
+\emph{Step 5: the count.} Let \m{\Phi^{*}}, a polynomial in~$X$ over~$\cO$, be the coefficient of
+\m{x^{\alpha^{*}}} in \m{\chi_1(\Phi)}. By \eqref{e:AD} and~\eqref{e:star} the coefficient of \m{X^{j}}
+in~\m{\Phi^{*}} is divisible by~$\varpi$ to the power \m{\lceil e+\epsilon(j-\mathrm{w}^{-}(\alpha))\rceil}, which is
+at least \m{e+1} for \m{j>\mathrm{w}^{-}(\alpha)}. By the second part of~\eqref{e:AD}, the coefficient of
+\m{X^{\mathrm{w}^{-}(\alpha)}} in \m{\Phi^{*}} differs by a multiple of \m{\varpi^{e+1}} from the coefficient of
+\m{x^{\alpha^{*}}X^{\mathrm{w}^{-}(\alpha)}} in \m{\chi_0(\Phi)}. A term \m{x^{\alpha'}} of~$\Phi$ contributes to the
+latter only if \m{\alpha'^{*}=\alpha^{*}} and \m{\mathrm{w}^{-}(\alpha')=\mathrm{w}^{-}(\alpha)}; then $\alpha'$ and
+$\alpha$ agree outside the two root variables of~$s_0$, have the same sum there, and the same value at
+\m{\rootVar{T}{i_1}{i_0}{s_0}}, so \m{\alpha'=\alpha}. Thus that coefficient is the coefficient of
+\m{x^{\alpha}} in~$\Phi$, which \m{\varpi^{e+1}} does not divide. Finally, taking the coefficient of
+\m{x^{\alpha^{*}}} commutes with~\m{\mathrm{t}_{\upsilon}}, and by \eqref{e:S} and~\eqref{e:star} the coefficient of
+\m{X^{j}} in \m{\Phi^{*}(X+\iota_{s_0}(\upsilon))} is divisible by~$\varpi$ to the power
+\m{\lceil e+\epsilon(\mathrm{w}^{+}(\alpha)-j)\rceil\ge e+1} for \m{j<\mathrm{w}^{+}(\alpha)}.
+
+So the image of \m{\Phi^{*}} in \m{(\cO/\varpi^{e+1}\cO)[X]} is not zero, has degree at
+most~\m{\mathrm{w}^{-}(\alpha)}, and is divisible by \m{(X-\iota_{s_0}(\upsilon))^{\mathrm{w}^{+}(\alpha)}} for every
+$\upsilon$ in~$W$. Lemma~\ref{l:stepanov}, for the homomorphism from $W$ to \m{\cO/\varpi^{e+1}\cO} induced
+by~\m{\iota_{s_0}}, gives \m{\mathrm{w}^{+}(\alpha)\cdot\#\FF_W\le\mathrm{w}^{-}(\alpha)}, and \m{\#\FF_W=\qT{T}}.
+\end{proof}
+\leanline{\lean{rootlemma}\sep \lean{stepanov}\sep \lean{aevalsub}}
+
+\sect{The volume of the cyclic interlacing cone}{s:cone}
+\begin{lemma}[the determinant of an interlacing pattern]\label{l:interlace}
+Let \m{k\ge0}, and let \m{\xi_0\ge\dots\ge\xi_{k-1}} and \m{\eta_0\ge\dots\ge\eta_{k-1}} be weakly decreasing
+sequences of real numbers. The determinant of the \m{k\times k} matrix whose \m{(i,i')} entry is $1$ if
+\m{\eta_{i'}<\xi_i} and $0$ otherwise equals $1$ if \m{\eta_i<\xi_i} for all~$i$ and \m{\xi_{i+1}\le\eta_i} for all
+\m{i<k-1}, and equals $0$ otherwise.
+\end{lemma}
+\begin{proof}
+By induction on~$k$; for \m{k=0} both sides are~$1$. Let \m{k\ge1}. If \m{\eta_0<\xi_i} for some \m{i\ge1}, then
+the rows $0$ and~$i$ consist of ones, since \m{\eta_{i'}\le\eta_0<\xi_i\le\xi_0}; the determinant is~$0$, and the
+condition fails because \m{\xi_1\ge\xi_i>\eta_0}. Otherwise \m{\xi_i\le\eta_0} for all \m{i\ge1}, column~$0$ has at
+most its entry in row~$0$ different from zero, and the determinant is that entry, $1$ or $0$ according as
+\m{\eta_0<\xi_0} or not, times the determinant of the same kind for the sequences without their first members.
+The induction hypothesis evaluates the latter, and \m{\xi_1\le\eta_0} holds.
+\end{proof}
+\leanline{\lean{detinter}}
+
+\begin{proposition}[the volume as a signed sum]\label{p:signed}
+Let $k$ and $m$ be natural numbers and \m{L=m+1}, let $\varrho$ be a real number with \m{1<\varrho}, $\varsigma$ a
+map from \m{\ZL} to the signs, \m{\delta=(\delta_s)_s} real numbers, and $\cC$ a subset of \m{\RR^{k\times L}} such
+that, for every~$\xi$: \m{\permStep{\varsigma}{\varrho}{1}(\xi)\in\cC} if and only if
+\m{\xi\in\pieri{\varsigma}{\varrho}}. For a permutation~$\sigma'$ of the indices let \m{\sigma'^{*}} be the linear
+map \m{f\mapsto f\circ\sigma'} of~\m{\RR^{k}} and
+\m{\mathrm{dt}(\sigma')=|\det(1-\varrho^{-L}\sigma'^{*})|}. Then
+\[\vol\bigl(\cC\cap\slab{k}{\delta}\bigr)=\frac{\mathrm{dt}(\mathrm{id})}{k!}\,
+\Bigl(\sum_{\sigma'}\frac{\sgn(\sigma')}{\mathrm{dt}(\sigma')}\Bigr)\,\vol\bigl(\slab{k}{\delta}\bigr),\]
+the sum being over all permutations of the indices. (The formal statement is for the letters \m{0,\dots,m} with
+addition modulo \m{m+1}.)
+\end{proposition}
+\begin{proof}
+For a tuple \m{\sigma=(\sigma_s)_s} of permutations write \m{S_{\sigma}=\permStep{\varsigma}{\varrho}{\sigma}}, and
+\m{S_1} for the identity permutations. The set \m{\slab{k}{\delta}} is bounded, and so is its intersection with
+any set; all volumes below are finite.
+
+\emph{The determinant of \m{S_{\sigma}}.} Up to the signs \m{\varsigma(s)}, \m{S_{\sigma}} is
+\m{\varrho\cdot\mathrm{Sh}\circ(1-\mathrm{N})}, where \m{(\mathrm{Sh}\,\xi)(i,s)=\xi(i,s+1)} and
+\m{(\mathrm{N}\xi)(\cdot,s)=N_s\,\xi(\cdot,s-1)} with \m{N_s=\varrho^{-1}\sigma_{s-1}^{*}}. For such a cyclic
+operator,
+\[\det(1-\mathrm{N})=\det(1-N_{L-1}\cdots N_1N_0).\]
+Indeed, order the letters as \m{0,\dots,L-1} and let $\mathrm{U}$ be the operator with
+\[(\mathrm{U}\eta')(\cdot,s)=\sum_{s'\le s}N_sN_{s-1}\cdots N_{s'+1}\,\eta'(\cdot,s');\]
+then
+\[(\mathrm{U}(1-\mathrm{N})\xi)(\cdot,s)=\xi(\cdot,s)-N_s\cdots N_0\,\xi(\cdot,L-1).\]
+The operator $\mathrm{U}$ has determinant~$1$, and \m{\mathrm{U}(1-\mathrm{N})} is triangular with the diagonal
+blocks \m{1,\dots,1} and \m{1-N_{L-1}\cdots N_0}. Hence
+\begin{equation}\label{e:detS}
+|\det S_{\sigma}|=\varrho^{kL}\cdot\mathrm{dt}(\sigma_0\sigma_1\cdots\sigma_{L-1}),
+\end{equation}
+because \m{N_{L-1}\cdots N_0=\varrho^{-L}(\sigma_{L-1}\sigma_0\cdots\sigma_{L-2})^{*}} and \m{\mathrm{dt}} takes the same
+value on conjugate permutations. As \m{\varrho>1}, the right side is not zero: \m{\mathrm{dt}(\sigma')} is the
+product of the numbers \m{1-\varrho^{-Ll}} over the cycles of~$\sigma'$, of lengths~$l$.
+
+\emph{Two families of sets.} Let $\mathcal{W}$ be the set of the $\xi$ such that the column sums
+\m{\sum_i(S_1\xi)(i,s)} lie in \m{[\delta_s-1,\delta_s]} for every letter. The column sums of \m{S_{\sigma}\xi}
+are those of \m{S_1\xi}, the permutations only reordering the summands. For a tuple~$\sigma$ let \m{\mathcal{W}_{\sigma}} be
+the set of the $\xi$ in~$\mathcal{W}$ with all coordinates of \m{S_{\sigma}\xi} positive. It is the preimage under
+\m{S_{\sigma}} of the slab without its walls, which have measure zero, so by~\eqref{e:detS}
+\m{\vol(\mathcal{W}_{\sigma})=\varrho^{-kL}\,\mathrm{dt}(\sigma_0\cdots\sigma_{L-1})^{-1}\,\vol(\slab{k}{\delta})}. Let
+$\Upsilon$ be the set of the $\xi$ in \m{\pieri{\varsigma}{\varrho}} with all coordinates of \m{S_1\xi} positive.
+By the hypothesis on~$\cC$, \m{\mathcal{W}\cap\Upsilon} is the preimage under~\m{S_1} of \m{\cC\cap\slab{k}{\delta}} without
+the walls, so \m{\vol(\mathcal{W}\cap\Upsilon)=\varrho^{-kL}\,\mathrm{dt}(\mathrm{id})^{-1}\,\vol(\cC\cap\slab{k}{\delta})}.
+For a tuple \m{\tau'=(\tau'_s)_s} of permutations let \m{\xi\circ\tau'} be the vector with coordinates
+\m{\xi(\tau'_s(i),s)}; the map \m{\xi\mapsto\xi\circ\tau'} preserves volume and maps $\mathcal{W}$ to itself.
+
+\emph{A pointwise identity.} We claim that for every $\xi$
+\begin{equation}\label{e:pointwise}
+\#\{\tau':\ \xi\circ\tau'\in\Upsilon\}\ =\ \sum_{\sigma}\sgn(\sigma_0\cdots\sigma_{L-1})\cdot
+\bigl[\text{all coordinates of } S_{\sigma}\xi \text{ are positive}\bigr].
+\end{equation}
+The right side is the product over the letters~$s$ of
+\[\sum_{\sigma_s}\sgn(\sigma_s)\prod_i\bigl[\varsigma(s)\bigl(\varrho\,\xi(i,s+1)-\xi(\sigma_s(i),s)\bigr)>0\bigr],\]
+that is, of the determinants of the matrices \m{A_s} whose entry at \m{(i,i')} is
+\[\bigl[\varsigma(s)\bigl(\varrho\,\xi(i,s+1)-\xi(i',s)\bigr)>0\bigr].\]
+Reorder the rows of~\m{A_s} so that
+\m{\xi(\cdot,s+1)} becomes weakly decreasing, and its columns so that \m{\xi(\cdot,s)} does. This multiplies
+\m{\det A_s} by the signs of two permutations, and in the product over the circle of letters each sign occurs
+twice. After the reordering Lemma~\ref{l:interlace} applies, to the transposed matrix when \m{\varsigma(s)=-}:
+the determinant is~$1$ if the decreasing rearrangements \m{\xi^{\downarrow}} of the columns satisfy, for all~$i$,
+\begin{align*}
+\varrho\,\xi^{\downarrow}(i,s+1)&>\xi^{\downarrow}(i,s)\ge\varrho\,\xi^{\downarrow}(i+1,s+1)&&\text{when } \varsigma(s)=+,\\
+\xi^{\downarrow}(i,s)&>\varrho\,\xi^{\downarrow}(i,s+1)\ge\xi^{\downarrow}(i+1,s)&&\text{when } \varsigma(s)=-,
+\end{align*}
+and it is $0$ otherwise. These are the conditions that define~$\Upsilon$, at the letter~$s$. So the right side
+of~\eqref{e:pointwise} is $1$ if \m{\xi^{\downarrow}\in\Upsilon} and $0$ otherwise. On the left, the columns of
+a vector in~$\Upsilon$ are strictly decreasing, by the same inequalities; so \m{\xi\circ\tau'\in\Upsilon}
+forces \m{\xi\circ\tau'=\xi^{\downarrow}} and determines~$\tau'$, the entries of each column being distinct. Hence
+the left side is also $1$ if \m{\xi^{\downarrow}\in\Upsilon} and $0$ otherwise.
+
+\emph{Integration.} Integrate~\eqref{e:pointwise} over~$\mathcal{W}$. The left side gives
+\m{(k!)^{L}\vol(\mathcal{W}\cap\Upsilon)}, the right side
+\m{\sum_{\sigma}\sgn(\sigma_0\cdots\sigma_{L-1})\vol(\mathcal{W}_{\sigma})}.
+Each permutation~$\sigma'$ is the product \m{\sigma_0\cdots\sigma_{L-1}} for \m{(k!)^{L-1}} tuples. Inserting the
+two volumes and cancelling \m{\varrho^{-kL}(k!)^{L-1}} gives the formula.
+\end{proof}
+\leanline{\lean{signedsum}\sep \lean{isBounded} (the intersection of any set with a slab is bounded)}
+
+\begin{proof}[Proof of Theorem 2]
+By Proposition~\ref{p:signed}, \m{\vol(\cC\cap\slab{k}{\delta})} is \m{\vol(\slab{k}{\delta})} times a
+number that depends only on $k$ and on \m{q=\varrho^{L}}. We evaluate this number in the case of one letter,
+\m{L=1}, with
+the sign~$+$, the real number~$q$ in the place of~$\varrho$, \m{\delta=1} and \m{\cC=\pieri{+}{q}}, the set of the
+$\xi$ in \m{\RR^{k}} with \m{q\,\xi(i+1)\le\xi(i)} for all~$i$; the hypothesis holds because \m{S_1\xi=(q-1)\xi}
+and $\cC$ is a cone. Put \m{\mathrm{f}_l=(q^{l+1}-1)/(q-1)} and let $G$ be the linear endomorphism of \m{\RR^{k}} with
+\m{(G\xi)(l)=\mathrm{f}_l\,(\xi(l)-q\,\xi(l+1))}, where \m{\xi(k)=0}. It is triangular with the diagonal
+entries~\m{\mathrm{f}_l}, so \m{\det G=\prod_{l=0}^{k-1}\mathrm{f}_l>0}. It preserves the sum of the coordinates,
+because \m{\mathrm{f}_l-q\,\mathrm{f}_{l-1}=1}. And
+\m{G\xi} has all coordinates \m{\ge0} if and only if \m{\xi(l)\ge q\,\xi(l+1)} for all~$l$, which implies
+\m{\xi\ge0} by descending induction. Hence the preimage of \m{\slab{k}{1}} under~$G$ is
+\m{\cC\cap\slab{k}{1}}, and \m{\vol(\cC\cap\slab{k}{1})=\vol(\slab{k}{1})/\det G}. The volume of
+\m{\slab{k}{1}} is finite and positive, as the set contains the cube \m{[0,1/k]^{k}}; only here is a volume
+cancelled. So the number is \m{1/\prod_{l=1}^{k}\frac{q^{l}-1}{q-1}}, and the theorem follows, also when the
+slab \m{\slab{k}{\delta}} has volume zero.
+\end{proof}
+\leanline{\lean{prodvol}}
+
+The proof evaluates the signed sum of Proposition~\ref{p:signed} without computing it: the identity
+\m{\frac{\mathrm{dt}(\mathrm{id})}{k!}\sum_{\sigma'}\sgn(\sigma')/\mathrm{dt}(\sigma')=\prod_{l=1}^{k}\frac{q-1}{q^{l}-1}} is
+obtained from the geometry of one letter.
+
+\sect{Two dimension bounds modulo \texorpdfstring{$p$}{p}}{s:dim}
+\begin{lemma}[the number of flags]\label{l:borel}
+Let $\FF$ be a finite field and \m{k\ge0}. The index in \m{\GLk(\FF)} of the subgroup of the lower triangular
+matrices is at most \m{\prod_{l=1}^{k}\bigl((\#\FF)^{l}-1\bigr)/(\#\FF-1)}.
+\end{lemma}
+\begin{proof}
+The subgroup has \m{(\#\FF-1)^{k}(\#\FF)^{k(k-1)/2}} elements, the lower triangular matrices with units on the
+diagonal, and Input~4 gives the order of the group; the quotient is the product.
+\end{proof}
+\leanline{\lean{borel}\sep \lean{cardGL}}
+
+\begin{lemma}[the excess of a step]\label{l:exdot}
+In Setting~\ref{set:T} with $\cO$ a field, let \m{i_0}, \m{i_1} be indices, $s_0$ a letter and $\xi$ a vector in
+\m{\RR^{k\times L}}. Put \m{\eta=\permStep{\varsigma_T}{\PT{T}}{1}(\xi)}. Then
+\[\pr{\exw{T}{s_0}{i_0}{i_1}{\cdot}}{\eta}=\Bigl(1-\frac1{\qT{T}}\Bigr)\cdot
+\Bigl(\eta\bigl(\rootVar{T}{i_0}{i_1}{s_0}\bigr)-\bigl(\xi(i_0,s_0)-\xi(i_1,s_0)\bigr)\Bigr).\]
+\end{lemma}
+\begin{proof}
+Let \m{\mathrm{d}_s=\xi(i_0,s)-\xi(i_1,s)}, and write \m{\eta^{+}_s}, \m{\eta^{-}_s} for the values of~$\eta$ at
+\m{\rootVar{T}{i_0}{i_1}{s}} and \m{\rootVar{T}{i_1}{i_0}{s}}. For every letter, even or odd, the definition of the
+step gives $\eta^{+}_s-\eta^{-}_s=\mathrm{d}_s-\PT{T}\,\mathrm{d}_{s+1}$. By the definition of the excess weight, in
+which the root variable of~$s_0$ has the coefficient \m{\PT{T}^{L}/\qT{T}=1}, the excess of~$\eta$ at~$s_0$ is
+\[\Bigl(1-\frac1{\qT{T}}\Bigr)\eta^{+}_{s_0}+\frac1{\qT{T}}\sum_{s}\PT{T}^{[s-s_0]}\bigl(\eta^{+}_s-\eta^{-}_s\bigr)
+=\Bigl(1-\frac1{\qT{T}}\Bigr)\eta^{+}_{s_0}+\frac1{\qT{T}}\sum_{s}\PT{T}^{[s-s_0]}\bigl(\mathrm{d}_s-\PT{T}\,\mathrm{d}_{s+1}\bigr),\]
+and the last sum, taken around the circle from~$s_0$, telescopes to
+\m{\mathrm{d}_{s_0}-\PT{T}^{L}\mathrm{d}_{s_0}=(1-\qT{T})\,\mathrm{d}_{s_0}}.
+\end{proof}
+\leanline{\lean{exdot}}
+
+By this lemma, \m{\permStep{\varsigma_T}{\PT{T}}{1}(\xi)} lies in \m{\exCone{T}{i_1}{0}} if and only if $\xi$ lies
+in \m{\pieri{\varsigma_T}{\PT{T}}}: the set \m{\cC=\exCone{T}{i_1}{0}} satisfies the hypothesis of Theorem~2 for
+\m{\varsigma=\varsigma_T} and \m{\varrho=\PT{T}}, whatever \m{i_1} is.
+
+\begin{lemma}[a point deep inside the cone]\label{l:conepoint}
+In Setting~\ref{set:T} with $\cO$ a field, let \m{i_0}, \m{i_1} be indices with \m{i_0+1=i_1}. There is a vector
+\m{\sigma^{\circ}} in \m{\exCone{T}{i_1}{-1}} with \m{0\le\sigma^{\circ}(v)\le\PT{T}^{3i_1}} for every
+variable~$v$.
+\end{lemma}
+\begin{proof}
+Let \m{\mathrm{g}_i=2\,\PT{T}^{2(i_0-i)}} for \m{i\le i_0} and \m{\mathrm{g}_i=0} for \m{i>i_0}, so that
+\m{\mathrm{g}_i=\PT{T}^{2}\mathrm{g}_{i+1}+2\,[i+1=i_1]}. Let \m{\xi(i,s)=\mathrm{g}_i} for even~$s$ and
+\m{\xi(i,s)=\PT{T}\mathrm{g}_i} for odd~$s$, and
+\[\sigma^{\circ}=\permStep{\varsigma_T}{\PT{T}}{1}(\xi).\]
+Then
+\m{\sigma^{\circ}(i,s)=(\PT{T}^{2}-1)\mathrm{g}_i} for even~$s$ and $0$ for odd~$s$, which lies between $0$ and
+\m{\PT{T}^{3i_1}}. By Lemma~\ref{l:exdot}, the excess of \m{\sigma^{\circ}} at~$s_0$ for the indices \m{i}, \m{i+1} is
+\m{(1-1/\qT{T})} times
+\[(\PT{T}^{2}-1)\mathrm{g}_{i+1}-(\mathrm{g}_i-\mathrm{g}_{i+1})=-2\,[i+1=i_1]\ \ (s_0 \text{ even}),\quad
+-\PT{T}(\mathrm{g}_i-\mathrm{g}_{i+1})\le-2\,[i+1=i_1]\ \ (s_0 \text{ odd});\]
+and \m{2(1-1/\qT{T})\ge1}.
+\end{proof}
+\leanline{\lean{conepoint}}
+
+\begin{lemma}[the volume of a slice of a simplex]\label{l:simplex}
+Let \m{n'\ge0} be a natural number and \m{\delta\le\delta'} real numbers. The set of the $\eta$ in
+\m{\RR^{n'+1}} with all coordinates \m{\ge0} and \m{\delta-1\le\sum_i\eta_i\le\delta} has volume at most
+\m{|\delta'^{\,n'}/n'!|}.
+\end{lemma}
+\begin{proof}
+If \m{\delta'<0} the set is empty. Otherwise argue by induction on~$n'$. For \m{n'=0} the set lies in an
+interval of length~$1$. For the step, the slice at a value
+\m{\eta_0} of the first coordinate is empty unless \m{0\le\eta_0\le\delta\le\delta'}, and is then a set of the same
+kind in one dimension less, for \m{\delta-\eta_0\le\delta'-\eta_0}; and
+\m{\int_0^{\delta'}(\delta'-\eta_0)^{n'-1}/(n'-1)!\,d\eta_0=\delta'^{\,n'}/n'!}.
+\end{proof}
+\leanline{\lean{simplex}}
+
+\begin{proposition}[forms obeying the excess condition, against a volume]\label{p:dimvol}
+In Setting~\ref{set:T}, let the ring of~$T$ be a field~$\FF$ of characteristic~$p$, let \m{i_0}, \m{i_1} be
+indices with \m{i_0+1=i_1}, $n$ a natural number and $h$ a real number. Write \m{\Lev^{\circ}} for the Levi subgroup \m{\Lev_{\twoBlock{k}{i_1}{\cdot}}(W)}, and \m{\Par^{\circ}} for the
+parahoric subgroup of the labelling \m{i\mapsto i}, and let \m{\delta_s=n+k+1} for every letter~$s$. Then
+\[\dim_{\FF}\exc{T}{n}{i_0}{i_1}{0}{h}\ \le\ [\Lev^{\circ}:\Lev^{\circ}\cap\Par^{\circ}]\cdot
+\vol\Bigl(\exCone{T}{i_1}{h+L(k+1)}\cap\slab{k}{\delta}\Bigr).\]
+\end{proposition}
+\begin{proof}
+Write \m{\Xi=\exc{T}{n}{i_0}{i_1}{0}{h}} and $\cC$ for the set on the right; $\cC$ is bounded and convex. The
+number of the points of~$\cC$ with coordinates in \m{\frac1Q\mathbb{Z}}, divided by \m{Q^{kL}}, tends to
+\m{\vol(\cC)} as the natural number~$Q$ grows, a bounded convex set having a boundary of measure zero. So it
+suffices to show, for \m{Q=\qT{T}^{l}} with \m{l\ge1}, that
+\begin{equation}\label{e:count}
+Q^{kL}\cdot\dim_{\FF}\Xi\ \le\ [\Lev^{\circ}:\Lev^{\circ}\cap\Par^{\circ}]\cdot\#\bigl(\cC\cap\tfrac1Q\mathbb{Z}^{k\times L}\bigr).
+\end{equation}
+The ring of~$T$ being a field of characteristic~$p$, we have \m{p=0} and \m{\varpi=0} in~$\FF$, and
+\m{\iota_{s+j}(\upsilon)=\iota_s(\upsilon)^{\PT{T}^{j}}} by Lemma~\ref{l:basic}(a); in particular
+\m{\iota_s(\upsilon)^{Q}=\iota_s(\upsilon)}. Hence \m{\polyAction{T}{\gamma}} commutes with the substitution
+\m{x_v\mapsto x_v^{Q}}, and for a form~$F$ the polynomial \m{F(x^{Q})} is sent by \m{\polyAction{T}{\gamma}} to
+\m{(\letterRep{T}{n}{\gamma}F)(x^{Q})} (Lemma~\ref{l:basic}(c)).
+
+\emph{Amplification.} Let $\mathcal{U}$ be the set of the functions~$\nu$ from the variables to
+\m{\{0,\dots,Q-1\}}. For $\nu$ in~$\mathcal{U}$ let \m{\hat\nu} be the exponent with
+\m{\hat\nu(i,s)=\nu(i,s)+Q\,[i=i_0]\,(k-\lfloor\sum_{i'}\nu(i',s)/Q\rfloor)}; it is congruent to~$\nu$
+modulo~$Q$, and its degree in each letter lies in \m{[kQ,kQ+Q)}. Send a tuple
+\m{(F_{\nu})_{\nu\in\mathcal{U}}} of elements of~$\Xi$ to the polynomial
+\m{\Phi=\sum_{\nu}x^{\hat\nu}F_{\nu}(x^{Q})}. The exponents of the $\nu$-th summand are congruent to~$\nu$
+modulo~$Q$, so the coefficient of \m{x^{Q\beta+\hat\nu}} in~$\Phi$ is \m{F_{\nu}(\beta)}, and the map is
+injective. Let $\Gamma$ be a set of representatives of the right cosets \m{(\Lev^{\circ}\cap\Par^{\circ})\gamma}
+in~\m{\Lev^{\circ}}. We show that the linear map sending \m{(F_{\nu})_{\nu}} to the family of the coefficients of
+\m{x^{Q\eta}} in \m{\polyAction{T}{\gamma}\Phi}, for $\gamma$ in~$\Gamma$ and $\eta$ in
+\m{\cC\cap\frac1Q\mathbb{Z}^{k\times L}}, is injective; comparing dimensions, this is~\eqref{e:count}.
+
+\emph{A least term.} Let $\omega$ be the weight with \m{\omega(i,s)=i} for even~$s$ and \m{\omega(i,s)=-i} for
+odd~$s$. Suppose \m{\Phi\ne0}. Among the pairs of a $\gamma$ in~$\Gamma$ and an exponent~$\alpha$ with nonzero
+coefficient in \m{\polyAction{T}{\gamma}\Phi}, choose one, \m{(\gamma_0,\alpha)}, with \m{\pr{\omega}{\alpha}}
+least. We show that \m{\alpha/Q} lies in~$\cC$; then the coefficient of \m{x^{\alpha}} in
+\m{\polyAction{T}{\gamma_0}\Phi} is one of the coordinates of the image and is not zero.
+
+By the commutation above,
+\m{\polyAction{T}{\gamma_0}\Phi=\sum_{\nu}(\polyAction{T}{\gamma_0}x^{\hat\nu})\cdot(\letterRep{T}{n}{\gamma_0}F_{\nu})(x^{Q})},
+so \m{\alpha=Q\beta+\alpha''} for some~$\nu$, a family~$\beta$ with
+\m{(\letterRep{T}{n}{\gamma_0}F_{\nu})(\beta)\ne0}, and an exponent \m{\alpha''} of
+\m{\polyAction{T}{\gamma_0}x^{\hat\nu}}. The action preserves the degree in each letter, so the degree
+of~\m{\alpha''} in each letter lies in \m{[kQ,kQ+Q]}. Hence \m{\alpha/Q} has coordinates \m{\ge0} and its sums over
+the indices lie in \m{[n+k,n+k+1]}: it lies in the slab.
+
+\emph{The excess at \m{(i_0,i_1)}.} As \m{F_{\nu}} lies in~$\Xi$ and \m{\gamma_0} in~\m{\Lev^{\circ}}, the
+family~$\beta$ has excess at most~$h$ at every letter. The excess of \m{\alpha''} is at most its degree, at most
+\m{L(kQ+Q)}, by Lemma~\ref{l:exIcc}. So the excess of \m{\alpha/Q} is at most \m{h+L(k+1)}.
+
+\emph{The excess at the other pairs.} Let \m{i}, \m{i+1} be indices with \m{i+1\ne i_1}, and $s_0$ a letter. We
+apply Theorem~1 to the indices \m{i}, \m{i+1}, the labelling \m{\twoBlock{k}{i_1}{\cdot}}, which takes the same
+value at both, the weight~$\omega$, for which the differences of the hypothesis are equal to~$1$, the polynomial
+\m{\polyAction{T}{\gamma_0}\Phi}, the exponent~$\alpha$ and \m{e=0}. Its coefficient at \m{x^{\alpha}} is not
+zero, that is, not divisible by \m{\varpi=0}. For $\gamma$ in~\m{\Lev^{\circ}} write
+\m{\gamma^{-1}\gamma_0=\gamma'\gamma_1} with \m{\gamma'} in \m{\Lev^{\circ}\cap\Par^{\circ}} and \m{\gamma_1}
+in~$\Gamma$. All exponents of \m{\polyAction{T}{\gamma_1}\Phi} have weight at least \m{\pr{\omega}{\alpha}}, by the
+choice of the pair. By Lemma~\ref{l:par}, for the labelling \m{i\mapsto i}, and since \m{p=0} in~$\FF$, the element
+\m{\gamma'} sends a variable \m{x_{i',s}} to a combination of the variables \m{x_{l,s}} with \m{l\ge i'} if $s$
+is even and with \m{l\le i'} if $s$ is odd: of variables of weight at least \m{\omega(i',s)}. So all exponents of
+\m{\polyAction{T}{\gamma^{-1}}\polyAction{T}{\gamma_0}\Phi} have weight at least \m{\pr{\omega}{\alpha}}, which is
+the hypothesis of Theorem~1 for \m{\varpi=0}. The theorem gives that the excess of~$\alpha$ at~$s_0$ for the
+indices \m{i}, \m{i+1} is at most~$0$.
+\end{proof}
+\leanline{\lean{dimvol}\sep \lean{rootlemma}\sep \lean{pdvdpar}\sep \lean{exwIcc}}
+
+\begin{proof}[Proof of Theorem 3(a)]
+There is an index, so \m{k\ge1}. Of the size conditions we use \m{\kappa\le1}, \m{1\le h},
+\begin{equation}\label{e:sizeA}
+\frac{2(L+2)k}{h}\le\kappa\qquad\text{and}\qquad\bigl(h+L(k+1)\bigr)\,k\,\PT{T}^{3i_1}+k+2\le\frac nh .
+\end{equation}
+Let \m{\sigma^{\circ}} be the vector of Lemma~\ref{l:conepoint} and \m{\sigma^{\bullet}=(h+L(k+1))\,\sigma^{\circ}}.
+The conditions that define the cones are linear, so the translation by~\m{\sigma^{\bullet}} maps
+\m{\exCone{T}{i_1}{h+L(k+1)}\cap\slab{k}{\delta}}, with \m{\delta_s=n+k+1}, into
+\m{\exCone{T}{i_1}{0}\cap\slab{k}{\delta'}} with \m{\delta'_s=n+k+1+\sum_i\sigma^{\bullet}(i,s)}. Let \m{\Lev^{\circ}} and
+\m{\Par^{\circ}} be as in Proposition~\ref{p:dimvol}. Both lie in the parahoric subgroup
+\m{\Par_{\twoBlock{k}{i_1}{\cdot}}(W)}, so its index times \m{[\Lev^{\circ}:\Lev^{\circ}\cap\Par^{\circ}]} is at most
+\m{[\GLk(W):\Par^{\circ}]}. That is the index of the lower triangular matrices in \m{\GLk(\FF_W)}, at most
+\m{\prod_{l=1}^{k}(\qT{T}^{l}-1)/(\qT{T}-1)} by Lemma~\ref{l:borel}. By Theorem~2, with the remark after
+Lemma~\ref{l:exdot}, this product times \m{\vol(\exCone{T}{i_1}{0}\cap\slab{k}{\delta'})} is
+\m{\vol(\slab{k}{\delta'})}. With Proposition~\ref{p:dimvol} we get
+\[\bigl[\GLk(W):\Par_{\twoBlock{k}{i_1}{\cdot}}(W)\bigr]\cdot\dim_{\FF}\exc{T}{n}{i_0}{i_1}{0}{h}\ \le\
+\vol\bigl(\slab{k}{\delta'}\bigr).\]
+The slab is contained in the product over the letters of the sets of Lemma~\ref{l:simplex} in \m{\RR^{k}}. By
+the second condition of~\eqref{e:sizeA} and \m{\sigma^{\circ}\le\PT{T}^{3i_1}},
+\m{\delta'_s\le n+n/h\le n\exp(1/h)}. So the volume is at most
+\m{\bigl((n\exp(1/h))^{k-1}/(k-1)!\bigr)^{L}}, and \m{n^{k-1}/(k-1)!\le\binom{n+k-1}{k-1}=\#\Mon_{k,n}}. Finally
+\m{\exp((k-1)L/h)\le1+\kappa}: the exponent is at most \m{\kappa/2\le\tfrac12} by the first condition
+of~\eqref{e:sizeA}, and \m{\exp(\theta)\le1+2\theta} for \m{0\le\theta\le\tfrac12}.
+\end{proof}
+\leanline{\lean{dimex}}
+
+\begin{proposition}[a nonzero deep form has a costly monomial]\label{p:deepweight}
+In Setting~\ref{set:T}, let the ring of~$T$ be a field~$\FF$ of characteristic~$p$, let $n$, $\mu$, $j$ be natural
+numbers with \m{2\mu\le k} and \m{2\mu<L}, and let $F$ be a nonzero form in \m{\deepForms{T}{k}{n}{\mu}{j}}. Then
+there is a family~$\beta$ with \m{F(\beta)\ne0} and
+\[j\ \le\ \sum_{v=(i,s)}\beta_s(i)\,\frac{\dpi{T}{\mu}{v}}{\PT{T}^{\,e_i}},\qquad e_i=2\mu\ \text{ if } i\ge2\mu,\quad
+e_i=1\ \text{ if } i<2\mu .\]
+\end{proposition}
+\begin{proof}
+Let \m{\FF'} be the field of rational functions over~$\FF$ in the variables that are not deep, and regard
+the polynomial of~$F$ as a polynomial~$\Phi$ over~\m{\FF'} in the deep variables; it is not zero. We apply
+Input~3 over~\m{\FF'}, with $\cV$ the set of the deep variables and \m{\varkappa(i,s)=\PT{T}^{e_i}}. Then
+\m{\prod_v\varkappa(v)=\PT{T}^{(L/2)\sum_ie_i}=\qT{T}^{\mu(k-2\mu+1)}} by Lemma~\ref{l:sumdeep}. A monomial of~$\Phi$
+of cost at least~$j$ comes from a family~$\beta$ with \m{F(\beta)\ne0} whose deep part it is, and the cost is
+the sum of the statement. It remains to give the points and the polynomials.
+
+\emph{The points.} Let $\cK$ be the set of the pairs \m{(l,l')} of indices with \m{l<\mu} and either
+\m{l'=l+\mu} or \m{l'\ge2\mu}; it has \m{\mu(k-2\mu+1)} elements. Let $\cS$ be the set of the functions~$\fs$
+from~$\cK$ to~\m{\FF_W}, so that \m{\#\cS=\qT{T}^{\mu(k-2\mu+1)}}. For $\fs$ in~$\cS$ choose a lift
+\m{\tilde{\fs}_{l,l'}} in~$W$ of each value and let \m{\gamma_{\fs}=1+\sum_{(l,l')\in\cK}\tilde{\fs}_{l,l'}E_{ll'}}, an
+element of \m{\GLk(W)} with inverse \m{1-\sum\tilde{\fs}_{l,l'}E_{ll'}}, the rows and the columns that occur being
+disjoint. By Lemma~\ref{l:basic}(b), \m{\polyAction{T}{\gamma_{\fs}^{-1}}} fixes the variables that are not deep and
+sends a deep variable \m{x_v} to \m{x_v-\upsilon_{\fs}(v)}, where
+\[\upsilon_{\fs}(l',s)=\sum_{l}\iota_s(\tilde{\fs}_{l,l'})\,x_{l,s}\ \ (s\ \text{even}),\qquad
+\upsilon_{\fs}(l,s)=-\sum_{l'}\iota_s(\tilde{\fs}_{l,l'})\,x_{l',s}\ \ (s\ \text{odd}),\]
+the sums being over the pairs in~$\cK$ with the given member; these are elements of~\m{\FF'}, the variables on
+the right not being deep. As $F$ lies in \m{\deepForms{T}{k}{n}{\mu}{j}}, every monomial of
+\m{\letterRep{T}{n}{\gamma_{\fs}}F} has at least $j$ deep variables, counted with multiplicity; applying
+\m{\polyAction{T}{\gamma_{\fs}^{-1}}} and Lemma~\ref{l:basic}(c), $\Phi$ is a combination of products of at least
+$j$ factors \m{x_v-\upsilon_{\fs}(v)}. So $\Phi$ lies in the $j$-th power of the ideal of the
+point~\m{\upsilon_{\fs}}.
+
+\emph{The polynomials.} Fix a letter~$s'$. For a pair \m{(l,l')} in~$\cK$ choose a natural number
+\m{j_{l,l'}}: it is $0$ if \m{l'=l+\mu}; if \m{l'\ge2\mu} it is the one of \m{2l}, \m{2l+1} for which the letter
+\m{s'-j_{l,l'}} is even. Let \m{v_{l,l'}} be the deep variable \m{(l',s'-j_{l,l'})} if that letter is even, and
+\m{(l,s')} if \m{j_{l,l'}=0} and $s'$ is odd. In each case \m{j_{l,l'}<e}, where
+\m{\PT{T}^{e}=\varkappa(v_{l,l'})}: for \m{l'\ge2\mu} we have \m{j_{l,l'}\le2\mu-1} and \m{e=2\mu}. By
+Lemma~\ref{l:basic}(a) and \m{p=0},
+\[\upsilon_{\fs}(v_{l,l'})^{\PT{T}^{j_{l,l'}}}=\sum_{(l_1,l'_1)\in\cK}C_{(l,l'),(l_1,l'_1)}\cdot\iota_{s'}(\tilde{\fs}_{l_1,l'_1}),\]
+with a matrix~$C$ over~\m{\FF'} that does not depend on~$\fs$: its entries are, up to sign, the
+\m{\PT{T}^{j_{l,l'}}}-th powers of the variables that occur in the formula for \m{\upsilon_{\fs}(v_{l,l'})}. We
+claim that \m{\det C\ne0}. If $s'$ is even, $C$ is block diagonal for the second members: the block of the pairs
+\m{(l,l+\mu)} is diagonal with the entries \m{x_{l,s'}}, and the block of each \m{l'\ge2\mu} is the matrix
+\m{(x_{l_1,s'-2l}^{\,\PT{T}^{2l}})_{l,l_1}}, whose entries are powers of \m{\mu^{2}} distinct variables, the
+letters \m{s'-2l} being distinct because \m{2\mu<L}. If $s'$ is odd, order the pairs \m{(l,l+\mu)} first: $C$ is
+block triangular, with a diagonal block of entries \m{-x_{l+\mu,s'}} and blocks
+\m{(x_{l_1,s'-2l-1}^{\,\PT{T}^{2l+1}})_{l,l_1}}. A matrix whose entries are powers of distinct variables has a
+nonzero determinant. So each \m{\iota_{s'}(\tilde{\fs}_{l_1,l'_1})} is a combination over~\m{\FF'}, with
+coefficients independent of~$\fs$, of the values at \m{\upsilon_{\fs}} of the monomials
+\m{x_{v_{l,l'}}^{\PT{T}^{j_{l,l'}}}}, which cost \m{\PT{T}^{j_{l,l'}}/\varkappa(v_{l,l'})<1}.
+
+Now let $v$ be a deep variable of the letter~$s$, and \m{\PT{T}^{e}=\varkappa(v)}. By Lemma~\ref{l:basic}(a),
+\m{\upsilon_{\fs}(v)^{\varkappa(v)}} is a combination, with coefficients in~\m{\FF'} independent of~$\fs$, of the
+\m{\iota_{s+e}(\tilde{\fs}_{l_1,l'_1})}; by the last paragraph for \m{s'=s+e} it is the value at \m{\upsilon_{\fs}} of
+a polynomial \m{\Phi_v} whose monomials cost less than~$1$. The same paragraph, for any letter~$s'$, shows that
+the point \m{\upsilon_{\fs}} determines the \m{\iota_{s'}(\tilde{\fs}_{l_1,l'_1})}, hence~$\fs$: two elements
+of~$W$ with the same image under~\m{\iota_{s'}} differ by a non-unit. So the points are pairwise distinct, and
+Input~3 applies.
+\end{proof}
+\leanline{\lean{deepweight}\sep \lean{nullst}\sep \lean{sumdeep}}
+
+\begin{proof}[Proof of Theorem 3(b)]
+From the size conditions: \m{0<\mu}, \m{2\mu\le k}, \m{1\le y}, \m{n<\PT{T}^{\lambda}} and \m{L=2\lambda}, and
+\m{\PT{T}^{3\mu}\le n} from the ninth condition; so \m{3\mu<\lambda} and \m{2\mu<L}. For a family~$\beta$ let
+\m{\mathrm{c}(\beta)} be the sum of Proposition~\ref{p:deepweight}. By that proposition, a form in
+\m{\deepForms{T}{k}{n}{\mu}{j}} that vanishes at all~$\beta$ with \m{j\le\mathrm{c}(\beta)} is zero; so
+\m{\dim_{\FF}\deepForms{T}{k}{n}{\mu}{j}} is at most the number of these~$\beta$. Summing over \m{j<j_0}, each
+$\beta$ is counted at most \m{\mathrm{c}(\beta)+1} times:
+\[\sum_{j<j_0}\dim_{\FF}\deepForms{T}{k}{n}{\mu}{j}\ \le\ \sum_{\beta}\bigl(1+\mathrm{c}(\beta)\bigr).\]
+The cyclic shifts of the indices permute the families. Averaging over them replaces \m{\beta_s(i)} by \m{n/k},
+so, by Lemma~\ref{l:sumdeep},
+\[\sum_{\beta}\mathrm{c}(\beta)=\bigl(\#\Mon_{k,n}\bigr)^{L}\cdot\frac nk\cdot\frac L2\cdot
+\Bigl(\frac{k-2\mu}{\PT{T}^{2\mu}}+\frac{2\mu}{\PT{T}}\Bigr)\ \le\
+\bigl(\#\Mon_{k,n}\bigr)^{L}\cdot L\,n\,\Bigl(\frac1{\PT{T}^{2\mu}}+\frac{\mu^{2}}{k\,\PT{T}}\Bigr),\]
+which is at most \m{z\,(\#\Mon_{k,n})^{L}} by the tenth condition.
+\end{proof}
+\leanline{\lean{dimdeep}}
+
+\sect{Conjugation-invariant means}{s:mean}
+In this section the variables are the entries \m{x_{i,i'}} of one generic matrix, and for a finite set~$\cV$ of
+variables \m{\Mon_{\cV}(n)} is the set of the exponents of degree~$n$ on~$\cV$.
+
+\begin{lemma}[density of the points where a form is a unit]\label{l:zariski}
+Let $W$ be a local ring, $\cO$ a ring, \m{\chi\colon W\to\cO} a ring homomorphism, $\cV$ a finite set, and $n$,
+$n'$ natural numbers. Let \m{\Phi_0} be a homogeneous polynomial of degree~$n'$ in \m{W[x_{\cV}]}, with
+\m{n+n'\le\#\FF_W}, and let \m{\upsilon_0} be a point of \m{W^{\cV}} at which \m{\Phi_0} takes a unit value. Let
+$M_1$ be an $\cO$-submodule of \m{\cO^{\Mon_{\cV}(n)}} that contains the vector
+\m{(\chi(\upsilon^{\alpha}))_{\alpha}} for every point $\upsilon$ of \m{W^{\cV}} with \m{\Phi_0(\upsilon)} a unit.
+Then \m{M_1=\cO^{\Mon_{\cV}(n)}}.
+\end{lemma}
+\begin{proof}
+Let $M_0$ be the $W$-submodule of \m{W^{\Mon_{\cV}(n)}} of the vectors whose image under~$\chi$ lies in~$M_1$. It
+suffices that \m{M_0} is everything, for then $M_1$ contains the unit vectors. By Nakayama's lemma, the finitely
+generated $W$-module \m{W^{\Mon_{\cV}(n)}/M_0} is zero if every $W$-linear map \m{\mathcal{L}} from it to~\m{\FF_W}
+is zero. Given such a map, let $\Phi$ be the polynomial over~\m{\FF_W} with the coefficient \m{\mathcal{L}} of the
+$\alpha$-th unit vector at~\m{x^{\alpha}}; it is homogeneous of degree~$n$. If $\upsilon$ is a point at which
+\m{\Phi_0} is a unit, then \m{(\upsilon^{\alpha})_{\alpha}} lies in~$M_0$, so $\Phi$ vanishes at the residue
+of~$\upsilon$. Hence the product of $\Phi$ with the reduction of~\m{\Phi_0} vanishes at every point of
+\m{\FF_W^{\cV}}. It is homogeneous of degree \m{n+n'\le\#\FF_W}, and such a polynomial is zero; the reduction of
+\m{\Phi_0} is not zero, because of~\m{\upsilon_0}; so \m{\Phi=0} and \m{\mathcal{L}=0}.
+\end{proof}
+\leanline{\lean{zariski}}
+
+\begin{lemma}[an integral invariant diagonal form]\label{l:diagform}
+Let $\cO$ be a valuation domain of characteristic zero, $\cV$ a finite set, $p$ a prime number that is not a unit
+in~$\cO$, and $e$ a natural number. There is a function~$w$ from the exponents on~$\cV$ to~$\cO$ such that
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=1pt,topsep=2pt]
+\item \m{p^{\#\cV\cdot e}=\binom{|\alpha|}{\alpha}\,w(\alpha)} for every exponent~$\alpha$ with \m{|\alpha|<p^{e}},
+where \m{\binom{|\alpha|}{\alpha}=|\alpha|!/\prod_v\alpha(v)!} is the multinomial coefficient;
+\item for every square matrix~$G$ over~$\cO$ indexed by~$\cV$ and all exponents $\alpha$, $\alpha'$: the
+coefficient of \m{x^{\alpha}} in the linear substitution of~$G$ applied to~\m{x^{\alpha'}}, times \m{w(\alpha)},
+equals \m{w(\alpha')} times the coefficient of \m{x^{\alpha'}} in the linear substitution of~\m{G^{\tp}} applied
+to~\m{x^{\alpha}}.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+A multinomial coefficient of degree~$l$ is a product of \m{\#\cV} binomial coefficients \m{\binom{l'}{\cdot}} with
+\m{l'\le l}. Let \m{l'<p^{e}}. The power of~$p$ in \m{\binom{l'}{\cdot}} has exponent at most the number of
+digits of~$l'$ in base~$p$ less one, which is less than~$e$, and the part prime to~$p$ is a unit of~$\cO$, a
+local ring in which $p$ is not a unit. So \m{\binom{|\alpha|}{\alpha}} divides \m{p^{\#\cV\cdot e}} in~$\cO$ when
+\m{|\alpha|<p^{e}}; let \m{w(\alpha)} be the quotient, and \m{w(\alpha)=0} for the other~$\alpha$. For~(ii),
+expand the product \m{\prod_{v'}(\sum_vG_{vv'}x_v)^{\alpha'(v')}}: the coefficient of \m{x^{\alpha}} is the sum,
+over the matrices \m{(m_{vv'})} of natural numbers with row sums $\alpha$ and column sums~$\alpha'$, of
+\m{\prod_{v'}\alpha'(v')!\cdot\prod_{v,v'}G_{vv'}^{m_{vv'}}/m_{vv'}!}. Multiplied by \m{\prod_v\alpha(v)!} this is
+symmetric under transposition. So both coefficients of~(ii) vanish unless \m{|\alpha|=|\alpha'|}, and then they
+differ by the factor \m{\prod\alpha'(v)!/\prod\alpha(v)!=\binom{|\alpha|}{\alpha}/\binom{|\alpha'|}{\alpha'}}, which
+is \m{w(\alpha')/w(\alpha)} if the degree is less than~\m{p^{e}}; otherwise both values of~$w$ are zero.
+\end{proof}
+\leanline{\lean{diagform}}
+
+\begin{proposition}[an invariant mean with prescribed values]\label{p:mean}
+Let $W$ be a local ring, $\cO$ a valuation domain of characteristic zero, \m{\chi\colon W\to\cO} a ring
+homomorphism, $k$ and $n_0$ natural numbers, and $\tau$ a labelling of the indices. Let $p$ be a prime number
+that is not a unit in~$\cO$ and $e$ a natural number with \m{n_0<p^{e}} and \m{n_0+k<\#\FF_W}. Let $\omega$ be a
+real function on the indices and $\Omega$ a set of real numbers. For an exponent~$\alpha$ on the generic
+variables put \m{\mathrm{rw}(\alpha)=\sum_{i,i'}\alpha(i,i')\,\omega(i)} and
+\m{\mathrm{cw}(\alpha)=\sum_{i,i'}\alpha(i,i')\,\omega(i')}. Then there is an $\cO$-linear form~$\cM$ on the
+polynomials in the generic variables over~$\cO$ such that:
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=1pt,topsep=2pt]
+\item \m{\cM(\conjSubst{\chi}{\gamma}\Phi)=\cM(\Phi)} for every $\gamma$ in \m{\Lev_{\tau}(W)} and every
+polynomial~$\Phi$;
+\item \m{\cM(x^{\alpha})=0} for every $\alpha$ with \m{\mathrm{rw}(\alpha)\ne\mathrm{cw}(\alpha)};
+\item for every $\alpha$ with \m{\mathrm{rw}(\alpha)\in\Omega}: \m{\cM(x^{\alpha})} is \m{p^{k^{2}e}} times the value
+of \m{x^{\alpha}} at the identity matrix if \m{|\alpha|\le n_0}, and \m{\cM(x^{\alpha})=0} if \m{|\alpha|>n_0};
+\item $\cM$ is an $\cO$-linear combination of forms \m{\cL\circ\conjSubst{\chi}{\gamma}}, with $\gamma$ in
+\m{\Lev_{\tau}(W)} and $\cL$ an $\cO$-linear form that vanishes at every \m{x^{\alpha}} with
+\m{\mathrm{rw}(\alpha)\notin\Omega}.
+\end{enumerate}
+\end{proposition}
+\begin{proof}
+We construct, for each \m{j\le n_0}, a form \m{\cM_j} that vanishes on the monomials of degree other than~$j$
+and has the four properties for the monomials of degree~$j$; their sum is~$\cM$. Fix~$j$.
+
+\emph{The algebra.} Let \m{V_j} be the free $\cO$-module with the basis \m{e_{\mathbf{l}}}, for the sequences
+\m{\mathbf{l}=(l_1,\dots,l_j)} of indices, and put \m{|\mathbf{l}|_{\omega}=\sum_r\omega(l_r)}. Let \m{X^{\tau}} be
+the matrix with the entry \m{x_{i',i}} at \m{(i,i')} if \m{\tau(i)=\tau(i')} and $0$ otherwise. An entry of its
+$j$-th Kronecker power is \m{\prod_rX^{\tau}_{l_r,l'_r}}, which is zero or the monomial \m{x^{\alpha}} with
+\m{\alpha=\sum_r1_{(l'_r,l_r)}}; then \m{\mathrm{rw}(\alpha)=|\mathbf{l}'|_{\omega}} and
+\m{\mathrm{cw}(\alpha)=|\mathbf{l}|_{\omega}}. For $\alpha$ of degree~$j$ let \m{S_{\alpha}} be the endomorphism
+of~\m{V_j} whose matrix has the entry $1$ where the Kronecker power has the entry \m{x^{\alpha}}, and $0$
+elsewhere; for a vector \m{c=(c_{\alpha})} put \m{S(c)=\sum_{\alpha}c_{\alpha}S_{\alpha}}. Then for every linear
+form~$\cL$, \m{S((\cL(x^{\alpha}))_{\alpha})} is $\cL$ applied to the entries of the Kronecker power. In
+particular, for $\gamma$ in \m{\Lev_{\tau}(W)}, the point with \m{x_{i',i}=\gamma_{ii'}} gives a vector
+\m{c_{\gamma}} with \m{S(c_{\gamma})=\chi(\gamma)^{\otimes j}}, the $j$-th Kronecker power of the matrix
+\m{\chi(\gamma)}.
+
+\emph{Density.} We claim: a submodule of the module of the vectors~$c$ that contains every $c$ with
+\m{S(c)=\chi(\gamma)^{\otimes j}} for some $\gamma$ in \m{\Lev_{\tau}(W)} is everything. This is
+Lemma~\ref{l:zariski} for the generic variables, the degree~$j$ and the polynomial \m{\Phi_0=\det X^{\tau}}, which
+is homogeneous of degree~$k$ and equal to~$1$ at the point of the identity matrix; here
+\m{j+k\le n_0+k<\#\FF_W}. Indeed, at a point~$\upsilon$ where \m{\det X^{\tau}} is a unit, the value of \m{X^{\tau}} is an
+element~$\gamma$ of the Levi subgroup, and \m{S((\chi(\upsilon^{\alpha}))_{\alpha})=\chi(\gamma)^{\otimes j}}.
+
+\emph{The module.} Let \m{V_j^{\Omega}} be the submodule of~\m{V_j} spanned by the vectors \m{S(c)e_{\mathbf{l}}}, for
+all~$c$ and all \m{\mathbf{l}} with \m{|\mathbf{l}|_{\omega}\in\Omega}. It is mapped into itself by every
+\m{S(c)}: by the density claim, used twice, it suffices to see that
+\m{\chi(\gamma)^{\otimes j}\chi(\gamma')^{\otimes j}e_{\mathbf{l}}=\chi(\gamma\gamma')^{\otimes j}e_{\mathbf{l}}} lies
+in~\m{V_j^{\Omega}}. Being finitely generated and without torsion over the valuation domain~$\cO$, \m{V_j^{\Omega}} is free.
+
+\emph{The form.} Let $w$ be the function of Lemma~\ref{l:diagform} for the \m{k^{2}} generic variables, the
+prime~$p$ and the exponent~$e$. For a polynomial~$\Phi$ with coefficients \m{\Phi_{\alpha}} let
+\m{\mathrm{K}(\Phi)=(w(\alpha)\Phi_{\alpha})_{|\alpha|=j}}, and define
+\[\cM_j(\Phi)=\operatorname{tr}\bigl(S(\mathrm{K}(\Phi))\,\big|\,V_j^{\Omega}\bigr),\qquad\text{so that}\quad
+\cM_j(x^{\alpha})=w(\alpha)\operatorname{tr}(S_{\alpha}|V_j^{\Omega})\ \text{ for } |\alpha|=j .\]
+
+\emph{Equivariance.} For $\gamma$ in \m{\Lev_{\tau}(W)},
+\begin{equation}\label{e:equiv}
+S\bigl(\mathrm{K}(\conjSubst{\chi}{\gamma}\Phi)\bigr)=\chi(\gamma)^{\otimes j}\,S(\mathrm{K}(\Phi))\,\chi(\gamma^{-1})^{\otimes j}.
+\end{equation}
+Indeed \m{\conjSubst{\chi}{\gamma}} is the linear substitution of a matrix~$G$ indexed by the generic variables.
+By Lemma~\ref{l:diagform}(ii) the $\alpha$-th coordinate of \m{\mathrm{K}(\conjSubst{\chi}{\gamma}\Phi)} is
+\m{\sum_{\alpha'}w(\alpha')\Phi_{\alpha'}} times the coefficient of \m{x^{\alpha'}} in the substitution of~\m{G^{\tp}}
+applied to~\m{x^{\alpha}}. So the left side of~\eqref{e:equiv} is \m{\sum_{\alpha'}w(\alpha')\Phi_{\alpha'}} times the
+matrix of the coefficients of \m{x^{\alpha'}} in the Kronecker power of the image of~\m{X^{\tau}} under the
+substitution of~\m{G^{\tp}}. That substitution replaces the matrix \m{(x_{i,i'})} by
+\m{\chi(\gamma^{-1})^{\tp}(x_{i,i'})\chi(\gamma)^{\tp}}, and therefore \m{X^{\tau}}, which is its transpose cut down to
+the pattern of the Levi subgroup, by \m{\chi(\gamma)X^{\tau}\chi(\gamma)^{-1}}, the matrices \m{\chi(\gamma)} and
+\m{\chi(\gamma)^{-1}} having that pattern. Taking coefficients gives the right side.
+
+\emph{The four properties.} (a) By~\eqref{e:equiv} and because \m{\chi(\gamma)^{\otimes j}} and its inverse
+map~\m{V_j^{\Omega}} to itself, the two traces agree. (b) \m{S_{\alpha}} sends \m{e_{\mathbf{l}'}} to zero unless
+\m{|\mathbf{l}'|_{\omega}=\mathrm{rw}(\alpha)}, and then to a combination of the \m{e_{\mathbf{l}}} with
+\m{|\mathbf{l}|_{\omega}=\mathrm{cw}(\alpha)}. If the two weights differ, \m{S_{\alpha}^{2}=0}, and a nilpotent
+endomorphism of a free module over a domain has trace zero. (c) If \m{\mathrm{rw}(\alpha)\in\Omega}, then
+\m{S_{\alpha}} maps \m{V_j} into~\m{V_j^{\Omega}}, so its trace on~\m{V_j^{\Omega}} is its trace on~\m{V_j}, the number of the
+sequences \m{\mathbf{l}} with \m{\sum_r1_{(l_r,l_r)}=\alpha}. That number is \m{\binom{|\alpha|}{\alpha}} if
+$\alpha$ is supported on the variables \m{x_{i,i}} and $0$ otherwise; and the value of \m{x^{\alpha}} at the
+identity matrix is $1$ or $0$ in the same cases. With Lemma~\ref{l:diagform}(i), \m{j\le n_0<p^{e}}, this
+is~(c). (d) Choose a basis of~\m{V_j^{\Omega}}; the trace is the sum, over the basis, of forms
+\m{\Phi\mapsto\cL'(S(\mathrm{K}(\Phi))\,\mathbf{v})} with \m{\mathbf{v}} in~\m{V_j^{\Omega}} and \m{\cL'} a linear form
+on~\m{V_j^{\Omega}}. By the definition of~\m{V_j^{\Omega}} and the density claim we may take
+\m{\mathbf{v}=\chi(\gamma)^{\otimes j}e_{\mathbf{l}}} with
+\m{|\mathbf{l}|_{\omega}\in\Omega}. By~\eqref{e:equiv} for \m{\gamma^{-1}},
+\m{S(\mathrm{K}(\Phi))\chi(\gamma)^{\otimes j}e_{\mathbf{l}}=\chi(\gamma)^{\otimes j}S(\mathrm{K}(\conjSubst{\chi}{\gamma^{-1}}\Phi))e_{\mathbf{l}}},
+so the form is \m{\cL\circ\conjSubst{\chi}{\gamma^{-1}}} with
+\m{\cL(\Phi)=\cL'(\chi(\gamma)^{\otimes j}S(\mathrm{K}(\Phi))e_{\mathbf{l}})}, and \m{\cL(x^{\alpha})=0} unless
+\m{\mathrm{rw}(\alpha)=|\mathbf{l}|_{\omega}}, which lies in~$\Omega$.
+\end{proof}
+\leanline{\lean{mean}\sep \lean{zariski}\sep \lean{diagform}}
+
+The image of~$S$ is the Schur algebra of the Levi subgroup in degree~$j$, an order spanned by the Kronecker
+powers of the group elements; \m{V_j^{\Omega}} is the part of the tensor space generated by the weight vectors with
+weight in~$\Omega$, and \m{\cM_j} is its character, read as a function on the dual of the Schur algebra. The
+function~$w$ is the price of integrality: the identification of polynomials of degree~$j$ with that dual
+has the multinomial coefficients as denominators.
+
+\sect{The Frobenius operator and the projector}{s:proj}
+\begin{lemma}[the Frobenius operator under a ring homomorphism]\label{l:frobmap}
+In Setting~\ref{set:T}, let $\mu$, $\lambda$, $n$ be natural numbers, $\cR$ a ring, \m{\psi=(\psi(s,j))} matrices in
+\m{\Mk(\cR)}, \m{\chi\colon\cR\to\cO} a ring homomorphism, and $\gamma$ an element of
+\m{\Lev_{\twoBlock{k}{\mu}{\cdot}}(W)}. Then $\chi$, applied to the entries of \m{\frob{T}{\mu}{\lambda}{n}{\psi}},
+gives
+\[\letterRep{T}{n}{\gamma^{-1}}\cdot\frob{T}{\mu}{\lambda}{n}{\psi'}\cdot\letterRep{T}{n}{\gamma},\qquad
+\psi'(s,j)=\letterConj{T}{\gamma}{s}\bigl(\chi(\psi(s,j))\bigr).\]
+\end{lemma}
+\begin{proof}
+Let \m{\Pi^{m}_s} and \m{\Pi'^{m}_s} be the products of Definition~\ref{d:frob}(b) for $\psi$ and~$\psi'$; then
+\[\chi(\Pi^{m}_s)=\iota_s(\gamma^{-1})\,\Pi'^{m}_s\,\iota_s(\gamma).\]
+For an even letter this says that
+\m{\chi(\Pi^{m}_s)} is \m{\Pi'^{m}_s} conjugated by the letter matrices of~$\gamma$. For an odd letter, taking
+transposed adjugates gives
+\[\chi(\operatorname{adj}(\Pi^{m}_s))^{\tp}=\iota_s(\gamma)^{\tp}\,\operatorname{adj}(\Pi'^{m}_s)^{\tp}\,\iota_s(\gamma^{-1})^{\tp},\]
+the determinants of \m{\iota_s(\gamma)} and \m{\iota_s(\gamma^{-1})} cancelling; and \m{\iota_s(\gamma)^{\tp}} is the
+letter matrix of~\m{\gamma^{-1}} at an odd letter. The number \m{m=\lambda+\dpi{T}{\mu}{(i,s)}} depends only on the
+block of~$i$, and the letter matrices of~$\gamma$ are block diagonal; so choosing the rows according to~$m$
+commutes with these conjugations, and
+\[\chi(B_s)=\letterMatrix{T}{\gamma^{-1}}{s}\,B'_s\,\letterMatrix{T}{\gamma}{s}.\]
+Symmetric powers and Kronecker products are multiplicative.
+\end{proof}
+\leanline{\lean{frobmap}}
+
+\begin{lemma}[the Frobenius operator in a filtration]\label{l:frobmem}
+In Setting~\ref{set:T}, let $\mu$, $\lambda$, $n$ be natural numbers, $\cR$ a ring, \m{\psi=(\psi(s,j))} matrices
+in \m{\Mk(\cR)}, and \m{\beta,\beta'} families in \m{\Fam}. Let \m{\cG} be a family of additive subgroups of~$\cR$
+such that \IsRF{\cG}. Let \m{\eta_{s,j}(i)} be real numbers, for a letter, a natural number and an index, let
+$\omega$ be a weight on the variables and $\epsilon$ a real number, such that
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=1pt,topsep=2pt]
+\item \m{|\eta_{s,0}(i)|\le\epsilon} for all $s$, $i$, and \m{\sum_i\eta_{s,j}(i)=0} for all $s$, $j$;
+\item \m{\omega(i,s)=\eta_{s,m}(i)} if $s$ is even and \m{\omega(i,s)=-\eta_{s,m}(i)} if $s$ is odd, where
+\m{m=\lambda+\dpi{T}{\mu}{(i,s)}};
+\item \m{\psi(s,j)_{ii'}\in\cG\bigl(\eta_{s,j+1}(i)-\eta_{s,j}(i')-\epsilon\bigr)} for every letter~$s$, every
+\m{j\le\lambda} and all indices $i$, $i'$;
+\item \m{0\le\epsilon}.
+\end{enumerate}
+Then the \m{(\beta,\beta')} entry of \m{\frob{T}{\mu}{\lambda}{n}{\psi}} lies in
+\m{\cG\bigl(\pr{\omega}{\beta}-L\,n\,k\,(\lambda+2)\,\epsilon\bigr)}.
+\end{lemma}
+\begin{proof}
+First, \m{(\Pi^{m}_s)_{ii'}} lies in \m{\cG(\eta_{s,m}(i)-(m+1)\epsilon)} for \m{m\le\lambda+1}: for \m{m=0} the
+entries are $0$ and~$1$ and \m{\eta_{s,0}(i)-\epsilon\le0}; and
+\m{(\psi(s,m)\Pi^{m}_s)_{ii'}=\sum_l\psi(s,m)_{il}(\Pi^{m}_s)_{li'}}, where the levels add to
+\m{\eta_{s,m+1}(i)-(m+2)\epsilon}. Next, every entry \m{(B_s)_{ii'}} lies in
+\m{\cG(\omega(i,s)-k(\lambda+2)\epsilon)}. For even~$s$ this is the first step. For odd~$s$ the entry is, up to
+sign, a minor of \m{\Pi^{m}_s} without the row~$i$, a sum of products of one entry from each other row; the
+levels add to \m{\sum_{l\ne i}\eta_{s,m}(l)-(k-1)(m+1)\epsilon=-\eta_{s,m}(i)-(k-1)(m+1)\epsilon}, by~(i).
+Finally an entry of \m{\mathrm{Sym}^{n}(B_s)} in the row~\m{\beta_s} is a sum of products of $n$ entries
+of~$B_s$, of which \m{\beta_s(i)} lie in the row~$i$; and the entry of the Kronecker product is the product over
+the $L$ letters.
+\end{proof}
+\leanline{\lean{frobmem}}
+
+\begin{lemma}[conjugation and Frobenius modulo $p$]\label{l:cjfrob}
+In Setting~\ref{set:T}, let $\gamma$ be an element of \m{\GLk(W)}, $s$ a letter, $j$ a natural number, $G$ a matrix
+in \m{\Mk(\cO)} and $i$, $i'$ indices. Write \m{G^{(j)}} for the matrix of the \m{\PT{T}^{j}}-th powers of the
+entries of~$G$. Then $p$ divides
+\[\Bigl(\letterConj{T}{\gamma}{s}\bigl(\bigl(\letterConj{T}{\gamma^{-1}}{s-j}(G)\bigr)^{(j)}\bigr)\Bigr)_{ii'}-\bigl(G_{ii'}\bigr)^{\PT{T}^{j}} .\]
+\end{lemma}
+\begin{proof}
+Modulo~$p$ the map \m{\pi\mapsto\pi^{\PT{T}^{j}}} of~$\cO$ is a ring homomorphism, so it commutes with products of
+matrices; and it sends \m{\iota_{s-j}(\upsilon)} to \m{\iota_s(\upsilon)}, by Lemma~\ref{l:basic}(a). Hence
+\m{(\iota_{s-j}(\gamma^{-1})\,G\,\iota_{s-j}(\gamma))^{(j)}\equiv\iota_s(\gamma^{-1})\,G^{(j)}\,\iota_s(\gamma)}
+modulo~$p$.
+\end{proof}
+\leanline{\lean{cjfrob}}
+
+\begin{proposition}[exponents of the Frobenius operator track the excess]\label{p:powdvd}
+In Setting~\ref{set:T}, let \m{i_0}, \m{i_1} be indices with \m{i_0+1=i_1}, let $s_0$ be a letter, and let
+$\lambda$, $n$ be natural numbers with \m{L\,n\,k\,(\lambda+2)\le\PT{T}^{\lambda}} and \m{\lambda\le L}. Let
+$\gamma$ be an element of \m{\GLk(W)}, let \m{T'} be the twisting data \m{\Tmap{\chi}{T}} for the inclusion~$\chi$
+of~$\cO$ in the polynomial ring in the generic variables \m{x_{s,i,i'}}, and suppose that $\psi$ is given by
+\[\psi(s,j)=\letterConj{T'}{\gamma}{s}\Bigl(\bigl(\letterConj{T'}{\gamma^{-1}}{s-j}(X_{s-j})\bigr)^{(j)}\Bigr)\]
+for every letter~$s$ and every natural number~$j$, in the notation of Lemma~\ref{l:cjfrob}. Let $c$ be a natural
+number, \m{\beta,\beta'} families, and $\nu$ an exponent on the generic variables, with parts \m{\nu_s} on the
+variables of the letter~$s$. With \m{\mathrm{rw}} and \m{\mathrm{cw}} as in Proposition~\ref{p:mean} for the function
+\m{\omega_0=\idxw{T}{\lambda}{i_0}{i_1}{\cdot}} on the indices, suppose that
+\m{\mathrm{rw}(\nu_s)=\mathrm{cw}(\nu_s)} for every letter \m{s\ne s_0}, and that
+\[2c+1<\bigl|\pr{\exw{T}{s_0+\lambda}{i_0}{i_1}{\cdot}}{\beta}-\mathrm{rw}(\nu_{s_0})\bigr| .\]
+Then \m{\varpi^{c}} divides the coefficient of \m{x^{\nu}} in the \m{(\beta,\beta')} entry of
+\m{\frob{T}{i_1}{\lambda}{n}{\psi}}.
+\end{proposition}
+\begin{proof}
+Let \m{\mathrm{sg}=\pm1} be the sign of the difference in the hypothesis, and put
+\[\mathrm{a}_m(i)=\omega_0(i)\cdot\tfrac{\mathrm{sg}}{2}\cdot\PT{T}^{m}/\qT{T};\qquad\text{so}\quad
+|\mathrm{a}_m(i)|\le\tfrac12\PT{T}^{-\lambda}\ \text{ for } m\le L,\qquad \sum_i\mathrm{a}_m(i)=0 .\] Give the generic
+variable \m{x_{s,i,i'}} the weight \m{\mathrm{a}_L(i)} if \m{s=s_0}, and
+\m{\mathrm{a}_{[s-s_0]}(i)-\mathrm{a}_{[s-s_0]}(i')} otherwise, and let \m{\cG} be the corresponding filtration
+\m{\gauss{\adic{\varpi}{\cdot}}{\cdot}{\cdot}} of the polynomial ring. The weight of \m{x^{\nu}} is then
+\m{\tfrac{\mathrm{sg}}{2}\mathrm{rw}(\nu_{s_0})}, the other letters contributing multiples of
+\m{\mathrm{rw}(\nu_s)-\mathrm{cw}(\nu_s)=0}. We apply Lemma~\ref{l:frobmem}, for \m{\mu=i_1}, with
+\[\eta_{s,j}(i)=\mathrm{a}_{j+[s-j-s_0]}(i),\qquad\omega=\tfrac{\mathrm{sg}}{2}\,\exw{T}{s_0+\lambda}{i_0}{i_1}{\cdot},\qquad
+\epsilon=\tfrac12\PT{T}^{-\lambda}.\]
+Condition~(i) holds by the two properties of~\m{\mathrm{a}_m}. Condition~(ii) is the definition of the excess
+weight at the letter \m{s_0+\lambda}, read at the two root variables of each letter, using \m{i_0+1=i_1}: these
+are the variables \m{(i_1,s)} and \m{(i_0,s)}, of which the deep one for \m{\mu=i_1} is the root variable
+\m{\rootVar{T}{i_0}{i_1}{s}}. For condition~(iii) let \m{j\le\lambda}. By Lemma~\ref{l:cjfrob} for~\m{T'}, the entry
+\m{\psi(s,j)_{ii'}} is \m{x_{s-j,i,i'}^{\,\PT{T}^{j}}} plus $p$ times a polynomial; and it is homogeneous of degree
+\m{\PT{T}^{j}} in the variables of the letter \m{s-j}. The weights of these variables are at most
+\m{\PT{T}^{-\lambda}} in absolute value, so every monomial of the entry has weight within
+\m{2\PT{T}^{j-\lambda}\le2} of the weight of the leading one; as \m{p=\varpi^{2}}, the entry lies in~$\cG$ at
+the level of its leading monomial. That level is \m{\PT{T}^{j}} times the weight of \m{x_{s-j,i,i'}}, which is
+\m{\eta_{s,j+1}(i)-\eta_{s,j}(i')} if \m{s-j\ne s_0} and \m{\eta_{s,j+1}(i)-\eta_{s,j}(i')+\mathrm{a}_j(i')} if
+\m{s-j=s_0}; and \m{|\mathrm{a}_j(i')|\le\epsilon}. The lemma gives the level
+\m{\tfrac{\mathrm{sg}}{2}\pr{\exw{T}{s_0+\lambda}{i_0}{i_1}{\cdot}}{\beta}-L\,n\,k\,(\lambda+2)\epsilon} for the entry,
+where the last term is at most~\m{\tfrac12} by hypothesis. So the coefficient of \m{x^{\nu}} is divisible
+by~$\varpi$ to a power that is at least
+\m{\tfrac12\bigl|\pr{\exw{T}{s_0+\lambda}{i_0}{i_1}{\cdot}}{\beta}-\mathrm{rw}(\nu_{s_0})\bigr|-\tfrac12>c}.
+\end{proof}
+\leanline{\lean{powdvd}\sep \lean{frobmem}\sep \lean{cjfrob}}
+
+\begin{lemma}[degrees in the Frobenius operator]\label{l:degle}
+In Setting~\ref{set:T}, let $\mu$, $\lambda$, $n$ be natural numbers, \m{\beta,\beta'} families, and $\nu$ an
+exponent on the generic variables. If the coefficient of \m{x^{\nu}} in the \m{(\beta,\beta')} entry of
+\m{\frob{T}{\mu}{\lambda}{n}{\frobX{T}{\cdot}{\cdot}}} is not zero, then for every letter~$s'$ the part of~$\nu$ on
+the variables of~$s'$ has degree at most \m{L\,n\,k\,(\lambda+2)\,\PT{T}^{\lambda}}.
+\end{lemma}
+\begin{proof}
+The entries of \m{\frobX{T}{s}{j}} with \m{j\le\lambda} have degree at most~\m{\PT{T}^{\lambda}}; those of the
+products \m{\Pi^{m}_s}, \m{m\le\lambda+1}, and of their adjugates have degree at most
+\m{k(\lambda+1)\PT{T}^{\lambda}}; an entry of the $n$-th symmetric power has $n$ times that degree at most, and an
+entry of the Kronecker product over $L$ letters $L$ times as much.
+\end{proof}
+\leanline{\lean{degle}\sep the formal proof is Lemma~\ref{l:frobmem} for a filtration that records the degree in the
+variables of one letter}
+
+\begin{lemma}[products of linear forms]\label{l:tensor}
+Let $\cS$ be a finite set, $\cV$ a set and $\cO$ a ring. There is a map, linear in each argument, that sends a
+family \m{(\cL_{\fs})_{\fs\in\cS}} of $\cO$-linear forms on \m{\cO[x_{\cV}]} to an $\cO$-linear form
+\m{\bigotimes_{\fs}\cL_{\fs}} on the polynomial ring in the variables \m{x_{\fs,v}}, such that
+\m{(\bigotimes_{\fs}\cL_{\fs})(\prod_{\fs}\Phi_{\fs})=\prod_{\fs}\cL_{\fs}(\Phi_{\fs})} whenever each \m{\Phi_{\fs}} is a
+polynomial in the variables \m{x_{\fs,v}}, \m{v\in\cV}, read as a polynomial in \m{\cO[x_{\cV}]}.
+\end{lemma}
+\begin{proof}
+Define the form on a monomial \m{x^{\nu}}, with parts \m{\nu_{\fs}}, as \m{\prod_{\fs}\cL_{\fs}(x^{\nu_{\fs}})}, and
+extend linearly.
+\end{proof}
+\leanline{\lean{tensordual}}
+
+\begin{proof}[Proof of Theorem 4]
+Write \m{q=\qT{T}=p^{oL}}. The hypotheses give
+\begin{equation}\label{e:nzero}
+n_0+k<q\quad\text{for}\quad n_0=L\,n\,k\,(\lambda+2)\,\PT{T}^{\lambda},\qquad n<q,\qquad
+L\,n\,k\,(\lambda+2)\le\PT{T}^{\lambda},
+\end{equation}
+because \m{(L\,n\,k\,(\lambda+2)+n+k+1)\,\PT{T}^{\lambda}\le\PT{T}^{2\lambda}=q}.
+
+\emph{The diagonal form.} Let \m{w_0} be the function of Lemma~\ref{l:diagform} for the $k$ indices as
+variables, the prime~$p$ and the exponent~\m{oL}, and put \m{w(\beta)=\prod_sw_0(\beta_s)}. As \m{n<q}, each
+\m{w_0(\beta_s)} divides \m{p^{k\,oL}}; choose \m{w'(\beta)} with \m{w(\beta)\,w'(\beta)=p^{k\,oL\cdot L}}.
+Property~(iii) of the theorem is Lemma~\ref{l:diagform}(ii) for each letter, since
+\m{\letterRep{T}{n}{\gamma}_{\beta',\beta}=\prod_s\mathrm{Sym}^{n}(\letterMatrix{T}{\gamma}{s})_{\beta'_s,\beta_s}} and the
+letter matrices of \m{\gamma^{\tp}} are the transposes of those of~$\gamma$.
+
+\emph{The operator.} Let \m{\mathrm{Fr}} be the matrix \m{\frob{T}{i_1}{\lambda}{n}{\frobX{T}{\cdot}{\cdot}}}, with
+entries in the polynomial ring in the generic variables. For a family \m{\cL=(\cL_s)_s} of $\cO$-linear forms on
+the polynomials in one generic matrix let \m{Z(\cL)} be the matrix over~$\cO$ obtained by applying the form
+\m{\bigotimes_s\cL_s} of Lemma~\ref{l:tensor} to the entries of~\m{\mathrm{Fr}}; it is linear in each~\m{\cL_s}.
+
+\emph{The means.} For every letter~$s$ let \m{\cM^{+}_s} and \m{\cM^{-}_s} be the forms of
+Proposition~\ref{p:mean} for the homomorphism \m{\iota_s}, the labelling \m{\twoBlock{k}{i_1}{\cdot}}, the degree
+\m{n_0}, the prime~$p$ with the exponent~\m{oL}, the function \m{\omega_0=\idxw{T}{\lambda}{i_0}{i_1}{\cdot}}, and the
+set~$\Omega$ of all real numbers, respectively of the real numbers greater than \m{h-(2c+1)}; the hypotheses
+hold by~\eqref{e:nzero}. Put \m{\cL^{\circ}_s=\cM^{+}_s-\cM^{-}_s} and
+\[Z=Z(\cL^{\circ})\cdot\operatorname{diag}(w'(\beta))_{\beta}.\]
+By (a), (b), (c) of the proposition, \m{\cL^{\circ}_s} is invariant under \m{\conjSubst{\iota_s}{\gamma}} for
+$\gamma$ in the Levi subgroup, and \m{\cL^{\circ}_s(x^{\alpha})=0} unless
+\m{\mathrm{rw}(\alpha)=\mathrm{cw}(\alpha)\le h-(2c+1)}.
+
+\emph{A criterion.} Let $s_0$ be a letter, $\gamma$ an element of \m{\Lev_{\twoBlock{k}{i_1}{\cdot}}(W)}, and \m{\cL},
+\m{\cL'} families of forms with \m{\cL'_s=\cL_s\circ\conjSubst{\iota_s}{\gamma}} for every letter. Let \m{F_1}, \m{F_2}
+be forms. Suppose that for every family~$\beta$ at which the row vector \m{F_1^{\tp}\letterRep{T}{n}{\gamma^{-1}}}
+has a coordinate not divisible by~\m{\varpi^{c}}, and for every exponent~$\nu$ on the generic variables, either
+\m{\prod_s\cL_s(x^{\nu_s})=0}, or the two hypotheses of Proposition~\ref{p:powdvd} hold for $s_0$, $\beta$
+and~$\nu$. Then \m{\varpi^{c}} divides \m{F_1^{\tp}Z(\cL')F_2}. Indeed, \m{\bigotimes_s\cL'_s} is
+\m{\bigotimes_s\cL_s} after the substitution of \m{\iota_s(\gamma^{-1})X_s\iota_s(\gamma)} for each~\m{X_s}. By
+Lemma~\ref{l:frobmap}, for the twisting data~\m{T'} and the substitution as the ring homomorphism, the
+substituted matrix \m{\mathrm{Fr}} is
+\m{\letterRep{T}{n}{\gamma^{-1}}\cdot\frob{T}{i_1}{\lambda}{n}{\psi}\cdot\letterRep{T}{n}{\gamma}} with $\psi$ as in
+Proposition~\ref{p:powdvd}; the constant matrices pass through the linear form. So
+\[F_1^{\tp}Z(\cL')F_2=\sum_{\beta,\beta'}\bigl(F_1^{\tp}\letterRep{T}{n}{\gamma^{-1}}\bigr)(\beta)\cdot
+\Bigl(\sum_{\nu}\mathrm{c}_{\nu}\prod_s\cL_s(x^{\nu_s})\Bigr)\cdot\bigl(\letterRep{T}{n}{\gamma}F_2\bigr)(\beta'),\]
+with \m{\mathrm{c}_{\nu}} the coefficient of \m{x^{\nu}} in the \m{(\beta,\beta')} entry of
+\m{\frob{T}{i_1}{\lambda}{n}{\psi}}, and every term is divisible by~\m{\varpi^{c}}, by the hypothesis or by
+Proposition~\ref{p:powdvd}.
+
+\emph{Property (i).} Let $F$ be a form, $\gamma$ in the Levi subgroup, and $\beta$ a family whose excess at some
+letter~$s_1$ exceeds~$h$. The coordinate \m{(\letterRep{T}{n}{\gamma}ZF)(\beta)} is \m{F_1^{\tp}Z(\cL^{\circ})F_2} for
+\m{F_1^{\tp}} the $\beta$-th row of \m{\letterRep{T}{n}{\gamma}} and \m{F_2=w'F}. Apply the criterion with
+\m{\cL=\cL'=\cL^{\circ}} and \m{s_0=s_1-\lambda}. The row vector \m{F_1^{\tp}\letterRep{T}{n}{\gamma^{-1}}} is the
+$\beta$-th unit vector. If \m{\prod_s\cL^{\circ}_s(x^{\nu_s})\ne0}, then every \m{\nu_s} has equal row and column
+weights, at most \m{h-(2c+1)}, and the excess of~$\beta$ at \m{s_0+\lambda} exceeds \m{\mathrm{rw}(\nu_{s_0})} by more
+than \m{2c+1}.
+
+\emph{Property (ii).} Let \m{F'} lie in \m{\exc{T}{n}{i_0}{i_1}{\varpi^{c}\cO}{h-(4c+2)}}, let $F$ be a form, and
+put $\mathrm{Y}(\cL)=(wF')^{\tp}Z(\cL)(w'F)$, with the products \m{wF'} and \m{w'F} taken coordinate by
+coordinate.
+The quantity of~(ii) is \m{\mathrm{Y}(\cL^{\circ})} less \m{p^{(k+k^{2})oL\cdot L}\sum_{\beta}F'(\beta)F(\beta)}.
+Expanding in each letter, \m{\mathrm{Y}(\cL^{\circ})} is the sum, over the subsets~$\cS$ of the letters, of
+\m{\mathrm{Y}(\cL^{\cS})} with \m{\cL^{\cS}_s=-\cM^{-}_s} for $s$ in~$\cS$ and \m{\cL^{\cS}_s=\cM^{+}_s} otherwise.
+
+For the empty subset: by Lemma~\ref{l:degle} and~(c), \m{\cM^{+}_s} takes at every monomial that occurs in
+\m{\mathrm{Fr}} the value \m{p^{k^{2}oL}} times its value at the identity; and \m{\mathrm{Fr}} with all generic
+matrices equal to the identity is the identity matrix. So \m{Z(\cM^{+})=p^{k^{2}oL\cdot L}\cdot1}, and
+\m{\mathrm{Y}(\cM^{+})=p^{k^{2}oL\cdot L}\sum_{\beta}w(\beta)w'(\beta)F'(\beta)F(\beta)}, which is the term
+subtracted.
+
+For a nonempty subset choose \m{s_0} in it. By~(d), \m{\cM^{-}_{s_0}} is a combination of forms
+\m{\cL_0\circ\conjSubst{\iota_{s_0}}{\gamma}} with $\gamma$ in the Levi subgroup and \m{\cL_0} vanishing at the
+\m{x^{\alpha}} with \m{\mathrm{rw}(\alpha)\le h-(2c+1)}. So it suffices that \m{\varpi^{c}} divides
+\m{\mathrm{Y}(\cL')} when \m{\cL'_{s_0}=\cL_0\circ\conjSubst{\iota_{s_0}}{\gamma}} and \m{\cL'_s=\cL^{\cS}_s} for
+\m{s\ne s_0}. Apply the criterion with \m{\cL_{s_0}=\cL_0}, \m{\cL_s=\cL'_s} otherwise, which is allowed by the
+invariance~(a), with \m{F_1=wF'} and \m{F_2=w'F}. By property~(iii),
+\m{((wF')^{\tp}\letterRep{T}{n}{\gamma^{-1}})(\beta)=w(\beta)\cdot(\letterRep{T}{n}{(\gamma^{-1})^{\tp}}F')(\beta)},
+and \m{(\gamma^{-1})^{\tp}} lies in the Levi subgroup; so, by the choice of~\m{F'}, this coordinate is divisible
+by~\m{\varpi^{c}} unless the excess of~$\beta$ is at most \m{h-(4c+2)} at every letter. For such $\beta$, and
+$\nu$ with \m{\prod_s\cL_s(x^{\nu_s})\ne0}: the parts \m{\nu_s}, \m{s\ne s_0}, have equal row and column weights
+by~(b), and \m{\mathrm{rw}(\nu_{s_0})>h-(2c+1)}, which exceeds the excess of~$\beta$ at \m{s_0+\lambda} by more
+than \m{2c+1}.
+\end{proof}
+\leanline{\lean{projector}\sep \lean{mean}\sep \lean{powdvd}\sep \lean{frobmap}\sep \lean{degle}\sep \lean{tensordual}\sep
+\lean{mapC} (a linear form applied to the entries commutes with multiplication by constant matrices)}
+
+\sect{Elementary divisors}{s:div}
+In this section $\cO$ is a valuation domain, with maximal ideal~$\fm$, and \m{\bar T=\Tmap{\mathrm{res}}{T}} is the
+twisting data over the residue field \m{\cO/\fm} obtained from~$T$ by the residue map
+\m{\mathrm{res}\colon\cO\to\cO/\fm}. For a finite set~$\cX$ a vector in \m{\cO^{\cX\times\Fam}} has the \kw{blocks}
+\m{F(\fx,\cdot)}, forms in \m{\cO^{\Fam}}.
+
+\begin{lemma}[independent columns]\label{l:cardle}
+In Setting~\ref{set:T}, let $\cO$ be a valuation domain, $n$ a natural number, $\cX$ a finite set and $\cN$ a
+set. Let $A$ be a matrix over~$\cO$ with rows indexed by \m{\cX\times\Fam} and columns by~$\cN$, and $A'$ a matrix
+with rows indexed by~$\cN$ and columns by \m{\cX\times\Fam}. Let $\cS$ be a finite subset of~$\cN$, $\tau$ a
+labelling and $\mathcal{B}$ a subset of \m{\Fam}. Suppose that \m{(A'A)_{l,l'}} is $1$ if \m{l=l'} and $0$ otherwise,
+for every \m{l'} in~$\cS$ and every $l$ in~$\cN$, and that for every \m{l'} in~$\cS$ every block of the column
+\m{l'} of~$A$ lies in \m{\trl{T}{n}{\tau}{\fm}{\mathcal{B}}}. Then
+\[\#\cS\ \le\ \#\cX\cdot\dim_{\cO/\fm}\trl{\bar T}{n}{\tau}{0}{\mathcal{B}} .\]
+\end{lemma}
+\begin{proof}
+Reduce the columns \m{l'\in\cS} of~$A$ modulo~$\fm$. Their blocks lie in \m{\trl{\bar T}{n}{\tau}{0}{\mathcal{B}}},
+by Lemma~\ref{l:basic}(d); and they are linearly independent over \m{\cO/\fm}, because the reduction of~$A'$
+recovers the coefficients of a combination of them.
+\end{proof}
+\leanline{\lean{cardle}}
+
+\begin{proposition}[two matrices that pair almost perfectly]\label{p:pairing}
+In Setting~\ref{set:T}, let $\cO$ be a valuation domain, $n$ a natural number, and $\cX$, $\cN$ finite sets. Let
+$A$ and $B$ be matrices over~$\cO$ with rows indexed by \m{\cX\times\Fam} and columns by~$\cN$, and let $A'$ and
+$C$ be matrices with rows indexed by~$\cN$ and columns by \m{\cX\times\Fam}. Let \m{\pi_1}, \m{\pi_2}, \m{\pi_0} be
+elements of~$\cO$, $\tau$ a labelling and $\mathcal{B}$ a subset of \m{\Fam}. Suppose that
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=1pt,topsep=2pt]
+\item \m{A'A=1};
+\item \m{\pi_0} is not a unit;
+\item \m{\pi_1\pi_0} divides every entry of \m{CB-\pi_1\cdot1};
+\item whenever \m{AF_1-BF_2=\pi_1\pi_0\,F} for vectors \m{F_1}, \m{F_2} in \m{\cO^{\cN}} and $F$ in
+\m{\cO^{\cX\times\Fam}}, every block of~$F$ lies in \m{\trl{T}{n}{\tau}{\fm}{\mathcal{B}}}.
+\end{enumerate}
+Then there is a natural number~$l$ with
+\[\#\cN+l\ \le\ \#\cX\cdot\dim_{\cO/\fm}\trl{\bar T}{n}{\tau}{0}{\mathcal{B}}\qquad\text{and}\qquad
+\IndexDvd{\cO^{\cN}}{CA(\cO^{\cN})+\pi_2\,\cO^{\cN}}{\pi_1^{\#\cN}\pi_2^{\,l}} .\]
+\end{proposition}
+\begin{proof}
+Write \m{\mathcal{Y}=\cX\times\Fam}. By Input~2(b), for the valuation pair \m{(\cO,\cO)}, there are invertible
+matrices $U$, $U'$ over~$\cO$ and elements \m{\varepsilon_y} of~$\cO$, \m{y\in\mathcal{Y}}, with
+\begin{equation}\label{e:smith}
+(AA'B-B)\,A'=U\operatorname{diag}(\varepsilon_y)\,U' .
+\end{equation}
+Multiplying by~$A'$ on the left and using~(i) gives \m{A'U\operatorname{diag}(\varepsilon_y)=0}; so the column~$y$
+of \m{A'U} is zero whenever \m{\varepsilon_y\ne0}. Let \m{\mathcal{Y}_0} be the set of the $y$ with
+\m{\varepsilon_y\ne0} and \m{\varepsilon_y} dividing \m{\pi_1\pi_0}, and \m{l=\#\mathcal{Y}_0}.
+
+\emph{The inequality.} Apply Lemma~\ref{l:cardle} to the matrix \m{(A\ U)}, with columns indexed by the disjoint
+union of $\cN$ and~$\mathcal{Y}$, to the matrix with the rows of~$A'$ above those of \m{U^{-1}-U^{-1}AA'}, and to
+the columns in $\cN$ and in~\m{\mathcal{Y}_0}. The product of the two matrices has the blocks $1$, \m{A'U}, $0$ and
+\m{1-U^{-1}AA'U}; its columns in $\cN$ and in~\m{\mathcal{Y}_0} are unit vectors, by the remark on \m{A'U}. The
+blocks of a column \m{Ae_{l'}} lie in \m{\trl{T}{n}{\tau}{\fm}{\mathcal{B}}} by~(iv) with \m{F_1=\pi_1\pi_0e_{l'}} and
+\m{F_2=0}. For $y$ in~\m{\mathcal{Y}_0} write \m{\pi_1\pi_0=\varepsilon_y\pi'}; by~\eqref{e:smith}, with
+\m{F_2=\pi'A'U'^{-1}e_y}, we have \m{A(A'BF_2)-BF_2=\pi_1\pi_0\,Ue_y}, and (iv) applies to the column \m{Ue_y}.
+
+\emph{The index.} For every~$y$ one of \m{\pi_1\pi_0}, \m{\varepsilon_y} divides the other; choose \m{\varepsilon'_y}
+with \m{\pi_1\pi_0\varepsilon'_y=\varepsilon_y}, or with \m{\varepsilon_y\varepsilon'_y=\pi_1\pi_0} when the former is
+impossible. Put \m{C_1=CU\operatorname{diag}(\pi_1\pi_0\varepsilon'_y-\varepsilon_y)}; its column~$y$ is zero for $y$
+outside~\m{\mathcal{Y}_0}. Write \m{CB-\pi_1=\pi_1\pi_0C_0} by~(iii). Using \eqref{e:smith} and~(i),
+\[C_1U'A+CAA'B=\pi_1\pi_0\,CU\operatorname{diag}(\varepsilon'_y)U'A+CB
+=\pi_1\bigl(1+\pi_0\,(C_0+CU\operatorname{diag}(\varepsilon'_y)U'A)\bigr).\]
+The determinant of the last bracket is congruent to~$1$ modulo \m{\pi_0}, hence a unit by~(ii); so the determinant
+of the left side divides \m{\pi_1^{\#\cN}}, and its image lies in \m{C_1(\cO^{\mathcal{Y}})+CA(\cO^{\cN})}. By
+Input~1(a),
+\m{\IndexDvd{\cO^{\cN}}{C_1(\cO^{\mathcal{Y}})+CA(\cO^{\cN})+\pi_2\cO^{\cN}}{\pi_1^{\#\cN}}}. The diagonal matrix on
+\m{\cO^{\mathcal{Y}}} with the entries \m{\pi_2} at \m{\mathcal{Y}_0} and $1$ elsewhere has determinant
+\m{\pi_2^{\,l}}, and $C_1$ maps its image into \m{\pi_2\cO^{\cN}}. By Input~1(a) and~(c), for the map~$C_1$,
+\m{\IndexDvd{C_1(\cO^{\mathcal{Y}})+CA(\cO^{\cN})+\pi_2\cO^{\cN}}{CA(\cO^{\cN})+\pi_2\cO^{\cN}}{\pi_2^{\,l}}}, and
+Input~1(b) gives the claim.
+\end{proof}
+\leanline{\lean{pairing}\sep \lean{cardle}\sep \lean{smith}\sep \lean{ofdetdvd}\sep \lean{idmap}\sep \lean{idtrans}}
+
+\begin{proposition}[the depth factorisation]\label{p:depthfact}
+In Setting~\ref{set:T}, let $\cO$ be a valuation domain of characteristic zero, $c$ and $n$ natural numbers,
+\m{i_0}, \m{i_1} indices with \m{i_0<i_1}, and $j_0$ a natural number with \m{\dep{T}{k}{n}{i_1}{\beta}\le j_0} for
+every family~$\beta$. Let $\cX$ and $\cE$ be finite sets, \m{\mathrm{pt}\colon\cE\to\cX} a map and
+\m{(\gamma_{\fe})_{\fe\in\cE}} elements of \m{\GLk(W)} such that the map
+\m{\fe\mapsto(\mathrm{pt}(\fe),\gamma_{\fe}^{-1}\Par_{\twoBlock{k}{i_1}{\cdot}}(W))} from $\cE$ to
+\m{\cX\times\GLk(W)/\Par_{\twoBlock{k}{i_1}{\cdot}}(W)} is surjective. Let $J$ be the matrix with rows indexed by
+\m{\cE\times\Fam} and columns by \m{\cX\times\Fam} whose entry at \m{((\fe,\beta),(\fx,\beta'))} is
+\m{\varpi^{\dep{T}{k}{n}{i_1}{\beta}}\cdot\letterRep{T}{n}{\gamma_{\fe}}_{\beta,\beta'}} if \m{\mathrm{pt}(\fe)=\fx}, and
+$0$ otherwise. Then there are a matrix~$A$ of the shape of~$J$, a square matrix~$\Delta$ indexed by
+\m{\cX\times\Fam} and a matrix~$A'$ of the shape of the transpose of~$J$, all over~$\cO$, such that:
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=1pt,topsep=2pt]
+\item \m{A\Delta=J};
+\item \m{\det\Delta} divides $\varpi$ to the power
+\m{\#\cX\cdot\sum_{j<j_0}\dim_{\cO/\fm}\deepForms{\bar T}{k}{n}{i_1}{j}};
+\item \m{A'A=1};
+\item for every $F$ in \m{\cO^{\cX\times\Fam}}, every $\fe$ in~$\cE$ and every real number~$h$ with
+\m{2c\le h}, the block \m{(AF)(\fe,\cdot)} lies in \m{\exc{T}{n}{i_0}{i_1}{\varpi^{c}\cO}{h}}.
+\end{enumerate}
+\end{proposition}
+\begin{proof}
+Write \m{\mathcal{Y}=\cX\times\Fam}, \m{\Par=\Par_{\twoBlock{k}{i_1}{\cdot}}(W)} and
+\m{\mathrm{d}(\beta)=\dep{T}{k}{n}{i_1}{\beta}}. So
+\[(JF)(\fe,\beta)=\varpi^{\mathrm{d}(\beta)}\,\bigl(\letterRep{T}{n}{\gamma_{\fe}}F(\mathrm{pt}(\fe),\cdot)\bigr)(\beta).\]
+
+\emph{Step 1: divisibility passes to all translates.} Let $\pi$ in~$\cO$ divide every coordinate of~\m{JF}. Then
+$\pi$ divides \m{\varpi^{\mathrm{d}(\beta)}(\letterRep{T}{n}{\gamma}F(\fx,\cdot))(\beta)} for every $\fx$, every
+$\gamma$ in \m{\GLk(W)} and every~$\beta$. Indeed, choose $\fe$ with \m{\mathrm{pt}(\fe)=\fx} and
+\m{\gamma'=\gamma\gamma_{\fe}^{-1}} in~\m{\Par}. For a letter~$s$ and indices $i$, $i'$ such that \m{(i,s)} is not
+deep and \m{(i',s)} is deep, for \m{\mu=i_1}, the entry \m{(\letterMatrix{T}{\gamma'}{s})_{ii'}} is divisible
+by~\m{p=\varpi^{2}} (Lemma~\ref{l:par}). So there are matrices \m{G_s} over~$\cO$ with
+\m{\operatorname{diag}(\varpi^{\dpi{T}{i_1}{(i,s)}})_i\cdot\letterMatrix{T}{\gamma'}{s}=G_s\cdot\operatorname{diag}(\varpi^{\dpi{T}{i_1}{(i,s)}})_i},
+and by Lemma~\ref{l:basic}(e),
+\m{\operatorname{diag}(\varpi^{\mathrm{d}(\beta)})\,\letterRep{T}{n}{\gamma'}=\bigl(\bigotimes_s\mathrm{Sym}^{n}(G_s)\bigr)\operatorname{diag}(\varpi^{\mathrm{d}(\beta)})}.
+Hence the vector \m{(\varpi^{\mathrm{d}(\beta)}(\letterRep{T}{n}{\gamma}F(\fx,\cdot))(\beta))_{\beta}} is the image of
+the block \m{(JF)(\fe,\cdot)} under a matrix over~$\cO$.
+
+\emph{Step 2: the factorisation.} The map \m{\mathrm{pt}} is surjective; a section of it makes \m{\mathcal{Y}} a
+subset of \m{\cE\times\Fam}. Input~2(a), for \m{(\cO,\cO)} and the weights~$0$, gives an invertible matrix~$U$ and
+a square matrix~$\Delta$ with \m{J=U_{\cdot,\mathcal{Y}}\Delta}. Put \m{A=U_{\cdot,\mathcal{Y}}} and
+\m{A'=(U^{-1})_{\mathcal{Y},\cdot}}; then (i) and (iii) hold. By Input~2(b),
+\m{\Delta=U_1\operatorname{diag}(\varepsilon_y)U_2} with $U_1$, $U_2$ invertible over~$\cO$. The column~$y$ of
+\m{JU_2^{-1}=AU_1\operatorname{diag}(\varepsilon_y)} is divisible by~\m{\varepsilon_y}; so by Step~1, for all $\fx$,
+$\gamma$, $\beta$,
+\begin{equation}\label{e:epsdiv}
+\varepsilon_y\ \text{ divides }\ \varpi^{\mathrm{d}(\beta)}\,\bigl(\letterRep{T}{n}{\gamma}\,(U_2^{-1}e_y)(\fx,\cdot)\bigr)(\beta).
+\end{equation}
+In particular \m{\varepsilon_y} divides \m{\varpi^{j_0}}: this element is the \m{(y,y)} entry of
+\m{U_2\cdot\varpi^{j_0}\cdot U_2^{-1}}, a sum of terms each divisible by~\m{\varepsilon_y}, by~\eqref{e:epsdiv} for
+\m{\gamma=1} and \m{\mathrm{d}(\beta)\le j_0}. Choose \m{\varepsilon'_y} with \m{\varepsilon_y\varepsilon'_y=\varpi^{j_0}}.
+
+\emph{Step 3: the determinant.} Up to a unit, \m{\det\Delta=\prod_y\varepsilon_y}. For each $y$ let \m{m_y} be the
+number of the \m{j<j_0} such that \m{\varepsilon_y} does not divide~\m{\varpi^{j}}. These $j$ form an initial
+segment, and \m{\varepsilon_y} divides \m{\varpi^{j_0}}; so \m{\varepsilon_y} divides \m{\varpi^{m_y}}, and
+\m{\sum_ym_y} is the sum over \m{j<j_0} of the number of the $y$ with \m{\varepsilon_y\nmid\varpi^{j}}. For a
+fixed~$j$, apply Lemma~\ref{l:cardle} to the matrices \m{U_2^{-1}} and~\m{U_2}, to these~$y$, the constant
+labelling~$0$ and the set~$\mathcal{B}$ of the $\beta$ with \m{\mathrm{d}(\beta)<j}: if some coordinate
+in~\eqref{e:epsdiv} with \m{\mathrm{d}(\beta)<j} had a unit as second factor, \m{\varepsilon_y} would divide
+\m{\varpi^{j}}. So the number of these $y$ is at most \m{\#\cX\cdot\dim\deepForms{\bar T}{k}{n}{i_1}{j}}. This
+is~(ii).
+
+\emph{Step 4: the excess condition.} Let $F$, $\fe$ and \m{h\ge2c} be as in~(iv), let $\gamma$ lie in
+\m{\Lev_{\twoBlock{k}{i_1}{\cdot}}(W)} and let $\beta$ be a family whose excess at a letter~$s_0$ exceeds~$h$. Put
+\m{F^{\circ}=U_2^{-1}\operatorname{diag}(\varepsilon'_y)U_1^{-1}F}; then \m{JF^{\circ}=\varpi^{j_0}AF}. Let
+\m{F_1=F^{\circ}(\mathrm{pt}(\fe),\cdot)}. The letter matrices of~$\gamma$ are block diagonal, so
+\m{\letterRep{T}{n}{\gamma}} commutes with \m{\operatorname{diag}(\varpi^{\mathrm{d}(\beta)})}, and
+\[\varpi^{j_0}\cdot\bigl(\letterRep{T}{n}{\gamma}(AF)(\fe,\cdot)\bigr)(\beta)=\varpi^{\mathrm{d}(\beta)}\cdot\bigl(\letterRep{T}{n}{\gamma\gamma_{\fe}}F_1\bigr)(\beta).\]
+As \m{\varpi\ne0} (Lemma~\ref{l:basic}), we have to show that \m{\varpi^{j_0+c}} divides the right side.
+
+Let \m{\omega=\dpi{T}{i_1}{\cdot}-\tfrac12\exw{T}{s_0}{i_0}{i_1}{\cdot}}, a weight on the variables. For a
+family~$\beta'$ let \m{\mathrm{o}(\beta')} be the largest natural number, at most
+\m{\max(\lceil j_0-\pr{\omega}{\beta'}\rceil,0)}, such that \m{\varpi^{\mathrm{o}(\beta')}} divides
+\m{(\letterRep{T}{n}{\gamma'}F_1)(\beta')} for every \m{\gamma'} in \m{\GLk(W)}. Choose a family~\m{\beta_0} for
+which \m{\theta_0=\mathrm{o}(\beta_0)+\pr{\omega}{\beta_0}} is least. Then, for every \m{\gamma'} and
+every~$\beta'$,
+\begin{equation}\label{e:least}
+\varpi\ \text{ to the power }\ \max(\lceil\theta_0-\pr{\omega}{\beta'}\rceil,0)\ \text{ divides }\
+(\letterRep{T}{n}{\gamma'}F_1)(\beta'),
+\end{equation}
+because the natural number \m{\mathrm{o}(\beta')} is at least \m{\theta_0-\pr{\omega}{\beta'}}. We claim that
+\m{\theta_0\ge j_0}. If \m{\mathrm{o}(\beta_0)} is the bound in its definition, this is clear. Otherwise there is
+\m{\gamma_0} such that \m{\varpi^{\mathrm{o}(\beta_0)+1}} does not divide
+\m{(\letterRep{T}{n}{\gamma_0}F_1)(\beta_0)}. On the one hand, Step~1 for \m{F^{\circ}} and \m{\pi=\varpi^{j_0}} shows
+that \m{\varpi^{j_0}} divides \m{\varpi^{\mathrm{d}(\beta_0)}(\letterRep{T}{n}{\gamma_0}F_1)(\beta_0)}; so
+\m{j_0\le\mathrm{o}(\beta_0)+\mathrm{d}(\beta_0)}. On the other hand, Theorem~1 applies to the indices \m{i_0\ne i_1},
+the letter~$s_0$, the constant labelling~$0$, the weight~$\omega$, the polynomial of the form
+\m{\letterRep{T}{n}{\gamma_0}F_1}, the exponent~\m{\beta_0} and the order \m{e=\mathrm{o}(\beta_0)}: its hypothesis
+on the translates is~\eqref{e:least}, by Lemma~\ref{l:basic}(c), and the hypothesis on~$\omega$ holds because of
+the two root variables of a letter exactly \m{\rootVar{T}{i_0}{i_1}{s}} is deep for \m{\mu=i_1}, so that the
+difference in question is \m{1} less half a difference of two excess weights, which lies in \m{[0.4,1.6]} by
+Lemma~\ref{l:exIcc}. The theorem gives \m{\pr{\exw{T}{s_0}{i_0}{i_1}{\cdot}}{\beta_0}\le0}, that is,
+\m{\pr{\omega}{\beta_0}\ge\mathrm{d}(\beta_0)}; and so \m{\theta_0\ge\mathrm{o}(\beta_0)+\mathrm{d}(\beta_0)\ge j_0}.
+
+Finally, by~\eqref{e:least} for \m{\gamma'=\gamma\gamma_{\fe}} and~$\beta$, the coordinate
+\m{(\letterRep{T}{n}{\gamma\gamma_{\fe}}F_1)(\beta)} is divisible by~$\varpi$ to a power that is at least
+\m{\theta_0-\pr{\omega}{\beta}\ge j_0-\mathrm{d}(\beta)+\tfrac12\pr{\exw{T}{s_0}{i_0}{i_1}{\cdot}}{\beta}>j_0-\mathrm{d}(\beta)+c},
+as the excess of~$\beta$ exceeds \m{h\ge2c}.
+\end{proof}
+\leanline{\lean{depthfact}\sep \lean{rootlemma}\sep \lean{pdvdpar}\sep \lean{exwIcc}\sep \lean{hermite}\sep
+\lean{smith}\sep \lean{cardle}}
+
+\begin{proof}[Proof of Theorem 5]
+\emph{Notation.} Put \m{\kappa_0=(k+k^{2})\,oL\cdot L} and \m{c=2\kappa_0+2}; the seventh size condition reads
+\m{6c+2\le y}. Let \m{i_1} be the index~$\mu$ and \m{i_0=\mu-1}; they exist because \m{0<\mu} and \m{2\mu\le k}.
+Let \m{j_0} be a bound for the depths \m{\dep{T}{k}{n}{\mu}{\beta}}. The residue field \m{\cO/\fm} has
+characteristic~$p$, as $p$ is not a unit, and \m{\bar T} satisfies the same size conditions as~$T$; also
+$\varpi$ is not a unit, and \m{\varpi\ne0}. Put \m{\cX'=\cH\times\cX}, \m{\cE'=\cH\times\cE} and
+\m{\mathcal{Y}=\cX'\times\Fam}; then \m{\#\mathcal{Y}=\#\cX\cdot\#\cI}, by the bijection~$\jmath$. Write
+\m{\Par=\Par_{\twoBlock{k}{\mu}{\cdot}}(W)}.
+
+\emph{Two factorisations.} The map of the hypothesis is an injective map of the finite set~$\cE$ to itself,
+hence bijective. So Proposition~\ref{p:depthfact} applies, with $c$, \m{(i_0,i_1)}, \m{j_0}, to the sets $\cX'$
+and~$\cE'$ with
+\[\mathrm{pt}_1(\fh,\fe)=(\fh,\mathrm{src}(\fe))\ \text{ and the elements } \gamma_{\fe}^{\tp};\qquad
+\mathrm{pt}_2(\fh,(\fx,\fq))=(\fh,\fx)\ \text{ and the } \tilde{\fq}^{-1}.\]
+Let \m{J_1=A_1\Delta_1} and \m{J_2=A_2\Delta_2} be the factorisations, with left inverses \m{A'_1}, \m{A'_2}.
+
+\emph{The projector.} Let $w$ and $Z$ be as in Theorem~4 for $c$, \m{(i_0,i_1)}, $\lambda$ and \m{h=y}; its
+hypotheses are the fifth and sixth size conditions. On vectors indexed by \m{\cE'\times\Fam} let \m{\mathbf{u}}
+act by \m{u_{\fe}} on the coordinate in~$\cH$, for each $\fe$, let \m{\mathbf{Z}} act by~$Z$ and \m{\mathbf{w}} by
+\m{\operatorname{diag}(w(\beta))} on the coordinate in \m{\Fam}.
+
+\emph{The pairing.} We apply Proposition~\ref{p:pairing} to the sets $\cE'$ (in the place of~$\cX$) and
+\m{\mathcal{Y}} (in the place of~$\cN$), the matrices
+\[A=A_1,\qquad B=\mathbf{u}^{-1}\mathbf{Z}\,A_2'^{\tp},\qquad A'=A'_1,\qquad C=A_2^{\tp}\,\mathbf{u}\,\mathbf{w},\]
+the elements \m{\pi_1=\varpi^{2\kappa_0}=p^{\kappa_0}}, \m{\pi_2=p^{e}}, \m{\pi_0=\varpi}, the labelling
+\m{\twoBlock{k}{\mu}{\cdot}} and the set~$\mathcal{B}$ of the families whose excess for \m{(i_0,i_1)} exceeds~$y$ at
+some letter; so the module of the conclusion is built from \m{\exc{\bar T}{n}{i_0}{i_1}{0}{y}}. Hypotheses (i)
+and~(ii) hold. For~(iii): \m{CB=A_2^{\tp}\,\mathbf{w}\mathbf{Z}\,A_2'^{\tp}}, so its \m{(y_1,y_2)} entry is the sum
+over $\fe'$ in~$\cE'$ of \m{\sum_{\beta}F'(\beta)w(\beta)(ZF)(\beta)} for the blocks \m{F'=(A_2e_{y_1})(\fe',\cdot)}
+and \m{F=(A_2'^{\tp}e_{y_2})(\fe',\cdot)}. The block \m{F'} lies in
+\m{\exc{T}{n}{i_0}{i_1}{\varpi^{c}\cO}{y-(4c+2)}} by Proposition~\ref{p:depthfact}(iv), as \m{2c\le y-(4c+2)}. By
+Theorem~4(ii) the entry is congruent modulo~\m{\varpi^{c}} to \m{p^{\kappa_0}} times the \m{(y_1,y_2)} entry of
+\m{A_2^{\tp}A_2'^{\tp}=1}; and \m{\pi_1\pi_0=\varpi^{c-1}}. For~(iv): if \m{A_1F_1-BF_2=\varpi^{c-1}F}, then each
+block of \m{A_1F_1} lies in \m{\exc{T}{n}{i_0}{i_1}{\varpi^{c}\cO}{y}} by Proposition~\ref{p:depthfact}(iv), and
+each block of \m{BF_2} is $Z$ applied to a form, so it lies there by Theorem~4(i). Hence, for $\gamma$ in the
+Levi subgroup and $\beta$ in~$\mathcal{B}$, \m{\varpi^{c}} divides \m{\varpi^{c-1}} times the coordinate of the
+translate of a block of~$F$, and that coordinate lies in~$\fm$. The proposition gives a natural number~$l$ with
+\begin{equation}\label{e:L}
+\#\mathcal{Y}+l\le\#\cE'\cdot\dim_{\cO/\fm}\exc{\bar T}{n}{i_0}{i_1}{0}{y},\qquad
+\IndexDvd{\cO^{\mathcal{Y}}}{CA_1(\cO^{\mathcal{Y}})+p^{e}\cO^{\mathcal{Y}}}{p^{\kappa_0\#\mathcal{Y}+el}} .
+\end{equation}
+
+\emph{The chain.} Let \m{e_0=\#\cX'\cdot\sum_{j<j_0}\dim_{\cO/\fm}\deepForms{\bar T}{k}{n}{\mu}{j}}; the
+determinants of \m{\Delta_1} and of \m{\Delta_2^{\tp}} divide~\m{\varpi^{e_0}}. By Input~1(a),
+\m{\IndexDvd{\cO^{\mathcal{Y}}}{\Delta_1(\cO^{\mathcal{Y}})+p^{e}\cO^{\mathcal{Y}}}{\varpi^{e_0}}}, and the same
+for~\m{\Delta_2^{\tp}}. Input~1(d), used for the endomorphism \m{CA_1} with~\eqref{e:L} and then for
+\m{\Delta_2^{\tp}}, gives
+\[\IndexDvd{\cO^{\mathcal{Y}}}{\Delta_2^{\tp}CA_1\Delta_1(\cO^{\mathcal{Y}})+p^{e}\cO^{\mathcal{Y}}}{p^{\,l'}},\qquad
+l'=e_0+\kappa_0\,\#\mathcal{Y}+e\,l,\]
+because \m{\varpi^{2e_0}=p^{e_0}}; and \m{\Delta_2^{\tp}CA_1\Delta_1=J_2^{\tp}\,\mathbf{u}\,\mathbf{w}\,J_1}.
+
+\emph{The exponent.} By Theorem~3(b) for~\m{\bar T}, \m{e_0\le(1+z)\,\#\cX\cdot\#\cI}. By \eqref{e:L} and
+Theorem~3(a) for~\m{\bar T}, with \m{h=y} and the index \m{\#\cQ} of the parahoric subgroup,
+\[l\ \le\ \#\cH\cdot\#\cX\cdot\bigl(\#\cQ\cdot\dim\exc{\bar T}{n}{i_0}{i_1}{0}{y}-(\#\Mon_{k,n})^{L}\bigr)\ \le\ \kappa\cdot\#\cX\cdot\#\cI .\]
+As
+\m{1+\kappa_0=c/2\le y}, we get \m{l'\le(z+\kappa e+y)\cdot\#\cX\cdot\#\cI}.
+
+\emph{The operator.} Let \m{\mathrm{r}} be the isomorphism from \m{\cO^{\mathcal{Y}}} to \m{\cO^{\cX\times\cI}} with
+\m{(\mathrm{r}G)(\fx,\fii)=G((\fh_{\fii},\fx),\beta_{\fii})}. We claim that, for every $G$ in
+\m{\cO^{\mathcal{Y}}},
+\begin{equation}\label{e:op}
+\mathrm{r}\bigl(J_2^{\tp}\,\mathbf{u}\,\mathbf{w}\,J_1\,G\bigr)=\bigl(\mathrm{r}(\mathbf{w}G)\bigr)^{\flat},
+\end{equation}
+with \m{F\mapsto F^{\flat}} the operator of the statement. By the definitions of \m{J_1} and~\m{J_2}, the
+coordinate of \m{J_2^{\tp}\mathbf{u}\mathbf{w}J_1G} at \m{((\fh,\fx),\beta)} is
+\[\sum_{\fq}\sum_{\fh',\beta',\beta''}\varpi^{2\mathrm{d}(\beta')}\,\letterRep{T}{n}{\tilde{\fq}^{-1}}_{\beta',\beta}\,
+(u_{(\fx,\fq)})_{\fh,\fh'}\,w(\beta')\,\letterRep{T}{n}{\gamma_{(\fx,\fq)}^{\tp}}_{\beta',\beta''}\,
+G\bigl((\fh',\mathrm{src}(\fx,\fq)),\beta''\bigr),\]
+with \m{\mathrm{d}(\beta')} the depth. By Theorem~4(iii),
+\m{w(\beta')\,\letterRep{T}{n}{\gamma^{\tp}}_{\beta',\beta''}=w(\beta'')\,\letterRep{T}{n}{\gamma}_{\beta'',\beta'}}; with
+\m{\varpi^{2}=p} the sum over~$\beta'$ becomes the \m{(\beta'',\beta)} entry of the matrix \m{H_{(\fx,\fq)}} of the
+statement, and \eqref{e:op} follows.
+
+\emph{Conclusion.} By hypothesis \m{Y(\operatorname{im}\Psi)\subseteq\operatorname{im}\Psi}, and
+by~\eqref{e:op} the map \m{\Psi\circ\mathrm{r}} sends the image of \m{J_2^{\tp}\mathbf{u}\mathbf{w}J_1} into
+\m{Y(\operatorname{im}\Psi)}. Input~1(c), for the map \m{\Psi\circ\mathrm{r}}, carries the index statement
+of the chain to \m{\IndexDvd{\operatorname{im}\Psi}{Y(\operatorname{im}\Psi)+p^{e}\operatorname{im}\Psi}{p^{\,l'}}}.
+\end{proof}
+\leanline{\lean{hecke}\sep \lean{depthfact}\sep \lean{projector}\sep \lean{pairing}\sep \lean{dimex}\sep
+\lean{dimdeep}\sep \lean{ofdetdvd}\sep \lean{idcomp}\sep \lean{idmap}}
+
+\sect{Where the results are used}{s:use}
+Theorem~5 is used once, in the unit of the columns (unit~145), for the operator attached to a marked prime of
+the field of the data. There $W$ is the valuation ring of that field at the prime; the letters are the infinite
+places of a certain class (the tops) that induce the prime or its complex conjugate, with the embeddings of
+these places, or their composites with complex conjugation, as the maps~$\iota_s$; $\cO$ is the ring of the
+complex numbers that are integral for an embedding into a $p$-adic field; $k$ is the rank of the columns and
+$n$ the number that the handout calls~\m{a(D)}; and the module is that of the integral columns. The size
+conditions are verified in the same unit. The result enters Theorem~A of the write-up through the index
+statement (b) of that theorem: it is the price, in index, of regaining at some primes the divisibility that the
+theta lifts lose there. Theorems 1 to~4 and the other results of the unit are used only inside it.
+
+\sect{Notes on the formal text}{s:notes}
+\begin{enumerate}[label=\textup{\arabic*.},leftmargin=1.6em,itemsep=5pt]
+\item \emph{The three declarations without a name.} The unit has three instances: that the family
+\m{\adic{\varpi}{\cdot}} has the three properties of Definition~\ref{d:filt}(a), that
+\m{\gauss{\cF}{\omega}{\cdot}} has them when $\cF$ has, and that a
+parahoric subgroup has finite index when the residue field is finite. The first two are stated after
+Definition~\ref{d:filt}; the third is used silently wherever an index of a parahoric subgroup is counted.
+\item \emph{Letters.} The formal text writes $N$ for the number of letters (here~$L$, the letter $N$ being kept
+in this write-up for the level), $r$ for the threshold (here~$\mu$), $\ell$ for \m{L/2} (here~$\lambda$), $a$,
+$a'$ for the pair of indices (here \m{i_0}, \m{i_1}), $i$ for the base letter (here~$s_0$), $w$ for~$\varpi$,
+\m{o_0} for~$o$, $R$, $O$, $K$ for the ring of the data, $g$, $h$, $u$ for group elements (here~$\gamma$), $c$,
+$x$ for weights (here~$\omega$), $P$, $v$, $D$, $\Omega$ for \m{\varrho}, \m{\varsigma}, \m{\delta}, $\cC$ in the
+statements on cones, $\nu$, $\beta$ for the points $\xi$, $\eta$ there, $Q$, $M$, $R$, $\beta$ and $a$, $z$, $w$ for
+the matrices $A$, $B$, $A'$, $C$ and the elements \m{\pi_1}, \m{\pi_2}, \m{\pi_0} of Proposition~\ref{p:pairing},
+$Q$, $d$, $R$, $s$, $g$, $x$ for $A$, $\Delta$, $A'$, \m{\mathrm{pt}}, $\gamma$, \m{j_0} of
+Proposition~\ref{p:depthfact}, $b$, $\theta$ for $w$, $h$ of Theorem~4, $\kappa$, $P$, $D$, $f$, $x$ for $\cM$,
+$\Omega$, \m{n_0}, $e$, $\omega$ of Proposition~\ref{p:mean}, and $f$, $M$, $J$, $m$, $c$ for $\Psi$, $V$,
+$\jmath$, $e$, $\fx$ of Theorem~5.
+\item \emph{Arguments that a reading by program adds.} In seventeen declarations of the unit a reading of the
+text by program lists as an argument a name that the declaration binds itself, because a variable of the same
+name is declared earlier in the file: the group element in the letter matrices, in the action, in the matrix
+on forms and in the conditions on forms; the base letter in the excess condition; the letter in the Frobenius
+operator and in three lemmas on it; the matrices and the exponent in Proposition~\ref{p:depthfact}; a family in
+Theorem~4; the point of~$\cX$ in the formula of Theorem~5; the element~$\varpi$ in Theorem~1, where the
+statement mentions only the component of~$T$; the name under which the degree is passed on in the depth; and
+the index of the cone of Definition~\ref{d:cones}(d), listed twice. This note states every declaration with the
+arguments that its uses in the artifact show: the depth has five, the conditions on forms five and six, the
+Frobenius operator five. Lean was not asked.
+\item \emph{An argument that the reading by program misses.} In Proposition~\ref{p:signed} the formal statement
+names the determinant by a local definition before the equation, and the reading by program stops there; so it
+does not see that the statement depends on~$k$. Lean takes $k$ as the first, implicit, argument: the proof of
+Theorem~2 applies the proposition with eight arguments, of which $k$ is the first.
+\item \emph{Counting an infinite set.} The number of elements of the residue field in
+Lemma~\ref{l:stepanov}, Lemma~\ref{l:zariski} and Proposition~\ref{p:mean} is, in the formal text, a natural
+number that is~$0$ for an infinite field. For twisting data the field is finite, by the last condition of
+Definition~\ref{d:T}.
+\item \emph{Hypotheses that are not used.} Setting~\ref{set:T} asks for \m{L\ge1}. Some elementary lemmas of the
+unit do not ask for it (parts of Lemma~\ref{l:basic}, Lemma~\ref{l:cjfrob}); nothing is lost, there being no
+twisting data for \m{L=0}. Lemma~\ref{l:sumdeep}, Lemma~\ref{l:exdot}, Lemma~\ref{l:conepoint} and
+Definition~\ref{d:cones}(d) are stated in the formal text for data over a field, which their proofs do not use.
+Of the ten size conditions, Theorem~3(a) uses the third, fourth, eighth and ninth, Theorem~3(b) the first,
+second, fourth, fifth, sixth, ninth and tenth, Theorem~4 the fifth and sixth; Theorem~5 uses all.
+\item \emph{Arguments with default values.} In Lemma~\ref{l:subst} the second homomorphism is, by default, the
+first, and hypotheses (ii) and~(iii) are then discharged by Lean; hypothesis~(iv) of Lemma~\ref{l:frobmem} and the
+weights of the Hermite form have defaults as well.
+\item \emph{Definitions written out.} The formal text defines the cone of Definition~\ref{d:cones}(c) through
+the step of~(a); the two inequalities written there are that definition unfolded. Volumes are taken as real
+numbers. In Theorem~5 the formal statement takes an enumeration of the cosets as an argument and the chosen
+representative of a coset from the library; the module on which \m{\Psi} is defined is written as a module of
+functions of two arguments.
+\item \emph{The last line of Theorem~5.} It is the index divisibility of Input~1: for every finite family in
+the image of~$\Psi$ a square matrix with determinant dividing \m{p^{l}} moves it into
+\m{Y(\operatorname{im}\Psi)+p^{e}\operatorname{im}\Psi}. Nothing is assumed about torsion in~$V$, and the residue
+field of~$\cO$, over which the dimensions of Theorem~3 are taken in the proof, is not the residue field
+of~$W$.
+\item \emph{The constant of Theorem~5.} The proof fixes \m{c=2(k+k^{2})oL\cdot L+2}, the number in the seventh
+size condition; an unrelated variable of the same name is in scope in the file.
+\item \emph{Assemblies.} Theorem~5 assembles Theorems 3 and~4 and Propositions \ref{p:pairing}
+and~\ref{p:depthfact}; Theorem~3(a) assembles Theorem~2, Proposition~\ref{p:dimvol} and Lemmas \ref{l:borel}
+to~\ref{l:simplex}. Their own content is the bookkeeping written out in their proofs.
+\item \emph{Sources named by the artifact.} The headers of the files call the following known and name related
+work, which this note has not compared: counts of zeros against degree (Stepanov, Bombieri), volumes of
+interlacing regions, Frobenius amplification, counting by leading terms along flags, Schur algebras and
+truncation by weights.
+\end{enumerate}
+
+\subhead{How this note was written.} From the dossier of the unit: its \UnitMembers{} statement readings and its
+structured proofs; the program check of the dossier covered \UnitSteps{} leaf steps of \UnitProofs{} proofs. A
+second reader compared all readings with the Lean text and sampled every proof; the corrections of that
+reading are followed here: in Proposition~\ref{p:depthfact} the root lemma is applied with the order
+\m{\mathrm{o}(\beta_0)} and the inequality \m{j_0\le\mathrm{o}(\beta_0)+\mathrm{d}(\beta_0)} is not strict, the
+numbers \m{m_y} are counts and not valuations, the first factorisation in the proof of Theorem~5 uses the
+transposed elements, the divisibility in the proof of Theorem~4 rests on the condition on coefficients and not
+on invariance alone, and Theorem~2 is an identity for every real \m{\varrho>1}. I read the eight files of the
+unit completely, and in the background library the definitions of the conventions and the statements of the
+Inputs; I did not read the proofs of the Inputs. The places where the dossier's reader was unsure were read in
+the source: the seventeen declarations of note~3, the statement of Proposition~\ref{p:signed} with the place
+where it is applied, and the long proofs of Theorems 1, 4 and~5 and of Propositions \ref{p:dimvol},
+\ref{p:mean}, \ref{p:powdvd}, \ref{p:pairing} and~\ref{p:depthfact}, whose automation was not replayed. Each
+inequality that the formal text leaves to automation was checked by hand, among them the constants $0.4$,
+$1.6$, \m{\tfrac1{20}} and $5$ of Theorem~1. The proofs follow the formal ones in substance. They differ in
+form in these places: Lemma~\ref{l:subst} is proved term by term instead of by induction on the polynomial;
+the determinant in Proposition~\ref{p:signed} is computed by an elimination instead of a factorisation and
+Sylvester's identity; Lemma~\ref{l:diagform}(ii) is proved by expanding the product instead of by an adjointness
+for a pairing of polynomials; in Proposition~\ref{p:deepweight} the determinant is seen not to vanish from the
+shape of the matrix instead of by a specialisation; Lemma~\ref{l:degle} is proved directly; in
+Proposition~\ref{p:mean} the form is a sum over the degrees instead of the result of an induction; and
+Theorem~3(b) averages over cyclic shifts instead of reflections. The diagram, the remarks after the definitions
+and the paragraph after Proposition~\ref{p:mean} are mine. Lean was not run for this note.
+
+\head{Appendix A. Concordance with the Lean artifact}
+{\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}\setlength{\tabcolsep}{0pt}
+\begin{longtable}{@{}p{26mm}p{66mm}p{36mm}r@{}}
+\textbf{In this note} & \textbf{Lean declaration} & \textbf{File} & \textbf{Lines}\\\midrule\endhead
+\ConcordanceRows
+\end{longtable}}
+
+\subhead{The five theorems and the twisting data as they are written in the artifact.}
+\quoted{TwD}
+\quoted{rootlemma}
+\quoted{prodvol}
+\quoted{dimex}
+\quoted{dimdeep}
+\quoted{projector}
+\quoted{hecke}
+In these texts {\leanfont ZMod N} is \m{\ZL}, {\leanfont Fin k} the set of the indices, {\leanfont levi W τ} and
+{\leanfont parahoric W τ} the two subgroups of the conventions, {\leanfont ⊥} the zero ideal, {\leanfont weight c α}
+the sum \m{\pr{\omega}{\alpha}}, and {\leanfont volume.real} the volume as a real number; note~2 of
+§\ref{s:notes} gives the letters.
+
+\head{Notation}
+\begingroup\fontsize{8.6}{10.9}\selectfont\raggedright
+\setlength{\columnsep}{9mm}\setlength{\parskip}{0pt}
+\begin{multicols}{2}
+\nt{$L$, $s$, $s'$, $s_0$, $s_1$, \m{[s-s_0]}}{the number of letters; letters, elements of \m{\ZL}; the representative in \m{\{0,\dots,L-1\}}}
+\nt{$k$, $i$, $i'$, $l$, $l'$, $l_1$, \m{i_0}, \m{i_1}}{the number of indices; indices \m{0,\dots,k-1}; a pair of indices ($l$, $l'$ are also natural numbers)}
+\nt{$v$, \m{x_v}, \m{x_{i,s}}}{a variable \m{(i,s)}; the variables of the polynomial ring}
+\nt{$W$, \m{\fm_W}, \m{\FF_W}}{a local ring, its maximal ideal, its residue field}
+\nt{$\cO$, $\cO'$, $\fm$, $\FF$, \m{\FF'}}{rings; the maximal ideal of a valuation domain; fields}
+\nt{$T$, $p$, $o$, \m{\iota_s}, \m{\varsigma_T}, $\varpi$}{twisting data and their components (Definition~\ref{d:T})}
+\nt{\m{\TwD{L}{W}{\cO}}, \m{\PT{T}}, \m{\qT{T}}, \m{\Tmap{\chi}{T}}, $\bar T$}{the set of twisting data; \m{p^{o}}; \m{\PT{T}^{L}}; the image under a ring homomorphism; the reduction}
+\nt{$\gamma$, \m{\gamma'}, \m{\gamma_0}, \m{\gamma_1}, \m{\gamma_{\upsilon}}, \m{\gamma_{\fe}}, \m{\gamma^{\tp}}}{elements of \m{\GLk(W)}; the transpose}
+\nt{\m{\letterMatrix{T}{\gamma}{s}}, \m{\polyAction{T}{\gamma}}, \m{\letterRep{T}{n}{\gamma}}}{the letter matrix, the action on polynomials, the matrix on forms (Definition~\ref{d:action})}
+\nt{$\tau$, \m{\twoBlock{k}{\mu}{\cdot}}, \m{\Lev_{\tau}(W)}, \m{\Par_{\tau}(W)}, \m{\Lev^{\circ}}, \m{\Par^{\circ}}}{labellings; Levi and parahoric subgroups}
+\nt{$n$, $n'$, \m{n_0}, $\mu$, $\lambda$, $j$, \m{j_0}, $e$, \m{e_0}, $c$, $m$}{natural numbers: degrees, the threshold, \m{L/2}, levels and steps, exponents}
+\nt{$\alpha$, \m{\alpha'}, \m{\alpha''}, \m{\alpha^{*}}, \m{\alpha^{\pm}_s}, $\nu$, \m{\hat\nu}, \m{\nu_s}}{exponents; values at root variables; exponents on generic variables}
+\nt{$\beta$, \m{\beta'}, \m{\beta''}, \m{\beta_0}, \m{\Mon_{k,n}}, \m{\Fam}}{families; exponents of degree~$n$; the set of families}
+\nt{$F$, \m{F'}, \m{F_1}, \m{F_2}, \m{F_{\nu}}, \m{F^{\circ}}, \m{F^{\flat}}}{forms and vectors of forms; the Hecke operator applied to~$F$}
+\nt{$\Phi$, \m{\Phi_0}, \m{\Phi_v}, \m{\Phi^{*}}, $X$}{polynomials; a further variable (also a matrix, in Input~2)}
+\nt{$\omega$, \m{\omega_0}, \m{\omega^{\pm}_s}, \m{\pr{\omega}{\alpha}}}{weights; the weighted sum}
+\nt{\m{\dpi{T}{\mu}{v}}, \m{\dep{T}{k}{n}{\mu}{\beta}}}{the indicator of deep variables; the depth}
+\nt{\m{\rootVar{T}{i_0}{i_1}{s}}, \m{\exw{T}{s_0}{i_0}{i_1}{v}}}{the root variable; the excess weight}
+\nt{\m{\trl{T}{n}{\tau}{I}{\mathcal{B}}}, \m{\exc{T}{n}{i_0}{i_1}{I}{h}}, \m{\deepForms{T}{k}{n}{\mu}{j}}}{the modules of forms of Definition~\ref{d:spaces}; $I$ an ideal, $\mathcal{B}$ a set of families, $h$ a real number}
+\nt{$\cF$, $\cG$, \m{\cG_{\pm}}, $\theta$, \m{\theta'}, \m{\theta_0}, \m{\adic{\varpi}{\theta}}, \m{\gauss{\cF}{\omega}{\theta}}}{families of subgroups; real levels; the filtrations of Definition~\ref{d:filt}}
+\nt{$\chi$, \m{\chi'}, \m{\chi_0}, \m{\chi_1}, \m{\chi_{\upsilon}}, $\cA$}{ring homomorphisms; an algebra}
+\nt{$\upsilon$, \m{\upsilon_0}, \m{\upsilon_{\fs}}, $\pi$, \m{\pi'}, \m{\pi_0}, \m{\pi_1}, \m{\pi_2}}{elements of~$W$ and points; elements of~$\cO$}
+\nt{$\epsilon$, \m{\varepsilon_y}, \m{\varepsilon'_y}}{a real number; diagonal entries of a Smith form}
+\nt{$\varsigma$, $\varrho$, $\sigma$, \m{\sigma'}, \m{\tau'}, $\delta$, \m{\delta'}, $\cC$}{signs, a real number \m{>1}, permutations, levels of a slab, a cone}
+\nt{\m{\permStep{\varsigma}{\varrho}{\sigma}}, \m{\slab{k}{\delta}}, \m{\pieri{\varsigma}{\varrho}}, \m{\exCone{T}{i_1}{h}}}{the step, the slab and the cones of Definition~\ref{d:cones}}
+\nt{$\xi$, $\eta$, \m{\eta'}, \m{\xi^{\downarrow}}, \m{\sigma^{\circ}}, \m{\sigma^{\bullet}}, \m{\vol}}{real vectors; a rearrangement; two special vectors; Lebesgue measure}
+\nt{$q$, $Q$, \m{P'}}{\m{\varrho^{L}} or \m{\qT{T}}; a power of \m{\qT{T}}; a power of \m{\PT{T}}}
+\nt{$\kappa$, $y$, $z$, \m{\kappa_0}, \m{\Sz{P,o,L,k,n,\mu}{\lambda,\kappa,y,z}}}{real numbers; the size conditions (Definition~\ref{d:sizes}); $P$ stands for a natural number there}
+\nt{\m{X_s}, \m{x_{s,i,i'}}, \m{\frobX{T}{s}{j}}, \m{\frob{T}{\mu}{\lambda}{n}{\psi}}, $\psi$, \m{\Pi^{m}_s}, \m{B_s}}{generic matrices and the Frobenius operator (Definition~\ref{d:frob})}
+\nt{\m{\letterConj{T}{\gamma}{s}}, \m{\idxw{T}{\lambda}{i_0}{i_1}{i}}, \m{\conjSubst{\chi}{\gamma}}, \m{G^{(j)}}}{conjugation, index weights, the substitution by conjugation; entrywise powers}
+\nt{\m{E_{ii'}}}{the matrix with the entry $1$ at \m{(i,i')} and $0$ elsewhere}
+\nt{$G$, \m{G_s}, $S$, \m{S_{\alpha}}, \m{N_s}, \m{A_s}, $U$, \m{U'}, \m{U_1}, \m{U_2}, $\Delta$, $J$, \m{J_1}, \m{J_2}, $H$}{matrices}
+\nt{$A$, $B$, \m{A'}, $C$, \m{C_0}, \m{C_1}, \m{A_1}, \m{A_2}, $Z$, $w$, \m{w_0}, \m{w'}}{the matrices of §\ref{s:div}; the projector and the diagonal form}
+\nt{$\cM$, \m{\cM_j}, \m{\cM^{\pm}_s}, $\cL$, \m{\cL'}, \m{\cL_0}, \m{\cL^{\circ}}, $\Omega$}{linear forms on polynomials; a set of real numbers}
+\nt{$V$, \m{V'}, \m{V_j}, \m{V_j^{\Omega}}, \m{M_0}, \m{M_1}, \m{M_2}, \m{M_3}, \m{M'_1}, \m{M'_2}, $\Psi$, $Y$}{modules and submodules; a linear map; an endomorphism}
+\nt{\m{\IndexDvd{M_1}{M_2}{\pi}}}{the index of \m{M_2} in \m{M_1} divides~$\pi$ (Input~1)}
+\nt{$\cX$, $\cX'$, $\cE$, $\cE'$, $\cH$, $\cI$, $\cQ$, $\cN$, $\cK$, $\cS$, $\cV$, $\cR$, $\mathcal{Y}$, \m{\mathcal{Y}_0}, $\mathcal{U}$, $\mathcal{W}$, $\mathcal{J}$, $\Gamma$, $\Upsilon$, $\Xi$}{finite sets, sets of indices and of points, a ring ($\cR$), a module ($\Xi$)}
+\nt{$\fx$, $\fq$, \m{\tilde{\fq}}, $\fe$, $\fe'$, $\fh$, $\fii$, $\fs$, $y$, \m{y_1}, \m{y_2}}{elements of $\cX$, $\cQ$, $\cE$, $\cH$, $\cI$, $\cS$, $\mathcal{Y}$ (the letter $y$ is also a real number)}
+\nt{\m{u_{\fe}}, $\jmath$, \m{\beta_{\fii}}, \m{\fh_{\fii}}, \m{\mathbf{u}}, \m{\mathbf{Z}}, \m{\mathbf{w}}, \m{\mathbf{l}}, \m{\mathbf{v}}, \m{e_y}}{the data of Theorem~5; operators in its proof; a sequence of indices; a vector; unit vectors}
+\nt{$N$, $r$, $\ell$, $a$, $b$, $d$, $f$, $g$, $x$, $D$, $K$, $O$, $R$, $M$}{letters of the formal text, used only in §\ref{s:notes} and after Definition~\ref{d:sizes}}
+\end{multicols}
+\endgroup
+
+\end{document}

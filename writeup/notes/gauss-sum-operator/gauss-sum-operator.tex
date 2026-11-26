@@ -1,0 +1,1499 @@
+% !TEX program = lualatex
+% ---------------------------------------------------------------------------------------------
+%  Readback note 23: Chains of definite theta lifts and the Gauss-sum operator at the level prime
+%
+%  Build:  python3 tools/rb.py note <slug>
+%
+%  One unit of a Lean artifact, rewritten as ordinary mathematics. The prose is hand-written. Lean names,
+%  line ranges and counts come from data.tex; quoted Lean statements are copied from the artifact by the build.
+%
+%  Rules of the text: standard terminology; every symbol is explained where it first appears and listed again
+%  in the notation at the end; no letter has two meanings; a proof is complete or says what it takes for granted;
+%  Lean names appear only in the LEAN lines and in the concordance.
+%
+%  The signature rule (the build enforces it): a function, relation or predicate that the artifact defines is
+%  written only through its notation macro, which the build makes from the spec (`notation`) with one slot for
+%  each explicit argument of the Lean definition. No argument is fixed and dropped, also not "for brevity" and
+%  not for one section. Every argument and every hypothesis of a stated declaration stands inside its
+%  statement, or in a Setting that the statement cites by number; only implicit and instance arguments (the
+%  ambient objects) may stand in the conventions.
+% ---------------------------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\ifdefined\pdfvariable\pdfvariable suppressoptionalinfo \numexpr 1+2+4+8\relax\fi
+\usepackage[a4paper,hmargin=35mm,top=22mm,bottom=27mm,footskip=12mm,nohead]{geometry}
+
+\usepackage{fontspec}
+\directlua{
+  luaotfload.add_fallback("gfallback", {"STIXTwoMath-Regular.otf:mode=node;", "DejaVuSans.ttf:mode=node;"})
+  luaotfload.add_fallback("gmonofallback", {"DejaVuSansMono.ttf:mode=node;", "STIXTwoMath-Regular.otf:mode=node;"})
+}
+\setmainfont{NewCM10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookItalic,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldItalic,SmallCapsFont=*-Book,SmallCapsFeatures={Letters=SmallCaps},
+  RawFeature={fallback=gfallback}]
+\setsansfont{NewCMSans10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookOblique,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldOblique,RawFeature={fallback=gfallback}]
+\setmonofont{JetBrainsMono}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,Scale=MatchLowercase,
+  RawFeature={-calt;-liga;fallback=gmonofallback}]
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage[math-style=TeX]{unicode-math}
+\setmathfont{NewCMMath-Book.otf}
+\emergencystretch=2.5em\relax
+
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows.meta,positioning,backgrounds}
+\usepackage[protrusion=true,expansion=true]{microtype}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{multicol}
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+
+\definecolor{ink}{HTML}{0F172A}
+\definecolor{inksoft}{HTML}{475569}
+\definecolor{inkfaint}{HTML}{94A3B8}
+\definecolor{rulegrey}{HTML}{CBD5E1}
+\definecolor{arith}{HTML}{C2410C}
+\definecolor{est}{HTML}{7C3AED}
+\definecolor{ana}{HTML}{0891B2}
+\definecolor{ok}{HTML}{047857}
+\definecolor{leancol}{HTML}{3730A3}
+
+\title{Chains of definite theta lifts and the Gauss-sum operator at the level prime}
+\author{grh-compact}
+\date{}
+
+% ------------------------------------------------------------------------------------- macros
+\newcommand{\leanfont}{\ttfamily\fontsize{8.6}{10.5}\selectfont\color{leancol}}
+\newcommand{\lean}[1]{\csname LN@#1\endcsname}
+\newcommand{\fillin}[1]{{\color{arith}\itshape[#1]}}  % a place of the template that is not written yet; the build reports every one that is left
+\newcommand{\leanquote}[1]{\csname LQ@#1\endcsname}
+\input{data.tex}
+
+\linespread{1.08}                       % 11 pt on 14.7 pt
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt plus 1.5pt minus 0.5pt}
+\setlength{\abovedisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\belowdisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\abovedisplayshortskip}{3pt plus 2pt}
+\setlength{\belowdisplayshortskip}{6pt plus 2pt minus 2pt}
+\emergencystretch=1.5em
+\clubpenalty=10000 \widowpenalty=10000 \displaywidowpenalty=10000
+\relpenalty=7000 \binoppenalty=9000
+\raggedbottom
+\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\sffamily\fontsize{7.6}{9}\selectfont\color{inkfaint}\thepage\,/\,\pageref*{LastPage}}
+\setlist{topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=4pt,leftmargin=2.1em,labelsep=0.55em}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\len}{\operatorname{len}}
+\newcommand{\cok}{\operatorname{cok}}
+\newcommand{\End}{\operatorname{End}}
+\newcommand{\Hom}{\operatorname{Hom}}
+\newcommand{\Gal}{\operatorname{Gal}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\kw}[1]{\emph{#1}}
+\newcommand{\m}[1]{\mbox{$#1$}}        % a short formula that must not be broken across lines
+\newcommand{\head}[1]{\par\addvspace{17pt plus 4pt minus 2pt}\Needspace{6\baselineskip}%
+  \noindent{\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\sect}[2]{\refstepcounter{section}\label{#2}\par\addvspace{19pt plus 4pt minus 2pt}\Needspace{7\baselineskip}%
+  \noindent\llap{{\fontsize{13.2}{16}\selectfont\bfseries\color{inkfaint}\thesection}\hspace{9pt}}%
+  {\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\subhead}[1]{\par\addvspace{9pt plus 2pt}\Needspace{4\baselineskip}\noindent\textbf{#1}\enspace\ignorespaces}
+% where a statement lives in the Lean archive
+\newcommand{\leantag}{{\sffamily\bfseries\fontsize{6.3}{8}\selectfont\color{leancol}\addfontfeatures{LetterSpace=7}LEAN}}
+\newcommand{\sep}{\unskip\nobreak\hspace{5pt}{\color{inkfaint}\textperiodcentered}\hspace{5pt plus 2pt}\ignorespaces}
+\newcommand{\leanline}[1]{\par\nopagebreak\vspace{-2.5pt}{\fontsize{8.9}{12.4}\selectfont\color{inksoft}\raggedright
+  \noindent\llap{\leantag\hspace{9pt}}#1\par}\vspace{1pt}}
+% a displayed statement in a tinted box: #1 colour, #2 text
+\newcommand{\statement}[2]{\par\addvspace{7pt}\begingroup\setlength{\fboxsep}{8.5pt}\setlength{\fboxrule}{0.6pt}%
+  \noindent\fcolorbox{#1!30!white}{#1!3!white}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{#2}}%
+  \endgroup\par\addvspace{7pt}}
+\newcommand{\nt}[2]{\par\noindent\hangindent=1.1em\hangafter=1 #1\enspace{\color{inksoft}#2}\par\vspace{1pt}}
+\newcommand{\legdot}[1]{\tikz[baseline=-0.62ex]\fill[#1] (0,0) circle (2.5pt);\hspace{3pt}}
+\newcommand{\crow}[4]{\csname CS@#1\endcsname & #2 & \textcolor{inksoft}{#3} & \textcolor{inksoft}{#4}\\}
+\newcommand{\leanquoteline}[2]{\par\noindent\hangindent=\dimexpr#1\fontdimen2\font+2.2em\relax\hangafter=1
+  \hspace*{#1\fontdimen2\font}#2}
+\newcommand{\quoted}[1]{\par\vspace{3pt}{\ttfamily\fontsize{7.5}{10.4}\selectfont\color{leancol}\raggedright
+  \setlength{\parskip}{0pt}\leanquote{#1}\par}\vspace{4pt}}
+\newcommand{\bx}[3]{{\sffamily\bfseries\fontsize{7.3}{9.2}\selectfont\color{#1!82!black}#2}\\[1.5pt]#3}
+\newcommand{\cs}[2]{\expandafter\newcommand\csname CS@#1\endcsname{#2}}
+
+% theorems
+\newtheoremstyle{plainx}{7pt plus 2pt}{7pt plus 2pt}{\itshape}{}{\bfseries}{.}{0.5em}{}
+\newtheoremstyle{uprightx}{7pt plus 2pt}{7pt plus 2pt}{}{}{\bfseries}{.}{0.5em}{}
+\theoremstyle{plainx}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{uprightx}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{setting}[theorem]{Setting}          % hypotheses shared by several statements; each of them cites it by number
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\renewcommand{\qedsymbol}{{\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.5pt}\fbox{\rule{0pt}{0.46em}\hspace{0.46em}}}}
+% what holds throughout the note: the ambient objects only (implicit and instance arguments), never a hypothesis
+\newenvironment{conventions}{\par\addvspace{5pt}\noindent\textbf{Conventions.}\enspace\ignorespaces}{\par\addvspace{3pt}}
+\makeatletter
+\renewenvironment{proof}[1][Proof]{\par\pushQED{\qed}\normalfont\topsep0pt\partopsep0pt
+  \trivlist\item[\hskip\labelsep\itshape #1.]\ignorespaces}{\popQED\endtrivlist\@endpefalse}
+\makeatother
+
+% where each declaration of the concordance is treated: \cs{key}{place}, the place naming a \label or a lettered item
+\cs{IsSplitLevel}{Definition~\ref{d:split}}
+\cs{residueOverN}{Definition~\ref{d:split}}
+\cs{residueOverNapply}{Definition~\ref{d:split}}
+\cs{residueEquiv}{Definition~\ref{d:red}}
+\cs{reduction}{Definition~\ref{d:red}}
+\cs{inclGL}{Definition~\ref{d:red}}
+\cs{reductionGL}{Definition~\ref{d:red}}
+\cs{liftGL}{Definition~\ref{d:red}}
+\cs{lastBasisVector}{Definition~\ref{d:red}}
+\cs{psiN}{Definition~\ref{d:split}}
+\cs{diagN}{Definition~\ref{d:diag}}
+\cs{diagNInv}{Definition~\ref{d:diag}}
+\cs{mirabolic}{Definition~\ref{d:diag}}
+\cs{ramified}{Definition~\ref{d:diag}}
+\cs{liftFn}{Definition~\ref{d:fn}}
+\cs{lastRowDatum}{Definition~\ref{d:fn}}
+\cs{lastColDatum}{Definition~\ref{d:fn}}
+\cs{charDatum}{Definition~\ref{d:fn}}
+\cs{existsGLlastcolandrow}{Lemma~\ref{l:kofy}}
+\cs{fourierOp}{Definition~\ref{d:F}}
+\cs{LiftLaw}{Definition~\ref{d:law}}
+\cs{chain}{Definition~\ref{d:chain}}
+\cs{chaina}{Definition~\ref{d:chain}}
+\cs{twoKernelAction}{Definition~\ref{d:chain}}
+\cs{IsJointlyInvariant}{Definition~\ref{d:joint}}
+\cs{embedGL}{Definition~\ref{d:emb}}
+\cs{detCharAt}{Definition~\ref{d:emb}}
+\cs{name}{Definition~\ref{d:names}}
+\cs{projOnFinPart}{Definition~\ref{d:names}}
+\cs{translateSum}{Definition~\ref{d:names}}
+\cs{nonInducedPlaces}{Definition~\ref{d:data}}
+\cs{diagPointN}{Definition~\ref{d:data}}
+\cs{conjEmbedGL}{Definition~\ref{d:data}}
+\cs{nonInducedRep}{Definition~\ref{d:data}}
+\cs{idemmulresidueOverN}{Lemma~\ref{l:elem}}
+\cs{reductioneqiff}{Lemma~\ref{l:elem}}
+\cs{disjointstar}{Lemma~\ref{l:elem}}
+\cs{natCastmem}{Lemma~\ref{l:elem}}
+\cs{reductioneqiffidemmulmem}{Lemma~\ref{l:elem}}
+\cs{diagNeqsdiffmul}{Lemma~\ref{l:elem}}
+\cs{existssubresidueOverNmemiff}{Lemma~\ref{l:resid}}
+\cs{lastRowDatumconju}{Lemma~\ref{l:fnfacts}}
+\cs{existsinclGLeq}{Lemma~\ref{l:fnfacts}}
+\cs{lastColDatumnezero}{Lemma~\ref{l:fnfacts}}
+\cs{liftFncompeqsumsmul}{Lemma~\ref{l:fnfacts}}
+\cs{mirabolicfixfourierOp}{Lemma~\ref{l:mirfix}}
+\cs{eqzeroofsmulinvariant}{Lemma~\ref{l:lawfacts}}
+\cs{inclGLlastColDatum}{Lemma~\ref{l:lawfacts}}
+\cs{ucharDatumeqfourierOp}{Proposition~\ref{p:slide}}
+\cs{compUpTopairseqsmul}{Theorem A}
+\cs{chainequivariant}{Lemma~\ref{l:cheq}}
+\cs{chainequivarianta}{Lemma~\ref{l:cheq}}
+\cs{existslinearchaineqpure}{Lemma~\ref{l:cheq}}
+\cs{sumchainmemnsmul}{Theorem C}
+\cs{atPlacesembedGL}{Lemma~\ref{l:embfacts}}
+\cs{embedGLmemsupportedOn}{Lemma~\ref{l:embfacts}}
+\cs{memintegralAboveofinclGLeq}{Lemma~\ref{l:embfacts}}
+\cs{existsembedGLscalareqscalarFin}{Lemma~\ref{l:embfacts}}
+\cs{scalarFinatPlace}{Lemma~\ref{l:embfacts}}
+\cs{pairWeilFinitescalarFin}{Lemma~\ref{l:names}}
+\cs{pairWeilFinitename}{Lemma~\ref{l:names}}
+\cs{liftFneqresidueDatum}{Lemma~\ref{l:names}}
+\cs{isSchwartzBruhatliftFn}{Lemma~\ref{l:names}}
+\cs{detCharAtinclGL}{Lemma~\ref{l:detchar}}
+\cs{normdetCharAtdiagNanti}{Lemma~\ref{l:detchar}}
+\cs{translateSumeqsumname}{Theorem B}
+\cs{isSplitLevelnonInducedPlaces}{Lemma~\ref{l:nonind}}
+\cs{adeleExtensionmapdiagN}{Lemma~\ref{l:nonind}}
+\cs{lastColDatumconjnezeroiff}{Lemma~\ref{l:colmir}}
+\cs{atPlacesconjmemmirabolic}{Lemma~\ref{l:colmir}}
+\cs{memramifiedofmemramifiedColumns}{Lemma~\ref{l:ramcol}}
+\cs{fourierOpmemcolumn}{Lemma~\ref{l:ramcol}}
+\cs{restrictToYofdiag}{Lemma~\ref{l:restr}}
+\cs{restrictToY}{Lemma~\ref{l:restr}}
+\cs{weylNormSqrestrictToYle}{Lemma~\ref{l:restr}}
+\cs{existsindexDvdfourierOppow}{Theorem D}
+\cs{charUnramifiedAtrankTwistofNmem}{Lemma~\ref{l:chars}}
+\cs{spaceCharrankTwist}{Lemma~\ref{l:chars}}
+
+% ------------------------------------------------------------------ macros of this note that are not notations of
+% defined functions (those are made by the build, in data.tex, from the spec)
+\newcommand{\CC}{\mathbb{C}}
+\newcommand{\ZZ}{\mathbb{Z}}
+\newcommand{\QQ}{\mathbb{Q}}
+\newcommand{\NN}{\mathbb{N}}
+\newcommand{\Af}{\mathbb{A}_f}
+\newcommand{\Oh}{\hat{\mathcal{O}}}
+\newcommand{\GL}{\operatorname{GL}}
+\newcommand{\cj}[1]{\overline{#1}}
+\newcommand{\ES}[1]{E_{#1}}                    % the product of the completions at the places of a finite set
+\newcommand{\OS}[1]{O_{#1}}                    % its integral elements
+\newcommand{\RS}[1]{(\ZZ/N)^{#1}}              % the residue ring
+\newcommand{\st}{\ast}                         % the last index
+\newcommand{\Ip}[1]{#1^{+}}                    % an index set with the last index added
+\newcommand{\red}{\operatorname{red}}          % reduction modulo N
+\newcommand{\secN}{\operatorname{sec}}         % the chosen section of the reduction of matrices
+\newcommand{\uz}{u_0}                          % diag(1,...,1,1/N) at every place of the split level
+\newcommand{\Mir}[1]{\operatorname{Mir}(#1)}   % the mirabolic group
+\newcommand{\nat}[1]{#1^{\natural}}            % a function of residue matrices, extended by zero
+\newcommand{\rrow}{\mathbf{r}}                 % the indicator of the last row
+\newcommand{\ebas}{\mathbf{e}}                 % the last basis vector
+\newcommand{\Fop}[1]{\mathsf{F}(#1)}           % the Gauss-sum operator of a representation
+\newcommand{\nm}[2]{\operatorname{nm}_{#1}(#2)}% the operator named by a function, at a set of places
+\newcommand{\emb}[2]{\operatorname{emb}_{#1}(#2)}
+\newcommand{\Gf}[1]{G_f(#1)}                   % the finite adelic unitary group of a standard space
+\newcommand{\Kz}[1]{K_0(#1)}
+\newcommand{\Wk}[1]{W_{\kappa}(#1)}            % the space of a weight
+\newcommand{\Alg}[2]{\mathcal{A}(#1;#2)}       % algebraic forms on an index set, with a last entry
+\newcommand{\cls}[1]{\operatorname{cl}(#1)}    % the number of classes of a level
+\newcommand{\jm}{\jmath}
+\newcommand{\Oj}{O_{\jmath}}
+\newcommand{\ind}[1]{\mathfrak{p}_{\jmath}(#1)}% the prime induced by an infinite place and the p-adic embedding
+\newcommand{\evt}[1]{\operatorname{ev}_{\jmath,#1}}
+\newcommand{\gauge}[2]{\operatorname{gauge}_{\jmath}(#1;#2)}
+\newcommand{\Int}[2]{\operatorname{Int}_{\jmath}(#1;#2)}
+\newcommand{\ND}{N(D)}
+\newcommand{\piN}{\pi_N(D)}
+\newcommand{\PiD}{\Pi(D)}
+\newcommand{\Col}{\mathrm{Col}(D)}
+\newcommand{\Colram}{\mathrm{Col}^{\mathrm{ram}}(D)}
+\newcommand{\Kcol}[1]{K^{\mathrm{col}}_{#1}(D)}
+\newcommand{\Stg}[1]{\mathrm{St}_{#1}(D)}
+\newcommand{\XI}[1]{\underline{X}_{#1}(D)}
+\newcommand{\XIo}[1]{\underline{X}^{\circ}_{#1}(D)}
+\newcommand{\resY}{\operatorname{res}_{D}}
+\newcommand{\bdU}{\operatorname{bd}_{D}}
+\newcommand{\brE}[1]{\operatorname{br}_{D}(#1)}
+\newcommand{\wnorm}[1]{\lVert #1\rVert^{2}_{\mathrm{W}}}
+\newcommand{\inbox}[1]{\par\addvspace{6pt}\begingroup\setlength{\fboxsep}{7pt}\setlength{\fboxrule}{0.5pt}%
+  \noindent\fcolorbox{rulegrey}{white}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{\fontsize{9.8}{13.4}\selectfont #1}}%
+  \endgroup\par\addvspace{6pt}}
+
+\begin{document}
+\color{ink}
+
+{\raggedright
+{\sffamily\bfseries\fontsize{7.2}{9}\selectfont\color{leancol}\addfontfeatures{LetterSpace=8}READBACK NOTE 23\par}
+\vspace{5pt}
+{\fontsize{21.5}{25.5}\selectfont\bfseries Chains of definite theta lifts and the Gauss-sum operator at the level prime\par}
+\vspace{5pt}
+{\fontsize{12.4}{16}\selectfont\itshape\color{inksoft} One unit of the Lean artifact \ArtifactName, read back into
+mathematics\par}}
+\vspace{8pt}
+{\color{rulegrey}\hrule height 0.6pt}
+\vspace{7pt}
+\thispagestyle{empty}
+
+\textbf{Summary.} At the level prime $N$, which splits completely in the CM field, a theta lift between definite
+unitary groups is governed by functions of residue matrices modulo~$N$. This note isolates the formal law that
+one lift obeys there, defines the \kw{Gauss-sum operator} \m{\mathsf{F}}, a finite Fourier transform in the last
+row followed by \m{\operatorname{diag}(1,\dots,1,N^{-1})}, and proves that \m{\mathsf{F}} slides through a chain of
+lifts (Theorem~A). Theorem~B rewrites the sums of translates with denominator~$N$ that the seesaw identity produces
+as data of exactly this kind. Theorem~C turns a jointly invariant combination of chains into a plain sum over
+classes, and Theorem~D bounds, at an embedding above~$N$, what powers of \m{\mathsf{F}} cost in integrality.
+
+\statement{leancol}{\fontsize{9.6}{13.2}\selectfont\textbf{What this note is.} The artifact \ArtifactName{} is a
+body of Lean code whose final theorems state the Riemann hypothesis and its analogue for Dirichlet
+$L$-functions. Its authors report that all files compile and that Lean's kernel accepts these theorems from its
+standard axioms; nothing was compiled for this note, and no mathematician has read the argument through. The
+headline is therefore a \emph{claim}, and this note does not say that it is proved: it says what one part of the
+formal text asserts and how it argues. The part is \UnitInNote{} of the \UnitMembers{} declarations of the unit
+\emph{Seesaw}: its files on names at a split level and on the characters of the lifts, which serve Theorem~A of
+the write-up (short forms). The other declarations of the unit are treated in further notes of the unit (the index
+sets and characters of the data; two consecutive lifts; the seesaw identity). Every statement below was compared, argument by argument, with its Lean text, and every proof is
+written out, except where an \emph{Input} from another unit or a quoted result of the background library is named
+with its owner. The Lean text read is \PinText; Appendix~A is the concordance of \ConcDecls{} declarations.}
+
+\sect{The statements}{s:intro}
+
+The theorems are stated in the settings that follow. The notions they use are defined in §\ref{s:setting}; the
+place of each definition is given in the setting.
+
+\begin{setting}[a split level]\label{s:split}
+$E$ is a CM field with a CM type and Weil data, $N$ is a prime number, and $\Sigma$ is a finite set of finite
+places of $E$ that is a split level for~$N$ (Definition~\ref{d:split}): $\Sigma$ is disjoint from its complex
+conjugate, each of its places has norm~$N$ and uniformiser~$N$, and the places of $E$ dividing $N$ are those of
+$\Sigma$ and their conjugates. We write \m{\ES{\Sigma}=\prod_{w\in\Sigma}E_w}, $\OS{\Sigma}$ for its ring of integral
+elements and \m{\red\colon\OS{\Sigma}\to\RS{\Sigma}} for the reduction modulo~$N$ (Definition~\ref{d:red}). For a
+finite index set $I$ we put \m{\Ip{I}=I\sqcup\{\st\}}, with $\st$ the \kw{last index}, and $\ebas$ is the last basis
+vector of \m{(\RS{\Sigma})^{\Ip{I}}}. Functions $f$ of matrices over $\RS{\Sigma}$ give functions $\nat{f}$ of
+matrices over $\ES{\Sigma}$; among them are the indicators $\bcol{y}$ of a last column and the characters
+$\cchar{y}$ of a last row (Definition~\ref{d:fn}). For a complex representation $\rho$ of
+\m{\GL_{\Ip{I}}(\ES{\Sigma})}, $\ram{\rho}$ is its set of ramified vectors (Definition~\ref{d:diag}) and $\Fop{\rho}$
+its Gauss-sum operator (Definition~\ref{d:F}); $\uz$ is the matrix \m{\operatorname{diag}(1,\dots,1,N^{-1})} at
+every place of $\Sigma$ (Definition~\ref{d:diag}).
+\end{setting}
+
+\statement{arith}{\phantomsection\label{t:A}\textbf{Theorem A} (the Gauss-sum operator slides through a chain of
+lift laws)\textbf{.}\enspace In Setting~\ref{s:split}, let $I_0,I_1,I_2,\dots$ be finite index sets, let $\rho_j$ be
+a complex representation of \m{\GL_{\Ip{I_j}}(\ES{\Sigma})} for each \m{j\ge0}, and let $L_j$ and \m{\varkappa_j\in\CC}
+be such that, for every~$j$, $\law{\rho_j}{\rho_{j+1}}{L_j}{\varkappa_j}$ (Definition~\ref{d:law}). Let
+\m{\varphi\in\ram{\rho_0}}, let \m{d_0,d_1,\dots} be complex numbers and let \m{p\ge0}. For \m{i\ge0} put
+\[
+A_i\;=\;d_i\cdot\rho_{2i+2}(\uz)\circ\sum_{y}L_{2i+1}[\cchar{y}]\circ L_{2i}[\bcol{y}]\;\colon\;\rho_{2i}\to\rho_{2i+2},
+\]
+the sum over all \m{y\in(\RS{\Sigma})^{\Ip{I_{2i+1}}}}, and let $o_i$ be the number of those $y$ that are non-zero at
+every place: for every \m{w\in\Sigma} some entry of $y$ has non-zero component at~$w$. Then
+\[
+A_{p-1}\circ\dots\circ A_0\,(\varphi)\;=\;\Bigl(\prod_{i<p}d_i\,o_i\prod_{l<2i+2}\varkappa_l\Bigr)\cdot
+L_{2p-1}[\bcol{\ebas}]\circ\dots\circ L_0[\bcol{\ebas}]\bigl(\Fop{\rho_0}^{\,p}\varphi\bigr).
+\]}
+
+\statement{arith}{\phantomsection\label{t:B}\textbf{Theorem B} (translates with denominator $N$ are named
+data)\textbf{.}\enspace In Setting~\ref{s:split}, let $\Sigma'$ be a second finite set of finite places of $E$ that is
+a split level for~$N$, let $I$, $I'$, $I''$ be finite index sets, and put \m{\mathcal{H}=\operatorname{Hom}(X_{\Ip{I}},X_{I'})} and
+\m{\mathcal{H}'=\operatorname{Hom}(X_{I'},X_{\Ip{I''}})}, where $X_J$ is the standard definite hermitian space on an
+index set~$J$, and let \m{v\in\mathcal{W}_f(\mathcal{H})} and \m{v'\in\mathcal{W}_f(\mathcal{H}')} be elements of the
+finite parts of their Weil representations (Definition~\ref{d:names}). Then
+\begin{align*}
+&\transum{I}{I'}{\Sigma'}{N}{I''}\bigl(\projfin{\mathcal{H}}{\Sigma'}v\otimes\projfin{\mathcal{H}'}{\Sigma'}v'\bigr)\\
+&\qquad=\;\sum_{z}\;\nm{\Sigma}{S\mapsto\bcol{z}(S\cdot\diagN{I}{\Sigma'})}\,v\;\otimes\;
+\nm{\Sigma}{S'\mapsto\cchar{z}(\diagN{I''}{\Sigma\smallsetminus\Sigma'}\cdot S')}\,v',
+\end{align*}
+the sum over all \m{z\in(\RS{\Sigma})^{I'}}. Here \m{\transum{I}{I'}{\Sigma'}{N}{I''}} is the sum of the pairs of
+translations by vectors with denominator~$N$ at $\Sigma'$, \m{\projfin{\mathcal{H}}{\Sigma'}} the projection of \m{\mathcal{W}_f(\mathcal{H})} to the vectors that
+are vacua above \m{\Sigma'\cup\cj{\Sigma'}}, \m{\nm{\Sigma}{F}} the operator named at $\Sigma$ by a function~$F$ of
+matrices over $\ES{\Sigma}$ (Definition~\ref{d:names}), and \m{\diagN{I}{\Sigma'}} the diagonal matrix with last
+entry $N$ at the places of \m{\Sigma\cap\Sigma'} (Definition~\ref{d:diag}); the matrices $\diagN{I}{\Sigma'}$ and
+$\diagN{I''}{\Sigma\smallsetminus\Sigma'}$ are formed for the split level~$\Sigma$.}
+
+\begin{setting}[a chain of kernels]\label{s:chain}
+$E$ is a CM field with a CM type. For \m{j\ge0}: $I_j$ is a finite index set and \m{\Gf{I_j}} the group of finite
+adelic points of the unitary group of the standard definite hermitian space on~$I_j$; $\kappa$ is a weight and
+$e_j$ a last entry, so that \m{\Alg{I_j}{e_j}} is the space of algebraic modular forms of weight \m{(\kappa,e_j)}
+on \m{\Gf{I_j}}, with values in the space \m{\Wk{I_j}} of the weight; $K_j$ is a level (a compact open subgroup of
+the stabiliser \m{\Kz{I_j}} of the standard lattice), $\mathcal{S}_j$ is a complex vector space, and
+\m{\mathcal{K}_j} is a theta kernel from $I_j$ to $I_{j+1}$ with weights \m{(\kappa,e_j)}, \m{(\kappa,e_{j+1})},
+level $K_j$ and data in $\mathcal{S}_j$ (Definition~\ref{d:kernel}), with its representation
+\m{\omega_j} of \m{\Gf{I_j}\times\Gf{I_{j+1}}} on $\mathcal{S}_j$ and its jet matrix $\mathcal{J}_j$. The chain
+\m{\chain{\mathcal{K}}{\Phi}_{j}\colon\Alg{I_0}{e_0}\to\Alg{I_j}{e_j}} of the first $j$ lifts with data
+\m{\Phi=(\Phi_j)_j}, \m{\Phi_j\in\mathcal{S}_j}, is defined in Definition~\ref{d:chain}.
+\end{setting}
+
+\statement{arith}{\phantomsection\label{t:C}\textbf{Theorem C} (a jointly invariant combination of chains is a sum
+over classes)\textbf{.}\enspace In Setting~\ref{s:chain}, let $M$ be a complex vector space, $\mathcal{X}$ a set,
+\m{m\ge0} a natural number, \m{\mathcal{X}_0\subseteq\mathcal{X}} a finite subset, \m{L_x\colon\Wk{I_m}\to M} a
+linear map and \m{\Phi_x=(\Phi_{x,j})_{j}} a family of data, for each \m{x\in\mathcal{X}}. Let
+\m{\varphi\in\Alg{I_0}{e_0}}, let \m{P_j(g,u)} be a property of a point \m{g\in\Gf{I_j}} and a vector
+\m{u\in\Wk{I_j}} for each~$j$, let \m{h\in\Gf{I_m}} and let \m{A\subseteq M}. Assume:
+\begin{enumerate}[label=(\alph*)]
+\item the family \m{(L_x,\Phi_x)_{x\in\mathcal{X}_0}} is jointly invariant of length $m$ for $\mathcal{K}$
+  (Definition~\ref{d:joint});
+\item for every \m{j<m} and every \m{g\in\Gf{I_j}}, the group of rational points in \m{gK_jg^{-1}} is trivial;
+\item $\varphi$ is fixed by $K_0$ under right translation;
+\item for all \m{x\in\mathcal{X}_0}, \m{j<m}, points \m{g\in\Gf{I_j}}, \m{g'\in\Gf{I_{j+1}}} and vectors~$u$:
+  \m{P_j(g,u)} implies \m{P_{j+1}\bigl(g',\mathcal{J}_j(\omega_j(g,g')\Phi_{x,j})\,u\bigr)};
+\item \m{P_0(g,\varphi(g))} for every \m{g\in\Gf{I_0}};
+\item for every linear map \m{\beta\colon\mathcal{S}_{m-1}\otimes\dots\otimes\mathcal{S}_0\to\Wk{I_m}}: if
+  \m{P_m\bigl(h,\beta(\Phi_{x,m-1}\otimes\dots\otimes\Phi_{x,0})\bigr)} for all \m{x\in\mathcal{X}_0}, then
+  \m{\sum_{x\in\mathcal{X}_0}L_x\bigl(\beta(\Phi_{x,m-1}\otimes\dots\otimes\Phi_{x,0})\bigr)\in A}.
+\end{enumerate}
+Then \m{\sum_{x\in\mathcal{X}_0}L_x\bigl(\chain{\mathcal{K}}{\Phi_x}_{m}(\varphi)(h)\bigr)} is a sum of
+\m{\prod_{j<m}\cls{K_j}} elements of~$A$, where \m{\cls{K_j}} is the number of double cosets of \m{\Gf{I_j}} modulo the
+rational points on the left and $K_j$ on the right.}
+
+\begin{setting}[the data at the level prime]\label{s:data}
+\m{P=(N_0,d)} are parameters and $D$ is admissible data for~$P$ (Chapter~III), with components: the scales $x$,
+$x_1$, $b$, the exponent $\mu$, the number of lifts $m$, the rank $r$, the thick set, the primes $g_0$, $g_1$ and
+the integer $\pi_g$. Attached to $D$ are the CM field \m{E(D)} with its number \m{f(D)} of infinite places, the
+level prime \m{\ND} and the integer \m{\piN} of \m{E(D)} with \m{\piN\cj{\piN}=\ND}, the set \m{\PiD} of places
+dividing $\piN$, the number \m{\varrho(D)} with \m{m=2\varrho(D)+2}, the index sets
+\m{\XI{j}=\XIo{j}\sqcup\{\st\}} of the standard definite spaces \m{X_j(D)}, the spaces \m{\Stg{j}} of algebraic
+forms on \m{X_j(D)} (stage~$j$), the level \m{\Kcol{j}} of stage $j$, the space \m{\Col\subseteq\Stg{0}} of columns
+and its subspace \m{\Colram} of ramified columns (Definition~\ref{d:columns}, which recalls them from the notes on
+the data and on the columns). Moreover \m{\jm\colon\CC\to\CC_{\ND}} is a ring homomorphism, $\Oj$ is the ring of the
+complex numbers $z$ with \m{|\jm(z)|\le1}, \m{\nonind{D}} is the set of non-induced places above \m{\ND}, a split
+level for \m{\ND}, \m{\dpt{D}{j}} is the diagonal point of stage~$j$ and \m{\nrep{D}{j}} the representation of
+\m{\GL_{\XI{j}}(\ES{\nonind{D}})} on \m{\Stg{j}} (Definition~\ref{d:data}); \m{\Int{\mathcal{V}}{\mathsf{d}}} is the
+$\Oj$-module of the forms of a space $\mathcal{V}$ that are $\jm$-integral at a point~$\mathsf{d}$
+(Definition~\ref{d:gauge}).
+\end{setting}
+
+\statement{arith}{\phantomsection\label{t:D}\textbf{Theorem D} (powers of the Gauss-sum operator on integral
+columns)\textbf{.}\enspace In Setting~\ref{s:data}, with the structure of a split level for \m{\ND} on \m{\nonind{D}}
+given by Lemma~\ref{l:nonind}, there is a natural number $e$ with
+\[e\;\le\;4\,m\cdot f(D)\cdot b\cdot\dim_{\CC}\Col\]
+such that for every \m{n\ge0} and all \m{\Phi_1,\dots,\Phi_n\in\Int{\Col}{1}} there is an \m{n\times n} matrix $u$
+over $\Oj$ whose determinant divides \m{\ND^{\,e}} in $\Oj$ and for which every \m{\psi_i=\sum_{k}u_{ik}\Phi_k}
+satisfies
+\[\Fop{\nrep{D}{0}}^{\,\varrho(D)+1}\,\psi_i\;\in\;\Int{\Col}{\dpt{D}{0}}.\]}
+
+\sect{The setting}{s:setting}
+\begin{conventions}\phantomsection\label{c:conventions}
+$E$ is a CM field with a fixed CM type; \m{x\mapsto\cj{x}} is its complex conjugation. $\Af$ is the ring of finite
+adeles of $E$ and $\Oh$ its ring of integers. Finite places of $E$ are written $w$, $v$; $\cj{w}$ is the
+conjugate place, $E_w$ the completion with ring of integers $O_w$, residue field $\mathbb{F}_w$ and norm
+\m{\mathrm{N}w=\#\mathbb{F}_w}. Whenever the additive character $\psi_0$ or a Weil representation occurs, $E$ carries
+Weil data: an element $\mathbf{j}$ of $E$ with \m{\cj{\mathbf{j}}=-\mathbf{j}}, a finite idele $\alpha$ and a
+splitting character $\upsilon$; then \m{\psi_0(t)=\psi_f(\mathbf{j}\alpha\cj{\alpha}\,t)}, with $\psi_f$ the standard
+additive character of the finite adeles, is an additive character of $\Af$ that is trivial on~$\Oh$ and whose
+values are roots of unity. An infinite place $\tau$ of $E$ is identified with the embedding \m{E\to\CC} of the CM
+type above it. $N$ is a prime number; $\Sigma$ and $\Sigma'$ are finite sets of finite places of~$E$. That such a
+set is a split level is a hypothesis; it is stated in each statement or in the setting it cites, and Lean carries
+it as an instance argument. Index sets $I$, $I'$, $I''$, $I_j$, $J$ are finite index sets, and
+\m{\Ip{I}=I\sqcup\{\st\}}. $R$ is a commutative ring. Representations are on complex vector spaces. For a finite
+index set $I$, $X_I$ is the standard definite hermitian space \m{E^{I}} with the form \m{\sum_i\cj{x_i}y_i},
+\m{\Gf{I}} the group of finite adelic points of its unitary group, and \m{\Kz{I}=\Gf{I}\cap\GL_I(\Oh)}. In
+Setting~\ref{s:chain}: the $\mathcal{S}_j$ are the data spaces, complex vector spaces; the $K_j$ are levels;
+$\kappa$ is the weight and the $e_j$ are the last entries; $\Phi$ denotes data; $M$ is a complex vector space (so
+also a rational one, which the class integral needs). In Setting~\ref{s:data}: \m{P=(N_0,d)} are parameters, $D$
+is admissible data, $\ell$ is a prime number and \m{\jm\colon\CC\to\CC_{\ell}} a ring homomorphism, with
+\m{\ell=\ND} where the statement says so.
+\end{conventions}
+
+\subhead{Split levels.}
+\begin{definition}[split level; residues over $N$]\label{d:split}
+Let $\Sigma$ be a finite set of finite places of $E$ and $N$ a natural number. We say that
+\m{\splitlevel{\Sigma}{N}} if: (a)~\m{\cj{w}\notin\Sigma} for every \m{w\in\Sigma}; (b)~\m{\mathrm{N}w=N} for every
+\m{w\in\Sigma}; (c)~$N$ is a uniformiser of $E_w$ for every \m{w\in\Sigma}; (d)~a finite place $w$ of $E$ divides
+$N$ if and only if \m{w\in\Sigma} or \m{\cj{w}\in\Sigma}. For any $\Sigma$ and $N$ put
+\m{\ES{\Sigma}=\prod_{w\in\Sigma}E_w} and let \m{\OS{\Sigma}=\prod_{w\in\Sigma}O_w} be its ring of integral elements.
+For \m{N>0} and \m{y\in\RS{\Sigma}} let \m{\tilde y_w\in\{0,\dots,N-1\}} be the least non-negative representative of
+$y_w$; then
+\m{\rN{y}\in\Af} is the finite adele with component \m{\tilde y_w/N} at each \m{w\in\Sigma} and $0$ at the other
+places, and, for $E$ with Weil data,
+\[\psiN{y}\;=\;\psi_0\bigl(-\rN{y}\bigr).\]
+\end{definition}
+\leanline{\lean{IsSplitLevel}\sep \lean{residueOverN}\sep \lean{residueOverNapply} (the formula for the components,
+a restatement of the definition)\sep \lean{psiN}}
+
+\begin{definition}[reduction modulo $N$]\label{d:red}
+Let \m{\splitlevel{\Sigma}{N}}, with $N$ prime; we say for short that $\Sigma$ is a split level.
+For \m{w\in\Sigma} the residue field $\mathbb{F}_w$ has $N$ elements by~(b), so there is exactly one ring isomorphism
+\m{\mathbb{F}_w\to\ZZ/N}. The \kw{reduction} \m{\red\colon\OS{\Sigma}\to\RS{\Sigma}} is the ring homomorphism whose
+component at $w$ is the residue map \m{O_w\to\mathbb{F}_w} followed by this isomorphism. For a finite index set $I$
+we regard \m{\GL_I(\OS{\Sigma})} as a subgroup of \m{\GL_I(\ES{\Sigma})}, write again
+\m{\red\colon\GL_I(\OS{\Sigma})\to\GL_I(\RS{\Sigma})} for the entrywise reduction, and fix a map
+\m{\secN\colon\GL_I(\RS{\Sigma})\to\GL_I(\OS{\Sigma})} with \m{\red\circ\secN=\mathrm{id}}. It exists: an entry
+\m{y\in\RS{\Sigma}} lifts to \m{(\tilde y_w)_{w}\in\OS{\Sigma}}, and a matrix over $\OS{\Sigma}$ whose reduction is
+invertible is invertible, because an element of $\OS{\Sigma}$ with invertible reduction is a unit. The
+\kw{last basis vector} \m{\ebas\in(\RS{\Sigma})^{\Ip{I}}} is the function \m{(i,w)\mapsto1} if \m{i=\st} and
+\m{(i,w)\mapsto0} otherwise, for \m{i\in\Ip{I}} and \m{w\in\Sigma}.
+\end{definition}
+\leanline{\lean{residueEquiv}\sep \lean{reduction}\sep \lean{inclGL}\sep \lean{reductionGL}\sep \lean{liftGL}\sep
+\lean{lastBasisVector}}
+
+\begin{definition}[diagonal elements, the mirabolic group, ramified vectors]\label{d:diag}
+Let $\Sigma$ be a split level for the prime~$N$, $I$ a finite index set and $\Sigma'$ a finite set of finite
+places. Then \m{\diagN{I}{\Sigma'}\in\GL_{\Ip{I}}(\ES{\Sigma})} is the diagonal matrix with entries $1$ at the
+indices of $I$ and, at the last index, the element of $\ES{\Sigma}$ whose component is $N$ at the
+\m{w\in\Sigma\cap\Sigma'} and $1$ at the other \m{w\in\Sigma}. We put
+\[\uz\;=\;\diagN{I}{\Sigma}^{-1},\]
+the matrix \m{\operatorname{diag}(1,\dots,1,N^{-1})} at every place of~$\Sigma$ (we write $\uz$ in every rank). The
+\kw{mirabolic group} \m{\Mir{I}\subseteq\GL_{\Ip{I}}(\ES{\Sigma})} consists of the \m{k\in\GL_{\Ip{I}}(\OS{\Sigma})}
+with \m{\red(k)\,\ebas=\ebas}, that is, whose last column is congruent to $\ebas$ modulo~$N$. For a complex
+representation $\rho$ of \m{\GL_{\Ip{I}}(\ES{\Sigma})}, a vector $\varphi$ of $\rho$ is \kw{ramified} if for every
+\m{w\in\Sigma} there is a unit $x$ of $\OS{\Sigma}$ with \m{\red(x)_v=1} for all \m{v\in\Sigma}, \m{v\ne w}, such
+that $\varphi$ lies in the image of \m{1-\rho(x\cdot1)}, where \m{x\cdot1} is the scalar matrix; \m{\ram{\rho}} is
+the set of ramified vectors.
+\end{definition}
+\leanline{\lean{diagN}\sep \lean{diagNInv}\sep \lean{mirabolic}\sep \lean{ramified}}
+
+\begin{definition}[functions of residue matrices]\label{d:fn}
+Let $\Sigma$ be a split level for the prime~$N$ and $I$, $I'$ finite index sets. For a complex function $f$ of
+\m{I'\times I} matrices over $\RS{\Sigma}$, \m{\nat{f}} is the function of \m{I'\times I} matrices $S$ over
+$\ES{\Sigma}$ with \m{\nat{f}(S)=f(\red S)} if all entries of $S$ lie in $\OS{\Sigma}$, and \m{\nat{f}(S)=0}
+otherwise; \m{f\mapsto\nat{f}} is $\CC$-linear. Three families are used:
+\begin{enumerate}[label=(\roman*)]
+\item $\rrow$, on \m{\Ip{I'}\times\Ip{I}} matrices: the indicator of the integral $S$ whose last row is congruent
+  to $\ebas$;
+\item \m{\bcol{y}}, for \m{y\in(\RS{\Sigma})^{I'}}, on \m{I'\times\Ip{I}} matrices: the indicator of the integral
+  $S$ whose last column is congruent to~$y$;
+\item \m{\cchar{y}}, for \m{y\in(\RS{\Sigma})^{I}}, on \m{\Ip{I'}\times I} matrices, for $E$ with Weil data:
+  \m{\cchar{y}(S)=\psiN{\textstyle\sum_{i\in I}r_iy_i}} for integral $S$ with last row \m{r=(r_i)_{i\in I}} modulo~$N$,
+  and \m{\cchar{y}(S)=0} for $S$ not integral.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{liftFn}\sep \lean{lastRowDatum}\sep \lean{lastColDatum}\sep \lean{charDatum}}
+
+\begin{lemma}\label{l:kofy}
+Let $I$ be a finite index set and $R$ a commutative ring. There is a map $k$ from \m{R^{\Ip{I}}} to
+\m{\GL_{\Ip{I}}(R)} such that every vector $y$ whose last entry \m{y_{\st}} is a unit of $R$ is both the last
+column and the last row of \m{k(y)}.
+\end{lemma}
+\begin{proof}
+Let $y$ have \m{y_{\st}\in R^{\times}} and let $C$ be the identity matrix with its last column replaced by~$y$. Its
+determinant is \m{y_{\st}}, and its last row is \m{(0,\dots,0,y_{\st})}. Hence
+\m{(CC^{\mathsf{T}})_{i\st}=\sum_{a}C_{ia}C_{\st a}=y_i\,y_{\st}}, the matrix \m{CC^{\mathsf{T}}} is symmetric, and
+\m{k(y)=y_{\st}^{-1}CC^{\mathsf{T}}} is invertible with last column and last row~$y$. For the other $y$ put
+\m{k(y)=1}.
+\end{proof}
+\leanline{\lean{existsGLlastcolandrow}\sep In the Lean statement the variable $y$ of the surrounding section is
+listed as an argument and not used: the statement quantifies over its own~$y$.}
+
+\begin{definition}[the Gauss-sum operator]\label{d:F}
+Let $E$ have Weil data, let $\Sigma$ be a split level for the prime~$N$, $I$ a finite index set and $\rho$ a complex
+representation of \m{\GL_{\Ip{I}}(\ES{\Sigma})}. With $k$ the map of Lemma~\ref{l:kofy} for \m{R=\RS{\Sigma}} (the
+one chosen by the formal text) and \m{\tilde k(y)=\secN(k(y))},
+\[
+\Fop{\rho}\;=\;\rho(\uz)\circ\sum_{y}\psiN{y_{\st}}\cdot\rho\bigl(\tilde k(y)\bigr),
+\]
+the sum over the \m{y\in(\RS{\Sigma})^{\Ip{I}}} whose last entry \m{y_{\st}} is a unit of $\RS{\Sigma}$. It is an
+endomorphism of the space of~$\rho$: a finite Fourier transform in the last row and column, followed by~$\uz$.
+\end{definition}
+\leanline{\lean{fourierOp}}
+
+\begin{definition}[lift law]\label{d:law}
+Let $E$ have Weil data, let $\Sigma$ be a split level for the prime~$N$, $I$ and $I'$ finite index sets, $\rho$
+and $\rho'$ complex representations of \m{\GL_{\Ip{I}}(\ES{\Sigma})} and \m{\GL_{\Ip{I'}}(\ES{\Sigma})}, $L$ a
+$\CC$-linear map from the complex functions of \m{\Ip{I'}\times\Ip{I}} matrices over $\ES{\Sigma}$ to the linear maps
+\m{\rho\to\rho'} (we write \m{L[F]} for its value at a function~$F$), and \m{\varkappa\in\CC}. We say that
+$\law{\rho}{\rho'}{L}{\varkappa}$ if
+\begin{enumerate}[label=(\roman*)]
+\item (\kw{integral equivariance}) for all \m{a\in\GL_{\Ip{I}}(\OS{\Sigma})}, \m{b\in\GL_{\Ip{I'}}(\OS{\Sigma})}, every
+  function $f$ of \m{\Ip{I'}\times\Ip{I}} matrices over $\RS{\Sigma}$ and every vector $\varphi$ of $\rho$:
+  \[\rho'(b)\Bigl(L\bigl[\nat{(T\mapsto f(\red(b)\,T\,\red(a)))}\bigr]\bigl(\rho(a)\varphi\bigr)\Bigr)\;=\;L[\nat{f}]\,\varphi;\]
+\item (\kw{the law of $\uz$}) \m{\rho'(\uz)\bigl(L[\rrow]\,\varphi\bigr)=\varkappa\cdot L[\bcol{\ebas}]\bigl(\rho(\uz)\varphi\bigr)}
+  for every vector $\varphi$ of~$\rho$.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{LiftLaw}}
+
+\subhead{Kernels and chains.}
+\begin{definition}[theta kernels and their lifts; recalled from the background library]\label{d:kernel}
+In Setting~\ref{s:chain}, a \kw{theta kernel} $\mathcal{K}$ from $I$ to $I'$, with weights \m{(\kappa,e)},
+\m{(\kappa,e')}, level \m{K\subseteq\Gf{I}} and data in a complex vector space $\mathcal{S}$, consists of a
+representation $\omega$ of \m{\Gf{I}\times\Gf{I'}} on $\mathcal{S}$ in which every vector has an open stabiliser, and
+a linear map $\mathcal{J}$, the \kw{jet matrix}, from $\mathcal{S}$ to the linear maps \m{\Wk{I}\to\Wk{I'}}, such
+that \m{\mathcal{J}(\omega(\gamma,\delta)\Phi)(\gamma u)=\delta\,\mathcal{J}(\Phi)(u)} for all rational points
+$\gamma$, $\delta$ of the two unitary groups, acting on \m{\Wk{I}}, \m{\Wk{I'}} through the weights. Its
+\kw{lift} with datum \m{\Phi\in\mathcal{S}} is the linear map \m{\Alg{I}{e}\to\Alg{I'}{e'}},
+\[
+\mathcal{K}[\Phi](\varphi)(h)\;=\;\int_{\Gamma\backslash\Gf{I}}\mathcal{J}\bigl(\omega(g,h)\Phi\bigr)\bigl(\varphi(g)\bigr)\,dg ,
+\]
+with $\Gamma$ the group of rational points and the measure that gives $K$ volume~$1$; the integrand is right
+invariant under an open subgroup, so the integral is a finite sum over classes, divided by an index. The
+lift is equivariant: \m{\mathcal{K}[\omega(a,b)\Phi](a\cdot\varphi)=b\cdot\mathcal{K}[\Phi](\varphi)} for
+\m{a\in\Gf{I}}, \m{b\in\Gf{I'}}, where \m{(a\cdot\varphi)(g)=\varphi(ga)} is right translation.
+\end{definition}
+
+\begin{definition}[chains of lifts]\label{d:chain}
+In Setting~\ref{s:chain}, let \m{\mathcal{K}=(\mathcal{K}_j)_{j}} be the kernels and \m{\Phi=(\Phi_j)_j} a family
+of data, \m{\Phi_j\in\mathcal{S}_j}. Then \m{\chain{\mathcal{K}}{\Phi}} is the family of linear maps
+\[
+\chain{\mathcal{K}}{\Phi}_{j}\;=\;\mathcal{K}_{j-1}[\Phi_{j-1}]\circ\dots\circ\mathcal{K}_0[\Phi_0]\;\colon\;\Alg{I_0}{e_0}\to\Alg{I_j}{e_j},
+\]
+the identity for \m{j=0}. For a family \m{\Phi=(\Phi_i)_i} with
+\m{\Phi_i\in\mathcal{S}_{2i}\otimes\mathcal{S}_{2i+1}}, \m{\chaintwo{\mathcal{K}}{\Phi}} is the family
+\m{\chaintwo{\mathcal{K}}{\Phi}_{p}\colon\Alg{I_0}{e_0}\to\Alg{I_{2p}}{e_{2p}}} of the composites of the first $p$
+\kw{pairs of lifts}, the $i$-th pair being the linear map that sends a pure tensor \m{s\otimes s'} to
+\m{\mathcal{K}_{2i+1}[s']\circ\mathcal{K}_{2i}[s]}, evaluated at~$\Phi_i$. For a family \m{a=(a_j)_j} of points
+\m{a_j\in\Gf{I_j}} and \m{i\ge0},
+\[
+\twoact{\mathcal{K}}{a}{i}\;=\;\omega_{2i}(a_{2i},a_{2i+1})\otimes\omega_{2i+1}(a_{2i+1},a_{2i+2}),
+\]
+an endomorphism of \m{\mathcal{S}_{2i}\otimes\mathcal{S}_{2i+1}}.
+\end{definition}
+\leanline{\lean{chain}\sep \lean{chaina}\sep \lean{twoKernelAction}}
+
+\begin{definition}[joint invariance]\label{d:joint}
+In Setting~\ref{s:chain}, let $M$ be a complex vector space, $\mathcal{X}$ a set, \m{m\ge0},
+\m{\mathcal{X}_0\subseteq\mathcal{X}} finite, \m{L_x\colon\Wk{I_m}\to M} linear and \m{\Phi_x=(\Phi_{x,j})_j} data, for
+\m{x\in\mathcal{X}}. The family \m{(L_x,\Phi_x)_{x\in\mathcal{X}_0}} is \kw{jointly invariant of length $m$ for
+$\mathcal{K}$} if for every family \m{a=(a_j)_j} with \m{a_j\in K_j} for all $j$ and \m{a_j=1} for \m{j\ge m}, and
+every linear map \m{\beta\colon\mathcal{S}_{m-1}\otimes\dots\otimes\mathcal{S}_0\to\Wk{I_m}},
+\[
+\sum_{x\in\mathcal{X}_0}L_x\Bigl(\beta\bigl(\textstyle\bigotimes_{j<m}\omega_j(a_j,a_{j+1})\Phi_{x,j}\bigr)\Bigr)
+\;=\;\sum_{x\in\mathcal{X}_0}L_x\Bigl(\beta\bigl(\textstyle\bigotimes_{j<m}\Phi_{x,j}\bigr)\Bigr).
+\]
+In words: the tensor \m{\sum_{x}L_x\otimes\Phi_{x,m-1}\otimes\dots\otimes\Phi_{x,0}} is invariant under the joint
+action of \m{\prod_{j<m}K_j}.
+\end{definition}
+\leanline{\lean{IsJointlyInvariant}\sep In the Lean definition the family $a$ of the surrounding section is listed
+as an argument and not used: the definition quantifies over its own family~$a$ of elements of the levels.}
+
+\subhead{Split places inside the adelic group; names.}
+\begin{definition}[embedding at a split level; determinant characters]\label{d:emb}
+Let $\Sigma$ be a finite set of finite places of $E$ with \m{\cj{w}\notin\Sigma} for \m{w\in\Sigma} (in the formal
+text: a split level for some~$N$) and $I$ a finite index set. For \m{g\in\GL_I(\ES{\Sigma})},
+\m{\emb{\Sigma}{g}\in\Gf{I}} is the element whose component is $g_w$ at each \m{w\in\Sigma}, the inverse of the
+conjugate transpose of $g_w$ at $\cj{w}$, and $1$ at the other places; \m{g\mapsto\emb{\Sigma}{g}} is a group
+homomorphism. For a Hecke character $\eta$ of $E$, with local components $\eta_w$, and \m{k\in\NN},
+\m{\detchar{\eta}{k}} is the character
+\[
+\detchar{\eta}{k}(g)\;=\;\prod_{w\in\Sigma}\eta_w(\det g_w)\,\lvert\det g_w\rvert_w^{-k/2}
+\]
+of \m{\GL_I(\ES{\Sigma})} with values in \m{\CC^{\times}}; here \m{\lvert\,\cdot\,\rvert_w} is the normalised absolute
+value of~$E_w$.
+\end{definition}
+\leanline{\lean{embedGL}\sep \lean{detCharAt}}
+
+\begin{definition}[names, projections, sums of translates; the first two recalled]\label{d:names}
+Let $E$ have Weil data and let $V$ be a hermitian space over $E$ of the kind used in this proof (in this note:
+\m{V=\operatorname{Hom}(X_I,X_{I'})} for finite index sets $I$, $I'$, whose finite adelic vectors are the
+\m{I'\times I} matrices over~$\Af$). Its Weil representation has a \kw{finite part} \m{\mathcal{W}_f(V)}, spanned by
+the translates \m{\varrho_f(t)\,\mathrm{vac}} of the vacuum by the finite Heisenberg operators. For a set $\Sigma'$
+of finite places, \m{\projfin{V}{\Sigma'}} is the restriction to \m{\mathcal{W}_f(V)} of the projection
+\m{P^{\Sigma'}}, the mean of \m{\varrho_f(t)} over the integral vectors $t$ supported above
+\m{\Sigma'\cup\cj{\Sigma'}}; its image consists of the vectors that are vacua above these places. For a split level
+$\Sigma$ for the prime $N$ and a function $F$ of \m{I'\times I} matrices over $\ES{\Sigma}$, \m{\nm{\Sigma}{F}} is the
+endomorphism of \m{\mathcal{W}_f(\operatorname{Hom}(X_I,X_{I'}))} named by~$F$: the operator that the background
+library attaches to the function \m{t\mapsto F(t_{\Sigma})} of finite adelic matrices, \m{t_\Sigma} being the
+components of $t$ at $\Sigma$; the map \m{(F,v)\mapsto\nm{\Sigma}{F}\,v} is bilinear. Finally, for finite index sets
+$I$, $I'$, $I''$, a finite set $\Sigma$ of finite places and a prime~$N$,
+\[
+\transum{I}{I'}{\Sigma}{N}{I''}\;=\;\sum_{y}\;\varrho_f\bigl(c(y)\bigr)\otimes\varrho_f\bigl(r(y)\bigr),
+\]
+the sum over \m{y\in(\RS{\Sigma})^{I'}}: an endomorphism of
+\m{\mathcal{W}_f(\mathcal{H})\otimes\mathcal{W}_f(\mathcal{H}')} for the spaces
+\m{\mathcal{H}=\operatorname{Hom}(X_{\Ip{I}},X_{I'})} and \m{\mathcal{H}'=\operatorname{Hom}(X_{I'},X_{\Ip{I''}})}, where
+\m{c(y)} is the \m{I'\times\Ip{I}} matrix with last column \m{(-\rN{y_i})_{i\in I'}} and zero elsewhere, and
+\m{r(y)} the \m{\Ip{I''}\times I'} matrix with last row \m{(-\cj{\rN{y_i}})_{i\in I'}} and zero elsewhere.
+\end{definition}
+\leanline{\lean{name}\sep \lean{projOnFinPart}\sep \lean{translateSum}}
+
+\subhead{The data.}
+\begin{definition}[columns and stages; recalled from other notes]\label{d:columns}
+In Setting~\ref{s:data}: \m{\Stg{j}} is the space of algebraic modular forms on \m{\Gf{\XI{j}}} of the weight
+\m{(\kappa_D,e_{D,j})} that Chapter~V attaches to stage~$j$. The level \m{\Kcol{j}} consists of the
+\m{k\in\Kz{\XI{j}}} that reduce to $1$ at the chosen places of $D$ and whose last row is congruent to
+\m{(0,\dots,0,1)} modulo $\piN$; equivalently (Input~2) $k$ lies in the chosen level and, at every \m{w\in\PiD},
+every entry of the last row of \m{k_w-1} is divisible by a uniformiser. \m{\Col} is the space of the forms of
+\m{\Stg{0}} fixed by \m{\Kcol{0}}, and \m{\Colram} is the image of \m{\prod_{w\in\PiD}(1-z_w)} on $\Col$, $z_w$ being
+right translation by the scalar matrix of a fixed integral norm-one adele $\nu_w$, equal to $1$ away from $w$ and
+$\cj{w}$, whose component at $w$ generates the units of the residue field (Input~3). The \kw{restriction}
+\m{\resY} maps \m{\Stg{m}} to algebraic forms on the definite space \m{Y_m(D)} of rank one less:
+\[
+\resY(\varphi)(h)\;=\;\Bigl(\prod_{\tau}\tau\bigl(\cj{\piN}\bigr)^{-\brE{\tau}}\Bigr)\cdot B_D\,\varphi\bigl(\bdU(h)\bigr),
+\]
+the product over the infinite places $\tau$ of \m{E(D)}, each with its embedding of the CM type; here
+\m{\bdU(h)=\operatorname{diag}(h,1)}, $B_D$ is the integer branching matrix of the columns and
+\m{\brE{\tau}\in\ZZ} the branching exponent (Input~4).
+\end{definition}
+
+\begin{definition}[gauges and integral forms; recalled from the background library]\label{d:gauge}
+Let $I$ be a finite index set, $\ell$ a prime and \m{\jm\colon\CC\to\CC_\ell} a ring homomorphism. For an infinite
+place $\tau$ of $E$, \m{\ind{\tau}} is the prime of $E$ above $\ell$ induced by the embedding
+\m{\jm\circ\tau\colon E\to\CC_\ell}, and \m{\evt{\tau}\colon\Af\to\CC_\ell} is the component at \m{\cj{\ind{\tau}}}
+followed by the continuous extension of \m{x\mapsto\jm(\tau(\cj{x}))}. The \kw{gauge} of a vector
+\m{u\in\Wk{I}} at \m{g\in\Gf{I}} is
+\[
+\gauge{g}{u}\;=\;\bigl\lVert\,\varrho_{\kappa,e}\bigl((\evt{\tau}(g^{-1}))_{\tau}\bigr)\,\jm(u)\,\bigr\rVert,
+\]
+the largest $\ell$-adic absolute value of a coordinate, where \m{\varrho_{\kappa,e}} is the representation of
+\m{\prod_\tau\GL_I} of weight \m{(\kappa,e)} and $\jm$ is applied to the coordinates of~$u$. An algebraic form
+$\varphi$ \kw{has gauge at most $C$ at a point} \m{\mathsf{d}\in\Gf{I}} if \m{\gauge{g\mathsf{d}}{\varphi(g)}\le C}
+for every \m{g\in\Gf{I}}. For a complex space $\mathcal{V}$ of algebraic forms, \m{\Int{\mathcal{V}}{\mathsf{d}}} is
+the $\Oj$-module of the \m{\varphi\in\mathcal{V}} that have gauge at most $1$ at~$\mathsf{d}$; for
+\m{\mathsf{d}=1} these are the \kw{$\jm$-integral} forms. For a form $\varphi$ and a ring homomorphism
+\m{\sigma\colon\CC\to\CC}, \m{\wnorm{\sigma\circ\varphi(g)}} is the squared norm, for the Gram matrix of the weight, of
+the vector with coordinates \m{\sigma(\varphi(g)_i)}.
+\end{definition}
+
+\begin{definition}[the non-induced places and the representation at the level prime]\label{d:data}
+In Setting~\ref{s:data}, but for any prime $\ell$ and ring homomorphism \m{\jm\colon\CC\to\CC_\ell},
+\[
+\nonind{D}\;=\;\bigl\{\cj{\ind{\tau}}\;:\;\tau\text{ an infinite place of }E(D)\bigr\},
+\]
+the set of the complex conjugates of the induced primes; it depends on $\ell$ and~$\jm$. Now let \m{\ell=\ND} and
+let \m{\nonind{D}} be a split level for $\ND$ (which holds, Lemma~\ref{l:nonind}). For \m{j\ge0},
+\[
+\dpt{D}{j}\;=\;\emb{\nonind{D}}{\diagN{\XIo{j}}{\PiD}}\;\in\;\Gf{\XI{j}},
+\]
+the point supported above $\ND$ with component \m{\operatorname{diag}(1,\dots,1,\ND)} at the \m{w\in\nonind{D}} that
+divide $\piN$ and $1$ at the other \m{w\in\nonind{D}}; \m{\cemb{D}{j}} is the homomorphism
+\[
+\cemb{D}{j}\colon\GL_{\XI{j}}(\ES{\nonind{D}})\to\Gf{\XI{j}},\qquad g\mapsto\dpt{D}{j}\cdot\emb{\nonind{D}}{g}\cdot\dpt{D}{j}^{-1};
+\]
+and \m{\nrep{D}{j}} is the representation of \m{\GL_{\XI{j}}(\ES{\nonind{D}})} on \m{\Stg{j}} in which $g$ acts by
+right translation by \m{\cemb{D}{j}(g)}.
+\end{definition}
+\leanline{\lean{nonInducedPlaces}\sep \lean{diagPointN}\sep \lean{conjEmbedGL}\sep \lean{nonInducedRep}}
+
+\subhead{What is taken for granted.}
+\inbox{\textbf{Inputs from other units} (as the unit's dossier reads them).\par
+\textbf{1} (unit \emph{Columns}). The set \m{\PiD} of the places dividing $\piN$ is a split level for~$\ND$.\par
+\textbf{2} (unit \emph{Columns}). \m{k\in\Kcol{j}} if and only if $k$ lies in the chosen level and, at every
+\m{w\in\PiD}, every entry of the last row of \m{k_w-1} has valuation at most \m{e^{-1}}.\par
+\textbf{3} (unit \emph{Columns}). For each \m{w\in\PiD}, every ramified column $\varphi$ has the form
+\m{\psi-z_w\psi} for some column~$\psi$; the adele $\nu_w$ is integral, of norm one, and equal to $1$ away from
+$w$ and~$\cj{w}$.\par
+\textbf{4} (unit \emph{Columns}, from the background library). The branching matrix $B_D$ has integer entries;
+it intertwines the action of \m{\operatorname{diag}(g,s)}, in the weight of stage~$m$, with a power of $s$ times the
+action of $g$ in the weight of \m{Y_m(D)}, the exponent at $\tau$ being the one that enters \m{\brE{\tau}}; and it
+satisfies a size bound in the Gram norms of the two weights. The reference for this branching from rank
+\m{n+1} to rank $n$ is to be confirmed.\par
+\textbf{5} (the note on the index sets and characters of the data, this unit; unit \emph{Columns}; Chapter~III).
+The level prime \m{\ND} is congruent to $1$ modulo the conductor of \m{E(D)}; so it splits completely in \m{E(D)},
+each place above it has norm \m{\ND} and uniformiser \m{\ND}, none is fixed by complex conjugation, and the group of
+infinite places permutes the places above a place of $K$ simply transitively (Chapter~III). A place dividing
+\m{\ND} is not a chosen place of~$D$, and \m{\lvert\XI{j}\rvert=n_j(D)} is even (unit \emph{Columns}).}
+
+\inbox{\textbf{Quoted from the background library} (\emph{Lib}). The catalogue of the write-up lists the following, as far
+as it contains them, as elementary facts or as definitions, without a reference to the literature; where a
+reference would be expected we write that it is to be confirmed.\par
+\textbf{Q1} (class integrals; the catalogue's file on class means). If all the groups of rational points in the
+conjugates of $K$ are trivial and $F$ is right $K$-invariant with values in a set $A$, then the integral of $F$ over
+the classes is a sum of elements of $A$, one for each double coset; and the class integral commutes with finite
+sums of additive maps.\par
+\textbf{Q2} (names at split places; the catalogue's files on the mixed model). For $\Sigma$ disjoint from its
+conjugate: the indicator of the matrices integral at $\Sigma$ names the projection \m{P^{\Sigma}}; the name of its
+Schrödinger translate by a vector $t$ is the Heisenberg translate by the part of $t$ above \m{\Sigma\cup\cj\Sigma},
+composed with \m{P^{\Sigma}}; and for \m{g}, \m{h} supported on \m{\Sigma\cup\cj{\Sigma}} the pair Weil operator
+with characters $a$, $b$ sends the operator named by $\Psi$ to the one named by \m{\Psi(h^{-1}\,\cdot\,g)}, times the
+values of the space characters at the determinants at $\Sigma$ and powers of their absolute values. Reference for
+the Schrödinger model at split places: to be confirmed.\par
+\textbf{Q3} (gauges). The gauge at $g$ does not change when $g$ is multiplied on the right by an element that is
+integral at every place above~$\ell$; the gauge of a sum is at most the largest gauge of a term; an integer matrix,
+and a Schur matrix of integral matrices, do not increase $\ell$-adic norms; some rational point moves any given point,
+and a given conjugate of it, to points integral above~$\ell$ (weak approximation).\par
+\textbf{Q4} (dimension of forms with free classes). If all the groups of rational points in the conjugates of a
+level are trivial, the space of forms of that level has dimension the number of classes times the dimension of the
+weight. The catalogue cites B.~Gross, \emph{Algebraic modular forms}, Israel J. Math. 113 (1999), without a place:
+reference to be confirmed. For the columns the groups are trivial (unit \emph{Columns}).\par
+\textbf{Q5} (characters). The splitting character $\upsilon$ is unramified at every finite place; a character of
+the norm-one adeles with a weight and a tame part that is trivial at a place $w$ and at $\cj{w}$ has an unramified
+base change at~$w$; for an index set of even cardinality the space character of the rank twist of $\nu$ is the base
+change of~$\nu$.}
+
+\sect{Split levels and the Gauss-sum operator}{s:proofsA}
+
+\begin{lemma}[elementary facts]\label{l:elem}
+Let $\Sigma$ be a finite set of finite places of $E$, $N$ a natural number, \m{y\in\RS{\Sigma}}, and let
+\m{\mathbf{1}_{\Sigma}\in\Af} be the adele equal to $1$ at the places of $\Sigma$ and $0$ elsewhere.
+\begin{enumerate}[label=(\roman*)]
+\item If $N$ is prime, \m{\mathbf{1}_{\Sigma}\cdot\rN{y}=\rN{y}}.
+\item Let \m{\splitlevel{\Sigma}{N}} with $N$ prime, \m{x\in\OS{\Sigma}} and \m{c\in\RS{\Sigma}}. Then \m{\red(x)=c} if and
+  only if \m{(x_w-\tilde c_w)/N\in O_w} for every \m{w\in\Sigma}.
+\item If \m{\splitlevel{\Sigma}{N}}, then $\Sigma$ and its conjugate \m{\cj{\Sigma}} are disjoint.
+\item If \m{\splitlevel{\Sigma}{N}}, then every \m{w\in\Sigma} divides~$N$.
+\item Let \m{\splitlevel{\Sigma}{N}} with $N$ prime, \m{x\in\OS{\Sigma}}, \m{c\in\RS{\Sigma}} and \m{u\in\Af} such that
+  $x$ is the family of the components of \m{N u} at $\Sigma$. Then \m{\red(x)=c} if and only if
+  \m{\mathbf{1}_{\Sigma}\cdot(u-\rN{c})\in\Oh}.
+\item Let \m{\splitlevel{\Sigma}{N}} with $N$ prime, $I$ a finite index set and $\Sigma'$ a finite set of finite
+  places. Then \m{\diagN{I}{\Sigma}=\diagN{I}{\Sigma\smallsetminus\Sigma'}\cdot\diagN{I}{\Sigma'}}.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(i) The adele \m{\rN{y}} vanishes outside~$\Sigma$. (ii) The component of \m{\red(x)} at $w$ is $c_w$ exactly when
+\m{x_w-\tilde c_w} lies in the maximal ideal of $O_w$, which is \m{N\,O_w} by (c) of Definition~\ref{d:split}.
+(iii) and (iv) are (a) and one direction of (d). (v) is (ii), since \m{(x_w-\tilde c_w)/N} is the component at $w$ of
+\m{u-\rN{c}} and membership in $\Oh$ of an adele supported on $\Sigma$ is tested at the places of~$\Sigma$. (vi) Both
+sides are diagonal with last entry $N$ at every place of~$\Sigma$.
+\end{proof}
+\leanline{\lean{idemmulresidueOverN}\sep \lean{reductioneqiff}\sep \lean{disjointstar}\sep \lean{natCastmem}\sep
+\lean{reductioneqiffidemmulmem}\sep \lean{diagNeqsdiffmul}\sep An unnamed instance records that $\red$ is a local
+homomorphism: an element of $\OS{\Sigma}$ with invertible reduction is a unit.}
+
+\begin{lemma}\label{l:resid}
+Let \m{\splitlevel{\Sigma}{N}} with $N$ prime, and let \m{z\in\Af}. There is \m{b\in\RS{\Sigma}} such that for every
+\m{y\in\RS{\Sigma}}:
+\[\mathbf{1}_{\Sigma}\cdot(z-\rN{y})\in\Oh\quad\Longleftrightarrow\quad\mathbf{1}_{\Sigma}\cdot(Nz)\in\Oh\ \text{ and }\ b=y.\]
+\end{lemma}
+\begin{proof}
+If \m{\mathbf{1}_{\Sigma}(z-\rN{y})} is integral, so is
+\m{\mathbf{1}_{\Sigma}Nz=N\cdot\mathbf{1}_{\Sigma}(z-\rN{y})+\mathbf{1}_\Sigma(\tilde y_w)_w}. So if \m{\mathbf{1}_{\Sigma}Nz} is not integral, both sides are false for every $y$ and every $b$ serves. If
+\m{\mathbf{1}_{\Sigma}Nz\in\Oh}, let \m{x\in\OS{\Sigma}} be the family of the components of \m{Nz} at
+$\Sigma$ and take for $b$ its reduction, \m{b=\red(x)}. By Lemma~\ref{l:elem}\,(v), \m{\mathbf{1}_{\Sigma}(z-\rN{y})\in\Oh} if and only if
+\m{\red(x)=y}, that is \m{b=y}.
+\end{proof}
+\leanline{\lean{existssubresidueOverNmemiff}\sep The text reading of the census lists a character~$b$ of the
+surrounding section as an argument; Lean does not take it: the $b$ of the statement is the element it provides.}
+
+\begin{lemma}[functions of residue matrices]\label{l:fnfacts}
+Let $\Sigma$ be a split level for the prime~$N$ and $I$, $I'$ finite index sets.
+\begin{enumerate}[label=(\roman*)]
+\item For every \m{\Ip{I'}\times\Ip{I}} matrix $S$ over $\ES{\Sigma}$, with $\uz$ in ranks \m{\Ip{I'}} and \m{\Ip{I}}:
+  \m{\rrow(\uz^{-1}S\,\uz)=\bcol{\ebas}(S)}.
+\item Let $f$ be a function of \m{I\times I} matrices over $\RS{\Sigma}$ and \m{g\in\GL_I(\ES{\Sigma})} with
+  \m{\nat{f}(g)\ne0} and \m{\nat{f}(g^{-1})\ne0}. Then \m{g=k} for some \m{k\in\GL_I(\OS{\Sigma})} with
+  \m{f(\red k)\ne0}.
+\item If \m{g\in\Mir{I}}, then \m{\bcol{\ebas}(g)\ne0}.
+\item Let $\rho$, $\rho'$ be complex representations of \m{\GL_{\Ip{I}}(\ES{\Sigma})}, \m{\GL_{\Ip{I'}}(\ES{\Sigma})},
+  $L$ a linear map from functions of \m{\Ip{I'}\times\Ip{I}} matrices over $\ES{\Sigma}$ to the linear maps
+  \m{\rho\to\rho'}, $\varphi$ a vector of~$\rho$, $J$ a finite set, $r$ a map from the
+  \m{\Ip{I'}\times\Ip{I}} matrices over $\RS{\Sigma}$ to $J$ and \m{g\colon J\to\CC}. Then
+  \m{L[\nat{(g\circ r)}]\,\varphi=\sum_{y\in J}g(y)\cdot L[\nat{(T\mapsto[r(T)=y])}]\,\varphi},
+  where \m{[r(T)=y]} is $1$ if \m{r(T)=y} and $0$ otherwise.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(i) The matrix \m{\uz^{-1}S\uz} has the entries of $S$, except that the last row is multiplied by $N$ and the last
+column divided by~$N$ (the corner entry is unchanged). It is integral with last row \m{\equiv\ebas} if and only if
+the entries of $S$ outside the last column are integral, \m{S_{\st\st}\equiv1} and \m{S_{i\st}/N} is integral for
+\m{i\ne\st}: that is, $S$ is integral with last column \m{\equiv\ebas}, because $N$ is a uniformiser at every place
+of~$\Sigma$. (ii) Both $g$ and $g^{-1}$ have entries in $\OS{\Sigma}$, since $\nat{f}$ vanishes on non-integral
+matrices. (iii) is the definition of \m{\Mir{I}}. (iv) \m{g\circ r=\sum_{y}g(y)\,[r=y]}, and \m{f\mapsto L[\nat{f}]\varphi}
+is linear.
+\end{proof}
+\leanline{\lean{lastRowDatumconju}\sep \lean{existsinclGLeq}\sep \lean{lastColDatumnezero}\sep
+\lean{liftFncompeqsumsmul}\sep In the last one the census lists the variable $y$ of the section, which Lean does not
+take.}
+
+\begin{lemma}[the mirabolic group and the Gauss-sum operator]\label{l:mirfix}
+Let $E$ have Weil data, let $\Sigma$ be a split level for the prime~$N$, $I$ a finite index set, $\rho$ a complex
+representation of \m{\GL_{\Ip{I}}(\ES{\Sigma})}, $\varphi$ a vector of~$\rho$, $T$ a linear endomorphism of the space
+of~$\rho$ and \m{g\in\Mir{I}}. Assume that \m{\rho(a)\bigl(T(\rho(b)\varphi)\bigr)=\varphi} for all
+\m{a,b\in\GL_{\Ip{I}}(\ES{\Sigma})} with \m{a\,g\,b\in\Mir{I}}. Then \m{T\bigl(\Fop{\rho}\varphi\bigr)=\Fop{\rho}\varphi}.
+\end{lemma}
+\begin{proof}
+As $g$ and $g^{-1}$ lie in \m{\Mir{I}}, Lemma~\ref{l:fnfacts}\,(iii) and (i) give \m{\rrow(\uz^{-1}g\uz)\ne0} and
+\m{\rrow(\uz^{-1}g^{-1}\uz)\ne0}; by (ii), \m{\uz^{-1}g\,\uz=k} with \m{k\in\GL_{\Ip{I}}(\OS{\Sigma})} and the last
+row of \m{\bar k=\red(k)} equal to~$\ebas$. Multiplication by $\bar k$ permutes the vectors $y$ with
+\m{y_{\st}} a unit and preserves \m{y_{\st}}, because \m{(\bar ky)_{\st}} is the product of the last row of $\bar k$
+with~$y$. So, with \m{\tilde k(y)} as in Definition~\ref{d:F},
+\[
+\Fop{\rho}\varphi=\sum_{y}\psiN{y_{\st}}\;\rho\bigl(\uz\,\tilde k(\bar ky)\bigr)\varphi ,
+\qquad
+T\bigl(\Fop{\rho}\varphi\bigr)=\sum_{y}\psiN{y_{\st}}\;T\bigl(\rho(\uz\,\tilde k(y))\varphi\bigr),
+\]
+and it suffices to show \m{T(\rho(b)\varphi)=\rho(a)^{-1}\varphi} for \m{b=\uz\tilde k(y)} and
+\m{a=\tilde k(\bar ky)^{-1}\uz^{-1}}. This is the hypothesis, once \m{a\,g\,b=\tilde k(\bar ky)^{-1}\,k\,\tilde k(y)} is
+seen to lie in \m{\Mir{I}}: it is integral and invertible, and its reduction sends $\ebas$ first to $y$ (the last
+column of \m{k(y)}), then to \m{\bar ky}, then back to $\ebas$ (as \m{k(\bar ky)\ebas=\bar ky}).
+\end{proof}
+\leanline{\lean{mirabolicfixfourierOp}\sep Lean takes $N$, its primality and the split level as arguments here;
+the text reading of the census misses them because the statement does not write their names.}
+
+\sect{Lift laws: proof of Theorem A}{s:proofsB}
+
+\begin{lemma}\label{l:lawfacts}
+In Setting~\ref{s:split}, let $I$, $I'$ be finite index sets, $\rho$, $\rho'$ complex representations of
+\m{\GL_{\Ip{I}}(\ES{\Sigma})}, \m{\GL_{\Ip{I'}}(\ES{\Sigma})}, and let $\law{\rho}{\rho'}{L}{\varkappa}$; let $\varphi$ be a
+vector of~$\rho$.
+\begin{enumerate}[label=(\roman*)]
+\item Let \m{\varphi\in\ram{\rho}}, \m{w\in\Sigma}, and let $f$ be a function of \m{\Ip{I'}\times\Ip{I}} matrices
+  over $\RS{\Sigma}$ such that \m{f(c\,T)=f(T)} for every $T$ and every \m{c\in\RS{\Sigma}} with the property: for
+  all \m{t,y\in\RS{\Sigma}} with \m{y_w=0}, \m{c\,t=y} if and only if \m{t=y}. Then \m{L[\nat{f}]\,\varphi=0}.
+\item For \m{k\in\GL_{\Ip{I'}}(\OS{\Sigma})} and \m{y\in(\RS{\Sigma})^{\Ip{I'}}}:
+  \m{\rho'(k)\bigl(L[\bcol{y}]\,\varphi\bigr)=L[\bcol{\red(k)y}]\,\varphi}.
+\end{enumerate}
+The property of $c$ in (i) holds exactly for the $c$ with \m{c_v=1} for \m{v\ne w} and \m{c_w\ne0}.
+\end{lemma}
+\begin{proof}
+(i) As $\varphi$ is ramified there are a unit $x$ of $\OS{\Sigma}$ with \m{\red(x)_v=1} for \m{v\ne w} and a vector
+$\psi$ with \m{\varphi=\psi-\rho(x\cdot1)\psi}. The element \m{c=\red(x)} has the property: for \m{y_w=0} the
+equation \m{ct=y} says \m{t_v=y_v} for \m{v\ne w} and \m{c_wt_w=0}, and $c_w$ is a unit. Integral equivariance, with
+\m{a=x\cdot1} and \m{b=1}, gives \m{L[\nat{(T\mapsto f(cT))}](\rho(x\cdot1)\psi)=L[\nat{f}]\psi}, and \m{f(cT)=f(T)}.
+Hence \m{L[\nat{f}]\varphi=L[\nat{f}]\psi-L[\nat{f}]\psi=0}. (ii) Apply integral equivariance with \m{a=1},
+\m{b=k} to the indicator $f$ of the matrices with last column \m{\red(k)y}: then
+\m{f(\red(k)T)} is the indicator of the matrices with last column~$y$.
+\end{proof}
+\leanline{\lean{eqzeroofsmulinvariant}\sep \lean{inclGLlastColDatum}\sep In the first the census lists the section
+variable~$y$, which Lean does not take; in the second Lean also takes $N$, its primality and the split level.}
+
+\begin{proposition}[one law and the Gauss-sum operator]\label{p:slide}
+In Setting~\ref{s:split}, let $I$, $I'$ be finite index sets, $\rho$, $\rho'$ complex representations of
+\m{\GL_{\Ip{I}}(\ES{\Sigma})}, \m{\GL_{\Ip{I'}}(\ES{\Sigma})}, let $\law{\rho}{\rho'}{L}{\varkappa}$ and
+\m{\varphi\in\ram{\rho}}. Put \m{C=\rho'(\uz)\bigl(L[\cchar{\ebas}]\,\varphi\bigr)}. Then
+\[
+C\;=\;\Fop{\rho'}\bigl(L[\bcol{\ebas}]\,\varphi\bigr)\qquad\text{and}\qquad C\;=\;\varkappa\cdot L[\bcol{\ebas}]\bigl(\Fop{\rho}\varphi\bigr).
+\]
+\end{proposition}
+\begin{proof}
+For \m{t\in\RS{\Sigma}} let $f_t$ be the indicator of the residue matrices $T$ with corner entry \m{T_{\st\st}=t}; then
+\m{\cchar{\ebas}=\sum_t\psiN{t}\,\nat{f_t}} by Lemma~\ref{l:fnfacts}\,(iv). If $t$ is not a unit, say \m{t_w=0}, then
+$f_t$ is invariant under the scalars $c$ of Lemma~\ref{l:lawfacts}\,(i), so \m{L[\nat{f_t}]\varphi=0}. Hence
+\begin{equation}\label{e:trunc}
+L[\cchar{\ebas}]\,\varphi\;=\;L[\nat{h}]\,\varphi,\qquad h(T)=\psiN{T_{\st\st}}\ \text{if }T_{\st\st}\text{ is a unit},\quad h(T)=0\ \text{otherwise.}
+\end{equation}
+\emph{First identity.} By Lemma~\ref{l:lawfacts}\,(ii) and \m{k(y)\ebas=y},
+\[
+\Fop{\rho'}\bigl(L[\bcol{\ebas}]\varphi\bigr)=\rho'(\uz)\sum_{y}\psiN{y_{\st}}\,L[\bcol{y}]\,\varphi ,
+\]
+the sum over the \m{y\in(\RS{\Sigma})^{\Ip{I'}}} with \m{y_{\st}} a unit. A matrix with last column $y$ has corner
+entry \m{y_{\st}}, so \m{\sum_y\psiN{y_{\st}}\bcol{y}=\nat{h}}, and the right side is $C$ by~\eqref{e:trunc}.
+
+\emph{Second identity.} By the law of $\uz$,
+\m{\varkappa\,L[\bcol{\ebas}](\Fop{\rho}\varphi)=\rho'(\uz)\sum_y\psiN{y_{\st}}\,L[\rrow]\bigl(\rho(\tilde k(y))\varphi\bigr)},
+the sum over the \m{y\in(\RS{\Sigma})^{\Ip{I}}} with \m{y_{\st}} a unit. Integral equivariance with
+\m{a=\tilde k(y)}, \m{b=1}, applied to the indicator $f$ of the matrices with last row~$y$, gives
+\m{L[\rrow](\rho(\tilde k(y))\varphi)=L[\nat{f}]\varphi}: indeed \m{T\,k(y)} has last row $y$ if and only if $T$
+has last row \m{y\,k(y)^{-1}=\ebas}, the last row of \m{k(y)} being~$y$. Summing over $y$ with the weights
+\m{\psiN{y_{\st}}} gives again \m{\nat{h}}, and the right side is $C$ by~\eqref{e:trunc}.
+\end{proof}
+\leanline{\lean{ucharDatumeqfourierOp}\sep Lean also takes $N$, its primality and the split level.}
+
+\begin{proof}[Proof of Theorem A]
+Write \m{F=\Fop{\rho_0}} and, for \m{q,j\ge0} and a vector $\psi$ of $\rho_0$,
+\[B_j^{q}(\psi)\;=\;L_{j-1}[\bcol{\ebas}]\circ\dots\circ L_0[\bcol{\ebas}]\,(F^{q}\psi),\]
+a vector of~$\rho_j$.
+
+\emph{(1) The vectors \m{B_j^{q}(\varphi)} are ramified.} Let \m{w\in\Sigma} and
+\m{\varphi=\psi-\rho_0(x\cdot1)\psi} with $x$ as in Definition~\ref{d:diag}. The scalar \m{x\cdot1} is central, so
+\m{\rho_0(x\cdot1)} commutes with~$F$. Integral equivariance of $L_j$ with \m{a=(x\cdot1)^{-1}}, \m{b=x\cdot1} gives
+\m{\rho_{j+1}(x\cdot1)\circ L_j[\nat{f}]=L_j[\nat{f}]\circ\rho_j(x\cdot1)} for every~$f$, because
+\m{f(\red(x)T\red(x)^{-1})=f(T)}. By induction on $j$,
+\m{B_j^{q}(\varphi)=B_j^{q}(\psi)-\rho_j(x\cdot1)B_j^{q}(\psi)}.
+
+\emph{(2)} \m{\Fop{\rho_j}\bigl(B_j^{q}(\varphi)\bigr)=\bigl(\prod_{l<j}\varkappa_l\bigr)B_j^{q+1}(\varphi)}. For \m{j=0}
+this is the definition. For the step, the two identities of Proposition~\ref{p:slide} for the law $L_j$ and the
+ramified vector \m{B_j^{q}(\varphi)} give
+\m{\Fop{\rho_{j+1}}\bigl(L_j[\bcol{\ebas}]\,B_j^{q}(\varphi)\bigr)=\varkappa_j\,L_j[\bcol{\ebas}]\bigl(\Fop{\rho_j}B_j^{q}(\varphi)\bigr)}.
+
+\emph{(3) One pair.} Let \m{\psi=B_{2q}^{q}(\varphi)}, a ramified vector of~$\rho_{2q}$. In
+\m{\sum_yL_{2q+1}[\cchar{y}]\,L_{2q}[\bcol{y}]\,\psi}, a term with $y$ zero at some place $w$ vanishes: then
+\m{\bcol{y}} is invariant under the scalars of Lemma~\ref{l:lawfacts}\,(i), since for such $c$ a column \m{c\,t}
+equals $y$ if and only if $t$ does. If $y$ is non-zero at every place, then at each place some entry of $y$ is a
+unit, so $y$ is the last column of an invertible matrix over each factor \m{\ZZ/N}, and these assemble to
+\m{k\in\GL_{\Ip{I_{2q+1}}}(\RS{\Sigma})} with \m{k\,\ebas=y}. With \m{\tilde k=\secN(k)}, Lemma~\ref{l:lawfacts}\,(ii)
+gives \m{L_{2q}[\bcol{y}]\psi=\rho_{2q+1}(\tilde k)\,L_{2q}[\bcol{\ebas}]\psi}, and integral equivariance of
+\m{L_{2q+1}} with \m{a=\tilde k}, \m{b=1} gives \m{L_{2q+1}[\cchar{y}]\circ\rho_{2q+1}(\tilde k)=L_{2q+1}[\cchar{\ebas}]},
+because the product of a row $r$ with \m{k\ebas=y} is the product of \m{rk} with~$\ebas$. So every such term equals
+the term of \m{y=\ebas}, and
+\begin{align*}
+A_q\,\psi\;&=\;d_q\,o_q\cdot\rho_{2q+2}(\uz)\,L_{2q+1}[\cchar{\ebas}]\bigl(B_{2q+1}^{q}(\varphi)\bigr)
+\;=\;d_q\,o_q\cdot\Fop{\rho_{2q+2}}\bigl(B_{2q+2}^{q}(\varphi)\bigr)\\
+&=\;d_q\,o_q\prod_{l<2q+2}\varkappa_l\cdot B_{2q+2}^{q+1}(\varphi),
+\end{align*}
+by the first identity of Proposition~\ref{p:slide} for \m{L_{2q+1}} and the ramified vector
+\m{B_{2q+1}^{q}(\varphi)}, and by~(2).
+
+\emph{(4)} The theorem follows by induction on~$p$: it is trivial for \m{p=0}, and if
+\m{A_{q-1}\circ\dots\circ A_0(\varphi)} is the stated multiple of \m{B_{2q}^{q}(\varphi)}, then (3) gives the
+statement for \m{q+1}.
+\end{proof}
+\leanline{\lean{compUpTopairseqsmul}\sep The census lists the section variable~$y$, which Lean does not take.}
+
+\sect{Chains: proof of Theorem C}{s:proofsC}
+
+\begin{lemma}[equivariance and linearity of chains]\label{l:cheq}
+In Setting~\ref{s:chain}, let \m{\mathcal{K}=(\mathcal{K}_j)_j} be the kernels.
+\begin{enumerate}[label=(\roman*)]
+\item Let \m{\varphi\in\Alg{I_0}{e_0}} be fixed by $K_0$, let \m{a=(a_j)_j} with \m{a_j\in K_j} for all~$j$,
+  \m{\Phi=(\Phi_j)_j} data and \m{j\ge0}. Then
+  \m{\chain{\mathcal{K}}{(\omega_i(a_i,a_{i+1})\Phi_i)_i}_{j}(\varphi)=a_j\cdot\chain{\mathcal{K}}{\Phi}_{j}(\varphi)}.
+\item Let \m{a=(a_j)_j} be any family of points \m{a_j\in\Gf{I_j}}, \m{t=(t_i)_i} with
+  \m{t_i\in\mathcal{S}_{2i}\otimes\mathcal{S}_{2i+1}}, \m{p\ge0} and \m{\varphi\in\Alg{I_0}{e_0}}. Then
+  \m{\chaintwo{\mathcal{K}}{(\twoact{\mathcal{K}}{a}{i}\,t_i)_i}_{p}(a_0\cdot\varphi)=a_{2p}\cdot\chaintwo{\mathcal{K}}{t}_{p}(\varphi)}.
+\item For \m{j\ge0}, \m{\varphi\in\Alg{I_0}{e_0}} and \m{g\in\Gf{I_j}} there is a linear map $\beta$ on
+  \m{\mathcal{S}_{j-1}\otimes\dots\otimes\mathcal{S}_0} with
+  \m{\chain{\mathcal{K}}{\Phi}_{j}(\varphi)(g)=\beta(\Phi_{j-1}\otimes\dots\otimes\Phi_0)} for all data~$\Phi$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(i) and (ii) follow by induction on the number of lifts from the equivariance of one lift
+(Definition~\ref{d:kernel}): in (i) the form $\varphi$ is fixed by \m{a_0\in K_0}; in (ii) one first treats pure
+tensors \m{t_p=s\otimes s'}, for which the pair is \m{\mathcal{K}_{2p+1}[s']\circ\mathcal{K}_{2p}[s]}, and extends by
+linearity. (iii) A lift is linear in its datum, so the value of the composite at $\varphi$ and $g$ is multilinear in
+\m{(\Phi_{j-1},\dots,\Phi_0)}.
+\end{proof}
+\leanline{\lean{chainequivariant}\sep \lean{chainequivarianta}\sep \lean{existslinearchaineqpure}\sep In the last
+one the census lists the section variable $\Phi$, which Lean does not take.}
+
+\begin{proof}[Proof of Theorem C]
+By induction on $m$, for all $M$, $L$, $h$, $A$ and~$P$. Let \m{\beta_j(g)} be the linear map of
+Lemma~\ref{l:cheq}\,(iii) for $\varphi$ and~$g$, and write \m{\Phi_x^{<j}=\Phi_{x,j-1}\otimes\dots\otimes\Phi_{x,0}}.
+
+\emph{\m{m=0}.} The chain is the identity and \m{\varphi(h)=\beta_0(h)(1)}. By (e), \m{P_0(h,\varphi(h))}, so (f)
+with \m{\beta=\beta_0(h)} gives \m{\sum_xL_x(\varphi(h))\in A}; the empty product of class numbers is~$1$.
+
+\emph{From $j$ to \m{m=j+1}.} By the definition of the lift,
+\begin{align*}
+\sum_{x\in\mathcal{X}_0}L_x\bigl(\chain{\mathcal{K}}{\Phi_x}_{j+1}(\varphi)(h)\bigr)&=\int_{\Gamma\backslash\Gf{I_j}}G(g)\,dg,\\
+G(g)&=\sum_{x\in\mathcal{X}_0}L_x\Bigl(\mathcal{J}_j\bigl(\omega_j(g,h)\Phi_{x,j}\bigr)\bigl(\chain{\mathcal{K}}{\Phi_x}_{j}(\varphi)(g)\bigr)\Bigr),
+\end{align*}
+where Q1 allows the finite sum to pass under the class integral. By Q1 and (b) it suffices to show that $G$ is
+right $K_j$-invariant and that every \m{G(g)} is a sum of \m{\prod_{i<j}\cls{K_i}} elements of~$A$.
+
+\emph{Values.} Fix $g$ and apply the induction hypothesis to the same $\Phi$ and $\varphi$, the point $g$, the set
+$A$ and the linear maps \m{L'_x(u)=L_x\bigl(\mathcal{J}_j(\omega_j(g,h)\Phi_{x,j})u\bigr)} on \m{\Wk{I_j}}. For a
+linear $\beta'$ on \m{\mathcal{S}_{j-1}\otimes\dots\otimes\mathcal{S}_0} let \m{T_{\beta'}} be the linear map on
+\m{\mathcal{S}_j\otimes\dots\otimes\mathcal{S}_0} with
+\m{T_{\beta'}(s\otimes t)=\mathcal{J}_j(\omega_j(g,h)s)\,\beta'(t)}, so that
+\m{L'_x(\beta'(\Phi_x^{<j}))=L_x(T_{\beta'}(\Phi_x^{<j+1}))}. Joint invariance of length $j$ for the $L'_x$ is
+hypothesis (a) for the families $a$ with \m{a_i=1} for \m{i\ge j} and the maps \m{T_{\beta'}}. Hypothesis (f) for
+the $L'_x$ and the point $g$: if \m{P_j(g,\beta'(\Phi_x^{<j}))} for all $x$, then (d) gives
+\m{P_{j+1}(h,T_{\beta'}(\Phi_x^{<j+1}))} for all $x$, and (f) for $\beta=T_{\beta'}$ gives
+\m{\sum_xL'_x(\beta'(\Phi_x^{<j}))\in A}. The other hypotheses are inherited. So \m{G(g)=\sum_xL'_x(\chain{\mathcal{K}}{\Phi_x}_{j}(\varphi)(g))} is a sum of
+\m{\prod_{i<j}\cls{K_i}} elements of~$A$.
+
+\emph{Invariance.} Let \m{a\in K_j} and let $a'$ be the family with $a$ at the index $j$ and $1$ elsewhere. By
+Lemma~\ref{l:cheq}\,(i),
+\begin{align*}
+\chain{\mathcal{K}}{\Phi_x}_{j}(\varphi)(ga)&=\beta_j(g)\Bigl(\textstyle\bigotimes_{i<j}\omega_i(a'_i,a'_{i+1})\Phi_{x,i}\Bigr),\\
+\omega_j(ga,h)\Phi_{x,j}&=\omega_j(g,h)\,\omega_j(a'_j,a'_{j+1})\Phi_{x,j}.
+\end{align*}
+Hence
+\[G(ga)=\sum_{x\in\mathcal{X}_0}L_x\Bigl(T_{\beta_j(g)}\bigl(\textstyle\bigotimes_{i\le j}\omega_i(a'_i,a'_{i+1})\Phi_{x,i}\bigr)\Bigr),\]
+which by (a) for the family $a'$ equals \m{\sum_xL_x(T_{\beta_j(g)}(\Phi_x^{<j+1}))=G(g)}.
+\end{proof}
+\leanline{\lean{sumchainmemnsmul}}
+
+\sect{Names at a split level: proof of Theorem B}{s:proofsD}
+
+\begin{lemma}[the embedding at a split level]\label{l:embfacts}
+Let \m{\splitlevel{\Sigma}{N}}, $I$ a finite index set, and for \m{g\in\Gf{I}} let \m{g_\Sigma\in\GL_I(\ES{\Sigma})}
+be the family of its components at~$\Sigma$.
+\begin{enumerate}[label=(\roman*)]
+\item For \m{g\in\GL_I(\ES{\Sigma})}: \m{\emb{\Sigma}{g}_{\Sigma}=g}, and \m{\emb{\Sigma}{g}} has component $1$ at
+  every place outside \m{\Sigma\cup\cj{\Sigma}}.
+\item Let \m{g\in\Gf{I}} and \m{a\in\GL_I(\OS{\Sigma})} with \m{a=g_\Sigma}. Then the component of $g$ at every
+  place dividing $N$ is integral and invertible.
+\item Let $N$ be prime, \m{w\in\Sigma}, and let $\nu$ be a finite adele with \m{\nu\cj{\nu}=1} that is integral and
+  has \m{\nu_v=1} at every place $v$ with \m{v\ne w} and \m{\cj{v}\ne w}. Then there is a unit $x$ of $\OS{\Sigma}$
+  with \m{\red(x)_v=1} for all \m{v\in\Sigma}, \m{v\ne w}, such that \m{\emb{\Sigma}{x\cdot1}} is the scalar matrix
+  of~$\nu$ in \m{\Gf{I}}.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(i) holds by construction. (ii) A place $w$ dividing $N$ lies in $\Sigma$ or in \m{\cj\Sigma}, by (d) of
+Definition~\ref{d:split}. In the first case \m{g_w=a_w\in\GL_I(O_w)}; in the second $g_w$ is the inverse of the
+conjugate transpose of the component at~\m{\cj{w}}, which is integral and invertible. (iii) Let $x$ be the family of
+the components of $\nu$ at~$\Sigma$; it is integral, and so is the family of the components of \m{\cj\nu}, which is
+its inverse because \m{\nu\cj\nu=1}. For \m{v\in\Sigma}, \m{v\ne w}, also \m{\cj{v}\ne w} by (a), so \m{\nu_v=1}. The
+two elements \m{\emb{\Sigma}{x\cdot1}} and the scalar matrix of $\nu$ are unitary, have component $1$ outside
+\m{\Sigma\cup\cj\Sigma} and the same components at~$\Sigma$; so they are equal.
+\end{proof}
+\leanline{\lean{atPlacesembedGL}\sep \lean{embedGLmemsupportedOn}\sep \lean{memintegralAboveofinclGLeq}\sep
+\lean{existsembedGLscalareqscalarFin}\sep \lean{scalarFinatPlace} (the component at a place $w$ of the scalar matrix
+of $\nu$ is the scalar matrix of~$\nu_w$; a rewriting rule, used silently)}
+
+\begin{lemma}[Weil operators at a split level]\label{l:names}
+Let $E$ have Weil data, $I$, $I'$ finite index sets, $a$, $b$ characters of the norm-one adeles of $E$ trivial on the
+rational points, and let \m{\omega_{a,b}} be the pair Weil representation of \m{\Gf{I}\times\Gf{I'}} on
+\m{\mathcal{W}_f(\operatorname{Hom}(X_I,X_{I'}))} with characters $a$,~$b$.
+\begin{enumerate}[label=(\roman*)]
+\item For finite adeles $\nu$, $\nu'$ of norm one, with scalar matrices \m{s(\nu)\in\Gf{I}}, \m{s(\nu')\in\Gf{I'}}:
+  \m{\omega_{a,b}(s(\nu),s(\nu'))=a(\det s(\nu'))\,b(\det s(\nu))^{-1}\cdot\omega_{1,1}(1,s(\nu'/\nu))}.
+\item Let $\Sigma$ be a split level for the prime~$N$, \m{g\in\GL_I(\ES{\Sigma})}, \m{k\in\GL_{I'}(\ES{\Sigma})}, $f$ a
+  function of \m{I'\times I} matrices over $\RS{\Sigma}$ and \m{v\in\mathcal{W}_f(\operatorname{Hom}(X_I,X_{I'}))}. Then
+  \[
+  \omega_{a,b}\bigl(\emb{\Sigma}{g},\emb{\Sigma}{k}\bigr)\,\nm{\Sigma}{\nat{f}}\,v=
+  \detchar{\eta_b}{|I'|}(g)^{-1}\,\detchar{\eta_a}{|I|}(k)\cdot\nm{\Sigma}{S\mapsto\nat{f}(k^{-1}Sg)}\,v,
+  \]
+  where \m{\eta_a(x)=a(x/\cj{x})\,\upsilon(x)^{-|I|}} and \m{\eta_b(x)=b(x/\cj{x})\,\upsilon(x)^{-|I'|}} are the space
+  characters.
+\item In the situation of (ii), the function \m{t\mapsto\nat{f}(t_\Sigma)} of finite adelic matrices is the function
+  that takes the value of $f$ at the family of the reductions of $t$ modulo the places of $\Sigma$ if $t$ is
+  integral there, and $0$ otherwise; it is a Schwartz--Bruhat function at~$\Sigma$, so that it has a name.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(i) A pair of scalars acts on \m{\operatorname{Hom}(X_I,X_{I'})} through the scalar \m{\nu'/\nu}; the characters
+contribute \m{a(\det s(\nu'))\,b(\det s(\nu))^{-1}} by the definition of the twisted representation. (ii) is Q2:
+\m{\emb{\Sigma}{g}} and \m{\emb{\Sigma}{k}} are supported on \m{\Sigma\cup\cj\Sigma}, with components $g$, $k$
+at~$\Sigma$ (Lemma~\ref{l:embfacts}\,(i)), and $\Sigma$ is disjoint from its conjugate; the scalar of Q2 is the
+stated product of the two determinant characters. (iii) is the definition of $\nat{f}$, read through the
+isomorphisms \m{\mathbb{F}_w\cong\ZZ/N}.
+\end{proof}
+\leanline{\lean{pairWeilFinitescalarFin}\sep \lean{pairWeilFinitename}\sep \lean{liftFneqresidueDatum}\sep
+\lean{isSchwartzBruhatliftFn} (an instance)}
+
+\begin{lemma}[determinant characters]\label{l:detchar}
+Let $I$, $I'$ be finite index sets and $\Sigma$ a finite set of finite places of~$E$.
+\begin{enumerate}[label=(\roman*)]
+\item Let $E$ have Weil data and let $a$ be a character of the norm-one adeles of $E$, trivial on the rational
+  points, whose base change \m{x\mapsto a(x/\cj{x})} is unramified at every \m{w\in\Sigma}. Then for all
+  \m{i,k\in\NN} and \m{g\in\GL_I(\OS{\Sigma})}, with \m{\eta(x)=a(x/\cj{x})\upsilon(x)^{-i}}: \m{\detchar{\eta}{k}(g)=1}.
+\item Let \m{\splitlevel{\Sigma}{N}} with $N$ prime, $\Sigma'$ a finite set of finite places,
+  \m{\jm\colon\CC\to\CC_N} a ring homomorphism, $\eta$ a Hecke character and \m{k\le k'} natural numbers. Then
+  \m{\lvert\jm(\detchar{\eta}{k'}(\diagN{I}{\Sigma'}))\rvert\le\lvert\jm(\detchar{\eta}{k}(\diagN{I'}{\Sigma'}))\rvert}.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(i) \m{\det g} is a unit of $\OS{\Sigma}$, so \m{\lvert\det g_w\rvert_w=1}, and \m{\eta_w(\det g_w)=1} because both
+the base change of $a$ and $\upsilon$ are unramified at~$w$ (Q5). (ii) The determinant of \m{\diagN{I}{\Sigma'}}
+does not depend on the rank: its component is $N$ at the places of \m{\Sigma\cap\Sigma'} and $1$ elsewhere. So the two
+values differ by the factor \m{\prod_{w\in\Sigma\cap\Sigma'}\lvert N\rvert_w^{-(k'-k)/2}=N^{(k'-k)\,\#(\Sigma\cap\Sigma')/2}},
+because \m{\lvert N\rvert_w=N^{-1}} for a place of norm $N$ with uniformiser~$N$. The square of this factor is a
+non-negative power of the integer $N$, of $N$-adic absolute value at most~$1$.
+\end{proof}
+\leanline{\lean{detCharAtinclGL}\sep \lean{normdetCharAtdiagNanti}}
+
+\begin{proof}[Proof of Theorem B]
+Write \m{\mathcal{H}=\operatorname{Hom}(X_{\Ip{I}},X_{I'})} and \m{\mathcal{H}'=\operatorname{Hom}(X_{I'},X_{\Ip{I''}})},
+and let \m{\epsilon=\mathbf{1}_{\Sigma}}, \m{\epsilon'=\mathbf{1}_{\Sigma'}}. Both $\Sigma$ and $\Sigma'$ are split
+levels for~$N$; hence \m{\Sigma\cup\cj\Sigma=\Sigma'\cup\cj{\Sigma'}} is the set of the places dividing~$N$, and
+\m{\epsilon+\cj{\epsilon}=\epsilon'+\cj{\epsilon'}}, \m{\epsilon'\cj{\epsilon'}=0}.
+
+\emph{Step 1: both sides are names at $\Sigma$.} The projection \m{P^{\Sigma'}} depends only on
+\m{\Sigma'\cup\cj{\Sigma'}}, so it equals \m{P^{\Sigma}}, which is named at $\Sigma$ by the indicator
+\m{\mathbf{1}_{\mathrm{int}}} of the matrices integral at~$\Sigma$ (Q2). The vectors \m{c(y)}, \m{r(y)} of
+Definition~\ref{d:names} are supported above \m{\Sigma'\cup\cj{\Sigma'}}; by Q2 the operator
+\m{\varrho_f(c(y))P^{\Sigma}} is named by the Schrödinger translate \m{c(y)\star\mathbf{1}_{\mathrm{int}}}, where
+\[
+(t\star\Psi)(X)\;=\;\psi_0\bigl(\tfrac12\textstyle\sum\cj{t}\cdot\epsilon\,(2X+t)\bigr)\,\Psi(X+t),
+\]
+the sum over the entries; likewise for \m{r(y)}. So the left side of the theorem is the image of
+\m{Z=\sum_y\,(c(y)\star\mathbf{1}_{\mathrm{int}})\otimes(r(y)\star\mathbf{1}_{\mathrm{int}})} under the linear map
+\m{\Psi\otimes\Psi'\mapsto\nm{\Sigma}{\Psi}v\otimes\nm{\Sigma}{\Psi'}v'}, and the right side is the image of
+\m{Z'=\sum_z\bigl(S\mapsto\bcol{z}(S\diagN{I}{\Sigma'})\bigr)\otimes\bigl(S'\mapsto\cchar{z}(\diagN{I''}{\Sigma\smallsetminus\Sigma'}S')\bigr)}.
+(The formal text first embeds the tensor product of the finite parts into that of the ambient spaces, which is
+injective over a field.) A tensor of two functions is determined by its values at pairs of points, so it suffices
+to prove \m{Z(T,R)=Z'(T,R)} for all finite adelic matrices $T$ of size \m{I'\times\Ip{I}} and $R$ of size
+\m{\Ip{I''}\times I'}.
+
+\emph{Step 2: the left side at \m{(T,R)}.} Put \m{t_i=T_{i\st}} and \m{s_i=R_{\st i}} for \m{i\in I'}, and
+\m{x_i=\rN{y_i}}, an adele supported on~$\Sigma'$; note \m{\cj{x_i}\,x_i=0}. Then
+\[
+Z(T,R)=\sum_{y}\;\psi_0\Bigl(-\sum_{i}\bigl(\cj{x_i}\,\epsilon\,t_i+x_i\,\epsilon\,s_i\bigr)\Bigr)\cdot
+\bigl[\epsilon\,(T+c(y))\text{ and }\epsilon\,(R+r(y))\text{ integral}\bigr].
+\]
+The integrality conditions concern the entries of $T$ outside the last column and of $R$ outside the last row,
+which do not involve~$y$, and the entries \m{\epsilon(t_i-x_i)} and \m{\epsilon(s_i-\cj{x_i})}. Let
+\m{\mathsf{p}=1+\epsilon'(N-1)}, the adele equal to $N$ on $\Sigma'$ and $1$ elsewhere, so that \m{N+1-\mathsf{p}} is $1$ on
+$\Sigma'$ and $N$ elsewhere. Applying Lemma~\ref{l:resid} for the split level $\Sigma'$ to the adele
+\m{\epsilon t_i+\cj{\epsilon s_i}}, and using that an adele $u$ has \m{\epsilon u} and \m{\epsilon\cj{u}} integral if
+and only if \m{\epsilon'u} and \m{\epsilon'\cj{u}} are, one finds \m{b_i\in\RS{\Sigma'}} such that for every
+\m{y_i}:
+\[
+\epsilon(t_i-x_i)\ \text{and}\ \epsilon(s_i-\cj{x_i})\ \text{integral}\iff
+\epsilon\,t_i\mathsf{p}\ \text{and}\ \epsilon\,(N+1-\mathsf{p})s_i\ \text{integral, and}\ y_i=b_i .
+\]
+So every term with \m{y\ne b} vanishes. The term \m{y=b} can vanish as well: it is non-zero exactly when
+\m{T\cdot\operatorname{diag}(1,\dots,1,\mathsf{p})} and \m{\operatorname{diag}(1,\dots,1,N+1-\mathsf{p})\cdot R} are
+integral at~$\Sigma$ (the formal proof records this by a case split after discarding the other terms).
+
+\emph{Step 3: the right side at \m{(T,R)}.} At the places of $\Sigma$ the matrix \m{\diagN{I}{\Sigma'}} is
+\m{\operatorname{diag}(1,\dots,1,\mathsf{p})} and \m{\diagN{I''}{\Sigma\smallsetminus\Sigma'}} is
+\m{\operatorname{diag}(1,\dots,1,N+1-\mathsf{p})}. So \m{Z'(T,R)} vanishes unless the same two matrices are integral
+at~$\Sigma$; then exactly one $z$ contributes, the reduction of the last column \m{(t_i\mathsf{p})_i}, and
+\m{Z'(T,R)=\psiN{\zeta}} with \m{\zeta\in\RS{\Sigma}} the reduction of
+\m{\sum_i(N+1-\mathsf{p})s_i\cdot t_i\mathsf{p}=N\sum_is_it_i} at~$\Sigma$ (note
+\m{(N+1-\mathsf{p})\mathsf{p}=N}).
+
+\emph{Step 4: the two characters agree.} It remains to see that, for \m{y=b},
+\[\psi_0\Bigl(-\sum_i(\cj{x_i}\,\epsilon\,t_i+x_i\,\epsilon\,s_i)\Bigr)\;=\;\psi_0\bigl(-\rN{\zeta}\bigr).\] The character $\psi_0$ is
+trivial on $\Oh$, so it suffices that the two arguments differ by an integral adele. By Step~2 the adeles \m{\epsilon(t_i-x_i)} and
+\m{\epsilon(s_i-\cj{x_i})} are integral, and by Lemma~\ref{l:elem}\,(v), applied to \m{u=\sum_is_it_i},
+\m{\epsilon\,(\sum_is_it_i-\rN{\zeta})} is integral. Expanding the product
+\m{\epsilon\sum_i(t_i-x_i)(s_i-\cj{x_i})}, which is integral, and using \m{x_i\cj{x_i}=0} gives the claim. This is the
+computation that the formal proof closes with its last three lines.
+\end{proof}
+\leanline{\lean{translateSumeqsumname}\sep The formal statement takes the split level structure of $\Sigma'$ as an
+explicit hypothesis and that of $\Sigma$ as an instance.}
+
+\sect{The level prime of the data: proof of Theorem D}{s:proofsE}
+
+\begin{lemma}[the non-induced places]\label{l:nonind}
+In Setting~\ref{s:data}, with \m{\ell=\ND} and \m{\jm\colon\CC\to\CC_{\ND}}:
+\begin{enumerate}[label=(\roman*)]
+\item \m{\nonind{D}} is a split level for \m{\ND}; in symbols, \m{\splitlevel{\nonind{D}}{\ND}}.
+\item Let \m{\nonind{D}} carry this structure, let \m{j\ge0}, $\Sigma'$ a finite set of finite places of \m{E(D)}
+  and $\tau$ an infinite place of \m{E(D)}. Then \m{\evt{\tau}}, applied to the entries of
+  \m{\emb{\nonind{D}}{\diagN{\XIo{j}}{\Sigma'}}}, gives \m{\operatorname{diag}(1,\dots,1,\ND)} if
+  \m{\cj{\ind{\tau}}\in\Sigma'} and the identity matrix otherwise.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(i) By Input~5, \m{\ND} splits completely in \m{E(D)}: every place above \m{\ND} has norm \m{\ND} and uniformiser
+\m{\ND}, the group of infinite places, which is the Galois group of \m{E(D)} over $K$, permutes the places above
+\m{\ND} that lie over a fixed place of $K$ simply transitively, and no place above \m{\ND} is fixed by complex
+conjugation. The induced places \m{\ind{\tau}} form one such orbit; so no induced place is the conjugate of another,
+and every place above \m{\ND} is an induced place or the conjugate of one. These are (a)--(d) of
+Definition~\ref{d:split} for the set of the conjugates. (ii) \m{\evt{\tau}} reads the component at
+\m{\cj{\ind{\tau}}\in\nonind{D}}, where the embedding places the component of the diagonal matrix
+(Lemma~\ref{l:embfacts}\,(i)); that component has last entry \m{\ND} if \m{\cj{\ind{\tau}}\in\Sigma'} and $1$
+otherwise, and \m{\evt{\tau}} fixes rational integers.
+\end{proof}
+\leanline{\lean{isSplitLevelnonInducedPlaces}\sep \lean{adeleExtensionmapdiagN}}
+
+\begin{lemma}[the column level is a conjugated mirabolic group]\label{l:colmir}
+In Setting~\ref{s:data}, with \m{\ell=\ND}, let \m{\Sigma=\nonind{D}} with its structure of a split level for
+\m{\ND}, let \m{j\ge0}, and for \m{k\in\Gf{\XI{j}}} put \m{k^{\Delta}=\bigl(\dpt{D}{j}^{-1}\,k\,\dpt{D}{j}\bigr)_{\Sigma}},
+the family of the components at~$\Sigma$.
+\begin{enumerate}[label=(\roman*)]
+\item For \m{k\in\Gf{\XI{j}}}: \m{\bcol{\ebas}(k^{\Delta})\ne0} if and only if for every \m{w\in\Sigma}: $k_w$ is
+  integral; if \m{\cj{w}\in\PiD}, every entry of the last row of \m{(k^{-1})_{\cj{w}}-1} is divisible by a
+  uniformiser; and if \m{w\in\PiD}, every entry of the last row of \m{k_w-1} is divisible by a uniformiser.
+\item For \m{k\in\Kcol{j}}: \m{k^{\Delta}\in\Mir{\XIo{j}}}.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(i) Let \m{w\in\Sigma}. If \m{w\in\PiD}, the component of \m{\dpt{D}{j}} at $w$ is
+\m{\delta=\operatorname{diag}(1,\dots,1,\ND)}, and \m{\delta^{-1}k_w\delta} has the entries of $k_w$ with the last
+row divided by \m{\ND} and the last column multiplied by \m{\ND}. It is integral with last column congruent to the
+last basis vector exactly when $k_w$ is integral and the last row of \m{k_w-1} is divisible by~\m{\ND}, a
+uniformiser. If \m{w\notin\PiD}, then \m{\cj{w}\in\PiD} by Input~1 (as $w$ divides \m{\ND}), the component of
+\m{\dpt{D}{j}} at $w$ is $1$, and the condition is that $k_w$ is integral with last column congruent to the last
+basis vector. Since $k$ is unitary, $k_w$ is the conjugate transpose of \m{(k^{-1})_{\cj{w}}}, so the last column of
+\m{k_w-1} is the conjugate of the last row of \m{(k^{-1})_{\cj{w}}-1}. (ii) By Input~2, $k$ and $k^{-1}$ are
+integral with last rows congruent to \m{(0,\dots,0,1)} at the places of~\m{\PiD}; so (i) gives
+\m{\bcol{\ebas}(k^{\Delta})\ne0} and \m{\bcol{\ebas}((k^{\Delta})^{-1})\ne0}, and Lemma~\ref{l:fnfacts}\,(ii) shows
+that \m{k^{\Delta}} is integral and invertible with last column congruent to~$\ebas$.
+\end{proof}
+\leanline{\lean{lastColDatumconjnezeroiff}\sep \lean{atPlacesconjmemmirabolic}}
+
+\begin{lemma}[ramified columns; the operator preserves columns]\label{l:ramcol}
+In Setting~\ref{s:data}, with \m{\ell=\ND} and \m{\nonind{D}} with its structure of a split level for \m{\ND}:
+\begin{enumerate}[label=(\roman*)]
+\item if \m{\varphi\in\Colram}, then \m{\varphi\in\ram{\nrep{D}{0}}};
+\item if \m{\varphi\in\Col}, then \m{\Fop{\nrep{D}{0}}\varphi\in\Col}.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+Write \m{\Sigma=\nonind{D}} and \m{\rho=\nrep{D}{0}}.
+(i) Let \m{w\in\Sigma}. It divides \m{\ND}, so $w$ or $\cj{w}$ is a place $\mathfrak{p}$ of \m{\PiD} (Input~1). By
+Input~3, \m{\varphi=\psi-z_{\mathfrak{p}}\psi} for a column~$\psi$, and \m{\nu_{\mathfrak{p}}} is integral, of norm
+one and equal to $1$ away from $w$ and~$\cj{w}$. By Lemma~\ref{l:embfacts}\,(iii) there is a unit $x$ of
+$\OS{\Sigma}$, congruent to $1$ at the places \m{v\ne w} of $\Sigma$, with \m{\emb{\Sigma}{x\cdot1}} the scalar
+matrix of~\m{\nu_{\mathfrak{p}}}. Scalar matrices are central, so \m{\cemb{D}{0}(x\cdot1)} is this scalar matrix
+too, \m{\rho(x\cdot1)=z_{\mathfrak{p}}}, and $\varphi$ lies in the image of \m{1-\rho(x\cdot1)}.
+
+(ii) Let \m{k\in\Kcol{0}} and let $T$ be right translation by~$k$; we show \m{T\,\Fop{\rho}\varphi=\Fop{\rho}\varphi}
+by Lemma~\ref{l:mirfix} with \m{g=k^{\Delta}\in\Mir{\XIo{0}}} (Lemma~\ref{l:colmir}\,(ii)). Let
+\m{a,b\in\GL_{\XI{0}}(\ES{\Sigma})} with \m{a\,g\,b\in\Mir{\XIo{0}}}. The operator \m{\rho(a)\,T\,\rho(b)} is right
+translation by $\cemb{D}{0}(a)\,k\,\cemb{D}{0}(b)=u\,k$ with
+\[u\;=\;\cemb{D}{0}(a)\,k\,\cemb{D}{0}(b)\,k^{-1}.\] The element $u$ has component $1$ outside
+\m{\Sigma\cup\cj{\Sigma}}, and \m{u^{\Delta}=(a\,g\,b)\,g^{-1}\in\Mir{\XIo{0}}}. By Lemma~\ref{l:fnfacts}\,(iii) and
+Lemma~\ref{l:colmir}\,(i), applied to $u$ and to $u^{-1}$, the element $u$ is integral at the places above \m{\ND}
+with last rows congruent to \m{(0,\dots,0,1)} at the places of~\m{\PiD}. It is supported at places above \m{\ND},
+none of which is a chosen place (Input~5), so it lies in the chosen level, and \m{u\in\Kcol{0}} by Input~2. Hence
+\m{u\,k\in\Kcol{0}} fixes the column~$\varphi$, which is the hypothesis of Lemma~\ref{l:mirfix}.
+\end{proof}
+\leanline{\lean{memramifiedofmemramifiedColumns}\sep \lean{fourierOpmemcolumn}}
+
+\begin{lemma}[restriction to \m{Y_m(D)} keeps gauges and sizes]\label{l:restr}
+In Setting~\ref{s:data}, but for any prime $\ell$ with a ring homomorphism \m{\jm\colon\CC\to\CC_\ell}:
+\begin{enumerate}[label=(\roman*)]
+\item Let \m{\mathsf{d}\in\Gf{\XI{m}}} be such that for every infinite place $\tau$ the matrix
+  \m{\evt{\tau}(\mathsf{d})} is \m{\operatorname{diag}(1,\dots,1,\ND)} if \m{\cj{\ind{\tau}}\in\PiD} and the identity
+  otherwise. Let $C$ be a real number and \m{\varphi\in\Stg{m}} of gauge at most $C$ at~$\mathsf{d}$. Then
+  \m{\resY(\varphi)} has gauge at most $C$ at~$1$.
+\item If \m{\ell\ne\ND}, $C$ is real and \m{\varphi\in\Stg{m}} has gauge at most $C$ at~$1$, then \m{\resY(\varphi)}
+  has gauge at most $C$ at~$1$.
+\item For every ring homomorphism \m{\sigma\colon\CC\to\CC}, every \m{\varphi\in\Stg{m}} and every point $h$ of the
+  finite adelic unitary group of \m{Y_m(D)}:
+  \[\wnorm{\sigma\circ\resY(\varphi)(h)}\;\le\;\exp\Bigl(x^{70}-\sum_{\tau}\brE{\tau}\cdot\log\ND\Bigr)\cdot\wnorm{\sigma\circ\varphi(\bdU(h))}.\]
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(i) Fix $h$ and put \m{g=\bdU(h)}. By Definition~\ref{d:columns},
+\m{\resY(\varphi)(h)=s\cdot B_D\,\varphi(g)} with \m{s=\prod_\tau\tau(\cj{\piN})^{-\brE{\tau}}}. By Input~4, $B_D$
+carries the action of
+\[\evt{\tau}(g\mathsf{d})^{-1}\;=\;\evt{\tau}(\mathsf{d})^{-1}\,\evt{\tau}(g)^{-1}\]
+in the weight of stage $m$ to the action of \m{\evt{\tau}(h)^{-1}} in the weight of \m{Y_m(D)}, times the scalar
+\m{\prod_\tau\lambda_\tau^{-\brE{\tau}}}, where \m{\lambda_\tau\in\{\ND,1\}} is the last entry of
+\m{\evt{\tau}(\mathsf{d})}. On the other hand \m{\lvert\jm(\tau(\cj{\piN}))\rvert=\lvert\lambda_\tau\rvert}: the
+left side is the absolute value of \m{\piN} at the place \m{\cj{\ind{\tau}}}, which is that of \m{\ND} if this
+place divides \m{\piN} and $1$ otherwise. So the two scalars have the same $\ell$-adic size, and the gauge of
+\m{\resY(\varphi)(h)} at $h$ is the norm of $B_D$ applied to the vector whose norm is the gauge of \m{\varphi(g)} at
+\m{g\mathsf{d}}; the integer matrix $B_D$ does not increase norms (Q3). (ii) is (i) for \m{\mathsf{d}=1}: for
+\m{\ell\ne\ND} no place above $\ell$ divides~\m{\piN}. (iii) The scalar $s$ contributes
+\m{\lvert\sigma(s)\rvert^2=\prod_\tau\lvert\sigma\tau(\cj{\piN})\rvert^{-2\brE{\tau}}}, and
+\m{\lvert\sigma\tau(\cj{\piN})\rvert^{2}=\sigma\tau(\cj{\piN}\,\piN)=\ND}, because \m{\sigma\circ\tau} is an
+embedding of the CM field \m{E(D)} and so commutes with complex conjugation. The matrix $B_D$ contributes at most
+\m{\exp(x^{70})} by its size bound (Input~4) and the comparisons of sizes of the data (Chapter~III).
+\end{proof}
+\leanline{\lean{restrictToYofdiag}\sep \lean{restrictToY}\sep \lean{weylNormSqrestrictToYle}\sep In the first two
+Lean takes the prime $\ell$, its primality and the homomorphism $\jm$ as instance arguments.}
+
+\begin{proof}[Proof of Theorem D]
+Write \m{\Sigma=\nonind{D}}, \m{\rho=\nrep{D}{0}}, \m{F=\Fop{\rho}}, \m{\Delta=\dpt{D}{0}}, and for a finite set
+$\Sigma'$ of places \m{\mathsf{d}(\Sigma')=\emb{\Sigma}{\diagN{\XIo{0}}{\Sigma'}}^{-1}}; so
+\m{\Delta\,\mathsf{d}(\PiD)=1}. For an index $a$ of \m{\XI{0}} let \m{t(a)} be the sum, over the classes of
+\m{\Kcol{0}}, the coordinates $i$ of the weight and the infinite places $\tau$, of the number of times $a$ occurs in
+the tableau that names the coordinate $i$ at~$\tau$.
+
+\emph{Step 1.} For every $\Sigma'$: every finite family in \m{\Int{\Col}{\Delta\mathsf{d}(\Sigma')}} is carried into
+\m{\Int{\Col}{\Delta}} by a square matrix over $\Oj$ whose determinant divides \m{\ND^{\,t(\st)}}. Indeed, a column is
+determined by its values at representatives of the classes, which are arbitrary vectors of the weight because the
+rational points act freely (Q4); adjust each representative by a rational point so that it, and its conjugate by
+\m{\mathsf{d}(\Sigma')}, are integral above \m{\ND} (Q3). In these coordinates, by Lemma~\ref{l:nonind}\,(ii), a
+column that is integral at \m{\Delta\mathsf{d}(\Sigma')} becomes integral at $\Delta$ after its coordinate $i$ at a
+class is multiplied by \m{\ND} to the number of occurrences of the last index in the tableaux of~$i$: the action of
+\m{\operatorname{diag}(1,\dots,1,\ND)} in the weight is diagonal with these powers of \m{\ND}, up to an integral
+Schur matrix (Q3). The determinant of this diagonal map is \m{\ND^{\,t(\st)}}.
+
+\emph{Step 2.} For \m{q\ge0}, every finite family in \m{\Int{\Col}{1}} is carried by a matrix over $\Oj$ of
+determinant dividing \m{\ND^{\,t(\st)(q+1)}} into the forms $\psi$ with \m{F^{q}\psi\in\Int{\Col}{\Delta}}. For
+\m{q=0} this is Step~1 with \m{\Sigma'=\PiD}. For the step it suffices, by Step~1 with \m{\Sigma'=\Sigma} and by
+composing matrices, that $F$ maps \m{\Int{\Col}{\Delta}} into \m{\Int{\Col}{\Delta\mathsf{d}(\Sigma)}}. Let $\psi$ be
+in the former. Then \m{F\psi} is a column (Lemma~\ref{l:ramcol}\,(ii)), and it is a sum of terms
+\m{\psiN{y_{\st}}\cdot\rho(\uz\,\tilde k(y))\psi}; the gauge of a sum is at most the largest gauge of a term, and
+\m{\lvert\jm(\psiN{y_{\st}})\rvert=1} since \m{\psiN{y_{\st}}} is a root of unity. The value of
+\m{\rho(\uz\tilde k(y))\psi} at $g$ is \m{\psi(g')} with
+\m{g'=g\,\Delta\,\mathsf{d}(\Sigma)\,\emb{\Sigma}{\tilde k(y)}\,\Delta^{-1}}, and
+\m{g'\Delta=g\Delta\mathsf{d}(\Sigma)\cdot\emb{\Sigma}{\tilde k(y)}}, where the last factor is integral above \m{\ND}
+(Lemma~\ref{l:embfacts}\,(ii)). So the gauge of this value at \m{g\Delta\mathsf{d}(\Sigma)} is its gauge at
+\m{g'\Delta} (Q3), at most~$1$.
+
+\emph{Step 3.} Take \m{q=\varrho(D)+1} and \m{e=t(\st)\,(\varrho(D)+2)}. To bound $e$: \m{t(a)=t(b)} for all
+indices $a$,~$b$, by the symmetry of the weight under permutations of the coordinates; and
+\m{\sum_at(a)} is the number of classes times the number of coordinates times the sum over $\tau$ of the number of
+boxes of the weight at~$\tau$, which is at most \m{a(D)} for each~$\tau$ (unit \emph{Columns}). The number of
+classes times the number of coordinates is \m{\dim_{\CC}\Col} (Q4). Hence
+\m{t(\st)\le\dim_{\CC}\Col\cdot f(D)\,a(D)/n_0(D)}, and \m{e\le4\,m\,f(D)\,b\,\dim_{\CC}\Col} is one of the comparisons
+of sizes of the data.
+\end{proof}
+\leanline{\lean{existsindexDvdfourierOppow}\sep The split level is an explicit argument of the Lean statement, with
+Lemma~\ref{l:nonind}\,(i) as its default value.}
+
+\begin{lemma}[the characters of the chain above the level prime]\label{l:chars}
+In Setting~\ref{s:data}, let $\vartheta$ be a tame character of $D$ and, for \m{i\ge0}, let
+\m{\mu_{D,i}(\vartheta^{i})} be the character of lift~$i$ (the product of the base character
+\m{\mu^{0}_{D,i}} and \m{\vartheta^{i}}).
+\begin{enumerate}[label=(\roman*)]
+\item For \m{j\ge0}, a finite index set $I$ and a finite place $w$ of \m{E(D)} dividing \m{\ND}: the base change of
+  the rank twist \m{\mu_{D,j}(\vartheta^{j})\,\upsilon^{\lfloor|I|/2\rfloor}} is unramified at~$w$.
+\item For \m{j,i\ge0}: the space character, in rank \m{|\XI{j}|}, of the rank twist of
+  \m{\mu_{D,i}(\vartheta^{i})} for \m{\XI{j}} is the base change \m{x\mapsto\mu_{D,i}(\vartheta^{i})(x/\cj{x})}.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(i) The tame part of \m{\mu_{D,j}(\vartheta^{j})} is trivial at $w$ and at $\cj{w}$: these places are not chosen
+(Input~5) and do not belong to the set \m{Q(\vartheta)}, whose places have norm prime to \m{\ND}; and $\upsilon$ is
+unramified. Apply Q5. (ii) is Q5, as \m{|\XI{j}|=n_j(D)} is even (Input~5).
+\end{proof}
+\leanline{\lean{charUnramifiedAtrankTwistofNmem}\sep \lean{spaceCharrankTwist}}
+
+\sect{Where the results are used}{s:used}
+Theorem~A, Theorem~B, Lemma~\ref{l:names}\,(ii), Lemma~\ref{l:detchar} and Lemma~\ref{l:ramcol}\,(i) are used
+together in the unit \emph{Columns}, in the file that trades denominators at the level prime for a column operator:
+there the chain of pairs of lifts whose data are the translates of Theorem~B is rewritten, by Theorem~B and then
+Theorem~A with \m{\rho_j=\nrep{D}{j}} and the laws given by the lifts of the definite chain, as a constant times the
+chain with the simplest data applied to \m{\Fop{\nrep{D}{0}}^{\varrho(D)+1}}. Theorem~D and
+Lemma~\ref{l:restr} enter the local statement at the level prime in the same unit. Theorem~C is used in
+\emph{Columns} (the chain of a good datum is a plain sum over classes, which gives its integrality) and in the unit
+\emph{Exchange}, together with Lemma~\ref{l:cheq}\,(i),\,(iii). Lemma~\ref{l:cheq}\,(ii), Lemma~\ref{l:names}\,(i)
+and Lemma~\ref{l:chars}\,(i) are used in the note on the seesaw identity, to show that a central element at a
+place dividing \m{\piN} acts trivially on a chain of pairs. The definitions of chains, of joint invariance and of
+\m{\transum{I}{I'}{\Sigma}{N}{I''}} are part of the definition of a good datum (unit \emph{Columns}), and
+\m{\twoact{\mathcal{K}}{a}{i}} occurs in the proof of the seesaw identity.
+
+\sect{Notes on the formal text}{s:notes}
+\subhead{Arguments that the census lists and Lean does not take.} The census of the workspace reads the arguments
+of a declaration from its text. In the files treated here a section declares variables (a vector~$y$ of residues, a
+family $a$ of points, data $\Phi$, a character~$b$); the text reading lists such a variable as an argument whenever
+its name occurs in a statement, also when the occurrence is bound there. This concerns the vector $y$ in the
+Gauss-sum operator, in the section of the split level, in Lemma~\ref{l:kofy}, Lemma~\ref{l:fnfacts}\,(iv),
+Lemma~\ref{l:lawfacts}\,(i) and Theorem~A; the family $a$ in the definition of joint invariance; the data $\Phi$ in
+Lemma~\ref{l:cheq}\,(iii); the character $b$ in Lemma~\ref{l:resid}. Nothing was compiled for this note, so Lean's
+own answer is not recorded; the statements above follow the Lean text.
+
+\subhead{Arguments that Lean takes and the census misses.} A lift law is defined for a split level~$\Sigma$ for a
+prime~$N$, and so are the mirabolic group, the function $\nat{f}$ and the Gauss-sum operator; the statements of
+Definition~\ref{d:law}, Lemma~\ref{l:mirfix}, Lemma~\ref{l:lawfacts}\,(ii) and Proposition~\ref{p:slide} therefore
+take $N$, its primality and the split level, although their text does not name them. The embedding
+\m{\emb{\Sigma}{g}} uses only that $\Sigma$ is disjoint from its conjugate, but takes a split level. The set
+\m{\nonind{D}} and Lemma~\ref{l:restr}\,(i) take a prime $\ell$ and a homomorphism $\jm$ that their names do not show.
+
+\subhead{A boundary case.} The adele \m{\rN{y}} is defined in the formal text for every natural number~$N$, with
+no hypothesis on $\Sigma$. The description by the representative in \m{\{0,\dots,N-1\}} is the case \m{N>0}; for
+\m{N=0} division by zero returns zero in Lean, so the adele is zero. Every use in this note has $N$ prime.
+
+\subhead{Choices.} The section \m{\secN}, the map $k$ of Lemma~\ref{l:kofy} and hence the matrices \m{\tilde k(y)} in
+the Gauss-sum operator are chosen once (by the axiom of choice). The proofs use only that \m{\red\circ\secN} is the
+identity and that \m{k(y)} has last row and last column~$y$; a different choice changes \m{\Fop{\rho}} on vectors
+that are not fixed by the principal congruence subgroup of level~$N$.
+
+\subhead{Statements that are more special or more general than their use.} Lemma~\ref{l:detchar}\,(ii) compares
+two ranks $I$,~$I'$ although the value does not depend on the rank. In Theorem~C the properties $P_j$ are arbitrary
+and serve as an induction hypothesis carried along the chain; hypothesis~(b) (free classes) is what turns class
+integrals into sums. In Theorem~D the exponent \m{\varrho(D)+1} is the number of pairs of lifts; the proof gives the
+statement for every power~$q$ with the exponent \m{t(\st)(q+1)}. Lemma~\ref{l:names}\,(ii) is stated in the dossier
+with the function \m{S\mapsto f(k^{-1}Sg)} of residue matrices; the Lean text has the function
+\m{S\mapsto\nat{f}(k^{-1}Sg)} of matrices over $\ES{\Sigma}$, which is not of the form $\nat{f'}$ when $g$ or $k$ is
+not integral, and this is the form used above.
+
+\subhead{Members that act implicitly.} Some members of this note are rewriting rules that no proof cites by name:
+the formula for the components of \m{\rN{y}} (Definition~\ref{d:split}) and the components of a scalar matrix
+(Lemma~\ref{l:embfacts}). An unnamed instance (the reduction is a local homomorphism) is mentioned after
+Lemma~\ref{l:elem}.
+
+\subhead{How this note was written.} From the unit's dossier: the statements in words and the structured proofs of
+the members of the two files (for the members that have a proof tree). Both Lean files were read completely
+in the source at the pinned commit, and every statement above was compared with its Lean text argument by argument;
+this is how the difference in Lemma~\ref{l:names}\,(ii) was found. The dossier's reader marks the claims for the long
+proofs of Theorem~B and of Theorem~D as read from lemma names. Both proofs were read line by line in the Lean
+source for this note; the computation with the two additive characters in Step~4 of Theorem~B and the three steps
+of Theorem~D are written from that reading. The proofs of Theorem~A, Proposition~\ref{p:slide} and
+Lemma~\ref{l:mirfix} were checked by hand as written here; they are shorter than the formal ones, which carry out
+the same re-indexings through rewriting. Of the background library, the definitions of kernels and lifts, of gauges
+and integral forms, of the Schrödinger action and of names were read in the source; their properties Q1--Q5 are
+quoted, not read. The inputs from the unit \emph{Columns} are stated as the dossier's imports read them. The
+program check of the unit's dossier covered \UnitSteps{} leaf steps of \UnitProofs{} proofs.
+
+\head{Appendix A. Concordance with the Lean artifact}
+{\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}\setlength{\tabcolsep}{0pt}
+\begin{longtable}{@{}p{27mm}>{\raggedright\arraybackslash}p{62mm}p{40mm}r@{}}
+\textbf{In this note} & \textbf{Lean declaration} & \textbf{File} & \textbf{Lines}\\\midrule\endhead
+\ConcordanceRows
+\end{longtable}}
+
+Legend: in the Lean text the set $\Sigma$ of places is {\leanfont P} and $\Sigma'$ is {\leanfont S}; the index
+sets $I$, $I'$, $I''$ are {\leanfont n}, {\leanfont n'}, {\leanfont m}, and \m{\Ip{I}} is the sum of {\leanfont n}
+and a one-point type; the representations $\rho$, $\rho'$ carry the Greek letter pi and the constant $\varkappa$
+of a law the letter gamma; $\nat{f}$ is {\leanfont liftFn f}; $\rrow$, $\bcol{y}$, $\cchar{y}$ are
+{\leanfont lastRowDatum}, {\leanfont lastColDatum y}, {\leanfont charDatum y}; $\uz$ is {\leanfont diagNInv}; the
+ring homomorphism $\jm$ is the field of the class {\leanfont PadicPlace}.
+
+Two statements as they stand in the artifact, the class of split levels and the Gauss-sum operator:
+\quoted{IsSplitLevel}
+\quoted{fourierOp}
+
+\head{Notation}
+\begingroup\fontsize{8.6}{10.9}\selectfont\raggedright
+\setlength{\columnsep}{9mm}\setlength{\parskip}{0pt}
+\begin{multicols}{2}
+\nt{$E$, $K$}{a CM field with a CM type; in Setting~\ref{s:data}, \m{E=E(D)} over the imaginary quadratic field}
+\nt{$\Af$, $\Oh$}{finite adeles of $E$; their integers}
+\nt{$w$, $v$, $\cj{w}$}{finite places of $E$; the conjugate place}
+\nt{$E_w$, $O_w$, $\mathbb{F}_w$, \m{\mathrm{N}w}}{completion, its integers, residue field, norm}
+\nt{$\mathbf{j}$, $\alpha$, $\upsilon$}{the Weil data: an element, an idele, the splitting character}
+\nt{$\psi_0$, $\psi_f$}{the standard finite additive characters}
+\nt{$N$}{a prime number (the level prime \m{\ND} for the data)}
+\nt{$\Sigma$, $\Sigma'$}{finite sets of finite places; split levels}
+\nt{$\ES{\Sigma}$, $\OS{\Sigma}$, $\RS{\Sigma}$}{product of completions; integral elements; residue ring}
+\nt{$\rN{y}$, $\psiN{y}$, $\tilde y$}{the adele \m{\tilde y/N} on $\Sigma$; its character value; least representative}
+\nt{$\mathbf{1}_{\Sigma}$, $\epsilon$, $\epsilon'$}{the adele that is $1$ on a set of places; those of $\Sigma$, $\Sigma'$}
+\nt{$I$, $I'$, $I''$, $I_j$, $J$}{finite index sets; \m{\Ip{I}=I\sqcup\{\st\}}, $\st$ the last index}
+\nt{$\red$, $\secN$}{reduction modulo $N$; a chosen section on matrices}
+\nt{$\ebas$}{the last basis vector}
+\nt{$\diagN{I}{\Sigma'}$, $\uz$}{diagonal matrix with last entry $N$ at \m{\Sigma\cap\Sigma'}; the inverse for
+  \m{\Sigma'=\Sigma}}
+\nt{$\Mir{I}$, $\ram{\rho}$}{the mirabolic group; ramified vectors}
+\nt{$\rho$, $\rho'$, $\rho_j$}{complex representations of \m{\GL_{\Ip{I}}(\ES{\Sigma})}}
+\nt{$\varphi$, $\psi$}{vectors of a representation; algebraic forms}
+\nt{$f$, $\nat{f}$, $h$, $f_t$}{functions of residue matrices; extension by zero}
+\nt{$\rrow$, $\bcol{y}$, $\cchar{y}$}{indicator of the last row; of a last column; character of a last row}
+\nt{$k(y)$, $\tilde k(y)$, $C$}{the matrix of Lemma~\ref{l:kofy}; its lift; an auxiliary matrix or a real bound}
+\nt{$\Fop{\rho}$, $F$}{the Gauss-sum operator}
+\nt{$L$, $L_j$, $\varkappa$, $\varkappa_j$}{lift laws and their constants}
+\nt{$A_i$, $d_i$, $o_i$, $p$, $q$, $l$}{the pair operators, scalars, counts; numbers of pairs; an index}
+\nt{$B_j^{q}$, $T$, $S$, $S'$, $R$, $r$, $t$, $c$, $x$, $y$, $z$, $u$, $a$, $b$, $g$, $k$}{auxiliary operators,
+  matrices, residues, units and group elements, as introduced where used}
+\nt{$\Gf{I}$, $\Kz{I}$, $X_I$}{finite adelic unitary group of the standard space $X_I$; stabiliser of its lattice}
+\nt{$\kappa$, $e_j$, $\Wk{I}$, $\Alg{I}{e}$}{weight, last entries, space of the weight, algebraic forms}
+\nt{$\mathcal{K}_j$, $\omega_j$, $\mathcal{J}_j$, $\mathcal{S}_j$, $K_j$}{kernels: representation, jet matrix, data
+  space, level}
+\nt{$\Phi$, $\Phi_x$, $\chain{\mathcal{K}}{\Phi}$, $\chaintwo{\mathcal{K}}{\Phi}$}{data; chains of lifts and of pairs}
+\nt{$\twoact{\mathcal{K}}{a}{i}$}{the joint action on the data of a pair}
+\nt{$M$, $\mathcal{X}$, $\mathcal{X}_0$, $L_x$, $A$, $P_j$, $\beta$, $G$, $\Gamma$}{in Theorem~C: target space,
+  index set, linear maps, a subset, properties, a linear map, the integrand, rational points}
+\nt{$\gamma$, $\delta$}{rational points, in the definition of a kernel; $\delta$ also a diagonal matrix}
+\nt{$\cls{K}$, $m$, $n$, $i$, $j$}{number of classes; natural numbers}
+\nt{$\emb{\Sigma}{g}$, $g_\Sigma$}{embedding at a split level; components at $\Sigma$}
+\nt{$\eta$, $\detchar{\eta}{k}$, $\nu$, $\nu'$}{a Hecke character; the determinant character; norm-one adeles}
+\nt{$V$, $\mathcal{H}$, $\mathcal{W}_f(V)$, $\varrho_f$}{hermitian spaces; finite part; finite Heisenberg operators}
+\nt{$\projfin{V}{\Sigma'}$, $\nm{\Sigma}{F}$}{projection to vacua above \m{\Sigma'\cup\cj{\Sigma'}}; named operator}
+\nt{$\transum{I}{I'}{\Sigma}{N}{I''}$}{the sum of pairs of translates with denominator $N$}
+\nt{$\mathsf{p}$, $\zeta$, $Z$, $\Psi$, $X$}{in the proof of Theorem~B: an adele, a residue, tensors of functions,
+  functions, a matrix}
+\nt{$P=(N_0,d)$, $D$}{parameters; admissible data}
+\nt{$x$, $x_1$, $b$, $\mu$, $m$, $r$, $g_0$, $g_1$, $\pi_g$}{components of $D$ (also local letters, as said)}
+\nt{$\ND$, $\piN$, $\PiD$}{the level prime; \m{\piN\cj{\piN}=\ND}; the places dividing $\piN$}
+\nt{$f(D)$, $a(D)$, $n_j(D)$, $\varrho(D)$}{number of infinite places; a size; ranks; \m{m=2\varrho(D)+2}}
+\nt{$\XI{j}$, $\XIo{j}$, $X_j(D)$, $Y_m(D)$}{index sets; the definite spaces}
+\nt{$\Stg{j}$, $\Kcol{j}$, $\Col$, $\Colram$}{forms of stage $j$; its level; columns; ramified columns}
+\nt{$\nu_w$, $z_w$, $\mathfrak{p}$}{the central adele at a place of \m{\PiD}; its translation; such a place}
+\nt{$\resY$, $\bdU$, $B_D$, $\brE{\tau}$, $s$, $\lambda_\tau$}{restriction; \m{h\mapsto\operatorname{diag}(h,1)};
+  branching matrix; exponents; scalars}
+\nt{$\tau$, $\sigma$}{an infinite place with its embedding; a ring homomorphism \m{\CC\to\CC}}
+\nt{$\ell$, $\jm$, $\Oj$}{a prime; a ring homomorphism \m{\CC\to\CC_\ell}; its valuation ring in $\CC$}
+\nt{$\ind{\tau}$, $\evt{\tau}$}{the induced prime; evaluation of adeles at its conjugate}
+\nt{$\gauge{g}{u}$, $\Int{\mathcal{V}}{\mathsf{d}}$, $\wnorm{\cdot}$}{gauge; integral forms at a point; Gram norm}
+\nt{$\nonind{D}$, $\dpt{D}{j}$, $\Delta$, $\delta$}{non-induced places; the diagonal point; a diagonal matrix}
+\nt{$\cemb{D}{j}$, $\nrep{D}{j}$, $k^{\Delta}$}{conjugated embedding; the representation on stage $j$; conjugated
+  components}
+\nt{$\mathsf{d}$, $t(a)$, $e$}{a point; tableau counts; the exponent of Theorem~D}
+\nt{$\vartheta$, $Q(\vartheta)$, $\mu_{D,i}(\vartheta^{i})$, $\mu^{0}_{D,i}$}{a tame character, its set of places,
+  the characters of the lifts}
+\end{multicols}
+\endgroup
+
+\end{document}

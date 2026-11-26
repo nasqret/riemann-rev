@@ -1,0 +1,85 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Filling.FixedLines:19:7",
+ "summary": "Almost every element of LocProd(T) is a unit, and such an element of R that is not a unit of R is divisible, at some w ∈ T, by the uniformiser ϖ_w; so R ∖ R^× ⊆ ⋃_{w∈T} {x : ϖ_w⁻¹x ∈ R} up to a null set. Each of these sets has measure md(ϖ_w⁻¹)⁻¹ = q_w⁻¹ ≤ b(S)⁻¹⁰ (q_w is a level prime), and #T ≤ 2·#(chosen places) = 4f(E) ≤ b(S)/250, whence the bound b(S)⁻⁹.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "1000 ≤ b(S) (the field thousand_le_b of the filling data).",
+   "lines": [
+    22,
+    22
+   ],
+   "lean": "  have b := S.thousand_le_b"
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The first claim, 2 ≤ b(S)⁹, follows from 1000 ≤ b(S) (bound: 2 ≤ 1000⁹). For the second, by monotonicity of the measure up to null sets it suffices that almost every x ∈ R ∖ R^× lies in ⋃_{w∈T} {x : ϖ_w⁻¹·x ∈ R} (ϖ_w the unit of LocProd(T) equal to the uniformiser at w and to 1 elsewhere): a.e. x is a unit of LocProd(T) (P.ae_isUnit); if no ϖ_w⁻¹x were integral, every component x_j would have valuation 1, so x ∈ R^×, a contradiction (simp_all with v(ϖ_j⁻¹x_j) ≤ 1 ⟺ v(x_j) < 1).",
+   "lines": [
+    23,
+    27
+   ],
+   "lean": "  refine ⟨by grw [← b]; bound, .trans' ?_ (measure_mono_ae (t := ⋃ w, {x | (MulEquiv.piUnits.symm\n    (mulSingle w (uniformizer _)) : (LocProd T)ˣ)⁻¹.1 * x ∈ R}) (P.ae_isUnit.mono fun x ⟨y, u⟩ ⟨a,\n    n⟩ ↦ by_contra (n ⟨a, y, mem_O_locProd.2 fun j ↦ by_contra fun _ ↦ · ⟨_, ⟨j, rfl⟩,\n    mem_O_locProd.2 fun i ↦ by obtain rfl | _ := (eq_or_ne i j) <;> simp_all [mem_O_locProd,\n    v_uniformizer_inv_mul_le_one_iff, -map_mul, one_lt_inv_iff₀]⟩, u⟩)))⟩",
+   "ambient_uses": [
+    "MeasureTheory.measure_mono_ae"
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Subadditivity bounds vol(⋃_w) by ∑_{w∈T} vol{ϖ_w⁻¹x ∈ R}, each term being ≤ b(S)⁻¹⁰ (proved in steps 5–6), so by #T·b(S)⁻¹⁰; and #T ≤ 2·#(Σ_i chosenPlaces(S, i)) since T ⊆ ⋃_p {p, p̄} (hypothesis k) and each {p, p̄} has at most 2 elements.",
+   "lines": [
+    28,
+    30
+   ],
+   "lean": "  grw [measure_iUnion_fintype_le, sum_le_card_nsmul _ _ (.ofReal (S.b ^ 10)⁻¹) fun w _ ↦ ?_,\n    card_univ, card_coe, k, card_biUnion_le_card_mul _ _ 2 (by grind),\n    ← ofReal_nsmul, ← ofReal_inv_of_pos (by bound)]",
+   "ambient_uses": [
+    "MeasureTheory.measure_iUnion_fintype_le"
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The numerical inequality 2·(2f(E))·b(S)⁻¹⁰ ≤ b(S)⁻⁹ (#chosenPlaces(S, i) = f(E) for i = 0, 1): after gcongr and clearing denominators it is 4f(E) ≤ b(S), which bound derives from f(E) ≤ b(S)/1000 (f_le_b).",
+   "lines": [
+    31,
+    31
+   ],
+   "lean": "  gcongr; simp [S.card_chosenPlaces, field]; bound [S.f_le_b]"
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Each set has measure vol{x : ϖ_w⁻¹x ∈ R} = md(ϖ_w⁻¹)⁻¹ = [ϖ_w⁻¹] (md = [·]⁻¹), and the generalised index is the product of the inverse norms of the components, of which only the w-component differs from 1: it is ‖ϖ_w‖_w = q_w⁻¹ (norm_locField_eq_q_zpow).",
+   "lines": [
+    32,
+    33
+   ],
+   "lean": "  rw [volume_setOf_mul_mem, md_eq_inv_genIndex, genIndex_eq_inv_prod_norm,\n    Fintype.prod_eq_single w] <;> simp +contextual [norm_locField_eq_q_zpow, -FinPlace.q_bounds]",
+   "uses": [
+    {
+     "decl": "IntegralPlace.volume_setOf_mul_mem"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "w ∈ T lies in {p, p̄} for a chosen place p above some q_i(S); then q_w = q_p = levelPrime(S, i) (chosenPlaces_q, q_star) and b(S)¹⁰ ≤ levelPrime(S, i) (le_levelPrime), so q_w⁻¹ ≤ b(S)⁻¹⁰.",
+   "lines": [
+    34,
+    34
+   ],
+   "lean": "  cases' mem_biUnion.1 (k w.2) with p; grw [S.le_levelPrime p.1]; grind [chosenPlaces_q, q_star]"
+  }
+ ]
+}

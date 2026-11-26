@@ -1,0 +1,328 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Endgame.OneSidedCriterion:41:7",
+ "name": "IsPolar.eventually_moment_le",
+ "file": "New/Endgame/OneSidedCriterion.lean",
+ "file_sha256": "a36c9c112b0455f6e4d16a3b2c115cd33e2860b9bba5543082b91c0364ccb502",
+ "commit": "72fead102f663d5c7a407964a13dc0cf9d977207",
+ "summary": "The moments of e^(−3v)E are derivatives of Φ at 4 (differentiation under the integral sign); Φ's Taylor series at 4 converges at 4 + R because (s − 1)Φ is analytic on a disc of radius > 3 about 4.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Unpack IsPolar(E, r): E measurable (m), C with |E(v)| ≤ C·e^v (hC), Φ with the Laplace identity (e) and (s − 1)Φ(s) analytic near Re s ≥ 1 (A). The closed disc of radius 3 about 4 lies in {Re s ≥ 1} (Re s ≥ 4 − |s − 4|), where A gives analyticity; the set of points where (s − 1)Φ(s) is analytic is open, so a thickening of the compact disc lies in it: there is ε > 0 (o) with (s − 1)Φ(s) analytic at every point of the ε-thickening of the disc (D).",
+   "lines": [
+    43,
+    45
+   ],
+   "span": [
+    43,
+    69,
+    45,
+    77
+   ],
+   "lean": "h.elim fun m ⟨C, Φ, _, hC, e,\n      A, _⟩ ↦ ((isCompact_closedBall (1 + 3) 3).exists_thickening_subset_open (isOpen_analyticAt ..)\n      (A · <| by simpa using (re_le_norm _).trans ·)).elim fun ε ⟨o, D⟩ ↦ by",
+   "uses": [
+    {
+     "decl": "IsPolar"
+    }
+   ],
+   "ambient_uses": [
+    "IsCompact.exists_thickening_subset_open",
+    "isOpen_analyticAt"
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "setup",
+   "claim": "It suffices to treat every R with 3 < R < 3 + ε (a, b).",
+   "lines": [
+    46,
+    46
+   ],
+   "lean": "  filter_upwards [Ioo_mem_nhdsGT (by bound : 3 < ε + 3)] with R ⟨a, b⟩",
+   "uses": [
+    {
+     "step": "1"
+    }
+   ],
+   "ambient_uses": [
+    "Ioo_mem_nhdsGT"
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "setup",
+   "claim": "D now reads: (z − 1)Φ(z) is analytic at every point of the open disc of radius ε + 3 about 4 (the ε-thickening of the closed disc of radius 3 is the open disc of radius ε + 3).",
+   "lines": [
+    47,
+    47
+   ],
+   "lean": "  simp [o] at D",
+   "uses": [
+    {
+     "step": "1"
+    }
+   ],
+   "ambient_uses": [
+    "thickening_closedBall"
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "fact",
+   "claim": "J (differentiation under the integral sign): for every natural k and every s with Re s > 2, F(v) = (−v)^k·E(v)·e^((1−s)v) is integrable on (0, ∞) and Φ^(k)(s) = ∫_0^∞ (−v)^k E(v)e^((1−s)v) dv.",
+   "lines": [
+    49,
+    60
+   ],
+   "lean": "  have J k : ∀ s, 2 < re s → let F v := (-v) ^ k * E v * ((1 - s) * v).exp\n    IntegrableOn F (Ioi 0) ∧ iteratedDeriv k Φ s = ∫ v in Ioi 0, F v := by\n    induction' k with k ih <;> intro s hs; simp [integrableOn_laplace_of_abs_le m hC, *]\n    obtain ⟨⟨ε, o, q⟩, n⟩ := exists_pos_mul_lt (sub_pos.2 hs) 2, (isOpen_re_gt _).mem_nhds hs\n    have := hasDerivAt_integral_of_dominated_loc_of_deriv_le ((isOpen_re_gt _).mem_nhds\n      (lt_tsub_iff_right.1 q)) (.mono n (ih · · |>.1.1)) (ih s hs).1 (by fun_prop) (.mono\n      (self_mem_ae_restrict (by simp)) fun v u z j ↦ ?_) ((ih (ε + 2) (by simpa)).1.norm.div_const\n      ε) (.of_forall fun v z _ ↦ ((hasDerivAt_mul_const _).cexp.const_mul _).comp_const_sub ..)\n    · simpa [iteratedDeriv_succ, pow_succ, ← mul_assoc, mul_right_comm] using! this.imp id\n        (·.congr_of_eventuallyEq (.mono n (ih · · |>.2)) |>.deriv)\n    simp [abs_of_pos, le_div_iff₀, mul_assoc, *]\n    grw [← j.out, lt_add_one (v * ε), add_one_le_exp, ← Real.exp_add]; bound",
+   "head_lines": [
+    49,
+    50
+   ],
+   "typed_fact": "∀ s, 2 < re s → let F v := (-v) ^ k * E v * ((1 - s) * v).exp\n    IntegrableOn F (Ioi 0) ∧ iteratedDeriv k Φ s = ∫ v in Ioi 0, F v",
+   "uses": [
+    {
+     "step": "1"
+    }
+   ]
+  },
+  {
+   "id": "4.1",
+   "parent": "4",
+   "kind": "induction",
+   "claim": "Induction on k, for all s with Re s > 2 at once.",
+   "lines": [
+    51,
+    60
+   ],
+   "lean": "    induction' k with k ih <;> intro s hs; simp [integrableOn_laplace_of_abs_le m hC, *]\n    obtain ⟨⟨ε, o, q⟩, n⟩ := exists_pos_mul_lt (sub_pos.2 hs) 2, (isOpen_re_gt _).mem_nhds hs\n    have := hasDerivAt_integral_of_dominated_loc_of_deriv_le ((isOpen_re_gt _).mem_nhds\n      (lt_tsub_iff_right.1 q)) (.mono n (ih · · |>.1.1)) (ih s hs).1 (by fun_prop) (.mono\n      (self_mem_ae_restrict (by simp)) fun v u z j ↦ ?_) ((ih (ε + 2) (by simpa)).1.norm.div_const\n      ε) (.of_forall fun v z _ ↦ ((hasDerivAt_mul_const _).cexp.const_mul _).comp_const_sub ..)\n    · simpa [iteratedDeriv_succ, pow_succ, ← mul_assoc, mul_right_comm] using! this.imp id\n        (·.congr_of_eventuallyEq (.mono n (ih · · |>.2)) |>.deriv)\n    simp [abs_of_pos, le_div_iff₀, mul_assoc, *]\n    grw [← j.out, lt_add_one (v * ε), add_one_le_exp, ← Real.exp_add]; bound",
+   "head_lines": [
+    51,
+    51
+   ],
+   "head_span": [
+    51,
+    5,
+    51,
+    44
+   ],
+   "uses": []
+  },
+  {
+   "id": "4.1.1",
+   "parent": "4.1",
+   "kind": "case",
+   "claim": "k = 0: integrability is `integrableOn_laplace_of_abs_le` (from hC, Re s > 2) and Φ(s) = ∫ E(v)e^((1−s)v) dv is the Laplace identity e.",
+   "lines": [
+    51,
+    51
+   ],
+   "span": [
+    51,
+    44,
+    51,
+    89
+   ],
+   "lean": "simp [integrableOn_laplace_of_abs_le m hC, *]",
+   "uses": [
+    {
+     "decl": "integrableOn_laplace_of_abs_le"
+    }
+   ]
+  },
+  {
+   "id": "4.1.2",
+   "parent": "4.1",
+   "kind": "case",
+   "claim": "k → k + 1, assuming the claim for k (ih).",
+   "lines": [
+    52,
+    60
+   ],
+   "lean": "    obtain ⟨⟨ε, o, q⟩, n⟩ := exists_pos_mul_lt (sub_pos.2 hs) 2, (isOpen_re_gt _).mem_nhds hs\n    have := hasDerivAt_integral_of_dominated_loc_of_deriv_le ((isOpen_re_gt _).mem_nhds\n      (lt_tsub_iff_right.1 q)) (.mono n (ih · · |>.1.1)) (ih s hs).1 (by fun_prop) (.mono\n      (self_mem_ae_restrict (by simp)) fun v u z j ↦ ?_) ((ih (ε + 2) (by simpa)).1.norm.div_const\n      ε) (.of_forall fun v z _ ↦ ((hasDerivAt_mul_const _).cexp.const_mul _).comp_const_sub ..)\n    · simpa [iteratedDeriv_succ, pow_succ, ← mul_assoc, mul_right_comm] using! this.imp id\n        (·.congr_of_eventuallyEq (.mono n (ih · · |>.2)) |>.deriv)\n    simp [abs_of_pos, le_div_iff₀, mul_assoc, *]\n    grw [← j.out, lt_add_one (v * ε), add_one_le_exp, ← Real.exp_add]; bound",
+   "uses": []
+  },
+  {
+   "id": "4.1.2.1",
+   "parent": "4.1.2",
+   "kind": "witness",
+   "claim": "Choose ε′ > 0 with 2ε′ < Re s − 2 (o, q), and note that {Re z > 2} is a neighbourhood of s (n).",
+   "lines": [
+    52,
+    52
+   ],
+   "lean": "    obtain ⟨⟨ε, o, q⟩, n⟩ := exists_pos_mul_lt (sub_pos.2 hs) 2, (isOpen_re_gt _).mem_nhds hs",
+   "uses": [],
+   "ambient_uses": [
+    "exists_pos_mul_lt",
+    "isOpen_re_gt"
+   ]
+  },
+  {
+   "id": "4.1.2.2",
+   "parent": "4.1.2",
+   "kind": "fact",
+   "claim": "Differentiation under the integral sign (Mathlib's `hasDerivAt_integral_of_dominated_loc_of_deriv_le`, on the neighbourhood {Re z > 2 + 2ε′} of s): z ↦ ∫ (−v)^k E(v)e^((1−z)v) dv has derivative ∫ (−v)^(k+1) E(v)e^((1−s)v) dv at s, and the new integrand is integrable. Its inputs: measurability for z near s and integrability at s from ih, the pointwise derivative ∂_z((−v)^k E(v)e^((1−z)v)) = (−v)^(k+1)E(v)e^((1−z)v), and the domination by |F(2 + ε′, v)|/ε′ with F(z, v) = (−v)^k E(v)e^((1−z)v), integrable by ih at 2 + ε′ (the domination inequality itself is the hole proved in step 4.1.2.4).",
+   "lines": [
+    53,
+    56
+   ],
+   "lean": "    have := hasDerivAt_integral_of_dominated_loc_of_deriv_le ((isOpen_re_gt _).mem_nhds\n      (lt_tsub_iff_right.1 q)) (.mono n (ih · · |>.1.1)) (ih s hs).1 (by fun_prop) (.mono\n      (self_mem_ae_restrict (by simp)) fun v u z j ↦ ?_) ((ih (ε + 2) (by simpa)).1.norm.div_const\n      ε) (.of_forall fun v z _ ↦ ((hasDerivAt_mul_const _).cexp.const_mul _).comp_const_sub ..)",
+   "uses": [
+    {
+     "step": "4.1.2.1"
+    }
+   ],
+   "ambient_uses": [
+    "hasDerivAt_integral_of_dominated_loc_of_deriv_le"
+   ]
+  },
+  {
+   "id": "4.1.2.3",
+   "parent": "4.1.2",
+   "kind": "deduction",
+   "claim": "Hence the claim for k + 1: the integrand for k + 1 is integrable, and Φ^(k+1)(s), the derivative at s of Φ^(k) (which agrees near s with the integral for k, by ih), is the integral for k + 1.",
+   "lines": [
+    57,
+    58
+   ],
+   "lean": "    · simpa [iteratedDeriv_succ, pow_succ, ← mul_assoc, mul_right_comm] using! this.imp id\n        (·.congr_of_eventuallyEq (.mono n (ih · · |>.2)) |>.deriv)",
+   "uses": [
+    {
+     "step": "4.1.2.2"
+    },
+    {
+     "step": "4.1.2.1"
+    }
+   ],
+   "ambient_uses": [
+    "iteratedDeriv_succ",
+    "HasDerivAt.congr_of_eventuallyEq"
+   ]
+  },
+  {
+   "id": "4.1.2.4",
+   "parent": "4.1.2",
+   "kind": "fact",
+   "claim": "The domination inequality of step 4.1.2.2: for v > 0 and Re z > 2 + 2ε′, |(−v)^(k+1)E(v)e^((1−z)v)| ≤ |(−v)^k E(v)e^((1−(2+ε′))v)|/ε′, i.e. ε′v·e^((1 − Re z)v) ≤ e^((−1−ε′)v); this holds because ε′v < ε′v + 1 ≤ e^(ε′v) and ε′ + 1 − Re z ≤ −1 − ε′.",
+   "lines": [
+    59,
+    60
+   ],
+   "lean": "    simp [abs_of_pos, le_div_iff₀, mul_assoc, *]\n    grw [← j.out, lt_add_one (v * ε), add_one_le_exp, ← Real.exp_add]; bound",
+   "uses": [
+    {
+     "step": "4.1.2.1"
+    }
+   ],
+   "ambient_uses": [
+    "Real.add_one_le_exp"
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "setup",
+   "claim": "It suffices to take t ≥ C (c) and t ≥ T (d), where T is the sum of the norms of the Taylor terms of Φ at 4 evaluated at 4 + R, ∑_k ‖(k!)^(−1)R^k Φ^(k)(4)‖ (the summand is fixed by step 7, where it is used).",
+   "lines": [
+    61,
+    61
+   ],
+   "lean": "  filter_upwards [mem_atTop C, mem_atTop (tsum _)] with t c d",
+   "uses": [],
+   "ambient_uses": [
+    "Filter.mem_atTop"
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "The bound |E(v)| ≤ C·e^v ≤ t·e^v (hC, c); and for every k apply J at s = 4: v ↦ (−v)^k E(v)e^(−3v) is integrable (i) and Φ^(k)(4) = ∫_0^∞ (−v)^k E(v)e^(−3v) dv (j); it remains to show integrability of F_k and |∫F_k| ≤ k!·t/R^k.",
+   "lines": [
+    62,
+    62
+   ],
+   "lean": "  use (by grw [hC · ·, c]), fun k ↦ (J k 4 (by norm_num)).rec fun i j ↦ (?_ : _ ∧ _)",
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "step": "5"
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "‖(k!)^(−1)R^k Φ^(k)(4)‖ ≤ T ≤ t: the Taylor series of Φ at 4 converges absolutely at σ = 4 + R (`summable_taylor_of_removable`: H(z) = (z − 1)Φ(z) is analytic on the disc of radius ε + 3 about 4, which contains 1 and 4 + R since R < ε + 3, and 4 ≠ 1; moreover H(1) = 0, because Φ is a function defined at 1 — analyticity of H alone would allow a simple pole of Φ at 1 —, so Φ agrees off 1 with a function holomorphic on the whole disc, H(z)/(z − 1) extended across 1, whose derivatives at 4 are those of Φ), so each term is at most the sum.",
+   "lines": [
+    63,
+    64
+   ],
+   "lean": "  grw [← d,\n    ← (summable_taylor_of_removable (1 + 3 + R) D (by simp; grind)).norm.le_tsum k (by bound)]",
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "step": "2"
+    },
+    {
+     "step": "5"
+    },
+    {
+     "decl": "summable_taylor_of_removable"
+    }
+   ],
+   "ambient_uses": [
+    "Summable.norm",
+    "Summable.le_tsum"
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "identity",
+   "claim": "Simplify: (−v)^k = (−1)^k v^k and constants leave the integral, so i and the goal speak of v^k e^(−3v)E(v), and |Φ^(k)(4)| = |∫_0^∞ F_k|.",
+   "lines": [
+    65,
+    66
+   ],
+   "lean": "  norm_num [j, neg_pow (ofReal _), mul_assoc, integrable_const_mul_iff, IntegrableOn,\n    mul_comm (ofReal _)] at i ⊢",
+   "uses": [
+    {
+     "step": "6"
+    }
+   ]
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Conclude: F_k is integrable (the real part of the integrable complex function), and |∫_0^∞ F_k| = |Φ^(k)(4)| ≤ k!·t/R^k by step 7.",
+   "lines": [
+    67,
+    67
+   ],
+   "lean": "  use mod_cast i.re, mod_cast by simp [field]; bound",
+   "uses": [
+    {
+     "step": "7"
+    },
+    {
+     "step": "8"
+    }
+   ]
+  }
+ ]
+}

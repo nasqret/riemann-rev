@@ -1,0 +1,1070 @@
+% !TEX program = lualatex
+% ---------------------------------------------------------------------------------------------
+%  Readback note 5: The parameters and the CM field: places, Frobenius elements, the different
+%
+%  Build:  python3 tools/rb.py note <slug>
+%
+%  One unit of a Lean artifact, rewritten as ordinary mathematics. The prose is hand-written. Lean names,
+%  line ranges and counts come from data.tex; quoted Lean statements are copied from the artifact by the build.
+%
+%  Rules of the text: standard terminology; every symbol is explained where it first appears and listed again
+%  in the notation at the end; no letter has two meanings; a proof is complete or says what it takes for granted;
+%  Lean names appear only in the LEAN lines and in the concordance.
+%
+%  The signature rule (the build enforces it): a function, relation or predicate that the artifact defines is
+%  written only through its notation macro, which the build makes from the spec (`notation`) with one slot for
+%  each explicit argument of the Lean definition. No argument is fixed and dropped, also not "for brevity" and
+%  not for one section. Every argument and every hypothesis of a stated declaration stands inside its
+%  statement, or in a Setting that the statement cites by number; only implicit and instance arguments (the
+%  ambient objects) may stand in the conventions.
+% ---------------------------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\ifdefined\pdfvariable\pdfvariable suppressoptionalinfo \numexpr 1+2+4+8\relax\fi
+\usepackage[a4paper,hmargin=35mm,top=22mm,bottom=27mm,footskip=12mm,nohead]{geometry}
+
+\usepackage{fontspec}
+\directlua{
+  luaotfload.add_fallback("gfallback", {"STIXTwoMath-Regular.otf:mode=node;", "DejaVuSans.ttf:mode=node;"})
+  luaotfload.add_fallback("gmonofallback", {"DejaVuSansMono.ttf:mode=node;", "STIXTwoMath-Regular.otf:mode=node;"})
+}
+\setmainfont{NewCM10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookItalic,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldItalic,SmallCapsFont=*-Book,SmallCapsFeatures={Letters=SmallCaps},
+  RawFeature={fallback=gfallback}]
+\setsansfont{NewCMSans10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookOblique,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldOblique,RawFeature={fallback=gfallback}]
+\setmonofont{JetBrainsMono}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,Scale=MatchLowercase,
+  RawFeature={-calt;-liga;fallback=gmonofallback}]
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage[math-style=TeX]{unicode-math}
+\setmathfont{NewCMMath-Book.otf}
+\emergencystretch=2.5em\relax
+
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows.meta,positioning,backgrounds}
+\usepackage[protrusion=true,expansion=true]{microtype}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{multicol}
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+
+\definecolor{ink}{HTML}{0F172A}
+\definecolor{inksoft}{HTML}{475569}
+\definecolor{inkfaint}{HTML}{94A3B8}
+\definecolor{rulegrey}{HTML}{CBD5E1}
+\definecolor{arith}{HTML}{C2410C}
+\definecolor{est}{HTML}{7C3AED}
+\definecolor{ana}{HTML}{0891B2}
+\definecolor{ok}{HTML}{047857}
+\definecolor{leancol}{HTML}{3730A3}
+
+\title{The parameters and the CM field: places, Frobenius elements, the different}
+\author{grh-compact}
+\date{}
+
+% ------------------------------------------------------------------------------------- macros
+\newcommand{\leanfont}{\ttfamily\fontsize{8.6}{10.5}\selectfont\color{leancol}}
+\newcommand{\lean}[1]{\csname LN@#1\endcsname}
+\newcommand{\fillin}[1]{{\color{arith}\itshape[#1]}}  % a place of the template that is not written yet; the build reports every one that is left
+\newcommand{\leanquote}[1]{\csname LQ@#1\endcsname}
+\input{data.tex}
+
+\linespread{1.08}                       % 11 pt on 14.7 pt
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt plus 1.5pt minus 0.5pt}
+\setlength{\abovedisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\belowdisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\abovedisplayshortskip}{3pt plus 2pt}
+\setlength{\belowdisplayshortskip}{6pt plus 2pt minus 2pt}
+\emergencystretch=1.5em
+\clubpenalty=10000 \widowpenalty=10000 \displaywidowpenalty=10000
+\relpenalty=7000 \binoppenalty=9000
+\raggedbottom
+\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\sffamily\fontsize{7.6}{9}\selectfont\color{inkfaint}\thepage\,/\,\pageref*{LastPage}}
+\setlist{topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=4pt,leftmargin=2.1em,labelsep=0.55em}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\len}{\operatorname{len}}
+\newcommand{\cok}{\operatorname{cok}}
+\newcommand{\End}{\operatorname{End}}
+\newcommand{\Hom}{\operatorname{Hom}}
+\newcommand{\Gal}{\operatorname{Gal}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\kw}[1]{\emph{#1}}
+\newcommand{\m}[1]{\mbox{$#1$}}        % a short formula that must not be broken across lines
+\newcommand{\head}[1]{\par\addvspace{17pt plus 4pt minus 2pt}\Needspace{6\baselineskip}%
+  \noindent{\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\sect}[2]{\refstepcounter{section}\label{#2}\par\addvspace{19pt plus 4pt minus 2pt}\Needspace{7\baselineskip}%
+  \noindent\llap{{\fontsize{13.2}{16}\selectfont\bfseries\color{inkfaint}\thesection}\hspace{9pt}}%
+  {\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\subhead}[1]{\par\addvspace{9pt plus 2pt}\Needspace{4\baselineskip}\noindent\textbf{#1}\enspace\ignorespaces}
+% where a statement lives in the Lean archive
+\newcommand{\leantag}{{\sffamily\bfseries\fontsize{6.3}{8}\selectfont\color{leancol}\addfontfeatures{LetterSpace=7}LEAN}}
+\newcommand{\sep}{\unskip\nobreak\hspace{5pt}{\color{inkfaint}\textperiodcentered}\hspace{5pt plus 2pt}\ignorespaces}
+\newcommand{\leanline}[1]{\par\nopagebreak\vspace{-2.5pt}{\fontsize{8.9}{12.4}\selectfont\color{inksoft}\raggedright
+  \noindent\llap{\leantag\hspace{9pt}}#1\par}\vspace{1pt}}
+% a displayed statement in a tinted box: #1 colour, #2 text
+\newcommand{\statement}[2]{\par\addvspace{7pt}\begingroup\setlength{\fboxsep}{8.5pt}\setlength{\fboxrule}{0.6pt}%
+  \noindent\fcolorbox{#1!30!white}{#1!3!white}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{#2}}%
+  \endgroup\par\addvspace{7pt}}
+\newcommand{\nt}[2]{\par\noindent\hangindent=1.1em\hangafter=1 #1\enspace{\color{inksoft}#2}\par\vspace{1pt}}
+\newcommand{\legdot}[1]{\tikz[baseline=-0.62ex]\fill[#1] (0,0) circle (2.5pt);\hspace{3pt}}
+\newcommand{\crow}[4]{\csname CS@#1\endcsname & #2 & \textcolor{inksoft}{#3} & \textcolor{inksoft}{#4}\\}
+\newcommand{\leanquoteline}[2]{\par\noindent\hangindent=\dimexpr#1\fontdimen2\font+2.2em\relax\hangafter=1
+  \hspace*{#1\fontdimen2\font}#2}
+\newcommand{\quoted}[1]{\par\vspace{3pt}{\ttfamily\fontsize{7.5}{10.4}\selectfont\color{leancol}\raggedright
+  \setlength{\parskip}{0pt}\leanquote{#1}\par}\vspace{4pt}}
+\newcommand{\bx}[3]{{\sffamily\bfseries\fontsize{7.3}{9.2}\selectfont\color{#1!82!black}#2}\\[1.5pt]#3}
+\newcommand{\cs}[2]{\expandafter\newcommand\csname CS@#1\endcsname{#2}}
+
+% theorems
+\newtheoremstyle{plainx}{7pt plus 2pt}{7pt plus 2pt}{\itshape}{}{\bfseries}{.}{0.5em}{}
+\newtheoremstyle{uprightx}{7pt plus 2pt}{7pt plus 2pt}{}{}{\bfseries}{.}{0.5em}{}
+\theoremstyle{plainx}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{uprightx}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{setting}[theorem]{Setting}          % hypotheses shared by several statements; each of them cites it by number
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\renewcommand{\qedsymbol}{{\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.5pt}\fbox{\rule{0pt}{0.46em}\hspace{0.46em}}}}
+% what holds throughout the note: the ambient objects only (implicit and instance arguments), never a hypothesis
+\newenvironment{conventions}{\par\addvspace{5pt}\noindent\textbf{Conventions.}\enspace\ignorespaces}{\par\addvspace{3pt}}
+\makeatletter
+\renewenvironment{proof}[1][Proof]{\par\pushQED{\qed}\normalfont\topsep0pt\partopsep0pt
+  \trivlist\item[\hskip\labelsep\itshape #1.]\ignorespaces}{\popQED\endtrivlist\@endpefalse}
+\makeatother
+
+% where each declaration of the concordance is treated: \cs{key}{place}, the place naming a \label or a lettered item
+\cs{par}{Definition~\ref{d:par}}
+\cs{twd}{Definition~\ref{d:tw}}
+\cs{Nn}{Definition~\ref{d:tw}}
+\cs{KP}{Definition~\ref{d:tw}}
+\cs{Mom}{Definition~\ref{d:tw}}
+\cs{heeg}{Lemma~\ref{l:arith}}
+\cs{ltd}{Lemma~\ref{l:arith}}
+\cs{dvdnorm}{Lemma~\ref{l:arith}}
+\cs{chione}{Lemma~\ref{l:arith}}
+\cs{thirteen}{Lemma~\ref{l:arith}}
+\cs{NdM}{Lemma~\ref{l:arith}}
+\cs{coprime}{Lemma~\ref{l:arith}}
+\cs{twopow}{Lemma~\ref{l:arith}}
+\cs{powd}{Lemma~\ref{l:powd}}
+\cs{EP}{Definition~\ref{d:E}}
+\cs{PlP}{Definition~\ref{d:E}}
+\cs{rtu}{Definition~\ref{d:E}}
+\cs{OmP}{Definition~\ref{d:E}}
+\cs{primrt}{Definition~\ref{d:E}}
+\cs{irr}{Lemma~\ref{l:irr}}
+\cs{tocyc}{Lemma~\ref{l:cyclo}}
+\cs{embeq}{Lemma~\ref{l:emb}}
+\cs{galP}{Definition~\ref{d:group}}
+\cs{cycP}{Definition~\ref{d:group}}
+\cs{pin}{Definition~\ref{d:group}}
+\cs{pcl}{Definition~\ref{d:group}}
+\cs{phialg}{Lemma~\ref{l:dict}}
+\cs{phimul}{Lemma~\ref{l:dict}}
+\cs{starrt}{Lemma~\ref{l:dict}}
+\cs{galrt}{Theorem A}
+\cs{pinpow}{Lemma~\ref{l:dict}}
+\cs{clpin}{Lemma~\ref{l:dict}}
+\cs{galpin}{Theorem A}
+\cs{clneg}{Lemma~\ref{l:dict}}
+\cs{expandpow}{Theorem A}
+\cs{expandtw}{Theorem A}
+\cs{cardPl}{Theorem A}
+\cs{cardcl}{Theorem A}
+\cs{prm}{Definition~\ref{d:perm}}
+\cs{prmspec}{Lemma~\ref{l:perm}}
+\cs{roots}{Lemma~\ref{l:roots}}
+\cs{prodphi}{Lemma~\ref{l:roots}}
+\cs{rti}{Definition~\ref{d:ints}}
+\cs{czE}{Definition~\ref{d:ints}}
+\cs{sqd}{Definition~\ref{d:ints}}
+\cs{dgen}{Definition~\ref{d:ints}}
+\cs{coert}{Definition~\ref{d:ints}}
+\cs{primrti}{Definition~\ref{d:ints}}
+\cs{coesq}{Definition~\ref{d:ints}}
+\cs{starsq}{Lemma~\ref{l:ints}}
+\cs{starrtpow}{Lemma~\ref{l:ints}}
+\cs{sqdvd}{Lemma~\ref{l:ints}}
+\cs{czmul}{Lemma~\ref{l:ints}}
+\cs{starcz}{Lemma~\ref{l:ints}}
+\cs{relspec}{Theorem C}
+\cs{dgendvd}{Lemma~\ref{l:dif}}
+\cs{dgenne}{Lemma~\ref{l:dif}}
+\cs{difmul}{Theorem C}
+\cs{condmem}{Lemma~\ref{l:dif}}
+\cs{unitreal}{Lemma~\ref{l:real}}
+\cs{vpi}{Definition~\ref{d:varpi}}
+\cs{starvpi}{Lemma~\ref{l:varpi}}
+\cs{difvpi}{Theorem C}
+\cs{prodvpi}{Theorem C}
+\cs{absvpi}{Lemma~\ref{l:varpi}}
+\cs{galv}{Definition~\ref{d:frob}}
+\cs{coegal}{Definition~\ref{d:frob}}
+\cs{memsmul}{Definition~\ref{d:frob}}
+\cs{Frb}{Definition~\ref{d:frob}}
+\cs{copNz}{Lemma~\ref{l:frobext}}
+\cs{frobext}{Lemma~\ref{l:frobext}}
+\cs{frobpow}{Lemma~\ref{l:frobpow}}
+\cs{decomp}{Theorem B}
+\cs{qpow}{Theorem B}
+\cs{notsq}{Lemma~\ref{l:unram}}
+\cs{valp}{Lemma~\ref{l:unram}}
+\cs{transit}{Lemma~\ref{l:trans}}
+\cs{inertnd}{Lemma~\ref{l:inert}}
+\cs{inertfix}{Lemma~\ref{l:inert}}
+\cs{inertstar}{Lemma~\ref{l:inert}}
+\cs{inertq}{Lemma~\ref{l:inert}}
+\cs{splitchi}{Lemma~\ref{l:split}}
+\cs{splitnd}{Lemma~\ref{l:split}}
+\cs{splitfr}{Lemma~\ref{l:split}}
+\cs{splitne}{Lemma~\ref{l:split}}
+\cs{splitfix}{Lemma~\ref{l:split}}
+\cs{splitq}{Lemma~\ref{l:split}}
+\cs{starmem}{Lemma~\ref{l:norm}}
+\cs{valnorm}{Lemma~\ref{l:norm}}
+\cs{bij}{Proposition~\ref{p:bij}}
+\cs{valmap}{Lemma~\ref{l:valmap}}
+\cs{alP}{Definition~\ref{d:alpha}}
+\cs{alinv}{Lemma~\ref{l:alpha}}
+\cs{valpha}{Lemma~\ref{l:alpha}}
+\cs{Nal}{Lemma~\ref{l:alpha}}
+\cs{weil}{Proposition~\ref{p:weil}}
+
+% ------------------------------------------------------------------ macros of this note that are not notations of
+% defined functions (those are made by the build, in data.tex, from the spec)
+\newcommand{\OO}{\mathcal{O}}
+\newcommand{\CC}{\mathbb{C}}
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\NN}{\mathbb{N}}
+\newcommand{\Dif}{\mathfrak{D}}
+\newcommand{\Cy}[1]{\Psi_{#1}}                 % the cyclotomic polynomial
+\newcommand{\chiK}[1]{\chi_{\KP{#1}}}         % the quadratic character of K(P)
+\newcommand{\emb}[1]{\iota_{#1}}              % the chosen embedding at an infinite place
+\newcommand{\cj}[1]{\overline{#1}}
+\newcommand{\ord}{\operatorname{ord}}
+\newcommand{\Nm}{\operatorname{N}}
+\newcommand{\Aut}{\operatorname{Aut}}
+\newcommand{\GL}{\operatorname{GL}}
+% components of the data D (fields of the record; not declarations of their own)
+\newcommand{\Dm}[1]{m(#1)}
+\newcommand{\Dr}[1]{r(#1)}
+\newcommand{\Dmu}[1]{\mu(#1)}
+\newcommand{\thick}[1]{\operatorname{thick}(#1)}
+\newcommand{\Dg}[2]{g_{#1}(#2)}
+\newcommand{\Dpig}[1]{\pi_g(#1)}
+\newcommand{\ordch}[1]{\operatorname{ord}_{\mathrm{ch}}(#1)}
+\newcommand{\Kch}[2]{K_{\mathrm{ch}}(#1,#2)}
+\newcommand{\rdE}[2]{\operatorname{rd}_{\EP{#1}{#2}}}
+
+\begin{document}
+\color{ink}
+
+{\raggedright
+{\sffamily\bfseries\fontsize{7.2}{9}\selectfont\color{leancol}\addfontfeatures{LetterSpace=8}READBACK NOTE 5 \textperiodcentered{} CHAPTER III, FIRST PART\par}
+\vspace{5pt}
+{\fontsize{21.5}{25.5}\selectfont\bfseries The parameters and the CM field: places, Frobenius elements, the different\par}
+\vspace{5pt}
+{\fontsize{12.4}{16}\selectfont\itshape\color{inksoft} One unit of the Lean artifact \ArtifactName, read back into
+mathematics\par}}
+\vspace{8pt}
+{\color{rulegrey}\hrule height 0.6pt}
+\vspace{7pt}
+\thispagestyle{empty}
+
+\textbf{Summary.} The argument works over one family of number fields. The parameters $P=(N_0,d)$ are a multiple
+$N_0$ of $18480$ and a prime $d\equiv N_0/2-1\bmod N_0$; they give the imaginary quadratic field
+$\KP{P}=\Q(\sqrt{-d})$ and, for every exponent $\mu$, the CM field $\EP{P}{\mu}$ obtained by adjoining a root of
+unity of order $\Nn{P}{\mu}=N_0\cdot3^{\lfloor\log_3\mu\rfloor+5}\cdot2^{\mu}$. This note sets up the arithmetic of
+these fields: the infinite places of $\EP{P}{\mu}$ form a group, identified with its Galois group over $\KP{P}$ and
+with the units modulo $\Nn{P}{\mu}$ (Theorem~A); the decomposition of a prime is read from an explicit Frobenius
+element (Theorem~B); the ring of integers is generated by the root of unity and $(1+\sqrt{-d})/2$, and the different
+is principal, generated by a purely imaginary integer the geometric mean of whose absolute values at the infinite
+places is the root discriminant (Theorem~C). From these the note builds the data that the Weil representation over $\EP{P}{\mu}$ needs.
+
+\statement{leancol}{\fontsize{9.6}{13.2}\selectfont\textbf{What this note is.} The artifact \ArtifactName{} is a
+body of Lean code whose final theorems state the Riemann hypothesis and its analogue for Dirichlet $L$-functions.
+That is a claim: its authors report that Lean's kernel accepts the code; a replay of that check by the owner of
+this write-up was started, and the handout's record of checks gives its state; nothing was compiled for this note;
+no mathematician has read the proof through. This note treats one part of one unit (the folder of the data of the proof): \UnitInNote{} of its
+\UnitMembers{} declarations, those of the two files on the parameters, the CM field and its Weil data; the note
+\emph{Admissible data} treats the rest. Every statement below was compared, argument by argument, with the Lean
+text, and every proof is given in full, except that results of the background library are quoted as \emph{Inputs}
+with their place in the artifact. The Lean text read is \PinText; Appendix~A is the concordance of \ConcDecls{}
+declarations.}
+
+\sect{The statements}{s:intro}
+The notation is that of Section~\ref{s:setting}: $P=(N_0,d)$ are parameters, $\mu$ is a natural number,
+$\Nn{P}{\mu}=N_0\,\twd{\mu}$ is the order of the root of unity $\rtu{P}{\mu}$ of the field $\EP{P}{\mu}$ over
+$\KP{P}=\Q(\sqrt{-d})$, and $\PlP{P}{\mu}$ is the set of infinite places of $\EP{P}{\mu}$, a group by
+Definition~\ref{d:group}.
+
+\statement{arith}{\phantomsection\label{t:A}\textbf{Theorem A (places, automorphisms, classes).}\enspace Let $P=(N_0,d)$
+be parameters and $\mu$ a natural number.
+\begin{enumerate}[label=(\alph*)]
+\item For every infinite place $v\in\PlP{P}{\mu}$, the automorphism $\galP{P}{\mu}(v)$ of $\EP{P}{\mu}$ over $\KP{P}$
+sends $\rtu{P}{\mu}$ to $\rtu{P}{\mu}^{\,n}$, where $n\in\{0,\dots,\Nn{P}{\mu}-1\}$ represents the class
+$\cycP{P}{\mu}(v)\in(\Z/\Nn{P}{\mu})^\times$.
+\item For every integer $\nu$ prime to $N_0$, the automorphism $\galP{P}{\mu}(\pin{P}{\mu}{\nu})$ sends
+$\rtu{P}{\mu}$ to $\rtu{P}{\mu}^{\,\nu}$.
+\item $\EP{P}{\mu}$ has exactly $\twd{\mu}\,\varphi(N_0)$ infinite places, $\varphi$ being Euler's function.
+\item Exactly $\twd{\mu}$ places $v\in\PlP{P}{\mu}$ have class $1$ modulo $N_0$, that is
+$\pcl{P}{N_0\mid\Nn{P}{\mu}}(v)=1$.
+\end{enumerate}}
+
+\statement{arith}{\phantomsection\label{t:B}\textbf{Theorem B (decomposition of primes).}\enspace Let $P=(N_0,d)$ be
+parameters, $\mu$ a natural number, $p$ a prime number with $p\nmid\Nn{P}{\mu}\,d$, and $w$ a finite place of
+$\EP{P}{\mu}$ with $p\in w$. Let $v\in\PlP{P}{\mu}$, and let $(\mathfrak{c},e)$ be one of the two pairs
+$(\mathrm{id},1)$ and $(\text{complex conjugation},-1)$, where $\mathfrak{c}$ is an automorphism of the ring of
+integers of $\EP{P}{\mu}$ and $e$ an integer.
+\begin{enumerate}[label=(\alph*)]
+\item $v\cdot w=\mathfrak{c}^{-1}(w)$ if and only if there is a natural number $n$ with
+$(v,e)=\Frb{\mu}{p}^{\,n}$ in $\PlP{P}{\mu}\times\Z$. Here $\mathfrak{c}^{-1}(w)$ is $w$ for the first pair and the
+conjugate place $\cj{w}$ for the second.
+\item The norm of $w$ is $p^{\,o}$, where $o$ is the order of the Frobenius element $\Frb{\mu}{p}$ in
+$\PlP{P}{\mu}\times\Z$.
+\end{enumerate}}
+
+\statement{arith}{\phantomsection\label{t:C}\textbf{Theorem C (integers and the different).}\enspace Let $P=(N_0,d)$ be
+parameters and $\mu$ a natural number; write $\OO$ for the ring of integers of $\EP{P}{\mu}$ and $\OO_K$ for that of
+$\KP{P}$.
+\begin{enumerate}[label=(\alph*)]
+\item Let $z\in\OO$ be a primitive root of unity of order $\Nn{P}{\mu}$ and $y=\Cy{\Nn{P}{\mu}}'(z)$ the value at $z$
+of the derivative of the cyclotomic polynomial of that order. Then $y$ divides $\Nn{P}{\mu}$ in $\OO$, the ideal
+$(y)$ is the different of $\OO$ over $\OO_K$, and $\OO=\OO_K[z]$.
+\item The different of $\OO$ over $\Z$ is the principal ideal generated by $\dgen{P}{\mu}\cdot\sqd{P}{\mu}$, and
+also by the purely imaginary integer $\vpi{P}{\mu}$ of Definition~\ref{d:varpi}.
+\item $\prod_{v\in\PlP{P}{\mu}}|\emb{v}(\vpi{P}{\mu})|=\rdE{P}{\mu}^{\,\#\PlP{P}{\mu}}$, where $\rdE{P}{\mu}$ is the root discriminant of $\EP{P}{\mu}$.
+\end{enumerate}}
+
+\textbf{Why these parameters.} The explanations of this paragraph are motivation, read from the comments of the
+formal text and from the places where later units use the results; they are not statements of this unit. The
+congruence on $d$ does two things. First, $d\equiv-1$ modulo $N_0/2$ and $8\mid N_0/2$ make every prime $p$ that
+divides $\Nn{P}{\mu}$ a divisor of $(d+1)/4$, the norm of $(1+\sqrt{-d})/2$. So all these primes split in $\KP{P}$,
+into the prime above $p$ that contains $(1+\sqrt{-d})/2$ and its conjugate, and the different of $\EP{P}{\mu}$ over
+$\KP{P}$, which lives above these primes, can be divided between an idele and its conjugate
+(Lemma~\ref{l:alpha}); this is the self-duality that the Weil representation asks for. Second,
+$d\not\equiv-1$ modulo $N_0$ itself makes the powers of $d$ modulo $N_0$ avoid $-1$ (Lemma~\ref{l:powd}). For a
+natural number $n$ and a place $v$, the place $\pin{P}{\mu}{-d^{\,n}}\cdot v$ then never has the class of $v$
+modulo $N_0$: the ramified prime $d$ never relates two places of the same class, and later units use this. (The
+prime $d$ does occur in the prime sums of the main inequality: $d^2\equiv1\bmod N_0$ by the proof of
+Lemma~\ref{l:powd}.) The divisibility by $18480=2^4\cdot3\cdot5\cdot7\cdot11$ makes every prime below $13$ split in
+$\KP{P}$ (Lemma~\ref{l:arith}(c)); with the factor $3^5$ of $\twd{\mu}$ it puts the roots of unity of order
+$5040=2^4\cdot3^2\cdot5\cdot7$ into $\EP{P}{\mu}$. The order of the root of unity grows with $\mu$ only by powers of $2$ and $3$, so that the count of
+places is exact (Theorem~A(c), (d)) and the group of places has a large cyclic $2$-part, where the note
+\emph{Admissible data} builds the thick places.
+
+\sect{The setting}{s:setting}
+\begin{conventions}\phantomsection\label{c:conventions}
+$\NN=\{0,1,2,\dots\}$. For a number field $F$, a \emph{finite place} is a nonzero prime ideal of its ring of
+integers, and an \emph{infinite place} is an archimedean absolute value; the place of an embedding
+$\psi\colon F\to\CC$ is $x\mapsto|\psi(x)|$. A CM field carries its complex conjugation $x\mapsto\cj{x}$, which
+every embedding into $\CC$ turns into complex conjugation; it acts on the finite places, $\cj{w}=\{\cj{x}:x\in w\}$.
+$\Cy{M}$ is the cyclotomic polynomial of order $M$, the monic integral polynomial whose complex roots are the
+primitive roots of unity of order $M$. Three letters are local to this note: $\psi$, $\psi'$ are embeddings of
+fields and homomorphisms of rings, and $\Psi$ occurs only in $\Cy{M}$; the columns $\psi$ of the overview of the
+handout and the additive character $\Psi$ of Chapter~IV do not occur here. In a statement about a commutative ring $R$ of characteristic $p$, or an
+integral domain $R$, these properties of $R$ are part of the statement. Divisibility, floors and subtraction of
+natural numbers are those of $\NN$, as in the formal text.
+\end{conventions}
+
+\begin{definition}[Parameters]\label{d:par}
+\emph{Parameters} are a pair $P=(N_0,d)$ of natural numbers such that $18480$ divides $N_0$, $d$ is a prime number,
+$N_0$ divides $2(d+1)$, and $N_0$ does not divide $d+1$. Since $N_0$ is even, the last two conditions say together
+that $d\equiv N_0/2-1\bmod N_0$.
+\end{definition}
+\leanline{\lean{par}}
+
+\begin{definition}[The order of the root of unity]\label{d:tw}
+For a natural number $\mu$ put $\twd{\mu}=3^{\lfloor\log_3\mu\rfloor+5}\cdot2^{\mu}$, where
+$\lfloor\log_3 0\rfloor=0$. For parameters $P=(N_0,d)$ and a natural number $\mu$ put
+\[\Nn{P}{\mu}=N_0\cdot\twd{\mu},\qquad\Mom{P}{\mu}=(N_0\,d)^{\mu+6},\]
+and let $\KP{P}=\Q(\mathrm{i}\sqrt d)\subset\CC$ be the imaginary quadratic field $\Q(\sqrt{-d})$, as a subfield of the
+complex numbers. Its quadratic character $\chiK{P}$ is, on the integers, the Legendre symbol modulo $d$ (so
+$\chiK{P}(d)=0$); in the formal text it is a function of $d$.
+\end{definition}
+\leanline{\lean{twd}\sep\lean{Nn}\sep\lean{KP}\sep\lean{Mom}}
+
+The power of $3$ in $\twd{\mu}$ lies between $81\mu$ and $243\mu$ for $\mu\ge1$. The number $\Mom{P}{\mu}$ will be the
+order of certain characters of residue fields in later units; here only Lemma~\ref{l:arith}(d) concerns it.
+
+\begin{definition}[The CM field, its places, its root of unity]\label{d:E}
+Let $P=(N_0,d)$ be parameters and $\mu$ a natural number. $\EP{P}{\mu}$ is the splitting field over $\KP{P}$ of
+the cyclotomic polynomial $\Cy{\Nn{P}{\mu}}$ (in it $X^{\Nn{P}{\mu}}-1$ splits as well), and $\rtu{P}{\mu}\in\EP{P}{\mu}$ is a chosen primitive root of unity of order
+$\Nn{P}{\mu}$; so $\EP{P}{\mu}=\KP{P}(\rtu{P}{\mu})$. $\PlP{P}{\mu}$ is the set of infinite places of $\EP{P}{\mu}$.
+Finally
+\[\OmP{P}{\mu}=\exp\bigl(\mathrm{cs}(d)\bigr)\cdot\frac{2\pi}{\rdE{P}{\mu}},\]
+where $\rdE{P}{\mu}$ is the root discriminant of $\EP{P}{\mu}$ (the absolute value of its discriminant, raised to
+the power one over its degree) and $\mathrm{cs}(d)$ is Euler's constant minus the real part of the logarithmic derivative
+at $1$ of the entire Dirichlet series of $\chiK{P}$ (its $L$-function made entire) (a definition of the library, unit~106).
+\end{definition}
+\leanline{\lean{EP}\sep\lean{PlP}\sep\lean{rtu}\sep\lean{primrt}\sep\lean{OmP}}
+
+The number $\OmP{P}{\mu}$ is a period: later units measure theta functions against it. This unit only defines it.
+
+\sect{The parameters}{s:par}
+\begin{lemma}[Arithmetic of the parameters]\label{l:arith}
+Let $P=(N_0,d)$ be parameters and $\mu$ a natural number.
+\begin{enumerate}[label=(\alph*)]
+\item $d\equiv7\bmod8$, and $64<d$.
+\item If $p$ is a prime number dividing $\Nn{P}{\mu}$, then $p$ divides $(d+1)/4$, and $\chiK{P}(p)=1$.
+\item If $p$ is a prime number with $\chiK{P}(p)\ne1$, then $13\le p$.
+\item $\Nn{P}{\mu}$ and $d$ are coprime; $2^{\mu+1}$ divides $\Nn{P}{\mu}$; and $\Nn{P}{\mu}\,d$ divides
+$\Mom{P}{\mu}$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) $16$ divides $N_0$ and $N_0$ divides $2(d+1)$, so $8\mid d+1$. Also $N_0\ne0$, because $0$ divides only $0$, so
+$18480\le N_0\le2(d+1)$.
+
+(b) The primes $2$ and $3$ divide $N_0$, so $p$ divides $N_0$, hence $p$ divides $2(d+1)=8\cdot\frac{d+1}4$ (the
+quotient is exact by~(a)). Thus $p$ divides
+$8$ or $(d+1)/4$; in the first case $p=2$, and $2$ divides $(d+1)/4$ by~(a). So $4p$ divides $d+1$. Now
+$\chiK{P}(p)$ is the Jacobi symbol of $p$ over the odd number $d$, and a Jacobi symbol with upper entry $p$ depends
+only on the lower entry modulo $4p$. As $d\equiv4p-1\bmod4p$, it equals the symbol of $p$ over $4p-1$, which is the
+symbol of $4p$ over $4p-1$ because $4$ is a square, that is the symbol of $1$ over $4p-1$, which is $1$.
+
+(c) The primes below $13$ divide $18480$, hence $\Nn{P}{0}$, and (b) applies with the exponent $0$.
+
+(d) If the prime $d$ divided $\Nn{P}{\mu}$, then $\chiK{P}(d)=1$ by~(b), but $\chiK{P}(d)=0$. Next $2\mid N_0$ and
+$2^\mu\mid\twd{\mu}$. Finally $\lfloor\log_3\mu\rfloor\le\mu$, so $\twd{\mu}$ divides $6^{\mu+5}$, which divides
+$(N_0d)^{\mu+5}$ because $6\mid N_0$; multiplying by $N_0\,d$ gives the claim.
+\end{proof}
+\leanline{\lean{heeg}\sep\lean{ltd}\sep\lean{dvdnorm}\sep\lean{chione}\sep\lean{thirteen}\sep\lean{coprime}\sep
+\lean{twopow}\sep\lean{NdM}}
+
+\begin{lemma}[Powers of $d$ modulo $N_0$]\label{l:powd}
+Let $P=(N_0,d)$ be parameters and $n$ a natural number. Then $d^{\,n}\not\equiv-1\bmod N_0$.
+\end{lemma}
+\begin{proof}
+In $\Z/N_0$ one has $2(d+1)=0$ and $d+1\ne0$. As $d$ is odd, $d-1=2i$ with an integer $i$, and
+$d^2-1=i\cdot2(d+1)=0$. So every power of $d$ is $1$ or $d$. Here $d\ne-1$ by assumption, and $1\ne-1$, since
+$2=0$ would give $d+1=2(i+1)=0$.
+\end{proof}
+\leanline{\lean{powd}}
+
+\sect{The field and its places}{s:field}
+\begin{lemma}[The cyclotomic polynomial stays irreducible]\label{l:irr}
+Let $P=(N_0,d)$ be parameters and $\mu$ a natural number. Then $\Cy{\Nn{P}{\mu}}$ is irreducible over $\KP{P}$.
+\end{lemma}
+\begin{proof}
+Let $F$ be the cyclotomic field of order $d$. As $d$ is a prime with $d\equiv3\bmod4$ (Lemma~\ref{l:arith}(a)),
+$\KP{P}$ embeds into $F$ by Input~(I0) of Section~\ref{s:dif}. It suffices that the polynomial is irreducible over
+$F$. Let $x$ be a root of it in an extension of $F$. The minimal polynomial of $x$ over $F$ divides
+$\Cy{\Nn{P}{\mu}}$, and its degree is $[F(x):F]$. The field $F(x)$ contains roots of unity of the coprime orders
+$\Nn{P}{\mu}$ and $d$ (Lemma~\ref{l:arith}(d)), hence of order $\Nn{P}{\mu}d$, so its degree over $\Q$ is at least
+$\varphi(d)\,\varphi(\Nn{P}{\mu})$ by the irreducibility of cyclotomic polynomials over $\Q$. As $[F:\Q]=\varphi(d)$,
+we get $[F(x):F]\ge\varphi(\Nn{P}{\mu})$, the degree of $\Cy{\Nn{P}{\mu}}$. So $\Cy{\Nn{P}{\mu}}$ is the minimal
+polynomial of $x$.
+\end{proof}
+\leanline{\lean{irr}}
+
+\begin{lemma}[The CM field lies in a cyclotomic field]\label{l:cyclo}
+Let $P=(N_0,d)$ be parameters and $\mu$ a natural number. There is an embedding of fields of $\EP{P}{\mu}$ into the
+cyclotomic field of order $\Nn{P}{\mu}\,d$. Consequently $\EP{P}{\mu}$ is abelian over $\Q$ and over $\KP{P}$, it is
+totally complex, and it is a CM field.
+\end{lemma}
+\begin{proof}
+The cyclotomic field of order $\Nn{P}{\mu}d$ contains a primitive root of unity of order $d$, hence a copy of
+$\KP{P}$ by (I0), and over it $\Cy{\Nn{P}{\mu}}$ splits; a splitting field embeds into every
+extension in which the polynomial splits. A subfield of an abelian extension of $\Q$ is abelian over $\Q$, and
+$\EP{P}{\mu}$ is totally complex because it contains the imaginary quadratic field $\KP{P}$. A totally complex
+abelian number field is a CM field: because the Galois group is abelian, complex conjugation is the same
+automorphism for every embedding into $\CC$, and its fixed field is totally real.
+\end{proof}
+\leanline{\lean{tocyc}; the consequences are instances without names, stated after it in the formal text.}
+
+\begin{lemma}[An embedding over the quadratic field is determined by its place]\label{l:emb}
+Let $P=(N_0,d)$ be parameters, $\mu$ a natural number, and $\psi$, $\psi'$ two embeddings of $\EP{P}{\mu}$ into
+$\CC$ that are the identity on $\KP{P}$. If $\psi$ and $\psi'$ have the same infinite place, then $\psi=\psi'$.
+\end{lemma}
+\begin{proof}
+Two embeddings with the same place are equal or complex conjugate. If $\psi'$ were the conjugate of $\psi$, then
+every $x\in\KP{P}$ would be equal to its complex conjugate, which fails for $\mathrm{i}\sqrt d$.
+\end{proof}
+\leanline{\lean{embeq}}
+
+\begin{definition}[The group of places and its three descriptions]\label{d:group}
+Let $P=(N_0,d)$ be parameters and $\mu$ a natural number. Fix an embedding $\emb{1}\colon\EP{P}{\mu}\to\CC$ that is
+the identity on $\KP{P}$ (the formal text takes the one that the algebraic closedness of $\CC$ provides). The map
+\[\Gal(\EP{P}{\mu}/\KP{P})\longrightarrow\PlP{P}{\mu},\qquad \gamma\longmapsto\text{the place of }\emb{1}\circ\gamma,\]
+is a bijection: it is injective by Lemma~\ref{l:emb}, and surjective because the Galois group permutes
+transitively the places of $\EP{P}{\mu}$ above the one infinite place of $\KP{P}$. The set $\PlP{P}{\mu}$ is given
+the structure of a commutative group that makes this bijection an isomorphism; its unit element is the place
+of~$\emb{1}$.
+\begin{enumerate}[label=(\roman*)]
+\item $\galP{P}{\mu}\colon\PlP{P}{\mu}\to\Gal(\EP{P}{\mu}/\KP{P})$ is the inverse isomorphism.
+\item $\cycP{P}{\mu}\colon\PlP{P}{\mu}\to(\Z/\Nn{P}{\mu})^\times$ is $\galP{P}{\mu}$ followed by the cyclotomic
+character, which is an isomorphism by Lemma~\ref{l:irr}.
+\item For an integer $\nu$, the place $\pin{P}{\mu}{\nu}\in\PlP{P}{\mu}$ is the one with
+$\cycP{P}{\mu}(\pin{P}{\mu}{\nu})=\nu\bmod\Nn{P}{\mu}$ if $\nu$ is prime to $\Nn{P}{\mu}$, and the unit element
+otherwise.
+\item For a natural number $m'$ with $m'\mid\Nn{P}{\mu}$, the homomorphism
+\[\pcl{P}{m'\mid\Nn{P}{\mu}}\colon\PlP{P}{\mu}\longrightarrow(\Z/m')^\times\]
+is $\cycP{P}{\mu}$ followed by reduction modulo $m'$: the \emph{class modulo $m'$} of a place. (In the formal text its explicit arguments are $P$ and the proof of the
+divisibility; the divisibility is written in the place of that proof.)
+\item For $v\in\PlP{P}{\mu}$ the \emph{chosen embedding at $v$} is $\emb{v}=\emb{1}\circ\galP{P}{\mu}(v)$; its place
+is $v$. This is the CM type of $\EP{P}{\mu}$ that all later units use.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{galP}\sep\lean{cycP}\sep\lean{pin}\sep\lean{pcl}; the group structure and the CM type are instances
+without names.}
+
+\begin{lemma}[The dictionary]\label{l:dict}
+Let $P=(N_0,d)$ be parameters and $\mu$ a natural number; let $v,v'\in\PlP{P}{\mu}$, let $\nu$ be an integer and
+$i$ a natural number.
+\begin{enumerate}[label=(\alph*)]
+\item $\emb{v}(x)=x$ for every $x\in\KP{P}$, and $\emb{v\,v'}(x)=\emb{v}\bigl(\galP{P}{\mu}(v')(x)\bigr)$ for every
+$x\in\EP{P}{\mu}$.
+\item $\cj{\rtu{P}{\mu}}=\rtu{P}{\mu}^{-1}$.
+\item $\pin{P}{\mu}{\nu}^{\,i}=\pin{P}{\mu}{\nu^i}$.
+\item If $\nu$ is prime to $N_0$, then for every natural number $m'$ with $m'\mid\Nn{P}{\mu}$ the class
+$\pcl{P}{m'\mid\Nn{P}{\mu}}(\pin{P}{\mu}{\nu})$ is the class of $\nu$ modulo $m'$.
+\item $\pcl{P}{N_0\mid\Nn{P}{\mu}}(\pin{P}{\mu}{\nu})=-1$ if and only if $\nu\equiv-1\bmod N_0$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) holds by the definition of $\emb{v}$, since $\galP{P}{\mu}$ is a homomorphism into a group of automorphisms over
+$\KP{P}$. (b) The injective map $\emb{1}$ commutes with conjugation and sends $\rtu{P}{\mu}$ to a complex number of
+absolute value $1$, whose conjugate is its inverse. (c) If $\nu$ is prime to $\Nn{P}{\mu}$, both sides have the
+class $\nu^i$. If not, then $\nu^i$ is not prime to $\Nn{P}{\mu}$ for $i\ge1$ and both sides are the unit element,
+and for $i=0$ both sides are the unit element as well. (d) The numbers $N_0$ and $\Nn{P}{\mu}$ have the same prime
+divisors, so $\nu$ is prime to $\Nn{P}{\mu}$ and the class of $\pin{P}{\mu}{\nu}$ is $\nu$. (e) If the class is
+$-1$, then $\nu$ is prime to $\Nn{P}{\mu}$, because the unit element has class $1\ne-1$ (Lemma~\ref{l:powd} with
+$n=0$); then (d) applies. Conversely $\nu\equiv-1\bmod N_0$ is prime to $N_0$, and (d) applies.
+\end{proof}
+\leanline{\lean{phialg}\sep\lean{phimul}\sep\lean{starrt}\sep\lean{pinpow}\sep\lean{clpin}\sep\lean{clneg}}
+
+\begin{proof}[Proof of Theorem A]
+(a) is the definition of the cyclotomic character, and (b) follows from (a) and Lemma~\ref{l:dict}(d): the exponent
+$n$ represents $\nu$ modulo $\Nn{P}{\mu}$, and $\rtu{P}{\mu}$ has that order. (c) By
+Definition~\ref{d:group} the number of places is the order of $(\Z/\Nn{P}{\mu})^\times$, which is the degree of
+$\Cy{\Nn{P}{\mu}}$. For a prime $p$ dividing $M$ one has $\Cy{M}(X^{p^k})=\Cy{Mp^k}(X)$ (induction on $k$); as $2$ and
+$3$ divide $N_0$, this gives $\Cy{\Nn{P}{\mu}}(X)=\Cy{N_0}(X^{\twd{\mu}})$, of degree $\twd{\mu}\,\varphi(N_0)$.
+(d) The places of class $1$ modulo $N_0$ form the kernel of the reduction from $(\Z/\Nn{P}{\mu})^\times$ onto
+$(\Z/N_0)^\times$, whose order is the quotient of the two orders.
+\end{proof}
+\leanline{\lean{galrt}\sep\lean{galpin}\sep\lean{cardPl}\sep\lean{cardcl}\sep\lean{expandpow}\sep\lean{expandtw}}
+
+\begin{definition}[The permutation of the places by an automorphism of $\CC$]\label{d:perm}
+Let $P=(N_0,d)$ be parameters, $\mu$ a natural number and $\sigma$ a field automorphism of $\CC$ that is the
+identity on $\KP{P}$. Then $\prm{\mu}{\sigma}$ is the permutation of $\PlP{P}{\mu}$ that multiplies every place, on
+the left, by the place of the embedding $\sigma\circ\emb{1}$. (Its explicit arguments in the formal text are $\mu$ and
+$\sigma$; the parameters are read from $\sigma$.)
+\end{definition}
+\leanline{\lean{prm}}
+
+\begin{lemma}\label{l:perm}
+Let $P=(N_0,d)$ be parameters, $\mu$ a natural number, $\sigma$ a field automorphism of $\CC$ that is the identity on
+$\KP{P}$, $v\in\PlP{P}{\mu}$ and $x\in\EP{P}{\mu}$. Then
+$\sigma\bigl(\emb{v}(x)\bigr)=\emb{v^\ast}(x)$ with $v^\ast=\prm{\mu}{\sigma}(v)$.
+\end{lemma}
+\begin{proof}
+Let $u$ be the place of $\sigma\circ\emb{1}$. The embeddings $\sigma\circ\emb{1}$ and $\emb{u}$ are the identity on
+$\KP{P}$ and have the same place, so they are equal (Lemma~\ref{l:emb}). Hence
+$\sigma(\emb{v}(x))=\emb{u}(\galP{P}{\mu}(v)(x))=\emb{u\,v}(x)$ by Lemma~\ref{l:dict}(a).
+\end{proof}
+\leanline{\lean{prmspec}}
+
+\begin{lemma}[Roots of unity, and the norm to the quadratic field]\label{l:roots}
+Let $P=(N_0,d)$ be parameters, $\mu$ a natural number and $y\in\EP{P}{\mu}$.
+\begin{enumerate}[label=(\alph*)]
+\item If $y$ is a root of unity, then there is a natural number $n<\Nn{P}{\mu}$ with $\rtu{P}{\mu}^{\,n}=y$.
+\item $\prod_{v\in\PlP{P}{\mu}}\emb{v}(y)$ is the norm of $y$ from $\EP{P}{\mu}$ to $\KP{P}\subset\CC$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) It suffices that $y^{\Nn{P}{\mu}}=1$. By Lemma~\ref{l:cyclo} the roots of unity of $\EP{P}{\mu}$ embed into those
+of the cyclotomic field of the even order $\Nn{P}{\mu}d$, a group of that order; so $z=y^{\Nn{P}{\mu}}$ satisfies
+$z^d=1$. If $z\ne1$, then $z$ has order $d$, and as in the proof of Lemma~\ref{l:irr} the degree of $\EP{P}{\mu}$
+over $\Q$ is at least $\varphi(d)\,\varphi(\Nn{P}{\mu})$. That degree is twice the number of infinite places,
+$2\,\varphi(\Nn{P}{\mu})$, so $d-1\le2$, against $d>64$. (b) The norm is the product of the conjugates
+$\gamma(y)$ over the Galois group; apply $\emb{1}$, which is the identity on $\KP{P}$.
+\end{proof}
+\leanline{\lean{roots}\sep\lean{prodphi}}
+
+\sect{The different}{s:dif}
+\begin{definition}[Four integers]\label{d:ints}
+Let $P=(N_0,d)$ be parameters and $\mu$ a natural number, and let $\OO$ be the ring of integers of $\EP{P}{\mu}$.
+The root of unity $\rti{P}{\mu}$ lies in $\OO$ (the formal text has a second name for it as an element of $\OO$,
+written here in the same way). $\czE{P}{\mu}\in\OO$ is the integer $(1+\sqrt{-d})/2$ of $\KP{P}$, and
+$\sqd{P}{\mu}=2\,\czE{P}{\mu}-1$ is the square root of $-d$ that lies in $\KP{P}\subset\CC$ on the positive
+imaginary axis. Finally $\dgen{P}{\mu}=\Cy{\Nn{P}{\mu}}'(\rti{P}{\mu})\in\OO$.
+\end{definition}
+\leanline{\lean{rti}\sep\lean{czE}\sep\lean{sqd}\sep\lean{dgen}\sep\lean{coert}\sep\lean{primrti}\sep\lean{coesq}}
+
+\begin{lemma}\label{l:ints}
+Let $P=(N_0,d)$ be parameters and $\mu$, $n$ natural numbers. Then, in the ring of integers of $\EP{P}{\mu}$:
+$\cj{\sqd{P}{\mu}}=-\sqd{P}{\mu}$, and $\sqd{P}{\mu}$ divides $d$;
+$\czE{P}{\mu}\,(1-\czE{P}{\mu})=(d+1)/4$ and $\cj{\czE{P}{\mu}}=1-\czE{P}{\mu}$; and
+$\cj{\rti{P}{\mu}}^{\,n}\,\rti{P}{\mu}^{\,n}=1$.
+\end{lemma}
+\begin{proof}
+The square of $\sqd{P}{\mu}$ is $-d$, its conjugate is the other root $-\sqd{P}{\mu}$, and
+$\czE{P}{\mu}=(1+\sqd{P}{\mu})/2$. The last identity is Lemma~\ref{l:dict}(b).
+\end{proof}
+\leanline{\lean{starsq}\sep\lean{sqdvd}\sep\lean{czmul}\sep\lean{starcz}\sep\lean{starrtpow}}
+
+\statement{ana}{\textbf{Inputs.}\enspace In (I0) to (I1$'$), $d$ is any prime number with the congruence stated.
+(I0), unit~106: for a prime $d\equiv3\bmod4$, the field $\Q(\sqrt{-d})$ embeds into every field of characteristic
+$0$ that contains a primitive root of unity of order $d$ (a quadratic Gauss sum).
+(I1), unit~106: for a prime $d\equiv7\bmod8$ the different of
+$\Q(\sqrt{-d})$ over $\Q$ is generated by $\sqrt{-d}$, and the ring of integers is $\Z[(1+\sqrt{-d})/2]$.
+(I1$'$), unit~106: let $d\equiv7\bmod8$ be prime, $p$ an odd prime number, $\psi'$ a homomorphism from the ring of
+integers of $\Q(\sqrt{-d})$ to a commutative ring $R$ of characteristic $p$, $n$ a natural number and $x\in R$.
+Then $x=\psi'\bigl((1+\sqrt{-d})/2\bigr)^{p^n}$ if and only if $2x-1=\chi(p)^n\,\psi'(\sqrt{-d})$, where $\chi(p)$ is
+the Legendre symbol of $p$ modulo $d$ (Euler's criterion with the law of quadratic reciprocity).
+(I2), unit~10: let $F\subset F'$ be number fields with rings of integers $\OO_F\subset\OO_{F'}$, let $z\in\OO_{F'}$
+generate $F'$ over $F$, and let a polynomial over $\OO_F$ vanish at $z$ and have derivative $y$ at $z$; if the ideal
+$(y)$ divides the different of $\OO_{F'}$ over $\OO_F$, then that different is $(y)$ and $\OO_{F'}=\OO_F[z]$.
+(I3), unit~10: a prime ideal whose square contains a prime number divides the different over $\Z$.
+
+\smallskip References, as the catalogue of the write-up and the dossier of the unit record them; none was opened
+for this note. For (I3): K.~Conrad~\cite{conrad}, Theorem~4.13 and its proof, of which (I3) is a consequence (the
+lower bound for the exponent of the different at a ramified prime; the reading agent's record), and
+Neukirch~\cite{neukirch}, Ch.~III, \S2, place not confirmed. For (I1): Neukirch~\cite{neukirch}, Ch.~I, place not
+confirmed. For (I2): Serre~\cite{serre}, Ch.~III, place not confirmed. For (I0) and (I1$'$) the catalogue names no
+work. From Mathlib we use that the ring of integers of $\Q(z)$, for a root of unity $z$, is $\Z[z]$, and that the
+different is multiplicative in a tower of number fields.}
+
+\begin{proof}[Proof of Theorem C(a)]
+Write $X^{\Nn{P}{\mu}}-1=\Cy{\Nn{P}{\mu}}\cdot Q$ with an integral polynomial $Q$. Differentiating and evaluating
+at $z$ gives $y\,Q(z)=\Nn{P}{\mu}\,z^{\Nn{P}{\mu}-1}$, so $y\,Q(z)\,z=\Nn{P}{\mu}$: thus $y$ divides
+$\Nn{P}{\mu}$. The subfield $\Q(z)$ is the cyclotomic field of order $\Nn{P}{\mu}$; its ring of integers is $\Z[z]$,
+so its different over $\Q$ is generated by $y$. By (I1) the different of $\KP{P}$ over $\Q$ is generated by
+$\sqd{P}{\mu}$, which divides $d$ (Lemma~\ref{l:ints}); as $\Nn{P}{\mu}$ and $d$ are coprime
+(Lemma~\ref{l:arith}(d)), the ideals $(y)$ and $(\sqd{P}{\mu})$ of $\OO$ are coprime. The different of $\OO$ over
+$\Z$ is a multiple of $(y)$, by transitivity through $\Q(z)$, and it is the product of the different of $\OO$ over
+$\OO_K$ and $(\sqd{P}{\mu})$, by transitivity through $\KP{P}$. Hence $(y)$ divides the different of $\OO$ over
+$\OO_K$, and (I2), for the polynomial $\Cy{\Nn{P}{\mu}}$, gives both remaining assertions. (I2) applies because $z$
+generates $\EP{P}{\mu}$ over $\KP{P}$: the root of unity $\rtu{P}{\mu}$ is a power of $z$, both being primitive of
+order $\Nn{P}{\mu}$.
+\end{proof}
+\leanline{\lean{relspec}}
+
+\begin{lemma}\label{l:dif}
+Let $P=(N_0,d)$ be parameters and $\mu$ a natural number. Then $\dgen{P}{\mu}$ divides $\Nn{P}{\mu}$ in the ring of
+integers of $\EP{P}{\mu}$, so $\dgen{P}{\mu}\ne0$; and $\Nn{P}{\mu}\,d$ lies in the different of that ring over $\Z$.
+\end{lemma}
+\begin{proof}
+The first assertion is Theorem~C(a) for $z=\rti{P}{\mu}$. By Theorem~C(a) and transitivity the different over $\Z$
+is generated by $\dgen{P}{\mu}\cdot\sqd{P}{\mu}$, which is the first half of Theorem~C(b); this product divides
+$\Nn{P}{\mu}\,d$ by Lemma~\ref{l:ints}.
+\end{proof}
+\leanline{\lean{dgendvd}\sep\lean{dgenne}\sep\lean{difmul}\sep\lean{condmem}}
+
+\begin{lemma}[A unit that makes the generator real]\label{l:real}
+Let $P=(N_0,d)$ be parameters and $\mu$ a natural number. There is an integer $u_0$ of $\EP{P}{\mu}$ with
+$\cj{u_0}\,u_0=1$ and $\cj{u_0\,\dgen{P}{\mu}}=u_0\,\dgen{P}{\mu}$.
+\end{lemma}
+\begin{proof}
+The derivative of a product $\prod(X-x)$ of distinct linear factors at one of its roots is the product of the
+differences of that root and the others. So $\dgen{P}{\mu}$ is the product of the differences
+$\rti{P}{\mu}-x$ over the primitive roots of unity $x\ne\rti{P}{\mu}$ of order $\Nn{P}{\mu}$. Each of them is
+$x=\rti{P}{\mu}^{\,l}$ with $l$ prime to $\Nn{P}{\mu}$, hence odd, $l=2i+1$, and
+\[\rti{P}{\mu}-\rti{P}{\mu}^{\,2i+1}=\rti{P}{\mu}^{\,i+1}\bigl(\rti{P}{\mu}^{-i}-\rti{P}{\mu}^{\,i}\bigr).\]
+The second factor changes sign under conjugation (Lemma~\ref{l:dict}(b)). As $4$ divides $\Nn{P}{\mu}$, the ring
+of integers contains a square root $\mathrm{i}_\ast$ of $-1$, and $\cj{\mathrm{i}_\ast}=-\mathrm{i}_\ast$. Put
+$u_x=\mathrm{i}_\ast\,\cj{\rti{P}{\mu}}^{\,i+1}$; then $\cj{u_x}\,u_x=1$ by Lemma~\ref{l:ints}, and
+$u_x\,(\rti{P}{\mu}-x)=\mathrm{i}_\ast\bigl(\rti{P}{\mu}^{-i}-\rti{P}{\mu}^{\,i}\bigr)$ is fixed by conjugation.
+The product $u_0$ of the $u_x$ has the two properties. (The formal proof is this induction over the factors.)
+\end{proof}
+\leanline{\lean{unitreal}}
+
+\begin{definition}[The purely imaginary generator of the different]\label{d:varpi}
+Let $P=(N_0,d)$ be parameters and $\mu$ a natural number. With an integer $u_0$ chosen as in Lemma~\ref{l:real},
+$\vpi{P}{\mu}=u_0\cdot\dgen{P}{\mu}\cdot\sqd{P}{\mu}$.
+\end{definition}
+\leanline{\lean{vpi}}
+
+\begin{lemma}\label{l:varpi}
+Let $P=(N_0,d)$ be parameters, $\mu$ a natural number and $v\in\PlP{P}{\mu}$. Then
+$\cj{\vpi{P}{\mu}}=-\vpi{P}{\mu}$, and $|\emb{v}(\vpi{P}{\mu})|=|\emb{v}(\dgen{P}{\mu})|\cdot\sqrt d$.
+\end{lemma}
+\begin{proof}
+$u_0\,\dgen{P}{\mu}$ is fixed by conjugation and $\sqd{P}{\mu}$ changes sign. Further
+$|\emb{v}(u_0)|^2=\emb{v}(\cj{u_0}\,u_0)=1$
+and $|\emb{v}(\sqd{P}{\mu})|=\sqrt d$.
+\end{proof}
+\leanline{\lean{starvpi}\sep\lean{absvpi}}
+
+\begin{proof}[Proof of Theorem C(b), (c)]
+The first half of (b) was shown with Lemma~\ref{l:dif}; the second follows because $u_0$ is a unit. For (c), all
+infinite places of $\EP{P}{\mu}$ are complex, so the square of the product in question is the absolute value of the
+norm of $\vpi{P}{\mu}$ to $\Q$, that is the absolute norm of the different, that is the absolute value of the
+discriminant, which is $\rdE{P}{\mu}$ to the power twice the number of infinite places. Take square roots.
+\end{proof}
+\leanline{\lean{difvpi}\sep\lean{prodvpi}}
+
+\sect{Frobenius elements}{s:frob}
+\begin{definition}[The action on finite places; the Frobenius element]\label{d:frob}
+Let $P=(N_0,d)$ be parameters and $\mu$ a natural number, and let $\OO$ be the ring of integers of $\EP{P}{\mu}$.
+For $v\in\PlP{P}{\mu}$ let $\galv{v}\colon\OO\to\OO$ be the restriction of $\galP{P}{\mu}(v)$ (its one explicit
+argument in the formal text is $v$). The group $\PlP{P}{\mu}$ acts on the finite places of $\EP{P}{\mu}$ by
+$v\cdot w=\{x\in\OO:\galv{v}(x)\in w\}$. For a natural number $p$,
+\[\Frb{\mu}{p}=\bigl(\pin{P}{\mu}{\chiK{P}(p)\,p},\ \chiK{P}(p)\bigr)\in\PlP{P}{\mu}\times\Z,\]
+and powers of such pairs are taken componentwise. (The parameters $P$ are an implicit argument of the formal
+definition; the notation shows the two explicit ones, the exponent $\mu$ and $p$.)
+\end{definition}
+\leanline{\lean{galv}\sep\lean{Frb}\sep\lean{coegal}\sep\lean{memsmul}; the action is an instance without a name.}
+
+\begin{setting}\label{set:fr}
+$P=(N_0,d)$ are parameters, $\mu$ is a natural number, $\OO$ is the ring of integers of $\EP{P}{\mu}$, $p$ is a prime
+number, $v\in\PlP{P}{\mu}$, and $(\mathfrak{c},e)$ is one of the two pairs $(\mathrm{id},1)$ and
+$(\text{complex conjugation},-1)$, where $\mathfrak{c}$ is an automorphism of the ring $\OO$ and $e$ an integer. Further $R$ is
+a commutative ring of characteristic $p$, $\psi\colon\OO\to R$ is a homomorphism of rings, and $n$ is a natural
+number.
+\end{setting}
+
+\begin{lemma}[A Frobenius congruence is tested on two generators]\label{l:frobext}
+In Setting~\ref{set:fr} assume $p\nmid\Nn{P}{\mu}$. Then $\psi(\galv{v}(x))=\psi(\mathfrak{c}(x))^{p^n}$ holds for all
+$x\in\OO$ if and only if both
+\[\psi\bigl(\galv{v}(\rti{P}{\mu})\bigr)=\psi\bigl(\galv{u}(\rti{P}{\mu})\bigr)\quad\text{with }u=\pin{P}{\mu}{e\,p^n}\]
+and
+\[\chiK{P}(p)^n\,e\,\psi(\sqd{P}{\mu})=\psi(\sqd{P}{\mu}).\]
+\end{lemma}
+\begin{proof}
+Both $x\mapsto\psi(\galv{v}(x))$ and $x\mapsto\psi(\mathfrak{c}(x))^{p^n}$ are homomorphisms of rings, the second
+because $R$ has characteristic $p$. By (I1) and Theorem~C(a) the ring $\OO$ is generated by $\rti{P}{\mu}$ and
+$\czE{P}{\mu}$, so the two maps agree if and only if they agree at these two elements. At the root of unity:
+$\mathfrak{c}$ raises it to the power $e$ (Lemma~\ref{l:dict}(b)), and $e\,p^n$ is prime to $N_0$ because
+$p\nmid\Nn{P}{\mu}$, so $\mathfrak{c}(\rti{P}{\mu})^{p^n}=\galv{u}(\rti{P}{\mu})$ by Theorem~A(b). At
+$\czE{P}{\mu}$, which $\galv{v}$ fixes: here $d\equiv7\bmod8$ and $p$ is odd (Lemma~\ref{l:arith}(a) and the
+hypothesis $p\nmid\Nn{P}{\mu}$), so (I1$'$) applies, with $\chi(p)=\chiK{P}(p)$, to the restriction $\psi'$ of
+$\psi\circ\mathfrak{c}$ to the integers of $\KP{P}$, where $\psi'(\sqrt{-d})=e\,\psi(\sqd{P}{\mu})$, and to
+$x=\psi(\czE{P}{\mu})$, where $2x-1=\psi(\sqd{P}{\mu})$. This turns the condition at $\czE{P}{\mu}$ into the second
+equation.
+\end{proof}
+\leanline{\lean{frobext}\sep\lean{copNz}}
+
+\begin{lemma}[Frobenius congruences and powers of the Frobenius element]\label{l:frobpow}
+In Setting~\ref{set:fr} assume that $R$ is an integral domain and that $p\nmid\Nn{P}{\mu}\,d$. Then
+$\psi(\galv{v}(x))=\psi(\mathfrak{c}(x))^{p^n}$ holds for all $x\in\OO$ if and only if $(v,e)=\Frb{\mu}{p}^{\,n}$ in
+$\PlP{P}{\mu}\times\Z$.
+\end{lemma}
+\begin{proof}
+Use Lemma~\ref{l:frobext}. The image of the root of unity in the domain $R$ is a root of the cyclotomic polynomial
+of an order that is not zero in $R$, so its powers with exponents below that order are distinct; by Theorem~A(a)
+the first condition says that $v$ and $u$ have the same class, that is $v=\pin{P}{\mu}{e\,p^n}$. In the second
+condition $\psi(\sqd{P}{\mu})$ can be cancelled, because its square $-d$ is not zero in $R$; it says
+$\chiK{P}(p)^n\,e=1$ in $R$, hence $e=\chiK{P}(p)^n$, as both are $\pm1$ and $p\ne2$. Together with
+Lemma~\ref{l:dict}(c) the two conditions say $v=\pin{P}{\mu}{\chiK{P}(p)\,p}^{\,n}$ and $e=\chiK{P}(p)^n$.
+\end{proof}
+\leanline{\lean{frobpow}}
+
+\begin{proof}[Proof of Theorem B]
+The residue ring $\OO/w$ is a finite field of characteristic $p$; let $\psi$ be the reduction. (a) If
+$v\cdot w=\mathfrak{c}^{-1}(w)$, then $\galv{v}\circ\mathfrak{c}^{-1}$ maps $w$ into itself and induces an
+endomorphism of the finite field, which is a power of the Frobenius map: for some $n$,
+$\psi(\galv{v}(x))=\psi(\mathfrak{c}(x))^{p^n}$ for all $x$, and Lemma~\ref{l:frobpow} gives
+$(v,e)=\Frb{\mu}{p}^{\,n}$. Conversely, such an $n$ gives that congruence by Lemma~\ref{l:frobpow}, and then
+$x\in v\cdot w$ if and only if $\mathfrak{c}(x)^{p^n}\in w$, if and only if $\mathfrak{c}(x)\in w$.
+(b) The norm of $w$ is $p^i$ for the residue degree $i$. By Lemma~\ref{l:frobpow}, for the unit place and the
+first pair, $\Frb{\mu}{p}^{\,n}=1$ if and only if $x^{p^n}=x$ on the residue field, if and only if $i$ divides $n$.
+So $i$ is the order of $\Frb{\mu}{p}$.
+\end{proof}
+\leanline{\lean{decomp}\sep\lean{qpow}}
+
+\begin{lemma}[No ramification]\label{l:unram}
+Let $P=(N_0,d)$ be parameters, $\mu$ a natural number, $p$ a prime number with $p\nmid\Nn{P}{\mu}\,d$ and $w$ a
+finite place of $\EP{P}{\mu}$ with $p\in w$. Then $p\notin w^2$, and $p$ has valuation exactly $1$ at $w$.
+\end{lemma}
+\begin{proof}
+If $p\in w^2$, then $w$ divides the different by (I3), which contains $\Nn{P}{\mu}\,d$ (Lemma~\ref{l:dif}); a natural
+number in $w$ is divisible by $p$.
+\end{proof}
+\leanline{\lean{notsq}\sep\lean{valp}}
+
+\begin{lemma}[Transitivity up to conjugation]\label{l:trans}
+Let $P=(N_0,d)$ be parameters, $\mu$ a natural number, $p$ a prime number, and $w$, $w'$ finite places of
+$\EP{P}{\mu}$ with $p\in w$ and $p\in w'$. Then there is $v\in\PlP{P}{\mu}$ with $v\cdot w=w'$ or
+$\cj{v\cdot w}=w'$.
+\end{lemma}
+\begin{proof}
+The Galois group of $\EP{P}{\mu}$ over $\Q$ permutes the primes above $p$ transitively: there is an automorphism
+$\gamma$ with $\gamma(w')=w$, that is $w'=\{x:\gamma(x)\in w\}$. Let $v$ be the place of the embedding
+$\emb{1}\circ\gamma$. The embedding $\emb{v}=\emb{1}\circ\galP{P}{\mu}(v)$ has the same place, so $\gamma$ is
+$\galP{P}{\mu}(v)$, or $\galP{P}{\mu}(v)$ followed by complex conjugation, which commutes with $\galP{P}{\mu}(v)$
+because $\EP{P}{\mu}$ is abelian over $\Q$ (Lemma~\ref{l:cyclo}). In the first case $w'=v\cdot w$ by the definition
+of the action, which takes preimages; in the second
+$w'=\{x:\cj{\galv{v}(x)}\in w\}=\{x:\galv{v}(\cj x)\in w\}=\cj{v\cdot w}$.
+\end{proof}
+\leanline{\lean{transit}}
+
+\begin{lemma}[Primes inert in the quadratic field]\label{l:inert}
+Let $P=(N_0,d)$ be parameters, $\mu$ a natural number and $p$ a prime number with $\chiK{P}(p)=-1$. Then
+$p\nmid\Nn{P}{\mu}\,d$. Let moreover $w$ be a finite place of $\EP{P}{\mu}$ with $p\in w$, and $v\in\PlP{P}{\mu}$.
+Then $v\cdot w=w$ if and only if $v=\pin{P}{\mu}{-p}^{\,n}$ for an even natural number $n$; $v\cdot w=\cj{w}$ if and
+only if $v=\pin{P}{\mu}{-p}^{\,n}$ for an odd $n$; and the norm of $w$ is $p$ to the least common multiple of $2$
+and the order of $\pin{P}{\mu}{-p}$ in $\PlP{P}{\mu}$.
+\end{lemma}
+\begin{proof}
+The primes dividing $\Nn{P}{\mu}\,d$ have $\chiK{P}=1$ or $0$ (Lemma~\ref{l:arith}(b)). Here
+$\Frb{\mu}{p}=(\pin{P}{\mu}{-p},-1)$, and Theorem~B applies with either pair.
+\end{proof}
+\leanline{\lean{inertnd}\sep\lean{inertfix}\sep\lean{inertstar}\sep\lean{inertq}}
+
+\begin{lemma}[Numbers congruent to $1$ modulo the conductor]\label{l:split}
+Let $P=(N_0,d)$ be parameters, $\mu$ a natural number and $p$ a natural number with
+$p\equiv1\bmod\Nn{P}{\mu}\,d$. Then $\chiK{P}(p)=1$ and $\Frb{\mu}{p}=1$. If moreover $p$ is a prime number, then
+$p\nmid\Nn{P}{\mu}\,d$; and for every finite place $w$ of $\EP{P}{\mu}$ with $p\in w$ and every $v\in\PlP{P}{\mu}$:
+$v\cdot w\ne\cj{w}$; $v\cdot w=w$ if and only if $v=1$; and the norm of $w$ is $p$.
+\end{lemma}
+\begin{proof}
+$p\equiv1$ modulo $d$ and modulo $\Nn{P}{\mu}$, so the symbol is $1$ and $\pin{P}{\mu}{p}$ is the unit element. A
+prime dividing the modulus would divide $1$. The rest is Theorem~B with $\Frb{\mu}{p}=1$.
+\end{proof}
+\leanline{\lean{splitchi}\sep\lean{splitfr}\sep\lean{splitnd}\sep\lean{splitne}\sep\lean{splitfix}\sep\lean{splitq}}
+
+\begin{lemma}[An integer of norm $p$ times a number prime to $p$]\label{l:norm}
+Let $P=(N_0,d)$ be parameters, $\mu$ a natural number, $p$ a prime number with $p\equiv1\bmod\Nn{P}{\mu}\,d$, $w$ a
+finite place of $\EP{P}{\mu}$ with $p\in w$, and $a$ an integer of $\EP{P}{\mu}$ such that $a\,\cj{a}=p\,k$ for a
+natural number $k$ prime to $p$. Then $\cj{a}\in w$ if and only if $a\notin w$. If $a\in w$, then $a$ has valuation
+exactly $1$ at $w$.
+\end{lemma}
+\begin{proof}
+$a\,\cj a\in w$, so one of the two lies in $w$. If both did, then $p\,k\in w^2$ with $k\notin w$, so $p\in w^2$,
+against Lemma~\ref{l:unram}. The valuations of $a$ and $\cj a$ at $w$ add up to that of $p\,k$, which is $1$.
+\end{proof}
+\leanline{\lean{starmem}\sep\lean{valnorm}}
+
+\begin{proposition}[As many places above $p$ and $a$ as infinite places]\label{p:bij}
+Let $P=(N_0,d)$ be parameters, $\mu$ a natural number, $p$ a prime number with $p\equiv1\bmod\Nn{P}{\mu}\,d$, and $a$
+an integer of $\EP{P}{\mu}$ such that $a\,\cj{a}=p\,k$ for a natural number $k$ prime to $p$. Then there is a
+bijection from $\PlP{P}{\mu}$ onto the set of finite places of $\EP{P}{\mu}$ that contain both $a$ and $p$.
+\end{proposition}
+\begin{proof}
+Fix a finite place $w$ containing $p$. Send $v$ to $v\cdot w$ if $a\in v\cdot w$ and to $\cj{v\cdot w}$ otherwise.
+Both places contain $p$, and exactly one of them contains $a$ (Lemma~\ref{l:norm}), so the map is well defined. If
+$u$ and $v$ have the same image, then $u\cdot w$ and $v\cdot w=(u^{-1}v)\cdot(u\cdot w)$ are equal or conjugate;
+Lemma~\ref{l:split} excludes the second and turns the first into $u=v$. A place containing $a$ and $p$ is
+$v\cdot w$ or $\cj{v\cdot w}$ for some $v$ (Lemma~\ref{l:trans}), and then it is the image of $v$.
+\end{proof}
+\leanline{\lean{bij}}
+
+\sect{Weil data}{s:weil}
+\begin{lemma}\label{l:valmap}
+Let $P=(N_0,d)$ be parameters, $\mu$ a natural number, $f$ an injective endomorphism of the ring of integers of
+$\EP{P}{\mu}$ and $w$ a finite place of $\EP{P}{\mu}$. Then $f(\dgen{P}{\mu})$ and $\dgen{P}{\mu}$ have the same
+valuation at $w$.
+\end{lemma}
+\begin{proof}
+$f(\dgen{P}{\mu})$ is the derivative of the cyclotomic polynomial at the primitive root $f(\rti{P}{\mu})$, and by
+Theorem~C(a) it generates the same ideal as $\dgen{P}{\mu}$.
+\end{proof}
+\leanline{\lean{valmap}}
+
+\begin{definition}[The idele of the different]\label{d:alpha}
+Let $P=(N_0,d)$ be parameters and $\mu$ a natural number. $\alP{P}{\mu}$ is the finite idele of $\EP{P}{\mu}$ whose
+component is $\dgen{P}{\mu}^{-1}$ at the finite places that contain $\czE{P}{\mu}$, and $1$ at all others.
+\end{definition}
+\leanline{\lean{alP}}
+
+\begin{lemma}\label{l:alpha}
+Let $P=(N_0,d)$ be parameters, $\mu$ a natural number and $w$ a finite place of $\EP{P}{\mu}$. Then the inverse of
+$\alP{P}{\mu}$ and the product $\Nn{P}{\mu}\cdot\alP{P}{\mu}$ are integral at every finite place, and the component
+at $w$ of $\alP{P}{\mu}\cdot\cj{\alP{P}{\mu}}\cdot\dgen{P}{\mu}$ is a unit.
+\end{lemma}
+\begin{proof}
+The first two assertions hold because $\dgen{P}{\mu}$ is an integer that divides $\Nn{P}{\mu}$. For the third, the
+component of the conjugate idele at $w$ is $\cj{\dgen{P}{\mu}}^{-1}$ if $\cj{\czE{P}{\mu}}=1-\czE{P}{\mu}$ lies in
+$w$, and $1$ otherwise. Not both $\czE{P}{\mu}$ and $1-\czE{P}{\mu}$ lie in $w$. If exactly one does, the component
+in question is $1$ or $\dgen{P}{\mu}/\cj{\dgen{P}{\mu}}$, a unit by Lemma~\ref{l:valmap} for complex conjugation.
+If neither does, the component is $\dgen{P}{\mu}$, and $\dgen{P}{\mu}\notin w$: otherwise $\Nn{P}{\mu}\in w$, and as
+$\Nn{P}{\mu}$ divides a power of $(d+1)/4=\czE{P}{\mu}(1-\czE{P}{\mu})$ by Lemma~\ref{l:arith}(b), one of the two
+factors would lie in $w$.
+\end{proof}
+\leanline{\lean{alinv}\sep\lean{valpha}\sep\lean{Nal}}
+
+\statement{ana}{\textbf{Inputs.}\enspace In (I4) to (I6), $F$ is a CM field with a chosen embedding $\emb{v}$ at
+every infinite place $v$. (I4), unit~106: \emph{Weil data} for $F$ consist of a primitive root of unity of order
+$5040$ in $F$, a \emph{splitting character} (a continuous unitary character $\upsilon$ of the ideles of $F$,
+trivial on $F^\times$, with $\upsilon(\cj x)=\upsilon(x)^{-1}$ for every idele $x$, and with
+$\upsilon(x)=\prod_v x_v/|x_v|$ for every idele $x$ whose finite components are all local units), an element
+$\jmath\in F$, and a finite idele, such that: $\cj{\jmath}=-\jmath$; the imaginary part of $\emb{v}(\jmath)$ is
+positive for every infinite place $v$; the product of $\jmath$, the idele and its conjugate generates the inverse
+of the different over $\Z$ at every finite place; $(1-\jmath^{-1})/2$ is an algebraic integer; and $\upsilon$ takes
+the value $-1$ at a uniformiser of every finite place $w$ with $\cj w=w$.
+(I5), unit~104: let $F$ contain a primitive root of unity of order $5040$ (the formal text calls such a CM field
+\emph{stably unramified}: then $F$ contains a square root of $-1$ and $(1+\sqrt{-7})/2$, so it is unramified over
+its maximal totally real subfield at every finite place). If every root of unity $y$ of $F$ is $y=u/\cj u$ for a
+unit $u$ of the ring of integers with $\prod_v\emb{v}(u)=1$, then $F$ has a splitting character. (I6), unit~97: every splitting character takes the value $-1$
+at a uniformiser of every finite place $w$ with $\cj w=w$.}
+
+\begin{proposition}[Weil data for the CM field]\label{p:weil}
+Let $P=(N_0,d)$ be parameters and $\mu$ a natural number. The field $\EP{P}{\mu}$, with the embeddings of
+Definition~\ref{d:group}, has Weil data in the sense of (I4), with $\jmath=-1/\sqd{P}{\mu}$ and the idele
+$\alP{P}{\mu}$.
+\end{proposition}
+\begin{proof}
+As $5040=2^4\cdot3^2\cdot5\cdot7$ divides $\Nn{P}{\mu}$ ($2^4\cdot5\cdot7$ divides $18480$, hence $N_0$, and
+$3^2$ divides $3^5$, hence $\twd{\mu}$), a power of $\rti{P}{\mu}$ has order $5040$: this is the first datum of
+(I4) and the first hypothesis of (I5). For the second hypothesis of (I5), let $y$ be a root of unity;
+$y=\rti{P}{\mu}^{\,n}$ by Lemma~\ref{l:roots}(a). Put $i=\Nn{P}{\mu}/4$, a natural number, and
+\[u=\rti{P}{\mu}^{\,i}\,\bigl(\rti{P}{\mu}-1\bigr).\]
+Its norm to $\KP{P}$ is $1$: the norm of $\rti{P}{\mu}$ is $1$, and the norm of $\rti{P}{\mu}-1$ is the value
+$\Cy{\Nn{P}{\mu}}(1)$, by Lemma~\ref{l:irr} and because the degree is even; that value is $1$ since $\Nn{P}{\mu}$ is
+not a power of a prime. So $u$ is a unit, and $\prod_v\emb{v}(u)=1$ by Lemma~\ref{l:roots}(b). Further
+$\cj u=\rti{P}{\mu}^{-i}(\rti{P}{\mu}^{-1}-1)=-\rti{P}{\mu}^{-i-1}(\rti{P}{\mu}-1)$, and $\rti{P}{\mu}^{\,2i}=-1$, so
+$\rti{P}{\mu}\,\cj u=u$; hence $y\,\cj{u^n}=u^n$, and (I5) gives a splitting character. Now $\jmath$: its conjugate
+is $-\jmath$ by Lemma~\ref{l:ints}; $\emb{v}(\jmath)=\mathrm{i}/\sqrt d$ for every $v$, because $\emb{v}$ is the
+identity on $\KP{P}$; and $(1-\jmath^{-1})/2=\czE{P}{\mu}$. By Lemma~\ref{l:alpha} and Theorem~C(b),
+$\jmath\,\alP{P}{\mu}\,\cj{\alP{P}{\mu}}$ has at every finite place the valuation of the inverse of
+$\dgen{P}{\mu}\cdot\sqd{P}{\mu}$, a generator of the different. The last condition is (I6).
+\end{proof}
+\leanline{\lean{weil}}
+
+\sect{Notes on the formal text}{s:notes}
+\subhead{Names and arguments.} The formal text writes $N_0$ and $d$ as the two components of $P$, and every other
+object of this note as a function of $P$ and the exponent; the note keeps all explicit arguments. Three notations
+show less than the full list of arguments, and say so where they are defined: the Frobenius element and the
+permutation of places have $P$ as an implicit argument, and the restriction $\galv{v}$ has both $P$ and $\mu$
+implicit. The class map takes $P$ and a proof of a divisibility; the note writes the divisibility. The formal text
+calls the exponent \texttt{s} and the root of unity \texttt{ζ}; this write-up keeps those letters for the complex
+variable and for Riemann's function.
+
+\subhead{Signatures that the reader of the unit derived.} For eleven declarations of this note the list of arguments
+in the dossier is derived from Lean's rule for section variables and not printed by Lean: Theorem~B(a), the
+statements of Lemmas~\ref{l:trans}, \ref{l:norm} and Proposition~\ref{p:bij}, the three statements on places in
+Lemma~\ref{l:split}, the two equivalences of Lemma~\ref{l:inert}, and Theorem~C(a). I read each of them in the Lean
+text and agree: where the statement binds a variable itself (the place $v$ in Lemma~\ref{l:trans}, the exponent in
+Theorem~B(a) and Lemma~\ref{l:inert}, the element $y$ of Theorem~C(a), the cofactor $k$ of Lemma~\ref{l:norm}), the
+section variable of the same name is not an argument; and the hypothesis $p\in w$ is an argument of the three
+statements of Lemma~\ref{l:split} that mention $w$, because the text includes it again after having omitted it.
+This follows the documented rule; only Lean's own output can confirm it, and nothing was compiled here.
+
+\subhead{The embedding into the cyclotomic field.} The census of the workspace records one explicit argument for
+the embedding of Lemma~\ref{l:cyclo}, an element of $\EP{P}{\mu}$. In the Lean text the declaration is a
+homomorphism of $\Q$-algebras with the two implicit arguments $P$ and $\mu$ and no explicit one; the arrow of the
+homomorphism was read as an argument. The note accounts for the entry by naming the field.
+
+\subhead{Where the formal statements differ from the natural ones.} Theorem~A(a) is stated in Lean with the class map for the divisor $\Nn{P}{\mu}$ of itself, which is $\cycP{P}{\mu}$. Lemma~\ref{l:arith}(b) is stated in Lean with
+the quotient $(d+1)/4$ of natural numbers; it is exact. In Theorem~B and Lemmas~\ref{l:frobext}, \ref{l:frobpow} the
+pair $(\mathfrak{c},e)$ is a ring automorphism and an integer with the hypothesis that they form one of the two pairs; the
+group $\PlP{P}{\mu}\times\Z$ has the integers as a multiplicative monoid, so the order in Theorem~B(b) is the order
+in a monoid. Valuations are multiplicative in Lean: ``valuation exactly $1$'' is there the value, in the value group of
+the discrete valuation, that Lean writes \texttt{.exp (-1)}, the value of a uniformiser (not the real number
+$e^{-1}$). The census of the workspace cuts the statement of Theorem~C(a) at the word \texttt{let}; the statement
+runs two lines further, as the reader's corrected list of statement spans records and as the Lean file shows, and
+for this reason it is not among the statements quoted in Appendix~A. In
+Lemma~\ref{l:split} the first two assertions do not assume that $p$ is prime; the formal text removes that
+hypothesis explicitly. Lemma~\ref{l:dict}(c) and (e) hold for all integers $\nu$, by the convention that an integer
+not prime to the order names the unit place. Proposition~\ref{p:weil} is an instance: it provides the data rather
+than asserting their existence, and it depends on the choices of Lemma~\ref{l:real} and of (I5). The formal
+definition behind (I4) lists the root of unity of order $5040$ as the property that (I5) assumes, and it writes
+$\jmath$ as \texttt{j}; in the overview of the handout the letter \emph{j} with its dot is a homomorphism of rings
+from $\CC$ to a non-archimedean field. The first hypothesis of (I5) cannot be dropped. The field $\Q(\sqrt3,\sqrt{-2})$ has the roots of unity
+$\pm1$, and $u=(\sqrt{-2}+\sqrt{-6})/2$ is a unit in it with $u/\cj u=-1$ and, for the two embeddings that send
+$\sqrt{-2}$ to the upper half-plane, with $\prod_v\emb{v}(u)=1$. But a splitting character of a CM field restricts
+to the ideles of the maximal totally real subfield as the quadratic character of the extension, and its values
+on the ideles with unit finite components show that this character is unramified at every finite place; the
+field $\Q(\sqrt3,\sqrt{-2})$ is ramified over $\Q(\sqrt3)$ above~$2$. (This example is due to the referee of the
+note and was checked by hand; it is not in the formal text.)
+
+\subhead{What is used where.} Inside the unit, the note \emph{Admissible data} uses Theorem~A, Lemmas~\ref{l:arith}
+and~\ref{l:dict}, Lemmas~\ref{l:unram} and~\ref{l:norm}, and Proposition~\ref{p:bij}. The remaining results serve later units: Lemma~\ref{l:perm} the
+conjugates of algebraic parts, Lemmas~\ref{l:inert} and~\ref{l:powd} the local analysis at the primes that do not
+split in $\KP{P}$, Theorem~C and Proposition~\ref{p:weil} the Weil representation. This was seen from the places of use
+in the source, not from a kernel export.
+
+\subhead{How this note was written.} From the dossier of the unit: the texts of its members and the structured
+proofs of the declarations of the two files treated here. I read both Lean files completely and compared every
+statement of this note with the Lean statement, argument by argument, with the lists of arguments of the census
+and of the dossier. The proofs follow the structured proofs; those of Lemma~\ref{l:arith}(d),
+Lemma~\ref{l:dict}(c) and Theorem~A(c), (d), which the formal text leaves to automation, are mine. The Inputs were
+taken from the dossier's reading of the library and from the library's own comments; I opened the definition
+(I4) and the statements of (I0), (I1$'$) and (I5), and none of the proofs behind (I0) to (I6). In the revision of
+26~November 2026, after a referee's report, the hypothesis of (I5) on the root of unity of order $5040$ was
+restored from the formal statement, and (I0) and (I1$'$) were moved from the proofs into the box of Inputs. A second reading of the unit by the reading agent arrived while this
+note was written; its three corrections that touch this note (the polynomial that defines the field, the direction
+of the automorphism in Lemma~\ref{l:trans}, the value of a uniformiser) were checked against the Lean text and
+adopted. The program check of the unit's dossier covered \UnitSteps{} leaf steps
+of \UnitProofs{} proofs.
+
+\head{Appendix A. Concordance with the Lean artifact}
+The formal names of the objects: \texttt{P.N₀}, \texttt{P.d} are $N_0$, $d$; \texttt{towerDeg} applied to $\mu$ is $\twd{\mu}$; the exponent \texttt{s} is $\mu$; \texttt{P.ζ s} and \texttt{P.zetaInt s} are the root of unity;
+\texttt{P.Φ s} is the group of places and \texttt{Φ v} the embedding $\emb{v}$; \texttt{star} is complex conjugation.
+Three statements as the artifact has them:
+\quoted{par}
+\quoted{prodvpi}
+\quoted{decomp}
+{\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}\setlength{\tabcolsep}{0pt}
+\begin{longtable}{@{}p{27mm}p{62mm}p{40mm}r@{}}
+\textbf{In this note} & \textbf{Lean declaration} & \textbf{File} & \textbf{Lines}\\\midrule\endhead
+\ConcordanceRows
+\end{longtable}}
+
+\head{Notation}
+\begingroup\fontsize{8.6}{10.9}\selectfont\raggedright
+\setlength{\columnsep}{9mm}\setlength{\parskip}{0pt}
+\begin{multicols}{2}
+\nt{$P=(N_0,d)$}{parameters (Definition~\ref{d:par})}
+\nt{$\mu$}{the exponent, a natural number}
+\nt{$\twd{\mu}$, $\Nn{P}{\mu}$}{the tower degree; the order of the root of unity}
+\nt{$\Mom{P}{\mu}$}{the number $(N_0d)^{\mu+6}$}
+\nt{$\KP{P}$, $\chiK{P}$}{$\Q(\sqrt{-d})$ and its quadratic character}
+\nt{$\EP{P}{\mu}$, $\rtu{P}{\mu}$}{the CM field and its chosen root of unity}
+\nt{$\PlP{P}{\mu}$}{the group of infinite places of $\EP{P}{\mu}$}
+\nt{$\OmP{P}{\mu}$, $\rdE{P}{\mu}$}{the period of Definition~\ref{d:E}; the root discriminant; $\mathrm{cs}(d)$ as there}
+\nt{$\galP{P}{\mu}$, $\cycP{P}{\mu}$}{from places to automorphisms and to classes}
+\nt{$\pin{P}{\mu}{\nu}$}{the place named by the integer $\nu$}
+\nt{$\pcl{P}{m'\mid\Nn{P}{\mu}}$}{the class of a place modulo a divisor $m'$ of $\Nn{P}{\mu}$}
+\nt{$\emb{v}$, $\emb{1}$}{the chosen embedding at the place $v$, at the unit place}
+\nt{$\prm{\mu}{\sigma}$}{the permutation of places by $\sigma\in\Aut(\CC)$}
+\nt{$\Cy{M}$}{the cyclotomic polynomial of order $M$ (the letter $\Psi$ is local to this note); $X$ its variable; $Q$ a cofactor}
+\nt{$\OO$, $\OO_K$, $\OO_F$}{rings of integers}
+\nt{$\czE{P}{\mu}$, $\sqd{P}{\mu}$}{$(1+\sqrt{-d})/2$ and $\sqrt{-d}$ in $\OO$}
+\nt{$\dgen{P}{\mu}$, $\vpi{P}{\mu}$}{generators of the different over $\KP{P}$ and over $\Q$}
+\nt{$\galv{v}$}{the restriction of $\galP{P}{\mu}(v)$ to $\OO$}
+\nt{$v\cdot w$, $\cj{w}$}{the action of a place $v$ on a finite place $w$; the conjugate place}
+\nt{$\Frb{\mu}{p}$}{the Frobenius element at $p$}
+\nt{$\alP{P}{\mu}$}{the idele of Definition~\ref{d:alpha}}
+\nt{$p$}{a prime number, or a natural number where said}
+\nt{$v,v',u,v^\ast$}{infinite places}
+\nt{$w,w'$}{finite places}
+\nt{$\mathfrak{c},e$}{an automorphism of $\OO$ and a sign (Setting~\ref{set:fr})}
+\nt{$R$, $\psi$, $\psi'$}{a ring; homomorphisms and embeddings (local to this note)}
+\nt{$\chi(p)$}{in (I1$'$): the Legendre symbol of $p$ modulo $d$}
+\nt{$\varphi$, $\pi$, $L$}{Euler's function; the circle constant; in ``$L$-function''}
+\nt{$F,F'$}{auxiliary number fields}
+\nt{$x,y,z,a$}{elements of fields and rings}
+\nt{$n,i,l,k,o$}{natural numbers and integers: exponents, orders, degrees, a cofactor}
+\nt{$\nu$}{an integer naming a place}
+\nt{$\sigma$, $\gamma$}{an automorphism of $\CC$; an element of a Galois group}
+\nt{$\jmath$}{the purely imaginary element of the Weil data}
+\nt{$\upsilon$}{a splitting character}
+\nt{$f$}{an endomorphism of $\OO$}
+\nt{$u_0$, $u_x$}{the unit of Lemma~\ref{l:real} and its factors}
+\nt{$u$}{also a unit, in (I5) and in the proof of Proposition~\ref{p:weil}}
+\end{multicols}
+\endgroup
+
+\head{References}
+\begingroup\fontsize{9.4}{12.6}\selectfont
+\begin{thebibliography}{9}
+\bibitem{conrad} K. Conrad, \emph{The different ideal}, expository notes on the author's web page. Theorem~4.13
+and its proof, as recorded by the reading agent for (I3); not opened for this note.
+\bibitem{neukirch} J. Neukirch, \emph{Algebraic Number Theory}, 1999. As recorded in the catalogue of the
+write-up, places not confirmed.
+\bibitem{serre} J.-P. Serre, \emph{Local Fields}. As recorded in the catalogue of the write-up, place not
+confirmed.
+\end{thebibliography}
+\endgroup
+
+\end{document}

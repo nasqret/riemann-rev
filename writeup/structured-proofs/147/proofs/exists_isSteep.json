@@ -1,0 +1,112 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Exchange.SteepParameters:13:7",
+ "name": "Data.exists_isSteep",
+ "summary": "Order the indices by the numbering of the base index set; compute the signs and doubled parameters along it, bound w at the top by 2w₀, and compute the lowest K-type entries (by induction over the rank); steepness is then a list of inequalities.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "step",
+   "claim": "Let ν be the numbering of the index set of the node (0, 0) of grid z by Fin(r + [z]) (`Data.gridNumber`).",
+   "lines": [
+    15,
+    15
+   ],
+   "lean": "  let ν : D.GridIndex z 0 0 ≃ _ := D.gridNumber z"
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "step",
+   "claim": "Take e = ν⁻¹ ∘ (the identification of the sum with Fin, of sizes matching by the definition of n); fix τ.",
+   "lines": [
+    16,
+    16
+   ],
+   "lean": "  use finSumFinEquiv.trans ((finCongr (by grind [n])).trans ν.symm), fun τ ↦ ?_",
+   "uses": [
+    {
+     "step": "1"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "step",
+   "claim": "For every index x: the sign of x is entrySign(0, 0, ν(x) + 1 − k) and the parameter is 2ς(τ, ν(x)) + [z] (by cases on the grid).",
+   "lines": [
+    17,
+    18
+   ],
+   "lean": "  have p x : D.gridSigns z 0 0 0 x = entrySign 0 0 (ν x + 1 - D.k) ∧ D.gridParam z 0 0 0 τ x =\n    2 * D.rowParameter τ (ν x) + z.toNat := by cases z <;> aesop",
+   "typed_fact": "D.gridSigns z 0 0 0 x = entrySign 0 0 (ν x + 1 - D.k) ∧ D.gridParam z 0 0 0 τ x =\n    2 * D.rowParameter τ (ν x) + z.toNat",
+   "uses": [
+    {
+     "step": "1"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "step",
+   "claim": "w(h, τ) ≤ 2w(0, τ) (the size comparison h² ≤ w(0, τ), `Data.nat_le_of_hasLogBound`).",
+   "lines": [
+    19,
+    19
+   ],
+   "lean": "  have : D.w D.h τ ≤ 2 * D.w 0 τ := by grind [(D.nat_le_of_hasLogBound : D.h ^ 2 ≤ D.w 0 τ)]",
+   "typed_fact": "D.w D.h τ ≤ 2 * D.w 0 τ",
+   "uses": [
+    {
+     "decl": "Data.nat_le_of_hasLogBound"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "step",
+   "claim": "For every index y, with L = 2ς(τ, ν(y)) + [z] − 2·lowestKType(y) and N = r + [z]: |L| ≤ N, and if ν(y) + 1 < k then L + N is an explicit natural number (by the formula of the lowest K-type, `two_mul_lowestKType`, and induction on the rank).",
+   "lines": [
+    20,
+    27
+   ],
+   "lean": "  have g\n    y : let L := 2 * D.rowParameter τ (ν y) + z.toNat - 2 * (D.gridParam z 0 0 0 τ).lowestKType y\n    let N := D.r + z.toNat; |L| ≤ N ∧\n    (ν y + 1 < D.k → L + N = ↑(N + N ⊓ D.k - 1 - 2 * ν y - (N - D.k) % 2)) := by\n    simp_rw [two_mul_lowestKType (hasGap_gridParam ..), twoRho, Finset.card_filter,\n      reindex_equiv ν.symm, p, ν.apply_symm_apply, entrySign_eq]; generalize (ν y).1 = a\n    induction D.r + _ <;> simp [Finset.univ_eq_empty, ↓Fin.sum_univ_castSucc,\n      eq_ite_iff] at *; grind (splits:=20) [rowParameter]",
+   "typed_fact": "let L := 2 * D.rowParameter τ (ν y) + z.toNat - 2 * (D.gridParam z 0 0 0 τ).lowestKType y\n    let N := D.r + z.toNat; |L| ≤ N ∧\n    (ν y + 1 < D.k → L + N = ↑(N + N ⊓ D.k - 1 - 2 * ν y - (N - D.k) % 2))",
+   "uses": [
+    {
+     "step": "3"
+    },
+    {
+     "decl": "two_mul_lowestKType"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "step",
+   "claim": "The conditions of steepness (strictly decreasing along e, the bound, the parity) follow from steps 3–5 by computation (`Data.rowParameter`, `Data.entrySign_eq`).",
+   "lines": [
+    28,
+    29
+   ],
+   "lean": "  constructor <;> simp [StrictAnti, neg_one_pow_eq_ite] <;> norm_cast <;> grind [rowParameter, Bool,\n    entrySign_eq]",
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "step": "5"
+    },
+    {
+     "decl": "Data.entrySign_eq"
+    }
+   ]
+  }
+ ]
+}

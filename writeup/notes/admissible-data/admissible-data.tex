@@ -1,0 +1,1002 @@
+% !TEX program = lualatex
+% ---------------------------------------------------------------------------------------------
+%  Readback note 6: Admissible data: scales, ranks and sizes, and their existence
+%
+%  Build:  python3 tools/rb.py note <slug>
+%
+%  One unit of a Lean artifact, rewritten as ordinary mathematics. The prose is hand-written. Lean names,
+%  line ranges and counts come from data.tex; quoted Lean statements are copied from the artifact by the build.
+%
+%  Rules of the text: standard terminology; every symbol is explained where it first appears and listed again
+%  in the notation at the end; no letter has two meanings; a proof is complete or says what it takes for granted;
+%  Lean names appear only in the LEAN lines and in the concordance.
+%
+%  The signature rule (the build enforces it): a function, relation or predicate that the artifact defines is
+%  written only through its notation macro, which the build makes from the spec (`notation`) with one slot for
+%  each explicit argument of the Lean definition. No argument is fixed and dropped, also not "for brevity" and
+%  not for one section. Every argument and every hypothesis of a stated declaration stands inside its
+%  statement, or in a Setting that the statement cites by number; only implicit and instance arguments (the
+%  ambient objects) may stand in the conventions.
+% ---------------------------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\ifdefined\pdfvariable\pdfvariable suppressoptionalinfo \numexpr 1+2+4+8\relax\fi
+\usepackage[a4paper,hmargin=35mm,top=22mm,bottom=27mm,footskip=12mm,nohead]{geometry}
+
+\usepackage{fontspec}
+\directlua{
+  luaotfload.add_fallback("gfallback", {"STIXTwoMath-Regular.otf:mode=node;", "DejaVuSans.ttf:mode=node;"})
+  luaotfload.add_fallback("gmonofallback", {"DejaVuSansMono.ttf:mode=node;", "STIXTwoMath-Regular.otf:mode=node;"})
+}
+\setmainfont{NewCM10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookItalic,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldItalic,SmallCapsFont=*-Book,SmallCapsFeatures={Letters=SmallCaps},
+  RawFeature={fallback=gfallback}]
+\setsansfont{NewCMSans10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookOblique,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldOblique,RawFeature={fallback=gfallback}]
+\setmonofont{JetBrainsMono}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,Scale=MatchLowercase,
+  RawFeature={-calt;-liga;fallback=gmonofallback}]
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage[math-style=TeX]{unicode-math}
+\setmathfont{NewCMMath-Book.otf}
+\emergencystretch=2.5em\relax
+
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows.meta,positioning,backgrounds}
+\usepackage[protrusion=true,expansion=true]{microtype}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{multicol}
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+
+\definecolor{ink}{HTML}{0F172A}
+\definecolor{inksoft}{HTML}{475569}
+\definecolor{inkfaint}{HTML}{94A3B8}
+\definecolor{rulegrey}{HTML}{CBD5E1}
+\definecolor{arith}{HTML}{C2410C}
+\definecolor{est}{HTML}{7C3AED}
+\definecolor{ana}{HTML}{0891B2}
+\definecolor{ok}{HTML}{047857}
+\definecolor{leancol}{HTML}{3730A3}
+
+\title{Admissible data: scales, ranks and sizes, and their existence}
+\author{grh-compact}
+\date{}
+
+% ------------------------------------------------------------------------------------- macros
+\newcommand{\leanfont}{\ttfamily\fontsize{8.6}{10.5}\selectfont\color{leancol}}
+\newcommand{\lean}[1]{\csname LN@#1\endcsname}
+\newcommand{\fillin}[1]{{\color{arith}\itshape[#1]}}  % a place of the template that is not written yet; the build reports every one that is left
+\newcommand{\leanquote}[1]{\csname LQ@#1\endcsname}
+\input{data.tex}
+
+\linespread{1.08}                       % 11 pt on 14.7 pt
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt plus 1.5pt minus 0.5pt}
+\setlength{\abovedisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\belowdisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\abovedisplayshortskip}{3pt plus 2pt}
+\setlength{\belowdisplayshortskip}{6pt plus 2pt minus 2pt}
+\emergencystretch=1.5em
+\clubpenalty=10000 \widowpenalty=10000 \displaywidowpenalty=10000
+\relpenalty=7000 \binoppenalty=9000
+\raggedbottom
+\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\sffamily\fontsize{7.6}{9}\selectfont\color{inkfaint}\thepage\,/\,\pageref*{LastPage}}
+\setlist{topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=4pt,leftmargin=2.1em,labelsep=0.55em}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\len}{\operatorname{len}}
+\newcommand{\cok}{\operatorname{cok}}
+\newcommand{\End}{\operatorname{End}}
+\newcommand{\Hom}{\operatorname{Hom}}
+\newcommand{\Gal}{\operatorname{Gal}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\kw}[1]{\emph{#1}}
+\newcommand{\m}[1]{\mbox{$#1$}}        % a short formula that must not be broken across lines
+\newcommand{\head}[1]{\par\addvspace{17pt plus 4pt minus 2pt}\Needspace{6\baselineskip}%
+  \noindent{\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\sect}[2]{\refstepcounter{section}\label{#2}\par\addvspace{19pt plus 4pt minus 2pt}\Needspace{7\baselineskip}%
+  \noindent\llap{{\fontsize{13.2}{16}\selectfont\bfseries\color{inkfaint}\thesection}\hspace{9pt}}%
+  {\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\subhead}[1]{\par\addvspace{9pt plus 2pt}\Needspace{4\baselineskip}\noindent\textbf{#1}\enspace\ignorespaces}
+% where a statement lives in the Lean archive
+\newcommand{\leantag}{{\sffamily\bfseries\fontsize{6.3}{8}\selectfont\color{leancol}\addfontfeatures{LetterSpace=7}LEAN}}
+\newcommand{\sep}{\unskip\nobreak\hspace{5pt}{\color{inkfaint}\textperiodcentered}\hspace{5pt plus 2pt}\ignorespaces}
+\newcommand{\leanline}[1]{\par\nopagebreak\vspace{-2.5pt}{\fontsize{8.9}{12.4}\selectfont\color{inksoft}\raggedright
+  \noindent\llap{\leantag\hspace{9pt}}#1\par}\vspace{1pt}}
+% a displayed statement in a tinted box: #1 colour, #2 text
+\newcommand{\statement}[2]{\par\addvspace{7pt}\begingroup\setlength{\fboxsep}{8.5pt}\setlength{\fboxrule}{0.6pt}%
+  \noindent\fcolorbox{#1!30!white}{#1!3!white}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{#2}}%
+  \endgroup\par\addvspace{7pt}}
+\newcommand{\nt}[2]{\par\noindent\hangindent=1.1em\hangafter=1 #1\enspace{\color{inksoft}#2}\par\vspace{1pt}}
+\newcommand{\legdot}[1]{\tikz[baseline=-0.62ex]\fill[#1] (0,0) circle (2.5pt);\hspace{3pt}}
+\newcommand{\crow}[4]{\csname CS@#1\endcsname & #2 & \textcolor{inksoft}{#3} & \textcolor{inksoft}{#4}\\}
+\newcommand{\leanquoteline}[2]{\par\noindent\hangindent=\dimexpr#1\fontdimen2\font+2.2em\relax\hangafter=1
+  \hspace*{#1\fontdimen2\font}#2}
+\newcommand{\quoted}[1]{\par\vspace{3pt}{\ttfamily\fontsize{7.5}{10.4}\selectfont\color{leancol}\raggedright
+  \setlength{\parskip}{0pt}\leanquote{#1}\par}\vspace{4pt}}
+\newcommand{\bx}[3]{{\sffamily\bfseries\fontsize{7.3}{9.2}\selectfont\color{#1!82!black}#2}\\[1.5pt]#3}
+\newcommand{\cs}[2]{\expandafter\newcommand\csname CS@#1\endcsname{#2}}
+
+% theorems
+\newtheoremstyle{plainx}{7pt plus 2pt}{7pt plus 2pt}{\itshape}{}{\bfseries}{.}{0.5em}{}
+\newtheoremstyle{uprightx}{7pt plus 2pt}{7pt plus 2pt}{}{}{\bfseries}{.}{0.5em}{}
+\theoremstyle{plainx}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{uprightx}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{setting}[theorem]{Setting}          % hypotheses shared by several statements; each of them cites it by number
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\renewcommand{\qedsymbol}{{\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.5pt}\fbox{\rule{0pt}{0.46em}\hspace{0.46em}}}}
+% what holds throughout the note: the ambient objects only (implicit and instance arguments), never a hypothesis
+\newenvironment{conventions}{\par\addvspace{5pt}\noindent\textbf{Conventions.}\enspace\ignorespaces}{\par\addvspace{3pt}}
+\makeatletter
+\renewenvironment{proof}[1][Proof]{\par\pushQED{\qed}\normalfont\topsep0pt\partopsep0pt
+  \trivlist\item[\hskip\labelsep\itshape #1.]\ignorespaces}{\popQED\endtrivlist\@endpefalse}
+\makeatother
+
+% where each declaration of the concordance is treated: \cs{key}{place}, the place naming a \label or a lettered item
+\cs{twd}{Definition~\ref{d:recall}}
+\cs{Nn}{Definition~\ref{d:recall}}
+\cs{KP}{Definition~\ref{d:recall}}
+\cs{Mom}{Definition~\ref{d:recall}}
+\cs{EP}{Definition~\ref{d:recall}}
+\cs{PlP}{Definition~\ref{d:recall}}
+\cs{pin}{Definition~\ref{d:recall}}
+\cs{pcl}{Definition~\ref{d:recall}}
+\cs{OmP}{Definition~\ref{d:recall}}
+\cs{CP}{Definition~\ref{d:C}}
+\cs{Data}{Definition~\ref{d:data}}
+\cs{scx}{Definition~\ref{d:scales}}
+\cs{scxo}{Definition~\ref{d:scales}}
+\cs{scb}{Definition~\ref{d:scales}}
+\cs{ED}{Definition~\ref{d:field}}
+\cs{PlD}{Definition~\ref{d:field}}
+\cs{ND}{Definition~\ref{d:field}}
+\cs{fD}{Definition~\ref{d:field}}
+\cs{cond}{Definition~\ref{d:field}}
+\cs{rdD}{Definition~\ref{d:field}}
+\cs{pinD}{Definition~\ref{d:field}}
+\cs{tops}{Definition~\ref{d:field}}
+\cs{gD}{Definition~\ref{d:field}}
+\cs{kD}{Definition~\ref{d:ranks}}
+\cs{tD}{Definition~\ref{d:ranks}}
+\cs{nD}{Definition~\ref{d:ranks}}
+\cs{posD}{Definition~\ref{d:ranks}}
+\cs{hhD}{Definition~\ref{d:ranks}}
+\cs{hD}{Definition~\ref{d:ranks}}
+\cs{rhg}{Definition~\ref{d:ranks}}
+\cs{rup}{Definition~\ref{d:order}}
+\cs{aD}{Definition~\ref{d:order}}
+\cs{bone}{Definition~\ref{d:order}}
+\cs{btwo}{Definition~\ref{d:order}}
+\cs{wt}{Definition~\ref{d:order}}
+\cs{nw}{Definition~\ref{d:order}}
+\cs{Ask}{Definition~\ref{d:sums}}
+\cs{budg}{Definition~\ref{d:sums}}
+\cs{jet}{Definition~\ref{d:sums}}
+\cs{UD}{Definition~\ref{d:sums}}
+\cs{hlb}{Definition~\ref{d:bd}}
+\cs{hlu}{Definition~\ref{d:bd}}
+\cs{hll}{Definition~\ref{d:bd}}
+\cs{pos}{Lemma~\ref{l:rules}}
+\cs{upabs}{Lemma~\ref{l:rules}}
+\cs{upnonneg}{Lemma~\ref{l:rules}}
+\cs{upnat}{Lemma~\ref{l:rules}}
+\cs{lowle}{Lemma~\ref{l:rules}}
+\cs{icc}{Lemma~\ref{l:icc}}
+\cs{ltBd}{Theorem B}
+\cs{leBd}{Theorem B}
+\cs{natlt}{Theorem B}
+\cs{natle}{Theorem B}
+\cs{natcast}{Proposition~\ref{p:table}}
+\cs{bdmul}{Proposition~\ref{p:table}}
+\cs{bdadd}{Proposition~\ref{p:table}}
+\cs{bdf}{Proposition~\ref{p:table}}
+\cs{cge}{Lemma~\ref{l:cge}}
+\cs{round}{Lemma~\ref{l:round}}
+\cs{rodd}{Lemma~\ref{l:ranks}}
+\cs{meven}{Lemma~\ref{l:ranks}}
+\cs{lem}{Lemma~\ref{l:ranks}}
+\cs{radd}{Lemma~\ref{l:ranks}}
+\cs{kler}{Lemma~\ref{l:ranks}}
+\cs{hundred}{Lemma~\ref{l:ranks}}
+\cs{kpos}{Lemma~\ref{l:ranks}}
+\cs{nmono}{Lemma~\ref{l:ranks}}
+\cs{keven}{Lemma~\ref{l:ranks}}
+\cs{todd}{Lemma~\ref{l:ranks}}
+\cs{rsix}{Lemma~\ref{l:ranks}}
+\cs{kth}{Lemma~\ref{l:ranks}}
+\cs{clthick}{Lemma~\ref{l:thick}}
+\cs{nwicc}{Lemma~\ref{l:weights}}
+\cs{nwnonneg}{Lemma~\ref{l:weights}}
+\cs{nwadd}{Lemma~\ref{l:weights}}
+\cs{nwlew}{Lemma~\ref{l:weights}}
+\cs{wlenw}{Lemma~\ref{l:weights}}
+\cs{wletwob}{Lemma~\ref{l:weights}}
+\cs{logw}{Lemma~\ref{l:weights}}
+\cs{chequiv}{Lemma~\ref{l:chosen}}
+\cs{cardch}{Lemma~\ref{l:chosen}}
+\cs{prodq}{Lemma~\ref{l:chosen}}
+\cs{chstar}{Lemma~\ref{l:chosen}}
+\cs{notstar}{Lemma~\ref{l:chosen}}
+\cs{rangech}{Lemma~\ref{l:chosen}}
+\cs{conjapart}{Lemma~\ref{l:chosen}}
+\cs{valN}{Lemma~\ref{l:level}}
+\cs{valpi}{Lemma~\ref{l:level}}
+\cs{ordch}{Definition~\ref{d:chosen}}
+\cs{chlevel}{Definition~\ref{d:chosen}}
+\cs{cardGL}{Lemma~\ref{l:GL}}
+\cs{princ}{Lemma~\ref{l:GL}}
+\cs{neat}{Proposition~\ref{p:neat}}
+\cs{mink}{Proposition~\ref{p:neat}}
+\cs{omega}{Lemma~\ref{l:omega}}
+\cs{behrend}{Proposition~\ref{p:behrend}}
+\cs{pigeon}{Lemma~\ref{l:pigeon}}
+\cs{exdata}{Theorem A}
+
+% ------------------------------------------------------------------ macros of this note that are not notations of
+% defined functions (those are made by the build, in data.tex, from the spec)
+\newcommand{\OO}{\mathcal{O}}
+\newcommand{\CC}{\mathbb{C}}
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\NN}{\mathbb{N}}
+\newcommand{\Dif}{\mathfrak{D}}
+\newcommand{\Cy}[1]{\Psi_{#1}}                 % the cyclotomic polynomial
+\newcommand{\chiK}[1]{\chi_{\KP{#1}}}         % the quadratic character of K(P)
+\newcommand{\emb}[1]{\iota_{#1}}              % the chosen embedding at an infinite place
+\newcommand{\cj}[1]{\overline{#1}}
+\newcommand{\ord}{\operatorname{ord}}
+\newcommand{\Nm}{\operatorname{N}}
+\newcommand{\Aut}{\operatorname{Aut}}
+\newcommand{\GL}{\operatorname{GL}}
+% components of the data D (fields of the record; not declarations of their own)
+\newcommand{\Dm}[1]{m(#1)}
+\newcommand{\Dr}[1]{r(#1)}
+\newcommand{\Dmu}[1]{\mu(#1)}
+\newcommand{\thick}[1]{\operatorname{thick}(#1)}
+\newcommand{\Dg}[2]{g_{#1}(#2)}
+\newcommand{\Dpig}[1]{\pi_g(#1)}
+\newcommand{\ordch}[1]{\operatorname{ord}_{\mathrm{ch}}(#1)}
+\newcommand{\Kch}[2]{K_{\mathrm{ch}}(#1,#2)}
+\newcommand{\rdE}[2]{\operatorname{rd}_{\EP{#1}{#2}}}
+
+\newcommand{\lvl}[1]{N(#1)}
+\newcommand{\piN}[1]{\pi_N(#1)}
+\newcommand{\Gf}[2]{G_{\mathrm{f}}(#1,#2)}
+\newcommand{\Kz}[2]{K_0(#1,#2)}
+\newcommand{\Gam}[2]{\Gamma(#1,#2)}
+\newcommand{\Ch}[2]{\operatorname{Ch}_{#1}(#2)}
+\newcommand{\clno}[1]{\operatorname{h}(\KP{#1})}
+\newcommand{\lx}[1]{\log\scx{#1}}
+\newcommand{\lb}[1]{\log\scb{#1}}
+\newcommand{\lxo}[1]{\log\scxo{#1}}
+\newcommand{\llb}[1]{\log\log\scb{#1}}
+\begin{document}
+\color{ink}
+
+{\raggedright
+{\sffamily\bfseries\fontsize{7.2}{9}\selectfont\color{leancol}\addfontfeatures{LetterSpace=8}READBACK NOTE 6 \textperiodcentered{} CHAPTER III, SECOND PART\par}
+\vspace{5pt}
+{\fontsize{21.5}{25.5}\selectfont\bfseries Admissible data: scales, ranks and sizes, and their existence\par}
+\vspace{5pt}
+{\fontsize{12.4}{16}\selectfont\itshape\color{inksoft} One unit of the Lean artifact \ArtifactName, read back into
+mathematics\par}}
+\vspace{8pt}
+{\color{rulegrey}\hrule height 0.6pt}
+\vspace{7pt}
+\thispagestyle{empty}
+
+\textbf{Summary.} The whole argument is run on one record of numbers and places, the \emph{admissible data} $D$:
+three scales $\scx{D}$, $\scxo{D}$, $\scb{D}$ with $\lb{D}\ll\scx{D}\ll\scxo{D}\ll\scb{D}$, two ranks
+$\Dm{D}\approx\sqrt{\scx{D}}$ and $\Dr{D}\approx\scx{D}^5$, a set of \emph{thick} infinite places of the CM field
+$\ED{D}$ that satisfies no multiplicative relation with small exponents, and two auxiliary primes. This note states
+the record, names what the later chapters compute from it (ranks, the order $\aD{D}$, weights, the prime sum, the
+budget), and describes the device by which the formal text compares sizes: every quantity carries an upper and a
+lower exponent, and two quantities are compared by their exponents (Theorem~B). It then proves that admissible data
+exist at every large scale (Theorem~A), by a weak form of the Siegel--Walfisz theorem, a pigeonhole in the class
+group and a construction of Behrend type.
+
+\statement{leancol}{\fontsize{9.6}{13.2}\selectfont\textbf{What this note is.} The artifact \ArtifactName{} is a
+body of Lean code whose final theorems state the Riemann hypothesis and its analogue for Dirichlet $L$-functions.
+That is a claim: its authors report that Lean's kernel accepts the code, a replay of that check by the owner of
+this write-up is recorded elsewhere, and nothing was compiled for this note; no mathematician has read the proof
+through. This note treats the second part of one unit (the folder of the data of the proof): \UnitInNote{} of its
+\UnitMembers{} declarations, among them nine definitions recalled from the first part, the note \emph{The parameters
+and the CM field}. Every statement was compared, argument by argument, with the Lean text. Proofs are complete,
+with two exceptions that are said where they occur: results of other units and of the background library are
+quoted as \emph{Inputs}, and the comparisons of exponents that the formal text leaves to a decision procedure are
+carried out here by hand only in the cases listed in Section~\ref{s:notes}. The Lean text read is \PinText;
+Appendix~A is the concordance of \ConcDecls{} declarations.}
+
+\sect{The statements}{s:intro}
+\statement{arith}{\phantomsection\label{t:A}\textbf{Theorem A (admissible data exist).}\enspace Let $P=(N_0,d)$ be
+parameters and $\varepsilon$ a real number with $0<\varepsilon/6$ and $\varepsilon<1/100$. Then for every
+sufficiently large real number $y$ there are admissible data $D$ for $P$ (Definition~\ref{d:data}) such that
+\[\scx{D}=y,\qquad \lxo{D}=y^{\varepsilon/6},\qquad (10^6\log y)^2\le\lxo{D},\]
+\[\llb{D}=\varepsilon\log y,\qquad \twd{\Dmu{D}}/\lb{D}\le\#\thick{D}.\]}
+
+By Theorem~A of the first part, $\twd{\Dmu{D}}$ is the number of the places of class $1$ modulo $N_0$, the set
+$\tops{D}$. So the last inequality says that the thick places are at least as many as the tops divided by
+$\lb{D}$.
+
+\statement{arith}{\phantomsection\label{t:B}\textbf{Theorem B (comparison by exponents).}\enspace Let $D$ be admissible
+data for parameters $P=(N_0,d)$, and let $l$, $l'$ be real numbers with $l<l'$.
+\begin{enumerate}[label=(\alph*)]
+\item If $F$, $G$ are real numbers with $\hlu{D}(F;\,l)$ and $\hll{D}(G;\,l')$, that is $|F|\le e^{l}$ and
+$e^{l'}\le G$, then $F<G$, and so $F\le G$.
+\item If $A$, $B$ are natural numbers with $\hlu{D}(A;\,l)$ and $\hll{D}(B;\,l')$, then $A<B$, and so $A\le B$.
+\end{enumerate}}
+
+The statement is immediate. What it stands for is a method. In the formal text the two bounds are found
+mechanically from the shape of the expressions $F$ and $G$ (Proposition~\ref{p:table} and Table~1), and the
+inequality $l<l'$ between two linear expressions in $\lx{D}$, $\lxo{D}$, $\lb{D}$, $\llb{D}$ is found from the
+conditions on the scales. All comparisons of sizes of the later chapters are made in this way.
+
+\sect{The setting}{s:setting}
+\begin{conventions}\phantomsection\label{c:conventions}
+$\log$ is the natural logarithm and $e$ its base; for natural numbers, subtraction stops at $0$ and $\lfloor\ \rfloor$ is
+the floor, as in the formal text. A \emph{finite place} of a number field is a nonzero prime ideal of its ring of
+integers, written like the ideal, with norm $\Nm(w)$; an \emph{infinite place} is an archimedean absolute value.
+The bar is complex conjugation on a CM field and on its finite places. An index set $I$ is a finite set.
+\end{conventions}
+
+\begin{definition}[Recalled from the first part]\label{d:recall}
+\emph{Parameters} are a pair $P=(N_0,d)$ of natural numbers with $18480\mid N_0$, $d$ prime, $N_0\mid2(d+1)$ and
+$N_0\nmid d+1$. For a natural number $\mu$: $\twd{\mu}=3^{\lfloor\log_3\mu\rfloor+5}2^{\mu}$,
+$\Nn{P}{\mu}=N_0\,\twd{\mu}$ and $\Mom{P}{\mu}=(N_0d)^{\mu+6}$; $\KP{P}=\Q(\sqrt{-d})\subset\CC$, with quadratic
+character $\chiK{P}$; $\EP{P}{\mu}$ is $\KP{P}$ with the roots of unity of order $\Nn{P}{\mu}$ adjoined, a CM field;
+$\PlP{P}{\mu}$ is the set of its infinite places, a commutative group isomorphic to $(\Z/\Nn{P}{\mu})^\times$; for
+an integer $\nu$, $\pin{P}{\mu}{\nu}\in\PlP{P}{\mu}$ is the place whose class is $\nu$ if $\nu$ is prime to
+$\Nn{P}{\mu}$, and the unit element otherwise; for a natural number $m$ with $m\mid\Nn{P}{\mu}$,
+$\pcl{P}{m\mid\Nn{P}{\mu}}\colon\PlP{P}{\mu}\to(\Z/m)^\times$ is the class modulo $m$; and
+$\OmP{P}{\mu}=\exp(\mathrm{cs}(d))\cdot2\pi/\mathrm{rd}$, with $\mathrm{rd}$ the root discriminant of $\EP{P}{\mu}$
+and $\mathrm{cs}(d)$ Euler's constant minus the real part of the logarithmic derivative at $1$ of the $L$-function
+of $\chiK{P}$.
+\end{definition}
+\leanline{\lean{twd}\sep\lean{Nn}\sep\lean{Mom}\sep\lean{KP}\sep\lean{EP}\sep\lean{PlP}\sep\lean{pin}\sep\lean{pcl}\sep
+\lean{OmP}}
+
+\begin{definition}[The constant of the parameters]\label{d:C}
+For parameters $P=(N_0,d)$,
+\[\CP{P}=C_{\mathrm{jet}}+(2d+6)+\Bigl(N_0+|\mathrm{cs}(d)|+\sum_{x}\bigl|\log|\Cy{N_0}'(x)|\bigr|\Bigr),\]
+where $x$ runs over the complex primitive roots of unity of order $N_0$, $\Cy{N_0}$ is the cyclotomic polynomial of
+that order, and $C_{\mathrm{jet}}$ is a natural number chosen from an existence statement of unit~150 (there it bounds the size
+of the conjugates of certain algebraic numbers of the Weil representation; this unit uses nothing about it). What
+this unit uses of $\CP{P}$ is Lemma~\ref{l:cge}.
+\end{definition}
+\leanline{\lean{CP}}
+
+\begin{definition}[Admissible data]\label{d:data}
+Let $P=(N_0,d)$ be parameters. \emph{Admissible data for $P$} are a record $D$ with the following components and
+properties. Components: three real numbers, the logarithms $\lx{D}$, $\lxo{D}$, $\lb{D}$ of the scales of
+Definition~\ref{d:scales}; natural numbers $\Dmu{D}$, $\Dm{D}$, $\Dr{D}$; a finite set $\thick{D}$ of infinite
+places of $\EP{P}{\Dmu{D}}$, the \emph{thick places}; natural numbers $\Dg{0}{D}$, $\Dg{1}{D}$; and an integer
+$\Dpig{D}$ of $\KP{P}$. Properties:
+\begin{enumerate}[label=(D\arabic*)]
+\item $10^{12}\,\CP{P}\le\llb{D}$, \ $100\,\llb{D}\le\lx{D}$, \ $10^6\,\lx{D}\le\lxo{D}$, \ $10^6\,\lxo{D}\le\lb{D}$ and
+$6\log\lxo{D}\le\llb{D}$.
+\item $\Dmu{D}\le32\,\lx{D}$.
+\item $\sqrt{\scx{D}}\le\Dm{D}\le2\sqrt{\scx{D}}$, and there is a natural number $n$ with $\Dm{D}=2^{n+1}$ and
+$\Dmu{D}=22(n+1)$.
+\item $\scx{D}^5\le\Dr{D}\le3\,\scx{D}^5$, and there is a natural number $n$ with $\Dr{D}=3^{n+1}$.
+\item For every natural number $m$ with $m\mid\Nn{P}{\Dmu{D}}$ that divides
+$N_0\cdot3^{\lfloor\log_3\Dmu{D}\rfloor+5}$, every thick place has class $-1$ modulo $m$:
+$\pcl{P}{m\mid\Nn{P}{\Dmu{D}}}(\sigma)=-1$ for all $\sigma\in\thick{D}$.
+\item Let $\psi=\pcl{P}{2^{\Dmu{D}+1}\mid\Nn{P}{\Dmu{D}}}$ be the class modulo $2^{\Dmu{D}+1}$. For all natural numbers $i$, $j$
+with $0<i<j\le324\,\Dmu{D}$ and all $\sigma,\tau,\rho\in\thick{D}$: if $\psi(\tau/\sigma)^j=\psi(\rho/\sigma)^i$, then
+$\psi(\tau/\sigma)=1$.
+\item $\Dg{0}{D}\ne\Dg{1}{D}$; and for $i\in\{0,1\}$: $\Dg{i}{D}$ is a prime number,
+$\Dg{i}{D}\equiv1\bmod\Nn{P}{\Dmu{D}}\,d$, the square of $\Mom{P}{\Dmu{D}}$ divides $\Dg{i}{D}-1$, and
+$\scb{D}^{10}\le\Dg{i}{D}\le\scb{D}^{11}$.
+\item $\Dpig{D}\cdot\cj{\Dpig{D}}=\Dg{0}{D}\,\Dg{1}{D}$.
+\item For every real number $y$ with $100\,\lb{D}\le y\le2^{\Dmu{D}}$ there is a prime number $p$ with
+$p\equiv1$ modulo the square of $\Mom{P}{\Dmu{D}}$ and $y\le\log p\le y+\sqrt{\lb{D}}$.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{Data}}
+
+\begin{definition}[The scales]\label{d:scales}
+For admissible data $D$ for parameters $P=(N_0,d)$, the three \emph{scales} $\scx{D}$, $\scxo{D}$, $\scb{D}$ are the
+exponentials of the three real numbers that $D$ stores. In terms of them (D1) reads
+\[\exp\bigl(10^{12}\CP{P}\bigr)\le\lb{D},\qquad(\lb{D})^{100}\le\scx{D},\qquad\scx{D}^{10^6}\le\scxo{D},\]
+\[\scxo{D}^{10^6}\le\scb{D},\qquad(\lxo{D})^{6}\le\lb{D}.\]
+\end{definition}
+\leanline{\lean{scx}\sep\lean{scxo}\sep\lean{scb}}
+
+\begin{definition}[The field and its places]\label{d:field}
+Let $D$ be admissible data for parameters $P=(N_0,d)$. Put $\ND{D}=\Nn{P}{\Dmu{D}}$, $\ED{D}=\EP{P}{\Dmu{D}}$ and
+$\PlD{D}=\PlP{P}{\Dmu{D}}$; let $\fD{D}$ be the number of elements of $\PlD{D}$ and $\rdD{D}$ the root discriminant
+of $\ED{D}$. The formal text also names the product $\ND{D}\cdot d$, the order of a cyclotomic field that contains
+$\ED{D}$. For an integer $j$, $\pinD{D}{j}=\pin{P}{\Dmu{D}}{j}$. The \emph{tops} are the places of class $1$ modulo
+$N_0$,
+\[\tops{D}=\bigl\{\tau\in\PlD{D}:\ \pcl{P}{N_0\mid\Nn{P}{\Dmu{D}}}(\tau)=1\bigr\},\]
+and $\gD{D}=\Dg{0}{D}\,\Dg{1}{D}$.
+\end{definition}
+\leanline{\lean{ND}\sep\lean{ED}\sep\lean{PlD}\sep\lean{fD}\sep\lean{rdD}\sep\lean{cond}\sep\lean{pinD}\sep\lean{tops}\sep
+\lean{gD}}
+
+\begin{definition}[Ranks and gaps]\label{d:ranks}
+Let $D$ be admissible data for parameters $P=(N_0,d)$, and $j$ a natural number. Put
+\[\kD{D}=(\Dr{D}+1)-\Dm{D},\qquad\tD{D}=5\,\Dr{D},\]
+\[\nD{D}{j}=\kD{D}+j\,(\tD{D}+1),\qquad\posD{D}{j}=\kD{D}+j-1,\]
+\[\hhD{D}=\Dr{D}^{8},\qquad\hD{D}=2\,\hhD{D},\qquad\rhg{D}=\hhD{D}-\lfloor(\tD{D}+1)/2\rfloor .\]
+\end{definition}
+\leanline{\lean{kD}\sep\lean{tD}\sep\lean{nD}\sep\lean{posD}\sep\lean{hhD}\sep\lean{hD}\sep\lean{rhg}}
+
+\begin{definition}[The order and the weights]\label{d:order}
+Let $D$ be admissible data for parameters $P=(N_0,d)$, $y$ a real number, $j$ a natural number and
+$\sigma\in\PlD{D}$. $\rup{D}{y}$ is the least natural multiple of $\ND{D}$ that is at least $y$ (it is $0$ for
+$y\le0$). Put
+\[\aD{D}=\rup{D}{\scx{D}\,\scb{D}},\qquad\bone{D}=\rup{D}{\aD{D}/\scx{D}},\qquad\btwo{D}=\rup{D}{\aD{D}/\scxo{D}} .\]
+The \emph{nominal weight} $\nw{D}{\sigma}$ is $\aD{D}/\scx{D}$ if $\sigma\in\thick{D}$ and $\aD{D}/\scxo{D}$ otherwise.
+The \emph{weight} $\wt{D}{j}{\sigma}$ is $\bone{D}+j\,\hD{D}+\hhD{D}$ if $\sigma\in\thick{D}$ and
+$\btwo{D}+j\,\hD{D}+\hhD{D}$ otherwise.
+\end{definition}
+\leanline{\lean{rup}\sep\lean{aD}\sep\lean{bone}\sep\lean{btwo}\sep\lean{nw}\sep\lean{wt}}
+
+\begin{definition}[The prime sum, the budget, the cost of one direction]\label{d:sums}
+Let $D$ be admissible data for parameters $P=(N_0,d)$, $y$ a real number, $j$ a natural number and
+$\sigma\in\PlD{D}$. With $\lambda_{d,1}(\nu)=\Lambda(\nu)\,(1-\chiK{P}(\nu))$, where $\Lambda$ is von Mangoldt's
+function (a definition of unit~151), and $(\ )_+$ the positive part,
+\[\Ask{D}{y}{\sigma}=\sum_{\nu=1}^{\aD{D}}\lambda_{d,1}(\nu)\Bigl(\frac y\nu-\nw{D}{\pinD{D}{-\nu}\cdot\sigma}\Bigr)_{+},
+\qquad\budg{D}=\fD{D}\,\aD{D}\,(\lb{D})^{3},\]
+\[\jet{D}{j}=\log(j!)-j\log\frac{\OmP{P}{\Dmu{D}}}{\gD{D}},\qquad
+\UD{D}=\sum_{\sigma\in\PlD{D}}\Bigl(\jet{D}{\wt{D}{0}{\sigma}}-\Ask{D}{\nw{D}{\sigma}}{\sigma}\Bigr).\]
+\end{definition}
+\leanline{\lean{Ask}\sep\lean{budg}\sep\lean{jet}\sep\lean{UD}}
+
+\textbf{Why these choices.} This paragraph is motivation, taken from the comments of the formal text and from the
+places where later units use the data; nothing in it is a statement of this unit. The one-sided bound for primes is
+proved at the scale $\scx{D}$, and the saving is $1/\Dm{D}$, about $\scx{D}^{-1/2}$: $\Dm{D}$ is the number of theta
+lifts. At the much larger scale $\scxo{D}$ a second remainder enters, which Chapter~II makes harmless by moving
+$\scxo{D}$ inside a window; the conditions leave room for that. The scale $\scb{D}$ is the size of the weights, which
+are orders of vanishing: $\aD{D}\approx\scx{D}\scb{D}$ at the tops and about $\scb{D}$, or $\scb{D}\scx{D}/\scxo{D}$,
+at the other places, according to whether the place is thick. All losses of the argument are powers of
+$\lb{D}$, the unit of the budget, and $(\lb{D})^{100}\le\scx{D}$ makes them small against the saving. The ranks grow
+in $2\Dm{D}$ steps of $\tD{D}+1$ from $\kD{D}$; $\Dm{D}$ is a power of $2$ and $\Dr{D}$ a power of $3$ so that the
+parities of Lemma~\ref{l:ranks} hold and $2^{\Dmu{D}}=\Dm{D}^{22}$ is about $\scx{D}^{11}$. The thick places all have
+class $-1$ modulo $N_0$, so for a top $\tau$ the place $\pinD{D}{-\nu}\cdot\tau$ can be thick only for
+$\nu\equiv1\bmod N_0$: this is how the progression $1$ modulo $N_0$ enters the prime sum, with the number of thick
+places as its coefficient, and why Theorem~A must provide many of them. Condition (D6) says that the thick places,
+seen in the $2$-part of the group of places, satisfy no relation $\psi(\tau/\sigma)^j=\psi(\rho/\sigma)^i$ with
+small exponents; a later unit applies it to $\tau=\pinD{D}{-p}^{\,i}\sigma$ and $\rho=\pinD{D}{-p}^{\,j}\sigma$ for a
+prime $p$, so that the powers of one Frobenius class carry a thick place to at most one other thick place. The
+primes $\Dg{0}{D}$, $\Dg{1}{D}$ split completely in $\ED{D}$; they carry an auxiliary level
+(Section~\ref{s:chosen}), and (D9) is used in unit~141 to choose a prime level $\lvl{D}$ of prescribed size.
+
+\sect{The calculus of sizes}{s:sizes}
+\begin{definition}[Bounds on the logarithmic scale]\label{d:bd}
+Let $D$ be admissible data for parameters $P=(N_0,d)$, let $F$ and $l$ be real numbers and $\ast$ one of the two
+signs $\top$, $\bot$ (a truth value in the formal text). The statement $\hlb{D}{\ast}{F}{l}$ means $|F|\le e^{l}$ if
+$\ast=\top$, and $e^{l}\le F$ if $\ast=\bot$. The two cases are also written $\hlu{D}(F;\,l)$ for
+$\hlb{D}{\top}{F}{l}$ and $\hll{D}(F;\,l)$ for $\hlb{D}{\bot}{F}{l}$; in the formal text $\hlu{D}$ and $\hll{D}$
+are the relation with its sign fixed. The data $D$ do not occur in the meaning: they are an index, which lets the
+rules below name the quantities of $D$. We call $l$ an \emph{upper exponent}, respectively a \emph{lower exponent},
+of $F$.
+\end{definition}
+\leanline{\lean{hlb}\sep\lean{hlu}\sep\lean{hll}}
+
+\begin{lemma}[First rules]\label{l:rules}
+Let $D$ be admissible data for parameters $P=(N_0,d)$, let $F$, $G$, $l$, $l'$ be real numbers and $A$, $B$ natural
+numbers.
+\begin{enumerate}[label=(\alph*)]
+\item If $\hll{D}(F;\,l)$, then $0<F$.
+\item If $\hlu{D}(F;\,l)$ and $|G|\le F$, then $\hlu{D}(G;\,l)$. If $\hlu{D}(F;\,l)$, $G\le F$ and $0\le G$, then
+$\hlu{D}(G;\,l)$.
+\item If $\hlu{D}(A;\,l)$ and $B\le A$, then $\hlu{D}(B;\,l)$.
+\item If $\hll{D}(G;\,l')$ and $G\le F$, then $\hll{D}(F;\,l')$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+Each is a chain of two inequalities, with $e^{l}>0$ in (a).
+\end{proof}
+\leanline{\lean{pos}\sep\lean{upabs}\sep\lean{upnonneg}\sep\lean{upnat}\sep\lean{lowle}}
+
+\begin{lemma}[The interval rule]\label{l:icc}
+Let $D$ be admissible data for parameters $P=(N_0,d)$, let $F$, $G$, $H$, $l$, $l'$, $l''$ be real numbers with
+$\hll{D}(G;\,l)$, $\hlu{D}(H;\,l')$ and $G\le F\le H$, and let $\ast$ be one of the two signs. Assume $l'\le l''$ or
+$l''\le l$, according to whether $\ast$ is $\top$ or $\bot$. Then $\hlb{D}{\ast}{F}{l''}$.
+\end{lemma}
+\begin{proof}
+$0<e^{l}\le G\le F\le H\le e^{l'}$, so $|F|\le e^{l'}\le e^{l''}$ in the first case and $e^{l''}\le e^{l}\le F$ in the
+second.
+\end{proof}
+\leanline{\lean{icc}. In the formal text $G$ and $H$ are $F$ by default, and the two last hypotheses are found by
+automation.}
+
+\begin{proof}[Proof of Theorem B]
+$F\le|F|\le e^{l}<e^{l'}\le G$; in (b) the natural numbers are compared as real numbers.
+\end{proof}
+\leanline{\lean{ltBd}\sep\lean{leBd}\sep\lean{natlt}\sep\lean{natle}}
+
+\begin{proposition}[The rules, and the exponents of the quantities of the data]\label{p:table}
+Let $D$ be admissible data for parameters $P=(N_0,d)$. Let $F$, $G$ be real numbers with upper exponents $l$, $l'$,
+or with lower exponents $l$, $l'$; in the second case they are positive. Then, in the same sense:
+\begin{enumerate}[label=(\alph*)]
+\item $F\,G$ has the exponent $l+l'$, and $F^{A}$ the exponent $A\,l$ for every natural number $A$;
+\item $F+G$ has the upper exponent $\max(l,l')+1$, respectively the lower exponent $\max(l,l')$;
+\item $\sqrt F$ has the exponent $l/2$; and if $F$ has the lower exponent $l$ and the upper exponent $l'$, then $1/F$
+has the upper exponent $-l$ and the lower exponent $-l'$;
+\item a natural number $A\ne0$ has the upper exponent $A$ and the lower exponent $0$, and $e^{l}$ has both
+exponents $l$.
+\end{enumerate}
+Moreover every line of Table~1 holds: the quantity in the first column has the upper exponent in the second column
+and, where one is given, the lower exponent in the third.
+\end{proposition}
+
+\begin{center}\fontsize{9}{12.4}\selectfont
+\begin{tabular}{@{}lll@{}}
+\toprule
+quantity & upper exponent & lower exponent\\\midrule
+$\lb{D}$ & $\llb{D}$ & $\llb{D}$\\
+$\lxo{D}$ & $\log\lxo{D}$ & $\log\lxo{D}$\\
+$\Dmu{D}$, \ $\CP{P}$ & $\log\lxo{D}$, \ $\llb{D}$ & \\
+$\Dm{D}$ & $\tfrac12\lx{D}+2$ & $\tfrac12\lx{D}$\\
+$\Dr{D}$; \ $\tD{D}$ & $5\lx{D}+3$; \ $5\lx{D}+8$ & $5\lx{D}$\\
+$\kD{D}$ & $5\lx{D}+3$ & $5\lx{D}-2$\\
+$\nD{D}{\Dm{D}}$ & $5.5\,\lx{D}+12$ & $5.5\,\lx{D}$\\
+$\hhD{D}$; \ $\hD{D}$ & $40\lx{D}+25$; \ $40\lx{D}+27$ & $40\lx{D}$\\
+$\twd{\Dmu{D}}$ & $11\lx{D}+\tfrac15\llb{D}$ & $11\lx{D}$\\
+$\fD{D}$ & $11\lx{D}+\tfrac15\llb{D}+\CP{P}$ & $11\lx{D}$\\
+$\Dg{i}{D}$; \ $\gD{D}$ & $11\lb{D}$; \ $22\lb{D}$ & $10\lb{D}$; \ $20\lb{D}$\\
+$\aD{D}$ & $\lb{D}+\lx{D}+1$ & $\lb{D}+\lx{D}$\\
+$\bone{D}$ & $\lb{D}+2$ & $\lb{D}-2$\\
+$\btwo{D}$ & $\lb{D}-\lxo{D}+\lx{D}+2$ & $\lb{D}-\lxo{D}+\lx{D}$\\
+$\nw{D}{\sigma}$ & $\lb{D}+1$ & $\lb{D}-\lxo{D}$\\
+$\wt{D}{0}{\sigma}$ & $\lb{D}+2$ & that of $\nw{D}{\sigma}$, for every $\wt{D}{j}{\sigma}$\\
+$\Mom{P}{\Dmu{D}}$ & $\tfrac19\lb{D}$ & \\
+$\log\ordch{D}$ & $32\lx{D}$ & \\
+\bottomrule
+\end{tabular}
+
+\smallskip{\fontsize{8.9}{12}\selectfont\color{inksoft}Table 1. Exponents recorded in the formal text; $\sigma\in\PlD{D}$,
+$i\in\{0,1\}$, $j$ a natural number; $\ordch{D}$ is defined in Definition~\ref{d:chosen}.}
+\end{center}
+
+\begin{proof}
+(a) to (d) are the rules $e^{l}e^{l'}=e^{l+l'}$, $2<e$, and $A\le e^{A}$. A line of the table follows from the
+interval rule, Lemma~\ref{l:icc}, applied to the bounds that the definitions give, and from (a) to (d). For example
+(D3) gives $e^{\lx{D}/2}\le\Dm{D}\le2\,e^{\lx{D}/2}$, and $2\le e^{2}$. For $\twd{\Dmu{D}}$: the factor
+$2^{\Dmu{D}}=\Dm{D}^{22}$ has the exponents $11\lx{D}+44$ and $11\lx{D}$; the factor $3^{\lfloor\log_3\Dmu{D}\rfloor}$
+is at most $\Dmu{D}+1$ and $3^5$ has the upper exponent $15$, so an upper exponent is
+$11\lx{D}+\log\lxo{D}+60$, which is below the one in the table because $\log\lxo{D}\le\frac16\llb{D}$ and
+$\llb{D}\ge10^{12}\,\CP{P}$ with $\CP{P}\ge64$ (Lemma~\ref{l:cge}). The line for $\fD{D}$ follows from this one by
+$\fD{D}=\twd{\Dmu{D}}\,\varphi(N_0)$ (Theorem~A of the first part) and $\varphi(N_0)\le\CP{P}$. For $\aD{D}$ use
+Lemma~\ref{l:round}: $\scx{D}\scb{D}\le\aD{D}\le\scx{D}\scb{D}+\ND{D}$. The remaining lines are verified in the same
+way; we did not redo all of them by hand (Section~\ref{s:notes}).
+\end{proof}
+\leanline{\lean{bdmul}\sep\lean{bdadd}\sep\lean{natcast}\sep\lean{bdf}; the other rules and lines are instances without
+names.}
+
+The formal text has a few more rules of the same kind, used rarely: for the natural ceiling, the absolute value, a
+difference, a finite sum, and for upper bounds of logarithms ($\log F$, $\log(FG)$, $\log F^{A}$, $\log A!$).
+
+\begin{lemma}\label{l:cge}
+Let $P=(N_0,d)$ be parameters. Then $64\le\CP{P}$, $N_0\le\CP{P}$, $d\le\CP{P}$ and $\varphi(N_0)\le\CP{P}$, with
+$\varphi$ Euler's function.
+\end{lemma}
+\begin{proof}
+All summands in Definition~\ref{d:C} are nonnegative, $64<d$, and $\varphi(N_0)\le N_0$.
+\end{proof}
+\leanline{\lean{cge}}
+
+\begin{lemma}[Rounding up]\label{l:round}
+Let $D$ be admissible data for parameters $P=(N_0,d)$, and let $F$, $l$ be real numbers with $\hll{D}(F;\,l)$. Then
+$F\le\rup{D}{F}\le F+\ND{D}$.
+\end{lemma}
+\begin{proof}
+$F>0$, and the least integer $n\ge F/\ND{D}$ satisfies $n<F/\ND{D}+1$; multiply by $\ND{D}$.
+\end{proof}
+\leanline{\lean{round}}
+
+\begin{lemma}[Ranks]\label{l:ranks}
+Let $D$ be admissible data for parameters $P=(N_0,d)$. Then:
+\begin{enumerate}[label=(\alph*)]
+\item $\Dr{D}$ is odd, $\Dm{D}$ is even, $\kD{D}$ is even and $\tD{D}$ is odd;
+\item $10000\le\Dm{D}$; \ $\Dr{D}+1=\kD{D}+\Dm{D}$; \ $\kD{D}\le\Dr{D}$; \ $100\,\Dm{D}\le\kD{D}$; \ $0<\kD{D}$;
+\item $\Dr{D}+6\le\tD{D}$; \ $\kD{D}+\tD{D}+1\le\hhD{D}$; and $j\mapsto\nD{D}{j}$ is monotone.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+By (D3) and (D4), $\Dm{D}$ is a power of $2$ and $\Dr{D}$ a power of $3$, both with positive exponent. From Table~1
+and Theorem~B: $10000<\Dm{D}$, because $10000<\frac12\lx{D}$ by (D1) and Lemma~\ref{l:cge}; and
+$2\,\Dm{D}\le\Dr{D}$, because $\frac12\lx{D}+4<5\lx{D}$. So the subtraction in $\kD{D}$ is exact,
+$\Dr{D}/2\le\kD{D}\le\Dr{D}$, and $100\,\Dm{D}\le\kD{D}$ because $\frac12\lx{D}+102<5\lx{D}-2$. The parities follow from
+$\kD{D}=\Dr{D}+1-\Dm{D}$ and $\tD{D}=5\,\Dr{D}$. Finally $\Dr{D}\ge3$ gives $\Dr{D}+6\le5\,\Dr{D}$ and
+$\kD{D}+\tD{D}+1\le6\,\Dr{D}+1\le\Dr{D}^8$.
+\end{proof}
+\leanline{\lean{rodd}\sep\lean{meven}\sep\lean{keven}\sep\lean{todd}\sep\lean{lem}\sep\lean{radd}\sep\lean{kler}\sep
+\lean{hundred}\sep\lean{kpos}\sep\lean{rsix}\sep\lean{kth}\sep\lean{nmono}}
+
+\begin{lemma}\label{l:thick}
+Let $D$ be admissible data for parameters $P=(N_0,d)$, and $\sigma\in\PlD{D}$ with $\sigma\in\thick{D}$. Then
+$\pcl{P}{N_0\mid\Nn{P}{\Dmu{D}}}(\sigma)=-1$.
+\end{lemma}
+\begin{proof}
+This is (D5) for the divisor $N_0$.
+\end{proof}
+\leanline{\lean{clthick}}
+
+\sect{Weights}{s:weights}
+\begin{lemma}[Nominal weights and weights]\label{l:weights}
+Let $D$ be admissible data for parameters $P=(N_0,d)$, $\sigma\in\PlD{D}$ and $j$ a natural number. Then
+\begin{enumerate}[label=(\alph*)]
+\item $\aD{D}/\scxo{D}\le\nw{D}{\sigma}\le\aD{D}/\scx{D}$; in particular $0\le\nw{D}{\sigma}$;
+\item $\nw{D}{\sigma}+\scx{D}^{42}\le2\,\scb{D}$;
+\item $\nw{D}{\sigma}\le\wt{D}{j}{\sigma}-\hhD{D}$;
+\item if $j\le2\,\Dm{D}$, then $\wt{D}{j}{\sigma}\le\nw{D}{\sigma}+\scx{D}^{42}$, hence
+$\wt{D}{j}{\sigma}\le2\,\scb{D}$, and $\log\wt{D}{j}{\sigma}\le\log\nw{D}{\sigma}+1/\scx{D}$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) $\scx{D}\le\scxo{D}$. (b) By (a) and Lemma~\ref{l:round},
+$\nw{D}{\sigma}\le(\scx{D}\scb{D}+\ND{D})/\scx{D}=\scb{D}+\ND{D}/\scx{D}$, and
+$\ND{D}/\scx{D}+\scx{D}^{42}\le\scb{D}$ by Theorem~B: an upper exponent of the left side is $42\lx{D}+1$.
+(c) $\bone{D}\ge\aD{D}/\scx{D}$ and $\btwo{D}\ge\aD{D}/\scxo{D}$ by Lemma~\ref{l:round}. (d) By the same lemma the
+difference $\wt{D}{j}{\sigma}-\nw{D}{\sigma}$ is at most $\ND{D}+2\,\Dm{D}\,\hD{D}+\hhD{D}$, with upper exponent
+$40.5\,\lx{D}+33$, below $42\lx{D}$. With (b) this gives the second inequality. For the third,
+$\nw{D}{\sigma}\,e^{1/\scx{D}}\ge\nw{D}{\sigma}+\nw{D}{\sigma}/\scx{D}$, and
+$\scx{D}^{42}\le\nw{D}{\sigma}/\scx{D}$ by Theorem~B, since $42\lx{D}<\lb{D}-\lxo{D}-\lx{D}$.
+\end{proof}
+\leanline{\lean{nwicc}\sep\lean{nwnonneg}\sep\lean{nwadd}\sep\lean{nwlew}\sep\lean{wlenw}\sep\lean{wletwob}\sep\lean{logw}}
+
+\sect{Chosen places and neat levels}{s:chosen}
+\statement{ana}{\textbf{Inputs.}\enspace Let $D$ be admissible data for parameters $P=(N_0,d)$, and $I$ an index set.
+(J1), unit~141: a finite place $w$ of $\ED{D}$ \emph{is chosen} if it contains $\cj{\Dpig{D}}$; for $i\in\{0,1\}$,
+$\Ch{i}{D}$ is the set of chosen places that contain $\Dg{i}{D}$, and every chosen place lies in one of the two.
+A place containing $\Dg{i}{D}$ has norm $\Dg{i}{D}$, and $\Dpig{D}\,\cj{\Dpig{D}}$ is $\Dg{i}{D}$ times a number
+prime to $\Dg{i}{D}$. (J2), unit~141: the \emph{level} $\lvl{D}$ is a prime number with
+$\lvl{D}\equiv1\bmod\ND{D}\,d$, and $\piN{D}$ is an integer of $\ED{D}$ with $\piN{D}\,\cj{\piN{D}}=\lvl{D}$.
+(J3), unit~141: $\omega_D$ attaches to every finite place $w$ of $\ED{D}$ a character $\omega_D(w)$ of its residue
+field, of order exactly $\Mom{P}{\Dmu{D}}$ if $w$ is chosen, and trivial otherwise. (J4), unit~122: $\Gf{D}{I}$ is
+the unitary group of the standard hermitian form with index set $I$ over the finite adeles of $\ED{D}$,
+$\Kz{D}{I}$ its subgroup of matrices that are integral with their inverses, $\Gam{D}{I}$ the image of the unitary
+group over $\ED{D}$; for an integer $a$ of $\ED{D}$ the principal level of $a$ consists of the elements of
+$\Kz{D}{I}$ congruent to $1$ modulo $a$. The general linear group with index set $I$ over a finite ring with $n$
+elements has at most $n^{(\#I)^2}$ elements. (J5), unit~50, a lemma of Minkowski and Serre: if finitely many
+distinct finite places of a CM field with more than one infinite place have norms whose product exceeds
+$(2\,\#I)^{h}$, $h$ the degree of the field, then for every subgroup $K$ of the group of elements of the integral
+subgroup that reduce to $1$ at these places, and every element $x$ of the adelic group, the intersection of the
+rational group with $xKx^{-1}$ is trivial. The catalogue of the write-up refers for (J5) to Serre~\cite{serre}
+and to Minkowski, as a special case, with the place not confirmed.}
+
+\begin{lemma}[The chosen places]\label{l:chosen}
+Let $D$ be admissible data for parameters $P=(N_0,d)$, $i\in\{0,1\}$, and $w$ a finite place of $\ED{D}$.
+\begin{enumerate}[label=(\alph*)]
+\item There is a bijection from $\PlD{D}$ onto $\Ch{i}{D}$ (the formal text fixes one); so $\Ch{i}{D}$ has $\fD{D}$
+elements, and the product of the norms of all chosen places is $\gD{D}^{\fD{D}}$.
+\item If $\Dg{i}{D}\in w$, then $\cj{w}$ is chosen if and only if $w$ is not. If $w$ is chosen, then $\cj{w}$ is
+not chosen.
+\item The family of all chosen places, indexed by the pairs of an index $i$ and an element of $\Ch{i}{D}$, has as
+its range the set of chosen places; it is injective, and no member is the conjugate of a member.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) The proposition of the first part on the places above a prime and an integer (the last of its section on Frobenius elements), for the prime $\Dg{i}{D}$, which is $\equiv1\bmod\ND{D}\,d$ by (D7), and the
+integer $\cj{\Dpig{D}}$, with (J1); the places of $\Ch{i}{D}$ have norm $\Dg{i}{D}$. (b) The lemma of the first part on an integer whose norm is the prime times a number prime to it,
+for the same prime and integer; a chosen place contains $\Dg{0}{D}$ or $\Dg{1}{D}$. (c) Places above
+$\Dg{0}{D}\ne\Dg{1}{D}$ have different norms, and (b).
+\end{proof}
+\leanline{\lean{chequiv}\sep\lean{cardch}\sep\lean{prodq}\sep\lean{chstar}\sep\lean{notstar}\sep\lean{rangech}\sep
+\lean{conjapart}}
+
+\begin{lemma}[The level is unramified]\label{l:level}
+Let $D$ be admissible data for parameters $P=(N_0,d)$ and $w$ a finite place of $\ED{D}$. If $\lvl{D}\in w$, then
+$\lvl{D}$ has valuation exactly $1$ at $w$. If $\piN{D}\in w$, then $\piN{D}$ has valuation exactly $1$ at $w$.
+\end{lemma}
+\begin{proof}
+The lemma of the first part on the absence of ramification and the lemma just used, for the prime $\lvl{D}$ of (J2) and the integer $\piN{D}$, whose norm is
+$\lvl{D}$ times $1$.
+\end{proof}
+\leanline{\lean{valN}\sep\lean{valpi}}
+
+\begin{definition}[The order and the level of the chosen places]\label{d:chosen}
+Let $D$ be admissible data for parameters $P=(N_0,d)$. $\ordch{D}$ is the order of the product, over all chosen
+places, of the general linear groups of rank $\Dr{D}\,\tD{D}$ over the residue fields. For an index set~$I$, which
+is finite, $\Kch{D}{I}$ is the subgroup of the elements of $\Kz{D}{I}$ that reduce to $1$ at every chosen place.
+\end{definition}
+\leanline{\lean{ordch}\sep\lean{chlevel}}
+
+\begin{lemma}\label{l:GL}
+Let $D$ be admissible data for parameters $P=(N_0,d)$ and $I$ a finite index set~$I$. If $I$ has at most
+$\Dr{D}\,\tD{D}$ elements, then the order of the product, over all chosen places, of the general linear groups with
+index set $I$ over the residue fields divides $\ordch{D}$. If $a$ is an integer of $\ED{D}$ divisible by
+$\cj{\Dpig{D}}$, then the principal level of $a$ is contained in $\Kch{D}{I}$.
+\end{lemma}
+\begin{proof}
+Embed $I$ into a set with $\Dr{D}\,\tD{D}$ elements and extend matrices by the identity: this is an injective
+homomorphism of groups, and the order of a subgroup divides the order of the group. Every chosen place contains
+$\cj{\Dpig{D}}$, hence $a$.
+\end{proof}
+\leanline{\lean{cardGL}\sep\lean{princ}}
+
+\begin{proposition}[Neat levels, and Minkowski's bound]\label{p:neat}
+Let $D$ be admissible data for parameters $P=(N_0,d)$, $I$ a finite index set~$I$ with at most
+$2\,\nD{D}{\Dm{D}}$ elements, and $K$ a subgroup~$K$ of $\Gf{D}{I}$.
+\begin{enumerate}[label=(\alph*)]
+\item If $K$ is contained in $\Kch{D}{I}$, then $\Gam{D}{I}\cap xKx^{-1}$ is trivial for every element~$x$ of
+$\Gf{D}{I}$.
+\item If $K$ is contained in $\Kz{D}{I}$, then the order of $\Gam{D}{I}\cap xKx^{-1}$ divides $\ordch{D}$ for
+every element~$x$ of $\Gf{D}{I}$.
+\end{enumerate}
+\end{proposition}
+\begin{proof}
+(a) is (J5) for the family of chosen places, which is injective (Lemma~\ref{l:chosen}). Its hypothesis: the degree
+of $\ED{D}$ is $2\fD{D}$ and the product of the norms is $\gD{D}^{\fD{D}}$, so it suffices that
+$(4\,\nD{D}{\Dm{D}})^2<\gD{D}$, which holds by Theorem~B and Table~1: $11\lx{D}+32<20\lb{D}$. (b) Conjugation by
+$x^{-1}$ followed by reduction at the chosen places is a homomorphism from $\Gam{D}{I}\cap xKx^{-1}$ to the product
+of the general linear groups over the residue fields. Its kernel lies in $\Gam{D}{I}\cap x\,\Kch{D}{I}\,x^{-1}$,
+which is trivial by (a). So the order divides that of the product, which divides $\ordch{D}$ by Lemma~\ref{l:GL},
+since $2\,\nD{D}{\Dm{D}}\le\Dr{D}\,\tD{D}$ by Theorem~B.
+\end{proof}
+\leanline{\lean{neat}\sep\lean{mink}}
+
+\begin{lemma}[Powers of the residue characters]\label{l:omega}
+Let $D$ be admissible data for parameters $P=(N_0,d)$, $\nu$ an integer~$\nu$ with $0<|\nu|\le8\,\Dm{D}$, and $w$ a
+finite place of $\ED{D}$. Then $\omega_D(w)^{\nu}\ne1$ if and only if $w$ is chosen.
+\end{lemma}
+\begin{proof}
+At a place that is not chosen the character is trivial. At a chosen place its order $\Mom{P}{\Dmu{D}}$ is a
+multiple of $\ND{D}\,d$ (the lemma of the first part on the arithmetic of the parameters, item (d)), and $8\,\Dm{D}<\ND{D}\,d$ by Theorem~B, so the order does
+not divide $\nu$.
+\end{proof}
+\leanline{\lean{omega}. Two instances without names follow in the formal text: the last two lines of Table~1.}
+
+For the line of $\log\ordch{D}$ in Table~1: by (J4) and Lemma~\ref{l:chosen}(a),
+\[\ordch{D}\le\gD{D}^{\,\fD{D}\,(\Dr{D}\,\tD{D})^2},\]
+and the exponent times $\log\gD{D}$ has an upper exponent below $32\lx{D}$.
+
+\sect{Existence of admissible data}{s:exist}
+\begin{proposition}[A construction of Behrend type]\label{p:behrend}
+Let $\Gamma_1$, $\Gamma_2$ be commutative groups, $\psi\colon\Gamma_1\to\Gamma_2$ a homomorphism,
+$\sigma_0,\gamma\in\Gamma_1$, and $n$, $M$, $L$ natural numbers with $L>0$ and $(LM)^n\le o$, where $o$ is the order
+of $\psi(\gamma)$ (it is $0$ in the formal text if that order is infinite). Then there is a finite subset
+$T\subseteq\Gamma_1$ such that
+\begin{enumerate}[label=(\roman*)]
+\item every element of $T$ is $\sigma_0\gamma^{\,i}$ for a natural number $i$;
+\item $M^n/(n\,M^2)\le\#T$;
+\item for all natural numbers $i$, $j$ with $0<i<j\le L$ and all $\sigma,\tau,\rho\in T$: if
+$\psi(\tau/\sigma)^j=\psi(\rho/\sigma)^i$, then $\psi(\tau/\sigma)=1$.
+\end{enumerate}
+\end{proposition}
+\begin{proof}
+Among the $M^n$ vectors $u=(u_1,\dots,u_n)$ with integer coordinates $0\le u_k<M$, the sum of squares takes fewer
+than $nM^2$ values; so for some value $q$ the sphere $S$ of the vectors with $\sum_ku_k^2=q$ has at least
+$M^n/(nM^2)$ elements (this count is in the library of the prover). For a vector $u$ with natural coordinates put
+$[u]=\sum_ku_k(LM)^{k-1}$; the map $u\mapsto[u]$ is additive, and on the vectors with all coordinates below $LM$ it
+is injective with values below $(LM)^n\le o$. Hence $u\mapsto\psi(\gamma)^{[u]}$ is injective on these vectors.
+Let $T$ be the set of the $\sigma_0\gamma^{[u]}$, $u\in S$. Then (i) holds, and (ii) because $L\ge1$ makes the
+coordinates of $S$ smaller than $LM$. For (iii) let $\sigma,\tau,\rho$ come from $u,v,z\in S$ and write
+$j=i+i'$ with $i'>0$. The hypothesis says $\psi(\gamma)^{(i+i')[v]}=\psi(\gamma)^{i[z]+i'[u]}$, and both exponents
+are values of the bracket at vectors with coordinates at most $(i+i')(M-1)<LM$. So $(i+i')\,v=i\,z+i'\,u$: the
+point $v$ lies between $z$ and $u$ on a segment, and all three lie on one sphere. Expanding
+$i^2z_k^2=((i+i')v_k-i'u_k)^2$ and summing,
+\[i\,(i\,q+i'q)=\sum_k i\,(i\,z_k^2+i'u_k^2)=\sum_k(i+i')\bigl(i'(u_k-v_k)^2+i\,v_k^2\bigr)
+=(i+i')\,i'\sum_k(u_k-v_k)^2+(i+i')\,i\,q ,\]
+so $u=v$, hence $\tau=\sigma$.
+\end{proof}
+\leanline{\lean{behrend}. The header of the Lean file cites Shapira~\cite{shapira}, Theorem~1, after
+Behrend~\cite{behrend}; the artifact records these citations as found, with no place compared.}
+
+\begin{lemma}[Pigeonhole in the class group]\label{l:pigeon}
+Let $F$ be a number field~$F$ with class number $n$, and let $\mathfrak{p}_i$, $\mathfrak{q}_i$, for
+$i\in\{0,\dots,n\}$, be finite places of $F$ such that $\mathfrak{p}_i\mathfrak{q}_i$ is principal for every $i$.
+Then there are indices $i\ne j$ such that $\mathfrak{p}_i\mathfrak{q}_j$ is principal.
+\end{lemma}
+\begin{proof}
+Two of the $n+1$ classes of the $\mathfrak{p}_i$ are equal, say those of $\mathfrak{p}_i$ and $\mathfrak{p}_j$ with
+$i\ne j$; then the class of $\mathfrak{p}_i\mathfrak{q}_j$ is that of $\mathfrak{p}_j\mathfrak{q}_j$, the trivial
+one.
+\end{proof}
+\leanline{\lean{pigeon}}
+
+\statement{ana}{\textbf{Inputs.}\enspace (J6), unit~126, a weak form of the Siegel--Walfisz theorem: let $M>0$ be a
+multiple of $4$ and $A$ a natural number. For all sufficiently large real $W$, every natural number $k>1$ with
+$M^k\le W^A$ and every real $y$ with $W\le y\le W^A$, there is a prime number $p\equiv1\bmod M^k$ with
+$y\le\log p\le y+W$. The catalogue of the write-up gives Montgomery and Vaughan~\cite{mv}, Corollary~11.19, of which
+this is a weaker form. (J7), unit~106: for a prime $d\equiv7\bmod8$ and a prime number $p$ whose Legendre symbol
+modulo $d$ is $1$, the ideal $(p)$ of $\Q(\sqrt{-d})$ is a product of two prime ideals of norm $p$; and the absolute
+norm of a principal ideal $(y)$ is $y\,\cj y$. (J8), unit~106: if $q$ is an integer with $|q|>1$ and
+$q^{o}\equiv1\bmod2^{\mu+1}$ for a natural number $o>0$, then $2^{\mu}\le(|q|+1)\,o$.}
+
+\begin{proof}[Proof of Theorem A]
+Write $Y=\log y$ and $W=y^{\varepsilon/6}=e^{\varepsilon Y/6}$, and let $\clno{P}$ be the class number of $\KP{P}$.
+Fix a natural number $n$ with $n>6$ and $n\,\varepsilon/6>99\,N_0d$. Since $W$ exceeds every fixed multiple of every
+fixed power of $Y$ when $y$ is large, we may assume all of the following: $Y\ge2$;
+\[W\ge10^{12}\,Y^2,\qquad W\ge(8019N_0+2)\,10368^{\,n}\,Y^{n+1},\qquad W\ge8019\cdot2^n\,n\,Y,\]
+\[W\ge2\,\clno{P}+10^6,\qquad W\ge\exp\bigl(10^{12}\,\CP{P}\bigr);\]
+and the conclusion of (J6) for $M=N_0d$ and $A=n$ at this $W$.
+
+\emph{Ranks and scales.} Choose natural numbers $i_2$, $i_3$ with $2^{i_2}\le e^{Y/2}<2^{i_2+1}$ and
+$3^{i_3}\le e^{5Y}<3^{i_3+1}$, and put
+\[m=2^{i_2+1},\qquad r=3^{i_3+1},\qquad\mu=22\,(i_2+1),\]
+and take $Y$, $W$, $W^6$ for the logarithms of the three scales. Then (D3) and (D4) hold, and $2^\mu=m^{22}$. As
+$i_2\log2\le Y/2$ and $Y\ge2$, we get $\mu\le16\,Y+22\le32\,Y$, which is (D2). For (D1):
+$\log\log$ of the third scale is $\log W^6=\varepsilon Y$, which is at least $10^{12}\,\CP{P}$ by the last
+assumption and at most $Y/100$; $10^6Y\le W$ and $10^6W\le W^6$ hold as $W\ge10^{12}Y^2$ and $W\ge10^6$; and
+$6\log W=\varepsilon Y$. The same computations give the first four assertions of the theorem.
+
+\emph{Primes.} First $(N_0d)^{2(\mu+6)}\le W^n$: the logarithm of the left side is at most
+$2(32Y+6)\,N_0d\le99\,N_0d\,Y<n\log W$. Hence also $2^\mu\le W^n$. By (J6) with $k=2(\mu+6)$: for every real $y'$
+with $W\le y'\le W^n$ there is a prime $p\equiv1$ modulo the square of $\Mom{P}{\mu}$ with
+$y'\le\log p\le y'+W$. This gives (D9), because $W\le100\,W^6$, $2^\mu\le W^n$ and $W\le\sqrt{W^6}$. For
+$i\in\{0,\dots,\clno{P}\}$ apply it to $y'=10W^6+2iW$, which is at most $W^7\le W^n$: there are primes $p_i\equiv1$
+modulo the square of $\Mom{P}{\mu}$ with $10W^6+2iW\le\log p_i\le10W^6+(2i+1)W$. They increase strictly with $i$, and
+$10W^6\le\log p_i\le11W^6$ because $(2\,\clno{P}+1)W\le W^2$. As $\Nn{P}{\mu}\,d$ divides $\Mom{P}{\mu}$, each $p_i$
+is $\equiv1\bmod\Nn{P}{\mu}\,d$; so its Legendre symbol modulo $d$ is $1$ and $(p_i)=\mathfrak{p}_i\mathfrak{q}_i$ in
+$\KP{P}$ with prime ideals of norm $p_i$ by (J7). By Lemma~\ref{l:pigeon} there are $i\ne j$ and an integer $\pi$
+of $\KP{P}$ with $\mathfrak{p}_i\mathfrak{q}_j=(\pi)$, so that $\pi\,\cj\pi=p_ip_j$. With the two primes $p_i$, $p_j$
+and the integer $\pi$, (D7) and (D8) hold.
+
+\emph{Thick places.} Put $M=N_0\cdot3^{\lfloor\log_3\mu\rfloor+5}$, so that $\Nn{P}{\mu}=M\,2^\mu$, and let $\psi$ be
+the class modulo $2^{\mu+1}$ on $\PlP{P}{\mu}$. The integers $-1$ and $M+1$ are prime to $N_0$; put
+$\sigma_0=\pin{P}{\mu}{-1}$ and $\gamma=\pin{P}{\mu}{M+1}$. By the dictionary of the first part, item (d), $\psi(\gamma)$ is the
+class of $M+1$, so its order $o$ satisfies $2^\mu\le(M+2)\,o$ by (J8). Choose a natural number $i_0$ with
+$2^{n\,i_0}\le2^\mu/W<2^{n(i_0+1)}$; this is possible because $W\le e^{Y/2}<m\le2^\mu$. Now
+$M\le243\,N_0(\mu+1)\le8019\,N_0Y$ and $324\mu\le10368\,Y$, so
+\[(M+2)\,\bigl(324\mu\cdot2^{i_0}\bigr)^n\le(8019N_0+2)\,10368^{\,n}\,Y^{n+1}\cdot\frac{2^\mu}{W}\le2^\mu\le(M+2)\,o .\]
+Thus Proposition~\ref{p:behrend} applies with $L=324\mu$ and the side $2^{i_0}$ in the role of its $M$. It gives a
+set $T$ of places with (D6), with at least $2^{n\,i_0}/(n\,2^{2i_0})$ elements, all of the form
+$\pin{P}{\mu}{-1}\cdot\pin{P}{\mu}{M+1}^{\,i}$. For a divisor $m'$ of $M$, such a place has class $-(M+1)^i=-1$
+modulo $m'$, again by item (d) of the dictionary: this is (D5). So the record with thick set $T$ is admissible.
+
+\emph{Many thick places.} It remains that $\twd{\mu}/W^6\le2^{n\,i_0}/(n\,2^{2i_0})$. Here
+$\twd{\mu}\le243(\mu+1)2^\mu\le8019\,Y\cdot2^{n(i_0+1)}\,W$, and $2^{i_0}<W$ because $2^{n\,i_0}\le2^\mu/W<W^n$. So
+\[\frac{\twd{\mu}}{W^6}\cdot\frac{n\,2^{2i_0}}{2^{n\,i_0}}\le\frac{8019\,Y\,2^{n}\,n\,W^{3}}{W^{6}}\le\frac{W^4}{W^6}\le1.\qedhere\]
+\end{proof}
+\leanline{\lean{exdata}}
+
+\sect{Notes on the formal text}{s:notes}
+\subhead{Names and arguments.} In the formal text the scales, the ranks $\kD{D}$, $\tD{D}$, the field and every
+other object of Definitions~\ref{d:scales} to~\ref{d:sums} are functions of the data, and the note writes them so.
+The components of the record are written in the same way, $\Dm{D}$, $\Dr{D}$, $\Dmu{D}$, $\thick{D}$,
+$\Dg{i}{D}$, $\Dpig{D}$; the overview of the write-up writes some of them without the argument. The record stores
+the logarithms of the scales, and the scales are their exponentials: the note writes $\lx{D}$ for the stored
+number. The component that the formal text calls \texttt{s} is $\Dmu{D}$ here. In Lean the hypotheses
+$\hlu{D}(F;\,l)$ and $\hll{D}(G;\,l')$ of Theorem~B and of Lemmas~\ref{l:rules} to~\ref{l:round} are instance
+arguments: Lean finds them by search, from the rules of Proposition~\ref{p:table} and the lines of Table~1, each of
+which is an instance; and the hypothesis $l<l'$ of Theorem~B has a default proof by a decision procedure.
+
+\subhead{What was not redone by hand.} The formal text proves each line of Table~1, and each use of Theorem~B, by
+one call of a decision procedure on the conditions (D1). In this note the inequalities between exponents are
+written out for the lines of $\Dm{D}$, $\twd{\Dmu{D}}$, $\fD{D}$ and for the uses in Lemmas~\ref{l:ranks},
+\ref{l:weights}, \ref{l:omega} and Proposition~\ref{p:neat}; the other lines of the table are stated as the formal
+text has them. The exponents given in the proofs are mine and may differ from those that Lean finds. The proof
+of Theorem~A is complete here; the formal proof closes several of its numerical steps by automation, and which
+goal each tactic settles there was inferred by the reader of the unit from the order of the conditions, not from
+Lean's output.
+
+\subhead{Signatures that could not be settled without Lean.} (1) For five declarations treated here the list of
+arguments is derived by the reader of the unit and not printed by Lean: Lemma~\ref{l:cge}, the range and the
+conjugation statement of Lemma~\ref{l:chosen}(c), and the lines of $\fD{D}$ and of $\CP{P}$ in Table~1. I read them
+in the Lean text and agree: the letter that looks like a section variable is in each case another object (the
+constant of the parameters, written with a dot after $P$; a variable bound inside the statement). (2) The two
+lines of Table~1 for $\wt{D}{0}{\sigma}$ and $\wt{D}{j}{\sigma}$ are instances that stand, in the Lean file, after a
+command that includes the hypothesis $j\le2\,\Dm{D}$ in what follows. Lean's documentation says that this command
+concerns theorems and no other declarations; and the proof of Lemma~\ref{l:weights}(d) needs the second instance
+to be found by search, which could not supply such a hypothesis. So I read both instances without the hypothesis,
+and the first one without $j$, against the census of the workspace; only Lean can settle it. (3) The rule for
+quotients is an instance that takes bounds for $F$ and for $1/G$. The census lists a further bound for $G$ as a
+possible argument; by Lean's rule for definitions, which keeps a section variable only if the term uses it, it is
+not one. This too is a reading of the rule, not Lean's answer.
+
+\subhead{Where the formal statements differ from the natural ones.} (D5) quantifies over a number $m$ and a proof
+that it divides the order of the root of unity; the name $m$ hides the component $\Dm{D}$ there. The subtraction in
+$\kD{D}$, $\posD{D}{j}$ and $\rhg{D}$ is that of natural numbers; Lemma~\ref{l:ranks} shows that it is exact for
+$\kD{D}$. In (D7) the formal text says that the pair of primes is injective and that the square of
+$\Mom{P}{\Dmu{D}}$ divides $\Dg{i}{D}-1$ in natural numbers. In Theorem~A the hypothesis is $0<\varepsilon/6$, and
+``for every sufficiently large $y$'' is a statement along the filter at infinity. In
+Proposition~\ref{p:behrend} the bound (ii) is a real quotient, which Lean reads as $0$ when $n=0$ or $M=0$, and the
+order of an element of infinite order is $0$; then the hypothesis forces $M=0$ and the statement is empty.
+Lemma~\ref{l:rules}(a) is all that the formal text uses of positivity. The definition of $\rhg{D}$ and of
+$\posD{D}{j}$ are not used in this unit.
+
+\subhead{How this note was written.} From the dossier of the unit: the texts of its members and the structured
+proofs of the five files treated here, of which the longest is the proof of Theorem~A. I read the five Lean files
+completely and compared every statement of this note with the Lean statement, argument by argument. The proof of
+Theorem~A follows the formal one step by step, with its constants; the proofs of Lemmas~\ref{l:ranks}
+and~\ref{l:weights} and of Proposition~\ref{p:table} replace calls of automation by explicit exponents. Of the
+Inputs I opened only the comments of the formal text and the reading of the dossier, not the proofs. The references
+are those of the catalogue of the write-up and of the artifact's own list; I did not open the cited works. A second
+reading of the unit by the reading agent arrived while this note was written; I compared its remarks on this part
+with the Lean text, and they agree with what is stated here. The
+program check of the unit's dossier covered \UnitSteps{} leaf steps of \UnitProofs{} proofs.
+
+\head{Appendix A. Concordance with the Lean artifact}
+The formal names of the objects: \texttt{D.logX}, \texttt{D.logX₁}, \texttt{D.logB} are $\lx{D}$, $\lxo{D}$,
+$\lb{D}$; \texttt{D.s}, \texttt{D.m}, \texttt{D.r} are $\Dmu{D}$, $\Dm{D}$, $\Dr{D}$; \texttt{D.g i} is $\Dg{i}{D}$ and
+\texttt{D.piG} is $\Dpig{D}$; \texttt{D.Φ} is $\PlD{D}$; \texttt{P.c} is $\CP{P}$; \texttt{primeSum} is the prime
+sum, \texttt{dirCost} the cost of one direction. Three statements as the artifact has them:
+\quoted{Data}
+\quoted{exdata}
+\quoted{leBd}
+{\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}\setlength{\tabcolsep}{0pt}
+\begin{longtable}{@{}p{27mm}p{62mm}p{40mm}r@{}}
+\textbf{In this note} & \textbf{Lean declaration} & \textbf{File} & \textbf{Lines}\\\midrule\endhead
+\ConcordanceRows
+\end{longtable}}
+
+\head{Notation}
+\begingroup\fontsize{8.6}{10.9}\selectfont\raggedright
+\setlength{\columnsep}{9mm}\setlength{\parskip}{0pt}
+\begin{multicols}{2}
+\nt{$P=(N_0,d)$}{parameters}
+\nt{$D$}{admissible data for $P$ (Definition~\ref{d:data})}
+\nt{$\scx{D}$, $\scxo{D}$, $\scb{D}$}{the three scales}
+\nt{$\Dmu{D}$, $\Dm{D}$, $\Dr{D}$}{the exponent, the number of lifts, the rank of the rows}
+\nt{$\thick{D}$}{the set of thick places}
+\nt{$\Dg{i}{D}$, $\gD{D}$, $\Dpig{D}$}{the two auxiliary primes, their product, an integer of that norm}
+\nt{$\CP{P}$, $C_{\mathrm{jet}}$}{the constant of the parameters and one of its summands}
+\nt{$\twd{\mu}$, $\Nn{P}{\mu}$, $\Mom{P}{\mu}$}{as in the first part}
+\nt{$\KP{P}$, $\chiK{P}$, $\EP{P}{\mu}$, $\PlP{P}{\mu}$}{as in the first part}
+\nt{$\pin{P}{\mu}{\nu}$, $\pcl{P}{m\mid\Nn{P}{\mu}}$}{the place named by $\nu$; the class modulo $m$}
+\nt{$\OmP{P}{\mu}$}{the period}
+\nt{$\ND{D}$, $\ED{D}$, $\PlD{D}$}{order, field and places for the exponent of $D$}
+\nt{$\fD{D}$, $\rdD{D}$}{the number of infinite places; the root discriminant}
+\nt{$\pinD{D}{j}$, $\tops{D}$}{the place named by $j$; the tops}
+\nt{$\kD{D}$, $\tD{D}$, $\nD{D}{j}$, $\posD{D}{j}$}{ranks}
+\nt{$\hhD{D}$, $\hD{D}$, $\rhg{D}$}{the half-gap, the gap, the reduced half-gap}
+\nt{$\rup{D}{y}$}{$y$ rounded up to a multiple of $\ND{D}$}
+\nt{$\aD{D}$, $\bone{D}$, $\btwo{D}$}{the order and the two rounded quotients}
+\nt{$\nw{D}{\sigma}$, $\wt{D}{j}{\sigma}$}{nominal weight; weight}
+\nt{$\Ask{D}{y}{\sigma}$, $\lambda_{d,1}$, $\Lambda$}{the prime sum; its coefficients; von Mangoldt's function}
+\nt{$\budg{D}$, $\jet{D}{j}$, $\UD{D}$}{budget; jet size; cost of one direction}
+\nt{$\hlb{D}{\ast}{F}{l}$, $\hlu{D}$, $\hll{D}$}{bounds on the logarithmic scale; $\ast\in\{\top,\bot\}$}
+\nt{$\lvl{D}$, $\piN{D}$}{the level and an integer of that norm}
+\nt{$\Ch{i}{D}$, $\omega_D$}{chosen places above $\Dg{i}{D}$; residue characters}
+\nt{$\Gf{D}{I}$, $\Kz{D}{I}$, $\Gam{D}{I}$, $\Kch{D}{I}$}{adelic unitary group, integral subgroup, rational points, level of the chosen places}
+\nt{$\ordch{D}$}{the order of Definition~\ref{d:chosen}}
+\nt{$\clno{P}$}{the class number of $\KP{P}$}
+\nt{$F,G,H$}{real numbers; $F$ also a number field in Lemma~\ref{l:pigeon}}
+\nt{$l,l',l''$}{exponents}
+\nt{$A,B$}{natural numbers; $A$ also the exponent in (J6)}
+\nt{$y,y'$}{real numbers; $y$ the scale in Theorem~A}
+\nt{$Y,W$}{$\log y$ and $y^{\varepsilon/6}$ in the proof of Theorem~A}
+\nt{$\varepsilon$}{the exponent of Theorem~A}
+\nt{$\sigma,\tau,\rho$}{infinite places, or elements of the set $T$}
+\nt{$\nu$}{an integer}
+\nt{$i,j,k,n,o,q$}{natural numbers and integers: indices, exponents, orders}
+\nt{$i',i_0,i_2,i_3$}{exponents in two proofs}
+\nt{$m,r,\mu,m'$}{in the proof of Theorem~A, the components under construction and a divisor; $m$ also a divisor in (D5)}
+\nt{$p,p_i$}{prime numbers}
+\nt{$M,L$}{a side and a bound (Proposition~\ref{p:behrend}); $M$ also a modulus}
+\nt{$\Gamma_1,\Gamma_2,\psi,\sigma_0,\gamma$}{groups, a homomorphism, two elements; $\psi$ also a class map}
+\nt{$T,S$}{a finite set of group elements; a sphere of integer vectors}
+\nt{$u,v,z$, $[u]$}{integer vectors and the bracket of the proof of Proposition~\ref{p:behrend}}
+\nt{$\mathfrak{p}_i,\mathfrak{q}_i$, $\pi$}{prime ideals; a generator}
+\nt{$w$, $\cj{w}$, $\Nm(w)$}{a finite place, its conjugate, its norm}
+\nt{$I$, $K$, $x$, $a$, $h$}{an index set, a subgroup, a group element (also a root of unity in Definition~\ref{d:C}), an integer, a degree}
+\nt{$\varphi$, $\pi$, $e$, $L$}{Euler's function; the circle constant in $2\pi$; the base of $\exp$; in ``$L$-function''}
+\nt{$\mathrm{cs}(d)$, $\mathrm{rd}$, $\Cy{N_0}$}{as in the first part}
+\end{multicols}
+\endgroup
+
+\head{References}
+\begingroup\fontsize{9.4}{12.6}\selectfont
+\begin{thebibliography}{9}
+\bibitem{behrend} F. A. Behrend, Proc. Nat. Acad. Sci. 32 (1946). As cited by the artifact; not opened.
+\bibitem{mv} H. L. Montgomery, R. C. Vaughan, \emph{Multiplicative Number Theory I. Classical Theory}, Cambridge
+University Press, 2007. Corollary~11.19, as recorded in the catalogue of the write-up.
+\bibitem{serre} J.-P. Serre, Rigidité du foncteur de Jacobi d'échelon $n\ge3$, Séminaire Henri Cartan 13 (1960/61),
+appendix. As recorded in the catalogue of the write-up, place not confirmed.
+\bibitem{shapira} A. Shapira, Behrend-type constructions for sets of linear equations, Acta Arith. (2006),
+Theorem~1. As cited by the artifact; not opened.
+\end{thebibliography}
+\endgroup
+
+\end{document}

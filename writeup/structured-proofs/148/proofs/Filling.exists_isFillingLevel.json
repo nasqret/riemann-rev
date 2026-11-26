@@ -1,0 +1,195 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Filling.GlobalToLocal:102:7",
+ "summary": "Build the integral place on ∏_T E_w: Haar measure normalised on the skew-adjoint integers, the modulus, the character charOnPlaces(S, T), with self-duality — the annihilator of O is O: (∀ r ∈ O, charOnPlaces(S, T)(r·a) = 1) ⟺ a ∈ O — and Plancherel (integrating the characters over O gives the indicator of O); then a lattice level of modulus g, and the standard-level conditions (ζ bound, unimodular Haar measure from the adelic one).",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "A skew unit y with trace data (τ, …) on ∏_T E_w.",
+   "lines": [
+    105,
+    105
+   ],
+   "lean": "  obtain ⟨y, a, τ, b, e, s, t⟩ := IsAdelic.exists_skew_unit (A := LocProd T)"
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "B = the skew-adjoint integers; ν = the additive Haar measure normalised on B.",
+   "lines": [
+    106,
+    108
+   ],
+   "lean": "  let B := {b : skewAdjoint (LocProd T) | b.1 ∈ O}\n  let ν := Measure.addHaarMeasure ⟨⟨B, isCompact_O.preimage_val isClosed_skewAdjoint⟩, 0,\n    isOpen_O.preimage_val.interior_eq.ge O.zero_mem⟩"
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "τ gives LocProd(T) a trace-one structure (TraceOne.mk τ t).",
+   "lines": [
+    109,
+    109
+   ],
+   "lean": "  let := TraceOne.mk τ t"
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "sp: the image of ν×ν under (a, b) ↦ τya + b, restricted to B×B, is Haar measure on O.",
+   "lines": [
+    110,
+    115
+   ],
+   "lean": "  have sp := (map_restrict_addHaar_eq (ν.prod ν) volume (.mk' (fun p ↦ τ * y * p.1.1 + p.2.1) (by\n    simp; grind)) (by measurability) .univ (fun x ↦ ⟨(skewPart (-y * x), skewPart (star τ * x)), by\n    simp; grind⟩) isCompact_O.measurableSet (C :=\n    B ×ˢ B) (Set.ext fun ⟨a, b⟩ ↦ let x := τ * y * a + b\n    by simp; grind [(by simp [x]; grind : -y * (x + star x) = a), mul_mem, IsStarStable.star_mem,\n          add_mem_cancel_left])).1"
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "ν(B) = 1 (addHaarMeasure_self) and 1000(2ϱ+2) ≤ k(𝔰); simplify sp with vol(O) = 1.",
+   "lines": [
+    116,
+    116
+   ],
+   "lean": "  obtain ⟨n : ν B = 1, _⟩ := Measure.addHaarMeasure_self, S.ϱ_le_k; simp [volume_O, n] at sp"
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Self-duality: charOnPlaces(S, T)(r·a) = 1 for all r ∈ O iff a ∈ O.",
+   "lines": [
+    117,
+    119
+   ],
+   "lean": "  have d a : (∀ r ∈ O, S.charOnPlaces T (r * a) = 1) ↔ a ∈ O := .trans\n    (by simp [locProd_O_eq_map_evalPlaces, charOnPlaces, adeleOfLocal_evalPlaces_mul, -map_mul])\n    ((S.forall_selfDualChar_mul_eq_one_iff (adeleOfLocal T a)).trans (by simp [mem_Ô_iff T]))",
+   "uses": [
+    {
+     "decl": "Filling.forall_selfDualChar_mul_eq_one_iff"
+    }
+   ],
+   "typed_fact": "(∀ r ∈ O, S.charOnPlaces T (r * a) = 1) ↔ a ∈ O"
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Local integrability of the inverse square-root norms.",
+   "lines": [
+    120,
+    120
+   ],
+   "lean": "  choose _ m i using fun x : LocProd T ↦ (locallyIntegrable_sqrt_inv_norm _ <| x ·)"
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "P = the integral place: modulus (genIndex)⁻¹, character charOnPlaces(S, T), measure, adelic conditions, …",
+   "lines": [
+    121,
+    143
+   ],
+   "lean": "  let P := IntegralPlace.mk (toPlace :=\n    ⟨.mkOfMulEqOne _ _ e, ν, ⟨⟨fun x ↦ (.ofReal (genIndex x))⁻¹, by simp⟩,\n    by simp [↓map_mul, ENNReal.mul_inv, genIndex_eq_inv_prod_norm, Finset.prod_nonneg]⟩,\n    S.charOnPlaces T, 1, continuous_ψf.subtype_val.comp ((continuous_adeleOfLocal T).const_mul\n    _), by simp [genIndex_eq_inv_prod_norm]; fun_prop, by simp [s], ⟨by fun_prop, sp⟩, by\n    simp; simp [genIndex_eq_inv_prod_norm], fun _ _ g u ↦ (map_smul_eq_inv_distribHaarChar_smul\n    (GeneralLinearGroup.mk'' g u)).trans (by simp [distribHaarChar_GL_eq_det isOpen_O isCompact_O\n    valPair]), by simpa [Pi.isUnit_iff, -Subtype.forall] using! (Measure.ae_eval_ne _ · _), ⟨_, fun\n    x ↦ ⟨_, by simp [set_pi_mem_nhds, m], (Integrable.fintype_prod_dep (i x)).mono_measure\n    (Measure.restrict_pi_pi ..).le⟩, fun _ ↦ by\n    erw [inv_inv, genIndex_eq_inv_prod_norm, ← enorm_pow, ← Finset.prod_pow,\n      ← Finset.prod_inv_distrib]; clear * -\n    grw [← Real.ofReal_le_enorm]; gcongr; grind [Real.sqrt_nonneg]⟩, by simp [charOnPlaces],\n    -- the kernel of Plancherel's inequality is the indicator of the integers\n    by\n    have q z := setIntegral_char (ν := volume) (M := O.toAddSubgroup) isOpen_O (χ :=\n      S.charOnPlaces T ∘ (star · * z))\n    clear * - d q; refine ⟨_, IsClopen.continuous_indicator ⟨isCompact_O.isClosed, isOpen_O⟩\n      continuous_one, ?_, ?_, ?_, (lintegral_mono ?_).trans ((lintegral_indicator_one_le _).trans_eq\n      volume_O)⟩ <;> simp_all [integrable_indicator_iff, isCompact_O.measurableSet, Pi.one_def,\n      Pi.le_def, Measure.real_def, volume_O, ← integral_indicator, indicator_apply,\n      AddChar.map_add_eq_mul, add_mul, apply_ite ofReal, apply_ite enorm] <;> grind\n      [IsStarStable.star_mem, star_star]⟩) ⟨b, neg_mem a, a, rfl, n⟩ d (congrFun rfl)",
+   "head_lines": [
+    121,
+    135
+   ]
+  },
+  {
+   "id": "8.1",
+   "parent": "8",
+   "kind": "deduction",
+   "claim": "Plancherel: the kernel is the indicator of the integers (character integrals over O).",
+   "lines": [
+    136,
+    143
+   ],
+   "lean": "    have q z := setIntegral_char (ν := volume) (M := O.toAddSubgroup) isOpen_O (χ :=\n      S.charOnPlaces T ∘ (star · * z))\n    clear * - d q; refine ⟨_, IsClopen.continuous_indicator ⟨isCompact_O.isClosed, isOpen_O⟩\n      continuous_one, ?_, ?_, ?_, (lintegral_mono ?_).trans ((lintegral_indicator_one_le _).trans_eq\n      volume_O)⟩ <;> simp_all [integrable_indicator_iff, isCompact_O.measurableSet, Pi.one_def,\n      Pi.le_def, Measure.real_def, volume_O, ← integral_indicator, indicator_apply,\n      AddChar.map_add_eq_mul, add_mul, apply_ite ofReal, apply_ite enorm] <;> grind\n      [IsStarStable.star_mem, star_star]⟩) ⟨b, neg_mem a, a, rfl, n⟩ d (congrFun rfl)"
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "An orthonormal basis of the lattice form over Ô.",
+   "lines": [
+    144,
+    145
+   ],
+   "span": [
+    144,
+    3,
+    145,
+    23
+   ],
+   "lean": "have ⟨k, l, h⟩ := exists_orthonormal_Ô (E := E) S.isUnimodular_latMiddle.splitGram\n  let c := U.conj k h;",
+   "uses": [
+    {
+     "decl": "exists_orthonormal_Ô"
+    }
+   ]
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Conjugation by the orthonormal basis k is continuous.",
+   "lines": [
+    145,
+    145
+   ],
+   "span": [
+    145,
+    24,
+    145,
+    76
+   ],
+   "lean": "have t : Continuous c := .subtype_mk (by fun_prop) _",
+   "typed_fact": "Continuous c"
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The standard level: from the lattice level of modulus g (exists_isLatticeLevel), the ζ bound (ideal zeta of ∏_T E_w ≤ that of the adeles, degree bound), the size conditions, and the unimodularity: the inverse Haar measure is left invariant.",
+   "lines": [
+    146,
+    149
+   ],
+   "lean": "  refine ⟨P, .imp (fun F h ↦ .mk (toIsStdLevel :=\n    ⟨h.1, ⟨by grw [idealZeta_locProd_le, idealZeta_intAdeles_pow_le _ S.degree_le], by simp; lia⟩,\n    Measure.haar.inv, { toIsMulLeftInvariant := ?_ }, inferInstance⟩) rfl h.2)\n    (P.exists_isLatticeLevel (by simp) (by simp [gIdele_val]) (by simp; omega))⟩",
+   "uses": [
+    {
+     "decl": "IntegralPlace.exists_isLatticeLevel"
+    },
+    {
+     "decl": "idealZeta_locProd_le"
+    }
+   ]
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The right invariance of the Haar measure on U over ∏_T E_w: image of the finite adelic Haar measure under toPlaces ∘ conjugation (surjective by exists_toPlaces_eq; the integral group maps onto the unit level).",
+   "lines": [
+    150,
+    155
+   ],
+   "lean": "  simpa using (map_restrict_haar_eq (Z := Gf ..) volume _ ((S.toPlaces T).comp c.toMonoidHom)\n    ((U.continuous_map : Continuous (S.toPlaces T)).comp t).measurable\n    ((isOpen_intGL (isOpen_integralOff T)).preimage_val.preimage t ).measurableSet\n    (exists_toPlaces_eq · |>.elim fun g h ↦ ⟨c.symm g, by simp [mul_mem_cancel_left,\n    mul_mem_cancel_right, h]⟩) P.measurableSet_unitaryLevel (C := Kf E 𝔰.BesselIndex)\n    (Set.ext fun g ↦ (and_comm.trans mem_latStabilizer_iff.symm).trans (le_normalizer l _).symm)).2",
+   "uses": [
+    {
+     "decl": "Filling.exists_toPlaces_eq"
+    },
+    {
+     "decl": "Filling.mem_latStabilizer_iff"
+    }
+   ]
+  }
+ ]
+}

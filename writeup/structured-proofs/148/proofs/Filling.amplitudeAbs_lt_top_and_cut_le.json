@@ -1,0 +1,348 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Filling.AmplitudeSums:64:7",
+ "summary": "Dominate the Bessel functions by the 𝖴-invariant majorants A_v of the cut pairs; the frame count bounds the sum over terms at boxed points; Tonelli and the covolume evaluate the integrals; where full and cut differ the majorant carries the factor b^{3r³f}, which gives the cut estimate.",
+ "intro_lines": [
+  [
+   64,
+   68
+  ]
+ ],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Use the size facts (of_size_bounds); write k = 1000(2ϱ+2)⁹ + r (pow_le_k) and use k ≤ f. (The quoted line 69 begins with the end of the statement, up to column 72 before the declaration's `:=`; that part is statement, not proof: the census's statement lines stop at the `:=` of a `let` inside the type; a second-reader message.)",
+   "lines": [
+    69,
+    70
+   ],
+   "lean": "    .ofReal (S.unipCovolume * (S.b ^ (𝔰.k ^ 3 * numInfPlaces E))⁻¹ / 2) := S.of_size_bounds <| by\n  intros; rename_i X; obtain ⟨⟨r, k⟩, f⟩ := S.pow_le_k.dest, S.k_le_f",
+   "uses": [
+    {
+     "decl": "New.Filling.NearTerms:288:7"
+    },
+    {
+     "decl": "New.Filling.Setup:156:5"
+    },
+    {
+     "decl": "Lib.General.Analysis.ZpowSum:32:22"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "setup",
+   "claim": "For every v choose the majorant A_v and the finite measure m_v of the cut pair of besselSys(v): A_v measurable and 𝖴-invariant, ‖W_t(y)‖ ≤ A_v(y) (with the factor b^{3r³f} where W_full ≠ W_cut), A_v(y) ≤ m_v({g : InCut(y g, b)}), and m_v(G₁)·∫A_v ≤ b^{2r³}|I_v| (field exists_majorant).",
+   "lines": [
+    71,
+    71
+   ],
+   "lean": "  choose A m hm hU hW hA _ l using (S.besselSys · |>.tail.exists_majorant)",
+   "uses": [
+    {
+     "decl": "New.Filling.BesselSystem:85:11"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Q(z) = ∏_v {g : InCut(z_v g, b)}.",
+   "lines": [
+    72,
+    72
+   ],
+   "lean": "  let Q (z : InfinitePlace E → 𝔰.G₁) := Set.univ.pi fun v ↦ {g | InCut (z v * g) S.b}",
+   "uses": [
+    {
+     "decl": "New.Filling.BesselSystem:33:8"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Q(z) is measurable.",
+   "lines": [
+    73,
+    73
+   ],
+   "lean": "  have R {z} : MeasurableSet (Q z) := .univ_pi (by measurability)",
+   "typed_fact": "MeasurableSet (Q z)",
+   "uses": []
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Wherever the indicator of Q(z) times β_d(z) is nonzero at g, some u ∈ 𝖴_d(g) puts ratToInf(u)·z in the boxes (exists_classUnip_mul_mem_boxedPoints).",
+   "lines": [
+    74,
+    75
+   ],
+   "lean": "  choose! u a b using fun {d z g} (h : (Q z).indicator (fun _ ↦ S.classCutoff d z * 1) g ≠ 0) ↦\n    exists_classUnip_mul_mem_boxedPoints d (Set.mem_of_indicator_ne_zero h · ⟨⟩)",
+   "uses": [
+    {
+     "decl": "New.Filling.BoxPartition:558:7"
+    },
+    {
+     "decl": "New.Filling.Setup:356:20"
+    }
+   ],
+   "ambient_uses": [
+    "Set.mem_of_indicator_ne_zero"
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "n: for every y, ∫ (over g, for ∏m_v) of ∑_{(d,γ)} 1_{Q(γ⁻¹y)}(g)·β_d(γ⁻¹y) is at most ∫ b^{6n²·dim}·1 — by the frame count (tsum_classCutoff_box_le with V the whole space) applied at each g to the terms (d, γ), with the elements u of step 5.",
+   "lines": [
+    76,
+    78
+   ],
+   "lean": "  have n y := lintegral_mono (μ := .pi m) fun g ↦ tsum_classCutoff_box_le (V := ⊤) (y' :=\n    y) Sigma.subtype_ext (fun (p : Σ d, X d) h ↦ ⟨.mul p.2.2.2 (.inv (a h).2), by simp [a h], by\n    simpa using! b h, Set.indicator_le_self _ _ g⟩) (by simp)",
+   "uses": [
+    {
+     "decl": "New.Filling.BoxPartition:513:7"
+    }
+   ],
+   "ambient_uses": [
+    "lintegral_mono",
+    "Set.indicator_le_self"
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Evaluate the integrals in n: the integral of an indicator is a measure, the sum over the pairs (d, γ) is a double sum.",
+   "lines": [
+    79,
+    80
+   ],
+   "lean": "  simp (disch := fun_prop (disch := tauto)) only [Q, pi_pi, mul_one, lintegral_const,\n    lintegral_indicator_const R, lintegral_tsum, ENNReal.tsum_sigma'] at n",
+   "uses": [],
+   "ambient_uses": [
+    "pi_pi",
+    "mul_one",
+    "lintegral_const",
+    "lintegral_indicator_const",
+    "lintegral_tsum",
+    "ENNReal.tsum_sigma'"
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "computation",
+   "claim": "1 ≤ b^n for every n (o); bound the masses by A (hA) in n.",
+   "lines": [
+    81,
+    82
+   ],
+   "lean": "  have o {n} := one_le_ofReal.2 (one_le_pow₀ (n := n) ‹_›)\n  grw [← hA] at n",
+   "uses": [],
+   "ambient_uses": [
+    "one_le_ofReal",
+    "one_le_pow₀"
+   ]
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "fact",
+   "claim": "e: for each side τ and y, ∏_v ‖W_{τ,v}(y_v)‖ ≤ (factor)·∏_v A_v(y_v) (hW), simplified.",
+   "lines": [
+    83,
+    84
+   ],
+   "lean": "  have e τ (y : _ → _) := prod_mono' fun v ↦ hW v τ (y v)\n  simp [↓prod_mul_distrib, prod_ite] at e",
+   "uses": [],
+   "ambient_uses": [
+    "prod_mono'",
+    "prod_mul_distrib",
+    "prod_ite"
+   ]
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "h1: integrate n against β_c(y)·∏_v A_v(y_v) dy.",
+   "lines": [
+    85,
+    86
+   ],
+   "lean": "  have h1 := lintegral_mono (μ := volume) fun y ↦\n    mul_le_mul_right (n y) (S.classCutoff c y * ∏ v, A v (y v))",
+   "uses": [
+    {
+     "decl": "New.Filling.Setup:356:20"
+    }
+   ],
+   "ambient_uses": [
+    "lintegral_mono",
+    "mul_le_mul_right"
+   ]
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Evaluate h1: ∫β_c(y)∏_v A_v(y_v) dy = ν·∏_v ∫A_v (lintegral_classCutoff_mul_prod), and ∏_v m_v(G₁)·∫A_v ≤ ∏_v b^{2r³}|I_v| = b^{2r³f}·#BesselCoord (l).",
+   "lines": [
+    87,
+    90
+   ],
+   "lean": "  simp (disch := fun_prop) only [← ENNReal.tsum_mul_left, lintegral_tsum, lintegral_mul_const,\n    mul_mul_mul_comm _ _ (classCutoff ..), lintegral_classCutoff_mul_prod _ hU, pi_univ] at h1\n  grw [mul_comm, mul_mul_mul_comm, ← prod_mul_distrib, l, prod_mul_distrib, prod_const,\n    ← Nat.cast_prod, ← Fintype.card_pi] at h1",
+   "uses": [
+    {
+     "decl": "New.Filling.AmplitudeSums:54:7"
+    },
+    {
+     "decl": "New.Filling.Setup:356:20"
+    }
+   ],
+   "ambient_uses": [
+    "ENNReal.tsum_mul_left",
+    "lintegral_tsum",
+    "lintegral_mul_const",
+    "mul_mul_mul_comm",
+    "mul_comm",
+    "prod_mul_distrib",
+    "Fintype.card_pi"
+   ]
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "fact",
+   "claim": "p: pointwise, ‖kernel_σ(γ, y) − kernel_cut(γ, y)‖ ≤ b^{−3r³f}·2·(∏A_v(y_v))(∏A_v((γ⁻¹y)_v)) up to the factors: where W_full = W_cut at y and at γ⁻¹y the difference vanishes; otherwise one of the factors carries b^{3r³f} (enorm_besselKernel, enorm_sub_le).",
+   "lines": [
+    91,
+    96
+   ],
+   "lean": "  have p γ y := have q τ := mul_le_mul' (e τ y) (e τ ((S.ratToInf γ)⁻¹ * y))\n    (mul_le_iff_le_inv (one_pos.trans_le o).ne' ofReal_ne_top).1 ((add_le_add (q σ)\n    (q .cut)).trans' (byCases (by\n    simp_rw [mul_mul_mul_comm _ (univ.prod _), ← mul_add, ← enorm_besselKernel]\n    grw [← pow_add, ← enorm_sub_le, ← le_self_pow o ·])\n      (by cases σ <;> simp +contextual [besselKernel, besselFn])))",
+   "uses": [
+    {
+     "decl": "New.Filling.LatticeChart:19:7"
+    },
+    {
+     "decl": "New.Filling.Setup:215:5"
+    },
+    {
+     "decl": "New.Filling.Setup:263:5"
+    },
+    {
+     "decl": "New.Filling.Setup:259:5"
+    }
+   ],
+   "ambient_uses": [
+    "mul_le_mul'",
+    "mul_le_iff_le_inv",
+    "ofReal_ne_top",
+    "add_le_add",
+    "mul_mul_mul_comm",
+    "mul_add",
+    "pow_add",
+    "enorm_sub_le",
+    "le_self_pow"
+   ]
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The claims for each c': the bound M and the finiteness of ∑ amplitudeAbs follow from e, n and h1 (with enorm_besselKernel).",
+   "lines": [
+    97,
+    98
+   ],
+   "lean": "  use fun c' ↦ ?_, ?_; grw [← ENNReal.le_tsum c', ← le_mul_of_one_le_left' (one_le_pow₀ o)] at *\n  simp_rw [amplitudeAbs, enorm_besselKernel]; grw [e, e, e, n, h1]",
+   "uses": [
+    {
+     "decl": "New.Filling.Setup:366:5"
+    },
+    {
+     "decl": "New.Filling.LatticeChart:19:7"
+    }
+   ],
+   "ambient_uses": [
+    "ENNReal.le_tsum",
+    "le_mul_of_one_le_left'",
+    "one_le_pow₀"
+   ]
+  },
+  {
+   "id": "14",
+   "parent": null,
+   "kind": "computation",
+   "claim": "M is a finite number.",
+   "lines": [
+    99,
+    99
+   ],
+   "lean": "  use ⟨_, fun _ ↦ (coe_toNNReal ?_).ge⟩ <;> finiteness",
+   "uses": [],
+   "ambient_uses": [
+    "coe_toNNReal"
+   ]
+  },
+  {
+   "id": "15",
+   "parent": null,
+   "kind": "computation",
+   "claim": "The cut estimate: apply p and regroup the sums and integrals.",
+   "lines": [
+    100,
+    101
+   ],
+   "lean": "  grw [p]; simp (disch := finiteness) only [mul_left_comm _ (_⁻¹ * _), ← two_mul,\n    ← mul_assoc _⁻¹, lintegral_const_mul', ENNReal.tsum_mul_left]",
+   "uses": [],
+   "ambient_uses": [
+    "mul_left_comm",
+    "two_mul",
+    "mul_assoc",
+    "lintegral_const_mul'",
+    "ENNReal.tsum_mul_left"
+   ]
+  },
+  {
+   "id": "16",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Insert h1 and pass to real numbers.",
+   "lines": [
+    102,
+    103
+   ],
+   "lean": "  grw [h1]\n  simp (disch := finiteness) [le_ofReal_iff_toReal_le, field, -Fintype.card_pi]",
+   "uses": [],
+   "ambient_uses": [
+    "le_ofReal_iff_toReal_le"
+   ]
+  },
+  {
+   "id": "17",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Conclude with #BesselCoord ≤ b^{2kf} (IsAdmissible) and b ≥ 2: the exponents satisfy the needed inequality (k = 1000(2n)⁹ + r is much larger than the other exponents).",
+   "lines": [
+    104,
+    106
+   ],
+   "lean": "  grw [IsAdmissible.card_besselCoord_le, ‹2 ≤ S.b›]\n  simp [← pow_mul, ← pow_add, ← k]\n  gcongr; lia",
+   "uses": [],
+   "ambient_uses": [
+    "pow_mul",
+    "pow_add"
+   ]
+  }
+ ]
+}

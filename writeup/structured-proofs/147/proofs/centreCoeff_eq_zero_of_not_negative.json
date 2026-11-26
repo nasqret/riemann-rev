@@ -1,0 +1,774 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Exchange.NonnegativeVanishing:21:7",
+ "name": "centreCoeff_eq_zero_of_not_negative",
+ "summary": "The coefficient is a sum over rational x with x*J_Y x = T; if there is none it is 0. Otherwise it is an integral over the quotient by the stabilizer H of x, and averaging the integrand over a compact subgroup C of H gives 0: at a real place τ where T is not negative semidefinite, Witt's theorem moves a vector of norm 1 to a positive basis line, and then no functional on the Fock space is invariant under the rotations of a remaining negative line (circle averages and the weight bound).",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "step",
+   "claim": "From hR: an infinite place τ where T_τ is not −c*c for any c (hβ). And either no rational b-frame x ∈ M_{n×b}(E) has x*J_Y x = T (first case, e), or there is one, and T = x*J_Y x (second case).",
+   "lines": [
+    27,
+    28
+   ],
+   "lean": "  obtain ⟨⟨τ, hβ⟩, e | ⟨x, rfl⟩⟩ := not_forall.1 hR,\n    isEmpty_or_nonempty {x : Matrix n b E | xᴴ * Y.J * x = T}"
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "step",
+   "claim": "First case: the coefficient is the sum over the rational x with x*J_Y x = T of integrals of theta terms (`Space.Splitting.centreCoeff_integral_eq_tsum`, by hi), an empty sum, hence 0.",
+   "lines": [
+    29,
+    29
+   ],
+   "lean": "  simpa [tsum_empty] using! D.centreCoeff_integral_eq_tsum hi T",
+   "uses": [
+    {
+     "step": "1"
+    },
+    {
+     "decl": "Space.Splitting.centreCoeff_integral_eq_tsum"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "step",
+   "claim": "Second case. Let x′ = x_Y⁻¹·x, the coordinates of x in the adelic frame of Y.",
+   "lines": [
+    30,
+    30
+   ],
+   "lean": "  let x' := Y.x⁻¹.1 * x.map toAdele",
+   "uses": [
+    {
+     "step": "1"
+    }
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "step",
+   "claim": "Rewrite hβ through x′: (x′_τ)*·diag(s)·x′_τ = T_τ, so hβ says that no c has −c*c = (x′_τ)*·diag(s)·x′_τ.",
+   "lines": [
+    31,
+    31
+   ],
+   "lean": "  rw [← gram_at_point_eq_map, ← gram_map_real] at hβ",
+   "uses": [
+    {
+     "step": "3"
+    }
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "step",
+   "claim": "Let w = x′_τ, the component of x′ at the place τ.",
+   "lines": [
+    32,
+    32
+   ],
+   "lean": "  set w := atRealPlace x' τ with ← e"
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "step",
+   "claim": "The matrix w*·diag(s)·w is hermitian (h); and from hγ at τ, negCount(−t) = μ(τ) + M + 1 for a natural number M (hM).",
+   "lines": [
+    33,
+    33
+   ],
+   "lean": "  obtain ⟨h, M, hM⟩ := isHermitian_conjTranspose_mul_mul w posProj_mul_self.2.2, (hγ τ).dest",
+   "ambient_uses": [
+    "Matrix.isHermitian_conjTranspose_mul_mul",
+    "Nat.lt.dest"
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "step",
+   "claim": "w*·diag(s)·w is not negative semidefinite (else it would be −c*c, against step 4), so it represents 1: some vector v has v*(w*·diag(s)·w)v = 1 (`herm_represents_one`).",
+   "lines": [
+    34,
+    35
+   ],
+   "lean": "  obtain ⟨v, -, hv⟩ := herm_represents_one h ⊤ fun _ ↦ hβ (by simpa [eq_comm] using! (\n    nonneg_iff_eq_star_mul_self.1 (posSemidef_iff_dotProduct_mulVec.2 ⟨h.neg, by simp_all⟩).nonneg))",
+   "uses": [
+    {
+     "step": "4"
+    },
+    {
+     "step": "6"
+    },
+    {
+     "decl": "herm_represents_one"
+    }
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "step",
+   "claim": "The vectors w·v and the basis vector e_i have the same norm 1 for the form diag(s) (s(i) = 1), so by Witt's theorem (`witt`) some u in U(diag(s)) carries w·v to e_i (hu).",
+   "lines": [
+    36,
+    38
+   ],
+   "lean": "  have ⟨u, hu⟩ := witt ⟨.I, by simp⟩ (posProj_mul_self (ε := s)).2.2 IsHermInvolution.isUnit\n    (.of_ne_zero (x := w *ᵥ v) (by simp [← mulVec_mulVec, ·] at hv))\n    (.of_ne_zero ((basisFun ℂ _).ne_zero i)) (by ext; simp_all [← replicateRow_vecMul, signMatrix])",
+   "uses": [
+    {
+     "step": "7"
+    },
+    {
+     "decl": "witt"
+    }
+   ]
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "block",
+   "claim": "No invariant functional: every continuous linear functional l on the Fock space PairFock(E, t, s) that is invariant under the real Weil action realPairWeil(μ, 0)(1, c) at τ of every c in the maximal compact subgroup of U(s) with c·(u·w) = u·w is zero. Since such functionals are determined by their values on the Heisenberg translates ρ(y)vac of the vacuum (`Heisenberg.IsVacuum.hom_ext`), fix y and show l(ρ(y)vac) = 0.",
+   "lines": [
+    40,
+    75
+   ],
+   "lean": "  have K (l : PairFock E t s →L[ℂ] ℂ) (k : ∀ c ∈ maxCompactU s, c.1.1 * (u.1.1 * w) = u.1.1 * w →\n    ∀ v, l (realPairWeil μ 0 (1, mulSingle τ c) v) = l v) : l = 0 := hom_ext fun y ↦ by\n    let f := ((u.1.1 * w).vecMulLinear.prod (of fun i (j : {j // t j = -1}) ↦ y (τ, i,\n      j)).vecMulLinear).prod (.funLeft ℂ ℂ (@Subtype.val _ (s · ≠ -1)))\n    have : Nonempty {k // s k ≠ -1} := ⟨⟨i, by simp [ht']⟩⟩\n    obtain ⟨r, hr, h1⟩ := herm_represents_one isHermitian_one f.ker fun n ↦ have ⟨r, h⟩ :=\n      (f.linearEquivOfInjective (.of_ker f (by simpa [\n        (dotProduct_star_self_nonneg _).ge_iff_eq'] using n)) (by simp_all)).surjective (0, 1)\n      by simpa [f, by simpa using hu] using congr($h.1.1 ⬝ᵥ v - $h.2 ⟨i, by simp [*]⟩)\n    simp [f, funext_iff, dotProduct_comm] at hr h1\n    let z := .single τ τ 1 ⊗ₖ (vecMulVec (star r) r ⊗ₖ diagonal 1) *ᵥ y\n    let F (η : ℂ) : PairFock E t s := η ^ M.succ • realHeisOp (y + (conj η - 1) • z) vacVector\n    have e (L : _ →L[ℂ] _) {f} (h : ∀ η, η * conj η = 1 → L (F η) = f η) d := (L.integral_comp_comm\n      integrable_of_compactSpace).symm.trans (congr(∫ θ, $(h _ (by simp))).trans (@integral_toCircle\n      f d))\n    refine (e l (fun η h0 ↦ ?_) (differentiableOn_const _)).symm.trans (.trans (congrArg l (ext\n      fun w ↦ (e (modelEval w) (fun η h0 ↦ by rw [map_smul, valueAt_apply, heisOp_apply,\n      Heisenberg.IsVacuum.vacElem_apply, beta_mul_realVac,\n      (by simp [realVac, z, *]; clear * - h0; grind : realVac (y + _) = realVac y), map_add,\n      (show Function.IsFixedPt (holCoord _) (_ • z) by\n           funext p; by_cases s p.2.1 = -1 <;> simp [*, z, dotProduct, ← mul_sum]\n           clear * - hr; grind [dotProduct])]) (by simp; fun_prop)).trans (by simp))) l.map_zero)\n    have : posProj s *ᵥ star r = 0 ∧\n      r ᵥ* posProj s = 0 := by simp +contextual [funext_iff, posProj, *]\n    convert k (U.of IsHermInvolution.isUnit (1 + (conj η - 1) • vecMulVec (star r) r) ?_)\n      (ext ?_) ?_ _\n    any_goals simp [← Matrix.ext_iff, signMatrix_eq_posProj_sub, *] <;> clear * - h0 <;> grind\n    rw [realPairWeil_apply_apply, weilRep_heisOp, ← map_smul, ← realPairWeil_apply_apply,\n      ← vacVector, ← polyVector_one, realPairWeil_polyVector,\n      Fintype.prod_eq_single τ, map_smul]; congr! 3\n    · simp [principalMinor_eq_det, ← posProj.eq_1, *, eq_inv_of_mul_eq_one_right h0,\n        eq_sub_of_add_eq hM]\n      rw [← smul_vecMulVec, vecMulVec_eq Unit, det_one_add_mul_comm]\n      simp +contextual [*, ite_eq_left_iff.2, ← zpow_natCast]\n    all_goals simp [funext_iff] <;> intro w <;> by_cases τ = w <;> simp [*, z,\n      dotProduct, mul_sum, signMatrix_eq_posProj_sub]",
+   "head_lines": [
+    40,
+    41
+   ],
+   "typed_fact": "l = 0",
+   "uses": [
+    {
+     "step": "8"
+    },
+    {
+     "decl": "Heisenberg.IsVacuum.hom_ext"
+    }
+   ]
+  },
+  {
+   "id": "9.1",
+   "parent": "9",
+   "kind": "step",
+   "claim": "Let f be the linear map from row vectors z indexed by n to (z·(u·w), z·Y_τ⁻, z restricted to the indices k with s(k) ≠ −1), where Y_τ⁻ is the matrix of the coordinates y(τ, ·, j) of y at the negative indices j of t.",
+   "lines": [
+    42,
+    43
+   ],
+   "lean": "    let f := ((u.1.1 * w).vecMulLinear.prod (of fun i (j : {j // t j = -1}) ↦ y (τ, i,\n      j)).vecMulLinear).prod (.funLeft ℂ ℂ (@Subtype.val _ (s · ≠ -1)))"
+  },
+  {
+   "id": "9.2",
+   "parent": "9",
+   "kind": "step",
+   "claim": "There is an index k with s(k) ≠ −1, namely i (s(i) = 1).",
+   "lines": [
+    44,
+    44
+   ],
+   "lean": "    have : Nonempty {k // s k ≠ -1} := ⟨⟨i, by simp [ht']⟩⟩",
+   "typed_fact": "Nonempty {k // s k ≠ -1}"
+  },
+  {
+   "id": "9.3",
+   "parent": "9",
+   "kind": "step",
+   "claim": "The kernel of f contains a vector r with r*r = 1 (`herm_represents_one` for the identity form on ker f). Otherwise f is injective, hence bijective, the dimensions agreeing by ht (|b| + negCount(t) + (|n| − negCount(s)) = |n|); a preimage r of (0, 1) would have r·(u·w) = 0 and r_k = 1 for s(k) ≠ −1, while by hu r·(u·w)·v = r·e_i = r_i = 1: a contradiction.",
+   "lines": [
+    45,
+    48
+   ],
+   "lean": "    obtain ⟨r, hr, h1⟩ := herm_represents_one isHermitian_one f.ker fun n ↦ have ⟨r, h⟩ :=\n      (f.linearEquivOfInjective (.of_ker f (by simpa [\n        (dotProduct_star_self_nonneg _).ge_iff_eq'] using n)) (by simp_all)).surjective (0, 1)\n      by simpa [f, by simpa using hu] using congr($h.1.1 ⬝ᵥ v - $h.2 ⟨i, by simp [*]⟩)",
+   "uses": [
+    {
+     "step": "8"
+    },
+    {
+     "step": "9.1"
+    },
+    {
+     "step": "9.2"
+    },
+    {
+     "decl": "herm_represents_one"
+    }
+   ],
+   "ambient_uses": [
+    "LinearMap.linearEquivOfInjective"
+   ]
+  },
+  {
+   "id": "9.4",
+   "parent": "9",
+   "kind": "step",
+   "claim": "Unfolding f: r·(u·w) = 0, r is orthogonal to the negative-t coordinates of y at τ, r vanishes at the indices with s ≠ −1, and r*r = 1.",
+   "lines": [
+    49,
+    49
+   ],
+   "lean": "    simp [f, funext_iff, dotProduct_comm] at hr h1",
+   "uses": [
+    {
+     "step": "9.3"
+    }
+   ]
+  },
+  {
+   "id": "9.5",
+   "parent": "9",
+   "kind": "step",
+   "claim": "Let z be the part of y on the line of r at the place τ: z = (e_ττ ⊗ r̄rᵀ ⊗ 1)·y.",
+   "lines": [
+    50,
+    50
+   ],
+   "lean": "    let z := .single τ τ 1 ⊗ₖ (vecMulVec (star r) r ⊗ₖ diagonal 1) *ᵥ y"
+  },
+  {
+   "id": "9.6",
+   "parent": "9",
+   "kind": "step",
+   "claim": "For η ∈ ℂ let F(η) = η^{M+1}·ρ(y + (η̄ − 1)z)·vac, a multiple of a Heisenberg translate of the vacuum in PairFock(E, t, s).",
+   "lines": [
+    51,
+    51
+   ],
+   "lean": "    let F (η : ℂ) : PairFock E t s := η ^ M.succ • realHeisOp (y + (conj η - 1) • z) vacVector"
+  },
+  {
+   "id": "9.7",
+   "parent": "9",
+   "kind": "step",
+   "claim": "For every continuous linear map L and every function f agreeing with L∘F on the unit circle (and differentiable on the closed disc): L of the circle mean of F equals the circle mean of f, which is f(0) (interchange of L and the integral, and the mean value property `integral_toCircle`).",
+   "lines": [
+    52,
+    54
+   ],
+   "lean": "    have e (L : _ →L[ℂ] _) {f} (h : ∀ η, η * conj η = 1 → L (F η) = f η) d := (L.integral_comp_comm\n      integrable_of_compactSpace).symm.trans (congr(∫ θ, $(h _ (by simp))).trans (@integral_toCircle\n      f d))",
+   "uses": [
+    {
+     "step": "9.6"
+    },
+    {
+     "decl": "integral_toCircle"
+    }
+   ],
+   "ambient_uses": [
+    "ContinuousLinearMap.integral_comp_comm"
+   ]
+  },
+  {
+   "id": "9.8",
+   "parent": "9",
+   "kind": "block",
+   "claim": "Compute l(ρ(y)vac) by circle means (step 9.7 twice): by invariance l(F(η)) = l(ρ(y)vac) for |η| = 1 (left open, steps 9.10–9.14), so the mean of l∘F is l(ρ(y)vac); pointwise, the value of F(η) at a point w of the model is η^{M+1} times an expression differentiable in η on the closed disc (the Gaussian factor does not change, `beta_mul_realVac`), so its circle mean is its value 0 at η = 0. Hence l(ρ(y)vac) = l(0) = 0.",
+   "lines": [
+    55,
+    61
+   ],
+   "lean": "    refine (e l (fun η h0 ↦ ?_) (differentiableOn_const _)).symm.trans (.trans (congrArg l (ext\n      fun w ↦ (e (modelEval w) (fun η h0 ↦ by rw [map_smul, valueAt_apply, heisOp_apply,\n      Heisenberg.IsVacuum.vacElem_apply, beta_mul_realVac,\n      (by simp [realVac, z, *]; clear * - h0; grind : realVac (y + _) = realVac y), map_add,\n      (show Function.IsFixedPt (holCoord _) (_ • z) by\n           funext p; by_cases s p.2.1 = -1 <;> simp [*, z, dotProduct, ← mul_sum]\n           clear * - hr; grind [dotProduct])]) (by simp; fun_prop)).trans (by simp))) l.map_zero)",
+   "head_span": [
+    55,
+    5,
+    59,
+    8
+   ],
+   "head_lines": [
+    55,
+    59
+   ],
+   "uses": [
+    {
+     "step": "9.7"
+    },
+    {
+     "decl": "beta_mul_realVac"
+    }
+   ]
+  },
+  {
+   "id": "9.8.1",
+   "parent": "9.8",
+   "kind": "step",
+   "claim": "The vector (η̄ − 1)z is fixed by the holomorphic-coordinate map holCoord, checked coordinatewise on the indices with s = −1 and the others, using r·Y_τ⁻ = 0 (step 9.4).",
+   "lines": [
+    59,
+    61
+   ],
+   "span": [
+    59,
+    8,
+    61,
+    98
+   ],
+   "lean": "show Function.IsFixedPt (holCoord _) (_ • z) by\n           funext p; by_cases s p.2.1 = -1 <;> simp [*, z, dotProduct, ← mul_sum]\n           clear * - hr; grind [dotProduct])]) (by simp; fun_prop)).trans (by simp))) l.map_zero)",
+   "typed_fact": "Function.IsFixedPt (holCoord _) (_ • z)",
+   "uses": [
+    {
+     "step": "9.4"
+    }
+   ]
+  },
+  {
+   "id": "9.9",
+   "parent": "9",
+   "kind": "step",
+   "claim": "posProj(s)·r̄ = 0 and r·posProj(s) = 0: r is supported on the negative indices of s.",
+   "lines": [
+    62,
+    63
+   ],
+   "lean": "    have : posProj s *ᵥ star r = 0 ∧\n      r ᵥ* posProj s = 0 := by simp +contextual [funext_iff, posProj, *]",
+   "typed_fact": "posProj s *ᵥ star r = 0 ∧\n      r ᵥ* posProj s = 0",
+   "uses": [
+    {
+     "step": "9.4"
+    }
+   ]
+  },
+  {
+   "id": "9.10",
+   "parent": "9",
+   "kind": "step",
+   "claim": "For |η| = 1 the matrix c_η = 1 + (η̄ − 1)·r̄rᵀ (rotation of the line of r by η̄) is unitary for diag(s), lies in the maximal compact subgroup and fixes u·w (r·(u·w) = 0); the invariance of l (hypothesis k of step 9) gives l(realPairWeil(μ, 0)(1, c_η at τ)(ρ(y)vac)) = l(ρ(y)vac), and it remains to identify the left side with l(F(η)).",
+   "lines": [
+    64,
+    65
+   ],
+   "lean": "    convert k (U.of IsHermInvolution.isUnit (1 + (conj η - 1) • vecMulVec (star r) r) ?_)\n      (ext ?_) ?_ _",
+   "uses": [
+    {
+     "step": "9.4"
+    },
+    {
+     "step": "9.9"
+    }
+   ]
+  },
+  {
+   "id": "9.11",
+   "parent": "9",
+   "kind": "step",
+   "claim": "The side conditions on c_η (unitary, in the maximal compact subgroup, fixing u·w) are matrix identities, checked with |η|² = 1 and step 9.9.",
+   "lines": [
+    66,
+    66
+   ],
+   "lean": "    any_goals simp [← Matrix.ext_iff, signMatrix_eq_posProj_sub, *] <;> clear * - h0 <;> grind",
+   "uses": [
+    {
+     "step": "9.9"
+    }
+   ]
+  },
+  {
+   "id": "9.12",
+   "parent": "9",
+   "kind": "step",
+   "claim": "The Weil action of c_η on the Heisenberg translate ρ(y)vac is the translate by c_η·y of its action on the vacuum (`weilRep_heisOp`); on the vacuum (the polynomial vector of 1) it acts by the determinant factor of `realPairWeil_polyVector`, a product over the infinite places that reduces to the place τ. Two identities remain: the factor is η^{M+1}, and c_η·y = y + (η̄ − 1)z.",
+   "lines": [
+    67,
+    69
+   ],
+   "lean": "    rw [realPairWeil_apply_apply, weilRep_heisOp, ← map_smul, ← realPairWeil_apply_apply,\n      ← vacVector, ← polyVector_one, realPairWeil_polyVector,\n      Fintype.prod_eq_single τ, map_smul]; congr! 3",
+   "uses": [
+    {
+     "step": "9.10"
+    },
+    {
+     "decl": "Heisenberg.IsVacuum.weilRep_heisOp"
+    },
+    {
+     "decl": "realPairWeil_polyVector"
+    }
+   ],
+   "ambient_uses": [
+    "Fintype.prod_eq_single"
+   ]
+  },
+  {
+   "id": "9.13",
+   "parent": "9",
+   "kind": "step",
+   "claim": "The factor: the principal minor of c_η on the negative lines is det(1 + (η̄ − 1)r̄rᵀ) = 1 + (η̄ − 1)rᵀr̄ = η̄ (`Matrix.det_one_add_mul_comm`, r*r = 1), to the power that the weight gives; with η̄ = η⁻¹ and negCount(−t) = μ(τ) + M + 1 (hM) this is η^{M+1}.",
+   "lines": [
+    70,
+    73
+   ],
+   "lean": "    · simp [principalMinor_eq_det, ← posProj.eq_1, *, eq_inv_of_mul_eq_one_right h0,\n        eq_sub_of_add_eq hM]\n      rw [← smul_vecMulVec, vecMulVec_eq Unit, det_one_add_mul_comm]\n      simp +contextual [*, ite_eq_left_iff.2, ← zpow_natCast]",
+   "uses": [
+    {
+     "step": "6"
+    },
+    {
+     "step": "9.4"
+    }
+   ],
+   "ambient_uses": [
+    "Matrix.det_one_add_mul_comm"
+   ]
+  },
+  {
+   "id": "9.14",
+   "parent": "9",
+   "kind": "step",
+   "claim": "The translate: c_η·y = y + (η̄ − 1)z, checked place by place (at w ≠ τ, c_η is 1 and z is 0; at τ it is the definition of z).",
+   "lines": [
+    74,
+    75
+   ],
+   "lean": "    all_goals simp [funext_iff] <;> intro w <;> by_cases τ = w <;> simp [*, z,\n      dotProduct, mul_sum, signMatrix_eq_posProj_sub]",
+   "uses": [
+    {
+     "step": "9.5"
+    }
+   ]
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "step",
+   "claim": "Let H be the stabilizer of x′ in the adelic unitary group of Y.",
+   "lines": [
+    76,
+    76
+   ],
+   "lean": "  let H := stabilizer (G E s) x'",
+   "uses": [
+    {
+     "step": "3"
+    }
+   ]
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "step",
+   "claim": "H is closed (the preimage of a point under the continuous map g ↦ g·x′); and the coefficient is the integral over the quotient by H of the theta term at x′ (J), T = x*J_Y x being invertible (h₀) (`Space.Splitting.centreCoeff_eq_integral_stabilizer`), with I the left invariance under the rational points of H.",
+   "lines": [
+    77,
+    78
+   ],
+   "lean": "  obtain ⟨h : IsClosed H.carrier, I, -, J⟩ := isClosed_singleton.preimage (f := (G.mat · * x'))\n    (by fun_prop), D.centreCoeff_eq_integral_stabilizer hi h₀ fun _ ↦ (stabilizer ..).mem_map",
+   "uses": [
+    {
+     "step": "10"
+    },
+    {
+     "decl": "Space.Splitting.centreCoeff_eq_integral_stabilizer"
+    }
+   ]
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "step",
+   "claim": "Let U be the point with u⁻¹ at the place τ and 1 at the other infinite places and at the finite places.",
+   "lines": [
+    79,
+    79
+   ],
+   "lean": "  let U : G .. := (mulSingle τ u⁻¹, 1)",
+   "uses": [
+    {
+     "step": "8"
+    }
+   ]
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "step",
+   "claim": "Let C be the intersection with H of the U-conjugate of the maximal compact subgroup.",
+   "lines": [
+    80,
+    80
+   ],
+   "lean": "  let C := (ConjAct.toConjAct U • maxCompact ..).subgroupOf H",
+   "uses": [
+    {
+     "step": "10"
+    },
+    {
+     "step": "12"
+    }
+   ]
+  },
+  {
+   "id": "14",
+   "parent": null,
+   "kind": "step",
+   "claim": "C is compact.",
+   "lines": [
+    81,
+    81
+   ],
+   "lean": "  have c : @IsCompact H _ C := (isCompact_maxCompact.smul _).preimage_val",
+   "typed_fact": "@IsCompact H _ C",
+   "uses": [
+    {
+     "step": "13"
+    }
+   ]
+  },
+  {
+   "id": "15",
+   "parent": null,
+   "kind": "step",
+   "claim": "C has a compact neighbourhood A in H (B: C lies in the interior of A); C is a compact space and closed.",
+   "lines": [
+    82,
+    82
+   ],
+   "lean": "  obtain ⟨⟨_, A, B⟩, _, _⟩ := exists_compact_superset c, c.compactSpace, c.isClosed",
+   "uses": [
+    {
+     "step": "14"
+    }
+   ],
+   "ambient_uses": [
+    "exists_compact_superset"
+   ]
+  },
+  {
+   "id": "16",
+   "parent": null,
+   "kind": "step",
+   "claim": "Transformation law: for k ∈ H the theta term at x′ of the datum moved by k equals, up to the factor of the Levi element, the theta term moved through the pair (Z, Y), since k fixes x′ (`Space.Splitting.sourceTerm_levi`, with δ = ν·υ^{|b|} by d).",
+   "lines": [
+    83,
+    84
+   ],
+   "lean": "  have law (k : H) h := by simpa [← d, x', -coe_units_inv, (id k⁻¹.2 : k.1⁻¹.mat *\n    x' = _)] using D.sourceTerm_levi _ ν δ 1 1 k x' (pairWeil _ _ δ δ (g, h) f)",
+   "uses": [
+    {
+     "step": "10"
+    },
+    {
+     "decl": "Space.Splitting.sourceTerm_levi"
+    }
+   ]
+  },
+  {
+   "id": "17",
+   "parent": null,
+   "kind": "step",
+   "claim": "Let κ be the normalized Haar measure (a probability measure) of the compact group C.",
+   "lines": [
+    85,
+    85
+   ],
+   "lean": "  let κ := (haar (@.univ C))⁻¹ • haar (G := C)",
+   "uses": [
+    {
+     "step": "14"
+    }
+   ]
+  },
+  {
+   "id": "18",
+   "parent": null,
+   "kind": "step",
+   "claim": "Right multiplication on C is measurable.",
+   "lines": [
+    86,
+    86
+   ],
+   "lean": "  have : MeasurableConstSMul Cᵐᵒᵖ C := ⟨fun c ↦ measurable_mul_const c.unop⟩",
+   "typed_fact": "MeasurableConstSMul Cᵐᵒᵖ C"
+  },
+  {
+   "id": "19",
+   "parent": null,
+   "kind": "step",
+   "claim": "The Haar measure of the compact group C is right invariant.",
+   "lines": [
+    87,
+    87
+   ],
+   "lean": "  have : (haar (G := C)).IsMulRightInvariant := inferInstance",
+   "typed_fact": "(haar (G := C)).IsMulRightInvariant"
+  },
+  {
+   "id": "20",
+   "parent": null,
+   "kind": "step",
+   "claim": "So is its multiple κ.",
+   "lines": [
+    88,
+    88
+   ],
+   "lean": "  have : κ.IsMulRightInvariant := isMulRightInvariant_smul _",
+   "typed_fact": "κ.IsMulRightInvariant",
+   "uses": [
+    {
+     "step": "17"
+    },
+    {
+     "step": "19"
+    }
+   ]
+  },
+  {
+   "id": "21",
+   "parent": null,
+   "kind": "block",
+   "claim": "The integral J over the quotient by H vanishes by the averaging criterion (`integral_quotMeasure_eq_zero_of_mean`): if averaging the integrand over a probability measure κ through right multiplication by elements of H multiplies it by a, while right multiplication by these elements multiplies the Haar measure of H by d, and a ≠ d, the integral is 0. Here the integrand is continuous and left invariant under the rational points of H (I), d = 1 and a = 0 (the children).",
+   "lines": [
+    90,
+    103
+   ],
+   "lean": "  simpa using! J.trans (integral_quotMeasure_eq_zero_of_mean _ I (by fun_prop [Splitting.thetaTerm])\n    (fun _ ⟨_, _, e⟩ ↦ e ▸ (ratMap_mul_toAdele ..).trans (by congr)) κ (fun _ ↦ (↑)) 1 (fun _ k ↦\n    (one_smul ..).substr (((haarMeasure_unique ..).congr (haarMeasure_unique _ ⟨⟨_, A.mul c⟩, _,\n    subset_interior_mul_left ⟨_, B k.2, k, k.2, rfl⟩⟩)).2 congr($(by simp [Set.preimage,\n    (measurableEmbedding_mulRight _).map_apply, ← QuotientGroup.preimage_image_mk_eq_mul]) • _)))\n    zero_ne_one fun k _ ↦ let T (c : C) := θ _ ∘L pairWeil Z Y ν δ (1, k * (c * U))\n    have e := strongIntegral_apply κ T fun _ ↦ integrable_of_compactSpace (by simp [T]; fun_prop)\n    by simpa [↓law, e, T, Splitting.thetaTerm] using ext_integrated _ (projOn_empty _ (pairWeil _ _\n      ν δ (1, U⁻¹) _)) fun _ _ _ ↦ DFunLike.congr_fun (K (strongIntegral κ T ∘L (integrated _).flip\n      _) fun c _ _ v ↦ let p := U * (mulSingle τ c, 1) * U⁻¹\n      by simpa [← pairWeil_integrated_right ν δ, e, T, p] using integral_mul_right_eq_self (T\n        · _) ⟨⟨p, matrix_ext_𝔸 (fun w ↦ Matrix.map_mul.trans (show (p.1 w).1.1 * atRealPlace x' w =\n        atRealPlace _ w by by_cases w = τ <;> simp [p, U, *])) (Matrix.map_mul.trans (by\n          simp [p, U]; apply Matrix.one_mul))⟩, _, ⟨by simpa, by simp⟩, rfl⟩) _)",
+   "head_span": [
+    90,
+    3,
+    91,
+    69
+   ],
+   "head_lines": [
+    90,
+    91
+   ],
+   "uses": [
+    {
+     "step": "11"
+    },
+    {
+     "decl": "integral_quotMeasure_eq_zero_of_mean"
+    }
+   ]
+  },
+  {
+   "id": "21.1",
+   "parent": "21",
+   "kind": "step",
+   "claim": "d = 1: right multiplication by an element of C preserves the Haar measure of H, because the translated measure is again a Haar measure (`MeasureTheory.Measure.haarMeasure_unique`) and both give the same mass to the compact neighbourhood A·c (steps 15).",
+   "lines": [
+    91,
+    94
+   ],
+   "span": [
+    91,
+    70,
+    94,
+    98
+   ],
+   "lean": "κ (fun _ ↦ (↑)) 1 (fun _ k ↦\n    (one_smul ..).substr (((haarMeasure_unique ..).congr (haarMeasure_unique _ ⟨⟨_, A.mul c⟩, _,\n    subset_interior_mul_left ⟨_, B k.2, k, k.2, rfl⟩⟩)).2 congr($(by simp [Set.preimage,\n    (measurableEmbedding_mulRight _).map_apply, ← QuotientGroup.preimage_image_mk_eq_mul]) • _)))",
+   "uses": [
+    {
+     "step": "15"
+    }
+   ],
+   "ambient_uses": [
+    "MeasureTheory.Measure.haarMeasure_unique"
+   ]
+  },
+  {
+   "id": "21.2",
+   "parent": "21",
+   "kind": "step",
+   "claim": "a = 0 ≠ 1. For k ∈ H let T(c) = θ ∘ ω_{Z,Y}(ν, δ)(1, k·c·U) for c ∈ C; T is integrable over the compact C, so its κ-integral is a continuous linear functional (e).",
+   "lines": [
+    95,
+    96
+   ],
+   "lean": "    zero_ne_one fun k _ ↦ let T (c : C) := θ _ ∘L pairWeil Z Y ν δ (1, k * (c * U))\n    have e := strongIntegral_apply κ T fun _ ↦ integrable_of_compactSpace (by simp [T]; fun_prop)",
+   "uses": [
+    {
+     "step": "12"
+    },
+    {
+     "step": "17"
+    }
+   ]
+  },
+  {
+   "id": "21.3",
+   "parent": "21",
+   "kind": "step",
+   "claim": "The κ-average of the theta term at x′ moved by k is, by the transformation law (step 16), the functional ∫T dκ applied to the datum moved by U⁻¹; by `ext_integrated` and the projection to the empty set of places it suffices that ∫T dκ, composed with the datum map, vanishes, which is step 9 applied to it once it is invariant under realPairWeil(μ, 0)(1, c at τ) for every c in the maximal compact subgroup fixing u·w; for such c put p = U·(c at τ)·U⁻¹.",
+   "lines": [
+    97,
+    99
+   ],
+   "lean": "    by simpa [↓law, e, T, Splitting.thetaTerm] using ext_integrated _ (projOn_empty _ (pairWeil _ _\n      ν δ (1, U⁻¹) _)) fun _ _ _ ↦ DFunLike.congr_fun (K (strongIntegral κ T ∘L (integrated _).flip\n      _) fun c _ _ v ↦ let p := U * (mulSingle τ c, 1) * U⁻¹",
+   "uses": [
+    {
+     "step": "9"
+    },
+    {
+     "step": "16"
+    },
+    {
+     "step": "21.2"
+    }
+   ]
+  },
+  {
+   "id": "21.4",
+   "parent": "21",
+   "kind": "step",
+   "claim": "Invariance: right multiplication by p preserves κ-integrals (`MeasureTheory.integral_mul_right_eq_self`, κ being right invariant, step 20), because p lies in C: it is in the conjugate of the maximal compact subgroup and fixes x′.",
+   "lines": [
+    100,
+    101
+   ],
+   "span": [
+    100,
+    7,
+    101,
+    63
+   ],
+   "lean": "by simpa [← pairWeil_integrated_right ν δ, e, T, p] using integral_mul_right_eq_self (T\n        · _) ⟨⟨p, matrix_ext_𝔸 (fun w ↦ Matrix.map_mul.trans (",
+   "uses": [
+    {
+     "step": "20"
+    },
+    {
+     "step": "21.3"
+    }
+   ],
+   "ambient_uses": [
+    "MeasureTheory.integral_mul_right_eq_self"
+   ]
+  },
+  {
+   "id": "21.5",
+   "parent": "21",
+   "kind": "step",
+   "claim": "p fixes x′ at the infinite places: at w = τ because c fixes u·w = u·x′_τ and p_τ = u⁻¹cu, at w ≠ τ because p_w = 1; at the finite places p is 1.",
+   "lines": [
+    101,
+    103
+   ],
+   "span": [
+    101,
+    63,
+    103,
+    81
+   ],
+   "lean": "show (p.1 w).1.1 * atRealPlace x' w =\n        atRealPlace _ w by by_cases w = τ <;> simp [p, U, *])) (Matrix.map_mul.trans (by\n          simp [p, U]; apply Matrix.one_mul))⟩, _, ⟨by simpa, by simp⟩, rfl⟩) _)",
+   "typed_fact": "(p.1 w).1.1 * atRealPlace x' w =",
+   "uses": [
+    {
+     "step": "5"
+    },
+    {
+     "step": "12"
+    }
+   ]
+  }
+ ]
+}

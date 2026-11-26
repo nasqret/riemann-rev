@@ -1,0 +1,313 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Columns.LocalStatement:106:7",
+ "summary": "Write g_l = a_l·diag(p on J_l, 1)·b_l with a_l, b_l ∈ K_l and apply `mem_raises_of_jet_bound` with the diagonal: the jet bound is `norm_jetSeries_le` combined with the divisibility of Schur jets `norm_schurJet_le` (charges: one per box of a height-one column moved by the diagonal), and the exponents are reorganized into ∑ A_l + liftLoss.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "fact",
+   "claim": "p ∤ g₀g₁N, p ≥ 1; choose i_l ≤ 𝔯 with g_l in the basic double coset of index i_l.",
+   "lines": [
+    109,
+    109
+   ],
+   "lean": "  obtain ⟨N, p1 : 1 ≤ (p : ℝ)⟩ := hΛ.not_dvd_gProd_mul_N, mod_cast hp.1.pos; choose i hi hc using hc",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Choose subsets J_l of the coordinates with #J_l = i_l.",
+   "lines": [
+    110,
+    110
+   ],
+   "lean": "  choose! J _ hJ using fun l h ↦ exists_subset_card_eq (le_card_of_mem_basicDoubleCoset (hc ⟨l, h⟩))",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "fact",
+   "claim": "g_l = a_l·diag(p on J_l, 1)·b_l with a_l, b_l ∈ K_l (basic double coset).",
+   "lines": [
+    111,
+    113
+   ],
+   "lean": "  choose a ha b hb e using fun l : Λ ↦ DoubleCoset.mem_doubleCoset.1\n    ((basicDoubleCoset_eq (diagGL_mem_basicDoubleCoset (ϖ := .mk0 p NeZero.out)\n    (by simp [← v_algebraMap_eq_valuation, ← hΛ.valuation_p l.2]) _).1).le (hJ _ l.2 ▸ hc l))",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Rewrite atSplits(g) as the product of the three families.",
+   "lines": [
+    114,
+    114
+   ],
+   "lean": "  simp [funext e, ← Pi.mul_def]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Apply `mem_raises_of_jet_bound` (δ = 1; translateDatum ∈ Std_1 by `translateDatum_mem_standardData`) with x = atSplits(a), y = atSplits(b) (in K_f) and the diagonal point, whose component at w is diag(p^{[w∈Λ, i∈J_w] − [(w̄, i) ∈ Λ.σJ]}); remaining: that description and the jet bound.",
+   "lines": [
+    115,
+    118
+   ],
+   "lean": "  refine Parameters.mem_raises_of_jet_bound (δ := 1) (H.translateDatum_mem_standardData hQ N.2.1 h j\n    (.inr N.1)) (Kf_le_localLevel ?_) (Kf_le_localLevel ?_) (fun _ ↦ (?_ : ∀ w (f : _ →+* ℂ_[p]),\n    (atPlace w _).1.map f = .diagonal fun i ↦ p ^ (ite (w ∈ Λ ∧ i ∈ J w) 1 0 - ite (⟨star w,\n    i⟩ ∈ Λ.sigma J) 1 0 : ℤ)) _ _) ?_ <;> first | rwa [atSplits_mem_Kf] | clear * - hΛ p1 hJ hi",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Parameters.mem_raises_of_jet_bound"
+    },
+    {
+     "decl": "Data.IsGoodDatum.translateDatum_mem_standardData"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "case-split",
+   "claim": "The description at each place w (cases w ∈ Λ, w̄ ∈ Λ).",
+   "lines": [
+    119,
+    121
+   ],
+   "lean": "  intro w; by_cases w ∈ Λ <;> by_cases star w ∈ Λ <;> simp_all [apply_ite, hΛ.1,\n    ← map_inv, atPlace_star (star_star w), atPlace_atSplits _ _ ⟨_, _⟩,\n    mem_supportedOn.1 (atSplits_mem_supportedOn _ _)]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "For f ∈ Std_1: the normal form of theta products at p (`thetaProducts_normal_form`, χ_K(p) ≠ 1).",
+   "lines": [
+    122,
+    122
+   ],
+   "lean": "  intro _ hf _ _; obtain ⟨_, _, u, v, H⟩ := P.thetaProducts_normal_form _ hΛ.4.2",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Parameters.thetaProducts_normal_form"
+    }
+   ]
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "The jet bound of `mem_raises_of_jet_bound` for f ∈ Std_1 and indices i′, i.",
+   "lines": [
+    123,
+    131
+   ],
+   "lean": "  grw [show ‖ιₚ (schurJet _ _ _ _)‖ ≤ p ^ (_ - D.jetExponent p j _) from norm_jetSeries_le hf _\n    (.proj _ ∘ₗ .proj _ ∘ₗ schurJet _) (r := p ^ (_ : ℝ)) fun Θ h ↦ by\n    erw [map_schurJet (isLiftWeight_kappa ..)]; simp_rw [jetExponent,\n      ← card_X]; exact norm_schurJet_le (ev := evenPlaces Λ) (isLiftWeight_kappa ..).1 u v\n      ((fun w h b ↦ ite (w ∈ Λ ∧ h = 1 ∧ b ∉ J w ∨ ⟨star w, b⟩ ∈ Λ.sigma J) 1 0) ∘ inducedPlace) (by\n      grind [IsMarked, IsServed, chiK_cases, inducedPlace_neg_pow_mul_of_odd, star_star]) ((H _ (by\n      simpa [P.norm_iota_periodFactor_eq_one _ (hΛ.4.2 ∘ P.chiK_eq_one_of_dvd Fact.out)] using\n        norm_star_piG_le_one) _ h).1 _), ← zero_add (Λ.sum _),\n    hΛ.sum_inducedPlace_sub_star_eq_zero (j + 1) fun c w ↦ #(J w) * ((D.n j / 2 : ℤ) - c)]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "8.1",
+   "parent": "8",
+   "kind": "reduction",
+   "claim": "Bound the Schur jet entry (next fact).",
+   "lines": [
+    123,
+    123
+   ],
+   "span": [
+    123,
+    1,
+    123,
+    8
+   ],
+   "lean": "  grw [",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "8.2",
+   "parent": "8",
+   "kind": "deduction",
+   "claim": "|ιₚ(schurJet entry of T f)| ≤ p^{(charges) − jetExponent(p, j, evenPlaces Λ)}: by `norm_jetSeries_le` with the entry as linear form; for a theta product, `norm_schurJet_le` with ev = evenPlaces(Λ) and charge 1 on the boxes moved by the diagonal (exempted couplings checked from IsMarked/IsServed and the partner places), and null-cone integrality from the normal form (|ιₚ(c s₁)| ≤ 1).",
+   "lines": [
+    123,
+    130
+   ],
+   "span": [
+    123,
+    8,
+    130,
+    40
+   ],
+   "lean": "show ‖ιₚ (schurJet _ _ _ _)‖ ≤ p ^ (_ - D.jetExponent p j _) from norm_jetSeries_le hf _\n    (.proj _ ∘ₗ .proj _ ∘ₗ schurJet _) (r := p ^ (_ : ℝ)) fun Θ h ↦ by\n    erw [map_schurJet (isLiftWeight_kappa ..)]; simp_rw [jetExponent,\n      ← card_X]; exact norm_schurJet_le (ev := evenPlaces Λ) (isLiftWeight_kappa ..).1 u v\n      ((fun w h b ↦ ite (w ∈ Λ ∧ h = 1 ∧ b ∉ J w ∨ ⟨star w, b⟩ ∈ Λ.sigma J) 1 0) ∘ inducedPlace) (by\n      grind [IsMarked, IsServed, chiK_cases, inducedPlace_neg_pow_mul_of_odd, star_star]) ((H _ (by\n      simpa [P.norm_iota_periodFactor_eq_one _ (hΛ.4.2 ∘ P.chiK_eq_one_of_dvd Fact.out)] using\n        norm_star_piG_le_one) _ h).1 _)",
+   "typed_fact": "‖ιₚ (schurJet _ _ _ _)‖ ≤ p ^ (_ - D.jetExponent p j _)",
+   "uses": [
+    {
+     "decl": "Parameters.norm_jetSeries_le"
+    },
+    {
+     "decl": "norm_schurJet_le"
+    },
+    {
+     "decl": "Parameters.norm_iota_periodFactor_eq_one"
+    },
+    {
+     "decl": "Data.norm_star_piG_le_one"
+    }
+   ]
+  },
+  {
+   "id": "8.3",
+   "parent": "8",
+   "kind": "deduction",
+   "claim": "Add the vanishing sum of `sum_inducedPlace_sub_star_eq_zero` (stage j + 1, G(c, w) = #J_w·(⌊n_j/2⌋ − c)).",
+   "lines": [
+    130,
+    131
+   ],
+   "span": [
+    130,
+    40,
+    131,
+    91
+   ],
+   "lean": ", ← zero_add (Λ.sum _),\n    hΛ.sum_inducedPlace_sub_star_eq_zero (j + 1) fun c w ↦ #(J w) * ((D.n j / 2 : ℤ) - c)]",
+   "typed_fact": null,
+   "uses": [
+    {
+     "decl": "Data.IsMarked.sum_inducedPlace_sub_star_eq_zero"
+    }
+   ]
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Collect all exponents into one sum over τ (markExponent, liftLoss, lowColumns, lastEntry).",
+   "lines": [
+    132,
+    135
+   ],
+   "lean": "  simp (disch := positivity) only [norm_zpow, norm_p_eq_inv, inv_zpow', ← rpow_sum_of_pos, add_sub,\n    markExponent, ← rpow_intCast, lastEntry, sum_filter, ← rpow_mul, placeOfEmb_comp_star,\n    ← rpow_add, push_cast, ← inducedPlace.eq_1, liftLoss, lowColumns, mul_sum, card_filter,\n    ← sum_ite_mem_eq D.tops, ← sum_add_distrib, Λ.sum_comm]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "Compare exponents termwise over τ.",
+   "lines": [
+    136,
+    136
+   ],
+   "lean": "  clear hf H; gcongr _ ^ (∑ τ, ?_ - _)",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "case-split",
+   "claim": "Cases on whether inducedPlace τ or its conjugate is in Λ.",
+   "lines": [
+    137,
+    138
+   ],
+   "lean": "  by_cases inducedPlace τ ∈ Λ <;> by_cases star (inducedPlace τ) ∈ Λ <;> simp_all [hΛ.1,\n    add_assoc]; norm_cast",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Rewrite the height-one count.",
+   "lines": [
+    139,
+    139
+   ],
+   "span": [
+    139,
+    1,
+    139,
+    7
+   ],
+   "lean": "  rw [",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "fact",
+   "claim": "The height-one column count equals ∑_{h<n_{j+1}} [h = 1]·κ(τ, h).",
+   "lines": [
+    139,
+    139
+   ],
+   "span": [
+    139,
+    7,
+    139,
+    94
+   ],
+   "lean": "show ite .. = ∑ h ∈ range (D.n (j + 1)), ite (h = 1) (D.κ τ h) 0 by simp [κ, n]; grind]",
+   "typed_fact": "ite .. = ∑ h ∈ range (D.n (j + 1)), ite (h = 1) (D.κ τ h) 0",
+   "uses": []
+  },
+  {
+   "id": "14",
+   "parent": null,
+   "kind": "computation",
+   "claim": "Rewrite the sums.",
+   "lines": [
+    140,
+    140
+   ],
+   "lean": "  simp_rw [mul_sum, ← card_X, sum_range, ← sum_add_distrib]; gcongr",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "15",
+   "parent": null,
+   "kind": "case-split",
+   "claim": "Split into the charged and uncharged boxes.",
+   "lines": [
+    141,
+    141
+   ],
+   "lean": "  split <;> simp [*, card_filter_add_card_filter_not]",
+   "typed_fact": null,
+   "uses": []
+  },
+  {
+   "id": "16",
+   "parent": null,
+   "kind": "estimate",
+   "claim": "The charges of row i′ are at most the number of moved boxes: injectivity of the tableau columns (`tableau_col_injective`) and i_l ≤ 𝔯.",
+   "lines": [
+    142,
+    143
+   ],
+   "lean": "  exact (sum_le_sum fun _ _ ↦ card_le_card_of_injOn _ (mem_filter_univ · |>.1)\n    (tableau_col_injective ..).injOn).trans (by simp [*]; grw [hi]; lia)",
+   "typed_fact": null,
+   "uses": []
+  }
+ ]
+}

@@ -1,0 +1,441 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Filling.BoxPartition:158:7",
+ "summary": "[δ] = #(Ô/δÔ) and x ≤ ∏_{p∈A} q_p = #(Ô/ker) for the reduction Ô → ∏_{p∈A} 𝔽_p; it suffices that δ ≡ 0 at every p ∈ A. If not at p, a descending induction over the frame shows that no nonzero vector of the flag can be fixed by s̄ modulo p, using integral Eichler elements and the agreement of the unipotent characters; this contradicts FixesNormAtLeast.",
+ "intro_lines": [
+  [
+   161,
+   163
+  ]
+ ],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Introduce the unit δ (u) and the data of FixesNormAtLeast: a finite set A of pairs p = (w, b) with x ≤ ∏_{p∈A} q_p (F) and, for each p ∈ A, a nonzero vector of the span of the frame fixed by s̄ modulo p (G); choose Chinese-remainder lifts l with prescribed residues at all p (H, exists_reduceAboveG_eq).",
+   "lines": [
+    164,
+    164
+   ],
+   "lean": "  intro g u ⟨A, F, G⟩; choose l H using S'.exists_reduceAboveG_eq",
+   "uses": [
+    {
+     "decl": "New.Filling.CrudeBoundDefs:19:7"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Q = tᴴ·(f | kf), a matrix over Ô (t and k are integral).",
+   "lines": [
+    165,
+    166
+   ],
+   "lean": "  let Q := @of _ _ (Ô E) (⟨_, ht.isInt_conjTranspose · ·⟩) * (frameImage 1).fromCols\n    (frameImage (intGL.map (.id _) ⟨_, k.2⟩).1)",
+   "uses": [
+    {
+     "decl": "Lib.General.LinearAlgebra.ColumnLattices:62:7"
+    },
+    {
+     "decl": "Lib.General.LinearAlgebra.ExtendColumns:148:8"
+    },
+    {
+     "decl": "Lib.General.Groups.ValuationPair:153:5"
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Q, mapped to 𝔸_f, is the conjugate transpose of P.",
+   "lines": [
+    167,
+    167
+   ],
+   "lean": "  obtain rfl : (Q.map (↑))ᴴ = P := by aesop (add simp [mul_apply, star_mul])",
+   "typed_fact": "(Q.map (↑))ᴴ = P",
+   "uses": [],
+   "ambient_uses": [
+    "mul_apply",
+    "star_mul"
+   ]
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "computation",
+   "claim": "δ lies in Ô and [δ] = #(Ô/δÔ) > 0 (genIndex_eq_card, Ô compact open); the hypotheses z, u are rewritten for Q.",
+   "lines": [
+    168,
+    170
+   ],
+   "lean": "  have p := genIndex_pos u.unit; simp [← ext_iff, ← conjTranspose_submatrix] at z u p ⊢\n  erw [submatrix_map, ← (Ô E).subtype.map_det,\n    genIndex_eq_card isOpen_Ô isCompact_Ô (by simp) u] at *",
+   "uses": [
+    {
+     "decl": "Lib.General.Measure.HaarModulus:85:7"
+    },
+    {
+     "decl": "Lib.General.Measure.HaarModulus:78:7"
+    },
+    {
+     "decl": "Lib.Adelic.Adeles.AdeleTopology:70:7"
+    },
+    {
+     "decl": "Lib.Adelic.Adeles.AdeleTopology:66:7"
+    }
+   ],
+   "ambient_uses": [
+    "ext_iff",
+    "submatrix_map"
+   ]
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "x ≤ ∏_{p∈A} q_p = #∏_{p∈A} 𝔽_p = #(Ô/ker), the reduction Ô → ∏ 𝔽_p being onto (via l), and #(Ô/ker) ≤ #(Ô/δÔ) once δ lies in the kernel. Suppose δ does not reduce to 0 at some p = ((i, w), b) ∈ A (n). By G some nonzero x̄ over 𝔽_w has f x̄ fixed by s̄ modulo p; it suffices to show, by induction downwards over the frame index a, that every x, y over 𝔽_w with f x = (k mod p) f y have x_a = 0 — then x̄ = 0, a contradiction.",
+   "lines": [
+    171,
+    178
+   ],
+   "lean": "  refine mod_cast ((F.trans_eq (by simp [Nat.card_pi, card_resField_eq_levelPrime,\n    ← A.prod_attach])).trans (Nat.card_congr ((RingHom.pi fun w : A ↦ S'.reduceAboveG\n    w.1).quotientKerEquivOfSurjective fun t ↦ ⟨l fun w ↦ dite _ (t ⟨w, ·⟩) fun _ ↦ 0, by\n    ext; simp [H]⟩).1).ge).trans (@index_antitone _ _ _ _ ((Ideal.span_singleton_le_iff_mem _).2\n    (funext fun ⟨⟨p, b⟩, h⟩ ↦ ((S'.reduceAboveG _).map_det _).trans (by_contra fun n ↦ (G _ h).elim\n    fun x h ↦ x.2 (funext ((wellFounded_gt.fix fun a ih x y h ↦ ?_ : ∀ a x y, frameImage 1 *ᵥ x =\n    frameImage (intGL.map (S'.reduceAboveG _) ⟨_, k.2⟩).1 *ᵥ y → x a = 0) · _ x (by simpa [←\n    intGL_map_reduceAboveG, mul_inclMatrix, Units.smul_def] using! h.symm)))))) ⟨mod_cast p.ne'⟩)",
+   "uses": [
+    {
+     "decl": "New.Filling.LatticeChart:77:7"
+    },
+    {
+     "decl": "New.Filling.LevelBridge:130:7"
+    },
+    {
+     "decl": "New.Filling.LevelBridge:125:5"
+    },
+    {
+     "decl": "Lib.General.LinearAlgebra.ExtendColumns:148:8"
+    },
+    {
+     "decl": "Lib.General.Groups.ValuationPair:153:5"
+    },
+    {
+     "decl": "Lib.General.Groups.ValuationPair:123:7"
+    }
+   ],
+   "ambient_uses": [
+    "Units.smul_def"
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "In the induction (index a, hypothesis ih for larger indices, f x = (k mod p) f y as h): Q mod p kills (x, −y), the rows of Q for e_a and k e_a vanish (z) and the 2 × 2 block at (z, kz) is nonsingular modulo p (n); hence the z-coefficients vanish: x_ϱ = y_ϱ = 0.",
+   "lines": [
+    179,
+    182
+   ],
+   "lean": "  replace n := by simpa [g, funext_iff, reindex_equiv ρ.symm] using eq_zero_of_mulVec_eq_zero (v :=\n    (x ⊕ᵥ -y) ∘ g) n (by simpa [funext_iff, mulVec_eq_sum, sum_univ_castSucc, reindex_equiv ρ.symm,\n    g, z] using (by simp [Q, ← mulVec_mulVec, ← submatrix_map, mulVec_neg, add_neg_eq_zero, h]; rfl\n    : Q.map (S'.reduceAboveG _) *ᵥ (x ⊕ᵥ -y) = 0))",
+   "uses": [
+    {
+     "decl": "Lib.General.Groups.ValuationPair:30:7"
+    },
+    {
+     "decl": "New.Filling.LevelBridge:125:5"
+    }
+   ],
+   "ambient_uses": [
+    "funext_iff",
+    "mulVec_eq_sum",
+    "mulVec_mulVec",
+    "submatrix_map"
+   ]
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "setup",
+   "claim": "If a = ϱ this is the claim. Otherwise a < ϱ (renamed a).",
+   "lines": [
+    183,
+    183
+   ],
+   "lean": "  cases' a using lastCases with a; simp [n]",
+   "uses": []
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "setup",
+   "claim": "o(t) = l(t at p, 0 elsewhere) − l(0): an integral finite adele with residue t at p and 0 at the other pairs of A.",
+   "lines": [
+    184,
+    184
+   ],
+   "lean": "  let o t := l (Pi.single (p, b) t) - l 0",
+   "uses": []
+  },
+  {
+   "id": "9",
+   "parent": null,
+   "kind": "fact",
+   "claim": "For every chosen q (with the same Boolean b), the conjugate of o(t) reduces to 0 under (q, b).",
+   "lines": [
+    185,
+    185
+   ],
+   "lean": "  have G q t : S'.reduceAboveG (q, b) (star (o t)) = 0 := by cases b <;> simp_all [o, reduceAboveG]",
+   "typed_fact": "S'.reduceAboveG (q, b) (star (o t)) = 0",
+   "uses": [
+    {
+     "decl": "New.Filling.LevelBridge:125:5"
+    }
+   ]
+  },
+  {
+   "id": "10",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "By exists_mulVec_eq_of_annihilator over 𝔽_w, it suffices that every linear form m vanishing on f_b (b ≤ a) and on (kf)_b (b < ϱ) gives m(f x⁺) = m(kf y⁺), x⁺ = (0, x₀, …, x_{ϱ−1}) and y⁺ likewise (shifted by one); then some x', y' with f x' = (kf) y' have x'_{a+1} = x_a, and ih at a+1 gives x_a = 0.",
+   "lines": [
+    186,
+    188
+   ],
+   "lean": "  refine (exists_mulVec_eq_of_annihilator _ _ (.Iio a.succ) (.Iio 𝔰.top) (cons 0 (init x))\n    (cons 0 (init y)) fun m c c' ↦ ?_\n    ).elim fun x ⟨_, h, e, _⟩ ↦ (e a.succ (by simp) ▸ ih _ (by simp) _ _ h :)",
+   "uses": [
+    {
+     "decl": "Lib.General.LinearAlgebra.AdelicRingDefs:37:7"
+    }
+   ]
+  },
+  {
+   "id": "11",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "Put A(M, x) = ∑_b o((m·Mf)_b)·(0, o(x₀), …)_b ∈ Ô, an integral lift of m(Mf·x⁺). It suffices that selfDualChar(r·g⁻¹(A(1, x) − A(k, y))) = 1 for every r ∈ Ô: then g⁻¹(A(1, x) − A(k, y)) ∈ Ô (forall_selfDualChar_mul_eq_one_iff), so A(1, x) − A(k, y) vanishes at p (inv_gIdele_smul_mem_iff), which is m(f x⁺) = m(kf y⁺).",
+   "lines": [
+    189,
+    192
+   ],
+   "lean": "  let A M x := o ∘ (m ᵥ* frameImage M) ⬝ᵥ cons 0 (init (o ∘ x))\n  have' := (S'.inv_gIdele_smul_mem_iff (A 1 x - A _ y)).1\n    ((S'.forall_selfDualChar_mul_eq_one_iff _).1 fun r ↦ _) (p, b)\n  simpa [A, dotProduct, sum_univ_succ, init, o, H] using this",
+   "uses": [
+    {
+     "decl": "New.Filling.LevelBridge:150:7"
+    },
+    {
+     "decl": "New.Filling.LevelBridge:142:7"
+    },
+    {
+     "decl": "Lib.General.LinearAlgebra.ExtendColumns:148:8"
+    }
+   ],
+   "ambient_uses": [
+    "sum_univ_succ"
+   ]
+  },
+  {
+   "id": "12",
+   "parent": null,
+   "kind": "fact",
+   "claim": "Integral Eichler elements: for a, x, M with x vanishing from a on and m(Mf_b) = 0 for b < a, there is u ∈ K ∩ 𝖴 with σ(u) = r·A(M, x) whose reduction at every (q, b) is 1 + f(r)·(f·f(o∘x))(f(o∘(m·M))).",
+   "lines": [
+    194,
+    205
+   ],
+   "lean": "  have V a x M (hx : ∀ b ≥ a, x b = 0) (c : ∀ b < a, (m ᵥ* frameImage M) b = 0) : ∃ u :\n    S'.latStabilizer, u.1 ∈ besselU ∧ simpleRootSum u.1 = r * A M x ∧\n    ∀ q, let f := S'.reduceAboveG (q, b); (intGL.map f ⟨u, u.2⟩).1 =\n      1 + f r • vecMulVec (frameImage 1 *ᵥ f ∘ o ∘ x) (f ∘ o ∘ (m ᵥ* M)) := by\n    obtain ⟨⟨v, Z⟩, _, _, τ, i, _, _, e⟩ :=\n      exists_star_vecMul_eq (S'.latMiddle _).splitGram (o ∘ (m ᵥ* M)), exists_skew_unit (A := 𝔸f E)\n    have : TraceOne (Ô E) := ⟨⟨τ, i⟩, Subtype.ext e⟩\n    have ⟨u, n, w, e⟩ :=\n      exists_mem_besselU_eq_eichlerMap a (o ∘ x) r Z (by simp [o, hx · ·]) (by simp_all [o, vecMul])\n    use ⟨U.map _ (by simp) (map_splitGram_latMiddle _) u, _, rfl⟩, n.map_mem_unitriangularOn\n      _, by simpa [simpleRootSum] using! congr($w.1), fun _ ↦ congr(Matrix.map $e _).trans\n      (by simp [eichlerMap, *, vecMulVec_apply, apply_ite, entrywise, vecMul])",
+   "head_lines": [
+    194,
+    197
+   ],
+   "typed_fact": "∃ u :\n    S'.latStabilizer, u.1 ∈ besselU ∧ simpleRootSum u.1 = r * A M x ∧\n    ∀ q, let f := S'.reduceAboveG (q, b); (intGL.map f ⟨u, u.2⟩).1 =\n      1 + f r • vecMulVec (frameImage 1 *ᵥ f ∘ o ∘ x) (f ∘ o ∘ (m ᵥ* M))",
+   "uses": [
+    {
+     "decl": "Lib.General.LinearAlgebra.ExtendColumns:148:8"
+    },
+    {
+     "decl": "New.Filling.Setup:111:5"
+    },
+    {
+     "decl": "Lib.General.LinearAlgebra.ExtendColumns:163:5"
+    },
+    {
+     "decl": "Lib.Adelic.Poincare.BesselSubgroup:50:5"
+    },
+    {
+     "decl": "New.Filling.LevelBridge:125:5"
+    },
+    {
+     "decl": "Lib.General.Groups.ValuationPair:153:5"
+    }
+   ]
+  },
+  {
+   "id": "12.1",
+   "parent": "12",
+   "kind": "setup",
+   "claim": "A vector v with h(v, ·) = o∘(m·Mf) for the lattice form (exists_star_vecMul_eq), and τ, i with τ + τ̄ = 1 in Ô (exists_skew_unit).",
+   "lines": [
+    198,
+    199
+   ],
+   "lean": "    obtain ⟨⟨v, Z⟩, _, _, τ, i, _, _, e⟩ :=\n      exists_star_vecMul_eq (S'.latMiddle _).splitGram (o ∘ (m ᵥ* M)), exists_skew_unit (A := 𝔸f E)",
+   "uses": [
+    {
+     "decl": "New.Filling.EichlerFlag:158:7"
+    },
+    {
+     "decl": "New.Filling.Setup:78:8"
+    }
+   ]
+  },
+  {
+   "id": "12.2",
+   "parent": "12",
+   "kind": "fact",
+   "claim": "Ô carries τ with τ + τ̄ = 1 (TraceOne).",
+   "lines": [
+    200,
+    200
+   ],
+   "lean": "    have : TraceOne (Ô E) := ⟨⟨τ, i⟩, Subtype.ext e⟩",
+   "typed_fact": "TraceOne (Ô E)",
+   "uses": [
+    {
+     "decl": "Lib.General.Measure.Place:11:7"
+    }
+   ],
+   "ambient_uses": [
+    "Subtype.ext"
+   ]
+  },
+  {
+   "id": "12.3",
+   "parent": "12",
+   "kind": "deduction",
+   "claim": "The Eichler element u ∈ 𝖴 over Ô of exists_mem_besselU_eq_eichlerMap for x̃ = r·f(o∘x), v and ς = τh(v, v).",
+   "lines": [
+    201,
+    202
+   ],
+   "lean": "    have ⟨u, n, w, e⟩ :=\n      exists_mem_besselU_eq_eichlerMap a (o ∘ x) r Z (by simp [o, hx · ·]) (by simp_all [o, vecMul])",
+   "uses": [
+    {
+     "decl": "New.Filling.EichlerFlag:165:7"
+    }
+   ]
+  },
+  {
+   "id": "12.4",
+   "parent": "12",
+   "kind": "computation",
+   "claim": "Its image in GFin lies in K and in 𝖴, its σ is r·A(M, x), and its reductions are as stated (entrywise from the Eichler map).",
+   "lines": [
+    203,
+    205
+   ],
+   "lean": "    use ⟨U.map _ (by simp) (map_splitGram_latMiddle _) u, _, rfl⟩, n.map_mem_unitriangularOn\n      _, by simpa [simpleRootSum] using! congr($w.1), fun _ ↦ congr(Matrix.map $e _).trans\n      (by simp [eichlerMap, *, vecMulVec_apply, apply_ite, entrywise, vecMul])",
+   "uses": [
+    {
+     "decl": "New.Filling.LevelBridge:32:7"
+    },
+    {
+     "decl": "New.Filling.LevelBridge:29:7"
+    },
+    {
+     "decl": "Lib.DiscreteSeries.Bruhat.EichlerMaps:19:19"
+    },
+    {
+     "decl": "Lib.General.Groups.ValuationPair:224:5"
+    },
+    {
+     "decl": "Lib.Adelic.Poincare.BesselSubgroup:50:5"
+    },
+    {
+     "decl": "Lib.General.Groups.ValuationPair:37:7"
+    }
+   ],
+   "ambient_uses": [
+    "vecMulVec_apply",
+    "apply_ite"
+   ]
+  },
+  {
+   "id": "13",
+   "parent": null,
+   "kind": "setup",
+   "claim": "Take the Eichler elements u for (x, M = 1) (x vanishes from a+1 on by ih) and u' for (y, M = k).",
+   "lines": [
+    206,
+    206
+   ],
+   "lean": "  obtain ⟨⟨u, hu, w, e⟩, u', hu', _⟩ := V _ x 1 (ih · · x y h) c, V _ y _ (by simp [n]) c'",
+   "uses": [
+    {
+     "step": "12"
+    }
+   ]
+  },
+  {
+   "id": "14",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "By Agrees (s), unipotentChar(u) = unipotentChar(u') provided reduction(u)·s̄ = s̄·reduction(u'); this equality of characters is selfDualChar(g⁻¹rA(1, x)) = selfDualChar(g⁻¹rA(k, y)), the claim of step 11.",
+   "lines": [
+    207,
+    208
+   ],
+   "lean": "  have := s _ _ hu hu' ?_; simpa [unipotentChar, *, Units.smul_def, mul_sub, mul_left_comm r.1,\n    AddChar.map_sub_eq_div, (S'.selfDualChar.val_isUnit _).div_eq_one_iff_eq]",
+   "uses": [
+    {
+     "decl": "New.Filling.Setup:391:5"
+    }
+   ],
+   "ambient_uses": [
+    "Units.smul_def",
+    "mul_sub",
+    "mul_left_comm"
+   ]
+  },
+  {
+   "id": "15",
+   "parent": null,
+   "kind": "computation",
+   "claim": "It remains reduction(u)·s̄ = s̄·reduction(u'), checked at every chosen place (j, v) after the injective idOrInvAdjoint(b): away from p both reductions are 1 (o vanishes there); at p it follows from the formulas of step 12 and f x = (k mod p) f y.",
+   "lines": [
+    209,
+    211
+   ],
+   "lean": "  funext j v; apply (S'.idOrInvAdjoint b).injective; obtain rfl | _ := eq_or_ne ⟨j,\n    v⟩ p <;> simp [add_mul, o, *, ← intGL_map_reduceAboveG, Units.ext_iff, comp_def, mul_add,\n    vecMulVec_mul, mul_vecMulVec, ← Pi.zero_def]",
+   "uses": [
+    {
+     "decl": "New.Filling.LevelBridge:119:5"
+    },
+    {
+     "decl": "New.Filling.LevelBridge:130:7"
+    }
+   ],
+   "ambient_uses": [
+    "add_mul",
+    "Units.ext_iff",
+    "mul_add"
+   ]
+  },
+  {
+   "id": "16",
+   "parent": null,
+   "kind": "computation",
+   "claim": "The remaining matrix identity (columns of a product with an inclusion matrix).",
+   "lines": [
+    212,
+    212
+   ],
+   "lean": "  erw [mul_inclMatrix]",
+   "uses": [
+    {
+     "decl": "Lib.General.Groups.ValuationPair:123:7"
+    }
+   ]
+  }
+ ]
+}

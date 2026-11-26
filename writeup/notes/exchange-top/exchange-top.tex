@@ -1,0 +1,1723 @@
+% !TEX program = lualatex
+% ---------------------------------------------------------------------------------------------
+%  Readback note 16: Partner data, vanishing on standard data, and the exchange identity at the top of the tower
+%
+%  Build:  python3 tools/rb.py note <slug>
+%
+%  One unit of a Lean artifact, rewritten as ordinary mathematics. The prose is hand-written. Lean names,
+%  line ranges and counts come from data.tex; quoted Lean statements are copied from the artifact by the build.
+%
+%  Rules of the text: standard terminology; every symbol is explained where it first appears and listed again
+%  in the notation at the end; no letter has two meanings; a proof is complete or says what it takes for granted;
+%  Lean names appear only in the LEAN lines and in the concordance.
+%
+%  The signature rule (the build enforces it): a function, relation or predicate that the artifact defines is
+%  written only through its notation macro, which the build makes from the spec (`notation`) with one slot for
+%  each explicit argument of the Lean definition. No argument is fixed and dropped, also not "for brevity" and
+%  not for one section. Every argument and every hypothesis of a stated declaration stands inside its
+%  statement, or in a Setting that the statement cites by number; only implicit and instance arguments (the
+%  ambient objects) may stand in the conventions.
+% ---------------------------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\ifdefined\pdfvariable\pdfvariable suppressoptionalinfo \numexpr 1+2+4+8\relax\fi
+\usepackage[a4paper,hmargin=35mm,top=22mm,bottom=27mm,footskip=12mm,nohead]{geometry}
+
+\usepackage{fontspec}
+\directlua{
+  luaotfload.add_fallback("gfallback", {"STIXTwoMath-Regular.otf:mode=node;", "DejaVuSans.ttf:mode=node;"})
+  luaotfload.add_fallback("gmonofallback", {"DejaVuSansMono.ttf:mode=node;", "STIXTwoMath-Regular.otf:mode=node;"})
+}
+\setmainfont{NewCM10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookItalic,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldItalic,SmallCapsFont=*-Book,SmallCapsFeatures={Letters=SmallCaps},
+  RawFeature={fallback=gfallback}]
+\setsansfont{NewCMSans10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookOblique,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldOblique,RawFeature={fallback=gfallback}]
+\setmonofont{JetBrainsMono}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,Scale=MatchLowercase,
+  RawFeature={-calt;-liga;fallback=gmonofallback}]
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage[math-style=TeX]{unicode-math}
+\setmathfont{NewCMMath-Book.otf}
+\emergencystretch=2.5em\relax
+
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows.meta,positioning,backgrounds}
+\usepackage[protrusion=true,expansion=true]{microtype}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{multicol}
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+
+\definecolor{ink}{HTML}{0F172A}
+\definecolor{inksoft}{HTML}{475569}
+\definecolor{inkfaint}{HTML}{94A3B8}
+\definecolor{rulegrey}{HTML}{CBD5E1}
+\definecolor{arith}{HTML}{C2410C}
+\definecolor{est}{HTML}{7C3AED}
+\definecolor{ana}{HTML}{0891B2}
+\definecolor{ok}{HTML}{047857}
+\definecolor{leancol}{HTML}{3730A3}
+
+\title{Partner data, vanishing on standard data, and the exchange identity at the top of the tower}
+\author{grh-compact}
+\date{}
+
+% ------------------------------------------------------------------------------------- macros
+\newcommand{\leanfont}{\ttfamily\fontsize{8.6}{10.5}\selectfont\color{leancol}}
+\newcommand{\lean}[1]{\csname LN@#1\endcsname}
+\newcommand{\fillin}[1]{{\color{arith}\itshape[#1]}}  % a place of the template that is not written yet; the build reports every one that is left
+\newcommand{\leanquote}[1]{\csname LQ@#1\endcsname}
+\input{data.tex}
+
+\linespread{1.08}                       % 11 pt on 14.7 pt
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt plus 1.5pt minus 0.5pt}
+\setlength{\abovedisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\belowdisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\abovedisplayshortskip}{3pt plus 2pt}
+\setlength{\belowdisplayshortskip}{6pt plus 2pt minus 2pt}
+\emergencystretch=1.5em
+\clubpenalty=10000 \widowpenalty=10000 \displaywidowpenalty=10000
+\relpenalty=7000 \binoppenalty=9000
+\raggedbottom
+\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\sffamily\fontsize{7.6}{9}\selectfont\color{inkfaint}\thepage\,/\,\pageref*{LastPage}}
+\setlist{topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=4pt,leftmargin=2.1em,labelsep=0.55em}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\len}{\operatorname{len}}
+\newcommand{\cok}{\operatorname{cok}}
+\newcommand{\End}{\operatorname{End}}
+\newcommand{\Hom}{\operatorname{Hom}}
+\newcommand{\Gal}{\operatorname{Gal}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\kw}[1]{\emph{#1}}
+\newcommand{\m}[1]{\mbox{$#1$}}        % a short formula that must not be broken across lines
+\newcommand{\head}[1]{\par\addvspace{17pt plus 4pt minus 2pt}\Needspace{6\baselineskip}%
+  \noindent{\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\sect}[2]{\refstepcounter{section}\label{#2}\par\addvspace{19pt plus 4pt minus 2pt}\Needspace{7\baselineskip}%
+  \noindent\llap{{\fontsize{13.2}{16}\selectfont\bfseries\color{inkfaint}\thesection}\hspace{9pt}}%
+  {\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\subhead}[1]{\par\addvspace{9pt plus 2pt}\Needspace{4\baselineskip}\noindent\textbf{#1}\enspace\ignorespaces}
+% where a statement lives in the Lean archive
+\newcommand{\leantag}{{\sffamily\bfseries\fontsize{6.3}{8}\selectfont\color{leancol}\addfontfeatures{LetterSpace=7}LEAN}}
+\newcommand{\sep}{\unskip\nobreak\hspace{5pt}{\color{inkfaint}\textperiodcentered}\hspace{5pt plus 2pt}\ignorespaces}
+\newcommand{\leanline}[1]{\par\nopagebreak\vspace{-2.5pt}{\fontsize{8.9}{12.4}\selectfont\color{inksoft}\raggedright
+  \noindent\llap{\leantag\hspace{9pt}}#1\par}\vspace{1pt}}
+% a displayed statement in a tinted box: #1 colour, #2 text
+\newcommand{\statement}[2]{\par\addvspace{7pt}\begingroup\setlength{\fboxsep}{8.5pt}\setlength{\fboxrule}{0.6pt}%
+  \noindent\fcolorbox{#1!30!white}{#1!3!white}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{#2}}%
+  \endgroup\par\addvspace{7pt}}
+\newcommand{\nt}[2]{\par\noindent\hangindent=1.1em\hangafter=1 #1\enspace{\color{inksoft}#2}\par\vspace{1pt}}
+\newcommand{\legdot}[1]{\tikz[baseline=-0.62ex]\fill[#1] (0,0) circle (2.5pt);\hspace{3pt}}
+\newcommand{\crow}[4]{\csname CS@#1\endcsname & #2 & \textcolor{inksoft}{#3} & \textcolor{inksoft}{#4}\\}
+\newcommand{\leanquoteline}[2]{\par\noindent\hangindent=\dimexpr#1\fontdimen2\font+2.2em\relax\hangafter=1
+  \hspace*{#1\fontdimen2\font}#2}
+\newcommand{\quoted}[1]{\par\vspace{3pt}{\ttfamily\fontsize{7.5}{10.4}\selectfont\color{leancol}\raggedright
+  \setlength{\parskip}{0pt}\leanquote{#1}\par}\vspace{4pt}}
+\newcommand{\bx}[3]{{\sffamily\bfseries\fontsize{7.3}{9.2}\selectfont\color{#1!82!black}#2}\\[1.5pt]#3}
+\newcommand{\cs}[2]{\expandafter\newcommand\csname CS@#1\endcsname{#2}}
+
+% theorems
+\newtheoremstyle{plainx}{7pt plus 2pt}{7pt plus 2pt}{\itshape}{}{\bfseries}{.}{0.5em}{}
+\newtheoremstyle{uprightx}{7pt plus 2pt}{7pt plus 2pt}{}{}{\bfseries}{.}{0.5em}{}
+\theoremstyle{plainx}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{uprightx}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{setting}[theorem]{Setting}          % hypotheses shared by several statements; each of them cites it by number
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\renewcommand{\qedsymbol}{{\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.5pt}\fbox{\rule{0pt}{0.46em}\hspace{0.46em}}}}
+% what holds throughout the note: the ambient objects only (implicit and instance arguments), never a hypothesis
+\newenvironment{conventions}{\par\addvspace{5pt}\noindent\textbf{Conventions.}\enspace\ignorespaces}{\par\addvspace{3pt}}
+\makeatletter
+\renewenvironment{proof}[1][Proof]{\par\pushQED{\qed}\normalfont\topsep0pt\partopsep0pt
+  \trivlist\item[\hskip\labelsep\itshape #1.]\ignorespaces}{\popQED\endtrivlist\@endpefalse}
+\makeatother
+
+% where each declaration of the concordance is treated: \cs{key}{place}, the place naming a \label or a lettered item
+\cs{existsstdExchangetop}{Theorem 1}
+\cs{applystdColDatumeqzero}{Theorem 2}
+\cs{stdExchangeofperiods}{Theorem 3}
+\cs{auxLiftinjectiveandhasSuminner}{Theorem 4}
+\cs{innertrivialLiftselfeqL}{Theorem 5}
+\cs{existscommoncosetreps}{Lemma~\ref{l:reps}}
+\cs{localSection}{Definition~\ref{d:locsec}}
+\cs{matchingPairs}{Definition~\ref{d:match}}
+\cs{mulfirstCols}{Lemma~\ref{l:translate}}
+\cs{translatemem}{Lemma~\ref{l:translate}}
+\cs{localSectionofprimitive}{Lemma~\ref{l:section}}
+\cs{isClopenprimitive}{Lemma~\ref{l:clopen}}
+\cs{existslinearfactor}{Proposition~\ref{p:factor}}
+\cs{partnerblock}{Lemma~\ref{l:block}}
+\cs{memmatchingPairs}{Lemma~\ref{l:matched}}
+\cs{existsstdRowDatumeqstdDatum}{Lemma~\ref{l:rowstd}}
+\cs{partnermemofstdColDatum}{Lemma~\ref{l:stable}}
+\cs{partnermemofunimodularvanishing}{Proposition~\ref{p:unimod}}
+\cs{thetaSmall}{Definition~\ref{d:thsm}}
+\cs{existsisEquivariantLift}{Proposition~\ref{p:lift}}
+\cs{thetaOnRealData}{Definition~\ref{d:threal}}
+\cs{equalRankThetaRatio}{Definition~\ref{d:exch}}
+\cs{StdExchange}{Definition~\ref{d:exch}}
+\cs{centreCoeffeqzeroofnotnegative}{Proposition~\ref{p:nonneg}}
+\cs{thetaTermstdDatumspec}{Proposition~\ref{p:terms}}
+\cs{thetaOnRealDataboxProdeqmul}{Lemma~\ref{l:box}}
+\cs{thetaLargeeqapplyoneofevenrank}{Proposition~\ref{p:const}}
+\cs{existsrapidwithrealSlice}{Lemma~\ref{l:slice}}
+\cs{existscontDiffwitt}{Lemma~\ref{l:witt}}
+\cs{posCoordMatrix}{Definition~\ref{d:detvec}}
+\cs{detVectorFn}{Definition~\ref{d:detvec}}
+\cs{detVectors}{Definition~\ref{d:detvec}}
+\cs{frameAtrealunitary}{Lemma~\ref{l:frame}}
+\cs{posProjeq}{Lemma~\ref{l:frame}}
+\cs{existssliceeq}{Lemma~\ref{l:posslice}}
+\cs{surjOnconeintegraldetVectors}{Proposition~\ref{p:cone}}
+\cs{adjointthetaeqformLift}{Lemma~\ref{l:adjoint}}
+\cs{liftauxDatumeqliftmodDatum}{Lemma~\ref{l:moddatum}}
+\cs{levelIndicatorsupportandnormSq}{Lemma~\ref{l:indicator}}
+\cs{gramFactor}{Definition~\ref{d:gram}}
+\cs{rallisTerm}{Definition~\ref{d:gram}}
+\cs{existsisSphericalWithiota}{Lemma~\ref{l:spherical}}
+\cs{innerauxLift}{Lemma~\ref{l:inner}}
+\cs{liftsauxLift}{Lemma~\ref{l:lifts}}
+\cs{auxLiftinjective}{Corollary~\ref{c:inj}}
+\cs{auxLiftprincipalRep}{Lemma~\ref{l:rep}}
+\cs{auxPairliftstrivialLift}{Lemma~\ref{l:trivlifts}}
+% letters that the coordinator may change in one place
+\newcommand{\dL}{\Phi}                 % a datum on the large side
+\newcommand{\dS}{\Psi}                 % a datum on the small side
+\newcommand{\sF}{\mathsf{F}}
+\newcommand{\sO}{\mathsf{O}}
+\newcommand{\sR}{\mathsf{R}}
+\newcommand{\ba}{\mathbf{a}}
+\newcommand{\bb}{\mathbf{b}}
+\newcommand{\bm}{\mathbf{m}}
+\newcommand{\bn}{\mathbf{n}}
+\newcommand{\br}{\mathbf{r}}
+\newcommand{\sW}{\mathsf{W}}
+\newcommand{\sV}{\mathsf{V}}
+\newcommand{\sX}{\mathsf{X}}
+\newcommand{\sY}{\mathsf{Y}}
+\newcommand{\sZ}{\mathsf{Z}}
+\newcommand{\sI}{\mathsf{I}}
+\newcommand{\se}{\mathsf{e}}
+\newcommand{\sg}{\mathsf{g}}
+\newcommand{\sh}{\mathsf{h}}
+\newcommand{\sk}{\mathsf{k}}
+\newcommand{\sx}{\mathsf{x}}
+\newcommand{\sy}{\mathsf{y}}
+\newcommand{\sz}{\mathsf{z}}
+\newcommand{\ssx}{\mathsf{s}}
+\newcommand{\sq}{\mathsf{q}}
+\newcommand{\fc}{\mathfrak{c}}
+\newcommand{\fp}{\mathfrak{p}}
+\newcommand{\fv}{\mathfrak{v}}
+\newcommand{\fx}{\mathfrak{x}}
+\newcommand{\fS}{\mathfrak{S}}
+\newcommand{\fA}{\mathfrak{A}}
+\newcommand{\fa}{\mathfrak{a}}
+\newcommand{\fl}{\mathfrak{l}}
+\newcommand{\rc}{\mathrm{c}}
+\newcommand{\rC}{\mathrm{C}}
+\newcommand{\A}{\mathbb{A}}
+\newcommand{\CC}{\mathbb{C}}
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\NN}{\mathbb{N}}
+\newcommand{\GL}{\operatorname{GL}}
+\newcommand{\U}{\operatorname{U}}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\cS}{\mathcal{S}}
+\newcommand{\cM}{\mathcal{M}}
+\newcommand{\cD}{\mathcal{D}}
+\newcommand{\cL}{\mathcal{L}}
+\newcommand{\cN}{\mathcal{N}}
+\newcommand{\cP}{\mathcal{Q}}
+\newcommand{\Mat}[2]{\operatorname{M}_{#1\times#2}}
+\newcommand{\rowk}[2]{\operatorname{row}_{#1}(#2)}
+\newcommand{\colk}[2]{\operatorname{col}_{#1}(#2)}
+\newcommand{\stc}[2]{\dS^{\mathrm{st}}_{#1,#2}}
+\newcommand{\str}[3]{\dL^{\mathrm{st}}_{#1,#2,#3}}
+\newcommand{\inu}[1]{#1^{\flat}}
+\newcommand{\thL}[5]{\theta^{\mathrm{lg}}_{#1,#2}(#3;#4,#5)}
+\newcommand{\thI}[5]{\operatorname{I}_{#1,#2}(#3,#4;#5)}
+\newcommand{\LP}[2]{\Pi(#1,#2)}
+\newcommand{\cf}[3]{\operatorname{coef}_{#1}(#2;#3)}
+\newcommand{\loc}[2]{#1\otimes#2}
+\newcommand{\negc}{\operatorname{neg}}
+\newcommand{\Np}{\operatorname{N}}
+\newcommand{\pet}[2]{\langle #1,#2\rangle_{\mathrm{Pet}}}
+
+\begin{document}
+\color{ink}
+
+{\raggedright
+{\sffamily\bfseries\fontsize{7.2}{9}\selectfont\color{leancol}\addfontfeatures{LetterSpace=8}READBACK NOTE 16\par}
+\vspace{5pt}
+{\fontsize{21.5}{25.5}\selectfont\bfseries Partner data, vanishing on standard data, and the exchange identity at
+the top of the tower\par}
+\vspace{5pt}
+{\fontsize{12.4}{16}\selectfont\itshape\color{inksoft} One unit of the Lean artifact \ArtifactName, read back into
+mathematics\par}}
+\vspace{8pt}
+{\color{rulegrey}\hrule height 0.6pt}
+\vspace{7pt}
+\thispagestyle{empty}
+
+\textbf{Summary.} Let $\sX$ be a hermitian space over a CM field and let $\sV$, $\sV'$ be hermitian spaces whose
+ranks add up to the rank of $\sX$. The \emph{exchange identity} says that the theta integrals of the pairs
+$(\sX,\sV)$ and $(\sX,\sV')$, formed with data that are \emph{partners} at a set of split places, are proportional,
+and that the square of the absolute value of the constant is a fixed number times a product of Hecke $L$-values.
+This note proves the identity at the top of a tower of spaces, for standard data (Theorem~1). The difference
+of the two integrals is an equivariant functional of the partner datum alone; such a functional vanishes on all
+standard data once certain Fourier coefficients of one of its values vanish (Theorem~2), and these coefficients
+are found by unfolding (Theorem~3). The note also proves two norm formulas for theta lifts to definite groups
+(Theorems 4 and~5).
+
+\statement{leancol}{\fontsize{9.6}{13.2}\selectfont\textbf{What this note is.} The artifact \ArtifactName{} is a
+body of Lean code: the compact edition of a formal proof, attributed by its authors to L.~Alpöge with the AI system
+Claude, whose final theorems are the Riemann hypothesis and its generalisation to Dirichlet $L$-functions. That
+headline is a claim. The authors report that every file compiles and that Lean's kernel accepted the proofs; the
+handout's record of checks says who checked what. No mathematician has read the argument through, and nothing here
+says that the Riemann hypothesis is proved. This note is the first of three on one unit of the artifact, the unit of
+the exchange identity, which belongs to the proof of Theorem~C of the handout (integral forms are long). It treats
+\UnitInNote{} of the unit's \UnitMembers{} declarations; the notes \emph{The exchange theorem, one square of lifts,
+and the triangle of lifts and descents} and \emph{The grid of lifts and descents, and the crude rows} treat the
+others. Every statement of the note is proved here from the structured proofs of the unit's dossier, which a
+program compared with the Lean text; what the proofs take from other units is recalled in §\ref{s:setting} and
+listed as Inputs, and it is not proved here. The five theorems, the definitions and the statements of
+§\ref{s:local} and §\ref{s:lift} were compared with their Lean statements by the writer; §\ref{s:notes} says what
+was not. A second reader compared all statements of the unit and a passage of every structured proof with the Lean text after the dossier was made; where her reading differs from the dossier's, this note follows hers (§\ref{s:notes}). The Lean text read is \PinText; Appendix~A is the concordance of \ConcDecls{} declarations.}
+
+\sect{The statements}{s:intro}
+The notions used in the five theorems are recalled or defined in §\ref{s:setting}: hermitian spaces and their
+splittings, real data, split tame characters $\fc$ with their local characters $\chi_{\fc}$, the theta integrals
+on the large and on the small side, the standard data $\str{\se}{\chi}{\sz}$ and $\stc{\chi}{\sz}$,
+the products $\LP{\fc}{e}$ of $L$-values, and equivariant lifts.
+
+\statement{arith}{\phantomsection\label{t:1}\textbf{Theorem 1} (the exchange identity at the top of the
+tower).\enspace \emph{Let $E$ be a CM field with a CM type and Weil data, and let $\sX$, $\sW_1$, $\sW$, $\sV'$ be
+hermitian spaces over $E$ with index sets $\bm$, $\bn$, $\ba$, $\bb$. Let $\fS$ be a base-adapted splitting of
+$\sX$ over $\sW_1$ along $\bb$ and $\fS_1$ a base-adapted splitting of $\sW_1$ over $\sW$ along one line. Suppose
+that $|\bn|$ is even. Let $\se'$ be an identification $\bb\sqcup(\bb\sqcup\bn)\simeq\bm$, let $\mu$ be weights,
+and let $\fv$ and $\fv_1$ be rapid real data for the pairs $(\sW_1,\sV')$ and $(\sW_1,\sW_1)$. Then there are real
+data $\fx$ for $(\sX,\sV'\oplus\sW_1)$ and $\fx'$ for $(\sX,\sV')$ such that the slice of $\fx'$ at $0$ for the
+splitting opposite to $\fS$ is $\fv$, and such that}
+\[\StdExchange{\sX}{\sV'\oplus\sW_1}{\sV'}{\mu}{\se'}{\fx}{\fx'}{\fc\mapsto\equalRankThetaRatio{\sW_1}{\fc}{\fv_1}}\]
+\emph{holds: $\fx$ and $\fx'$ are rapid, and there is a real number $\rC$ such that every split tame character
+$\fc$ of weight $\mu$ has a complex number $\rc$ with
+$\rC\,|\rc|^2=\LP{\fc}{|\bn|/2}\cdot\equalRankThetaRatio{\sW_1}{\fc}{\fv_1}$ and}
+\[\thL{\sX}{\sV'\oplus\sW_1}{\fc}{\fx}{\str{\se'}{\chi_{\fc}}{\sz}}
+=\rc\cdot\thetaSmall{\sX}{\sV'}{\fc}{\fx'}{\stc{\chi_{\fc}}{\sz}}\]
+\emph{for every integral $\bb\times\bm$ matrix $\sz$ over the product of the completions of $E$ at the places of
+$\fc$.}}
+\leanline{\lean{existsstdExchangetop}}
+
+\statement{arith}{\phantomsection\label{t:2}\textbf{Theorem 2} (vanishing on standard data).\enspace
+\emph{Let $E$ be a CM field with a CM type and Weil data, with the element $\jmath$; let $\sX$, $\sW_1$, $\sW$,
+$\sV'$ be hermitian spaces over $E$ with index sets $\bm$, $\bn$, $\ba$, $\bb$; let $\fc$ be a split tame character
+and $\rho$ a multiplicative character of the product of the completions of $E$ at the places of $\fc$. Let
+$(\cM,\cD)$ be an equivariant lift for $\fc$, $\sX$ and $\rho$, let $\fS$ be a base-adapted splitting of $\sX$
+over $\sW_1$ along $\bb$ and $\fS_1$ a base-adapted splitting of $\sW_1$ over $\sW$ along one line. Write
+$\dS_0=\stc{\chi_{\fc}}{\fA_3'}$ for the standard datum of the block $\fA_3'$ of the frame of $\fS$ adapted to the places
+of $\fc$. Suppose that $\dS_0$ lies in $\cM$, and that the centre coefficient}
+\[\cf{\fS}{\jmath T}{\cD(\dS_0)}\bigl(\operatorname{rad}_{\fS}(\mathsf{c},\mathsf{w})\,\operatorname{lev}_{\fS}(\sq,\sg)\bigr)\]
+\emph{vanishes for all $T$, $\mathsf{c}$, $\mathsf{w}$, $\sq$, $\sg$ such that one of the following holds:}
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=1pt]
+\item \emph{$T$ is the Gram matrix $\mathrm{J}_{\sV'}$ of $\sV'$, and there are an adelic $\bb\times\bb$ matrix $Y$ and
+$\sk\in\GL_{\bb}(\hat{\mathcal{O}}_E)$ with $\sq=\varsigma_E\,\mathrm{x}_{\sV'}\,Y$ such that $Y_f\,\sk$ is unitary for the
+identity form;}
+\item \emph{$T$ is invertible and, as an adelic matrix, is not represented by the signs of $\sV'$.}
+\end{enumerate}
+\emph{Then for every identification $\se'\colon\bb\sqcup(\bb\sqcup\bn)\simeq\bm$ and every integral $\sz$,
+that is, every $\bb\times\bm$ matrix $\sz$ with entries in the integers of the product of the completions at the
+places of $\fc$:} \m{\cD(\stc{\chi_{\fc}}{\sz})=0}.}
+\leanline{\lean{applystdColDatumeqzero}}
+
+\statement{arith}{\phantomsection\label{t:3}\textbf{Theorem 3} (the exchange identity from a period
+condition).\enspace \emph{Let $E$ be a CM field with a CM type and Weil data; let $\sX$, $\sW_1$, $\sW$, $\sV'$ be
+hermitian spaces over $E$ with index sets $\bm$, $\bn$, $\ba$, $\bb$, let $\fS$ be a base-adapted splitting of $\sX$
+over $\sW_1$ along $\bb$ and $\fS_1$ a base-adapted splitting of $\sW_1$ over $\sW$ along one line, and suppose
+that $|\bn|$ is even. Let $\mu$ be weights, $\se'$ an identification $\bb\sqcup(\bb\sqcup\bn)\simeq\bm$, and let
+$\fv$ and $\fv'$ be rapid real data for $(\sX,\sV'\oplus\sW_1)$ and $(\sX,\sV')$. Let $\mathrm{l}$ be a complex
+function on the split tame characters of weight $\mu$, and $\Omega$ a real function on the real points of
+$\U(\sV'\oplus\sW_1)$ which is non-negative and does not vanish near~$1$. Assume:}
+
+\emph{(the period condition) for every split tame character $\fc$ of weight $\mu$, with
+$\omega=\omega_{\fc}^{-1}\upsilon^{|\bn|/2}$, and every real point $\sh$ of $\U(\sV'\oplus\sW_1)$ there is a real
+point $\mathsf{p}$ of $\U(\sV')\times\U(\sW_1)$ such that, for all $B\in\GL_{\bb}(\A_E)$, with $\det_\infty B$ the idele that is $\det B$ at the
+infinite places and $1$ at the finite ones, all characters $\omega'$, finite data $F$, adelic matrices $\sx$ and points
+$\sg$, $\sy$:}
+\begin{multline*}
+\int_{[\U(\sW_1)]}\thetaOnRealData{\sW_1}{\sV'\oplus\sW_1}{\omega}{\omega\omega'}{F\boxtimes F_{\fc}}{\binom{\sx}{0}}{(\sg,\sy\oplus\mathsf{u})}
+\Bigl(\omega_\infty(1,\mathsf{p}\sh)\,\mathrm{sl}_{\fS}\bigl((\mathsf{p}\sh)^{-1}\tbinom{B}{0};\fv\bigr)\Bigr)\,d\mathsf{u}\\
+=\frac{\Omega(\sh)\,\mathrm{l}(\fc)}{\omega^{\mathrm{bc}}_{\fc}(\det_\infty B)\,|\det_\infty B|^{|\bn|/2}}\;
+\thetaOnRealData{\sW_1}{\sV'}{\omega}{\omega'}{F}{\sx}{(\sg,\sy)}\bigl(\mathrm{sl}_{\fS}(B;\fv')\bigr);
+\end{multline*}
+\emph{here $\omega^{\mathrm{bc}}_{\fc}$ is the base change of $\omega_{\fc}$, a character of the ideles of $E$, and $|\cdot|$ the idele absolute value; $F_{\fc}$ is the finite datum for $(\sW_1,\sW_1)$ named by $\stc{\chi_{\fc}}{1}$ at the places of $\fc$,
+$\omega_\infty$ is the real Weil representation of weights $|\bn|/2-\mu$ and $0$, and $\mathrm{sl}_{\fS}$ is the
+real slice;}
+
+\emph{(the support or sign condition) either every non-zero real slice $\mathrm{sl}_{\fS}(\sx;\fv)$ has a Gram
+matrix $\sx^{*}\operatorname{diag}(\sV'\oplus\sW_1)\sx$, with the diagonal form of the signs of $\sV'\oplus\sW_1$, that is represented by the signs of $\sV'$; or
+$\sV'$ is negative definite, $\sW_1$ has a positive sign, and $2\negc(\sW_1)\le|\bn|$.}
+
+\emph{Then}
+\[\StdExchange{\sX}{\sV'\oplus\sW_1}{\sV'}{\mu}{\se'}{\fv}{\fv'}{\fc\mapsto|\mathrm{l}(\fc)|^2/\LP{\fc}{|\bn|/2}}\]
+\emph{holds.}}
+\leanline{\lean{stdExchangeofperiods}}
+
+\statement{arith}{\phantomsection\label{t:4}\textbf{Theorem 4} (the inner product formula for the adjoint
+lift).\enspace \emph{Let $P$ be parameters, $D$ admissible data for $P$ and $j$ a lift index, $1\le j\le m$. There
+is a complex number $A\ne0$ such that for every tame character $\vartheta$ of $D$ the adjoint lift
+$\theta^{*}_{D,\vartheta,j}$, from the forms of principal level on $\sW_j(D)$ to the algebraic forms on the definite
+space of the $j$-th auxiliary pair $\fa_{D}(\vartheta,j)$, is injective, and for all forms $y'$, $y$ of principal
+level on $\sW_j(D)$}
+\[\bigl\langle\theta^{*}_{D,\vartheta,j}\,y',\ \theta^{*}_{D,\vartheta,j}\,y\bigr\rangle
+=\sum_{\bar{\sg}}A\cdot\gramFactor{\fa_{D}(\vartheta,j)}\cdot\rallisTerm{D}{\vartheta}{j}{\sW_j(D)}{y'}{y}{\bar{\sg}},\]
+\emph{the sum over the cosets $\bar{\sg}$ of Definition~\ref{d:gram} being unconditionally convergent. The number
+$A$ does not depend on $\vartheta$.}}
+\leanline{\lean{auxLiftinjectiveandhasSuminner}}
+
+\statement{arith}{\phantomsection\label{t:5}\textbf{Theorem 5} (the norm of the lift of the trivial
+character).\enspace \emph{Let $E$ be a CM field with a CM type and Weil data, $\bn$ a finite index set and $\fl$
+$L$-value data for $E$ and $\bn$, with character $\omega_{\fl}$, chosen places $\fp_i$ and twist places
+$\mathfrak{q}_i$. Let $e$ be a natural number with $2e=|\bn|$ and $e>1$. Put}
+\[\rC=\frac{\operatorname{vol}[\U(\sI_{\bn})]\cdot\operatorname{vol}[\U(\sI_{1})]}{\prod_{\fp}\bigl(1-\operatorname{sg}(\fp)\Np\fp^{-e}\bigr)^{-1}},\]
+\emph{the product over all finite places $\fp$ of $E$, with the signs $\operatorname{sg}(\fp)$ of Setting~\ref{set:aux}.
+Then $\rC\ne0$, and the lift $\Xi(\fl)$ of the trivial character from $\U(\sI_1)$ to $\U(\sI_{\bn})$ satisfies}
+\[\langle\Xi(\fl),\Xi(\fl)\rangle=\rC\cdot\prod_i(\Np\fp_i-1)\cdot\operatorname{hook}(\fl)\cdot\operatorname{weyl}(\fl)\cdot
+L^{\fl}(e,\omega_{\fl}^{-1})\cdot\Bigl(\prod_i\Np\mathfrak{q}_i\Bigr)^{|\bn|-1},\]
+\emph{where $L^{\fl}(e,\omega_{\fl}^{-1})$ is the value at $e$ of the Hecke $L$-function of the base change of $\omega_{\fl}^{-1}$ without the
+Euler factors at the places of $\fl$ and at their conjugates; the number $\rC$ depends only on $E$ and $|\bn|$; $\operatorname{hook}(\fl)$ is the hook number of the weight of $\fl$ and
+$\operatorname{weyl}(\fl)$ the Weyl index of Setting~\ref{set:aux}.}}
+\leanline{\lean{innertrivialLiftselfeqL}}
+
+Theorem~1 is the input of the second note of the unit, which removes hyperbolic planes from $\sX$ to reach the
+exchange theorem for arbitrary complementary spaces and arbitrary partners. Theorems 2 and~3 are its proof.
+Theorem~4 is used in Chapter~VIII (the determinants that measure congruences) and Theorem~5 in the second note
+(the norm of the lift from $\U(1)$ is an $L$-value).
+
+\sect{The setting}{s:setting}
+\begin{conventions}\phantomsection\label{c:conventions}
+The natural numbers are $0,1,2,\dots$. The letters of the handout keep their meaning: $P$ are parameters, $D$
+admissible data, $m$ the number of lifts, $\vartheta$ a tame character of $D$, $\tau$ an infinite place. The
+objects of this note that are local to the theory of theta series are set in other alphabets. Finite index sets
+are bold ($\ba$, $\bb$, $\bm$, $\bn$, $\br$, and $\bn'$, $\br'$), $|\bn|$ is the number of elements of $\bn$, and an
+$\ba\times\bn$ matrix has rows indexed by $\ba$ and columns by $\bn$; $\Mat{\ba}{\bn}(\sR)$ is the set of such
+matrices over a ring $\sR$, and $\GL_{\bn}(\sR)$ the group of invertible $\bn\times\bn$ matrices. Sans-serif letters are a semilocal field $\sF$ with its subring $\sO$, a
+commutative ring $\sR$, hermitian spaces, and matrices and points of groups; fraktur letters are real data ($\fv$, $\fx$), places ($\fp$), split tame
+character ($\fc$), splittings ($\fS$), integral frames ($\fA$), auxiliary pairs ($\fa$) and $L$-value data ($\fl$);
+upright letters ($\rc$, $\rC$) are constants. The implicit arguments of the declarations of the unit are of the
+following kinds, and each statement below introduces the ones it uses: a semilocal field with its subring; finite
+index sets, one of them non-empty where a statement says so; a commutative ring; a CM field $E$ with a CM type and,
+where a statement says so, Weil data; signs and hermitian spaces; splittings, which are base-adapted where a
+statement says so; weights and characters; natural numbers; real data, finite data and functions; sets of places and of matrices;
+matrices and points; forms; parameters and admissible data with a lift index.
+\end{conventions}
+
+\subhead{Matrices over a semilocal field.} A \kw{semilocal field} is what the background library calls so: a
+locally compact commutative topological ring $\sF$ with a Haar measure, a compact open subring $\sO$ of
+volume~$1$ and an invertible, topologically nilpotent element $\varpi\in\sO$, such that $(\sO,\sF)$ has the
+elementary divisor property of a product of valuation rings. The example is the product of the completions of $E$
+at a finite set of finite places, with its integers. A matrix over $\sF$ is \kw{integral} if its entries lie in
+$\sO$; a matrix $\sy\in\Mat{\bn}{\bb}(\sF)$ \kw{has a left inverse} if $\ssx\,\sy=1$ for some $\ssx$, and is
+\kw{primitive} if it is integral with an integral left inverse. A square matrix is primitive exactly when it lies
+in $\GL_{\bn}(\sO)$. For a set $\mathcal{U}$ of matrices, $\cS(\mathcal{U})$ is the space of locally constant,
+compactly supported complex functions that vanish outside $\mathcal{U}$ (Schwartz--Bruhat functions supported in
+$\mathcal{U}$); $\cS^{\mathrm{inj}}$ is this space for the matrices with a left inverse and $\cS^{\mathrm{sur}}$
+for the matrices whose transpose has one.
+
+Let $\se\colon\bb\sqcup\ba\simeq\bn$ be an identification and $\sk\in\GL_{\bn}(\sR)$. Then
+$\colk{\se}{\sk}\in\Mat{\bn}{\bb}(\sR)$ consists of the columns of $\sk$ indexed by $\bb$, and
+$\rowk{\se}{\sk}\in\Mat{\ba}{\bn}(\sR)$ of the rows of $\sk^{-1}$ indexed by $\ba$; so
+$\rowk{\se}{\sk}\,\colk{\se}{\sk}=0$. Let $\chi$ be a multiplicative character of $\sR$ and $\sO'\subseteq\sR$ a
+subring. Complex functions $\dL$ on $\Mat{\ba}{\bn}(\sR)$ and $\dS$ on $\Mat{\bn}{\bb}(\sR)$ are \kw{partners for
+$\chi$ over $\sO'$ with respect to $\se$} if $\dL$ vanishes off the matrices $\rowk{\se}{\sk}$ and $\dS$ off the
+matrices $\colk{\se}{\sk}$, $\sk\in\GL_{\bn}(\sO')$, and
+\[\dL(\rowk{\se}{\sk})=\chi(\det\sk)\,\dS(\colk{\se}{\sk})\qquad\text{for all }\sk\in\GL_{\bn}(\sO').\]
+The kernel of a surjective $\ba\times\bn$ matrix is the column space of an injective $\bn\times\bb$ matrix, and
+partners are functions that correspond under this duality of Grassmannians, twisted by $\chi$.
+
+For a multiplicative character $\chi$ of $\sF$ let $\inu{\chi}$ be the function equal to $\chi^{-1}$ on the units
+of $\sO$ and to $0$ elsewhere. The character $\chi$ is \kw{tame} if there are a finite ring $\bar{\sR}$, a
+surjective homomorphism $\sO\to\bar{\sR}$ with kernel $\varpi\sO$ and a primitive multiplicative character $\bar\chi$
+of $\bar{\sR}$ such that $\inu{\chi}$ is $\bar\chi$ composed with the reduction $\sz\mapsto\bar{\sz}$. For an integral
+$\ssx\in\Mat{\bb}{\bn}(\sF)$ the \kw{standard column datum} and, for an identification
+$\se\colon\bb\sqcup\ba\simeq\bn$, the \kw{standard row datum} are the functions
+\[\stc{\chi}{\ssx}(\sy)=\inu{\chi}(\det(\ssx\,\sy)),\qquad
+\str{\se}{\chi}{\ssx}(\sx)=\inu{\chi}\Bigl(\det\tbinom{\ssx}{\sx}\Bigr)\]
+of an integral $\sy\in\Mat{\bn}{\bb}(\sF)$ and of an $\sx\in\Mat{\ba}{\bn}(\sF)$ for which the square matrix with
+the rows of $\ssx$ and of $\sx$, ordered by $\se$, is integral; they are $0$ at the other matrices. They are
+partners for $\chi$ over $\sO$ with respect to $\se$ (Input~1). An \kw{integral frame} $\fA$ for
+$(\bm,\bn,\bb)$ is an integral invertible $\bm\times(\bb\sqcup\bn\sqcup\bb)$ matrix with integral inverse, cut into
+column blocks $(\fA_1\mid\fA_2\mid\fA_3)$, the inverse being cut into row blocks $\fA_1'$, $\fA_2'$, $\fA_3'$; for a function $G$, the
+function $\mathrm{st}_{\fA}(G)$ of an $\ba\times\bm$ matrix $\sx$ is $G(\sx\,(\fA_1\mid\fA_2))$ if $\sx$ is integral and
+$0$ otherwise. An additive character $\mathrm{e}_{\sF}$ of $\sF$ \kw{has conductor $\sO$} if it is continuous and
+is trivial on $\sz\sO$ exactly when $\sz\in\sO$, for elements $\sz$ of $\sF$.
+
+\subhead{Hermitian spaces, data and theta integrals.} $E$ is a CM field, $E^{+}$ its maximal totally real
+subfield, $\A_E$ its ring of adeles and $\hat{\mathcal{O}}_E$ the ring of integral finite adeles. A \kw{CM type}
+chooses one complex embedding above each infinite place $\tau$. \kw{Weil data} for $E$ consist of an element
+$\jmath\in E$ with $\bar\jmath=-\jmath$ and positive imaginary part at every embedding of the CM type, a finite
+idele that makes the integral adeles self-dual for the standard additive character $\mathrm{e}_{\A}$ twisted by
+$\jmath$ (from it come the scale idele $\varsigma_E$ and the idele of the inverse different), and a character
+$\upsilon$ of the norm-one adeles $\U(1)(\A)$ that splits the metaplectic cover, the \kw{splitting character}. A
+\kw{hermitian space} $\sW$ over $E$ with index set $\bn$ and signs (a function from $\bn$ to $\{\pm1\}$) is given by a hermitian
+Gram matrix $\mathrm{J}_{\sW}\in\GL_{\bn}(E)$ and an adelic frame $\mathrm{x}_{\sW}\in\GL_{\bn}(\A_E)$ in which the form is the
+diagonal form of the signs; $\negc(\sW)$ is the number of negative signs, $\U(\sW)$ the unitary group,
+$[\U(\sW)]=\U(\sW)(E^{+})\backslash\U(\sW)(\A)$ with its invariant measure, and $\mathcal{K}_f$ the stabilizer of the integral
+lattice in the finite adelic points. $\sI_{\bn}$ is the standard positive definite space on $\bn$, and
+$\sV'\oplus\sW$ the orthogonal sum.
+
+For hermitian spaces $\sW$, $\sV$ and characters $\omega$, $\omega'$ of $\U(1)(\A)$ the Weil representation
+$\omega_{\sW,\sV}(\omega,\omega')$ of $\U(\sW)(\A)\times\U(\sV)(\A)$ acts on the space of \kw{data} of the pair, the
+restricted tensor product of the models of the Heisenberg representation of $\operatorname{Hom}(\sW,\sV)$. A datum
+of the form $\fv\otimes F$ has a \kw{real datum} $\fv$, a vector of the Fock-type model at the infinite places, and
+a \kw{finite datum} $F$; $\fv$ is \kw{rapid} if all its weighted norms are finite. With the theta functional
+$\theta$, the \kw{theta kernel} is $\theta_{\sW,\sV}(\omega,\omega';f)(\sg,\sh)=\theta(\omega_{\sW,\sV}(\omega,\omega')(\sg,\sh)f)$,
+and the \kw{theta integral} of a datum $f$ is the function on $\U(\sW)(\A)$
+\[\thI{\sW}{\sV}{\omega}{\omega'}{f}(\sg)=\int_{[\U(\sV)]}\theta_{\sW,\sV}(\omega,\omega';f)(\sg,\sh)\,d\sh.\]
+
+A \kw{split tame character} $\fc$ of weight $\mu$ ($\mu(\tau)>0$ an integer for each infinite place $\tau$) is a
+character $\omega_{\fc}$ of $\U(1)(E^{+})\backslash\U(1)(\A)$ of weight $\mu$ whose tame part is non-trivial exactly
+at the places of a non-empty finite set $\Sigma(\fc)$ of finite places of $E$ that contains the conjugate of none of
+its members. Its places split in $E/E^{+}$; $\sF_{\fc}=\prod_{\fp\in\Sigma(\fc)}E_{\fp}$ is a semilocal field, and
+$\chi_{\fc}$ is the tame character of $\sF_{\fc}$ induced by $\omega_{\fc}$ (in a rank that the context fixes). For
+a function $\dL$ on matrices over $\sF_{\fc}$ and a real datum $\fv$, the \kw{local datum} $\loc{\fv}{[\dL]}$ has
+real part $\fv$, is the function $\dL$ of the components at $\Sigma(\fc)$, and is the vacuum at the other finite
+places; $\loc{\fv}{[\dL]^{c}}$ is the same with the components at the conjugate places, read through complex
+conjugation. For hermitian spaces $\sW$ (index set $\bn$) and $\sV$ (index set $\ba$) and $\dL$ on
+$\Mat{\ba}{\bn}(\sF_{\fc})$,
+\[\thL{\sW}{\sV}{\fc}{\fv}{\dL}=\thI{\sW}{\sV}{\omega_{\fc}^{-1}\upsilon^{\lfloor|\bn|/2\rfloor}}{\omega_{\fc}^{-1}\upsilon^{\lfloor|\bn|/2\rfloor}}{\loc{\fv}{[\dL]}}\]
+is the theta integral \kw{on the large side}. For a finite set $\Sigma$ of places, a character $\omega$ and a
+natural number $e$ put $\Pi(\Sigma,\omega,e)=\bigl(\prod_{\fp\in\Sigma}\Np\fp\bigr)^{e^2}\prod_{i=1}^{e}|L^{\Sigma}(i,\omega)|^{2}$,
+with the partial Hecke $L$-function $L^{\Sigma}$ of the base change of $\omega$ to $E$, from which the Euler factors at the places of $\Sigma$ and at their conjugates are removed, and for an integer $e$
+\[\LP{\fc}{e}=\Pi(\Sigma(\fc),\omega_{\fc},e)\ \ (e\ge0),\qquad
+\LP{\fc}{e}=\Pi(\Sigma(\fc),\omega_{\fc},-e)^{-1}\ \ (e<0).\]
+
+\subhead{Splittings and centre coefficients.} A \kw{splitting} $\fS$ of $\sX$ over $\sW_1$ along $\bb$ writes
+$\sX$ as the orthogonal sum of $|\bb|$ hyperbolic planes, spanned by two isotropic frames in duality indexed by
+$\bb$, and of a copy of $\sW_1$; it is \kw{base-adapted} when its frames are the standard ones in the adelic
+frames of the two spaces. The \kw{opposite} splitting exchanges the two isotropic frames. The stabilizer of the
+first frame is a parabolic subgroup with radical elements $\operatorname{rad}_{\fS}(\mathsf{c},\mathsf{w})$ ($\mathsf{w}$ in the centre of the unipotent
+radical, a space of hermitian $\bb\times\bb$ matrices) and Levi elements $\operatorname{lev}_{\fS}(\sq,\sg)$,
+$\sq\in\GL_{\bb}(\A_E)$, $\sg\in\U(\sW_1)(\A)$. For a function $f$ on $\U(\sX)(\A)$ and a $\bb\times\bb$ matrix
+$T$, the \kw{centre coefficient} $\cf{\fS}{T}{f}$ is the Fourier coefficient of $f$ along the centre of the
+radical at the character $\mathsf{w}\mapsto\mathrm{e}_{\A}(\tr(T\mathsf{w}))$. In the mixed model of $\fS$ the theta kernel of
+$(\sX,\sV)$ is a sum, over the rational matrices $\mathsf{v}$ that are the images of the first frame, of \kw{theta terms},
+and the datum enters a term through its \kw{real slice} $\mathrm{sl}_{\fS}(\sx;\fv)$, a real datum of the smaller
+pair. A reading of the components at a set of places $\Sigma$ attaches to a base-adapted $\fS$ an integral frame,
+the \kw{adapted frame}. An adelic matrix $T$ is \kw{represented by} signs $\mathsf{t}$ if at every infinite place it has the
+form $\mathsf{c}^{*}\operatorname{diag}(\mathsf{t})\,\mathsf{c}$.
+
+\subhead{Equivariant lifts.} Let $\fc$ be a split tame character, $\sX$ a hermitian space with index set $\bm$
+and $\rho$ a multiplicative character of $\sF_{\fc}$. A pair $(\cM,\cD)$ of a space $\cM$ of complex functions on
+$\Mat{\bm}{\bb}(\sF_{\fc})$ and a linear map $\cD$ from such functions to functions on $\U(\sX)(\A)$ is an
+\kw{equivariant lift} for $\fc$, $\sX$ and $\rho$ if $\cM\subseteq\cS^{\mathrm{inj}}$; each $\cD(\dS)$, $\dS\in\cM$,
+is an automorphic function; for every finite adelic point $\sg$ supported at $\Sigma(\fc)$ and $\dS\in\cM$ the
+translate $\dS(\sg_{\Sigma}\,\cdot\,)$ lies in $\cM$ and
+$\cD(\dS(\sg_{\Sigma}\,\cdot\,))(\sx\sg)=\rho(\det\sg_{\Sigma})\,\cD(\dS)(\sx)$; and every $\cD(\dS)$, $\dS\in\cM$,
+is invariant under the elements of $\mathcal{K}_f$ that are trivial at $\Sigma(\fc)$.
+
+\statement{inksoft}{\textbf{Inputs.} The proofs below take the following for granted. The numbers are the units of
+the reading; the first eight are units of the background library, whose results this write-up quotes, the last
+four are units of the argument. References are those of the handout's catalogue; none of their places has been
+confirmed yet.
+
+\vspace{3pt}\phantomsection\label{i:gauss}\textbf{Input 1} (unit~103, Gauss sums and standard data).\enspace
+The standard row and column data of an integral $\ssx$ are partners; the blocks of an integral frame satisfy
+$\fA_1'\fA_1=1$, $\fA_2'\fA_2=1$, $\fA_3'\fA_3=1$ and the six mixed products vanish; the \emph{matrix Gauss sum}: for a primitive
+multiplicative character $\bar\chi$ of a finite ring $\bar{\sR}$ and a primitive additive character
+$\bar{\mathrm{e}}$, $\sum_{\bar{\sz}}\bar\chi(\det\bar{\sz})\bar{\mathrm{e}}(\tr(\bar T\bar{\sz}))=\bar\chi^{-1}(\det\bar T)\sum_{\bar{\sz}}\bar\chi(\det\bar{\sz})\bar{\mathrm{e}}(\tr\bar{\sz})$ (T.~Kondo,
+J.~Math.\ Soc.\ Japan 15 (1963); a weaker form, over finite rings); invariance of functionals under shears.
+
+\vspace{3pt}\phantomsection\label{i:la}\textbf{Input 2} (units 112 and 120, linear algebra and Witt's
+theorem).\enspace A matrix is primitive exactly when it is $\colk{\se}{\sk}$ for some $\sk\in\GL_{\bn}(\sO)$;
+Jacobi's identity for complementary minors,
+$\det\tbinom{\ssx}{\rowk{\se}{\sk}}\det\sk=\det(\ssx\,\colk{\se}{\sk})$; a matrix with a left inverse becomes
+primitive after right multiplication by an invertible matrix; Witt's extension theorem over a field with
+involution and over $\hat{\mathcal{O}}_E$ (U.~First, J.~Pure Appl.\ Algebra 219 (2015); the theorem, and a special
+case); a unimodular hermitian matrix over $\hat{\mathcal{O}}_E$ becomes the identity after a change of basis in $\GL_{\bb}(\hat{\mathcal{O}}_E)$ (R.~Jacobowitz,
+Amer.\ J.~Math.\ 84 (1962); a special case).
+
+\vspace{3pt}\phantomsection\label{i:dual}\textbf{Input 3} (units 43, 38 and 37, dual pairs and the mixed
+model).\enspace Theta integrals of target-bounded data are automorphic and depend linearly on the datum; local
+data of rapid real data and Schwartz--Bruhat functions on surjective matrices are target-bounded;
+$\thI{\sW}{\sV}{\omega}{\omega'}{\omega_{\sW,\sV}(\omega,\omega')(\sg,\sh)f}=\thI{\sW}{\sV}{\omega}{\omega'}{f}(\,\cdot\,\sg)$;
+the action of $\mathcal{K}_f$ and of points supported at $\Sigma$ on local data; the centre coefficient of a theta integral
+at $\jmath T$ is the sum over the rational $\mathsf{v}$ with $\mathsf{v}^{*}\mathrm{J}\mathsf{v}=T$ of the integrals of the theta terms, and for
+invertible $T$ an integral over the quotient by the stabilizer of one $\mathsf{v}$; the laws of theta terms under
+radical and Levi elements; existence of sections in the mixed model; the linear functional ``centre coefficient of
+$\cD(\dS)$'' of an equivariant lift and its behaviour under shears.
+
+\vspace{3pt}\phantomsection\label{i:singular}\textbf{Input 4} (units 42, 98, 10 and 123, singular forms).\enspace
+\emph{Freitag's lemma}: under invariance, radical and base conditions, the centre coefficient of an automorphic
+function at an invertible index vanishes at points supported at $\Sigma$ once it does at unimodular indices
+(E.~Freitag, LNM~1487 (1991); J.-S.~Li, Amer.\ J.~Math.\ 119 (1997); not a literal theorem of these sources);
+\emph{Landherr's theorem} for spaces with a point and \emph{weak approximation} for unitary groups (W.~Landherr,
+Abh.\ Math.\ Sem.\ Hamburg 11 (1936); M.~Kneser, TIFR lectures 47 (1969), §5.5; special cases); a continuous
+periodic function on adelic matrices with vanishing Fourier coefficients is zero.
+
+\vspace{3pt}\phantomsection\label{i:tower}\textbf{Input 5} (units 131, 17 and 114, the tower).\enspace The
+\emph{tower property}: the constant term of a theta integral on the large side along an isotropic line is a
+multiple of the theta integral of the smaller pair (after S.~Rallis, Compositio Math.\ 51 (1984); an analogue);
+\emph{strong approximation} in the form of a constancy criterion for automorphic functions on an isotropic unitary
+group (M.~Kneser, J.~reine angew.\ Math.\ 218 (1965); a weaker form); \emph{unfolding in stages}: for a closed
+embedding of a product $\mathcal{G}_1\times\mathcal{G}_2$ of unimodular groups in a unimodular group $\mathcal{G}$, a discrete subgroup $\mathcal{G}_0\subset\mathcal{G}_2$, and a
+non-negative weight $\Omega$ not vanishing near a point, there is $\mathrm{R}\ne0$ with
+$\int_{\mathcal{G}_0\backslash\mathcal{G}}f=\mathrm{R}\,\rc$ for every continuous integrable $f$ whose inner integrals over
+$\mathcal{G}_1\times\mathcal{G}_0\backslash\mathcal{G}_2$ are $\Omega\,\rc$ (reference to be confirmed); the averaging criterion for the
+vanishing of an integral over a quotient; $\LP{\fc}{e}>0$.
+
+\vspace{3pt}\phantomsection\label{i:rallis}\textbf{Input 6} (units 26 and 27, the inner product formula).\enspace
+The \emph{Rallis inner product formula} in two forms. Doubling form: for $\operatorname{rk}\sV>2\operatorname{rk}\sW$,
+clean data $f$, $f'$ and rapidly decreasing automorphic $y$, $y'$,
+$\langle\theta_{f'}y',\theta_fy\rangle=\operatorname{vol}[\U(\sV)]\int\langle f',\omega(\sg,1)f\rangle\pet{y'}{R(\sg)y}\,d\sg$
+(S.~Rallis, LNM~1245 (1987); J.-S.~Li, J.~reine angew.\ Math.\ 428 (1992); a special case, in the convergent
+range). Euler form: for an edge and $2\operatorname{rk}\sW<\operatorname{rk}\sV$ there is $A_0\ne0$ such that for
+all characters of the weights of the edge and every finite datum $F$ that is sharp of a level with constant
+$\rc_F$, the lift of forms of that level is injective and
+$\langle\theta y',\theta y\rangle=\sum_{\bar{\sg}}A_0\,\rc_F\,\mathrm{ct}(\bar{\sg})$, a sum of coset terms
+(S.~Rallis, Compositio Math.\ 52 (1984); a special case, in the stable range). Sharp data: a datum $F\otimes$vacuum
+whose function $F$ modulo a modulus has a fixed left inverse on its support is sharp, with constant
+$\sum|F|^2$ divided by the numbers of matrices and of invertible matrices modulo the modulus; the local doubling
+sum at one place; partial integrals.
+
+\vspace{3pt}\phantomsection\label{i:hecke}\textbf{Input 7} (units 44, 25 and 96, Hecke transfer and
+lifts).\enspace \emph{Hecke transfer}: an equivariant map from data to functions sends the unramified vacuum at a
+split place to a spherical vector, and the Hecke polynomials of the two sides are related by
+$T\mapsto\mathrm{tr}_{\fp,e}(\mathrm{a}_{\fp}T)\cdot\mathrm{pol}(\Np\fp^{e}\mathrm{a}_{\fp}T/\mathrm{b}_{\fp})$, with the Frobenius values $\mathrm{a}_{\fp}$, $\mathrm{b}_{\fp}$ of the two characters, (S.~Rallis, Amer.\ J.~Math.\ 104 (1982); a
+special case, at split places); an edge gives arrows in both directions, and the adjoint of the lift along an arrow
+is the conjugate of the descent; Euler products converge for exponents $>1$.
+
+\vspace{3pt}\phantomsection\label{i:new}\textbf{Input 8} (units 134 Forms, 138 Selmer, 140 Trace, 141 Seesaw, and
+the second note of this unit).\enspace Auxiliary pairs, their data and class-sum lifts, and the facts on them that
+Setting~\ref{set:aux} and the proofs of §\ref{s:norms} name; the chain of lifts and its arrows; $L$-value data and
+the lift $\Xi(\fl)$ with its elementary properties (the second note).}
+
+\sect{Partners at the split places}{s:local}
+In this section $\sF$ is a semilocal field with subring $\sO$. The functions on the two sides of the exchange
+identity live on $\ba\times\bn$ and on $\bn\times\bb$ matrices; they are compared through their averages over
+$\GL_{\ba}(\sF)$ and $\GL_{\bb}(\sF)$, which for want of a convergent integral are defined by a choice of coset
+representatives.
+
+\begin{lemma}[coset representatives]\label{l:reps}
+Let $\sF$ be a semilocal field with subring $\sO$ and let $\bb$, $\bn$ be finite index sets. There are a linear
+functional $\cL_0$ on the space of all complex functions on $\GL_{\bb}(\sF)$ and a set
+$\mathcal{R}\subset\GL_{\bb}(\sF)$ of representatives of the cosets of $\GL_{\bb}(\sF)$ modulo $\GL_{\bb}(\sO)$ such
+that
+\begin{enumerate}[label=\textup{(\arabic*)},leftmargin=2.3em,itemsep=1pt]
+\item for every finite subset $\mathcal{R}_0\subseteq\mathcal{R}$ and every function $G$ that vanishes on
+$\mathcal{R}\smallsetminus\mathcal{R}_0$: $\cL_0(G)=\sum_{\mathsf{r}\in\mathcal{R}_0}G(\mathsf{r})$;
+\item for every $\sy\in\Mat{\bn}{\bb}(\sF)$ with a left inverse there is exactly one $\mathsf{r}\in\mathcal{R}$
+such that $\sy\,\mathsf{r}$ is primitive, and exactly one $\mathsf{r}\in\mathcal{R}$ such that $\sy\,\mathsf{r}^{-1}$
+is primitive.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+By the elementary divisor property, every $\sg\in\GL_{\bb}(\sF)$ has a $\sk\in\GL_{\bb}(\sO)$ with
+$(\sg^{-1})^{-\mathsf{T}}=\sk^{-\mathsf{T}}\sg\,\sk$, where ${}^{-\mathsf{T}}$ is the inverse transpose
+(Input~2). Choose an element $\sg$ of each coset and such a $\sk$ for it, and let $\mathcal{R}$ consist of the
+products $\sg\sk$. The functional ``sum of the values on $\mathcal{R}$'' is defined on the functions that vanish
+at all but finitely many points of $\mathcal{R}$; extend it linearly to all functions. This gives~(1). For~(2): a
+matrix with a left inverse becomes primitive after right multiplication by some $\mathsf{u}\in\GL_{\bb}(\sF)$, and
+if $\sy\mathsf{u}$ is primitive then $\sy\mathsf{u}\mathsf{u}'$ is primitive exactly when
+$\mathsf{u}'\in\GL_{\bb}(\sO)$ (Input~2). So the $\mathsf{u}$ with $\sy\mathsf{u}$ primitive form one coset, which
+contains one element of $\mathcal{R}$. The same holds for the inverses, because by the choice of the $\sk$ the
+inverse transposes of the elements of $\mathcal{R}$ are again representatives of all cosets, and the inverse
+transpose preserves $\GL_{\bb}(\sO)$.
+\end{proof}
+\leanline{\lean{existscommoncosetreps}}
+
+\begin{definition}[local section]\label{d:locsec}
+Let $\sF$ be a semilocal field, $\bb$, $\bn$ finite index sets, $\chi$ a multiplicative character of $\sF$ and
+$\sy\in\Mat{\bn}{\bb}(\sF)$. With the functional $\cL_0$ and the set $\mathcal{R}$ of Lemma~\ref{l:reps}, chosen
+once for $(\sF,\bb,\bn)$, $\localSection{\chi}{\sy}$ is the linear functional
+\[\localSection{\chi}{\sy}(\dS)=\cL_0\bigl(\sg\mapsto\chi(\det\sg)\,\dS(\sy\,\sg)\bigr)\]
+on the complex functions $\dS$ on $\Mat{\bn}{\bb}(\sF)$. By Lemma~\ref{l:reps}\,(1) it equals
+$\sum_{\mathsf{r}\in\mathcal{R}}\chi(\det\mathsf{r})\dS(\sy\,\mathsf{r})$ whenever only finitely many terms are
+non-zero: it stands for the integral of $\chi(\det\sg)\dS(\sy\sg)$ over $\GL_{\bb}(\sF)$.
+\end{definition}
+\leanline{\lean{localSection}}
+
+\begin{definition}[matched pairs]\label{d:match}
+Let $\sF$ be a semilocal field, $\ba$, $\bb$, $\bn$ finite index sets, $\chi$ a multiplicative character of $\sF$
+and $\se\colon\bb\sqcup\ba\simeq\bn$ an identification. $\matchingPairs{\chi}{\se}$ is the space of the pairs
+$(\dL,\dS)\in\cS^{\mathrm{sur}}\times\cS^{\mathrm{inj}}$ of Schwartz--Bruhat functions, on $\Mat{\ba}{\bn}(\sF)$
+and on $\Mat{\bn}{\bb}(\sF)$, such that for every $\sk\in\GL_{\bn}(\sF)$
+\[\localSection{\chi}{\rowk{\se}{\sk}^{\mathsf{T}}}\bigl(\dL\circ{}^{\mathsf{T}}\bigr)
+=\chi(\det\sk)\cdot\localSection{\chi}{\colk{\se}{\sk}}(\dS).\]
+On the left stands the local section for the index sets $(\ba,\bn)$, applied to the function
+$\sx\mapsto\dL(\sx^{\mathsf{T}})$ of $\bn\times\ba$ matrices.
+\end{definition}
+\leanline{\lean{matchingPairs}}
+
+\begin{lemma}[translation]\label{l:translate}
+Let $\sF$ be a semilocal field and $\ba$, $\bb$, $\bn$ finite index sets.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=1pt]
+\item For an identification $\se\colon\bb\sqcup\ba\simeq\bn$ and $\sg,\sk\in\GL_{\bn}(\sF)$:
+$\sg\,\colk{\se}{\sk}=\colk{\se}{\sg\sk}$.
+\item Let $\chi$ be a multiplicative character of $\sF$ and $\se\colon\bb\sqcup\ba\simeq\bn$. If the pair
+$(\dL,\dS)$ lies in $\matchingPairs{\chi}{\se}$ and $\sg\in\GL_{\bn}(\sF)$, then the pair
+$\bigl(\chi(\det\sg)\,\dL(\,\cdot\,\sg),\ \dS(\sg^{-1}\,\cdot\,)\bigr)$ lies in $\matchingPairs{\chi}{\se}$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) holds by definition. (b) Translation by an invertible matrix is a homeomorphism that preserves the matrices
+with a left inverse, so both functions stay Schwartz--Bruhat with the required supports. Since
+$\rowk{\se}{\sg^{-1}\sk}=\rowk{\se}{\sk}\,\sg$ and, by (a), $\colk{\se}{\sg^{-1}\sk}=\sg^{-1}\colk{\se}{\sk}$,
+the two sides of the matching identity of the new pair at $\sk$ are $\chi(\det\sg)$ times those of the old pair
+at $\sg^{-1}\sk$, the factor $\chi(\det(\sg^{-1}\sk))$ becoming $\chi(\det\sk)$.
+\end{proof}
+\leanline{\lean{mulfirstCols}\sep \lean{translatemem}}
+
+\begin{lemma}[local sections of primitive supports]\label{l:section}
+Let $\sF$ be a semilocal field, $\bb$, $\bn$ finite index sets, $\chi$ a multiplicative character of $\sF$ and
+$\sy\in\Mat{\bn}{\bb}(\sF)$ a matrix that has a left inverse. There is $\sg\in\GL_{\bb}(\sF)$ such that $\sy\sg$
+is primitive and, for every function $\dS$ that vanishes off the primitive matrices,
+$\localSection{\chi}{\sy}(\dS)=\chi(\det\sg)\,\dS(\sy\sg)$.
+\end{lemma}
+\begin{proof}
+Take for $\sg$ the unique $\mathsf{r}\in\mathcal{R}$ with $\sy\mathsf{r}$ primitive (Lemma~\ref{l:reps}\,(2)). The
+function $\sh\mapsto\chi(\det\sh)\dS(\sy\sh)$ vanishes at the other elements of $\mathcal{R}$, so
+Lemma~\ref{l:reps}\,(1) with the set $\{\mathsf{r}\}$ gives the value.
+\end{proof}
+\leanline{\lean{localSectionofprimitive}}
+
+\begin{lemma}[primitive matrices form a clopen set]\label{l:clopen}
+Let $\sF$ be a semilocal field, $\ba$, $\bb$, $\bn$ finite index sets, $\chi$ a multiplicative character of
+$\sF$ that is tame, and $\se\colon\bb\sqcup\ba\simeq\bn$. Then the set of primitive matrices in
+$\Mat{\bn}{\ba}(\sF)$ is closed and open.
+\end{lemma}
+\begin{proof}
+It is the image of the compact group $\GL_{\bn}(\sO)$ under the continuous map that takes the columns indexed by
+$\ba$ (Input~2), hence closed. Let $\sy_0$ be primitive with integral left inverse $\ssx$. The standard
+datum $\stc{\chi}{\ssx}$ is locally constant, its value at $\sy_0$ is $\inu{\chi}(1)=1$, and every matrix at which
+it does not vanish is primitive (Input~1). So a neighbourhood of $\sy_0$ consists of primitive
+matrices. The tame character is needed only for the standard datum to be locally constant.
+\end{proof}
+\leanline{\lean{isClopenprimitive}}
+
+\begin{proposition}[the large side factors through the partner]\label{p:factor}
+Let $\sF$ be a semilocal field, $\ba$, $\bb$, $\bn$ finite index sets, $\chi$ a multiplicative character of $\sF$
+that is tame, $\se\colon\bb\sqcup\ba\simeq\bn$, and $\mathcal{X}$ a set. Let $\cL$ be a linear map from the complex
+functions on $\Mat{\ba}{\bn}(\sF)$ to the complex functions on $\mathcal{X}$ such that
+$\chi(\det\sg)\cdot\cL(\dL(\sg\,\cdot\,))=\cL(\dL)$ for every $\sg\in\GL_{\ba}(\sF)$ and every
+$\dL\in\cS^{\mathrm{sur}}$. Then there is a linear map $\cL'$ from the complex functions on $\Mat{\bn}{\bb}(\sF)$
+to the complex functions on $\mathcal{X}$ with $\cL'(\dS)=\cL(\dL)$ for every pair
+$(\dL,\dS)\in\matchingPairs{\chi}{\se}$.
+\end{proposition}
+\begin{proof}
+A matrix $\sx\in\Mat{\ba}{\bn}(\sF)$ has a primitive transpose exactly when $\sx=\rowk{\se}{\sk}$ for some
+$\sk\in\GL_{\bn}(\sO)$ (Input~2); choose such a $\sk(\sx)$ for each of them. Define $\cL'(\dS)$ as $\cL$
+of the function that is $\chi(\det\sk(\sx))\cdot\localSection{\chi}{\colk{\se}{\sk(\sx)}}(\dS)$ at the $\sx$ with
+primitive transpose and $0$ elsewhere. It is linear in $\dS$.
+
+Let $(\dL,\dS)$ be a matched pair, and let $\mathcal{R}$ be the set of Lemma~\ref{l:reps} for $(\ba,\bn)$. For
+$\mathsf{r}\in\mathcal{R}$ let $\dL_{\mathsf{r}}$ be the product of $\dL$ with the indicator of the set of the
+$\sx$ for which $\sx^{\mathsf{T}}\mathsf{r}^{-1}$ is primitive. This set is closed and open by
+Lemma~\ref{l:clopen}, so $\dL_{\mathsf{r}}\in\cS^{\mathrm{sur}}$. Every $\sx$ in the support of $\dL$ has a
+transpose with a left inverse, so it lies in exactly one of these sets (Lemma~\ref{l:reps}\,(2)). The support is
+compact, hence covered by the sets of a finite subset $\mathcal{R}_0\subseteq\mathcal{R}$, and
+$\dL=\sum_{\mathsf{r}\in\mathcal{R}_0}\dL_{\mathsf{r}}$. By the invariance of $\cL$ under the transposes of the
+elements of $\mathcal{R}_0$,
+\[\cL(\dL)=\sum_{\mathsf{r}\in\mathcal{R}_0}\chi(\det\mathsf{r})\,\cL\bigl(\dL_{\mathsf{r}}(\mathsf{r}^{\mathsf{T}}\,\cdot\,)\bigr)
+=\cL\Bigl(\sx\mapsto[\sx^{\mathsf{T}}\text{ primitive}]\sum_{\mathsf{r}\in\mathcal{R}_0}\chi(\det\mathsf{r})\,\dL(\mathsf{r}^{\mathsf{T}}\sx)\Bigr).\]
+If $\sx^{\mathsf{T}}$ is primitive and $\dL(\mathsf{r}^{\mathsf{T}}\sx)\ne0$, then $\mathsf{r}\in\mathcal{R}_0$,
+because $\mathsf{r}$ is the representative that belongs to the point $\mathsf{r}^{\mathsf{T}}\sx$ of the support.
+So by Lemma~\ref{l:reps}\,(1) the inner sum is $\localSection{\chi}{\sx^{\mathsf{T}}}(\dL\circ{}^{\mathsf{T}})$, and
+by the matching identity at $\sk(\sx)$ it equals
+$\chi(\det\sk(\sx))\cdot\localSection{\chi}{\colk{\se}{\sk(\sx)}}(\dS)$. This is the function that defines
+$\cL'(\dS)$.
+\end{proof}
+\leanline{\lean{existslinearfactor}}
+
+\begin{lemma}[partners from a function of a block]\label{l:block}
+Let $\ba$, $\bb$, $\bn$ be finite index sets, $\sR$ a commutative ring, $\se\colon\bb\sqcup\ba\simeq\bn$ an
+identification, $\chi$ a multiplicative character of $\sR$ and $G$ a complex function on $\Mat{\ba}{\bb}(\sR)$. Cut
+an $\ba\times\bn$ matrix $\sx$ by $\se$ into column blocks $(\sx_1\mid\sx_2)$ with $\sx_2$ square, and an
+$\bn\times\bb$ matrix $\sy$ into row blocks $\sy_1$ (square) and $\sy_2$. Then the functions
+\[\dL(\sx)=\chi^{-1}(\det\sx_2)\,G(\sx_2^{-1}\sx_1),\qquad\dS(\sy)=\chi^{-1}(\det\sy_1)\,G(-\sy_2\sy_1^{-1})\]
+are partners for $\chi$ over $\sR$ with respect to $\se$.
+\end{lemma}
+\begin{proof}
+If $\dL(\sx)\ne0$ then $\sx_2$ is invertible and $\sx=\rowk{\se}{\sk}$ for the inverse $\sk$ of the block matrix
+with rows $(1\ 0)$ and $(\sx_1\ \sx_2)$; if $\dS(\sy)\ne0$ then $\sy_1$ is invertible and $\sy=\colk{\se}{\sk}$ for
+the block matrix $\sk$ with columns $\sy$ and $\binom{0}{1}$. For $\sk\in\GL_{\bn}(\sR)$ write
+$\rowk{\se}{\sk}=(\sx_1\mid\sx_2)$ and $\colk{\se}{\sk}=\binom{\sy_1}{\sy_2}$. Jacobi's identity
+(Input~2, with the rows $(1\ 0)$) gives $\det\sx_2\cdot\det\sk=\det\sy_1$, and
+$\rowk{\se}{\sk}\colk{\se}{\sk}=0$ gives $\sx_1\sy_1+\sx_2\sy_2=0$. So $\sx_2$ is invertible exactly when $\sy_1$
+is; then $\chi^{-1}(\det\sx_2)=\chi(\det\sk)\chi^{-1}(\det\sy_1)$ and $\sx_2^{-1}\sx_1=-\sy_2\sy_1^{-1}$, and
+otherwise both values vanish.
+\end{proof}
+\leanline{\lean{partnerblock}}
+
+\begin{lemma}[partners are matched]\label{l:matched}
+Let $\ba$, $\bb$, $\bn$ be finite index sets, $\sF$ a semilocal field with subring $\sO$, $\chi$ a multiplicative
+character of $\sF$ that is tame, $\se\colon\bb\sqcup\ba\simeq\bn$, and let $\dL$, $\dS$ be partners for $\chi$ over
+$\sO$ with respect to $\se$ such that $\dS$ is locally constant. Then $(\dL,\dS)\in\matchingPairs{\chi}{\se}$.
+\end{lemma}
+\begin{proof}
+$\dS$ vanishes off the primitive matrices, and so does $\dL\circ{}^{\mathsf T}$; $\dL$ is locally constant because
+$\dS$ is and $\GL_{\bn}(\sO)$ is compact. A locally constant function supported on the primitive matrices is a
+Schwartz--Bruhat function supported on matrices with a left inverse (Input~1). Let
+$\sk\in\GL_{\bn}(\sF)$. By Lemma~\ref{l:section} there are $\sg$ and $\sh$ with $\colk{\se}{\sk}\sg$ and
+$\rowk{\se}{\sk}^{\mathsf T}\sh$ primitive, and the two local sections of the matching identity are
+$\chi(\det\sg)\dS(\colk{\se}{\sk}\sg)$ and $\chi(\det\sh)\dL(\sh^{\mathsf T}\rowk{\se}{\sk})$. Write
+$\colk{\se}{\sk}\sg=\colk{\se}{\mathsf{j}_1}$ with $\mathsf{j}_1\in\GL_{\bn}(\sO)$. Then $\sk^{-1}\mathsf{j}_1$ is
+block triangular for $\se$ with diagonal blocks $\sg$ and some $\mathsf{f}^{-1}$, so
+$\rowk{\se}{\sk}=\mathsf{f}^{-1}\rowk{\se}{\mathsf{j}_1}$ and $\det\sk\det\sg=\det\mathsf{j}_1\det\mathsf{f}$;
+as $\rowk{\se}{\mathsf{j}_1}^{\mathsf T}$ is primitive, $\sh^{\mathsf T}\mathsf{f}^{-1}$ lies in $\GL_{\ba}(\sO)$.
+Hence $\sh^{\mathsf T}\rowk{\se}{\sk}=\rowk{\se}{\mathsf{j}}$ for some $\mathsf{j}\in\GL_{\bn}(\sO)$ with
+$\colk{\se}{\mathsf{j}}=\colk{\se}{\mathsf{j}_1}$ and
+$\det\mathsf{j}\cdot\det(\sh^{\mathsf T}\mathsf{f}^{-1})=\det\mathsf{j}_1$ (Input~2). The partner
+identity at $\mathsf{j}$ now gives
+$\chi(\det\sh)\dL(\rowk{\se}{\mathsf{j}})=\chi(\det\sh\det\mathsf{j})\dS(\colk{\se}{\mathsf{j}_1})
+=\chi(\det\sk)\chi(\det\sg)\dS(\colk{\se}{\sk}\sg)$.
+\end{proof}
+\leanline{\lean{memmatchingPairs}}
+
+\begin{lemma}[the standard row datum in an integral frame]\label{l:rowstd}
+Let $\sF$ be a semilocal field, $\bb$, $\bm$, $\bn$ finite index sets, $\chi$ a multiplicative character of $\sF$
+that is tame, $\fA$ an integral frame over $\sF$ whose matrix $(\fA_1\mid\fA_2\mid\fA_3)$ has rows indexed by $\bn$ and
+column blocks indexed by $\bb$, $\bm$, $\bb$, and $\se'\colon\bb\sqcup(\bb\sqcup\bm)\simeq\bn$ an identification.
+There is a complex number $\rc$ with $|\rc|=1$ and
+\[\str{\se'}{\chi}{\fA_3'}=\mathrm{st}_{\fA}\bigl(\sy\mapsto\rc\cdot\inu{\chi}(\det\sy)\bigr).\]
+\end{lemma}
+\begin{proof}
+Multiply the square matrix with the rows of $\fA_3'$ and of $\sx$ by the integral invertible matrix
+$(\fA_3\mid\fA_1\mid\fA_2)$. By the relations $\fA_3'\fA_3=1$, $\fA_3'\fA_1=0$, $\fA_3'\fA_2=0$ the product is block triangular with diagonal
+blocks $1$ and $\sx\,(\fA_1\mid\fA_2)$; the first matrix is integral exactly when $\sx$ is, and
+its determinant is a unit exactly when $\det(\sx(\fA_1\mid\fA_2))$ is. So the two functions agree up to the factor
+$\chi$ of the unit $\det(\fA_3\mid\fA_1\mid\fA_2)$, reordered by $\se'$, which has absolute value~$1$.
+\end{proof}
+\leanline{\lean{existsstdRowDatumeqstdDatum}}
+
+\begin{setting}[a stable space and a partner]\label{set:stable}
+$\sF$ is a semilocal field with subring $\sO$ and element $\varpi$; $\ba$, $\bb$, $\bm$, $\bn$ are finite index
+sets; $\chi$ is a multiplicative character of $\sF$ that is tame; $\se\colon\bb\sqcup\ba\simeq\bn$ is an
+identification, $\mathcal{U}$ a set of $\bn\times\bb$ matrices, and $\cP$ a space of complex functions on
+$\Mat{\bn}{\bb}(\sF)$. The hypotheses are: \textup{(i)} $\cP$ is stable under translation: $G(\sg\,\cdot\,)\in\cP$
+for all $G\in\cP$ and $\sg\in\GL_{\bn}(\sF)$; \textup{(ii)} $\cP\subseteq\cS(\mathcal{U})$; \textup{(iii)} $\dS$ is
+a locally constant function on $\Mat{\bn}{\bb}(\sF)$; \textup{(iv)} $\dL$ and $\dS$ are partners for $\chi$ over
+$\sO$ with respect to $\se$.
+\end{setting}
+
+\begin{lemma}[a stable space that contains a multiple of a standard datum]\label{l:stable}
+In Setting~\ref{set:stable}, let $G\in\cP$, let $\sx\in\Mat{\bn}{\bb}(\sF)$ be integral and
+$\ssx\in\Mat{\bb}{\bn}(\sF)$ integral with $\ssx\,\sx=1$, and let $\mathrm{n}$ be a function on
+$\Mat{\bn}{\bb}(\sF)$ with values in the natural numbers such that $G(\sy)=\mathrm{n}(\sy)\cdot\stc{\chi}{\ssx}(\sy)$
+for all $\sy$ and $\mathrm{n}(\sx)\ne0$. Then $\dS\in\cP$.
+\end{lemma}
+\begin{proof}
+The partner $\dS$ is locally constant and vanishes off the compact set of primitive matrices, so there is an
+exponent $i$ with $\dS(\sy+\varpi^{i}\sz)=\dS(\sy)$ for all $\sy$ and all integral $\sz$. Put
+$\mathsf{d}=\varpi^{-i}\bigl(1-\sx(1-\varpi^{i})\ssx\bigr)$. It is invertible, with integral inverse
+$\varpi^{i}+(1-\varpi^{i})\sx\ssx$, and $\ssx\mathsf{d}=\ssx$, $\mathsf{d}\sx=\sx$. The function
+\[G'(\sy)=\int_{\GL_{\bn}(\sO)}\dS(\sk^{-1}\sx)\,G(\mathsf{d}\,\sk\,\sy)\,d\sk\]
+lies in $\cP$: the integrand is a locally constant family of elements of $\cP$ over a compact group, by (i) and
+(ii), so the integral is a finite combination of its members (unit 105). We show $G'=\mathrm{N}_0\dS$ with
+$\mathrm{N}_0=\int|G(\mathsf{d}\sk\sx)|\,d\sk$, which is positive because the integrand is continuous,
+non-negative and equal to $\mathrm{n}(\sx)\ne0$ at $\sk=1$. If $G(\mathsf{d}\sk\sy)\ne0$ then $\mathsf{d}\sk\sy$ is
+integral and $\ssx\sk\sy=\ssx\mathsf{d}\sk\sy$ has a unit determinant, so $\sy$ is primitive; hence both sides
+vanish at a $\sy$ that is not primitive. Let $\sy=\colk{\se}{\mathsf{l}}$ and $\sx=\colk{\se}{\mathsf{j}}$ with
+$\mathsf{l},\mathsf{j}\in\GL_{\bn}(\sO)$ (Input~2). Replacing $\sk$ by $\sk\,\mathsf{j}\mathsf{l}^{-1}$,
+\[G'(\sy)=\int\dS(\mathsf{l}\mathsf{j}^{-1}\sk^{-1}\sx)\,G(\mathsf{d}\sk\sx)\,d\sk .\]
+Where the integrand is non-zero, $\sg=\ssx\sk\sx$ lies in $\GL_{\bb}(\sO)$ and
+$\sk\sx=\sx\sg+\varpi^{i}\sz$ with $\sz$ integral, so $\mathsf{l}\mathsf{j}^{-1}\sk^{-1}\sx=\sy\sg^{-1}$ up to
+$\varpi^{i}$ times an integral matrix. By the choice of $i$ and the law $\dS(\sy\sg)\chi(\det\sg)=\dS(\sy)$ of a
+partner (unit 112), $\dS(\mathsf{l}\mathsf{j}^{-1}\sk^{-1}\sx)=\chi(\det\sg)\dS(\sy)$, while
+$G(\mathsf{d}\sk\sx)=\mathrm{n}(\mathsf{d}\sk\sx)\chi^{-1}(\det\sg)$. The product is
+$\dS(\sy)\,|G(\mathsf{d}\sk\sx)|$, since $|\chi|=1$ on units. So $G'=\mathrm{N}_0\dS$ and $\dS\in\cP$.
+\end{proof}
+\leanline{\lean{partnermemofstdColDatum}}
+
+\begin{proposition}[a criterion by unimodular indices]\label{p:unimod}
+In Setting~\ref{set:stable}, let $\fA$ be an integral frame over $\sF$ whose matrix $(\fA_1\mid\fA_2\mid\fA_3)$ has rows
+indexed by $\bn$ and column blocks indexed by $\bb$, $\bm$, $\bb$, let $\mathrm{e}_{\sF}$ be an additive character
+of $\sF$ that has conductor $\sO$, and let $\cM$ be a space of complex functions on $\Mat{\bn}{\bb}(\sF)$. For a
+$\bb\times\bb$ matrix $\sz$ over $\sF$ put
+\[S_{\sz}(\sy)=\stc{\chi}{\fA_1'}\bigl(\sy+\fA_3\,\sz\,\fA_1'\sy\bigr),\qquad\text{so that }S_0=\stc{\chi}{\fA_1'}.\]
+Suppose that every $S_{\sz}$ lies in $\cM$, and that $\cP$ contains every $\dS'\in\cM$ with the following property:
+$\cL(\dS')=0$ for every $\bb\times\bb$ matrix $T$ over $\sF$ and every linear functional $\cL$ such that
+$\cL(S_{\sz})=\mathrm{e}_{\sF}(\tr(T\sz))\,\cL(S_0)$ for all $\sz$, and such that $\cL(S_0)=0$ if $T$ is primitive.
+Then $\dS\in\cP$.
+\end{proposition}
+\begin{proof}
+Let $\bar{\sR}$, the reduction $\sz\mapsto\bar{\sz}$ and $\bar\chi$ be as in the definition of a tame character, and
+let $\mathcal{Z}$ be a set of integral $\bb\times\bb$ matrices, containing $1$, that maps bijectively to
+$\Mat{\bb}{\bb}(\bar{\sR})$. Since $\mathrm{e}_{\sF}$ has conductor $\sO$,
+$\bar{\mathrm{e}}(\bar{\sz})=\mathrm{e}_{\sF}(\varpi^{-1}\sz)$ is a primitive additive character of $\bar{\sR}$ (Input~1).
+Consider the Gauss sum of shears
+\[\Gamma_0=\sum_{\sz\in\mathcal{Z}}\bar\chi(\det\bar{\sz})\,S_{\varpi\sz}\in\cM .\]
+\emph{$\Gamma_0\in\cP$.} Let $T$ and $\cL$ be as in the hypothesis, and suppose $\cL(\Gamma_0)\ne0$. Then
+$\cL(S_0)\ne0$, and $T$ is integral: for an integral $\ssx$ and a matrix unit $\mathsf{u}$,
+$S_{\sz+\ssx\mathsf{u}}=S_{\sz}$, because the standard datum does not see an integral shear; hence
+$\mathrm{e}_{\sF}(\tr(T\ssx\mathsf{u}))=1$ for all integral $\ssx$, and the conductor gives the entries of $T$ in
+$\sO$. Now $\cL(\Gamma_0)=\bigl(\sum_{\sz\in\mathcal{Z}}\bar\chi(\det\bar{\sz})\,\bar{\mathrm{e}}(\tr(\bar T\bar{\sz}))\bigr)\cL(S_0)$,
+and by the matrix Gauss sum (Input~1) the sum is $\bar\chi^{-1}(\det\bar T)$ times its value at $1$. It is
+non-zero, so $\det T$ is a unit and $T$ is primitive; but then $\cL(S_0)=0$, a contradiction. So every such $\cL$
+kills $\Gamma_0$, and $\Gamma_0\in\cP$ by hypothesis.
+
+\emph{Conclusion.} Apply Lemma~\ref{l:stable} to the translate $G=\Gamma_0(-\varpi^{-1}\,\cdot\,)\in\cP$, to
+$\sx=\fA_3-\varpi\fA_1$ and to $\ssx=\fA_1'$; the frame relations give $\fA_1'(\fA_3-\varpi\fA_1)=-\varpi$, and the
+formal proof arranges the unit $-\varpi$ so that the hypothesis $\ssx\sx=1$ of the lemma holds. A computation with
+the frame relations and the multiplicativity of $\inu{\chi}$ on integral elements shows that each non-zero term
+$\bar\chi(\det\bar{\sz})S_{\varpi\sz}(-\varpi^{-1}\sy)$ equals $\stc{\chi}{\fA_1'}(\sy)$. So $G$ is $\mathrm{n}(\sy)$
+times this standard datum, $\mathrm{n}(\sy)$ being the number of non-zero terms, and $\mathrm{n}(\sx)\ne0$ because
+$\sz=1$ contributes.
+\end{proof}
+\leanline{\lean{partnermemofunimodularvanishing}}
+
+\sect{The difference of the two theta integrals}{s:lift}
+\begin{definition}[the theta integral on the small side]\label{d:thsm}
+Let $E$ be a CM field with a CM type and Weil data, $\sW$ and $\sV$ hermitian spaces over $E$ with index sets
+$\bn$ and $\ba$, $\fc$ a split tame character, $\fv$ a real datum for $(\sW,\sV)$ and $\dS$ a complex function on
+$\Mat{\bn}{\ba}(\sF_{\fc})$. Then
+\[\thetaSmall{\sW}{\sV}{\fc}{\fv}{\dS}
+=\thI{\sW}{\sV}{\omega_{\fc}\upsilon^{\lfloor|\bn|/2\rfloor}}{\upsilon^{|\ba|}}{\loc{\fv}{[\dS\circ{}^{\mathsf T}]^{c}}},\]
+a function on $\U(\sW)(\A)$: the theta integral over $[\U(\sV)]$ whose finite datum is the function
+$\sy\mapsto\dS(\sy^{\mathsf T})$ of the components at the places conjugate to those of $\fc$.
+\end{definition}
+\leanline{\lean{thetaSmall}\sep the integral on the large side is the declaration {\leanfont thetaLarge} of unit 43}
+
+\begin{proposition}[the difference is an equivariant lift]\label{p:lift}
+Let $E$ be a CM field with a CM type and Weil data; let $\sW$, $\sV$, $\sV'$ be hermitian spaces over $E$ with
+index sets $\bn$, $\ba$, $\bb$; let $\fc$ be a split tame character and $\se\colon\bb\sqcup\ba\simeq\bn$ an
+identification. Suppose that $|\bn|$ is even, let $\fv$ and $\fv'$ be rapid real data for $(\sW,\sV)$ and
+$(\sW,\sV')$, and let $\rc$ be a complex number. There are a space $\cM$ of complex functions on
+$\Mat{\bn}{\bb}(\sF_{\fc})$ and a linear map $\cD$ from such functions to functions on $\U(\sW)(\A)$ such that
+$(\cM,\cD)$ is an equivariant lift for $\fc$, $\sW$ and the inverse of the local character of $\upsilon^{|\bb|}$ in
+rank $|\bb|$, and such that for all partners $\dL$, $\dS$ for $\chi_{\fc}$ over the integers of $\sF_{\fc}$ with
+respect to $\se$, with $\dS$ locally constant:
+\[\dS\in\cM\qquad\text{and}\qquad
+\cD(\dS)=\thL{\sW}{\sV}{\fc}{\fv}{\dL}-\rc\cdot\thetaSmall{\sW}{\sV'}{\fc}{\fv'}{\dS}.\]
+\end{proposition}
+\begin{proof}
+Both theta integrals extend to linear functionals of the datum (Input~3). The functional
+$\dL\mapsto\thL{\sW}{\sV}{\fc}{\fv}{\dL}$ has the invariance required in Proposition~\ref{p:factor}: write
+$\sg\in\GL_{\ba}(\sF_{\fc})$ as the components of a finite adelic point $\sk$ of $\U(\sV)$ supported at
+$\Sigma(\fc)$; moving the datum by $\sk$ on the side of $\sV$ does not change an integral over $[\U(\sV)]$, and
+the Weil representation moves the local datum of $\dL$ to $\chi_{\fc}(\det\sg)^{-1}$ times that of
+$\dL(\sg\,\cdot\,)$ (Input~3; here $|\bn|$ even makes the character of the integral the base change of
+$\omega_{\fc}^{-1}$). So there is a linear $\cL'$ with $\cL'(\dS)=\thL{\sW}{\sV}{\fc}{\fv}{\dL}$ for every matched
+pair. Let $\cM$ be the space of second components of matched pairs, a subspace of $\cS^{\mathrm{inj}}$, and
+$\cD=\cL'-\rc\cdot\thetaSmall{\sW}{\sV'}{\fc}{\fv'}{\,\cdot\,}$. Partners with $\dS$ locally constant are matched
+(Lemma~\ref{l:matched}), which gives the last assertion. For $\dS\in\cM$, $\cD(\dS)$ is a difference of theta
+integrals of target-bounded data, hence automorphic (Input~3). For a point $\sg$ supported at
+$\Sigma(\fc)$ the translated pair is matched (Lemma~\ref{l:translate}), translation of a theta integral is the
+theta integral of the moved datum, and the Weil representation of $\sg$ acts on both local data by the
+translation of the function and a character of $\det\sg_{\Sigma}$; with $|\bn|=|\ba|+|\bb|$ the two characters
+agree and equal the one in the statement. For $\sk\in\mathcal{K}_f$ trivial at $\Sigma(\fc)$ both local data are fixed.
+\end{proof}
+\leanline{\lean{existsisEquivariantLift}}
+
+\begin{proof}[Proof of Theorem 2]
+Let $\fA$ be the frame adapted to the splitting opposite to $\fS$, and $\cP=\cM\cap\ker\cD$. It is stable under
+translation by $\GL_{\bm}(\sF_{\fc})$ (Input~3) and lies in $\cS^{\mathrm{inj}}$. The standard data
+$\str{\se'}{\chi_{\fc}}{\sz}$ and $\stc{\chi_{\fc}}{\sz}$ are partners and $\stc{\chi_{\fc}}{\sz}$ is locally
+constant. So Proposition~\ref{p:unimod}, with the additive character of $\sF_{\fc}$, shows
+$\stc{\chi_{\fc}}{\sz}\in\cP$, which is the assertion, once its two hypotheses are verified. The shears of
+$\dS_0$ lie in $\cM$ by Input~3. It remains to take $\dS'\in\cM$ that is killed by every admissible
+functional and to show $\cD(\dS')=0$.
+
+The function $\cD(\dS')$ is automorphic. By weak approximation (Input~4) it suffices to show that
+it vanishes at the points that are trivial at $\Sigma(\fc)$, and a continuous function on the adelic hermitian
+matrices that is periodic under the rational ones vanishes when all its Fourier coefficients do. So it suffices
+that every centre coefficient $\cf{\fS}{T}{\cD(\dS')}$ vanishes at such points. For fixed $T$ and a fixed point,
+this coefficient is a linear functional $\cL$ of $\dS'\in\cM$ which transforms under the shears $S_{\sz}$ by
+$\mathrm{e}_{\sF}(\tr(T_{\Sigma}\sz))$ (Input~3). So $\cL$ is admissible, and kills $\dS'$, provided
+$\cL(\dS_0)=0$ whenever $T_{\Sigma}$ is primitive.
+
+Let $T_\Sigma$ be primitive. Then $\det T\ne0$, and $T$ may be taken skew-hermitian, the other coefficients being
+zero. Freitag's lemma (Input~4), applied to $\cD(\dS_0)$ with a base-adapted stage of the composed
+splitting of $\sX$ over $\sW$, reduces the vanishing of the coefficient to its vanishing at the points
+$\operatorname{rad}_{\fS}(\mathsf{c},\mathsf{w})\operatorname{lev}_{\fS}(\sq,\sg)$ for which the hermitian matrix built from $T$ and $\sq$, divided by the inverse
+different, is unimodular over $\hat{\mathcal{O}}_E$. For such a point there is
+$\sk\in\GL_{\bb}(\hat{\mathcal{O}}_E)$ making this matrix the identity (Input~2). Write $T=\jmath B_0$.
+If $B_0$ is represented by the signs of $\sV'$ at every infinite place, it is the Gram matrix of a space with
+these signs and a point, and Landherr's theorem (Input~4) gives a rational change of coordinates
+$\mathsf{c}_0$ with $\mathsf{c}_0^{*}\mathrm{J}_{\sV'}\mathsf{c}_0=B_0$. Moving the rational Levi element of $\mathsf{c}_0$ through the coefficient turns
+it into a coefficient at $\jmath J_{\sV'}$ at a point as in alternative~(i), with $Y=\mathrm{x}_{\sV'}^{-1}\mathsf{c}_0\sq$ up to
+the scale idele. If $B_0$ is not represented, alternative~(ii) applies. In both cases the coefficient
+vanishes by hypothesis.
+\end{proof}
+
+\sect{Fourier coefficients of theta integrals}{s:coeff}
+\begin{definition}[the theta functional on real data]\label{d:threal}
+Let $E$ be a CM field with a CM type and Weil data, $\sW_1$ and $\sV$ hermitian spaces with index sets $\bn$ and
+$\ba$, $\omega$ and $\omega'$ characters of $\U(1)(\A)$, $F$ a finite datum for $(\sW_1,\sV)$, $\sx$ an adelic
+$\ba\times\bn$ matrix and $\mathsf{p}$ a point of $\U(\sW_1)(\A)\times\U(\sV)(\A)$. Then
+\[\thetaOnRealData{\sW_1}{\sV}{\omega}{\omega'}{F}{\sx}{\mathsf{p}}\colon\quad
+\fv\longmapsto\theta\bigl(\operatorname{heis}(\sx)\,\omega_{\sW_1,\sV}(\omega,\omega')(\mathsf{p})(\fv\otimes F)\bigr)\]
+is a continuous linear functional on the real data of the pair; $\operatorname{heis}(\sx)$ is the operator of
+the Heisenberg group attached to the vector of $\sx$.
+\end{definition}
+\leanline{\lean{thetaOnRealData}}
+
+\begin{proposition}[coefficients at indices that are not negative]\label{p:nonneg}
+Let $E$ be a CM field with a CM type and Weil data, with element $\jmath$ and splitting character $\upsilon$. Let
+$\sX$, $\sY$, $\sZ$ be hermitian spaces with index sets $\bm$, $\bn$, $\ba$, and $\fS$ a splitting of $\sX$ over
+$\sZ$ along $\bb$. Let $\omega$ be a character of $\U(1)(\A)$ with weights $\mu$, $\delta$ a character, $f$ a
+datum of the pair $(\sX,\sY)$, $\sg$ a point of $\U(\sX)(\A)$ and $T$ a $\bb\times\bb$ matrix over $E$. Assume:
+there is an index $i$ of $\sY$ with positive sign; $\mu(\tau)$ is smaller than the number of positive signs of
+$\sZ$ for every infinite place $\tau$; $|\bb|+\negc(\sZ)=\negc(\sY)$; $\delta=\omega\,\upsilon^{|\bb|}$; $T$ is
+invertible; $T$, as an adelic matrix, is not represented by the signs $-1$, that is, at some infinite place it is
+not of the form $-\mathsf{c}^{*}\mathsf{c}$; and the theta terms of $\fS$ for $(\sY,\delta,\delta,f)$ at $\sg$ are integrable. Then
+\[\cf{\fS}{\jmath T}{\thI{\sX}{\sY}{\delta}{\delta}{f}}(\sg)=0 .\]
+\end{proposition}
+\begin{proof}
+The coefficient is the sum, over the rational $\bn\times\bb$ matrices $\mathsf{v}$ with
+$\mathsf{v}^{*}\mathrm{J}_{\sY}\mathsf{v}=T$, of integrals of theta terms (Input~3); if there is no such
+$\mathsf{v}$ it is zero. Fix one, and let $\mathsf{v}'=\mathrm{x}_{\sY}^{-1}\mathsf{v}$ be its coordinates in the
+adelic frame. As $T$ is invertible, the coefficient is the integral over the quotient of $\U(\sY)(\A)$ by the
+stabilizer $\operatorname{Stab}$ of $\mathsf{v}'$ of the theta term at $\mathsf{v}'$ (Input~3). Let $\tau$ be an
+infinite place where $T_\tau$ is not of the form $-\mathsf{c}^{*}\mathsf{c}$, and $\mathsf{w}_0$ the component of $\mathsf{v}'$ at
+$\tau$. The hermitian matrix $\mathsf{w}_0^{*}\operatorname{diag}(\sY)\mathsf{w}_0$ is not negative semidefinite, so
+some vector $\mathsf{a}_0$ has $\mathsf{a}_0^{*}\mathsf{w}_0^{*}\operatorname{diag}(\sY)\mathsf{w}_0\mathsf{a}_0=1$;
+by Witt's theorem (Input~2) an element $\mathsf{u}_0$ of the real unitary group carries
+$\mathsf{w}_0\mathsf{a}_0$ to the basis vector of the index $i$.
+
+\emph{No invariant functional.} Let $e_0\ge0$ be the integer with (number of positive signs of
+$\sZ)=\mu(\tau)+e_0+1$. We claim that a continuous linear functional $\cL_1$ on the Fock model of the pair
+$(\sZ,\sY)$ at the infinite places vanishes if it is invariant under the real Weil representation, of weights $\mu$
+and $0$, of all elements of the maximal compact subgroup at $\tau$ that fix $\mathsf{u}_0\mathsf{w}_0$. It suffices
+to show $\cL_1(\operatorname{heis}(\mathsf{y}_0)\operatorname{vac})=0$ for every $\mathsf{y}_0$, the Heisenberg
+translates of the vacuum being total. Counting dimensions with $|\bb|+\negc(\sZ)=\negc(\sY)$ and the positive index
+$i$, one finds a unit row vector $\mathsf{r}_0$ supported on the negative indices of $\sY$, orthogonal to the
+columns of $\mathsf{u}_0\mathsf{w}_0$ and to the negative coordinates of $\mathsf{y}_0$ at $\tau$. For a complex
+number $\varkappa$ with $|\varkappa|=1$ the rotation
+$\mathsf{c}_{\varkappa}=1+(\bar\varkappa-1)\bar{\mathsf{r}}_0\mathsf{r}_0^{\mathsf T}$ of the line of $\mathsf{r}_0$
+lies in the maximal compact subgroup and fixes $\mathsf{u}_0\mathsf{w}_0$. It moves
+$\operatorname{heis}(\mathsf{y}_0)\operatorname{vac}$ to $\varkappa^{e_0+1}$ times the translate of the vacuum by
+$\mathsf{y}_0+(\bar\varkappa-1)\mathsf{z}_0$, $\mathsf{z}_0$ the part of $\mathsf{y}_0$ on the line of
+$\mathsf{r}_0$: the vacuum is multiplied by the minor $\det\mathsf{c}_{\varkappa}=\bar\varkappa$ to the power given
+by the weight, which is $\varkappa^{e_0+1}$. So $\cL_1(\operatorname{heis}(\mathsf{y}_0)\operatorname{vac})$ is the
+mean over the circle of a function $\varkappa\mapsto\varkappa^{e_0+1}G_0(\varkappa)$ with $G_0$ holomorphic on the
+closed disc (the translate depends holomorphically on $\varkappa$, as $\mathsf{z}_0$ lies in the holomorphic
+coordinates), and by the mean value property this mean is the value at $\varkappa=0$, which is $0$ because
+$e_0+1\ge1$.
+
+\emph{Averaging.} Let $\mathcal{C}$ be the intersection of $\operatorname{Stab}$ with the conjugate by
+$\mathsf{u}_0^{-1}$, at $\tau$, of the maximal compact subgroup; it is compact. For $\sk\in\operatorname{Stab}$ the
+theta term at $\mathsf{v}'$ of the datum moved by $\sk$ is the theta term moved through the pair $(\sZ,\sY)$ (law
+of the Levi elements, Input~3, with $\delta=\omega\upsilon^{|\bb|}$). The average of the theta term over
+$\mathcal{C}$, for its Haar probability measure, is therefore a functional of the kind just excluded, applied to
+the datum: it is zero. Right multiplication by $\mathcal{C}$ preserves the Haar measure of $\operatorname{Stab}$.
+The averaging criterion (Input~5: if averaging multiplies the integrand by a number different from the modulus,
+the integral over the quotient vanishes) gives the result.
+\end{proof}
+\leanline{\lean{centreCoeffeqzeroofnotnegative}}
+
+\begin{proposition}[theta terms of standard data]\label{p:terms}
+Let $E$ be a CM field with a CM type and Weil data; let $\sX$, $\sW_1$, $\sV$ be hermitian spaces with index sets
+$\bm$, $\bn$, $\ba$, and $\fS$ a base-adapted splitting of $\sX$ over $\sW_1$ along $\bb$.
+Let $\Sigma$ be a finite set of finite places whose product of completions $\sF_\Sigma$ is not the zero ring, with
+a reading of the components at $\Sigma$, and let $\fA$ be the adapted frame of $\fS$. Let $\omega'$ be a
+character, $\chi$ a multiplicative character of $\sF_\Sigma$, $\rc_0$ a complex number and $\mathsf{n}$ a
+$(\bb\sqcup\bn)\times\ba$ matrix over $\sF_\Sigma$; let $\dL$ be a function with $\dL\in\cS(\mathcal{U})$ for a
+set $\mathcal{U}$ and $\dL=\mathrm{st}_{\fA}\bigl(\sy\mapsto\rc_0\,\inu{\chi}(\det(\sy\mathsf{n}))\bigr)$; let
+$\fv$ be a rapid real datum; let $\omega$, $\omega''$ be characters with $\omega''=\omega\,\upsilon^{|\bb|}$; and
+let $\mathsf{c}$, $\mathsf{w}$, $\sq$, $\sg$ be the coordinates of a point. Put $f=\loc{\fv}{[\dL]}$ and
+$\mathsf{p}=\operatorname{rad}_{\fS}(\mathsf{c},\mathsf{w})\,\operatorname{lev}_{\fS}(\sq,\sg)$. Then:
+\begin{enumerate}[label=\textup{(\arabic*)},leftmargin=2.3em,itemsep=1pt]
+\item the theta terms of $\fS$ for $(\sV,\omega'',\omega',f)$ at $\mathsf{p}$ are integrable;
+\item for every rational $\ba\times\bb$ matrix $\mathsf{v}$, with $\mathsf{v}'=\mathrm{x}_{\sV}^{-1}\mathsf{v}$,
+every adelic $\ba\times\bb$ matrix $Y$ with $\mathsf{v}'\sq=\varsigma_EY$ and every point $\sk$ of $\U(\sV)(\A)$,
+with $\sy=\sk_f^{-1}Y_f$, the theta term at $\mathsf{v}$ and $\sk$ equals
+\begin{multline*}
+\mathrm{e}_{\A}\bigl(\tfrac12\tr(\mathsf{w}\,\mathsf{v}^{*}\mathrm{J}_{\sV}\mathsf{v})\bigr)\,\omega'_{\ba}(\det\sq)^{-1}\,|\det\sq|^{|\ba|/2}\,
+[\sy\text{ integral}]\cdot\operatorname{vac}_{\fS}(\sV)\\
+\cdot\ \thetaOnRealData{\sW_1}{\sV}{\omega}{\omega'}{F_{\sy}}{\mathsf{v}'\mathsf{c}^{*}\operatorname{diag}(\sW_1)}{(\sg,\sk)}\bigl(\mathrm{sl}_{\fS}(\sk^{-1}Y;\fv)\bigr),
+\end{multline*}
+where $\omega'_{\ba}$ is the character attached to $\omega'$ in rank $|\ba|$, $\operatorname{vac}_{\fS}(\sV)$ the
+vacuum factor of the mixed model, $\operatorname{diag}(\sW_1)$ the diagonal form of the signs of $\sW_1$, and
+$F_{\sy}$ the finite datum named at $\Sigma$ by the function
+$\sy'\mapsto\rc_0\,\inu{\chi}(\det((\bar{\sy}\mid\sy')\mathsf{n}))$ of the integral $\sy'$, $\bar{\sy}$ being the
+components of $\sy$ at $\Sigma$;
+\item for all signs $\mathsf{t}'$ on $\bb$ and every $\bb\times\bb$ matrix $T$ over $E$ that, as an adelic matrix, is not represented
+by $\mathsf{t}'$: if every non-zero real slice $\mathrm{sl}_{\fS}(\sx;\fv)$ has a Gram matrix
+$\sx^{*}\operatorname{diag}(\sV)\sx$ that is represented by $\mathsf{t}'$, then
+$\cf{\fS}{\jmath T}{\thI{\sX}{\sV}{\omega''}{\omega'}{f}}(\mathsf{p})=0$.
+\end{enumerate}
+\end{proposition}
+\begin{proof}
+(1) The datum is named at a set of places disjoint from its conjugate by a Schwartz--Bruhat function, and $\fv$ is
+rapid; integrability then holds once the matrices at which $\dL$ does not vanish give left-invertible transposed
+coordinate matrices at $\mathsf{p}$ (Input~3). Where $\dL\ne0$ the matrix $\sy(\fA_1\mid\fA_2)$ of the standard
+datum has a unit determinant, and the coordinate matrix of $\mathsf{p}$ on the frame of $\fS$ is the adelic frame
+times a block triangular matrix with diagonal blocks $\sq$ and an invertible one; this gives the left inverse.
+
+(2) Move the datum through the two factors of $\mathsf{p}$. The radical element contributes the character
+$\mathrm{e}_{\A}(\frac12\tr(\mathsf{w}\,\mathsf{v}^{*}\mathrm{J}_{\sV}\mathsf{v}))$ and the Heisenberg operator of $\mathsf{v}'\mathsf{c}^{*}\operatorname{diag}(\sW_1)$; the Levi element
+contributes $\omega'_{\ba}(\det\sq)^{-1}|\det\sq|^{|\ba|/2}$ and replaces $\mathsf{v}'$ by $\mathsf{v}'\sq$ (Input~3, with
+$\omega''=\omega\upsilon^{|\bb|}$). What remains is the source term of the local datum on the adapted frame: the
+vacuum factor times, when the finite part is integral, the theta functional of the vector named by the slice of
+$\dL$, applied to the real slice of $\fv$ (Input~3). The slice of the standard datum $\dL$ at $\bar{\sy}$
+is the function named in the statement.
+
+(3) The coefficient is the sum over the rational $\mathsf{v}$ with $\mathsf{v}^{*}\mathrm{J}_{\sV}\mathsf{v}=T$ of integrals of theta terms. By (2)
+each term is a multiple of the functional of Definition~\ref{d:threal} at the real slice
+$\mathrm{sl}_{\fS}(\sk^{-1}Y;\fv)$. If this slice were non-zero, its Gram matrix would be represented by $\mathsf{t}'$;
+but that Gram matrix is, up to the invertible factor $\sq$ and the unitary part of the point, the image of
+$\mathsf{v}^{*}\mathrm{J}_{\sV}\mathsf{v}=T$, which is not represented by $\mathsf{t}'$. So every term vanishes.
+\end{proof}
+\leanline{\lean{thetaTermstdDatumspec}}
+
+\begin{lemma}[products of data]\label{l:box}
+Let $E$ be a CM field with a CM type and Weil data, $\sW_1$ and $\sV'$ hermitian spaces with index sets $\bn$ and
+$\bb$. Let $\omega$, $\omega'$ be characters of $\U(1)(\A)$; $F'$ and $F$ finite data for $(\sW_1,\sV')$ and
+$(\sW_1,\sW_1)$; $\sx$ an adelic $\bb\times\bn$ matrix; $\sg$, $\mathsf{u}$, $\mathsf{l}$ points of
+$\U(\sW_1)(\A)$, $\U(\sV')(\A)$, $\U(\sW_1)(\A)$; and $\fv'$, $\fv$ real data for $(\sW_1,\sV')$ and
+$(\sW_1,\sW_1)$. Then
+\begin{multline*}
+\thetaOnRealData{\sW_1}{\sV'\oplus\sW_1}{\omega}{\omega\omega'}{F'\boxtimes F}{\tbinom{\sx}{0}}{(\sg,\mathsf{u}\oplus\mathsf{l})}(\fv'\boxtimes\fv)\\
+=\thetaOnRealData{\sW_1}{\sV'}{\omega}{\omega'}{F'}{\sx}{(\sg,\mathsf{u})}(\fv')\cdot
+\theta_{\sW_1,\sW_1}(\omega,\omega;\fv\otimes F)(\sg,\mathsf{l}).
+\end{multline*}
+\end{lemma}
+\begin{proof}
+The model of the pair $(\sW_1,\sV'\oplus\sW_1)$ is the tensor product of the models of $(\sW_1,\sV')$ and
+$(\sW_1,\sW_1)$; the Weil representation of a block-diagonal point, the Heisenberg operator of a vector in the
+first summand and the theta functional are compatible with this product. Unfolding the definitions gives the
+identity.
+\end{proof}
+\leanline{\lean{thetaOnRealDataboxProdeqmul}}
+
+\begin{proposition}[the equal-rank theta integral is constant]\label{p:const}
+Let $E$ be a CM field with a CM type and Weil data, $\sX$ and $\sW$ hermitian spaces with index sets $\bm$ and
+$\ba$, $\fS_1$ a base-adapted splitting of $\sX$ over $\sW$ along one line, and $\fc$ a split tame character.
+Suppose that $|\bm|$ is even, and let $\fv$ be a rapid real datum for $(\sX,\sX)$. Then for every point $\sg$ of
+$\U(\sX)(\A)$
+\[\thL{\sX}{\sX}{\fc}{\fv}{\stc{\chi_{\fc}}{1}}(\sg)=\thL{\sX}{\sX}{\fc}{\fv}{\stc{\chi_{\fc}}{1}}(1).\]
+\end{proposition}
+\begin{proof}
+Apply Proposition~\ref{p:lift} to $(\sX,\sX)$ and the zero space, with constant $0$: the partners of the empty
+frame are $\stc{\chi_{\fc}}{1}$ on both sides, so the function in question is $\cD(\stc{\chi_{\fc}}{1})$ for an
+equivariant lift. It is therefore automorphic, has level supported at $\Sigma(\fc)$ and is invariant under $\mathcal{K}_f$
+off $\Sigma(\fc)$. By the tower property (Input~5) its constant term along the isotropic line of
+$\fS_1$ is a theta integral of the smaller pair, so that on the Levi subgroup it depends only on the component in
+$\U(\sW)$. The constancy criterion from strong approximation (Input~5) applies.
+\end{proof}
+\leanline{\lean{thetaLargeeqapplyoneofevenrank}}
+
+\begin{definition}[the equal-rank ratio; the standard exchange identity]\label{d:exch}
+Let $E$ be a CM field with a CM type and Weil data.
+
+\textup{(a)} For a hermitian space $\sV$ with index set $\ba$, a split tame character $\fc$ and a real datum $\fv$
+for $(\sV,\sV)$,
+\[\equalRankThetaRatio{\sV}{\fc}{\fv}=\frac{\bigl|\thL{\sV}{\sV}{\fc}{\fv}{\stc{\chi_{\fc}}{1}}(1)\bigr|^2}{\LP{\fc}{\lfloor|\ba|/2\rfloor}} .\]
+
+\textup{(b)} Let $\sX$, $\sV$, $\sV'$ be hermitian spaces with index sets $\bm$, $\bn$, $\bb$, let $\mu$ be
+weights, $\se\colon\bb\sqcup\bn\simeq\bm$ an identification, $\fv$ and $\mathfrak{y}$ real data for $(\sX,\sV)$ and
+$(\sX,\sV')$, and $\cN$ a real function on the split tame characters of weight $\mu$. The statement
+\[\StdExchange{\sX}{\sV}{\sV'}{\mu}{\se}{\fv}{\mathfrak{y}}{\cN}\]
+holds if $\fv$ and $\mathfrak{y}$ are rapid and there is a real number $\rC$ such that every split tame character
+$\fc$ of weight $\mu$ has a complex number $\rc$ with
+$\rC\,|\rc|^2=\LP{\fc}{|\bn|-\lfloor|\bm|/2\rfloor}\cdot\cN(\fc)$ and
+\[\thL{\sX}{\sV}{\fc}{\fv}{\str{\se}{\chi_{\fc}}{\sz}}=\rc\cdot\thetaSmall{\sX}{\sV'}{\fc}{\mathfrak{y}}{\stc{\chi_{\fc}}{\sz}}
+\qquad\text{for every integral }\sz\in\Mat{\bb}{\bm}(\sF_{\fc}).\]
+\end{definition}
+\leanline{\lean{equalRankThetaRatio}\sep \lean{StdExchange}}
+
+\sect{The real pair, and the proofs of Theorems 3 and 1}{s:real}
+\begin{proof}[Proof of Theorem 3]
+Both data are rapid by assumption. \emph{The constant.} The inclusion of $\U(\sV')\times\U(\sW_1)$ in
+$\U(\sV'\oplus\sW_1)$ is a closed embedding. Unfolding in stages (Input~5), with the weight that is
+$\Omega$ at the infinite places on the points whose finite part lies in $\mathcal{K}_f$ up to a block
+element, and $0$ on the other points, gives a number $\mathrm{R}\ne0$. Let $\mathsf{a}=\det(\varsigma_E\,\mathrm{x}_{\sV'})$,
+an idele, and
+$\mathrm{k}=\operatorname{vac}_{\fS}(\sV'\oplus\sW_1)\,\operatorname{vac}_{\fS}(\sV')^{-1}\,|\mathsf{a}|^{|\bn|/2}$.
+Take $\rC=|\mathrm{R}\,\mathrm{k}|^{-2}$. Fix a split tame character $\fc$ of weight $\mu$, and let $\fA$ be the
+frame of $\fS$ adapted to the places of $\fc$. By Lemma~\ref{l:rowstd} there is $\rc_1$ with $|\rc_1|=1$ and
+$\str{\se'}{\chi_{\fc}}{\fA_3'}=\mathrm{st}_{\fA}(\sy\mapsto\rc_1\inu{\chi_{\fc}}(\det\sy))$. Let $(\cM,\cD)$ be the
+equivariant lift of Proposition~\ref{p:lift} for $\sX$, $\sV'\oplus\sW_1$, $\sV'$, the data $\fv$, $\fv'$ and the
+constant
+\[\rc=\mathrm{R}\,\mathrm{k}\,\rc_1\,\omega^{\mathrm{bc}}_{\fc}(\mathsf{a})\,\mathrm{l}(\fc).\]
+Then $\rC|\rc|^2=|\mathrm{l}(\fc)|^2$, and this is $\LP{\fc}{|\bb|+|\bn|-|\bm|/2}$ times
+$|\mathrm{l}(\fc)|^2/\LP{\fc}{|\bn|/2}$ because $|\bm|=|\bn|+2|\bb|$ and the products of $L$-values are positive.
+For an integral $\sz$ the row and column data of $\sz$ are partners, so the asserted identity is
+$\cD(\stc{\chi_{\fc}}{\sz})=0$. By Theorem~2 it suffices that $\dS_0=\stc{\chi_{\fc}}{\fA_3'}$ lies in $\cM$, which
+holds because it is the partner of a row datum, and that the centre coefficients of
+$\cD(\dS_0)$, the integral on the large side of the partner of $\dS_0$ minus $\rc$ times the integral on the small side of $\dS_0$, vanish in
+the two cases of Theorem~2.
+
+\emph{Case \textup{(i)}: the index $\mathrm{J}_{\sV'}$.} By Proposition~\ref{p:terms} the theta terms of both
+pairs are integrable and explicit. The coefficient of the large integral is the integral over the quotient by the
+stabilizer of the rational frame $\binom{1}{0}$ of $\sV'$ in $\sV'\oplus\sW_1$, which is $\U(\sW_1)$; that of the
+small integral is the integral of the theta term at $1$ over $\U(\sV')(\A)$, the stabilizer being trivial
+(Input~3). By unfolding in stages the first is $\mathrm{R}$ times the number $\rc'$ for which the inner integral
+over $[\U(\sW_1)]$ of the large theta term at a point $\sh$ is $\Omega(\sh)\,\rc'$ times the small theta
+term. If the finite part of the point lies in $\mathcal{K}_f$ up to a block element, insert the explicit terms of
+Proposition~\ref{p:terms}\,(2): for the large pair with the constant $\rc_1$ and the matrix $1$, for the small one
+with the frame $\binom10$; the standard row datum is fixed by the integral point, the named vector of the large
+pair is the product of the vector named by the indicator of the integral matrices and of $F_{\fc}$, and the
+period condition, used with $B=\sy^{-1}Y$, evaluates the integral over $[\U(\sW_1)]$. The characters are collected
+as follows: $\omega(\det B)$ splits into its infinite and finite parts; the quotient of the values of
+$\inu{\chi_{\fc}}$ at $\det\sx$ and at its conjugate is the value of $\omega_{\fc}$ at the finite part (unit 38);
+$|\det\sy|=1$ for unitary $\sy$. The result is $\rc'=\mathrm{k}\,\rc_1\,\omega^{\mathrm{bc}}_{\fc}(\mathsf{a})\,\mathrm{l}(\fc)$.
+If the finite part does not lie in $\mathcal{K}_f$ up to a block element, the large theta term vanishes: were the
+finite matrix integral, Witt's theorem over $\hat{\mathcal{O}}_E$ (Input~2) would produce such a block element. So
+the coefficient of $\cD(\dS_0)$ is $\mathrm{R}\rc'-\rc=0$ times the small coefficient.
+
+\emph{Case \textup{(ii)}: $T$ invertible and not represented by the signs of $\sV'$.} The small coefficient
+vanishes by Proposition~\ref{p:terms}\,(3), the slices of the pair $(\sX,\sV')$ having Gram matrices represented
+by the signs of $\sV'$. The large one vanishes by Proposition~\ref{p:terms}\,(3) under the first alternative of
+the support or sign condition, and by Proposition~\ref{p:nonneg} under the second: $\sV'$ is negative definite,
+$\sW_1$ has a positive sign, and the bound on the weights follows from $2\negc(\sW_1)\le|\bn|$ and the positivity
+of the weights of $\fc$.
+\end{proof}
+
+\begin{lemma}[a datum with prescribed slices]\label{l:slice}
+Let $E$ be a CM field with a CM type and Weil data; let $\sX$, $\sW_1$, $\sV'$ be hermitian spaces with index sets
+$\bm$, $\bn$, $\ba$, and $\fS$ a base-adapted splitting of $\sX$ over $\sW_1$ along $\bb$. Let $\Omega_0$ be a real
+function on the space of real coordinates of the slices that is smooth, has compact support, is non-negative and
+is non-zero at a point $\sy$, and let $\fv$ be a rapid real datum for $(\sW_1,\sV')$. Then there are a complex
+number $\mathrm{k}$ and a rapid real datum $\fx'$ for $(\sX,\sV')$ such that the slice of $\fx'$ at $0$ for the
+splitting opposite to $\fS$ is $\fv$, and the slice of $\fx'$ at every $\sx$, in the mixed model of $\fS$, is
+$\Omega_0(\sx)\,\mathrm{k}\cdot\omega_\infty(1)\fv$.
+\end{lemma}
+\begin{proof}
+The integral of $\Omega_0$ is positive; let $\mathrm{k}$ be its inverse. By the existence of sections in the mixed
+model (Input~3: a smooth compactly supported coefficient times a fixed rapid vector) there is a rapid $\fx'$ with
+the prescribed slices. The slice at $0$ for the opposite splitting is the integral over $\sx$ of the slices
+(Input~3), which is $\bigl(\int\Omega_0\bigr)\mathrm{k}\,\fv=\fv$; two real data are equal when the integrated data
+built from their zero terms agree.
+\end{proof}
+\leanline{\lean{existsrapidwithrealSlice}}
+
+\begin{lemma}[Witt's theorem, smooth local form]\label{l:witt}
+Let $\bb$, $\bm$ be finite index sets, $\mathrm{J}$ a complex $\bm\times\bm$ matrix with $\mathrm{J}^{*}=\mathrm{J}$,
+and $\sx$ a complex $\bm\times\bb$ matrix with $\det(\sx^{*}\mathrm{J}\sx)\ne0$. There is a map $\sk$ from the
+$\bm\times\bb$ matrices to the unitary group of $\mathrm{J}$ such that $\sy\mapsto\sk(\sy)$ is smooth as a map of
+real vector spaces and, for every $\sy$ in a neighbourhood of $\sx$, $\sk(\sy)\,\sx\,\mathsf{c}=\sy$ for some
+$\bb\times\bb$ matrix $\mathsf{c}$.
+\end{lemma}
+\begin{proof}
+Put $\mathsf{w}=(\sx^{*}\mathrm{J}\sx)^{-1}\sx^{*}$ and, for an $\bm\times\bm$ matrix $\sg$,
+$\mathsf{S}_0(\sg)=(\sg\sx\mathsf{w}-\sx\mathsf{w}\sg^{*})\mathrm{J}$, which is skew for $\mathrm{J}$, so that
+$\exp\mathsf{S}_0(\sg)$ is unitary. The map $\sg\mapsto\exp(\mathsf{S}_0(\sg))(\sg-\mathsf{S}_0(\sg))$ has derivative the identity at
+$\sg=1$, so it has a smooth local inverse $\mathsf{A}$ near $1$ (and a smooth function defined everywhere agrees
+with it near $1$, unit 112). With $\mathsf{p}(\sy)=1-(\sx-\sy)\mathsf{w}\mathrm{J}$ one has
+$\mathsf{p}(\sy)\sx=\sy$ and $\mathsf{p}(\sx)=1$; put $\sk(\sy)=\exp\mathsf{S}_0(\mathsf{A}(\mathsf{p}(\sy)))$. Near $\sx$,
+$\sk(\sy)\bigl(\mathsf{A}\mathsf{p}(\sy)-\mathsf{S}_0(\mathsf{A}\mathsf{p}(\sy))\bigr)\sx=\mathsf{p}(\sy)\sx=\sy$, and
+$\bigl(\sg-\mathsf{S}_0(\sg)\bigr)\sx$ lies in the column space of $\sx$, since $\sg\sx\mathsf{w}\mathrm{J}\sx=\sg\sx$.
+\end{proof}
+\leanline{\lean{existscontDiffwitt}}
+
+\begin{proof}[Proof of Theorem 1]
+Let $\mathrm{J}$ be the diagonal form of $\sV'\oplus\sW_1$ at a real place and $\sx_0=\binom10$ the frame of
+$\sV'$, so that $\sx_0^{*}\mathrm{J}\sx_0$ is the diagonal form of $\sV'$. Lemma~\ref{l:witt} gives a smooth
+$\sk$ with $\sk(\sy)\sx_0\mathsf{c}=\sy$ near $\sx_0$. Choose a smooth bump $\Omega_1\ge0$ at $\sx_0$ (in the
+coordinates at every infinite place) with compact support in the neighbourhood where this holds and where the
+Gram matrix $\sx^{*}\mathrm{J}\sx$ is invertible, and put
+$\mathsf{f}_0(\sx)=\sx\,(\sx^{*}\mathrm{J}\sx)^{-1}(\sx^{*}\mathrm{J}\sx_0)$, so $\mathsf{f}_0(\sx_0)=\sx_0$. Where
+$\Omega_1(\mathsf{f}_0(\sx))\ne0$ one has $\sx=\sk(\mathsf{f}_0(\sx))\,\sx_0\,\mathsf{c}$ with
+$\mathsf{c}^{*}\operatorname{diag}(\sV')\mathsf{c}=\sx^{*}\mathrm{J}\sx$.
+
+\emph{The small datum.} Lemma~\ref{l:slice}, with the weight
+$\sx\mapsto\Omega_1(\sx_0\sx)\,\bigl|\prod_\tau\det(\sx_\tau)^{|\bn|/2+\mu(\tau)}\bigr|^2$ (smooth, non-negative,
+compactly supported, non-zero at $1$), gives $\mathrm{k}$ and a rapid $\fx'$ whose slice at $0$ for the opposite
+splitting is $\fv$.
+
+\emph{The large datum.} Let $\fx$ be a rapid real datum for $(\sX,\sV'\oplus\sW_1)$ whose slice at $\sx$ is,
+with $\sy=\mathsf{f}_0(\sx)$,
+\[\Omega_1(\sy)\,\Omega_1\bigl(\sk(\sy)^{-1}\sx\bigr)\,\prod_\tau\overline{\det\bigl((\sk(\sy)^{-1}\sx)_{\tau,1}\bigr)}^{\,2\mu(\tau)}\,\mathrm{k}\cdot
+\omega_\infty\bigl(1,\sk(\sy)\bigr)(\fv\boxtimes\fv_1),\]
+where $(\,\cdot\,)_{\tau,1}$ is the first block at $\tau$ and $\omega_\infty$ the real Weil representation of weights
+$|\bn|/2-\mu$. It exists by the existence of sections (Input~3): the coefficient is smooth because $\sk$ is, it
+has compact support because its support lies in the image of a product of two compact sets, and the weighted
+norms of the vector field are bounded by those of the vacuum, of $\fv_1$ and of $\fv$.
+
+\emph{The period condition.} Apply Theorem~3 to $\fx$, $\fx'$, the weight
+$\Omega(\sh)=\Omega_1(\mathsf{f}_0(\sh^{-1}\sx_0))$, which is non-negative and non-zero near $1$, and
+$\mathrm{l}(\fc)=\thL{\sW_1}{\sW_1}{\fc}{\fv_1}{\stc{\chi_{\fc}}{1}}(1)$. The support condition holds in its first
+form by the relation $\mathsf{c}^{*}\operatorname{diag}(\sV')\mathsf{c}=\sx^{*}\mathrm{J}\sx$. For the period
+condition let $\sy=\mathsf{f}_0(\sh^{-1}\sx_0)$. If $\Omega_1(\sy)=0$ both sides vanish. Otherwise there are
+$\mathsf{c}_\tau$ preserving the form of $\sV'$ with $\sk(\sy_\tau)\sx_0\mathsf{c}_\tau=(\sh^{-1}\sx_0)_\tau$, hence
+elements $\mathsf{u}_\tau$ of the real unitary group of $\sV'$; then $\sh_\tau\sk(\sy_\tau)(\mathsf{u}_\tau\oplus1)$
+fixes $\sx_0$, so it is $1\oplus\mathsf{q}_\tau$ with $\mathsf{q}_\tau$ in the real unitary group of $\sW_1$. Use
+the point $\mathsf{p}=(\mathsf{u},\mathsf{q}^{-1})$. At the slice argument $\sx=\sh^{-1}\sx_0\mathsf{u}^{-1}B$ one
+checks $\mathsf{f}_0(\sx)=\sy$, so the slices of $\fx$ and $\fx'$ are those written above. The Weil representation
+of the point on $\fv\boxtimes\fv_1$ factors by Lemma~\ref{l:box}; the theta kernel of $(\sW_1,\sW_1)$ with
+$\fv_1$, integrated over $[\U(\sW_1)]$, is the theta integral on the large side, which is constant
+(Proposition~\ref{p:const}, by $\fS_1$ and $|\bn|$ even) and so equals $\mathrm{l}(\fc)$; the character of $\fc$
+at the infinite places is read from its weights (unit 96), which produces $\omega^{\mathrm{bc}}_{\fc}(\det_\infty B)$ and the
+power of $|\det_\infty B|$. Clearing denominators gives the period condition. So Theorem~3 yields the standard
+exchange identity with the function $\fc\mapsto|\mathrm{l}(\fc)|^2/\LP{\fc}{|\bn|/2}$, which is
+$\equalRankThetaRatio{\sW_1}{\fc}{\fv_1}$ by Definition~\ref{d:exch}.
+\end{proof}
+
+\sect{Determinant vectors and the cone integral}{s:det}
+The tower property (Input~5) produces a \emph{cone integral} of the real datum. One floor down in the tower, the
+second note needs to know that the real data of a special shape are reproduced by it.
+
+\begin{definition}[determinant vectors]\label{d:detvec}
+Let $E$ be a CM field with a CM type and Weil data, $\sW$ and $\sV$ hermitian spaces with index sets $\bn$ and
+$\br$ and signs $\operatorname{sgn}_{\sW}$ and $\operatorname{sgn}_{\sV}$. Let $F$ be an adelic $\bn\times\br$
+matrix and $\mathsf{u}$ a point of the real coordinate space of the Fock model of the pair $(\sW,\sV)$
+(coordinates indexed by an infinite place and a pair of indices).
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=1pt]
+\item $\posCoordMatrix{\operatorname{sgn}_{\sW}}{\operatorname{sgn}_{\sV}}{F}{\mathsf{u}}$ is the family, over the
+infinite places, of the square matrices $\mathsf{u}^{+}F$, where $\mathsf{u}^{+}$ is the matrix of the coordinates
+of the projection of $\mathsf{u}$ to the coordinates that join basis vectors of equal sign.
+\item For a natural number $e$, natural numbers $\mu(\tau)$ at the infinite places and $\rc\in\CC$,
+\[\detVectorFn{\operatorname{sgn}_{\sW}}{\operatorname{sgn}_{\sV}}{e}{\mu}{\rc}{F}{\mathsf{u}}
+=\rc\cdot\operatorname{vac}(\mathsf{u})\cdot\overline{\prod_\tau\det\nolimits_{+}(\mathsf{M}_\tau)^{\mu(\tau)}\,\det\nolimits_{-}(\mathsf{M}_\tau)^{\mu(\tau)+2e}},\]
+where $\mathsf{M}=\posCoordMatrix{\operatorname{sgn}_{\sW}}{\operatorname{sgn}_{\sV}}{F}{\mathsf{u}}$, $\det_{\pm}$ are the
+principal minors on the indices of $\br$ of sign $\pm1$, and $\operatorname{vac}$ is the Gaussian, the vacuum
+vector.
+\item $\detVectors{e}{\mu}$ is the set of the vectors of the Fock model of $(\sW,\sV)$ that are rapid and equal to
+$\mathsf{u}\mapsto\detVectorFn{\operatorname{sgn}_{\sW}}{\operatorname{sgn}_{\sV}}{e}{\mu}{\rc}{F}{\mathsf{u}}$ for
+some $\rc$ and $F$. The pair $(\sW,\sV)$ is an implicit argument; we name it when needed.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{posCoordMatrix}\sep \lean{detVectorFn}\sep \lean{detVectors}}
+
+\begin{lemma}[the real frame of an adapted splitting]\label{l:frame}
+\textup{(a)} Let $E$ be a CM field with a CM type, $\sW$ and $\sW'$ hermitian spaces with index sets $\bn$ and
+$\bn'$, and $\fS$ a splitting of $\sW$ over $\sW'$ along $\br$ that is adapted at the point $1$ with signs
+$\mathsf{t}$. For every infinite place $\tau$ the real frame matrix $\mathsf{P}$ of $\fS$ at $\tau$ is unitary, and
+$\operatorname{diag}(\sW)\,\mathsf{P}=\mathsf{P}\,\mathsf{B}$, where $\mathsf{B}$ has the block
+$\bigl(\begin{smallmatrix}0&1\\1&0\end{smallmatrix}\bigr)$ on $\br\sqcup\br$ and the diagonal form of $\sW'$ on
+$\bn'$.
+
+\textup{(b)} For a finite index set $\bn$ with signs, the projection onto the coordinates of positive sign is
+$\frac12(1+\operatorname{diag})$ of the signs.
+\end{lemma}
+\begin{proof}
+(a) Adaptedness gives $\mathsf{P}^{*}\mathsf{P}=1$, and $\mathsf{P}$ is square, so $\mathsf{P}\mathsf{P}^{*}=1$.
+The Gram matrix of the frame of a splitting is $\mathsf{B}$ (unit 38), that is,
+$\mathsf{P}^{*}\operatorname{diag}(\sW)\mathsf{P}=\mathsf{B}$; multiply by $\mathsf{P}$. (b) By definition.
+\end{proof}
+\leanline{\lean{frameAtrealunitary}\sep \lean{posProjeq}}
+
+\begin{lemma}[slices of polynomial vectors]\label{l:posslice}
+Let $E$ be a CM field with a CM type and Weil data, $\sW$ and $\sW'$ hermitian spaces with index sets $\bn$ and
+$\bn'$, and $\fS$ a splitting of $\sW$ over $\sW'$ along $\br$ that is adapted at $1$ with signs $\mathsf{t}$; let
+$\mathsf{L}$, $\mathsf{I}$, $\mathsf{K}$ be the blocks of its mixed model and $\mathrm{P}_{+}$ the projections to
+the positive coordinates. For all coordinate vectors $\mathsf{a}$ and $\mathsf{u}$ there is $\mathsf{U}$ with
+$\mathrm{P}_{+}\mathsf{U}=\mathsf{L}(-\mathsf{a})+\mathsf{I}\,\mathrm{P}_{+}\mathsf{u}+\mathsf{K}(-\mathsf{a})$
+such that, for every polynomial in the positive coordinates, with Fock vector $\fv$: the slice of $\fv$ at
+$\mathsf{a}$, evaluated at $\mathsf{u}$, is $\fv(\mathsf{U})$.
+\end{lemma}
+\begin{proof}
+Put $\mathsf{J}_0(\mathsf{a},\mathsf{z},\mathsf{b})=\mathsf{L}\mathsf{a}+\mathsf{I}\mathsf{z}+\mathsf{K}\mathsf{b}$ and
+$\mathsf{U}=\mathsf{J}_0(-\mathsf{a},\mathsf{u},-\mathsf{a})$. Lemma~\ref{l:frame} gives
+$\mathrm{P}_{+}\mathsf{J}_0(\mathsf{a},\mathsf{z},\mathsf{b})=\mathsf{J}_0(\tfrac12(\mathsf{a}+\mathsf{b}),\mathrm{P}_{+}\mathsf{z},\tfrac12(\mathsf{a}+\mathsf{b}))$
+and $\langle\mathsf{J}_0(\mathsf{a},\mathsf{u},\mathsf{a}),\mathsf{J}_0(\mathsf{c},\mathsf{z},\mathsf{c})\rangle=2\langle\mathsf{a},\mathsf{c}\rangle+\langle\mathsf{u},\mathsf{z}\rangle$,
+the real frame matrix being orthonormal. Both sides of the asserted identity are continuous and linear in the
+polynomial vector, so it suffices to compare them on the Heisenberg translates of the vacuum (unit 37), where the
+slice is explicit and both sides are the same Gaussian exponential by the two formulas.
+\end{proof}
+\leanline{\lean{existssliceeq}}
+
+\begin{proposition}[the cone integral is onto the determinant vectors]\label{p:cone}
+Let $E$ be a CM field with a CM type and Weil data; let $\sW$, $\sW'$, $\sV$, $\sV'$ be hermitian spaces with
+index sets $\bn$, $\bn'$, $\br$, $\br'$; let $\fA$ be a base-adapted splitting of $\sW'$ over $\sW$ along one line
+and $\fS$ a base-adapted splitting of $\sV'$ over $\sV$ along one line. Let $e$ be a natural number, $\mu(\tau)$
+natural numbers at the infinite places, $\mathrm{b}$ a parameter of the cone integral and $\mathrm{z}$ a real
+number with $1\le\mathrm{z}$, and suppose $|\bn'|=2(e+\negc(\sW'))$. Then the cone integral with weights $e+\mu$,
+\[\fv'\longmapsto\iint\operatorname{cone}_{\fA,\fS}(e+\mu,\mathrm{b},\mathrm{z};\fv',\mathsf{p})\,d\mathsf{p}\]
+(the integral of the cone integrand of the tower property for the product of two Haar measures) has this
+property: every element of the set $\detVectors{e}{\mu}$ of the pair $(\sW,\sV)$ is the cone integral of an element
+of the set $\detVectors{e}{\mu}$ of the pair $(\sW',\sV')$. (Nothing is said about the cone integrals of the other
+determinant vectors of the larger pair.)
+\end{proposition}
+\begin{proof}
+Let $\fv=\detVectorFn{\operatorname{sgn}_{\sW}}{\operatorname{sgn}_{\sV}}{e}{\mu}{\rc}{F}{\,\cdot\,}$ be a
+determinant vector. The line-term expansion of the cone integral (unit 43) provides a splitting, adapted at $1$,
+whose mixed terms are the line terms, and its frame in terms of the blocks of $\fA$ and $\fS$. Let $G$ be the
+adelic $\bn'\times\br'$ matrix that is $F$ on the smaller spaces plus a multiple of the hyperbolic part, and for
+$\rc'\in\CC$ let $\mathrm{R}(\rc')$ be the Fock vector of the polynomial
+$\rc'\prod_\tau \Delta_{\tau,+}^{\mu(\tau)}\Delta_{\tau,-}^{\mu(\tau)+2e}$, where $\Delta_{\tau,\pm}$ are determinants of matrices of
+linear forms with coefficients from $G$. The real Weil representation of a block-diagonal point acts on a
+polynomial vector by powers of principal minors and a linear substitution (unit 43); with the exponents fixed by
+$|\bn'|=2(e+\negc(\sW'))$ the minors cancel, and
+$\mathrm{R}(\rc')=\detVectorFn{\operatorname{sgn}_{\sW'}}{\operatorname{sgn}_{\sV'}}{e}{\mu}{\rc'}{G}{\,\cdot\,}$;
+it is rapid, being a polynomial vector. By Lemma~\ref{l:posslice} the slice of a polynomial vector is its value at
+an explicit point, and by Lemma~\ref{l:frame} the matrix
+$\posCoordMatrix{\operatorname{sgn}_{\sW'}}{\operatorname{sgn}_{\sV'}}{G}{\,\cdot\,}$ at that point is conjugate,
+by the unitary frame matrix, to the block sum of the Levi coordinate $\mathsf{q}_\tau$ on the hyperbolic plane and of
+$\posCoordMatrix{\operatorname{sgn}_{\sW}}{\operatorname{sgn}_{\sV}}{F}{\mathsf{u}}$; so each of its principal
+minors is $\mathsf{q}_\tau$ times the corresponding minor of the smaller matrix. Therefore the cone integrand of
+$\mathrm{R}(\rc')$ at a point $\mathsf{p}$ is $\exp(\mathrm{E}_0(\mathsf{p}))\,\rc'\rc^{-1}\fv$ with the real function
+$\mathrm{E}_0(\mathsf{p})=-\sum_\tau|\mathsf{q}_\tau|^2+\log\bigl(|\mathsf{q}|^{\mathrm{z}}\prod_\tau|\mathsf{q}_\tau|^{2(e+\mu(\tau))}\bigr)$. For
+$\fv\ne0$ the function $\exp\mathrm{E}_0$ is integrable with positive integral, and
+$\rc'=\rc\,(\int\exp\mathrm{E}_0)^{-1}$ gives a determinant vector with cone integral $\fv$; for $\fv=0$ take $0$.
+\end{proof}
+\leanline{\lean{surjOnconeintegraldetVectors}}
+
+\sect{Two norm formulas}{s:norms}
+\begin{setting}[auxiliary pairs and $L$-value data]\label{set:aux}
+The following objects are those of units 134, 138, 140 and 141 and of the second note of this unit; we recall
+what the statements need.
+
+\textup{(a)} $E$ is a CM field with a CM type and Weil data, $\br$ and $\bn$ are finite index sets. An
+\kw{auxiliary pair} $\fa$ for $E$, $\br$, $\bn$ consists of two families of finite places (the chosen places and
+the twist places), a hermitian space $\sW(\fa)$ with index set $\br$, an embedding of $\br$ into $\bn$ with
+$|\br|<|\bn|$, a weight $\operatorname{wt}(\fa)$ of forms on $\sI_{\bn}$ and a character. It determines: the characters and
+the theta kernel of the pair $(\sW(\fa),\sI_{\bn})$; a finite datum $\Upsilon(\fa)$ and, for the highest weight
+vector of $\operatorname{wt}(\fa)$, a real datum $\fv(\fa)$; the space $\mathcal{A}(\fa)$ of algebraic forms on $\sI_{\bn}$ of
+the level, character and weight of $\fa$, with its inner product $\langle\ ,\ \rangle$; the class-sum lift
+$\theta_{\fa}$ from $\mathcal{A}(\fa)$ to forms on $\sW(\fa)$; the residue ring $\sR(\fa)$ of the product of all
+places of $\fa$; the level indicator $\mathbb{1}_{\fa}$, a function on $\Mat{\bn}{\br}(\sR(\fa))$; the number
+$\mathrm{t}(\fa)$, the product over the twist places of the orders of $\GL_{\br}$ of the residue fields; the level
+group of $\fa$ and its index $\mathrm{i}(\fa)$ in the stabilizer of the integral lattice; and the action of the
+product of the groups $\GL_{\br}$ of the residue fields of the chosen places on $\mathcal{A}(\fa)$. A parameter
+on $\sW(\fa)$ may \kw{fit} $\fa$. A form $F\in\mathcal{A}(\fa)$ \kw{lifts} a family $\mathsf{p}$ of complex
+numbers $\mathsf{p}(\fp,i)$ if at every finite place $\fp\ne\bar{\fp}$ off the places of $\fa$ and their conjugates
+it is spherical with the Hecke polynomial that Hecke transfer (Input~7) attaches to the polynomial of
+$\mathsf{p}$ at $\fp$.
+
+\textup{(b)} $P$ are parameters, $D$ admissible data, $\vartheta$ a tame character of $D$ and $j$ a lift index,
+$1\le j\le m$. Then $\sW_j(D)$ is the $j$-th space of the tower of the rows, $\fa_D(\vartheta,j)$ the $j$-th
+auxiliary pair, the \kw{forms of principal level} on a space are those of the parameter of the rows fixed by the
+principal level at the chosen places, and the \kw{adjoint lift} $\theta^{*}_{D,\vartheta,j}$ is the adjoint of
+$\theta_{\fa_D(\vartheta,j)}$, a linear map from the forms of principal level on $\sW_j(D)$ to
+$\mathcal{A}(\fa_D(\vartheta,j))$. The \kw{eigenpart} of a space for a family $\mathsf{p}$ consists of the forms
+of principal level on which each Hecke operator acts by the value of $\mathsf{p}$. $\Theta^{\circ}_{D,\vartheta}$
+is the chain of the $m$ lifts as a map on all forms of principal level on the first space $\sY_0(D)$ of the
+chain.
+
+\textup{(c)} \kw{$L$-value data} $\fl$ for $E$ and $\bn$ consist of chosen places $\fp_i$ and twist places
+$\mathfrak{q}_i$, jet degrees at the infinite places, and a character $\omega_{\fl}$ of the corresponding weight,
+unramified off the places, with $|\bn|>1$. They determine an auxiliary pair $\fa(\fl)$ for the one-point index
+set and $\bn$, with $\sW(\fa(\fl))=\sI_1$, and the lift $\Xi(\fl)\in\mathcal{A}(\fa(\fl))$ of the trivial character,
+a class sum of kernel forms. $\operatorname{hook}(\fl)$ is the hook number of the weight of $\fa(\fl)$ in rank
+$|\bn|$, $\operatorname{weyl}(\fl)$ the number of elements of its Weyl index set, and $\operatorname{sg}(\fp)\in\{\pm1\}$ the sign
+that is $-1$ for one place of each pair of conjugate split places and $1$ otherwise.
+\end{setting}
+
+\begin{lemma}[the adjoint of the class-sum lift is a theta lift]\label{l:adjoint}
+In Setting~\ref{set:aux}\,(a), let $\fa$ be an auxiliary pair for $E$, $\br$, $\bn$ with $\br$ non-empty, $l$ a
+parameter on $\sW(\fa)$ that fits $\fa$, $y$ a form on $\sW(\fa)$ of the type of $l$, and $F\in\mathcal{A}(\fa)$
+such that $\langle F,\Xi\rangle=\pet{y}{\theta_{\fa}(\Xi)}$ for every $\Xi\in\mathcal{A}(\fa)$. Then $F$ is the
+algebraic form of the theta lift of $y$ to $\sI_{\bn}$ with the datum $\fv(\fa)\otimes\Upsilon(\fa)$.
+\end{lemma}
+\begin{proof}
+Since $l$ fits $\fa$, the real datum is an edge, so with $\Upsilon(\fa)$ it gives an arrow from the type of $l$
+to the type on $\sI_{\bn}$ and, for the swapped pair, an arrow back (unit 134, Input~7). The algebraic form of the
+lift of $y$ lies in $\mathcal{A}(\fa)$. For every $\Xi$, $\theta_{\fa}(\Xi)$ is a fixed multiple of the conjugate
+of the descent of $\bar\Xi$, and the adjoint of the lift along an arrow is the conjugate of the descent; so the
+algebraic form of the lift has the same inner products with every $\Xi$ as $F$.
+\end{proof}
+\leanline{\lean{adjointthetaeqformLift}}
+
+\begin{lemma}[the datum of the level indicator]\label{l:moddatum}
+In Setting~\ref{set:aux}\,(a), let $\fa$ be an auxiliary pair, $\fv$ a real datum, and $y$ a function on
+$\U(\sW(\fa))(\A)$ that is automorphic and rapidly decreasing and is fixed by the principal level at the chosen
+places. Then the theta lift of $y$ with the datum $\fv\otimes\Upsilon(\fa)$ equals its theta lift with the datum
+whose real part is $\fv$ and whose finite part is the function $\mathrm{t}(\fa)\cdot\mathbb{1}_{\fa}$ modulo the
+places of $\fa$.
+\end{lemma}
+\begin{proof}
+$\Upsilon(\fa)$ is the sum, over the elements $\mathsf{A}$ of the product of the groups $\GL_{\br}$ of the
+residue fields at the twist places, of the translates of the datum of $\mathbb{1}_{\fa}$ by lifts of
+$\mathsf{A}^{-1}$ that reduce to $1$ at the chosen places (unit 134). Each such lift lies in the principal level
+at the chosen places and fixes $y$; by the equivariance of the theta lift each summand gives the same lift.
+\end{proof}
+\leanline{\lean{liftauxDatumeqliftmodDatum}}
+
+\begin{lemma}[the level indicator]\label{l:indicator}
+Let $E$ be a CM field with a CM type, $\br$ and $\bn$ finite index sets and $\fa$ an auxiliary pair for them. Put
+$G=\mathrm{t}(\fa)\cdot\mathbb{1}_{\fa}$. Then the rows of every $\sy$ with $G(\sy)\ne0$ that are indexed by the
+image of $\br$ form the identity matrix, and
+\[\sum_{\sy}|G(\sy)|^2=\mathrm{t}(\fa)^2\cdot\Bigl(\prod_i\Np\mathfrak{q}_i\Bigr)^{(|\bn|-|\br|)\,|\br|},\]
+the product over the twist places $\mathfrak{q}_i$ of $\fa$.
+\end{lemma}
+\begin{proof}
+A matrix over $\sR(\fa)$ is the family of its reductions at the places of $\fa$, and this is a bijection
+(unit 104). In these terms $\mathbb{1}_{\fa}$ is the indicator of a product of sets, which are counted place by
+place.
+\end{proof}
+\leanline{\lean{levelIndicatorsupportandnormSq}}
+
+\begin{definition}[the Gram factor and the terms of the inner product]\label{d:gram}
+\textup{(a)} In Setting~\ref{set:aux}\,(a), for an auxiliary pair $\fa$,
+\[\gramFactor{\fa}=\frac{\mathrm{i}(\fa)\cdot\mathrm{t}(\fa)^2\cdot\bigl(\prod_i\Np\mathfrak{q}_i\bigr)^{(|\bn|-|\br|)\,|\br|}}{\#\GL_{\br}(\sR(\fa))} .\]
+
+\textup{(b)} In Setting~\ref{set:aux}\,(b), let $\sV$ be a hermitian space with the index set of the rows, $y'$
+and $y$ forms of principal level on $\sV$, and $\bar{\sg}$ a coset of the finite adelic unitary group of the
+definite space of the auxiliary pairs modulo its elements that are integral off the places of the modulus
+$\mathfrak{m}_D(\vartheta)$ of $\fa_D(\vartheta,1)$ and their conjugates. Then
+\[\rallisTerm{D}{\vartheta}{j}{\sV}{y'}{y}{\bar{\sg}}=\frac{\mathrm{ct}(\bar{\sg})}{\#\Mat{\bn}{\br}\bigl(\mathcal{O}_E/\mathfrak{m}_D(\vartheta)\bigr)},\]
+where $\mathrm{ct}(\bar{\sg})$ is the coset term of the inner product formula (Input~6) for the character of
+$\fa_D(\vartheta,j)$ on the definite side: the vacuum coefficient at a representative $\sg$ times
+$\pet{y'}{R(\sg)y}$; here $\bn$ and $\br$ are the index sets of the definite space and of the rows.
+\end{definition}
+\leanline{\lean{gramFactor}\sep \lean{rallisTerm}}
+
+\begin{lemma}[the chain of lifts is spherical]\label{l:spherical}
+Let $P$ be parameters and $D$ admissible data, and let $\mathsf{p}$ be a family of complex numbers
+$\mathsf{p}(\fp,i)$. There is a family $G$ of functions $G(\fp)\colon\CC\to\CC$, one for each finite place, such
+that for every form $y$ in the eigenpart of $\sY_0(D)$ for $\mathsf{p}$ and every finite place $\fp\ne\bar{\fp}$ such
+that neither $\fp$ nor $\bar{\fp}$ is a chosen place, the form $\Theta^{\circ}_{D,1}(y)$ is spherical at $\fp$ with
+Hecke polynomial $G(\fp)$.
+\end{lemma}
+\begin{proof}
+A form is spherical with a given Hecke polynomial exactly when its algebraic form is (unit 102). Induct on the
+length of the chain. A form in the eigenpart is spherical at such $\fp$ with the Hecke polynomial of $\mathsf{p}$
+(unit 138). Each further lift is, up to a scalar, the theta lift by a datum that is an arrow (unit 141), and Hecke
+transfer for theta lifts (Input~7) applies: the characters are unramified at $\fp$ because their tame parts are
+trivial off the places of the auxiliary pairs, and the trivial twist has no twist places.
+\end{proof}
+\leanline{\lean{existsisSphericalWithiota}}
+
+\begin{lemma}[adjointness]\label{l:inner}
+In Setting~\ref{set:aux}\,(b), for parameters $P$, data $D$, a tame character $\vartheta$, a form $y$ of
+principal level on $\sW_j(D)$ and $\Xi\in\mathcal{A}(\fa_D(\vartheta,j))$:
+$\langle\theta^{*}_{D,\vartheta,j}\,y,\Xi\rangle=\pet{y}{\theta_{\fa_D(\vartheta,j)}(\Xi)}$.
+\end{lemma}
+\begin{proof}
+This is the definition of the adjoint lift (unit 138).
+\end{proof}
+\leanline{\lean{innerauxLift}}
+
+\begin{proof}[Proof of Theorem 4]
+The real datum of the auxiliary pair $\fa_D(1,j)$ of the trivial twist is an edge (second note; unit 134), and
+$2\operatorname{rk}\sW_j(D)<\operatorname{rk}\sI_{\bn}$. The Euler form of the inner product formula (Input~6)
+gives $A_0\ne0$, valid for all characters of the weights of the edge, hence for all $\vartheta$. Put $A=A_0$
+times the number of elements of the Weyl index set. Fix $\vartheta$ and write $\fa=\fa_D(\vartheta,j)$,
+$G=\mathrm{t}(\fa)\mathbb{1}_{\fa}$. For a form $y$ of principal level, Lemma~\ref{l:inner} and
+Lemma~\ref{l:adjoint} show that $\theta^{*}_{D,\vartheta,j}\,y$ is the algebraic form of the lift of $y$ by
+$\fv(\fa)\otimes\Upsilon(\fa)$, which by Lemma~\ref{l:moddatum} is the lift by the datum of $G$. This datum is
+sharp for the principal level at the places of $\fa$ and their conjugates (Input~6): the modulus has places
+(unit 140), the tame part of the character is trivial off them, $G$ has the support property of
+Lemma~\ref{l:indicator} and $\sum|G|^2\ne0$. So the lift is injective, and so is $\theta^{*}_{D,\vartheta,j}$.
+The inner product of two algebraic forms is $\mathrm{i}(\fa)$ times the number of elements of the Weyl index set
+times the Petersson product of the corresponding forms (second note). Multiplying the series of Input~6 by this
+factor and inserting the constant of sharpness, with the value of $\sum|G|^2$ from Lemma~\ref{l:indicator}, gives
+the terms $A\cdot\gramFactor{\fa}\cdot\rallisTerm{D}{\vartheta}{j}{\sW_j(D)}{y'}{y}{\bar{\sg}}$.
+\end{proof}
+
+\begin{lemma}[the adjoint lift transfers eigensystems]\label{l:lifts}
+In Setting~\ref{set:aux}\,(b), let $P$ be parameters, $D$ data, $\vartheta$ a tame character, $\mathsf{p}$ a
+family of complex numbers and $y$ a form in the eigenpart of $\sW_j(D)$ for $\mathsf{p}$. Then
+$\theta^{*}_{D,\vartheta,j}\,y$ lifts $\mathsf{p}$.
+\end{lemma}
+\begin{proof}
+By Lemmas \ref{l:inner} and~\ref{l:adjoint} it is the algebraic form of a theta lift along an arrow; $y$ is
+spherical at the places in question with the Hecke polynomial of $\mathsf{p}$ (unit 138), and Hecke transfer
+(Input~7) gives the polynomial required, the characters being unramified there.
+\end{proof}
+\leanline{\lean{liftsauxLift}}
+
+\begin{corollary}[injectivity]\label{c:inj}
+In Setting~\ref{set:aux}\,(b), for parameters $P$, data $D$ and a tame character $\vartheta$, the adjoint lift
+$\theta^{*}_{D,\vartheta,j}$ is injective.
+\end{corollary}
+\begin{proof}
+It is the first assertion of Theorem~4.
+\end{proof}
+\leanline{\lean{auxLiftinjective}}
+
+\begin{lemma}[the adjoint lift is equivariant at the chosen places]\label{l:rep}
+In Setting~\ref{set:aux}\,(b), let $P$ be parameters, $D$ data, $\vartheta$ a tame character, $\ssx$ an element
+of the product of the groups $\GL$ of the residue fields of the chosen places, in the rank of the rows, and $y$ a
+form of principal level on $\sW_j(D)$. Then $\theta^{*}_{D,\vartheta,j}(\ssx\cdot y)=\ssx\cdot\theta^{*}_{D,\vartheta,j}(y)$,
+for the action of $\ssx$ on forms of principal level by translation and its action on
+$\mathcal{A}(\fa_D(\vartheta,j))$.
+\end{lemma}
+\begin{proof}
+Two elements of $\mathcal{A}(\fa)$ are equal when their inner products with all $\ssx\cdot\Xi$ agree, the action
+being bijective. By Lemma~\ref{l:inner}, $\langle\theta^{*}(\ssx y),\ssx\Xi\rangle=\pet{\ssx y}{\theta_{\fa}(\ssx\Xi)}$;
+$\theta_{\fa}(\ssx\Xi)$ is the translate of $\theta_{\fa}(\Xi)$ by a lift of $\ssx$ (unit 138), and the Petersson
+product and the inner product of $\mathcal{A}(\fa)$ are invariant (units 102, 138).
+\end{proof}
+\leanline{\lean{auxLiftprincipalRep}}
+
+\begin{lemma}[the lift of the trivial character is spherical]\label{l:trivlifts}
+In Setting~\ref{set:aux}\,(c), let $E$ be a CM field with a CM type and Weil data, $\bn$ a finite index set and
+$\fl$ $L$-value data. Then $\Xi(\fl)$ lifts the constant family $1$ for the auxiliary pair $\fa(\fl)$.
+\end{lemma}
+\begin{proof}
+Hecke transfer for an equivariant map (Input~7) applies to the map from finite data to forms given by the class
+sum over $\U(\sI_1)$ of the kernel values, and to the datum $\Upsilon(\fa(\fl))$, whose image is $\Xi(\fl)$. On
+$\U(\sI_1)$ the representation is trivial, so the Hecke polynomial on that side is the one of the constant
+family~$1$.
+\end{proof}
+\leanline{\lean{auxPairliftstrivialLift}}
+
+\begin{proof}[Proof of Theorem 5]
+Write $\fa=\fa(\fl)$ and $G=\mathrm{t}(\fa)\mathbb{1}_{\fa}$. \emph{Reduction to a doubling integral.} The inner
+product of $\Xi(\fl)$ with itself is an index times a Petersson product (second note), and $\Xi(\fl)$ is, up to
+the inverse of an index, the algebraic form of the theta lift of the constant function $1$ on $\U(\sI_1)$ with
+the datum $\fv(\fa)\otimes\Upsilon(\fa)$, hence with the datum of $G$ (Lemma~\ref{l:moddatum}; the constant
+function is automorphic and, $\sI_1$ being definite, rapidly decreasing). The doubling form of the inner product
+formula (Input~6; the rank condition is $2<|\bn|$) expresses the Petersson product as
+$\operatorname{vol}[\U(\sI_{\bn})]$ times the integral over $\U(\sI_1)(\A)$ of the matrix coefficient of the datum.
+
+\emph{The places off $\fl$.} The datum is the vacuum off the places of $\fl$ and their conjugates. Integrating
+out one more split pair $\{\fp,\bar{\fp}\}$ multiplies the partial integral by the local doubling sum, which is
+$\prod_{\mathfrak{u}\in\{\fp,\bar{\fp}\}}(1-\operatorname{sg}(\mathfrak{u})\Np\mathfrak{u}^{-e})/(1-\omega_{\fl}(\varpi_{\mathfrak{u}})^{-1}\Np\mathfrak{u}^{-e})$
+(Input~6; here $e>1$ and $\omega_{\fl}$ is unramified). By induction on finite sets of places and passage to the
+limit, the partial integrals converging and the Euler products converging for $e>1$ (Input~7), the integral off
+the places of $\fl$ is $L^{\fl}(e,\omega_{\fl}^{-1})$ divided by the Euler product of the signs, times the partial
+integral at the places of $\fl$ and at infinity.
+
+\emph{The places of $\fl$ and infinity.} The datum of $G$ is sharp (Input~6, by Lemma~\ref{l:indicator}), so the
+remaining partial integral is its constant of sharpness times the archimedean integral, which over the compact
+group is $\operatorname{vol}[\U(\sI_1)]$ times the Fock pairing of the highest weight vector with itself; the
+polynomial of the highest vector is a renaming of the harmonic polynomial of $\fa$ (second note), the pairing is
+invariant under renaming, and its value is the hook number. The constant of sharpness and the indices are
+counted over the residue fields: the stabilizer of a line in $\GL_{\bn}$ of a field with $\Np\fp$ elements has
+index $\sum_{i<|\bn|}\Np\fp^{\,i}$, the stabilizer of a non-zero vector has index $\Np\fp^{|\bn|}-1$ (units 44,
+103), and $\sum|G|^2$ is given by Lemma~\ref{l:indicator} with $|\br|=1$. Collecting the factors gives the
+formula; $\rC\ne0$ because the volumes and the Euler product are non-zero.
+\end{proof}
+
+\sect{Notes on the formal text}{s:notes}
+\begin{enumerate}[label=\textup{\arabic*.},leftmargin=1.6em,itemsep=5pt]
+\item \emph{Half ranks.} Where the formal text divides a number of elements by $2$ it uses the division of
+natural numbers; in Theorems 1 and~3 and in Propositions \ref{p:lift} and~\ref{p:const} the number is assumed
+even, and in Definition~\ref{d:exch} the floor is written. The argument of $\LP{\fc}{\cdot}$ in
+Definition~\ref{d:exch}\,(b) is an integer, possibly negative.
+\item \emph{Local sections depend on choices.} The functional $\cL_0$ and the representatives of
+Lemma~\ref{l:reps} are fixed by the axiom of choice; Definition~\ref{d:locsec} and Definition~\ref{d:match}
+depend on them, and the results of §\ref{s:local} hold for every choice.
+\item \emph{Hypotheses that are not used, or only formally.} In Lemma~\ref{l:clopen} the identification $\se$ is an
+argument of the formal statement although the conclusion does not mention it. In Proposition~\ref{p:nonneg} the
+hypothesis on the index $i$ is the existence of a positive sign of $\sY$. Lemma~\ref{l:indicator} is stated in the
+formal text without Weil data, the surrounding statements with them.
+\item \emph{Statements that begin with a local definition.} The formal statements of Proposition~\ref{p:unimod},
+Proposition~\ref{p:terms}, Lemma~\ref{l:indicator}, Lemma~\ref{l:block}, Lemma~\ref{l:posslice} and Theorem~5
+begin with a local definition (of $S_{\sz}$, of the datum and the point, of $G$, of the blocks, of the Fock vector,
+of $\rC$). The reader's tool takes such a definition for the beginning of the proof; the dossier restores the
+statements, and they were read here in the Lean text.
+\item \emph{Arguments that only Lean can settle.} For some declarations of this note the dossier gives the list
+of arguments by Lean's rules, applied by hand, because the text alone does not determine it; no compiler was run.
+They are: Lemma~\ref{l:reps}, Lemma~\ref{l:clopen}, Lemma~\ref{l:block}, Proposition~\ref{p:unimod},
+Proposition~\ref{p:terms}, Lemma~\ref{l:indicator}, Theorems 3, 4 and~5, Lemma~\ref{l:trivlifts},
+Definition~\ref{d:exch}\,(b) and Definition~\ref{d:detvec}\,(c). The doubt concerns implicit and instance
+arguments only (which index sets, signs and instances a declaration takes); the explicit arguments and the
+hypotheses are those written in the Lean statements. For instance arguments of definitions the tool marks some
+as taken only if the defining term uses them.
+\item \emph{A reading in the dossier that the types contradict.} For Lemma~\ref{l:rowstd} the dossier gives the
+identification as $\bb\sqcup(\bb\sqcup\bn)\simeq\bm$. The frame of the formal statement has its rows indexed by
+$\bn$, so the identification that the types allow is $\bb\sqcup(\bb\sqcup\bm)\simeq\bn$, as stated here; in the
+application (Theorem~3) the two index sets appear with exchanged names. This was inferred from the types in the
+Lean text, not checked by a compiler.
+\item \emph{The second reading.} A second reader compared the statements of the unit with the Lean text. Three
+of her points concern this note and are followed here: the constant $\rC$ of Theorem~5 depends only on the field
+and the rank, and its $L$-function omits the Euler factors at the places of the datum and at their conjugates
+(the dossier allowed a dependence on the chosen places and named the places only); in the period condition of
+Theorem~3 the character in the denominator is the base change of $\omega_{\fc}$, evaluated at an idele;
+Proposition~\ref{p:cone} asserts preimages and no more; and in the proof of Proposition~\ref{p:factor} the pieces
+are cut out by the primitivity of $\sx^{\mathsf T}\mathsf{r}^{-1}$, as written here from the Lean text.
+\item \emph{What is taken for granted.} Everything listed as Inputs. In particular the two forms of the Rallis
+inner product formula, Hecke transfer, Freitag's lemma, Landherr's theorem, the tower property and strong
+approximation are results of the background library; the catalogue of the handout records how the formal
+statements relate to the published ones (special cases and weaker forms), and their places in the literature are
+not yet confirmed.
+\item \emph{Where the results go.} Theorem~1, Proposition~\ref{p:lift}, Lemma~\ref{l:stable}, Lemma~\ref{l:block},
+Lemma~\ref{l:slice}, Lemma~\ref{l:box}, Proposition~\ref{p:const}, Proposition~\ref{p:cone} and Theorem~5 are used
+in the second note of the unit; Theorem~4 and Lemmas \ref{l:lifts}, \ref{l:rep} and~\ref{l:spherical} are used by
+other units of the argument.
+\end{enumerate}
+
+\subhead{How this note was written.} From the dossier of the unit, which three readers made in three parts; this
+note follows the first part. The program check of the whole dossier covered \UnitSteps{} leaf steps of
+\UnitProofs{} proofs and found every statement at its lines. I read all statements of this part in the dossier,
+all structured proofs in their summaries, and step by step those of Theorems 2 and~3, of Theorem~1, of
+Proposition~\ref{p:nonneg}, Proposition~\ref{p:factor}, Lemma~\ref{l:stable}, Proposition~\ref{p:unimod},
+Proposition~\ref{p:lift}, Theorems 4 and~5 and Proposition~\ref{p:cone}. In the Lean text I read the statements of
+all declarations of the note, the proof of Proposition~\ref{p:factor}, and the definitions of the background
+library that the statements rest on (partners, standard data, integral frames, tame characters, split tame
+characters, local data, theta integrals on the large side, equivariant lifts, the products of $L$-values,
+representedness). The proofs here are shorter than the formal ones: bookkeeping with characters, measures and
+matrix identities is merged, and the proofs of Lemma~\ref{l:matched} and Lemma~\ref{l:stable} are written as the
+computations that the formal steps amount to. The readers of the dossier mark the long automation steps of
+Theorems 2, 3, 5 and of Propositions \ref{p:nonneg} and~\ref{p:cone} as coarse; these proofs are given here in
+outline with every input named, and they have not been checked independently of the dossier. Nothing was compiled.
+
+\head{Appendix A. Concordance with the Lean artifact}
+{\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}\setlength{\tabcolsep}{0pt}
+\begin{longtable}{@{}p{30mm}p{56mm}p{43mm}r@{}}
+\textbf{In this note} & \textbf{Lean declaration} & \textbf{File} & \textbf{Lines}\\\midrule\endhead
+\ConcordanceRows
+\end{longtable}}
+
+\subhead{Three statements as they are written in the artifact.}
+\quoted{existsstdExchangetop}
+\quoted{StdExchange}
+\quoted{auxLiftinjectiveandhasSuminner}
+Legend: in these texts {\leanfont X}, {\leanfont W₁}, {\leanfont W}, {\leanfont V'} are the spaces $\sX$, $\sW_1$,
+$\sW$, $\sV'$; {\leanfont D}, {\leanfont D₁} the splittings $\fS$, $\fS_1$; {\leanfont σ'} is $\se'$; {\leanfont v},
+{\leanfont v₁}, {\leanfont x}, {\leanfont x'} are the real data $\fv$, $\fv_1$, $\fx$, $\fx'$; {\leanfont 𝔠} is
+$\fc$ and {\leanfont 𝔠.χ} is $\chi_{\fc}$; {\leanfont ℓ} is $\cN$; {\leanfont thetaLarge}, {\leanfont stdRowDatum},
+{\leanfont stdColDatum}, {\leanfont lValueProdInt} are the theta integral on the large side, the standard data and
+$\LP{\fc}{e}$. In the third, {\leanfont D} is the data $D$, {\leanfont auxLift} the adjoint lift and {\leanfont
+auxPair} the auxiliary pair.
+
+\head{Notation}
+\begingroup\fontsize{8.6}{10.9}\selectfont\raggedright
+\setlength{\columnsep}{9mm}\setlength{\parskip}{0pt}
+\begin{multicols}{2}
+\nt{$E$, $E^{+}$, $\A_E$, $\mathcal{O}_E$, $\hat{\mathcal{O}}_E$}{a CM field, its maximal totally real subfield, its adeles, its integers, its integral finite adeles}
+\nt{$\tau$; $\fp$, $\bar{\fp}$, $\mathfrak{q}_i$, $\mathfrak{u}$; $\Np\fp$}{an infinite place of $E$; finite places, the conjugate place; the norm of a place}
+\nt{$\jmath$, $\upsilon$, $\varsigma_E$, $\mathrm{e}_{\A}$}{Weil data: the purely imaginary element, the splitting character, the scale idele, the additive character of the adeles}
+\nt{$P$, $D$, $m$, $\vartheta$, $j$}{parameters, admissible data, the number of lifts, a tame character of $D$, a lift index}
+\nt{$\ba,\bb,\bm,\bn,\br,\bn',\br'$; $|\bn|$}{finite index sets; the number of elements}
+\nt{$\sF$, $\sO$, $\varpi$; $\sR$, $\bar{\sR}$}{a semilocal field, its compact open subring, its topologically nilpotent unit; a commutative ring; the residue ring of a tame character}
+\nt{$\sF_{\fc}$, $\sF_\Sigma$}{the product of the completions of $E$ at the places of $\fc$, of $\Sigma$}
+\nt{$\Mat{\ba}{\bn}(\sR)$, $\GL_{\bn}(\sR)$; $\sx^{\mathsf T}$, $\sx^{*}$, $\tr$}{matrices with rows $\ba$ and columns $\bn$, invertible matrices; transpose, conjugate transpose, trace}
+\nt{$\sg,\sh,\sk,\sx,\sy,\sz,\ssx,\sq$; $\mathsf{a},\mathsf{b},\mathsf{c},\mathsf{d},\mathsf{f},\mathsf{j},\mathsf{l},\mathsf{n},\mathsf{p},\mathsf{r},\mathsf{t},\mathsf{u},\mathsf{v},\mathsf{w},\mathsf{z}$}{matrices, vectors and points of groups: $\sk$ in a general linear or unitary group, $\sz$ an integral matrix or an element of $\sF$, $\ssx$ a left inverse, $\sq$ a Levi coordinate, $\mathsf{v}$ a rational frame, $\mathsf{c},\mathsf{w}$ the coordinates of a radical element, $\mathsf{t}$ signs, $\mathsf{p}$ a point or a family of eigenvalues, $\mathsf{r}$ a coset representative}
+\nt{$\mathsf{A},\mathsf{B},\mathsf{I},\mathsf{K},\mathsf{L},\mathsf{M},\mathsf{P},\mathsf{U}$, $\mathsf{J}_0$, $\mathsf{S}_0$, $\mathrm{P}_{+}$}{matrices of §\ref{s:real} and §\ref{s:det}: a local inverse, the form of a split frame, blocks of a mixed model, a matrix of positive coordinates, a frame matrix, a point, a combination of blocks, a skew matrix, the projection to positive coordinates}
+\nt{$\se$, $\se'$}{identifications of index sets, $\bb\sqcup\ba\simeq\bn$}
+\nt{$\colk{\se}{\sk}$, $\rowk{\se}{\sk}$}{the columns of $\sk$ indexed by $\bb$; the rows of $\sk^{-1}$ indexed by $\ba$}
+\nt{$\chi$, $\inu{\chi}$, $\bar\chi$; $\mathrm{e}_{\sF}$, $\bar{\mathrm{e}}$}{a multiplicative character, its inverse on integral units, the primitive character of the residue ring; an additive character and its reduction}
+\nt{$\dL$, $\dS$, $\dS_0$, $\dS'$}{functions on the large side ($\ba\times\bn$ matrices) and on the small side ($\bn\times\bb$ matrices); partners}
+\nt{$\stc{\chi}{\ssx}$, $\str{\se}{\chi}{\ssx}$}{the standard column datum and the standard row datum}
+\nt{$\cS(\mathcal{U})$, $\cS^{\mathrm{inj}}$, $\cS^{\mathrm{sur}}$}{Schwartz--Bruhat functions supported in a set $\mathcal{U}$, on matrices with a left inverse, on matrices whose transpose has one}
+\nt{$\cL_0$, $\mathcal{R}$, $\mathcal{R}_0$}{the functional and the coset representatives of Lemma~\ref{l:reps}; a finite set of them}
+\nt{$\localSection{\chi}{\sy}$; $\matchingPairs{\chi}{\se}$}{the local section (Definition~\ref{d:locsec}); the matched pairs (Definition~\ref{d:match})}
+\nt{$\cL$, $\cL'$, $\cL_1$; $\mathcal{X}$}{linear maps and functionals; a set}
+\nt{$\fA$, $(\fA_1\mid\fA_2\mid\fA_3)$, $\fA_i'$; $\mathrm{st}_{\fA}(G)$}{an integral frame, its column blocks, the row blocks of its inverse; the function $G$ read in the frame}
+\nt{$\cP$, $\cM$; $S_{\sz}$, $\Gamma_0$, $\mathcal{Z}$}{a stable space of functions, the domain of a lift; the shears of a standard datum, their Gauss sum, a set of integral representatives}
+\nt{$G$, $G'$, $G_0$; $\mathrm{n}$, $\mathrm{N}_0$; $i$}{functions; a counting function, a positive constant; an index or an exponent}
+\nt{$\sW,\sV,\sV',\sX,\sW_1,\sY,\sZ$; $\sI_{\bn}$}{hermitian spaces; the standard positive definite space}
+\nt{$\mathrm{J}_{\sW}$, $\mathrm{x}_{\sW}$, $\negc(\sW)$, $\operatorname{diag}(\sW)$}{the Gram matrix, the adelic frame, the number of negative signs, the diagonal form of the signs}
+\nt{$\U(\sW)$, $[\U(\sW)]$, $\mathcal{K}_f$, $d\sk$}{the unitary group, its adelic quotient, the stabilizer of the integral lattice, integration for a Haar measure}
+\nt{$\omega$, $\omega'$, $\omega''$, $\delta$; $\rho$; $\mu$}{characters of $\U(1)(\A)$; a character of $\sF_{\fc}$; weights, integers at the infinite places}
+\nt{$\fc$, $\omega_{\fc}$, $\Sigma(\fc)$, $\chi_{\fc}$; $\Sigma$}{a split tame character, its character, its set of places, its local character; a finite set of finite places}
+\nt{$\fv,\fv',\fv_1,\fx,\fx',\mathfrak{y}$; $F$, $F'$, $F_{\fc}$, $F_{\sy}$; $f$}{real data; finite data (also an algebraic form in §\ref{s:norms}); a datum}
+\nt{$\theta$, $\thI{\sW}{\sV}{\omega}{\omega'}{f}$}{the theta functional; the theta integral over $[\U(\sV)]$}
+\nt{$\thL{\sW}{\sV}{\fc}{\fv}{\dL}$, $\thetaSmall{\sW}{\sV}{\fc}{\fv}{\dS}$}{the theta integrals on the large and on the small side}
+\nt{$\thetaOnRealData{\sW_1}{\sV}{\omega}{\omega'}{F}{\sx}{\mathsf{p}}$}{the theta functional on real data (Definition~\ref{d:threal})}
+\nt{$\LP{\fc}{e}$, $\Pi(\Sigma,\omega,e)$, $L^{\Sigma}$; $e$, $e_0$}{products of partial Hecke $L$-values; a natural number or an integer}
+\nt{$\fS$, $\fS_1$; $\cf{\fS}{T}{f}$; $T$, $B_0$, $Y$}{splittings; the centre coefficient; a matrix index, its hermitian part, an adelic matrix}
+\nt{$(\cM,\cD)$}{an equivariant lift}
+\nt{$\equalRankThetaRatio{\sV}{\fc}{\fv}$}{the equal-rank ratio (Definition~\ref{d:exch})}
+\nt{$\StdExchange{\sX}{\sV}{\sV'}{\mu}{\se}{\fv}{\mathfrak{y}}{\cN}$}{the standard exchange identity (Definition~\ref{d:exch})}
+\nt{$\cN$; $\rc$, $\rC$, $\mathrm{R}$, $\mathrm{k}$, $\mathrm{b}$, $\mathrm{z}$; $\mathrm{l}$}{a real function on split tame characters; constants; a complex function on split tame characters}
+\nt{$\Omega$, $\Omega_0$, $\Omega_1$; $B$}{weight and bump functions; an invertible adelic $\bb\times\bb$ matrix}
+\nt{$\varkappa$, $\mathcal{C}$}{a point of the unit circle; a compact group (proof of Proposition~\ref{p:nonneg})}
+\nt{$\posCoordMatrix{\operatorname{sgn}_{\sW}}{\operatorname{sgn}_{\sV}}{F}{\mathsf{u}}$}{the matrix of positive coordinates (Definition~\ref{d:detvec})}
+\nt{$\detVectorFn{\operatorname{sgn}_{\sW}}{\operatorname{sgn}_{\sV}}{e}{\mu}{\rc}{F}{\mathsf{u}}$, $\detVectors{e}{\mu}$}{a determinant vector, the set of determinant vectors}
+\nt{$\Delta_{\tau,\pm}$}{determinants of matrices of linear forms (proof of Proposition~\ref{p:cone})}
+\nt{$\fa$, $\sW(\fa)$, $\mathcal{A}(\fa)$, $\theta_{\fa}$, $\Upsilon(\fa)$, $\fv(\fa)$, $\mathbb{1}_{\fa}$, $\sR(\fa)$, $\mathrm{t}(\fa)$, $\mathrm{i}(\fa)$}{an auxiliary pair and its objects (Setting~\ref{set:aux})}
+\nt{$\gramFactor{\fa}$, $\rallisTerm{D}{\vartheta}{j}{\sV}{y'}{y}{\bar{\sg}}$}{the Gram factor and the terms of the inner product (Definition~\ref{d:gram})}
+\nt{$\fl$, $\omega_{\fl}$, $\fa(\fl)$, $\Xi(\fl)$}{$L$-value data, their character, their auxiliary pair, the lift of the trivial character}
+\nt{$A$, $A_0$}{the constants of the inner product formula}
+\nt{$y$, $y'$, $\Xi$; $\pet{y}{y'}$; $R(\sg)$; $l$}{forms; the Petersson product; right translation; a parameter of a discrete series type}
+\nt{$\sW_j(D)$, $\sY_0(D)$, $\fa_D(\vartheta,j)$, $\theta^{*}_{D,\vartheta,j}$, $\Theta^{\circ}_{D,\vartheta}$, $\mathfrak{m}_D(\vartheta)$}{the objects attached to the data (Setting~\ref{set:aux})}
+
+\end{multicols}
+\endgroup
+
+\end{document}

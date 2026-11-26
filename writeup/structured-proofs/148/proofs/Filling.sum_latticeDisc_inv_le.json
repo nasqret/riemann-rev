@@ -1,0 +1,484 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Filling.BlockBound:21:7",
+ "summary": "Average over the finite set A = K_f/(K_f ∩ K) of local translations of a class: for each u, Σ_{φ∈A} f([uφ]) ≤ #A·b with f(c) = Σ_T d_c(T)^{−(k+1)} and b = τ^{s+1}/N^{kf} (the discriminant of a class transported to uÔ^κ, Siegel's lemma bound, a congruence count modulo π̄), and the class integral turns this average into Σ_c f(c) ≤ #Classes·b.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Use the elementary size facts.",
+   "lines": [
+    24,
+    75
+   ],
+   "span": [
+    24,
+    78,
+    75,
+    98
+   ],
+   "lean": "S.of_size_bounds (by\n  intros; rw [mul_comm_div]; set b : ℝ := _ / _\n  set f := fun _ ↦ _; let A := Kf .. ⧸ (S.latStabilizer.comap S.inclHFin).subgroupOf _\n  have := Subgroup.fintypeOfIndexNeZero (Nat.cast_pos.1 (ok.le_relIndex.trans_lt' (by bound))).ne'\n  have hB u : ∑ φ : A, f ⟦u * φ.out⟧ ≤ .ofReal (Nat.card A * b)\n  choose g hη k hk h using fun φ : A ↦ mk_out_eq_mul stdRatPoints S.columnLevel (u * φ.out)\n  let y (φ : A) := φ.out * ⟨_, S.hasFiniteType_columnLevel.1 (hk φ)⟩\n  have hy φ : ↑(y φ) = φ := .trans (QuotientGroup.mk_mul_of_mem _\n    (S.principalLevel_eq_unitaryLevel.le (ok.1.le (hk φ))).1) φ.out_eq\n  let r φ := replicateRow Unit ((y φ).1⁻¹.1.1 𝔰.k₀); rw [← Finset.univ.tsum_subtype']\n  refine (ENNReal.tsum_mul_left.trans_le\n    ((mul_le_mul_right (tsum_sublatticeDisc_inv_le u s) _).trans ?_)).trans'\n    (.trans (ENNReal.tsum_le_tsum fun φ ↦ ?_) (ENNReal.tsum_comm.trans_le (ENNReal.tsum_le_tsum\n    fun T ↦ if h : _ + s = _ then ENNReal.tsum_mul_right.trans_le (mul_left_mono\n    (tsum_inv_index_pow_le_of_congr S.piBar_mem r (fun φ _ _ ↦ (y φ).2.isIntMatrix_inv _)\n    (sublatticeBasis u.1.3 T).2.1 (equivOfCardEq (by simpa)) (K := .comap (.proj ()) (_ ∙ _))\n    (fun | _, ⟨_, h, rfl⟩ => mem_span_singleton_iff_exists_mul.2 ⟨_, h (), rfl⟩) _ (fun\n    _ _ ↦ dvd_rfl) (𝔰.k + 1) (by simp; lia) fun B _ a h H ↦ (tsum_eq_single ⟨a, h⟩ fun ⟨b, k⟩ ↦\n    absurd (Subtype.mk_eq_mk.2 (hy b ▸ hy a ▸ QuotientGroup.eq.2 (S.inclHFin_mem_latStabilizer.2\n    ⟨(_ * y a).2, fun _ ↦ (by simpa [← mul_apply, mulVec, dotProduct, r] using H _ k _ h ⟨_,\n    (y a).2.isIntMatrix.isInt_transpose ·, rfl⟩)⟩)))).le)) else by simp [h])))\n  · grw [show genIndex _ = _ by simpa [genIndex_natCast, genIndex_pos,\n      le_of_lt] using congr(√(genIndex $S.piBar_mul_star)), mul_one, ← ofReal_mul (by bound),\n      ← Subgroup.index_eq_card, ← Subgroup.relIndex, ← ok.le_relIndex]\n    apply ofReal_le_ofReal (le_of_pow_le_pow_left₀ (NeZero.ne 1000) (by bound) _)\n    simp [div_pow, pow_mul, field, pow_right_comm _ _ 1000]\n    grw [N_le, S.size_le, pow_mul S.tailScale 4 250, tailScale_pow_four, ← Shape.k,\n      ← Nat.add_sub_of_le S.ϱ_le_k]\n    simp [← pow_mul, ← pow_add]; gcongr; lia\n  cases' inv_mem (hη φ) with η hη; let P := η.1.toLin.toLinearEquiv\n  refine .trans (ENNReal.tsum_le_tsum fun ⟨T, b⟩ ↦ ?_) (tsum_comp_le_tsum_of_injective\n    ((map_injective_of_injective P.injective).comp Subtype.val_injective) _)\n  erw [latticeDisc, sublatticeDisc]; obtain ⟨q, ⟨V, -⟩, x, a, -, hx, e⟩ := sublatticeBasis _ T\n  by_cases d : genIndex (qᴴ * q).det = 0; simp [d]\n  erw [classCoordX₀, h] at V; simp [e, ← hη, isIntMatrix_middleBaseChange_mul] at V\n  obtain ⟨w, p, z⟩ := sublatticeDisc_mul_index_sq_le u.1.3 _ (r φ) (P.finrank_map_eq T).symm\n    (fun | _, ⟨v, rfl⟩ => ⟨_, hx.le ⟨v, rfl⟩, mulVec_mulVec ..⟩) a (by simp [e, ← genIndex_det_conj,\n    finAdeleMat_conjTranspose, by simpa using U.gram_invariant η x x])\n    d (by simpa [y] using (y φ).2.isIntMatrix.mul V.1) (K := .comap (.proj ()) (_ ∙ _)) (by\n    simpa [r, y, ← Matrix.mul_assoc] using! V.2)\n  grw [← Real.le_sqrt_of_sq_le w]; simp [*, mul_pow, P.finrank_map_eq]\n  lift f to S.Classes → NNReal using Quot.ind (div_mul_cancel · _ ▸\n    sum_ne_top.1 ((hB _).trans_lt coe_lt_top).ne ⟦1⟧ (by simp)) with f\n  let φ g := b - f (⟦g⟧)\n  have e γ a k h g : φ _ = φ g := congr(b - f $((eq ..).2 ⟨γ, a, k, h, rfl⟩)).symm\n  have r : S.columnLevel ≤ rightStab φ := by simpa [LE.le] using e 1\n  simp (disch := finiteness) only [← ofNNReal_finsetSum, le_ofReal_iff_toReal_le, coe_toReal] at *\n  simpa [↓classIntegral_eq_classSum r, classSum_eq_sum, φ, NeZero.pos,\n    ← sum_congr _ f (congrArg f ·.out_eq)] using (classIntegral_sum (K :=\n    S.columnLevel) Finset.univ (fun _ : A ↦ .id ℝ) _ (fun _ ↦ ⟨(by simpa using e · · 1),\n    Subgroup.isOpen_mono r S.hasFiniteType_columnLevel.2⟩) (congrFun rfl) :).le.trans'\n    (mul_nonneg (by simp) (finsum_nonneg (mul_nonneg (by simp) <| by simpa [φ] using hB ·.out))))",
+   "head_span": [
+    24,
+    78,
+    24,
+    98
+   ],
+   "head_lines": [
+    24,
+    24
+   ],
+   "uses": [
+    {
+     "decl": "Filling.of_size_bounds"
+    }
+   ]
+  },
+  {
+   "id": "1.1",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Rewrite the bound as #Classes·b with b = τ^{s+1}/N^{kf}.",
+   "lines": [
+    25,
+    25
+   ],
+   "lean": "  intros; rw [mul_comm_div]; set b : ℝ := _ / _"
+  },
+  {
+   "id": "1.2",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Let f(c) = Σ_T latticeDisc(S, c, T)^{−(k+1)} (subspaces of codimension s) and A = K_f/(K_f ∩ ι⁻¹K), the integral points K_f of U(X₀)(𝔸_f) modulo those whose image under ι = inclHFin lies in K.",
+   "lines": [
+    26,
+    26
+   ],
+   "lean": "  set f := fun _ ↦ _; let A := Kf .. ⧸ (S.latStabilizer.comap S.inclHFin).subgroupOf _"
+  },
+  {
+   "id": "1.3",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "A is finite: its index is at least (N^k/b)^f > 0 (le_relIndex of IsAdmissible).",
+   "lines": [
+    27,
+    27
+   ],
+   "lean": "  have := Subgroup.fintypeOfIndexNeZero (Nat.cast_pos.1 (ok.le_relIndex.trans_lt' (by bound))).ne'",
+   "uses": [
+    {
+     "decl": "Filling.IsAdmissible"
+    }
+   ]
+  },
+  {
+   "id": "1.4",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Claim: for every u ∈ U(X₀)(𝔸_f), Σ_{φ∈A} f([u·φ̃]) ≤ #A·b (φ̃ a representative of φ, [·] the class).",
+   "lines": [
+    28,
+    64
+   ],
+   "lean": "  have hB u : ∑ φ : A, f ⟦u * φ.out⟧ ≤ .ofReal (Nat.card A * b)\n  choose g hη k hk h using fun φ : A ↦ mk_out_eq_mul stdRatPoints S.columnLevel (u * φ.out)\n  let y (φ : A) := φ.out * ⟨_, S.hasFiniteType_columnLevel.1 (hk φ)⟩\n  have hy φ : ↑(y φ) = φ := .trans (QuotientGroup.mk_mul_of_mem _\n    (S.principalLevel_eq_unitaryLevel.le (ok.1.le (hk φ))).1) φ.out_eq\n  let r φ := replicateRow Unit ((y φ).1⁻¹.1.1 𝔰.k₀); rw [← Finset.univ.tsum_subtype']\n  refine (ENNReal.tsum_mul_left.trans_le\n    ((mul_le_mul_right (tsum_sublatticeDisc_inv_le u s) _).trans ?_)).trans'\n    (.trans (ENNReal.tsum_le_tsum fun φ ↦ ?_) (ENNReal.tsum_comm.trans_le (ENNReal.tsum_le_tsum\n    fun T ↦ if h : _ + s = _ then ENNReal.tsum_mul_right.trans_le (mul_left_mono\n    (tsum_inv_index_pow_le_of_congr S.piBar_mem r (fun φ _ _ ↦ (y φ).2.isIntMatrix_inv _)\n    (sublatticeBasis u.1.3 T).2.1 (equivOfCardEq (by simpa)) (K := .comap (.proj ()) (_ ∙ _))\n    (fun | _, ⟨_, h, rfl⟩ => mem_span_singleton_iff_exists_mul.2 ⟨_, h (), rfl⟩) _ (fun\n    _ _ ↦ dvd_rfl) (𝔰.k + 1) (by simp; lia) fun B _ a h H ↦ (tsum_eq_single ⟨a, h⟩ fun ⟨b, k⟩ ↦\n    absurd (Subtype.mk_eq_mk.2 (hy b ▸ hy a ▸ QuotientGroup.eq.2 (S.inclHFin_mem_latStabilizer.2\n    ⟨(_ * y a).2, fun _ ↦ (by simpa [← mul_apply, mulVec, dotProduct, r] using H _ k _ h ⟨_,\n    (y a).2.isIntMatrix.isInt_transpose ·, rfl⟩)⟩)))).le)) else by simp [h])))\n  · grw [show genIndex _ = _ by simpa [genIndex_natCast, genIndex_pos,\n      le_of_lt] using congr(√(genIndex $S.piBar_mul_star)), mul_one, ← ofReal_mul (by bound),\n      ← Subgroup.index_eq_card, ← Subgroup.relIndex, ← ok.le_relIndex]\n    apply ofReal_le_ofReal (le_of_pow_le_pow_left₀ (NeZero.ne 1000) (by bound) _)\n    simp [div_pow, pow_mul, field, pow_right_comm _ _ 1000]\n    grw [N_le, S.size_le, pow_mul S.tailScale 4 250, tailScale_pow_four, ← Shape.k,\n      ← Nat.add_sub_of_le S.ϱ_le_k]\n    simp [← pow_mul, ← pow_add]; gcongr; lia\n  cases' inv_mem (hη φ) with η hη; let P := η.1.toLin.toLinearEquiv\n  refine .trans (ENNReal.tsum_le_tsum fun ⟨T, b⟩ ↦ ?_) (tsum_comp_le_tsum_of_injective\n    ((map_injective_of_injective P.injective).comp Subtype.val_injective) _)\n  erw [latticeDisc, sublatticeDisc]; obtain ⟨q, ⟨V, -⟩, x, a, -, hx, e⟩ := sublatticeBasis _ T\n  by_cases d : genIndex (qᴴ * q).det = 0; simp [d]\n  erw [classCoordX₀, h] at V; simp [e, ← hη, isIntMatrix_middleBaseChange_mul] at V\n  obtain ⟨w, p, z⟩ := sublatticeDisc_mul_index_sq_le u.1.3 _ (r φ) (P.finrank_map_eq T).symm\n    (fun | _, ⟨v, rfl⟩ => ⟨_, hx.le ⟨v, rfl⟩, mulVec_mulVec ..⟩) a (by simp [e, ← genIndex_det_conj,\n    finAdeleMat_conjTranspose, by simpa using U.gram_invariant η x x])\n    d (by simpa [y] using (y φ).2.isIntMatrix.mul V.1) (K := .comap (.proj ()) (_ ∙ _)) (by\n    simpa [r, y, ← Matrix.mul_assoc] using! V.2)\n  grw [← Real.le_sqrt_of_sq_le w]; simp [*, mul_pow, P.finrank_map_eq]",
+   "head_lines": [
+    28,
+    28
+   ],
+   "typed_fact": "∑ φ : A, f ⟦u * φ.out⟧ ≤ .ofReal (Nat.card A * b)"
+  },
+  {
+   "id": "1.4.1",
+   "parent": "1.4",
+   "kind": "deduction",
+   "claim": "For each φ, the chosen representative of the class of uφ̃ is g_φ·(uφ̃)·k_φ with g_φ rational (hη) and k_φ in the column level K_c (hk).",
+   "lines": [
+    29,
+    29
+   ],
+   "lean": "  choose g hη k hk h using fun φ : A ↦ mk_out_eq_mul stdRatPoints S.columnLevel (u * φ.out)",
+   "ambient_uses": [
+    "DoubleCoset.mk_out_eq_mul"
+   ]
+  },
+  {
+   "id": "1.4.2",
+   "parent": "1.4",
+   "kind": "deduction",
+   "claim": "y(φ) = φ̃·k_φ (an element of K_f: K_c is of finite type, so contained in K_f).",
+   "lines": [
+    30,
+    30
+   ],
+   "lean": "  let y (φ : A) := φ.out * ⟨_, S.hasFiniteType_columnLevel.1 (hk φ)⟩"
+  },
+  {
+   "id": "1.4.3",
+   "parent": "1.4",
+   "kind": "deduction",
+   "claim": "y(φ) represents φ in A: k_φ ∈ K_c = ι⁻¹(K(g)) ⊆ ι⁻¹(K).",
+   "lines": [
+    31,
+    32
+   ],
+   "lean": "  have hy φ : ↑(y φ) = φ := .trans (QuotientGroup.mk_mul_of_mem _\n    (S.principalLevel_eq_unitaryLevel.le (ok.1.le (hk φ))).1) φ.out_eq",
+   "uses": [
+    {
+     "decl": "Filling.principalLevel_eq_unitaryLevel"
+    },
+    {
+     "decl": "Filling.IsAdmissible"
+    }
+   ],
+   "typed_fact": "↑(y φ) = φ"
+  },
+  {
+   "id": "1.4.4",
+   "parent": "1.4",
+   "kind": "deduction",
+   "claim": "Let r(φ) be the k₀-th row of y(φ)⁻¹ (as a one-row matrix); write the finite sum over A as a sum over its elements.",
+   "lines": [
+    33,
+    33
+   ],
+   "lean": "  let r φ := replicateRow Unit ((y φ).1⁻¹.1.1 𝔰.k₀); rw [← Finset.univ.tsum_subtype']"
+  },
+  {
+   "id": "1.4.5",
+   "parent": "1.4",
+   "kind": "deduction",
+   "claim": "Main chain: Σ_φ f([uφ̃]) ≤ Σ_φ Σ_T (transported term for φ) (goal 2 below) = Σ_T Σ_φ (…) (swap) and, for each T, the sum over φ is a congruence count (step 1.4.6); factoring, the double sum is at most (bound of the congruence count) · Σ_T d(T ∩ uÔ^κ)^{−(k+1)} ≤ (…)·(200fk·rd_E)^{f(k+1)s} (tsum_sublatticeDisc_inv_le), and it remains to compare with #A·b (goal 1).",
+   "lines": [
+    34,
+    36
+   ],
+   "lean": "  refine (ENNReal.tsum_mul_left.trans_le\n    ((mul_le_mul_right (tsum_sublatticeDisc_inv_le u s) _).trans ?_)).trans'\n    (.trans (ENNReal.tsum_le_tsum fun φ ↦ ?_) (ENNReal.tsum_comm.trans_le (ENNReal.tsum_le_tsum",
+   "uses": [
+    {
+     "decl": "Filling.tsum_sublatticeDisc_inv_le"
+    }
+   ],
+   "ambient_uses": [
+    "ENNReal.tsum_comm"
+   ]
+  },
+  {
+   "id": "1.4.6",
+   "parent": "1.4",
+   "kind": "deduction",
+   "claim": "For a subspace T of codimension s: Σ_φ (index)^{−(k+1)} ≤ [Ô : π̄Ô]^{…} by the congruence count with modulus π̄ (π̄ ∈ Ô), rows Y = r(φ) (integral, as y(φ)⁻¹ is integral), the primitive sublattice basis of T, and the fact that two φ whose rows r agree modulo π̄ give the same element of A (their quotient lies in ι⁻¹K by inclHFin_mem_latStabilizer), so each congruence class has at most one φ; subspaces of other dimensions contribute 0.",
+   "lines": [
+    37,
+    44
+   ],
+   "lean": "    fun T ↦ if h : _ + s = _ then ENNReal.tsum_mul_right.trans_le (mul_left_mono\n    (tsum_inv_index_pow_le_of_congr S.piBar_mem r (fun φ _ _ ↦ (y φ).2.isIntMatrix_inv _)\n    (sublatticeBasis u.1.3 T).2.1 (equivOfCardEq (by simpa)) (K := .comap (.proj ()) (_ ∙ _))\n    (fun | _, ⟨_, h, rfl⟩ => mem_span_singleton_iff_exists_mul.2 ⟨_, h (), rfl⟩) _ (fun\n    _ _ ↦ dvd_rfl) (𝔰.k + 1) (by simp; lia) fun B _ a h H ↦ (tsum_eq_single ⟨a, h⟩ fun ⟨b, k⟩ ↦\n    absurd (Subtype.mk_eq_mk.2 (hy b ▸ hy a ▸ QuotientGroup.eq.2 (S.inclHFin_mem_latStabilizer.2\n    ⟨(_ * y a).2, fun _ ↦ (by simpa [← mul_apply, mulVec, dotProduct, r] using H _ k _ h ⟨_,\n    (y a).2.isIntMatrix.isInt_transpose ·, rfl⟩)⟩)))).le)) else by simp [h])))",
+   "uses": [
+    {
+     "decl": "Filling.tsum_inv_index_pow_le_of_congr"
+    },
+    {
+     "decl": "Filling.sublatticeBasis"
+    },
+    {
+     "decl": "Filling.inclHFin_mem_latStabilizer"
+    }
+   ]
+  },
+  {
+   "id": "1.4.7",
+   "parent": "1.4",
+   "kind": "deduction",
+   "claim": "Goal 1 (numerics).",
+   "lines": [
+    45,
+    52
+   ],
+   "lean": "  · grw [show genIndex _ = _ by simpa [genIndex_natCast, genIndex_pos,\n      le_of_lt] using congr(√(genIndex $S.piBar_mul_star)), mul_one, ← ofReal_mul (by bound),\n      ← Subgroup.index_eq_card, ← Subgroup.relIndex, ← ok.le_relIndex]\n    apply ofReal_le_ofReal (le_of_pow_le_pow_left₀ (NeZero.ne 1000) (by bound) _)\n    simp [div_pow, pow_mul, field, pow_right_comm _ _ 1000]\n    grw [N_le, S.size_le, pow_mul S.tailScale 4 250, tailScale_pow_four, ← Shape.k,\n      ← Nat.add_sub_of_le S.ϱ_le_k]\n    simp [← pow_mul, ← pow_add]; gcongr; lia",
+   "head_span": [
+    45,
+    3,
+    45,
+    10
+   ],
+   "head_lines": [
+    45,
+    45
+   ]
+  },
+  {
+   "id": "1.4.7.1",
+   "parent": "1.4.7",
+   "kind": "deduction",
+   "claim": "[Ô : π̄Ô] = √[Ô : NÔ] since π̄π̄* = N (genIndex is multiplicative and genIndex of conj equals genIndex).",
+   "lines": [
+    45,
+    46
+   ],
+   "span": [
+    45,
+    10,
+    46,
+    60
+   ],
+   "lean": "show genIndex _ = _ by simpa [genIndex_natCast, genIndex_pos,\n      le_of_lt] using congr(√(genIndex $S.piBar_mul_star)),",
+   "uses": [
+    {
+     "decl": "Filling"
+    }
+   ],
+   "typed_fact": "genIndex _ = _"
+  },
+  {
+   "id": "1.4.7.2",
+   "parent": "1.4.7",
+   "kind": "deduction",
+   "claim": "#A is the relative index [K_f : K_f ∩ ι⁻¹K] and (N^k/b)^f ≤ it.",
+   "lines": [
+    46,
+    47
+   ],
+   "span": [
+    46,
+    61,
+    47,
+    71
+   ],
+   "lean": "mul_one, ← ofReal_mul (by bound),\n      ← Subgroup.index_eq_card, ← Subgroup.relIndex, ← ok.le_relIndex]",
+   "uses": [
+    {
+     "decl": "Filling.IsAdmissible"
+    }
+   ]
+  },
+  {
+   "id": "1.4.7.3",
+   "parent": "1.4.7",
+   "kind": "deduction",
+   "claim": "It suffices to compare 1000-th powers of the two (nonnegative) sides.",
+   "lines": [
+    48,
+    48
+   ],
+   "lean": "    apply ofReal_le_ofReal (le_of_pow_le_pow_left₀ (NeZero.ne 1000) (by bound) _)"
+  },
+  {
+   "id": "1.4.7.4",
+   "parent": "1.4.7",
+   "kind": "deduction",
+   "claim": "Expand the powers.",
+   "lines": [
+    49,
+    49
+   ],
+   "lean": "    simp [div_pow, pow_mul, field, pow_right_comm _ _ 1000]"
+  },
+  {
+   "id": "1.4.7.5",
+   "parent": "1.4.7",
+   "kind": "deduction",
+   "claim": "Use N ≤ b^{60n}, (200fk·rd_E)^{1000} ≤ b, τ^{1000} = (τ⁴)^{250} = b^{250kf} and k = 1000(2ϱ+2) + (k − 1000(2ϱ+2)).",
+   "lines": [
+    50,
+    51
+   ],
+   "lean": "    grw [N_le, S.size_le, pow_mul S.tailScale 4 250, tailScale_pow_four, ← Shape.k,\n      ← Nat.add_sub_of_le S.ϱ_le_k]",
+   "uses": [
+    {
+     "decl": "Filling.IsAdmissible"
+    },
+    {
+     "decl": "Filling"
+    },
+    {
+     "decl": "Filling.tailScale_pow_four"
+    }
+   ]
+  },
+  {
+   "id": "1.4.7.6",
+   "parent": "1.4.7",
+   "kind": "deduction",
+   "claim": "Compare the exponents of b (linear arithmetic).",
+   "lines": [
+    52,
+    52
+   ],
+   "lean": "    simp [← pow_mul, ← pow_add]; gcongr; lia"
+  },
+  {
+   "id": "1.4.8",
+   "parent": "1.4",
+   "kind": "deduction",
+   "claim": "Goal 2, for each φ: η = g_φ⁻¹ is rational (η ∈ U(X₀)(E)); P is the E-linear automorphism of E^κ given by η.",
+   "lines": [
+    53,
+    53
+   ],
+   "lean": "  cases' inv_mem (hη φ) with η hη; let P := η.1.toLin.toLinearEquiv"
+  },
+  {
+   "id": "1.4.9",
+   "parent": "1.4",
+   "kind": "deduction",
+   "claim": "It suffices to bound each term for T by the term for P(T) at uÔ^κ, since T ↦ P(T) is injective on subspaces and preserves dimension.",
+   "lines": [
+    54,
+    55
+   ],
+   "lean": "  refine .trans (ENNReal.tsum_le_tsum fun ⟨T, b⟩ ↦ ?_) (tsum_comp_le_tsum_of_injective\n    ((map_injective_of_injective P.injective).comp Subtype.val_injective) _)",
+   "ambient_uses": [
+    "tsum_comp_le_tsum_of_injective"
+   ]
+  },
+  {
+   "id": "1.4.10",
+   "parent": "1.4",
+   "kind": "deduction",
+   "claim": "Unfold latticeDisc and sublatticeDisc of T for the class [uφ̃]; take the sublattice basis q = x·a of T.",
+   "lines": [
+    56,
+    56
+   ],
+   "lean": "  erw [latticeDisc, sublatticeDisc]; obtain ⟨q, ⟨V, -⟩, x, a, -, hx, e⟩ := sublatticeBasis _ T",
+   "uses": [
+    {
+     "decl": "Filling.latticeDisc"
+    },
+    {
+     "decl": "Filling.sublatticeBasis"
+    }
+   ]
+  },
+  {
+   "id": "1.4.11",
+   "parent": "1.4",
+   "kind": "deduction",
+   "claim": "If [det qᴴq] = 0 the term is 0.",
+   "lines": [
+    57,
+    57
+   ],
+   "lean": "  by_cases d : genIndex (qᴴ * q).det = 0; simp [d]"
+  },
+  {
+   "id": "1.4.12",
+   "parent": "1.4",
+   "kind": "deduction",
+   "claim": "Rewrite the integrality V of the basis through classCoordX₀ of the chosen representative g_φuφ̃k_φ.",
+   "lines": [
+    58,
+    58
+   ],
+   "lean": "  erw [classCoordX₀, h] at V; simp [e, ← hη, isIntMatrix_middleBaseChange_mul] at V"
+  },
+  {
+   "id": "1.4.13",
+   "parent": "1.4",
+   "kind": "deduction",
+   "claim": "By sublatticeDisc_mul_index_sq_le for the transported basis (dimension preserved by P, Gram matrix preserved by the isometry η), (d·i)² ≤ D: d the discriminant of P(T) ∩ uÔ^κ, i the index of the congruence lattice given by r(φ), D the discriminant of T for the class.",
+   "lines": [
+    59,
+    63
+   ],
+   "lean": "  obtain ⟨w, p, z⟩ := sublatticeDisc_mul_index_sq_le u.1.3 _ (r φ) (P.finrank_map_eq T).symm\n    (fun | _, ⟨v, rfl⟩ => ⟨_, hx.le ⟨v, rfl⟩, mulVec_mulVec ..⟩) a (by simp [e, ← genIndex_det_conj,\n    finAdeleMat_conjTranspose, by simpa using U.gram_invariant η x x])\n    d (by simpa [y] using (y φ).2.isIntMatrix.mul V.1) (K := .comap (.proj ()) (_ ∙ _)) (by\n    simpa [r, y, ← Matrix.mul_assoc] using! V.2)",
+   "uses": [
+    {
+     "decl": "Filling.sublatticeDisc_mul_index_sq_le"
+    }
+   ]
+  },
+  {
+   "id": "1.4.14",
+   "parent": "1.4",
+   "kind": "deduction",
+   "claim": "Hence D^{−(k+1)/2} ≤ (d·i)^{−(k+1)} (square roots and powers).",
+   "lines": [
+    64,
+    64
+   ],
+   "lean": "  grw [← Real.le_sqrt_of_sq_le w]; simp [*, mul_pow, P.finrank_map_eq]"
+  },
+  {
+   "id": "1.5",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "f takes finite values (by the claim at u = 1, Σ_φ f([φ̃]) ≤ #A·b < ∞), so f is a function to the nonnegative reals.",
+   "lines": [
+    65,
+    66
+   ],
+   "lean": "  lift f to S.Classes → NNReal using Quot.ind (div_mul_cancel · _ ▸\n    sum_ne_top.1 ((hB _).trans_lt coe_lt_top).ne ⟦1⟧ (by simp)) with f"
+  },
+  {
+   "id": "1.6",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Let φ(g) = b − f([g]) on U(X₀)(𝔸_f).",
+   "lines": [
+    67,
+    67
+   ],
+   "lean": "  let φ g := b - f (⟦g⟧)"
+  },
+  {
+   "id": "1.7",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "φ is invariant: φ(γ·g·k) = φ(g) for rational γ and k in the column level (same class).",
+   "lines": [
+    68,
+    68
+   ],
+   "lean": "  have e γ a k h g : φ _ = φ g := congr(b - f $((eq ..).2 ⟨γ, a, k, h, rfl⟩)).symm",
+   "typed_fact": "φ _ = φ g"
+  },
+  {
+   "id": "1.8",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Hence the column level fixes φ on the right.",
+   "lines": [
+    69,
+    69
+   ],
+   "lean": "  have r : S.columnLevel ≤ rightStab φ := by simpa [LE.le] using e 1",
+   "typed_fact": "S.columnLevel ≤ rightStab φ"
+  },
+  {
+   "id": "1.9",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Pass to real numbers: the sums of the finite values of f.",
+   "lines": [
+    70,
+    70
+   ],
+   "lean": "  simp (disch := finiteness) only [← ofNNReal_finsetSum, le_ofReal_iff_toReal_le, coe_toReal] at *"
+  },
+  {
+   "id": "1.10",
+   "parent": "1",
+   "kind": "deduction",
+   "claim": "Σ_c f(c) ≤ #Classes·b: the class sum of φ equals its class integral (K_c fixes φ); by linearity (classIntegral_sum) the class integral of g ↦ Σ_{a∈A} φ(g·ã) is #A times that of φ, and Σ_{a∈A} φ(gã) = #A·b − Σ_a f([gã]) ≥ 0 by the claim (step 1.4); so the class sum of b − f is ≥ 0.",
+   "lines": [
+    71,
+    75
+   ],
+   "lean": "  simpa [↓classIntegral_eq_classSum r, classSum_eq_sum, φ, NeZero.pos,\n    ← sum_congr _ f (congrArg f ·.out_eq)] using (classIntegral_sum (K :=\n    S.columnLevel) Finset.univ (fun _ : A ↦ .id ℝ) _ (fun _ ↦ ⟨(by simpa using e · · 1),\n    Subgroup.isOpen_mono r S.hasFiniteType_columnLevel.2⟩) (congrFun rfl) :).le.trans'\n    (mul_nonneg (by simp) (finsum_nonneg (mul_nonneg (by simp) <| by simpa [φ] using hB ·.out))))",
+   "uses": [
+    {
+     "decl": "classIntegral_eq_classSum"
+    },
+    {
+     "decl": "classIntegral_sum"
+    },
+    {
+     "step": "1.4"
+    }
+   ]
+  }
+ ]
+}

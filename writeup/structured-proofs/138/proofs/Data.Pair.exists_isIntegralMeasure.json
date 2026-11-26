@@ -1,0 +1,382 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Selmer.ValueFamilies:30:7",
+ "summary": "For z ≥ 2, F is the normalised squared norm of the lift (intAlgPart), K = {0}, m = 0; adding a place multiplies the L-value by its Euler factors. For z = 1, F = ‖Mk·N·Λ‖², Λ the determinant period of rank 2, K = {0, 1}, m = 1; integrality comes from the class-sum expansion with stabilisers dividing Mk, and the twist relation from the L-value product formula.",
+ "intro_lines": [],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "fact",
+   "claim": "For every tame ϑ, the tame part ψ_p·ψ_ϑ is trivial off the places of the modulus 𝔪(ϑ, 2) (the chosen places and Q(ϑ)).",
+   "lines": [
+    35,
+    36
+   ],
+   "lean": "  have s ϑ : ∀ w ∉ (D.𝔪 ϑ 2).places,\n    (p.ψ * ϑ.ψ) w = 1 := by simp_all [places_modulus_eq_union, p.6, ϑ.5]",
+   "uses": [
+    {
+     "decl": "Data.places_modulus_eq_union"
+    }
+   ],
+   "typed_fact": "∀ w ∉ (D.𝔪 ϑ 2).places,\n    (p.ψ * ϑ.ψ) w = 1"
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "reduction",
+   "claim": "Case split: 1 < z, or z = 1.",
+   "lines": [
+    37,
+    80
+   ],
+   "lean": "  cases' p.z_mem.1.lt_or_eq' with hz hz\n  · use p.intAlgPart ⟨card_fin _, hz⟩, {0}, 0, by simp,\n      isIntegralMeasure_intAlgPart _, ?_, by grind [ratio_eq_intAlgPart_div, intAlgPart_ne_zero]\n    introv _ _ _ _\n    obtain ⟨⟨_, ⟨⟩⟩⟩ := p.intAlgPart_eq_mul_L ⟨card_fin _, hz⟩, ϑ'.6 v,\n      @levelNorm_mem_and_notMem_of_mem_Q _ D ϑ' v, @levelNorm_mem_and_notMem_of_mem_Q _ D ϑ'\n      (star v), (p.hasWeight.mul ϑ.hasWeight).atUnif_star (w := v)\n    simp [mul_assoc, L, *]\n    convert (eulerProd_erase (p.hasWeight.mul ϑ.hasWeight).inv.isHeckeOfType.norm_heckeCoeff_le {v,\n      star v}).2.2 p.z (mod_cast hz)\n    · simp [funext_iff, heckeCoeff, Set.indicator]; grind [star_star]\n    repeat simp_all [atUnif, heckeCoeff, cpow_neg, Ne.symm, places_modulus_eq_union,\n      IsChosen] <;> grind\n  let c := (p.c · - 1)\n  have h ϑ := ((p.hasWeight.mul (TameChar.hasWeight ϑ)).mul_upsilonU1_pow 1).of_weight_eq (e' :=\n    (-c ·)) (by grind [le_c, add_zero])\n  obtain ⟨⟨N, _, J⟩, C, K⟩ := exists_modKernel_integral_bound (Fin 2) (Fin 2) D (univ.sum c * 2),\n    stdClassSum_det_modKernel_eq _ even_two c\n  let Λ ϑ := detPeriod (Fin 2) (p.ν * ϑ.toAutChar * WeilData.upsilonU1 ^ 1) c (D.𝔪 ϑ 2) (p.ψ * ϑ.ψ)\n  choose γ b e using (K <| isTameFor_of_hasWeight (c := 2) · (h _) r)\n  have a ϑ : ‖_ * Λ _‖ = _ := congr(‖$(e ϑ 1)‖)\n  simp [places_modulus_eq_union, inv_mul_cancel_comm] at a b\n  refine ⟨(‖D.chosenGroupOrder * N * Λ ·‖ ^ 2), univ, 1, by simp [NeZero.ne]; grind [norm_zero],\n    fun ϑ ↦ let g (x : StdClasses (Kf ..) × GL _ (D.𝔪 ϑ 2).ResRing) := x.1.out * (liftMod x.2).1\n    .norm_sq _ ⟨_, inferInstance, (detFin 1 <| g ·), _, fun x ↦ mul_mem (div_mem_integralAway\n    ((D.card_classAut_dvd_chosenGroupOrder (by simpa using\n      D.nat_le_of_hasLogBound) le_rfl x.1.out).mul_right (_ ^ 0))) fun l _ k j ↦\n    congr(‖j (N * $(detKernel_embFin_mul (Pi.single 1 1) ..))‖).ge.trans\n      (@(J _ _ _ (h .one) (h _) D.norm_mul_gProd_pow_mem_modulus (by simp [ite_mem]) _ _ _\n      (by simp [letterMinor, det_apply', prod_pow_eq_pow_sum, prod_smul, ← smul_sum,\n      smul_pow, pow_mul, sq, mul_smul])).1 l _ ⟨j⟩ k (by simp) (exists_mul_mem_integralAbove l (g x)\n    1).choose_spec.1 ⟨∏ τ, det (of (.X ⟨τ, ·, ·⟩)) ^ c τ, by simp [letterMinor, det_apply]⟩), by\n    rintro ⟨⟩ rfl\n    simp [Λ, ↓detPeriod_eq_stdClassSum_sum (s _), classSum, detKernel, mul_sum, modKernel_twist,\n      Fintype.sum_prod_type, Rat.smul_def, division_def]\n    ac_rfl⟩, ?_, fun ϑ ↦ ?_⟩\n  · introv _ _ _ c\n    simp [Λ, ↓← mul_conj', ↓detPeriod_insert (c ▸ s ϑ) v, AutChar.frobValue, AutChar.spaceChar,\n      IsChosen, *, ← ofReal_pow,\n      prod_range, inv_eq_conj, places_modulus_eq_union, D.levelNorm_mem_and_notMem_of_mem_Q ϑ']\n    ring\n  have := And.intro (p.lValueProd_eq 1 ϑ) (b 1)\n  simp [ratio, lowerPoint, hz, twist_one_spec] at this ⊢\n  norm_cast at *; grind",
+   "head_lines": [
+    37,
+    37
+   ]
+  },
+  {
+   "id": "2.1",
+   "parent": "2",
+   "kind": "case",
+   "claim": "Case z ≥ 2: take F = intAlgPart, K = {0}, m = 0: F(1) ≠ 0, F is an integral measure at each modulus (isIntegralMeasure_intAlgPart), and F(ϑ) = F(1)·ρ(ϑ) (ratio_eq_intAlgPart_div); the insertion law remains.",
+   "lines": [
+    38,
+    49
+   ],
+   "lean": "  · use p.intAlgPart ⟨card_fin _, hz⟩, {0}, 0, by simp,\n      isIntegralMeasure_intAlgPart _, ?_, by grind [ratio_eq_intAlgPart_div, intAlgPart_ne_zero]\n    introv _ _ _ _\n    obtain ⟨⟨_, ⟨⟩⟩⟩ := p.intAlgPart_eq_mul_L ⟨card_fin _, hz⟩, ϑ'.6 v,\n      @levelNorm_mem_and_notMem_of_mem_Q _ D ϑ' v, @levelNorm_mem_and_notMem_of_mem_Q _ D ϑ'\n      (star v), (p.hasWeight.mul ϑ.hasWeight).atUnif_star (w := v)\n    simp [mul_assoc, L, *]\n    convert (eulerProd_erase (p.hasWeight.mul ϑ.hasWeight).inv.isHeckeOfType.norm_heckeCoeff_le {v,\n      star v}).2.2 p.z (mod_cast hz)\n    · simp [funext_iff, heckeCoeff, Set.indicator]; grind [star_star]\n    repeat simp_all [atUnif, heckeCoeff, cpow_neg, Ne.symm, places_modulus_eq_union,\n      IsChosen] <;> grind",
+   "head_lines": [
+    38,
+    39
+   ],
+   "uses": [
+    {
+     "decl": "Data.Pair.intAlgPart"
+    },
+    {
+     "decl": "Data.Pair.isIntegralMeasure_intAlgPart"
+    },
+    {
+     "decl": "Data.Pair.ratio_eq_intAlgPart_div"
+    },
+    {
+     "decl": "Data.Pair.intAlgPart_ne_zero"
+    }
+   ]
+  },
+  {
+   "id": "2.1.1",
+   "parent": "2.1",
+   "kind": "setup",
+   "claim": "Let ϑ, ϑ', v be as in (3); intAlgPart = A·L(z, (νϑ)⁻¹) without the Euler factors at the chosen places and at Q ∪ Q̄ (intAlgPart_eq_mul_L, A ≠ 0); v is not chosen and v, v̄ are prime to the level (levelNorm_mem_and_notMem_of_mem_Q); the base change of νϑ takes inverse values at v̄ and v.",
+   "lines": [
+    40,
+    43
+   ],
+   "lean": "    introv _ _ _ _\n    obtain ⟨⟨_, ⟨⟩⟩⟩ := p.intAlgPart_eq_mul_L ⟨card_fin _, hz⟩, ϑ'.6 v,\n      @levelNorm_mem_and_notMem_of_mem_Q _ D ϑ' v, @levelNorm_mem_and_notMem_of_mem_Q _ D ϑ'\n      (star v), (p.hasWeight.mul ϑ.hasWeight).atUnif_star (w := v)",
+   "uses": [
+    {
+     "decl": "Data.Pair.intAlgPart_eq_mul_L"
+    },
+    {
+     "decl": "Data.levelNorm_mem_and_notMem_of_mem_Q"
+    },
+    {
+     "decl": "AutChar.HasWeight.atUnif_star"
+    }
+   ]
+  },
+  {
+   "id": "2.1.2",
+   "parent": "2.1",
+   "kind": "computation",
+   "claim": "So F(ϑ')/F(ϑ) is the quotient of the two partial L-values at z.",
+   "lines": [
+    44,
+    44
+   ],
+   "lean": "    simp [mul_assoc, L, *]"
+  },
+  {
+   "id": "2.1.3",
+   "parent": "2.1",
+   "kind": "fact",
+   "claim": "Removing the Euler factors at {v, v̄} from the Euler product at z > 1 multiplies it by ∏_{w∈{v,v̄}} (1 − a_w q_w^{−z}) (eulerProd_erase, the coefficients being bounded by 1).",
+   "lines": [
+    45,
+    46
+   ],
+   "lean": "    convert (eulerProd_erase (p.hasWeight.mul ϑ.hasWeight).inv.isHeckeOfType.norm_heckeCoeff_le {v,\n      star v}).2.2 p.z (mod_cast hz)",
+   "uses": [
+    {
+     "decl": "eulerProd_erase"
+    }
+   ]
+  },
+  {
+   "id": "2.1.4",
+   "parent": "2.1",
+   "kind": "computation",
+   "claim": "The coefficient functions agree off {v, v̄} (indicator computation).",
+   "lines": [
+    47,
+    47
+   ],
+   "lean": "    · simp [funext_iff, heckeCoeff, Set.indicator]; grind [star_star]"
+  },
+  {
+   "id": "2.1.5",
+   "parent": "2.1",
+   "kind": "computation",
+   "claim": "The two factors are 1 − y_v^{±1} q_v^{−z} (values at the uniformisers, q_{v̄} = q_v), as in (3) with K = {0}.",
+   "lines": [
+    48,
+    49
+   ],
+   "lean": "    repeat simp_all [atUnif, heckeCoeff, cpow_neg, Ne.symm, places_modulus_eq_union,\n      IsChosen] <;> grind"
+  },
+  {
+   "id": "2.2",
+   "parent": "2",
+   "kind": "case",
+   "claim": "Case z = 1: let c_τ = c(τ) − 1 (c the weight datum of ν).",
+   "lines": [
+    50,
+    80
+   ],
+   "lean": "  let c := (p.c · - 1)\n  have h ϑ := ((p.hasWeight.mul (TameChar.hasWeight ϑ)).mul_upsilonU1_pow 1).of_weight_eq (e' :=\n    (-c ·)) (by grind [le_c, add_zero])\n  obtain ⟨⟨N, _, J⟩, C, K⟩ := exists_modKernel_integral_bound (Fin 2) (Fin 2) D (univ.sum c * 2),\n    stdClassSum_det_modKernel_eq _ even_two c\n  let Λ ϑ := detPeriod (Fin 2) (p.ν * ϑ.toAutChar * WeilData.upsilonU1 ^ 1) c (D.𝔪 ϑ 2) (p.ψ * ϑ.ψ)\n  choose γ b e using (K <| isTameFor_of_hasWeight (c := 2) · (h _) r)\n  have a ϑ : ‖_ * Λ _‖ = _ := congr(‖$(e ϑ 1)‖)\n  simp [places_modulus_eq_union, inv_mul_cancel_comm] at a b\n  refine ⟨(‖D.chosenGroupOrder * N * Λ ·‖ ^ 2), univ, 1, by simp [NeZero.ne]; grind [norm_zero],\n    fun ϑ ↦ let g (x : StdClasses (Kf ..) × GL _ (D.𝔪 ϑ 2).ResRing) := x.1.out * (liftMod x.2).1\n    .norm_sq _ ⟨_, inferInstance, (detFin 1 <| g ·), _, fun x ↦ mul_mem (div_mem_integralAway\n    ((D.card_classAut_dvd_chosenGroupOrder (by simpa using\n      D.nat_le_of_hasLogBound) le_rfl x.1.out).mul_right (_ ^ 0))) fun l _ k j ↦\n    congr(‖j (N * $(detKernel_embFin_mul (Pi.single 1 1) ..))‖).ge.trans\n      (@(J _ _ _ (h .one) (h _) D.norm_mul_gProd_pow_mem_modulus (by simp [ite_mem]) _ _ _\n      (by simp [letterMinor, det_apply', prod_pow_eq_pow_sum, prod_smul, ← smul_sum,\n      smul_pow, pow_mul, sq, mul_smul])).1 l _ ⟨j⟩ k (by simp) (exists_mul_mem_integralAbove l (g x)\n    1).choose_spec.1 ⟨∏ τ, det (of (.X ⟨τ, ·, ·⟩)) ^ c τ, by simp [letterMinor, det_apply]⟩), by\n    rintro ⟨⟩ rfl\n    simp [Λ, ↓detPeriod_eq_stdClassSum_sum (s _), classSum, detKernel, mul_sum, modKernel_twist,\n      Fintype.sum_prod_type, Rat.smul_def, division_def]\n    ac_rfl⟩, ?_, fun ϑ ↦ ?_⟩\n  · introv _ _ _ c\n    simp [Λ, ↓← mul_conj', ↓detPeriod_insert (c ▸ s ϑ) v, AutChar.frobValue, AutChar.spaceChar,\n      IsChosen, *, ← ofReal_pow,\n      prod_range, inv_eq_conj, places_modulus_eq_union, D.levelNorm_mem_and_notMem_of_mem_Q ϑ']\n    ring\n  have := And.intro (p.lValueProd_eq 1 ϑ) (b 1)\n  simp [ratio, lowerPoint, hz, twist_one_spec] at this ⊢\n  norm_cast at *; grind",
+   "head_lines": [
+    50,
+    50
+   ]
+  },
+  {
+   "id": "2.2.1",
+   "parent": "2.2",
+   "kind": "fact",
+   "claim": "For every tame ϑ, νϑ·υ has weight −c' with c'_τ = c_τ (of_weight_eq, mul_upsilonU1_pow).",
+   "lines": [
+    51,
+    52
+   ],
+   "lean": "  have h ϑ := ((p.hasWeight.mul (TameChar.hasWeight ϑ)).mul_upsilonU1_pow 1).of_weight_eq (e' :=\n    (-c ·)) (by grind [le_c, add_zero])",
+   "uses": [
+    {
+     "decl": "AutChar.HasWeight.mul_upsilonU1_pow"
+    },
+    {
+     "decl": "AutChar.HasWeight.of_weight_eq"
+    }
+   ]
+  },
+  {
+   "id": "2.2.2",
+   "parent": "2.2",
+   "kind": "fact",
+   "claim": "Choose the integrality constant N ≠ 0 for the theta kernels of rank 2 (exists_modKernel_integral_bound) and the constant C of the class-sum identity of the determinant kernel (stdClassSum_det_modKernel_eq).",
+   "lines": [
+    53,
+    54
+   ],
+   "lean": "  obtain ⟨⟨N, _, J⟩, C, K⟩ := exists_modKernel_integral_bound (Fin 2) (Fin 2) D (univ.sum c * 2),\n    stdClassSum_det_modKernel_eq _ even_two c",
+   "uses": [
+    {
+     "decl": "exists_modKernel_integral_bound"
+    },
+    {
+     "decl": "stdClassSum_det_modKernel_eq"
+    }
+   ]
+  },
+  {
+   "id": "2.2.3",
+   "parent": "2.2",
+   "kind": "setup",
+   "claim": "Let Λ(ϑ) = detPeriod of rank 2 for νϑυ, weight c', modulus 𝔪(ϑ, 2) and tame part ψ_p ψ_ϑ.",
+   "lines": [
+    55,
+    55
+   ],
+   "lean": "  let Λ ϑ := detPeriod (Fin 2) (p.ν * ϑ.toAutChar * WeilData.upsilonU1 ^ 1) c (D.𝔪 ϑ 2) (p.ψ * ϑ.ψ)",
+   "uses": [
+    {
+     "decl": "detPeriod"
+    }
+   ]
+  },
+  {
+   "id": "2.2.4",
+   "parent": "2.2",
+   "kind": "fact",
+   "claim": "For each twist ϑ choose γ with |γ|² = C/lValueProd(…) and γ·(class sum of the kernel) = 1 (isTameFor_of_hasWeight, p ramified).",
+   "lines": [
+    56,
+    56
+   ],
+   "lean": "  choose γ b e using (K <| isTameFor_of_hasWeight (c := 2) · (h _) r)",
+   "uses": [
+    {
+     "decl": "Data.isTameFor_of_hasWeight"
+    }
+   ]
+  },
+  {
+   "id": "2.2.5",
+   "parent": "2.2",
+   "kind": "fact",
+   "claim": "Taking norms: |γ|·|Λ(ϑ)| = 1 for every ϑ.",
+   "lines": [
+    57,
+    57
+   ],
+   "lean": "  have a ϑ : ‖_ * Λ _‖ = _ := congr(‖$(e ϑ 1)‖)",
+   "typed_fact": "‖_ * Λ _‖ = _"
+  },
+  {
+   "id": "2.2.6",
+   "parent": "2.2",
+   "kind": "computation",
+   "claim": "Rewrite the places of the modulus as chosen places ∪ Q (places_modulus_eq_union).",
+   "lines": [
+    58,
+    58
+   ],
+   "lean": "  simp [places_modulus_eq_union, inv_mul_cancel_comm] at a b",
+   "uses": [
+    {
+     "decl": "Data.places_modulus_eq_union"
+    }
+   ]
+  },
+  {
+   "id": "2.2.7",
+   "parent": "2.2",
+   "kind": "assembly",
+   "claim": "Take F(ϑ) = ‖Mk·N·Λ(ϑ)‖², K = univ, m = 1; F(1) ≠ 0 since Λ(1) ≠ 0.",
+   "lines": [
+    59,
+    72
+   ],
+   "lean": "  refine ⟨(‖D.chosenGroupOrder * N * Λ ·‖ ^ 2), univ, 1, by simp [NeZero.ne]; grind [norm_zero],\n    fun ϑ ↦ let g (x : StdClasses (Kf ..) × GL _ (D.𝔪 ϑ 2).ResRing) := x.1.out * (liftMod x.2).1\n    .norm_sq _ ⟨_, inferInstance, (detFin 1 <| g ·), _, fun x ↦ mul_mem (div_mem_integralAway\n    ((D.card_classAut_dvd_chosenGroupOrder (by simpa using\n      D.nat_le_of_hasLogBound) le_rfl x.1.out).mul_right (_ ^ 0))) fun l _ k j ↦\n    congr(‖j (N * $(detKernel_embFin_mul (Pi.single 1 1) ..))‖).ge.trans\n      (@(J _ _ _ (h .one) (h _) D.norm_mul_gProd_pow_mem_modulus (by simp [ite_mem]) _ _ _\n      (by simp [letterMinor, det_apply', prod_pow_eq_pow_sum, prod_smul, ← smul_sum,\n      smul_pow, pow_mul, sq, mul_smul])).1 l _ ⟨j⟩ k (by simp) (exists_mul_mem_integralAbove l (g x)\n    1).choose_spec.1 ⟨∏ τ, det (of (.X ⟨τ, ·, ·⟩)) ^ c τ, by simp [letterMinor, det_apply]⟩), by\n    rintro ⟨⟩ rfl\n    simp [Λ, ↓detPeriod_eq_stdClassSum_sum (s _), classSum, detKernel, mul_sum, modKernel_twist,\n      Fintype.sum_prod_type, Rat.smul_def, division_def]\n    ac_rfl⟩, ?_, fun ϑ ↦ ?_⟩",
+   "head_lines": [
+    59,
+    59
+   ]
+  },
+  {
+   "id": "2.2.7.1",
+   "parent": "2.2.7",
+   "kind": "fact",
+   "claim": "Integral measure: Λ(ϑ) is a sum over the classes x and y ∈ GL_2(𝒪/𝔪) of the determinant kernel at g_x = (class representative)·(lift of y), each divided by the order of a stabiliser, which divides Mk (card_classAut_dvd_chosenGroupOrder); F is the squared norm of such a sum (norm_sq).",
+   "lines": [
+    60,
+    63
+   ],
+   "lean": "    fun ϑ ↦ let g (x : StdClasses (Kf ..) × GL _ (D.𝔪 ϑ 2).ResRing) := x.1.out * (liftMod x.2).1\n    .norm_sq _ ⟨_, inferInstance, (detFin 1 <| g ·), _, fun x ↦ mul_mem (div_mem_integralAway\n    ((D.card_classAut_dvd_chosenGroupOrder (by simpa using\n      D.nat_le_of_hasLogBound) le_rfl x.1.out).mul_right (_ ^ 0))) fun l _ k j ↦",
+   "uses": [
+    {
+     "decl": "Data.card_classAut_dvd_chosenGroupOrder"
+    }
+   ]
+  },
+  {
+   "id": "2.2.7.2",
+   "parent": "2.2.7",
+   "kind": "fact",
+   "claim": "The terms N·(kernel)(g) are integral at every prime l prime to Q: the kernel is invariant under rational points (detKernel_embFin_mul), and after moving g into the integral points above l (exists_mul_mem_integralAbove) the integrality bound of step 2.2.2 applies (the level contains N(Q)·g²... norm_mul_gProd_pow_mem_modulus).",
+   "lines": [
+    64,
+    68
+   ],
+   "lean": "    congr(‖j (N * $(detKernel_embFin_mul (Pi.single 1 1) ..))‖).ge.trans\n      (@(J _ _ _ (h .one) (h _) D.norm_mul_gProd_pow_mem_modulus (by simp [ite_mem]) _ _ _\n      (by simp [letterMinor, det_apply', prod_pow_eq_pow_sum, prod_smul, ← smul_sum,\n      smul_pow, pow_mul, sq, mul_smul])).1 l _ ⟨j⟩ k (by simp) (exists_mul_mem_integralAbove l (g x)\n    1).choose_spec.1 ⟨∏ τ, det (of (.X ⟨τ, ·, ·⟩)) ^ c τ, by simp [letterMinor, det_apply]⟩), by",
+   "uses": [
+    {
+     "decl": "detKernel_embFin_mul"
+    },
+    {
+     "decl": "exists_mul_mem_integralAbove"
+    },
+    {
+     "decl": "Data.norm_mul_gProd_pow_mem_modulus"
+    }
+   ]
+  },
+  {
+   "id": "2.2.7.3",
+   "parent": "2.2.7",
+   "kind": "computation",
+   "claim": "The measure evaluates to Mk·N·Λ(ϑ): detPeriod is the class sum of Σ_y of the kernel at g·ỹ (detPeriod_eq_stdClassSum_sum); rearranging the sums gives the identity.",
+   "lines": [
+    69,
+    72
+   ],
+   "lean": "    rintro ⟨⟩ rfl\n    simp [Λ, ↓detPeriod_eq_stdClassSum_sum (s _), classSum, detKernel, mul_sum, modKernel_twist,\n      Fintype.sum_prod_type, Rat.smul_def, division_def]\n    ac_rfl⟩, ?_, fun ϑ ↦ ?_⟩",
+   "uses": [
+    {
+     "decl": "detPeriod_eq_stdClassSum_sum"
+    }
+   ]
+  },
+  {
+   "id": "2.2.8",
+   "parent": "2.2",
+   "kind": "goal",
+   "claim": "Insertion law: adding v to the modulus multiplies detPeriod by the Euler factor of rank 2 at v (detPeriod_insert), so F by ∏_{k∈{0,1}} ∏_± (1 − y_v^{±1} q_v^{k−1}) (squared norm, conjugation).",
+   "lines": [
+    73,
+    77
+   ],
+   "lean": "  · introv _ _ _ c\n    simp [Λ, ↓← mul_conj', ↓detPeriod_insert (c ▸ s ϑ) v, AutChar.frobValue, AutChar.spaceChar,\n      IsChosen, *, ← ofReal_pow,\n      prod_range, inv_eq_conj, places_modulus_eq_union, D.levelNorm_mem_and_notMem_of_mem_Q ϑ']\n    ring",
+   "uses": [
+    {
+     "decl": "detPeriod_insert"
+    },
+    {
+     "decl": "AutChar.frobValue"
+    },
+    {
+     "decl": "AutChar.spaceChar"
+    }
+   ]
+  },
+  {
+   "id": "2.2.9",
+   "parent": "2.2",
+   "kind": "fact",
+   "claim": "The product of L-values for (νϑ)⁻¹ is N(Q)^{z²} times that for ν⁻¹ times ∏ ρ² (lValueProd_eq), and |γ|² = C/lValueProd (step 2.2.4 at s = 1).",
+   "lines": [
+    78,
+    78
+   ],
+   "lean": "  have := And.intro (p.lValueProd_eq 1 ϑ) (b 1)",
+   "uses": [
+    {
+     "decl": "Data.Pair.lValueProd_eq"
+    }
+   ]
+  },
+  {
+   "id": "2.2.10",
+   "parent": "2.2",
+   "kind": "computation",
+   "claim": "With z = 1 (one lower point) and the trivial twist: F(ϑ) = F(1)·N(Q)·ρ(ϑ)².",
+   "lines": [
+    79,
+    79
+   ],
+   "lean": "  simp [ratio, lowerPoint, hz, twist_one_spec] at this ⊢"
+  },
+  {
+   "id": "2.2.11",
+   "parent": "2.2",
+   "kind": "computation",
+   "claim": "The remaining identity is arithmetic in the reals.",
+   "lines": [
+    80,
+    80
+   ],
+   "lean": "  norm_cast at *; grind"
+  }
+ ]
+}

@@ -1,0 +1,347 @@
+{
+ "schema": "readback/proof/1",
+ "declaration": "New.Filling.GlobalSieve:172:7",
+ "summary": "Apply one_sided_poisson to the product system (the band-limit systems of the Bessel systems at the infinite places times J' at T) with Γ a power of b: the frequency condition is sum_frequencies_le with c_v = κ_v^{2ϱ+1}/(gN), and the weight condition (Σ_pΛ)² ≤ Γ∏c_a follows from the head weights via sum_frequencies_le applied to the partial products; then compare (1+b⁻¹⁰)/deg and the error with prod_band_le_inv_deg.",
+ "intro_lines": [
+  [
+   175,
+   179
+  ]
+ ],
+ "steps": [
+  {
+   "id": "1",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Collect: b ≥ 1, rd_E > 0, g > 0, N > 0, |κ_v| ≥ 1 (K), the frequency bound Z (sum_frequencies_le), the band limits h of the Bessel systems (sieve systems on ℂ), Θ > 0.",
+   "lines": [
+    180,
+    182
+   ],
+   "lean": "  obtain ⟨b, r, _, N, K, Z, h, θ⟩ := S.one_le_b, rootDiscr_pos E, (by simp : S.g ≠ 0).pos,\n    S.N_prime.pos, S.one_le_abs_kappa, S.sum_frequencies_le T, (S.besselSys · |>.band_limits.1),\n    (by simp [Shape.bandConst] : 0 < 𝔰.bandConst)",
+   "uses": [
+    {
+     "decl": "Filling.sum_frequencies_le"
+    },
+    {
+     "decl": "BesselSystem"
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Unfold the head weights and dampedPower.",
+   "lines": [
+    183,
+    183
+   ],
+   "lean": "  unfold headWeight finHeadWeight dampedPower at *"
+  },
+  {
+   "id": "3",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Apply one_sided_poisson to the product system (h'.pi h) at i = ϱ and the set U:",
+   "lines": [
+    184,
+    208
+   ],
+   "lean": "  refine ((S.one_sided_poisson T hA hg (h'.pi h) (fun a c hc X hy ↦ by\n    simp_rw [frequencyGain, ratPoint, prod_mul_distrib, mul_assoc, ← mul_sum, ← mul_assoc,\n      ← sum_mul] at *\n    grw [Z _ _ _ _ (S.kappa · ^ (2 * 𝔰.ϱ + 1) / (S.g * S.N)) _ (fun v ↦ ⟨by\n      simp [div_eq_mul_inv]; grw [hc, Nat.sub_le] <;> simp [pow_succ, field, K], by\n      grw [abs_div, abs_pow, abs_kappa_le, div_le_self] <;> norm_cast <;> bound⟩) hy]; bound)\n    (by positivity) (by intros; positivity) (Γ := S.b ^ _) (fun i hi ↦ by\n    let m (p : Fin i → A) j := ∏ a ∈ range j, (padTuple (p · |>.1) 1 a).1\n    have L v a := (by grw [frameScaleSq, ← pow_abs_two_mul, Nat.sub_le, abs_kappa_le,\n      div_le_self] <;> bound : S.frameScaleSq v a ≤ _)\n    beta_reduce\n    grw [(.trans ?_ ((prod_univ_sum ..).ge.trans (prod_le_prod₀ (by intros; positivity) fun (j :\n      Fin i) _ ↦ Z (S.N ^ i) (𝔰.n ^ 6) (image (m · j.succ) univ) (∏ a ∈ range j.succ, S.frameScaleSq\n      · a) (fun _ ↦ S.N ^ i) (by bound) (by simp; grw [← K]; simp; bound) (by simp [m, hA,\n      prod_mem, apply_dite, dite_eq_iff, -Subring.mem_comap]))) : ∑ p, _ ≤ _),\n      volÔ_eq, abs_of_pos (by bound), N_le, N_le, L, half_le_self, S.rd_le_b]\n    simp [field, ← pow_mul, ← pow_add, mul_pow]; grw [hi]\n    iterate 3 simp [r, -frameScaleSq, le_of_lt, prod_pos]\n    grw [← image_subset_iff.2 fun p h ↦ mem_piFinset.2 fun _ ↦\n      mem_image_of_mem _ h, sum_image fun p _ q _ e ↦ funext fun j ↦ ?_]\n    · simp_rw [@prod_range _ _ i, @prod_comm (Fin i), ← prod_mul_distrib]\n      gcongr 3 <;> simp [m]\n      split <;> simp +contextual [denomIndex, relIndex_eq_one.2, IsConcreteLE.le_iff, div_nonneg, *]\n    simpa [m, prod_range_succ] using congr($e j / $(@Fin.cases i (fun k ↦ m p k = m q k) (by bound)\n      (congrFun e) j.castSucc))) 𝔰.ϱ le_rfl U hU).trans_eq' (by congr! <;> ext <;> simp)).trans ?_",
+   "head_span": [
+    184,
+    3,
+    184,
+    49
+   ],
+   "head_lines": [
+    184,
+    184
+   ],
+   "uses": [
+    {
+     "decl": "Filling.one_sided_poisson"
+    },
+    {
+     "decl": "SieveSystem.pi"
+    }
+   ]
+  },
+  {
+   "id": "3.1",
+   "parent": "3",
+   "kind": "deduction",
+   "claim": "frequency condition: for |c_v|⁻¹ ≤ |κ_v|/g and nonzero T-integers X,",
+   "lines": [
+    184,
+    189
+   ],
+   "span": [
+    184,
+    50,
+    189,
+    94
+   ],
+   "lean": "(fun a c hc X hy ↦ by\n    simp_rw [frequencyGain, ratPoint, prod_mul_distrib, mul_assoc, ← mul_sum, ← mul_assoc,\n      ← sum_mul] at *\n    grw [Z _ _ _ _ (S.kappa · ^ (2 * 𝔰.ϱ + 1) / (S.g * S.N)) _ (fun v ↦ ⟨by\n      simp [div_eq_mul_inv]; grw [hc, Nat.sub_le] <;> simp [pow_succ, field, K], by\n      grw [abs_div, abs_pow, abs_kappa_le, div_le_self] <;> norm_cast <;> bound⟩) hy]; bound)",
+   "head_span": [
+    184,
+    50,
+    184,
+    71
+   ],
+   "head_lines": [
+    184,
+    184
+   ]
+  },
+  {
+   "id": "3.1.1",
+   "parent": "3.1",
+   "kind": "deduction",
+   "claim": "expand frequencyGain and ratPoint,",
+   "lines": [
+    185,
+    186
+   ],
+   "lean": "    simp_rw [frequencyGain, ratPoint, prod_mul_distrib, mul_assoc, ← mul_sum, ← mul_assoc,\n      ← sum_mul] at *"
+  },
+  {
+   "id": "3.1.2",
+   "parent": "3.1",
+   "kind": "deduction",
+   "claim": "apply Z with x_v = κ_v^{2ϱ+1}/(gN): |c_v/frameScaleSq|⁻¹ ≤ |x_v| ≤ B, and bound the result by ε := (…).",
+   "lines": [
+    187,
+    189
+   ],
+   "lean": "    grw [Z _ _ _ _ (S.kappa · ^ (2 * 𝔰.ϱ + 1) / (S.g * S.N)) _ (fun v ↦ ⟨by\n      simp [div_eq_mul_inv]; grw [hc, Nat.sub_le] <;> simp [pow_succ, field, K], by\n      grw [abs_div, abs_pow, abs_kappa_le, div_le_self] <;> norm_cast <;> bound⟩) hy]; bound)"
+  },
+  {
+   "id": "3.2",
+   "parent": "3",
+   "kind": "deduction",
+   "claim": "ε ≥ 0, Λ ≥ 0, and Γ = b^{(…)};",
+   "lines": [
+    190,
+    190
+   ],
+   "span": [
+    190,
+    5,
+    190,
+    59
+   ],
+   "lean": "(by positivity) (by intros; positivity) (Γ := S.b ^ _)"
+  },
+  {
+   "id": "3.3",
+   "parent": "3",
+   "kind": "deduction",
+   "claim": "weight condition for i ≤ ϱ:",
+   "lines": [
+    190,
+    208
+   ],
+   "span": [
+    190,
+    60,
+    208,
+    99
+   ],
+   "lean": "(fun i hi ↦ by\n    let m (p : Fin i → A) j := ∏ a ∈ range j, (padTuple (p · |>.1) 1 a).1\n    have L v a := (by grw [frameScaleSq, ← pow_abs_two_mul, Nat.sub_le, abs_kappa_le,\n      div_le_self] <;> bound : S.frameScaleSq v a ≤ _)\n    beta_reduce\n    grw [(.trans ?_ ((prod_univ_sum ..).ge.trans (prod_le_prod₀ (by intros; positivity) fun (j :\n      Fin i) _ ↦ Z (S.N ^ i) (𝔰.n ^ 6) (image (m · j.succ) univ) (∏ a ∈ range j.succ, S.frameScaleSq\n      · a) (fun _ ↦ S.N ^ i) (by bound) (by simp; grw [← K]; simp; bound) (by simp [m, hA,\n      prod_mem, apply_dite, dite_eq_iff, -Subring.mem_comap]))) : ∑ p, _ ≤ _),\n      volÔ_eq, abs_of_pos (by bound), N_le, N_le, L, half_le_self, S.rd_le_b]\n    simp [field, ← pow_mul, ← pow_add, mul_pow]; grw [hi]\n    iterate 3 simp [r, -frameScaleSq, le_of_lt, prod_pos]\n    grw [← image_subset_iff.2 fun p h ↦ mem_piFinset.2 fun _ ↦\n      mem_image_of_mem _ h, sum_image fun p _ q _ e ↦ funext fun j ↦ ?_]\n    · simp_rw [@prod_range _ _ i, @prod_comm (Fin i), ← prod_mul_distrib]\n      gcongr 3 <;> simp [m]\n      split <;> simp +contextual [denomIndex, relIndex_eq_one.2, IsConcreteLE.le_iff, div_nonneg, *]\n    simpa [m, prod_range_succ] using congr($e j / $(@Fin.cases i (fun k ↦ m p k = m q k) (by bound)\n      (congrFun e) j.castSucc))) 𝔰.ϱ le_rfl U hU).trans_eq' (by congr! <;> ext <;> simp)).trans ?_",
+   "head_span": [
+    190,
+    60,
+    190,
+    74
+   ],
+   "head_lines": [
+    190,
+    190
+   ]
+  },
+  {
+   "id": "3.3.1",
+   "parent": "3.3",
+   "kind": "deduction",
+   "claim": "m(p, j) = the partial product of the entries padTuple(p, 1, a), a < j;",
+   "lines": [
+    191,
+    191
+   ],
+   "lean": "    let m (p : Fin i → A) j := ∏ a ∈ range j, (padTuple (p · |>.1) 1 a).1"
+  },
+  {
+   "id": "3.3.2",
+   "parent": "3.3",
+   "kind": "deduction",
+   "claim": "L: frameScaleSq(S, v, a) ≤ b^{(…)} (|κ_v| ≤ b²³);",
+   "lines": [
+    192,
+    193
+   ],
+   "lean": "    have L v a := (by grw [frameScaleSq, ← pow_abs_two_mul, Nat.sub_le, abs_kappa_le,\n      div_le_self] <;> bound : S.frameScaleSq v a ≤ _)"
+  },
+  {
+   "id": "3.3.3",
+   "parent": "3.3",
+   "kind": "deduction",
+   "claim": "β-reduce;",
+   "lines": [
+    194,
+    194
+   ],
+   "lean": "    beta_reduce"
+  },
+  {
+   "id": "3.3.4",
+   "parent": "3.3",
+   "kind": "deduction",
+   "claim": "(Σ_p ∏_j(…))² ≤ ∏_j Σ_{partial products} (…) and each factor is bounded by Z with the scales of the partial products (prod_univ_sum, prod_le_prod); vol(Ô) = (rd_E/2)^{−f}; N ≤ b^{60n}; rd_E ≤ b;",
+   "lines": [
+    195,
+    199
+   ],
+   "lean": "    grw [(.trans ?_ ((prod_univ_sum ..).ge.trans (prod_le_prod₀ (by intros; positivity) fun (j :\n      Fin i) _ ↦ Z (S.N ^ i) (𝔰.n ^ 6) (image (m · j.succ) univ) (∏ a ∈ range j.succ, S.frameScaleSq\n      · a) (fun _ ↦ S.N ^ i) (by bound) (by simp; grw [← K]; simp; bound) (by simp [m, hA,\n      prod_mem, apply_dite, dite_eq_iff, -Subring.mem_comap]))) : ∑ p, _ ≤ _),\n      volÔ_eq, abs_of_pos (by bound), N_le, N_le, L, half_le_self, S.rd_le_b]",
+   "uses": [
+    {
+     "decl": "Filling.sum_frequencies_le"
+    }
+   ]
+  },
+  {
+   "id": "3.3.5",
+   "parent": "3.3",
+   "kind": "deduction",
+   "claim": "simplify the powers and use i ≤ ϱ;",
+   "lines": [
+    200,
+    200
+   ],
+   "lean": "    simp [field, ← pow_mul, ← pow_add, mul_pow]; grw [hi]"
+  },
+  {
+   "id": "3.3.6",
+   "parent": "3.3",
+   "kind": "deduction",
+   "claim": "positivity of the products;",
+   "lines": [
+    201,
+    201
+   ],
+   "lean": "    iterate 3 simp [r, -frameScaleSq, le_of_lt, prod_pos]"
+  },
+  {
+   "id": "3.3.7",
+   "parent": "3.3",
+   "kind": "deduction",
+   "claim": "the map p ↦ (partial products) is injective on Fin i → A,",
+   "lines": [
+    202,
+    203
+   ],
+   "lean": "    grw [← image_subset_iff.2 fun p h ↦ mem_piFinset.2 fun _ ↦\n      mem_image_of_mem _ h, sum_image fun p _ q _ e ↦ funext fun j ↦ ?_]"
+  },
+  {
+   "id": "3.3.8",
+   "parent": "3.3",
+   "kind": "deduction",
+   "claim": "the summands match the head weights, with den = 1 for units,",
+   "lines": [
+    204,
+    206
+   ],
+   "lean": "    · simp_rw [@prod_range _ _ i, @prod_comm (Fin i), ← prod_mul_distrib]\n      gcongr 3 <;> simp [m]\n      split <;> simp +contextual [denomIndex, relIndex_eq_one.2, IsConcreteLE.le_iff, div_nonneg, *]"
+  },
+  {
+   "id": "3.3.9",
+   "parent": "3.3",
+   "kind": "deduction",
+   "claim": "and injectivity: equal partial products give equal entries (by division). Instantiate at i = ϱ and U, and identify the sum with the left side.",
+   "lines": [
+    207,
+    208
+   ],
+   "lean": "    simpa [m, prod_range_succ] using congr($e j / $(@Fin.cases i (fun k ↦ m p k = m q k) (by bound)\n      (congrFun e) j.castSucc))) 𝔰.ϱ le_rfl U hU).trans_eq' (by congr! <;> ext <;> simp)).trans ?_"
+  },
+  {
+   "id": "4",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "Compare the constants:",
+   "lines": [
+    209,
+    209
+   ],
+   "lean": "  gcongr"
+  },
+  {
+   "id": "5",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "the error term with prod_band_le_inv_deg (IsAdmissible),",
+   "lines": [
+    210,
+    210
+   ],
+   "span": [
+    210,
+    3,
+    210,
+    44
+   ],
+   "lean": "grw [← IsAdmissible.prod_band_le_inv_deg,",
+   "uses": [
+    {
+     "decl": "Filling.IsAdmissible"
+    }
+   ]
+  },
+  {
+   "id": "6",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "ϱ+2 ≤ b (as k ≤ b and 1000(2ϱ+2) ≤ k), and rd_E ≤ b;",
+   "lines": [
+    210,
+    211
+   ],
+   "span": [
+    210,
+    45,
+    211,
+    15
+   ],
+   "lean": "show _ + 1 ≤ S.b by grw [← k_le_b, ← S.ϱ_le_k]; grind,\n    S.rd_le_b]",
+   "uses": [
+    {
+     "decl": "Filling"
+    }
+   ],
+   "typed_fact": "_ + 1 ≤ S.b"
+  },
+  {
+   "id": "7",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "simplify the powers of b;",
+   "lines": [
+    212,
+    212
+   ],
+   "lean": "  simp [abs_div, field, mul_pow, ← pow_mul, ← pow_add, ← pow_succ', mul_comm _ (∏ _, _), mul_assoc]"
+  },
+  {
+   "id": "8",
+   "parent": null,
+   "kind": "deduction",
+   "claim": "the remaining inequality holds by monotonicity and nonnegativity.",
+   "lines": [
+    213,
+    213
+   ],
+   "lean": "  gcongr; grind [Fintype.card_pos, mul_le_mul_right S.pow_le_k (numInfPlaces E)]"
+  }
+ ]
+}
