@@ -1,0 +1,1414 @@
+% !TEX program = lualatex
+% ---------------------------------------------------------------------------------------------
+%  Readback note 37: The top floor at a finite place: finite Bessel functions, shell bounds and the top kernel
+%
+%  Build:  python3 tools/rb.py note <slug>
+%
+%  One unit of a Lean artifact, rewritten as ordinary mathematics. The prose is hand-written. Lean names,
+%  line ranges and counts come from data.tex; quoted Lean statements are copied from the artifact by the build.
+%
+%  Rules of the text: standard terminology; every symbol is explained where it first appears and listed again
+%  in the notation at the end; no letter has two meanings; a proof is complete or says what it takes for granted;
+%  Lean names appear only in the LEAN lines and in the concordance.
+%
+%  The signature rule (the build enforces it): a function, relation or predicate that the artifact defines is
+%  written only through its notation macro, which the build makes from the spec (`notation`) with one slot for
+%  each explicit argument of the Lean definition. No argument is fixed and dropped, also not "for brevity" and
+%  not for one section. Every argument and every hypothesis of a stated declaration stands inside its
+%  statement, or in a Setting that the statement cites by number; only implicit and instance arguments (the
+%  ambient objects) may stand in the conventions.
+% ---------------------------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\ifdefined\pdfvariable\pdfvariable suppressoptionalinfo \numexpr 1+2+4+8\relax\fi
+\usepackage[a4paper,hmargin=35mm,top=22mm,bottom=27mm,footskip=12mm,nohead]{geometry}
+
+\usepackage{fontspec}
+\directlua{
+  luaotfload.add_fallback("gfallback", {"STIXTwoMath-Regular.otf:mode=node;", "DejaVuSans.ttf:mode=node;"})
+  luaotfload.add_fallback("gmonofallback", {"DejaVuSansMono.ttf:mode=node;", "STIXTwoMath-Regular.otf:mode=node;"})
+}
+\setmainfont{NewCM10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookItalic,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldItalic,SmallCapsFont=*-Book,SmallCapsFeatures={Letters=SmallCaps},
+  RawFeature={fallback=gfallback}]
+\setsansfont{NewCMSans10}[Extension=.otf,UprightFont=*-Book,ItalicFont=*-BookOblique,
+  BoldFont=*-Bold,BoldItalicFont=*-BoldOblique,RawFeature={fallback=gfallback}]
+\setmonofont{JetBrainsMono}[Extension=.otf,UprightFont=*-Regular,ItalicFont=*-Italic,
+  BoldFont=*-SemiBold,BoldItalicFont=*-SemiBoldItalic,Scale=MatchLowercase,
+  RawFeature={-calt;-liga;fallback=gmonofallback}]
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage[math-style=TeX]{unicode-math}
+\setmathfont{NewCMMath-Book.otf}
+\emergencystretch=2.5em\relax
+
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc,arrows.meta,positioning,backgrounds}
+\usepackage[protrusion=true,expansion=true]{microtype}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{multicol}
+\usepackage[hidelinks,pdfusetitle]{hyperref}
+
+\definecolor{ink}{HTML}{0F172A}
+\definecolor{inksoft}{HTML}{475569}
+\definecolor{inkfaint}{HTML}{94A3B8}
+\definecolor{rulegrey}{HTML}{CBD5E1}
+\definecolor{arith}{HTML}{C2410C}
+\definecolor{est}{HTML}{7C3AED}
+\definecolor{ana}{HTML}{0891B2}
+\definecolor{ok}{HTML}{047857}
+\definecolor{leancol}{HTML}{3730A3}
+
+\title{The top floor at a finite place: finite Bessel functions, shell bounds and the top kernel}
+\author{grh-compact}
+\date{}
+
+% ------------------------------------------------------------------------------------- macros
+\newcommand{\leanfont}{\ttfamily\fontsize{8.6}{10.5}\selectfont\color{leancol}}
+\newcommand{\lean}[1]{\csname LN@#1\endcsname}
+\newcommand{\fillin}[1]{{\color{arith}\itshape[#1]}}  % a place of the template that is not written yet; the build reports every one that is left
+\newcommand{\leanquote}[1]{\csname LQ@#1\endcsname}
+\input{data.tex}
+
+\linespread{1.08}                       % 11 pt on 14.7 pt
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5.5pt plus 1.5pt minus 0.5pt}
+\setlength{\abovedisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\belowdisplayskip}{7.5pt plus 2pt minus 3pt}
+\setlength{\abovedisplayshortskip}{3pt plus 2pt}
+\setlength{\belowdisplayshortskip}{6pt plus 2pt minus 2pt}
+\emergencystretch=1.5em
+\clubpenalty=10000 \widowpenalty=10000 \displaywidowpenalty=10000
+\relpenalty=7000 \binoppenalty=9000
+\raggedbottom
+\pagestyle{fancy}\fancyhf{}\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\sffamily\fontsize{7.6}{9}\selectfont\color{inkfaint}\thepage\,/\,\pageref*{LastPage}}
+\setlist{topsep=2pt,partopsep=0pt,parsep=0pt,itemsep=4pt,leftmargin=2.1em,labelsep=0.55em}
+
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\len}{\operatorname{len}}
+\newcommand{\cok}{\operatorname{cok}}
+\newcommand{\End}{\operatorname{End}}
+\newcommand{\Hom}{\operatorname{Hom}}
+\newcommand{\Gal}{\operatorname{Gal}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\kw}[1]{\emph{#1}}
+\newcommand{\m}[1]{\mbox{$#1$}}        % a short formula that must not be broken across lines
+\newcommand{\head}[1]{\par\addvspace{17pt plus 4pt minus 2pt}\Needspace{6\baselineskip}%
+  \noindent{\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\sect}[2]{\refstepcounter{section}\label{#2}\par\addvspace{19pt plus 4pt minus 2pt}\Needspace{7\baselineskip}%
+  \noindent\llap{{\fontsize{13.2}{16}\selectfont\bfseries\color{inkfaint}\thesection}\hspace{9pt}}%
+  {\fontsize{13.2}{16}\selectfont\bfseries\color{ink}#1}\par\nopagebreak\vspace{-1pt}}
+\newcommand{\subhead}[1]{\par\addvspace{9pt plus 2pt}\Needspace{4\baselineskip}\noindent\textbf{#1}\enspace\ignorespaces}
+% where a statement lives in the Lean archive
+\newcommand{\leantag}{{\sffamily\bfseries\fontsize{6.3}{8}\selectfont\color{leancol}\addfontfeatures{LetterSpace=7}LEAN}}
+\newcommand{\sep}{\unskip\nobreak\hspace{5pt}{\color{inkfaint}\textperiodcentered}\hspace{5pt plus 2pt}\ignorespaces}
+\newcommand{\leanline}[1]{\par\nopagebreak\vspace{-2.5pt}{\fontsize{8.9}{12.4}\selectfont\color{inksoft}\raggedright
+  \noindent\llap{\leantag\hspace{9pt}}#1\par}\vspace{1pt}}
+% a displayed statement in a tinted box: #1 colour, #2 text
+\newcommand{\statement}[2]{\par\addvspace{7pt}\begingroup\setlength{\fboxsep}{8.5pt}\setlength{\fboxrule}{0.6pt}%
+  \noindent\fcolorbox{#1!30!white}{#1!3!white}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{#2}}%
+  \endgroup\par\addvspace{7pt}}
+\newcommand{\nt}[2]{\par\noindent\hangindent=1.1em\hangafter=1 #1\enspace{\color{inksoft}#2}\par\vspace{1pt}}
+\newcommand{\legdot}[1]{\tikz[baseline=-0.62ex]\fill[#1] (0,0) circle (2.5pt);\hspace{3pt}}
+\newcommand{\crow}[4]{\csname CS@#1\endcsname & #2 & \textcolor{inksoft}{#3} & \textcolor{inksoft}{#4}\\}
+\newcommand{\leanquoteline}[2]{\par\noindent\hangindent=\dimexpr#1\fontdimen2\font+2.2em\relax\hangafter=1
+  \hspace*{#1\fontdimen2\font}#2}
+\newcommand{\quoted}[1]{\par\vspace{3pt}{\ttfamily\fontsize{7.5}{10.4}\selectfont\color{leancol}\raggedright
+  \setlength{\parskip}{0pt}\leanquote{#1}\par}\vspace{4pt}}
+\newcommand{\bx}[3]{{\sffamily\bfseries\fontsize{7.3}{9.2}\selectfont\color{#1!82!black}#2}\\[1.5pt]#3}
+\newcommand{\cs}[2]{\expandafter\newcommand\csname CS@#1\endcsname{#2}}
+
+% theorems
+\newtheoremstyle{plainx}{7pt plus 2pt}{7pt plus 2pt}{\itshape}{}{\bfseries}{.}{0.5em}{}
+\newtheoremstyle{uprightx}{7pt plus 2pt}{7pt plus 2pt}{}{}{\bfseries}{.}{0.5em}{}
+\theoremstyle{plainx}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{uprightx}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{setting}[theorem]{Setting}          % hypotheses shared by several statements; each of them cites it by number
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\renewcommand{\qedsymbol}{{\setlength{\fboxsep}{0pt}\setlength{\fboxrule}{0.5pt}\fbox{\rule{0pt}{0.46em}\hspace{0.46em}}}}
+% what holds throughout the note: the ambient objects only (implicit and instance arguments), never a hypothesis
+\newenvironment{conventions}{\par\addvspace{5pt}\noindent\textbf{Conventions.}\enspace\ignorespaces}{\par\addvspace{3pt}}
+\makeatletter
+\renewenvironment{proof}[1][Proof]{\par\pushQED{\qed}\normalfont\topsep0pt\partopsep0pt
+  \trivlist\item[\hskip\labelsep\itshape #1.]\ignorespaces}{\popQED\endtrivlist\@endpefalse}
+\makeatother
+
+% where each declaration of the concordance is treated: \cs{key}{place}, the place naming a \label or a lettered item
+\cs{phase}{Definition~\ref{d:phase}}
+\cs{existsbesselUofphasenezero}{Lemma~\ref{l:phase}}
+\cs{normphaseleone}{Lemma~\ref{l:phase}}
+\cs{phaseeq}{Lemma~\ref{l:phase}}
+\cs{phasebesselSmul}{Lemma~\ref{l:phase}}
+\cs{phasemulofmemunitaryLevel}{Lemma~\ref{l:phase}}
+\cs{phasebesselUmul}{Lemma~\ref{l:phase}}
+\cs{continuousphase}{Lemma~\ref{l:phase}}
+\cs{unitaryLevelleunitaryLevelone}{Lemma~\ref{l:phase}}
+\cs{IntermediateGroup}{Definition~\ref{d:int}}
+\cs{unipotentMass}{Definition~\ref{d:int}}
+\cs{floorZeroForm}{Definition~\ref{d:int}}
+\cs{Cosets}{Definition~\ref{d:int}}
+\cs{massRatio}{Definition~\ref{d:int}}
+\cs{besselVector}{Definition~\ref{d:int}}
+\cs{unipotentMassnezeroandnetop}{Lemma~\ref{l:int}}
+\cs{existsofinnerbesselVectornezero}{Lemma~\ref{l:inner}}
+\cs{isOpen}{Lemma~\ref{l:int}}
+\cs{existscoset}{Lemma~\ref{l:int}}
+\cs{invmdeqsqrtgenIndexsq}{Lemma~\ref{l:int}}
+\cs{groupMeasurenetop}{Lemma~\ref{l:int}}
+\cs{massRationezeroandnetop}{Lemma~\ref{l:int}}
+\cs{floorZeroFormoncongGroup}{Lemma~\ref{l:cong}}
+\cs{isCutbesselVector}{Lemma~\ref{l:cut}}
+\cs{unipotentMassmulinnerbesselVector}{Proposition~\ref{p:unfold}}
+\cs{pairingNormmullemassRatio}{Proposition~\ref{p:pn}}
+\cs{enormintegralphaseequpperPairing}{Lemma~\ref{l:avg}}
+\cs{invtwopowlegroupMeasure}{Lemma~\ref{l:mass}}
+\cs{existsunitmemfloorValues}{Lemma~\ref{l:val}}
+\cs{existscloseofinnernezero}{Lemma~\ref{l:close}}
+\cs{existsgaugedepthofnezero}{Proposition~\ref{p:depth}}
+\cs{lintegralshellsle}{Proposition~\ref{p:shells}}
+\cs{lintegralformMajorantnetop}{Corollary~\ref{c:finite}}
+\cs{enormfloorFormle}{Theorem A}
+\cs{floorZeroFormlemainterm}{Theorem B}
+\cs{correlation}{Definition~\ref{d:top}}
+\cs{topKernel}{Definition~\ref{d:top}}
+\cs{energya}{Definition~\ref{d:top}}
+\cs{existsgaugeisHead}{Lemma~\ref{l:heads}}
+\cs{eventuallycorrelationeq}{Proposition~\ref{p:const}}
+\cs{eventuallysumpacketsleenergy}{Theorem D}
+\cs{floorFormtopeqintegral}{Theorem C}
+\cs{lintegralenergyletopKernel}{Theorem D}
+\cs{continuoustopKernel}{Theorem C}
+% ----- macros-148: the recalled notions of unit 148 (chunks a, b) and of its neighbours, with every explicit
+% ----- argument of the Lean definition as a slot. Shared by Notes F, P, T, G; copy unchanged into the preamble.
+\newcommand{\fs}{\mathfrak{s}}                      % the shape (rho, kappa, k_0)
+\newcommand{\sT}{\mathsf{T}}                        % a finite set of finite places
+\newcommand{\cL}{\mathcal{L}}                       % a level
+\newcommand{\AEf}{\mathbb{A}_{E,f}}
+\newcommand{\hO}{\hat{O}_E}
+\newcommand{\GL}{\mathrm{GL}}
+\newcommand{\full}{\mathrm{full}}
+\newcommand{\cut}{\mathrm{cut}}
+\newcommand{\rh}[1]{\varrho(#1)}                    % Shape.ϱ
+\newcommand{\kk}[1]{k(#1)}                          % Shape.k = #κ
+\newcommand{\nn}[1]{n(#1)}                          % Shape.n = ϱ + 1
+\newcommand{\rr}[1]{r(#1)}                          % Shape.r = 2ϱ + k + 1
+\newcommand{\Ix}[1]{I(#1)}                          % Shape.BesselIndex
+\newcommand{\Mx}[1]{M(#1)}                          % Shape.MiddleIndex
+\newcommand{\ninf}[1]{f(#1)}                        % numInfPlaces E
+\newcommand{\ET}[1]{E_{#1}}                         % LocProd T
+% the components of the filling data S
+\newcommand{\bS}[1]{b(#1)}                          % S.b
+\newcommand{\NS}[1]{N(#1)}                          % S.N
+\newcommand{\qS}[2]{q_{#2}(#1)}                     % S.levelPrime i
+\newcommand{\gS}[1]{g(#1)}                          % S.g = q_0 q_1
+\newcommand{\piS}[1]{\bar\pi(#1)}                   % S.piBar
+\newcommand{\vpS}[1]{\varpi(#1)}                    % S.ϖ
+\newcommand{\ChS}[2]{\mathrm{Ch}_{#2}(#1)}          % S.chosenPlaces i
+\newcommand{\KcolS}[1]{K^{\mathrm{col}}(#1)}        % S.columnLevel
+\newcommand{\BsysS}[2]{\mathfrak{B}_{#2}(#1)}       % S.besselSys v
+% forms, groups, levels of the set-up (Setup.lean)
+\newcommand{\Trat}[2]{T^{\mathrm{rat}}_{#1}(#2)}    % S.ratMiddle R
+\newcommand{\Tlat}[2]{T^{\mathrm{lat}}_{#1}(#2)}    % S.latMiddle R
+\newcommand{\GS}[2]{G_{#1}(#2)}                     % S.G R
+\newcommand{\GFin}[1]{G^{\mathrm{lat}}_{#1}}        % S.GFin
+\newcommand{\GRes}[1]{\mathsf{G}(#1)}               % S.GRes
+\newcommand{\Cl}[1]{\mathrm{Cl}(#1)}                % S.Classes
+\newcommand{\Bc}[1]{\mathrm{Bc}(#1)}                % S.BesselCoord
+\newcommand{\KS}[1]{K(#1)}                          % S.latStabilizer
+\newcommand{\redS}[1]{\mathrm{red}_{#1}}            % S.reduction
+\newcommand{\KgS}[1]{K_g(#1)}                       % S.principalLevel
+\newcommand{\redim}[2]{\overline{#2}^{\,#1}}        % S.reducedImage A
+\newcommand{\kapS}[2]{\kappa_{#2}(#1)}              % S.kappa v
+\newcommand{\gid}[1]{\hat{g}(#1)}                   % S.gIdele
+\newcommand{\latB}[1]{\Lambda(#1)}                  % S.latBasis
+\newcommand{\rinf}[1]{\mathrm{r}^{\infty}_{#1}}     % S.ratToInf
+\newcommand{\rfin}[1]{\mathrm{r}^{f}_{#1}}          % S.ratToFin
+\newcommand{\incH}[1]{\mathrm{inc}_{#1}}            % S.inclHFin
+\newcommand{\hc}[2]{h_{#1}(#2)}                     % S.h c
+\newcommand{\pos}[4]{\mathrm{pos}_{#1}(#2,#3;#4)}   % S.termPosition c c' γ
+\newcommand{\terms}[4]{\mathrm{Tm}_{#1}(#2,#3,#4)}  % S.termsOver c s c'
+\newcommand{\Zf}[2]{Z_{#1}(#2)}                     % S.frameProducts γ
+\newcommand{\tdisc}[2]{\mathsf{g}_{#1}(#2)}         % S.termDisc γ
+\newcommand{\clU}[2]{\mathcal{U}_{#1,#2}}           % S.classUnip c
+\newcommand{\cutoff}[2]{\beta_{#1,#2}}              % S.classCutoff c
+\newcommand{\besfn}[4]{W^{#1}_{#2}(#3)_{#4}}        % S.besselFn y i, with the side
+\newcommand{\amp}[5]{a^{#1}_{#2}(#3,#4;#5)}         % S.amplitude c c' γ, with the side
+\newcommand{\ampabs}[5]{|a|^{#1}_{#2}(#3,#4;#5)}    % S.amplitudeAbs c c' γ, with the side
+\newcommand{\ampsum}[6]{A^{#1}_{#2}(#3;#4,#5,#6)}   % S.amplitudeSum T c s c', with the side
+\newcommand{\uchar}[2]{\psi^{\mathcal{U}}_{#1}(#2)} % S.unipotentChar u
+\newcommand{\ucov}[1]{\nu(#1)}                      % S.unipCovolume
+\newcommand{\siegC}[1]{c_{*}(#1)}                   % S.siegelConst
+\newcommand{\packC}[1]{a_{*}(#1)}                   % S.packetConst
+\newcommand{\uord}[1]{\mathrm{uo}(#1)}              % S.unipOrder
+\newcommand{\cdim}[1]{\mathrm{cd}(#1)}              % S.columnDim
+\newcommand{\bdeg}[1]{\deg(#1)}                     % S.besselDegree
+\newcommand{\mainE}[1]{\mathsf{d}(#1)}              % S.mainEnergy
+\newcommand{\besE}[1]{\mathsf{d}_{1}(#1)}           % S.besselEnergy
+\newcommand{\tailS}[1]{\mathrm{tl}(#1)}             % S.tailScale
+\newcommand{\codimF}[1]{\mathrm{cf}(#1)}            % S.codimFactor
+\newcommand{\fscale}[3]{\mathrm{fs}_{#1}(#2,#3)}    % S.frameScaleSq v a
+\newcommand{\fsprod}[1]{\mathrm{fs}(#1)}            % S.frameScaleProd
+\newcommand{\mass}[2]{\operatorname{mass}(#1,#2)}   % mass E r
+% chunk b and the sieve
+\newcommand{\energy}[3]{\mathrm{En}_{#1}(#2;#3)}    % Filling.energy A Ω (S implicit in Lean, shown)
+\newcommand{\linkE}[5]{\mathrm{LE}^{#1}_{#2}(#3;#4,#5)} % Filling.linkEnergy T Ω' R (side and S implicit, shown)
+\newcommand{\fixset}[3]{\mathrm{Fix}_{#1}(#2,#3)}   % Filling.fixingSet Sg d (S implicit, shown)
+\newcommand{\vfix}[3]{\mathrm{Fix}_{#1,#2}(#3)}     % Filling.vectorFixer w d (S implicit, shown)
+\newcommand{\charT}[2]{\psi_{#1,#2}}                % S.charOnPlaces T
+\newcommand{\fgain}[3]{\beta_{#1,#2}(#3)}           % S.frequencyGain T ξ
+\newcommand{\link}[1]{\operatorname{link}(#1)}      % link γ
+\newcommand{\clink}[2]{\operatorname{link}^{\circ}(#1,#2)} % commonLink γ γ'
+\newcommand{\tdnorm}[2]{\|\mathsf{g}\|_{#1}(#2)}    % S.termDiscNorm γ
+\newcommand{\mnorm}[3]{\mathrm{mn}_{#1}(#2;#3)}     % S.minorNorm j γ
+\newcommand{\cgauge}[5]{\mathrm{cg}_{#1}(#2;#3,#4;#5)} % S.classGauge j c c' γ
+\newcommand{\pinv}[5]{\mathrm{pi}_{#1}(#2,#3;#4,#5)} % S.pairInvariant c c' γ γ'
+\newcommand{\ldsq}[3]{\mathrm{ld}_{#1}(#2,#3)}      % S.linkDiscSq v e
+\newcommand{\lmet}[1]{Q^{\mathrm{link}}_{#1}}       % S.linkMetric
+% ----- end of macros-148
+% ----- notions of the background library, of the unit on the real place and of the note on standard levels that
+% ----- this note recalls, written by hand with every explicit argument (TeX as in the notes that state them)
+\newcommand{\JT}[1]{J(#1)}                          % Shape.Form.splitGram
+\newcommand{\GT}[1]{G(#1)}                          % Shape.Form.G
+\newcommand{\UT}[1]{\mathcal{U}(#1)}                % besselU
+\newcommand{\HT}[1]{\mathcal{H}(#1)}                % besselH
+\newcommand{\ST}[1]{\mathcal{S}(#1)}                % besselS
+\newcommand{\Hl}[2]{\mathcal{H}_{#1}(#2)}           % GT l
+\newcommand{\Ql}[2]{\mathcal{Q}_{#1}(#2)}           % unitriGroup l
+\newcommand{\sd}[1]{\operatorname{sd}(#1)}          % simpleRootSum
+\newcommand{\ZT}[2]{Z_{#1}(#2)}                     % Shape.Form.frameGram
+\newcommand{\weyl}[2]{w_{#1}(#2)}                   % weylElem l p
+\newcommand{\gix}[1]{[#1]}                          % genIndex
+\newcommand{\den}[1]{\operatorname{den}(#1)}        % denomIndex
+\newcommand{\modA}{\operatorname{mod}_A}            % the modulus of the place structure
+\newcommand{\zetaA}[1]{\zeta_{A}(#1)}               % idealZeta O_A
+\newcommand{\uLev}[2]{K_{#2}(#1)}                   % unitaryLevel O_A g J(T)
+\newcommand{\cgp}[1]{\mathrm{K}^{\circ}(#1)}        % Level.congGroup F
+\newcommand{\gL}[1]{g_{#1}}                         % the unit of a level
+\newcommand{\BoxL}[1]{\operatorname{Box}(#1)}       % boxSet
+\newcommand{\Posn}[1]{\operatorname{Posn}(#1)}      % positions
+\newcommand{\Levels}[3]{\operatorname{Lev}(#1,#2,#3)} % Level ι T m
+\newcommand{\Gauges}[1]{\operatorname{Gau}(#1)}     % Gauge F
+\newcommand{\IsStd}[1]{#1\in\operatorname{StdLev}}  % IntegralPlace.IsStdLevel F
+\newcommand{\stdg}[2]{\Gamma_{#1}(#2)}              % IntegralPlace.IsStdLevel.gauge F α
+\newcommand{\Lam}[1]{\Lambda(#1)}                   % Gauge.Λ
+\newcommand{\szl}[3]{\operatorname{sz}_{#1}(#2)\le #3} % x ∈ Γ.ofSize i, Γ.HasMatSize i X
+\newcommand{\Hd}[3]{#3\in\operatorname{Hd}_{#2}(#1)} % Γ.IsHead j p
+\newcommand{\gM}[1]{\mathsf{M}(#1)}                 % Level.groupMeasure F
+\newcommand{\gMu}[1]{\mathsf{M}_{\ge0}(#1)}         % Level.upperMeasure F 0
+\newcommand{\flm}[2]{\theta_{#2}(#1)}               % Level.floorMeasure F l
+\newcommand{\mH}[1]{\theta_{n}(#1)}                 % Level.measureH F
+\newcommand{\stk}[3]{\mu^{#1}_{#2,#3}}              % Level.stackMeasure F l i
+\newcommand{\quadric}[2]{\delta^{(#2)}(#1)}         % floorQuadric
+\newcommand{\etab}[1]{\eta_{<#1}}                   % ascConv heisenbergMeasure j
+\newcommand{\fmod}[3]{\mathsf{d}_{#2}(#1;#3)}       % Level.floorModulus F l g
+\newcommand{\vexp}[1]{\mathsf{s}(#1)}               % Level.volumeExponent F
+\newcommand{\Val}[4]{\operatorname{Val}_{#2}(#1;#3,#4)} % Level.floorValues F a x y
+\newcommand{\Av}[5]{\mathsf{Av}_{#2}(#1;#3)(#4,#5)} % Level.upperPairing F j k g y
+\newcommand{\Pv}[5]{\mathsf{Pv}_{#2}(#1;#3)(#4,#5)} % Level.pivotModulus F j k g y
+\newcommand{\Sm}[5]{\mathsf{Sm}_{#2}(#1;#3,#4)(#5)} % Level.weightedSquareSum F k x j g
+\newcommand{\PN}[3]{\operatorname{PN}(#1;#2,#3)}    % Level.pairingNorm F W W'
+\newcommand{\hdens}[4]{\mathsf{h}_{#2}(#1;#3,#4)}   % Level.headDensity F j p q
+\newcommand{\fform}[6]{\mathcal{I}_{#2}(#1;#3,#4;#5,#6)} % Level.floorForm F j p q W ω
+\newcommand{\fmodu}[7]{\mathcal{I}^{\mathrm{mod}}_{#2}(#1;#3,#4;#5,#6,#7)} % Level.formModulus F j p q W x ω
+\newcommand{\fmaj}[7]{\mathcal{I}^{\mathrm{maj}}_{#2}(#1;#3,#4;#5,#6,#7)} % Level.formMajorant F j p q W W' x
+\newcommand{\snp}[7]{\operatorname{SNP}_{#2}(#1;#3,#4;#5,#6,#7)} % Gauge.selfNormProduct Γ j p q W W' x
+\newcommand{\bcorr}[3]{\mathrm{J}(#1,#2;#3)}        % besselCorrelation μ W γ
+\newcommand{\fhw}[3]{\Lambda_{#1}(#2;#3)}           % finHeadWeight K i p
+\newcommand{\lenergy}[4]{\mathcal{E}(#1;#2,#3,#4)}  % Level.energy Z R ω e (Notes on the formal text, 1)
+\newcommand{\pk}[1]{\mathsf{k}_{#1}}                % the kernel (x,y) -> <W_Z(x), W_Z(y)> of an intermediate group
+\newcommand{\vol}{\operatorname{vol}}
+\newcommand{\rePart}{\operatorname{Re}}
+\newcommand{\CC}{\mathbb{C}}
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\NN}{\mathbb{N}}
+\newcommand{\Inp}[1]{Input~\ref{i:#1}}
+
+\begin{document}
+\color{ink}
+
+{\raggedright
+{\sffamily\bfseries\fontsize{7.2}{9}\selectfont\color{leancol}\addfontfeatures{LetterSpace=8}READBACK NOTE 37\par}
+\vspace{5pt}
+{\fontsize{21.5}{25.5}\selectfont\bfseries The top floor at a finite place: finite Bessel functions, shell bounds and the top kernel\par}
+\vspace{5pt}
+{\fontsize{12.4}{16}\selectfont\itshape\color{inksoft} One unit of the Lean artifact \ArtifactName, read back into
+mathematics\par}}
+\vspace{8pt}
+{\color{rulegrey}\hrule height 0.6pt}
+\vspace{7pt}
+\thispagestyle{empty}
+
+\textbf{Summary.} At finitely many finite places the second moment of the Poincaré series is governed by one
+function on a unitary group over a product $A$ of local fields: the \emph{finite Bessel function}, which is a
+character of the Bessel unipotent subgroup on the cosets of a principal congruence subgroup and zero elsewhere.
+This note feeds the vector of its translates, the \emph{finite Bessel vector} of a group $Z$ between the
+congruence subgroup and the integral group, into the tower method of the unit on the real place. It proves three
+things. The floor forms of this vector decay in the frequency: a non-integral frequency~$\xi$ costs a power of
+the index of~$\xi$. The form at the bottom of the tower is the square of the measure of~$Z$ up to an error that is
+a high power of the volume of the non-units. And at the top floor the form unfolds to an integral of inner
+products of \emph{correlations}, which gives a kernel that is continuous, of positive type, and bounds from
+above an energy that counts packets of rational terms. The estimates rest on one \emph{shell bound}: the
+positions are sorted by the denominator ideal of $(x-1)/g$, and a sum over ideals is paid for by an ideal zeta
+function.
+
+\statement{leancol}{\fontsize{9.6}{13.2}\selectfont\textbf{What this note is.} The artifact \ArtifactName{} is a
+body of Lean code: the compact edition of a formal proof, due to L.~Alpöge with the AI system Claude, of the
+Riemann hypothesis and of its generalisation to Dirichlet $L$-functions. That headline is a claim. The authors
+report that every file compiles and that Lean's kernel accepted the proofs; an independent replay is recorded in
+the handout's record of checks when it reports. No mathematician has read the argument through, and nothing here
+says that the Riemann hypothesis is proved. This note (Note~T of its unit) treats \UnitInNote{} of the
+\UnitMembers{} declarations of the unit \emph{Translates of Poincaré series fill the rows}: the module on the
+top floor at a finite place. Proved here from the inputs: Theorems A to~D and the statements of
+§§\ref{s:phase}--\ref{s:top}. Taken for granted and stated as Inputs 1 to~5 in §\ref{s:inputs}: the Bessel
+subgroup and the congruence subgroups from the background library, the tower of floor measures and its
+estimates from the unit on the real place, the standard levels from another note of this unit, and three facts
+on ideals, valuations and Eichler elements. Every statement was compared with its Lean text, argument by
+argument. The Lean text read is \PinText; Appendix~A is the concordance of \ConcDecls{} declarations.}
+
+\sect{The statements}{s:intro}
+The objects are defined in §\ref{s:setting}. In brief: $A$ is a finite product of local fields with an
+involution, $T$ a hermitian form of a shape~$\fs$, \m{\GT{T}} the unitary group of its split Gram matrix, $\cL$ a
+standard level with unit \m{\gL{\cL}} and congruence subgroup \m{\cgp{\cL}}, and $Z$ a group between
+\m{\cgp{\cL}} and the group \m{\uLev{1}{T}} of the integral isometries. The finite Bessel vector \m{\bvec{Z}{y}}
+has one coordinate for each coset of \m{\cgp{\cL}} in~$Z$; \m{\fform{\cL}{j}{p}{q}{W}{\omega}} is the floor form of
+the unit on the real place, \m{\mr{Z}} the mass ratio, \m{\gix{\xi}} the generalised index and
+\m{\den{\xi}} the denominator index of a unit~$\xi$.
+
+\statement{arith}{\phantomsection\label{t:A}\textbf{Theorem A} (the frequency bound).\enspace
+\emph{In Setting~\ref{s:Z}, let \m{j\le\rh{\fs}}, let $K$ and $t$ be natural numbers with
+\m{10^{10}\nn{\fs}^4\le K} and \m{t+10^{10}\nn{\fs}^4\le\kk{\fs}}, let $\xi$ be a unit of~$A$, let $p$, $q$ be
+sequences of units of~$A$, and let \m{\omega\colon\GT{T}\to\CC} be a function such that either
+\m{\omega(x)=\psi_A\bigl(\xi\cdot\ZT{T}{x}_{jj}\bigr)} for all~$x$, or there is $i$ with \m{j=i+1}, \m{\omega=1} and
+\m{\xi=\gL{\cL}^{-1}(p_i^{-1}-q_i^{-1})}. Then}
+\[\bigl|\fform{\cL}{j}{p}{q}{\bvec{Z}{\cdot}}{\omega}\bigr|\ \le\ \mr{Z}\cdot\gix{\xi}^{t/2}\,\den{\xi}^{-6}\,
+\Bigl(\frac{2}{\modA(\gL{\cL})}\Bigr)^{K}\,\fhw{K}{j}{p}\,\fhw{K}{j}{q}.\]}
+\leanline{\lean{enormfloorFormle}}
+
+\statement{arith}{\phantomsection\label{t:B}\textbf{Theorem B} (the bottom value).\enspace
+\emph{In Setting~\ref{s:Z}, let $t$ be a natural number with \m{t+10^{10}\nn{\fs}^4\le\kk{\fs}}. Then}
+\[\fzf{\cL}{Z}\ \le\ \gM{\cL}(Z)\cdot\gM{\cL}\bigl(\cgp{\cL}\bigr)\cdot\Bigl(\gM{\cL}(Z)+\vol\bigl(O_A\setminus
+O_A^{\times}\bigr)^{t+1}\cdot2^{-\nn{\fs}}\Bigr).\]}
+\leanline{\lean{floorZeroFormlemainterm}}
+
+\statement{arith}{\phantomsection\label{t:C}\textbf{Theorem C} (the top floor: unfolding and continuity).\enspace
+\emph{In Setting~\ref{s:Z}:}
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=1pt]
+\item \emph{Let $p$, $q$ be sequences of units of~$A$ and \m{\xi\in A}; put
+\m{\varphi_\xi(x)=\psi_A\bigl(\xi\cdot\ZT{T}{x}_{\varrho\varrho}\bigr)} for \m{x\in\GT{T}}. Then the function
+\m{F_\xi(l)=\varphi_\xi(l^{-1})\cdot\langle\corr{Z}{p}{l},\corr{Z}{q}{l}\rangle} is integrable for the measure
+\m{\stk{\cL}{\varrho}{2}}, and}
+\[\fform{\cL}{\varrho}{p}{q}{\bvec{Z}{\cdot}}{\varphi_\xi}\ =\ \int F_\xi(l)\,d\stk{\cL}{\varrho}{2}(l).\]
+\item \emph{Let $L$ be an open additive subgroup of~$A$. Then \m{(p,q)\mapsto\topK{L}{Z}{p}{q}} is a continuous
+function on the pairs of sequences of units of~$A$.}
+\end{enumerate}}
+\leanline{\lean{floorFormtopeqintegral}\sep \lean{continuoustopKernel}}
+
+\statement{arith}{\phantomsection\label{t:D}\textbf{Theorem D} (the top floor: energy and packets).\enspace
+\emph{In Setting~\ref{s:Z}, let $\mathcal C$ be a finite set, $R$ a complex matrix with rows and columns indexed
+by~$\mathcal C$, and \m{\omega=(\omega_i)_{i\in\mathcal C}} a family of sequences of units of~$A$.}
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=1pt]
+\item \emph{Let \m{L\subseteq A} be an open subset, suppose that $R$ is positive semidefinite, and let $t$ be a
+unit of $A$ with \m{(\omega_i)_{\varrho}=t} for all indices \m{i\in\mathcal C}. Then
+\m{\mathcal Q=\sum_{i,i'\in\mathcal C}R_{ii'}\cdot\topK{L}{Z}{\omega_i}{\omega_{i'}}} is real and \m{\mathcal Q\ge0}, and}
+\[\int\mathbf 1\bigl[(\JT{T}\,e)_{z}-t\in L\bigr]\cdot\lenergy{Z}{R}{\omega}{e}\ d\quadric{\cL}{\varrho}(e)\ \le\ \mathcal Q.\]
+\item \emph{Suppose that the units of $A$ form an open set and that inversion is continuous at~$1$. Let $e$ be a
+vector, $\Theta_0$ a non-empty finite set, and for \m{\theta\in\Theta_0} let \m{l_\theta\in\Hl{\varrho}{T}} with
+\m{l_\theta^{-1}z=e} and \m{n_\theta\in\Cos{Z}\times\Cos{Z}}, such that \m{l_\theta l_{\theta'}^{-1}\in\cgp{\cL}} and
+\m{n_\theta=n_{\theta'}} together imply \m{\theta=\theta'}. For \m{\theta\in\Theta_0} let $v_\theta$ be the vector with the
+coordinate \m{\corr{Z}{\omega_i}{l_\theta}_{n_\theta}} for every index \m{i\in\mathcal C}. Then there is a neighbourhood
+of $e$ such that for every $x$ in it, every \m{k\in\HT{T}\cap\cgp{\cL}} and every vector $y$ with \m{k\,y=x},}
+\[\mH{\cL}\bigl(\cgp{\cL}\bigr)\cdot\sum_{\theta\in\Theta_0}\bigl(\rePart\,v_\theta^{*}Rv_\theta\bigr)^{+}\ \le\ \lenergy{Z}{R}{\omega}{y}.\]
+\end{enumerate}}
+\leanline{\lean{lintegralenergyletopKernel}\sep \lean{eventuallysumpacketsleenergy}}
+
+Theorem~A is the decay of the finite sieve in the frequency, Theorem~B its bottom value, and Theorems C and~D
+are what the top floor of the sieve needs: the last form is an integral of a positive kernel, and that kernel
+dominates the sum over the packets of rational terms that the main note of the unit (Note~F, \emph{Translates of
+Poincaré series fill the rows}) compares with Siegel's formula.
+
+\sect{The setting}{s:setting}
+\begin{conventions}\phantomsection\label{c:conventions}
+The natural numbers are \m{0,1,2,\dots}, and a difference of natural numbers is read as $0$ when it would be
+negative. $A$ is a \emph{semilocal field}: a locally compact topological ring with a Haar measure \m{\vol} and a
+compact open subring $O_A$ of volume~$1$, in this proof always a finite product of non-archimedean local fields.
+It carries an involution \m{x\mapsto\bar x} and an \emph{integral place structure}: $O_A$ is stable under the
+involution; \m{O_A^{\times}} is the group of the units of~$O_A$; $\psi_A$ is a unitary additive character of $A$
+which is \emph{self-dual}, that is, \m{\psi_A(ra)=1} for all \m{r\in O_A} exactly if \m{a\in O_A}; for a unit $u$
+of~$A$, \m{\modA(u)} is the modulus, \m{\vol(uX)=\modA(u)\vol(X)}, and \m{\gix{u}=\modA(u)^{-1}} is the
+\emph{generalised index}, which for \m{u\in O_A} is the index of $uO_A$ in~$O_A$, so that then \m{\gix{u}\ge1}; for a
+unit~$\xi$, \m{\den{\xi}} is the index of \m{O_A\cap\xi^{-1}O_A} in~$O_A$. The place structure has further data (a
+trace-one element, a measure on the skew elements) that enter only through the inputs; its Plancherel constant
+is~$1$. A \emph{shape} is a triple \m{\fs=(\varrho,\kappa,k_0)} of a natural number, a finite set and an element
+of it; \m{\rh{\fs}=\varrho}, \m{\kk{\fs}=\#\kappa}, \m{\nn{\fs}=\rh{\fs}+1}. $T$ is an \emph{$\fs$-form} over~$A$
+whose split Gram matrix is a \emph{hermitian unit} (hermitian and invertible); $\iota$ is a finite set, $m$ a
+natural number, and $\cL$ denotes a level of~$T$ in \m{\Levels{\iota}{T}{m+1}}, in the sense recalled below. A
+\emph{sequence of units} is a map \m{p\colon\NN\to A^{\times}}, \m{a\mapsto p_a}; the sequences of units carry the
+product topology, and $1$ is the constant sequence. For a finite set $X$, \m{\ell^2(X)} is \m{\CC^X} with the inner
+product \m{\langle v,w\rangle=\sum_x\bar v_xw_x}, conjugate-linear in the first variable; $X^*$ is the conjugate
+transpose of a matrix. Integrals of functions with values in \m{[0,\infty]} are Lebesgue integrals; for measures
+$\mu$, $\nu$ on a group, \m{\mu*\nu} is the image of \m{\mu\times\nu} under the multiplication. Elements written
+$x$, $y$, $u$, $k$ are elements of \m{\GT{T}}, and $g$ is a unit of~$A$, where nothing else is said.
+\end{conventions}
+
+\subhead{Forms and groups.} These notions belong to the background library. The index set \m{\Ix{\fs}}
+consists of \m{e_0,\dots,e_{\varrho-1}}, of the elements of~$\kappa$, of~$z$, and of
+\m{e^*_0,\dots,e^*_{\varrho-1}}. The \emph{frame} is \m{\mathfrak f_a=e_a} for \m{a<\varrho} and \m{\mathfrak
+f_{\varrho}=z}. An $\fs$-form $T$ is a hermitian matrix indexed by \m{\kappa\sqcup\{z\}}; its \emph{split Gram
+matrix} \m{\JT{T}}, indexed by \m{\Ix{\fs}}, pairs $e_a$ with $e^*_a$ to~$1$ and is $T$ on the middle;
+\m{\GT{T}} is the unitary group of \m{\JT{T}} over~$A$, with the form \m{h(v,v')=v^*\JT{T}v'}, so that the
+coordinate of a vector $w$ at $e^*_a$ is \m{h(e_a,w)}. For \m{x\in\GT{T}},
+\m{\ZT{T}{x}=(h(\mathfrak f_a,x\,\mathfrak f_{a'}))_{a,a'\le\varrho}} is its \emph{frame Gram matrix}; its corner
+entry is \m{\ZT{T}{x}_{\varrho\varrho}=h(z,xz)}. The \emph{level} of an index is $a$ for $e_a$, $\varrho$ for the
+middle indices, and \m{2\varrho-a} for $e^*_a$. In \m{\GT{T}}: \m{\UT{T}} is the \emph{Bessel unipotent
+subgroup}, the elements that are block upper triangular for the levels with identity diagonal blocks;
+\m{\HT{T}} is the subgroup of the elements that fix all $e_a$, all $e^*_a$ and~$z$; \m{\Hl{l}{T}}, for
+\m{l\le\varrho}, the subgroup of those that fix $e_a$ and $e^*_a$ for \m{a<l}, and \m{\Hl{\varrho+1}{T}=\HT{T}};
+\m{\Ql{l}{T}} is the group of the elements that are unitriangular on the first $l$ floors; and
+\m{\ST{T}=\UT{T}\HT{T}} is the \emph{Bessel subgroup}. For \m{u\in\GT{T}}, \m{\sd{u}=\sum_{a<\varrho}h(e^*_a,u\,\mathfrak
+f_{a+1})} is the sum of the entries of $u$ just above the diagonal of its frame block. For a sequence $p$ of
+units and \m{l\le\varrho}, \m{\weyl{l}{p}\in\GT{T}} is the \emph{Weyl element} of length~$l$: it sends $e_a$ to
+\m{p_ae^*_a} and $e^*_a$ to \m{\bar p_a^{-1}e_a} for \m{a<l} and fixes the other basis vectors. For a unit $g$
+of~$A$, \m{\uLev{g}{T}} is the group of the \m{k\in\GT{T}} that have entries in~$O_A$, as has $k^{-1}$, and for
+which \m{g^{-1}(k-1)} has entries in~$O_A$; so \m{\uLev{1}{T}} is the group of the \emph{integral isometries}.
+
+\subhead{Levels and the tower.} These notions belong to the unit on the real place (the notes \emph{The tower
+method at a place}); they are recalled with their arguments. A \emph{level}
+\m{\cL\in\Levels{\iota}{T}{m+1}} consists of a hyperbolic basis of the middle form with \m{m+1} further
+hyperbolic pairs and an orthonormal part indexed by~$\iota$; a unit \m{\gL{\cL}} of $A$ with
+\m{\overline{\gL{\cL}}=\gL{\cL}}; s-finite measures \m{\flm{\cL}{\varrho}}, carried by \m{\Hl{\varrho}{T}}, and
+\m{\mH{\cL}\ne0}, carried by \m{\HT{T}} and invariant under right translation by its elements; an open set of vectors,
+the \emph{ball}; a compact set \m{\BoxL{\cL}\subseteq\GT{T}}, the \emph{box}; and a measurable set
+\m{\Posn{\cL}\subseteq\GT{T}}, the \emph{positions}. Its \emph{congruence subgroup} is
+\m{\cgp{\cL}=\uLev{\gL{\cL}}{T}}. The library provides measures $\eta_l$ on \m{\GT{T}}, the \emph{Heisenberg
+measures} of the floors; \m{\etab{j}} is the convolution of the first $j$ of them, and \m{\etab{\varrho+2}} is
+carried by \m{\UT{T}}. The \emph{floor measures} are \m{\flm{\cL}{l}} for \m{l<\varrho} (the law of the inverse
+Weyl element of floor~$l$, convolved with~$\eta_l$), \m{\flm{\cL}{\varrho}}, and \m{\flm{\cL}{\varrho+1}=\mH{\cL}}.
+For natural numbers $l$, $i$ the \emph{stack measure} is
+\[\stk{\cL}{l}{i}=(\eta_{l+i-1}*\flm{\cL}{l+i-1})*\dots*(\eta_l*\flm{\cL}{l}),\]
+with \m{\gM{\cL}=\stk{\cL}{0}{\varrho+2}}, the \emph{group measure}, and
+\m{\gMu{\cL}=\flm{\cL}{\varrho+1}*\dots*\flm{\cL}{0}}. The \emph{quadric measure} \m{\quadric{\cL}{\varrho}} is the
+image of \m{\flm{\cL}{\varrho}} under \m{\sigma\mapsto\sigma^{-1}z}, a measure on the vectors \m{e\in A^{\Ix{\fs}}} with
+\m{h(e,e)=h(z,z)}. For a unit $g$ and \m{l<\varrho} the \emph{floor modulus} is
+\m{\fmod{\cL}{l}{g}=\modA(g)^{\kk{\fs}+1+2(\varrho-l-1)+1/2}}, and for sequences $p$, $q$ of units and
+\m{j\le\varrho} the \emph{head density} is
+\[\hdens{\cL}{j}{p}{q}=\prod_{a<j}\modA(p_aq_a)^{(\kk{\fs}+1+2(\varrho-a-1))/2}.\]
+The \emph{volume exponent} is \m{\vexp{\cL}=\#\iota-(3\nn{\fs}+m+2)}. For \m{a<\varrho} and \m{x,y\in\GT{T}} the set of
+\emph{floor values} \m{\Val{\cL}{a}{x}{y}\subseteq A} consists of the coordinates \m{h(e_a,w)} of the vectors $w$
+whose coordinates at $e^*_b$, \m{b<a}, vanish and for which \m{x^{-1}w} and
+\m{\gL{\cL}^{-1}(x^{-1}w-(xy)^{-1}w)} lie in the ball. A point $x$ is \emph{near at~$j$} if \m{\xi x\in\BoxL{\cL}}
+for some \m{\xi\in\Ql{j}{T}}.
+
+For a function \m{k\colon\GT{T}\times\GT{T}\to\CC} and \m{j\le\varrho+1} put
+\begin{align*}
+\Av{\cL}{j}{k}{g}{y}&=\int k(\sigma g,\sigma y)\,d\bigl(\flm{\cL}{\varrho+1}*\dots*\flm{\cL}{j}\bigr)(\sigma),\\
+\Pv{\cL}{j}{k}{g}{y}&=\int\bigl|\Av{\cL}{j+1}{k}{\sigma g}{\sigma y}\bigr|\,d\flm{\cL}{j}(\sigma),
+\end{align*}
+here with \m{g,y\in\GT{T}}. For a finite set $X$, functions \m{W,W'\colon\GT{T}\to\ell^2(X)} and \m{d\in\GT{T}}, write
+$k_{W,W'}^{d}(x,y)=\langle W(x),W'(dy)\rangle$. The \emph{pairing norm} is
+$\PN{\cL}{W}{W'}=\int\!\!\int|\langle W(x),W'(y)\rangle|^2\,d\gMu{\cL}(y)\,d\gMu{\cL}(x)$. For \m{j\le\varrho},
+sequences $p$, $q$ of units, \m{x,g\in\GT{T}} and \m{\omega\colon\GT{T}\to\CC}, with \m{d=\weyl{j}{q}^{-1}\weyl{j}{p}}, put
+\begin{align*}
+\Phi_j(x,g)=\int\!\!\int&\omega(\sigma\tau^{-1})\cdot\Av{\cL}{j+1}{k^{1}_{W,W}}{\sigma g}{\sigma gx}\\
+&\cdot\overline{\Av{\cL}{j+1}{k^{d}_{W,W}}{\tau\weyl{j}{p}^{-1}g}{\tau\weyl{j}{p}^{-1}gx}}\,d\flm{\cL}{j}(\tau)\,d\flm{\cL}{j}(\sigma).
+\end{align*}
+Then the \emph{floor form}, its \emph{modulus} at $x$ and its \emph{majorant} at $x$ are
+\begin{align*}
+\fform{\cL}{j}{p}{q}{W}{\omega}&=\hdens{\cL}{j}{p}{q}\cdot\int\!\!\int\Phi_j(x,g)\,d\gM{\cL}(x)\,d\stk{\cL}{0}{j}(g),\\
+\fmodu{\cL}{j}{p}{q}{W}{x}{\omega}&=\int|\Phi_j(x,g)|\,d\stk{\cL}{0}{j}(g),\\
+\fmaj{\cL}{j}{p}{q}{W}{W'}{x}&=\int\Pv{\cL}{j}{k^{1}_{W,W}}{g}{gx}\\
+&\qquad\cdot\Pv{\cL}{j}{k^{d}_{W,W'}}{\weyl{j}{p}^{-1}g}{\weyl{j}{p}^{-1}gx}\,d\stk{\cL}{0}{j}(g).
+\end{align*}
+A function \m{W\colon\GT{T}\to\ell^2(X)} is a \emph{cut Bessel function for~$\cL$} if it is measurable and bounded,
+\m{W(ux)=\psi_A\bigl(\gL{\cL}^{-1}\sd{u}\bigr)W(x)} for \m{u\in\UT{T}}, and \m{W(x)\ne0} implies \m{ux\in\BoxL{\cL}}
+for some \m{u\in\UT{T}}. For a measure $\mu$ on \m{\GT{T}}, such a $W$ and \m{\gamma\in\GT{T}}, the \emph{Bessel
+correlation} \m{\bcorr{\mu}{W}{\gamma}\in\ell^2(X\times X)} has the coordinates
+\m{\int W(y)_a\,\overline{W(\gamma^{-1}y)_b}\,d\mu(y)}.
+
+A \emph{gauge} \m{\Gamma\in\Gauges{\cL}} provides, for every natural number~$i$, a compact set of the elements
+of $A$ \emph{of size at most~$i$}, written \m{\szl{\Gamma}{x}{i}}, increasing with~$i$, and a constant
+\m{\Lam{\Gamma}\in[2,\infty)}; a vector or a matrix has size at most $i$ if its entries have. A sequence $p$ of
+units is a \emph{head of length $j$ for~$\Gamma$}, \m{\Hd{\Gamma}{j}{p}}, if \m{(p_0\cdots p_{l-1})^{-1}} has size at
+most~$1$ for all \m{l\le j}. The \emph{self-norm product}
+\m{\snp{\Gamma}{j}{p}{q}{W}{W'}{x}\in[0,\infty]} of a gauge is the quantity of that name of the unit on the real
+place; it enters here only through the inputs.
+
+\subhead{Standard levels.} From the note \emph{Poincaré series of cut Bessel functions} of this unit:
+\m{\IsStd{\cL}} (\emph{$\cL$ is a standard level}) means that $\cL$ is the level of the lattice
+\m{O_A^{\Ix{\fs}}} with a bound for an ideal zeta function; what this note uses of it is Input~\ref{i:3}. For
+a unit $\alpha$ of $A$ with \m{\alpha\in O_A} and \m{\bar\alpha=\alpha}, \m{\stdg{\cL}{\alpha}\in\Gauges{\cL}} is the
+\emph{gauge of depth~$\alpha$} of a standard level: $x$ has size at most $i$ exactly if \m{\alpha^ix\in O_A}, and
+\m{\Lam{\stdg{\cL}{\alpha}}=2/\modA(\alpha)}. For a natural number $K$, \m{j\le\varrho} and a sequence $p$ of units, the
+\emph{head weight} is \m{\fhw{K}{j}{p}=\prod_{l<j}\gix{p_0\cdots p_l}^{K/2}} if all the partial products
+\m{p_0\cdots p_l}, \m{l<j}, lie in~$O_A$, and \m{\fhw{K}{j}{p}=0} otherwise; \m{\zetaA{s}=\sum_I[O_A:I]^{-s}} is
+the ideal zeta function of~$O_A$, the sum over the ideals of finite index.
+
+\begin{setting}[a level]\label{s:L}
+$A$ is a semilocal field with an involution and an integral place structure, $\fs$ is a shape, $T$ is an
+$\fs$-form over $A$ whose split Gram matrix \m{\JT{T}} is a hermitian unit, $\iota$ is a finite set, $m$ a natural
+number, and \m{\cL\in\Levels{\iota}{T}{m+1}} is a level.
+\end{setting}
+
+\begin{definition}[the finite Bessel function]\label{d:phase}
+Let $A$ be a semilocal field with an involution and an integral place structure, $\fs$ a shape and $T$ an
+$\fs$-form over $A$ whose split Gram matrix is a hermitian unit. For a unit $g$ of $A$ and \m{z\in\GT{T}},
+\[\phs{g}{z}=\begin{cases}\psi_A\bigl(g^{-1}\sd{u}\bigr)&\text{if }u^{-1}z\in\uLev{g}{T}\text{ for some }u\in\UT{T},\\
+0&\text{if there is no such }u,\end{cases}\]
+where in the first case $u$ is a chosen such element; by Lemma~\ref{l:phase}(c) the value does not depend on the
+choice.
+\end{definition}
+\leanline{\lean{phase}}
+
+\begin{definition}[intermediate groups and the finite Bessel vector]\label{d:int}
+In Setting~\ref{s:L}:
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item \m{\IntG{\cL}} is the set of the subgroups $Z$ of \m{\GT{T}} with \m{\cgp{\cL}\le Z\le\uLev{1}{T}}, the
+\emph{intermediate groups} of~$\cL$.
+\item The \emph{unipotent mass} is \m{\umass{\cL}=\prod_{l<\varrho}\fmod{\cL}{l}{\gL{\cL}}\in[0,\infty]}.
+\item For a subgroup $Z$ of \m{\GT{T}},
+\[\fzf{\cL}{Z}=\int\Bigl|\int_Z\phs{\gL{\cL}}{yxy^{-1}}\,d\gM{\cL}(y)\Bigr|^2d\gM{\cL}(x)\ \in[0,\infty].\]
+\item For \m{Z\in\IntG{\cL}}, \m{\Cos{Z}} is the set of the cosets \m{\cgp{\cL}a}, \m{a\in Z}; it is finite,
+because \m{\cgp{\cL}} is open and $Z$ lies in the compact group \m{\uLev{1}{T}}. Each coset $c$ has a chosen
+representative \m{a_c\in Z}.
+\item For \m{Z\in\IntG{\cL}} the \emph{mass ratio} is
+$\mr{Z}=\gM{\cL}(Z)\cdot\gM{\cL}(\cgp{\cL})\cdot\umass{\cL}^{-2}\in[0,\infty]$.
+\item For \m{Z\in\IntG{\cL}} and \m{y\in\GT{T}} the \emph{finite Bessel vector} \m{\bvec{Z}{y}\in\ell^2(\Cos{Z})}
+has the coordinate \m{\phs{\gL{\cL}}{y\,a_c^{-1}}} at the coset~$c$. We write
+\m{\pk{Z}(x,y)=\langle\bvec{Z}{x},\bvec{Z}{y}\rangle} for its kernel.
+\end{enumerate}
+\end{definition}
+\leanline{\lean{IntermediateGroup}\sep \lean{unipotentMass}\sep \lean{floorZeroForm}\sep \lean{Cosets}\sep
+\lean{massRatio}\sep \lean{besselVector}}
+
+\begin{setting}[a standard level with an intermediate group]\label{s:Z}
+In Setting~\ref{s:L}, with $A$, $\fs$, $T$, $\iota$, $m$ and $\cL$ as there: $\cL$ is a standard level,
+\m{\IsStd{\cL}}, and \m{Z\in\IntG{\cL}} is an intermediate group of~$\cL$.
+\end{setting}
+
+\begin{definition}[correlations, the top kernel, the energy]\label{d:top}
+In Setting~\ref{s:Z}, write \m{\varrho=\rh{\fs}}.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=2pt]
+\item For a sequence $p$ of units of $A$ and \m{l\in\GT{T}}, the \emph{correlation} is
+\[\corr{Z}{p}{l}=\hdens{\cL}{\varrho}{p}{1}\cdot\bcorr{\gM{\cL}}{\bvec{Z}{\cdot}}{\weyl{\varrho}{p}\,l^{-1}}\ \in\ \ell^2(\Cos{Z}\times\Cos{Z}).\]
+\item For a set \m{L\subseteq A} and sequences $p$, $q$ of units of~$A$, the \emph{top kernel} is
+\[\topK{L}{Z}{p}{q}=\int_{\{l:\ h(z,l^{-1}z)-p_\varrho\in L\}}\bigl\langle\corr{Z}{p}{l},\corr{Z}{q}{l}\bigr\rangle\,d\stk{\cL}{\varrho}{2}(l)\ \in\CC.\]
+\item For a finite set $\mathcal C$, a complex matrix $R$ indexed by~$\mathcal C$, a family
+\m{\omega=(\omega_i)_{i\in\mathcal C}} of sequences of units of $A$ and a vector \m{e\in A^{\Ix{\fs}}}, the \emph{energy} is
+\[\lenergy{Z}{R}{\omega}{e}=\inf_{l}\ \int\sum_{x\in\Cos{Z}\times\Cos{Z}}\bigl(\rePart\,v^{*}Rv\bigr)^{+}\,d\mH{\cL}(h)\ \in[0,\infty],\]
+where the infimum is over the \m{l\in\Hl{\varrho}{T}} with \m{l^{-1}z=e} (it is $\infty$ if there is none), $v$ is
+the vector with the coordinates \m{v_i=\corr{Z}{\omega_i}{hl}_x}, the index $i$ running over~$\mathcal C$, and
+\m{r^{+}=\max(r,0)}. (The index, called $p$ in the formal text, is bound inside the definition; see
+§\ref{s:notes}, item~1.)
+\end{enumerate}
+\end{definition}
+\leanline{\lean{correlation}\sep \lean{topKernel}\sep \lean{energya}}
+
+\sect{What is taken for granted}{s:inputs}
+The following statements are used and not proved here. Inputs 1 and~5 belong to the background library,
+Inputs 2 and~4 to the unit on the real place (the notes \emph{The tower method at a place}), Input~3 to the note
+\emph{Poincaré series of cut Bessel functions} of this unit. They are stated from the dossier's readings of
+their quoted Lean statements; the statements of Inputs 2 to~4 I also read in the Lean text. No reference to the
+literature is claimed for any of them: they are statements about the objects of this proof.
+
+\statement{est}{\phantomsection\label{i:1}\textbf{Input 1} (the Bessel subgroup and the congruence subgroups;
+background library).\enspace Let $A$, $\fs$, $T$ be as in the conventions and $g$ a unit of~$A$.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=1pt]
+\item \m{\UT{T}\subseteq\ST{T}}, and \m{\ST{T}} normalises \m{\UT{T}}. For \m{s,s'\in\ST{T}}:
+\m{\sd{ss'}=\sd{s}+\sd{s'}}; and \m{\sd{h}=0} for \m{h\in\HT{T}}.
+\item \m{\uLev{g}{T}} is an open compact subgroup of \m{\GT{T}}, contained in \m{\uLev{1}{T}} and normalised by it;
+for \m{k\in\uLev{g}{T}}, \m{g^{-1}\sd{k}\in O_A}.
+\item If \m{\JT{T}} and its inverse have entries in~$O_A$ and \m{g\in O_A}, then every \m{x\in\GT{T}} for which
+\m{g^{-1}(x-1)} has entries in $O_A$ lies in \m{\uLev{g}{T}}.
+\item For a sequence $p$ of units and \m{l\le\varrho}, \m{\weyl{l}{p}} commutes with the elements of \m{\Hl{l}{T}}.
+\m{\HT{T}\subseteq\Hl{\varrho}{T}}; if \m{\sigma,\tau\in\Hl{\varrho}{T}} and \m{\sigma^{-1}z=\tau^{-1}z}, then
+\m{\sigma\tau^{-1}\in\HT{T}}; and \m{\ZT{T}{hxh'}_{\varrho\varrho}=\ZT{T}{x}_{\varrho\varrho}} for \m{h,h'\in\HT{T}} and
+\m{x\in\GT{T}}.
+\item For \m{u\in\UT{T}}, \m{a<\varrho} and a vector $w$ whose coordinates at $e^*_b$, \m{b<a}, vanish, the
+coordinates of $uw$ and of $w$ at $e^*_a$ agree.
+\end{enumerate}}
+
+\statement{est}{\phantomsection\label{i:2}\textbf{Input 2} (the tower; unit on the real place).\enspace In
+Setting~\ref{s:L}, write \m{\varrho=\rh{\fs}}.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=1pt]
+\item \emph{(Measures.)} \m{\gM{\cL}=\etab{\varrho+2}*\gMu{\cL}}; \m{\gM{\cL}=\stk{\cL}{\varrho}{2}*\stk{\cL}{0}{\varrho}};
+\m{\stk{\cL}{\varrho}{2}=\mH{\cL}*\flm{\cL}{\varrho}}, and this measure is invariant under right translation by the
+elements of \m{\Hl{\varrho}{T}}; \m{\stk{\cL}{l}{i}} is carried by \m{\Hl{l}{T}}, and \m{\stk{\cL}{0}{0}} is the unit
+mass at~$1$.
+\item \emph{(Pairing kernels.)} Let $W$ be a cut Bessel function for $\cL$, \m{k=k^{1}_{W,W}}, and suppose that
+$\cL$ has a gauge. Then \m{|\Av{\cL}{j}{k}{g}{y}|\le\Pv{\cL}{j}{k}{g}{y}} for \m{j\le\varrho} and \m{g,y\in\GT{T}}; there
+is \m{c<\infty} with \m{\int|k(\sigma g,\sigma y)|\,d\stk{\cL}{\varrho}{2}(\sigma)\le c} for all $g$,~$y$; and for every
+function~$k'$, if \m{\Pv{\cL}{j}{k'}{g}{y}\ne0} then \m{k'(\sigma g,\sigma y)\ne0} for some \m{\sigma\in\Hl{j}{T}}.
+\item \emph{(Forms.)} For \m{j\le\varrho}, sequences $p$, $q$ of units, $W$ and $\omega$:
+\m{|\fform{\cL}{j}{p}{q}{W}{\omega}|\le\hdens{\cL}{j}{p}{q}\cdot\int\fmodu{\cL}{j}{p}{q}{W}{x}{\omega}\,d\gM{\cL}(x)}; and if $W$
+is a cut Bessel function for $\cL$ and \m{|\omega|\le1}, then
+\m{\fmodu{\cL}{j}{p}{q}{W}{x}{\omega}\le\fmaj{\cL}{j}{p}{q}{W}{W}{x}} for all~$x$.
+\item \emph{(Near points.)} If $W$ is a cut Bessel function for $\cL$ and \m{W(x)\ne0}, then $x$ is near at
+every~$j$; if $x$ is near at $j$ and \m{\sigma\in\Hl{j}{T}}, then \m{\sigma x} is near at~$j$. If $\Gamma$ is a gauge
+of~$\cL$, \m{j\le\varrho}, $p$ is a sequence of units, and
+$x$ and \m{\weyl{j}{p}^{-1}x} are near at~$j$, then \m{\szl{\Gamma}{p_0\cdots p_{l-1}}{9\nn{\fs}}} for all \m{l\le j}.
+\item \emph{(Correlations.)} Let $\Gamma$ be a gauge of~$\cL$, $W$ a continuous cut Bessel function for $\cL$,
+$p$, $q$ heads of length $\varrho$ for~$\Gamma$, \m{x\in\Hl{\varrho}{T}} and $\mu$ a Haar measure of \m{\GT{T}}. Then
+\begin{align*}
+&\bigl\langle\bcorr{\mu}{W}{\weyl{\varrho}{p}x},\bcorr{\mu}{W}{\weyl{\varrho}{q}x}\bigr\rangle\\
+&\quad=\int\!\!\int\langle W(y_1),W(y_2)\rangle\,\overline{\bigl\langle W((\weyl{\varrho}{p}x)^{-1}y_1),W((\weyl{\varrho}{q}x)^{-1}y_2)\bigr\rangle}\,d\mu\,d\mu,
+\end{align*}
+the integral over \m{(y_1,y_2)}. If \m{W(y)\ne0} and \m{W((\weyl{\varrho}{p}x)^{-1}y)\ne0}, then \m{\szl{\Gamma}{y}{60\nn{\fs}^2}}; and for every $i$ the
+set of the \m{y\in\GT{T}} with \m{\szl{\Gamma}{y}{i}} is compact.
+\end{enumerate}}
+
+\statement{est}{\phantomsection\label{i:3}\textbf{Input 3} (standard levels; note \emph{Poincaré series of cut
+Bessel functions} of this unit).\enspace In Setting~\ref{s:L}, suppose \m{\IsStd{\cL}}, and write
+\m{\varrho=\rh{\fs}}, \m{n=\nn{\fs}}.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=1pt]
+\item \m{\JT{T}} and its inverse have entries in~$O_A$; \m{\gL{\cL}\in O_A}; \m{\BoxL{\cL}=\uLev{1}{T}}; the ball is
+\m{O_A^{\Ix{\fs}}}; \m{\Posn{\cL}=\{y^{-1}uy:\ y\in\GT{T},\ u\in\UT{T}\}\cdot\cgp{\cL}}; and there is a vector $u_0$
+with \m{h(u_0,w)=w_z} for all vectors~$w$ and with $z$-coordinate~$0$.
+\item \m{\zetaA{m}^{n}\le1+2^{-n}}, hence \m{\zetaA{m}\le2}; \m{m<9n}; \m{13n\le\#\iota}; and
+\m{\kk{\fs}=\#\iota+2m+3}.
+\item \m{\gM{\cL}} is a Haar measure of \m{\GT{T}}, invariant under left and right translations; and
+\m{\vol(O_A^{\times})^{i+1}\le\stk{\cL}{l}{i+2}(\uLev{1}{T})} whenever \m{l+i=\varrho}.
+\item \emph{(Unfolding.)} For a unit $g$ of $A$ with \m{g\in O_A} and \m{\bar g=g}, an s-finite measure $\theta$
+on \m{\GT{T}} and \m{c\in\GT{T}}:
+\begin{align*}
+&(\etab{\varrho+2}*\theta)\bigl(\{y:\ yc\in\uLev{g}{T}\}\bigr)\\
+&\qquad=\prod_{l<\varrho}\fmod{\cL}{l}{g}\cdot\theta\bigl(\{y:\ uyc\in\uLev{g}{T}\text{ for some }u\in\UT{T}\}\bigr).
+\end{align*}
+\item \emph{(Gauges.)} For a unit \m{\alpha\in O_A} with \m{\bar\alpha=\alpha}, \m{\stdg{\cL}{\alpha}} is a gauge of~$\cL$,
+as described in §\ref{s:setting}; in every gauge $\Gamma$ of~$\cL$ the elements of the box and of the ball have
+size at most~$1$, the sizes add under multiplication, and \m{\modA(u)\le\Lam{\Gamma}^{i}} for a unit $u$ with
+\m{\szl{\Gamma}{u}{i}}.
+\end{enumerate}}
+
+\statement{est}{\phantomsection\label{i:4}\textbf{Input 4} (the estimates of the tower method; unit on the real
+place).\enspace In Setting~\ref{s:L}, suppose \m{\IsStd{\cL}}; let $W$ be a cut Bessel function for~$\cL$,
+\m{k=k^{1}_{W,W}}, \m{j\le\rh{\fs}}, $p$, $q$ sequences of units, $\Gamma$ a gauge of~$\cL$, and write
+\m{n=\nn{\fs}}, \m{\varrho=\rh{\fs}}.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=1pt]
+\item \emph{(Positions.)} Let $q$ be a head of length $j$ for~$\Gamma$, $\Gamma'$ a second gauge, $S$ a set of
+positions $x$ with \m{\szl{\Gamma'}{\gL{\cL}^{-1}(x-1)}{1}}, and \m{f\colon\GT{T}\to[0,\infty]}, \m{\epsilon\in[0,\infty]} with
+\m{f(x)^2\le\epsilon^2\cdot\snp{\Gamma}{j}{p}{q}{W}{W}{x}} on~$S$. Then
+\[\hdens{\cL}{j}{p}{q}\int_Sf\,d\gM{\cL}\ \le\ \epsilon\cdot\umass{\cL}\cdot\PN{\cL}{W}{W}\cdot
+\Lam{\Gamma}^{N_1}\cdot\Lam{\Gamma'}^{N_2},\]
+where \m{N_1=1500000n^3+1} and \m{N_2=50000n^2}.
+\item \emph{(The majorant.)} Let $p$ be a head of length $j$ for~$\Gamma$, $x$ a position and
+\m{\varsigma_0\in[0,\infty]}. Suppose that, if \m{\varsigma_0<1}, for every $y$ with \m{\langle W(y),W(yx)\rangle\ne0}
+such that \m{\weyl{j}{p}^{-1}y} and \m{\weyl{j}{q}^{-1}yx} are near at~$j$ there is $a$ with \m{j\le a<\varrho} and
+\m{\vol(\Val{\cL}{a}{y}{x})\le\varsigma_0}. Then
+\m{\fmaj{\cL}{j}{p}{q}{W}{W}{x}^2\le\varsigma_0^{\vexp{\cL}}\cdot V_0^2\cdot\snp{\Gamma}{j}{p}{q}{W}{W}{x}} with
+\m{V_0=2^{99\cdot13\,n}}, the floor-mass constant of the gauge of depth~$1$.
+\item \emph{(Frequencies.)} Let $p$ be a head of length $j$ for~$\Gamma$ and $x$ a position. If $\eta$, $\xi$ are
+units with \m{\psi_A(\xi c)=\psi_A(\eta c)} for all $c$ with \m{\szl{\Gamma}{c}{200n^2}}, and
+\m{\omega(y)=\psi_A(\xi\cdot\ZT{T}{y}_{jj})}, then
+\m{\fmodu{\cL}{j}{p}{q}{W}{x}{\omega}^2\le\gix{\eta}^{\#\iota}\cdot\snp{\Gamma}{j}{p}{q}{W}{W}{x}}. If \m{j=i+1} and
+\m{\xi=\gL{\cL}^{-1}(p_i^{-1}-q_i^{-1})} is a unit, then
+\m{\fmodu{\cL}{j}{p}{q}{W}{x}{1}^2\le\gix{\xi}^{\#\iota}\cdot\snp{\Gamma}{j}{p}{q}{W}{W}{x}}.
+\item \emph{(Integrality from floor values.)} Let $p$, $q$ be heads of length $j$ for~$\Gamma$ and $\Gamma''$ a
+second gauge such that, if \m{j\ne0}, \m{\szl{\Gamma''}{\gL{\cL}^{-1}c}{1}} for every $c$ with \m{\szl{\Gamma}{c}{10n}}.
+Let \m{x,y\in\GT{T}} be such that: there are \m{u,v\in\UT{T}} with \m{ux,\,vxy\in\BoxL{\cL}} and
+\m{\szl{\Gamma''}{\gL{\cL}^{-1}(vxy-ux)}{2}}; \m{\weyl{j}{p}^{-1}x} and \m{\weyl{j}{q}^{-1}xy} are near at~$j$; and for
+every $a$ with \m{j\le a<\varrho} there is a unit \m{c\in\Val{\cL}{a}{x}{y}} with \m{\szl{\Gamma''}{c^{-1}}{1}}. Then
+\m{\szl{\Gamma''}{\gL{\cL}^{-1}(y-1)}{99n}}.
+\item \emph{(The floor $0$.)} \m{\hdens{\cL}{0}{p}{q}=1},
+\m{\fmaj{\cL}{0}{1}{1}{W}{W}{x}=\Pv{\cL}{0}{k}{1}{x}^2}, and there is a number \m{\Sigma_0(x)\in[0,\infty]} with
+\m{\snp{\Gamma}{0}{1}{1}{W}{W}{x}=\Lam{\Gamma}^{3\cdot10^6n^3}\cdot\Sigma_0(x)^2} such that, for a position $x$ and
+\m{\varepsilon\in[0,\infty]}: if for every \m{\sigma\in\GT{T}} with \m{k(\sigma,\sigma x)\ne0} there is \m{a<\varrho} with
+\m{\vol(\Val{\cL}{a}{\sigma}{x})\le\varepsilon}, then
+\m{\Pv{\cL}{0}{k}{1}{x}^2\le\varepsilon^{\vexp{\cL}}\cdot\Lam{\Gamma}^{10^4n\varrho}\cdot\Sigma_0(x)}.
+\end{enumerate}}
+
+\statement{est}{\phantomsection\label{i:5}\textbf{Input 5} (ideals, valuations, Eichler elements; background
+library).\enspace Let $A$ be as in the conventions.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=1pt]
+\item \emph{(Summation over ideals.)} Let $s$ be a natural number with \m{\zetaA{s}\le2}, $\rho$ a measure on a
+measurable space, $S$ a subset of it, $f$ a function with values in \m{[0,\infty]}, \m{V\in[0,\infty]}, and
+\m{I\mapsto S(I)} a family of subsets indexed by the ideals of~$O_A$. If for almost every \m{x\in S} there is an
+ideal $I$ of finite index with \m{x\in S(I)} and \m{[O_A:I]^{s}\cdot f(x)\cdot\rho(S(I))\le V}, then
+\m{\int_Sf\,d\rho\le\zetaA{s}\cdot V}.
+\item \emph{(Content.)} For a finite family \m{(d_i)} of elements of~$A$ one of which is~$1$, there is a unit
+$c$ of $A$ with \m{c\in O_A} such that \m{\{\varepsilon\in A:\ \varepsilon d_i\in O_A\text{ for all }i\}=cO_A}; this is an
+ideal of $O_A$ of index \m{\gix{c}}, and \m{\bar c\in O_A}.
+\item \emph{(Greatest common divisors.)} For units $\xi$, $\beta$ of $A$ there are a unit $\eta$ and
+\m{x,c\in O_A} with \m{\eta=\xi+c\beta}, \m{\xi=x\eta} and \m{\beta\in\eta O_A}.
+\item \emph{(Primitive matrices.)} If a matrix $X$ over~$A$, with columns indexed by a finite set with a
+weight function, has a left inverse, there is an invertible matrix $b$, block upper triangular for the
+weights, such that $Xb$ has entries in $O_A$ and a left inverse with entries in~$O_A$.
+\item \emph{(Volumes.)} For a unit~$u$, \m{\vol(\{x:\ ux\in O_A\})=\modA(u)^{-1}}; for a unit \m{u\in O_A} the ideal
+\m{uO_A} has index \m{\gix{u}}; and \m{\vol(O_A\cap\xi^{-1}O_A)=\den{\xi}^{-1}}. Almost every element of $A$ is a
+unit.
+\item \emph{(Eichler elements.)} In Setting~\ref{s:L}, let $u_0$ be a vector with \m{h(u_0,w)=w_z} for all $w$
+and with $z$-coordinate~$0$. For every vector $v$ there is \m{\mathrm E(v)\in\GT{T}}, given by a formula that is
+polynomial in the coordinates of $v$ and in the ring inverse of~$v_z$, with \m{\mathrm E(z)=1}, such that
+\m{\mathrm E(v)\in\Hl{\varrho}{T}} if the coordinates of $v$ at all $e_a$ and $e^*_a$ vanish, and
+\m{\mathrm E(v)^{-1}z=v} if \m{h(v,v)=h(z,z)} and $v_z$ is a unit.
+\end{enumerate}}
+
+\sect{The finite Bessel function and its vector}{s:phase}
+\begin{lemma}[the finite Bessel function]\label{l:phase}
+Let $A$ be a semilocal field with an involution and an integral place structure, $\fs$ a shape, $T$ an
+$\fs$-form over~$A$, $g$ a unit of~$A$, and \m{x,y,u,k\in\GT{T}}.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=1pt]
+\item If \m{\phs{g}{y}\ne0}, there is \m{u'\in\UT{T}} with \m{u'^{-1}y\in\uLev{g}{T}}.
+\item \m{|\phs{g}{y}|\le1}.
+\item If \m{u\in\UT{T}} and \m{u^{-1}y\in\uLev{g}{T}}, then \m{\phs{g}{y}=\psi_A(g^{-1}\sd{u})}.
+\item If \m{x\in\ST{T}}, \m{u\in\UT{T}} and \m{u^{-1}x\in\uLev{g}{T}}, then
+\m{\phs{g}{xy}=\psi_A(g^{-1}\sd{u})\cdot\phs{g}{y}}.
+\item If \m{k\in\uLev{g}{T}}, then \m{\phs{g}{yk}=\phs{g}{y}}.
+\item If \m{u\in\UT{T}}, then \m{\phs{g}{uy}=\psi_A(g^{-1}\sd{u})\cdot\phs{g}{y}}.
+\item The function \m{z\mapsto\phs{g}{z}} on \m{\GT{T}} is locally constant, hence continuous.
+\item \m{\uLev{g}{T}\le\uLev{1}{T}}.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) and (b) are read off Definition~\ref{d:phase}, as $\psi_A$ is unitary. (h) is part of the definition of
+\m{\uLev{g}{T}}.
+
+(c) Let $u_0$ be the chosen element, so that \m{u_0^{-1}y\in\uLev{g}{T}}. Then
+\m{u_0^{-1}u=(u_0^{-1}y)(u^{-1}y)^{-1}} lies in \m{\uLev{g}{T}}, so \m{g^{-1}\sd{u_0^{-1}u}\in O_A} by
+Input~\ref{i:1}(b), and \m{\psi_A(g^{-1}\sd{u_0^{-1}u})=1} because $\psi_A$ is self-dual. As
+\m{\sd{u}=\sd{u_0}+\sd{u_0^{-1}u}} by Input~\ref{i:1}(a), the two values of the character agree.
+
+(d) Suppose first that \m{u_0^{-1}y\in\uLev{g}{T}} for some \m{u_0\in\UT{T}}. Then \m{v=xu_0x^{-1}u} lies in
+\m{\UT{T}}, because $x$ normalises it, and $v^{-1}xy=(u^{-1}x)(u_0^{-1}y)\in\uLev{g}{T}$. By (c),
+$\phs{g}{xy}=\psi_A(g^{-1}\sd{v})$, and $\sd{v}=\sd{x}+\sd{u_0}+\sd{x^{-1}}+\sd{u}=\sd{u_0}+\sd{u}$ by additivity.
+With $\phs{g}{y}=\psi_A(g^{-1}\sd{u_0})$ this is the claim. If there is no such $u_0$, then \m{\phs{g}{y}=0}, and
+\m{\phs{g}{xy}=0} as well: from \m{v^{-1}xy\in\uLev{g}{T}} with \m{v\in\UT{T}} one gets \m{u_0=x^{-1}vu^{-1}x\in\UT{T}}
+with $u_0^{-1}y=(u^{-1}x)^{-1}(v^{-1}xy)\in\uLev{g}{T}$.
+
+(e) The condition \m{u^{-1}yk\in\uLev{g}{T}} is the condition \m{u^{-1}y\in\uLev{g}{T}}; so both sides vanish
+together, and otherwise they are equal by~(c). (f) is (d) for \m{x=u}. (g) By (e) the function is constant on
+the cosets of the open subgroup \m{\uLev{g}{T}} (Input~\ref{i:1}(b)).
+\end{proof}
+\leanline{\lean{existsbesselUofphasenezero}\sep \lean{normphaseleone}\sep \lean{phaseeq}\sep
+\lean{phasebesselSmul}\sep \lean{phasemulofmemunitaryLevel}\sep \lean{phasebesselUmul}\sep
+\lean{continuousphase}\sep \lean{unitaryLevelleunitaryLevelone}}
+
+\begin{lemma}[intermediate groups]\label{l:int}
+In Setting~\ref{s:L}:
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=1pt]
+\item \m{\umass{\cL}\ne0} and \m{\umass{\cL}\ne\infty}.
+\item Every \m{Z\in\IntG{\cL}} is an open subgroup of \m{\GT{T}}.
+\item For \m{Z\in\IntG{\cL}} and \m{y\in Z} there is a coset \m{d\in\Cos{Z}} such that, for every
+\m{c\in\Cos{Z}}, \m{y\,a_c^{-1}\in\cgp{\cL}} holds exactly if \m{c=d}.
+\item For every unit $u$ of~$A$, \m{\modA(u)^{-1}=\bigl(\sqrt{\gix{u}}\bigr)^2}.
+\end{enumerate}
+Suppose moreover that $\cL$ is a standard level, \m{\IsStd{\cL}}.
+\begin{enumerate}[label=\textup{(\alph*)},leftmargin=2.3em,itemsep=1pt,resume]
+\item If $S$ is a subgroup of \m{\GT{T}} contained in \m{\uLev{1}{T}}, then \m{\gM{\cL}(S)\ne\infty}.
+\item For every \m{Z\in\IntG{\cL}}: \m{\mr{Z}\ne0} and \m{\mr{Z}\ne\infty}.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(a) Each floor modulus is a product of powers of \m{\modA(\gL{\cL})}, the modulus of a unit, which is neither $0$
+nor~$\infty$. (b) $Z$ contains the open subgroup \m{\cgp{\cL}} (Input~\ref{i:1}(b)). (c) Take for $d$ the coset
+of~$y$: \m{y\,a_c^{-1}\in\cgp{\cL}} says that $y$ and $a_c$ lie in the same coset. (d) is the definition of the
+generalised index. (e) \m{\gM{\cL}} is a Haar measure (Input~\ref{i:3}(c)) and \m{\uLev{1}{T}} is compact. (f) $Z$
+and \m{\cgp{\cL}} are open, hence of positive measure, and of finite measure by~(e); with (a) this gives the claim.
+\end{proof}
+\leanline{\lean{unipotentMassnezeroandnetop}\sep \lean{isOpen}\sep \lean{existscoset}\sep
+\lean{invmdeqsqrtgenIndexsq}\sep \lean{groupMeasurenetop}\sep \lean{massRationezeroandnetop}}
+
+\begin{lemma}[non-orthogonal Bessel vectors]\label{l:inner}
+In Setting~\ref{s:L}, let \m{Z\in\IntG{\cL}} and \m{x,y\in\GT{T}} with \m{\langle\bvec{Z}{x},\bvec{Z}{y}\rangle\ne0}.
+Then there are \m{u,v\in\UT{T}} with \m{ux\in\uLev{1}{T}} and \m{(ux)^{-1}(vy)\in\cgp{\cL}}.
+\end{lemma}
+\begin{proof}
+For some coset $c$ both $\phs{\gL{\cL}}{x\,a_c^{-1}}$ and $\phs{\gL{\cL}}{y\,a_c^{-1}}$ are not zero. By
+Lemma~\ref{l:phase}(a) there are \m{u,v\in\UT{T}} such that $k_1=ux\,a_c^{-1}$ and $k_2=vy\,a_c^{-1}$ lie in
+\m{\cgp{\cL}}.
+Then \m{ux=k_1a_c\in\uLev{1}{T}}, as \m{a_c\in Z\le\uLev{1}{T}}, and
+$(ux)^{-1}(vy)=a_c^{-1}(k_1^{-1}k_2)a_c\in\cgp{\cL}$, because \m{\uLev{1}{T}} normalises \m{\cgp{\cL}}
+(Input~\ref{i:1}(b)).
+\end{proof}
+\leanline{\lean{existsofinnerbesselVectornezero}}
+
+\begin{lemma}[the form on the congruence subgroup]\label{l:cong}
+In Setting~\ref{s:Z}, with $x$, $y$ the variables of integration and \m{g=\gL{\cL}},
+\[\int_{\cgp{\cL}}\Bigl|\int_Z\phs{g}{yxy^{-1}}\,d\gM{\cL}(y)\Bigr|^2d\gM{\cL}(x)=\gM{\cL}(Z)^2\cdot\gM{\cL}\bigl(\cgp{\cL}\bigr).\]
+\end{lemma}
+\begin{proof}
+For \m{x\in\cgp{\cL}} and \m{y\in Z\le\uLev{1}{T}} the conjugate \m{yxy^{-1}} lies in \m{\cgp{\cL}}, so
+\m{\phs{g}{yxy^{-1}}=\psi_A(g^{-1}\sd{1})=1} by Lemma~\ref{l:phase}(c) with \m{u=1}. The inner integral is
+\m{\gM{\cL}(Z)}, which is finite by Lemma~\ref{l:int}(e).
+\end{proof}
+\leanline{\lean{floorZeroFormoncongGroup}}
+
+\begin{lemma}[the finite Bessel vector is cut]\label{l:cut}
+In Setting~\ref{s:Z}, the function \m{y\mapsto\bvec{Z}{y}} is a continuous cut Bessel function for~$\cL$.
+\end{lemma}
+\begin{proof}
+Its coordinates are continuous by Lemma~\ref{l:phase}(g) and of modulus at most~$1$, so its norm is at most
+\m{\sqrt{\#\Cos{Z}}}. The rule \m{\bvec{Z}{uy}=\psi_A(\gL{\cL}^{-1}\sd{u})\bvec{Z}{y}} for \m{u\in\UT{T}} is
+Lemma~\ref{l:phase}(f) in each coordinate. If \m{\bvec{Z}{x}\ne0}, then \m{\langle\bvec{Z}{x},\bvec{Z}{x}\rangle\ne0},
+and Lemma~\ref{l:inner} gives \m{u\in\UT{T}} with \m{ux\in\uLev{1}{T}=\BoxL{\cL}} (Input~\ref{i:3}(a)).
+\end{proof}
+\leanline{\lean{isCutbesselVector}}
+
+\begin{proposition}[unfolding along the unipotent subgroup]\label{p:unfold}
+In Setting~\ref{s:Z}, for all \m{y,x\in\GT{T}}, with \m{g=\gL{\cL}} and $u$ the variable of integration,
+\[\umass{\cL}\cdot\bigl\langle\bvec{Z}{y},\bvec{Z}{yx}\bigr\rangle=\int\mathbf 1_Z(uy)\cdot\phs{g}{uyx(uy)^{-1}}\,d\etab{\varrho+2}(u).\]
+\end{proposition}
+\begin{proof}
+The measure \m{\etab{\varrho+2}} is carried by \m{\UT{T}}; let \m{u\in\UT{T}}. We claim that the integrand at $u$
+equals
+\[\sum_{c\in\Cos{Z}}\mathbf 1\bigl[uy\,a_c^{-1}\in\cgp{\cL}\bigr]\cdot\overline{\bvec{Z}{y}_c}\cdot\bvec{Z}{yx}_c .\]
+If \m{uy\notin Z}, both vanish, since \m{uy\,a_c^{-1}\in\cgp{\cL}} would give \m{uy\in\cgp{\cL}a_c\subseteq Z}. If
+\m{uy\in Z}, by Lemma~\ref{l:int}(c) exactly one coset $d$ has \m{k=uy\,a_d^{-1}\in\cgp{\cL}}, and the sum is
+$\overline{\phs{g}{y\,a_d^{-1}}}\cdot\phs{g}{yx\,a_d^{-1}}$. Now \m{y\,a_d^{-1}=u^{-1}k}, so
+$\phs{g}{y\,a_d^{-1}}=\psi_A(g^{-1}\sd{u^{-1}})=\overline{\psi_A(g^{-1}\sd{u})}$ by Lemma~\ref{l:phase}(c) and
+Input~\ref{i:1}(a); and $uyx(uy)^{-1}=u\cdot(yx\,a_d^{-1})\cdot k^{-1}$, so
+$\phs{g}{uyx(uy)^{-1}}=\psi_A(g^{-1}\sd{u})\cdot\phs{g}{yx\,a_d^{-1}}$ by Lemma~\ref{l:phase}(e),~(f). This proves
+the claim. Integrating it, the coset $c$ contributes
+$\etab{\varrho+2}(\{u:\ uy\,a_c^{-1}\in\cgp{\cL}\})\cdot\overline{\bvec{Z}{y}_c}\,\bvec{Z}{yx}_c$. By the unfolding of
+Input~\ref{i:3}(d) for the unit mass at~$1$, this measure is \m{\umass{\cL}} if \m{u'y\,a_c^{-1}\in\cgp{\cL}} for some
+\m{u'\in\UT{T}}, which is the case when \m{\bvec{Z}{y}_c\ne0} (Lemma~\ref{l:phase}(a)); and when
+\m{\bvec{Z}{y}_c=0} the term vanishes. The sum over $c$ is $\umass{\cL}\langle\bvec{Z}{y},\bvec{Z}{yx}\rangle$.
+\end{proof}
+\leanline{\lean{unipotentMassmulinnerbesselVector}}
+
+\begin{proposition}[the pairing norm]\label{p:pn}
+In Setting~\ref{s:Z},
+$\PN{\cL}{\bvec{Z}{\cdot}}{\bvec{Z}{\cdot}}\cdot\umass{\cL}\le\mr{Z}$.
+\end{proposition}
+\begin{proof}
+Write \m{W=\bvec{Z}{\cdot}}, \m{\mathsf v=\umass{\cL}}, and \m{\nu(x)=\etab{\varrho+2}(\{u:\ ux\in Z\})} for
+\m{x\in\GT{T}}. By Proposition~\ref{p:unfold} (for the pair \m{x}, \m{x^{-1}y}) and Lemma~\ref{l:phase}(b),
+\begin{equation}\label{e:beta}\mathsf v\cdot|\langle W(x),W(y)\rangle|\le\nu(x)\qquad(x,y\in\GT{T}).\end{equation}
+Moreover \m{\nu(x)\le1}: as \m{Z\le\uLev{1}{T}}, Input~\ref{i:3}(d) for the unit~$1$ and the unit mass at $1$
+bounds \m{\nu(x)} by \m{\prod_{l<\varrho}\fmod{\cL}{l}{1}=1}. Since \m{\gM{\cL}=\etab{\varrho+2}*\gMu{\cL}}
+(Input~\ref{i:2}(a)), \m{\gM{\cL}(Z)=\int\nu(x)\,d\gMu{\cL}(x)}. So it suffices to show, for every~$x$,
+\begin{equation}\label{e:pn}\mathsf v^{3}\int|\langle W(x),W(y)\rangle|^2\,d\gMu{\cL}(y)\ \le\ \nu(x)\cdot\gM{\cL}\bigl(\cgp{\cL}\bigr),\end{equation}
+and to integrate over~$x$. If \m{W(x)=0} this is clear. Otherwise, as $W$ is cut (Lemma~\ref{l:cut}), there is
+\m{u_0\in\UT{T}} with \m{b=u_0x\in\uLev{1}{T}}. By the right invariance of \m{\gM{\cL}} and Input~\ref{i:3}(d) for
+\m{\theta=\gMu{\cL}} and \m{c=b^{-1}},
+\begin{gather*}
+\gM{\cL}\bigl(\cgp{\cL}\bigr)=\gM{\cL}\bigl(\{y:\ yb^{-1}\in\cgp{\cL}\}\bigr)=\mathsf v\cdot\gMu{\cL}(Y_x),\\
+Y_x=\{y:\ uyb^{-1}\in\cgp{\cL}\text{ for some }u\in\UT{T}\}.
+\end{gather*}
+For \m{y\in Y_x}, \eqref{e:beta} and \m{\nu(x)\le1} give \m{\mathsf v^2|\langle W(x),W(y)\rangle|^2\le\nu(x)^2\le\nu(x)}.
+For \m{y\notin Y_x} the inner product vanishes: otherwise Lemma~\ref{l:inner} gives \m{u',v'\in\UT{T}} with
+\m{u'x\in\uLev{1}{T}} and \m{v'y\in u'x\,\cgp{\cL}}; then
+\m{v'yb^{-1}\in u'u_0^{-1}\cdot b\,\cgp{\cL}\,b^{-1}=u'u_0^{-1}\cgp{\cL}}, since $b$ normalises \m{\cgp{\cL}}, and
+\m{u=u_0u'^{-1}v'} shows \m{y\in Y_x}. Hence the left side of \eqref{e:pn} is at most
+\m{\mathsf v\cdot\nu(x)\cdot\gMu{\cL}(Y_x)=\nu(x)\gM{\cL}(\cgp{\cL})}. Integrating \eqref{e:pn} over $x$ gives
+\m{\mathsf v^3\cdot\PN{\cL}{W}{W}\le\gM{\cL}(Z)\,\gM{\cL}(\cgp{\cL})}, which is the claim after division
+by~$\mathsf v^2$ (Lemma~\ref{l:int}(a)).
+\end{proof}
+\leanline{\lean{pairingNormmullemassRatio}}
+
+\begin{lemma}[the inner integral as an average]\label{l:avg}
+In Setting~\ref{s:Z}, for every \m{x\in\GT{T}}, with $y$ the variable of integration and \m{g=\gL{\cL}},
+\[\Bigl|\int_Z\phs{g}{yxy^{-1}}\,d\gM{\cL}(y)\Bigr|=\bigl|\Av{\cL}{0}{\pk{Z}}{1}{x}\bigr|\cdot\umass{\cL}.\]
+\end{lemma}
+\begin{proof}
+The integrand is bounded on $Z$, which has finite measure. By $\gM{\cL}=\etab{\varrho+2}*\gMu{\cL}$ and Fubini's
+theorem the integral is
+\[\int\!\!\int\mathbf 1_Z(u\sigma)\,\phs{g}{u\sigma x(u\sigma)^{-1}}\,d\etab{\varrho+2}(u)\,d\gMu{\cL}(\sigma),\]
+and by Proposition~\ref{p:unfold} the inner integral is $\umass{\cL}\cdot\pk{Z}(\sigma,\sigma x)$. The integral of
+\m{\pk{Z}(\sigma,\sigma x)} over $\sigma$ is \m{\Av{\cL}{0}{\pk{Z}}{1}{x}} by definition.
+\end{proof}
+\leanline{\lean{enormintegralphaseequpperPairing}}
+
+\begin{lemma}[a lower bound for the mass of the integral group]\label{l:mass}
+In Setting~\ref{s:L}, suppose \m{\IsStd{\cL}}, and let \m{B\in[0,\infty]} with \m{2\le B} and
+\m{\vol(O_A\setminus O_A^{\times})\le B^{-1}}. Then \m{2^{-\nn{\fs}}\le\gM{\cL}(\uLev{1}{T})}.
+\end{lemma}
+\begin{proof}
+By Input~\ref{i:3}(c) for \m{l=0}, \m{i=\varrho}: $\vol(O_A^{\times})^{\varrho+1}\le\gM{\cL}(\uLev{1}{T})$; and
+$\vol(O_A^{\times})=1-\vol(O_A\setminus O_A^{\times})\ge1-B^{-1}\ge\tfrac12$.
+\end{proof}
+\leanline{\lean{invtwopowlegroupMeasure}}
+
+\sect{The shell bound, the frequency bound and the bottom value}{s:shells}
+In this section \m{n=\nn{\fs}} and \m{\varrho=\rh{\fs}}; in the proofs \m{g=\gL{\cL}} and \m{W=\bvec{Z}{\cdot}}. For a
+standard level and the gauge \m{\stdg{\cL}{\alpha}}, ``size at most $i$'' means \m{\alpha^ix\in O_A}; for
+\m{\alpha=1} it means integrality.
+
+\begin{lemma}[floor values]\label{l:val}
+In Setting~\ref{s:Z}, let \m{a<\rh{\fs}} and \m{x,z,y\in\GT{T}} with \m{\langle\bvec{Z}{x},\bvec{Z}{z}\rangle\ne0}. Then
+there is a unit $c$ of $A$ with \m{c\in O_A}, \m{c\in\Val{\cL}{a}{x}{y}} and
+\m{\vol\bigl(\Val{\cL}{a}{x}{y}\bigr)\le\modA(c)}.
+\end{lemma}
+\begin{proof}
+Let $X$ be the matrix with the rows of \m{x^{-1}} above the rows of \m{g^{-1}(x^{-1}-(xy)^{-1})}; it has a left
+inverse. As the ball is \m{O_A^{\Ix{\fs}}} (Input~\ref{i:3}(a)), \m{\Val{\cL}{a}{x}{y}} is the set of the coordinates
+$w_{e^*_a}$ of the vectors $w$ with $Xw$ integral and \m{w_{e^*_b}=0} for \m{b<a}. By Input~\ref{i:5}(d), with the
+levels of the indices as weights, there is an invertible matrix $b$, block upper triangular for the levels, such
+that $Xb$ is integral with an integral left inverse; so $Xw$ is integral exactly if \m{b^{-1}w} is. Put
+\m{i=e^*_a}. Its level \m{2\varrho-a} is shared by no other index, and the indices of higher level are the
+$e^*_b$ with \m{b<a}. As $b$ and $b^{-1}$ are block upper triangular, the column $w^0$ of $b$ at $i$ vanishes at
+these indices, and \m{(b^{-1}w)_i=(b^{-1})_{ii}\,w_i} for every $w$ that vanishes at them. For \m{w=w^0} this gives
+\m{(b^{-1})_{ii}\,b_{ii}=1}; let \m{c=b_{ii}}, a unit. Since $Xw^0$ is a column of~$Xb$, \m{c=w^0_i\in\Val{\cL}{a}{x}{y}}.
+Every element of \m{\Val{\cL}{a}{x}{y}} is a $w_i$ with \m{b^{-1}w} integral and $w$ vanishing at the $e^*_b$,
+\m{b<a}; then \m{c^{-1}w_i=(b^{-1}w)_i\in O_A}. So \m{\Val{\cL}{a}{x}{y}\subseteq cO_A}, a set of volume \m{\modA(c)}.
+Finally, by Lemma~\ref{l:inner} there is \m{u\in\UT{T}} with \m{ux\in\uLev{1}{T}}; \m{x^{-1}w^0} is integral, hence so
+is \m{uw^0=(ux)(x^{-1}w^0)}, and its coordinate at $e^*_a$ is $w^0_i=c$ by Input~\ref{i:1}(e). So \m{c\in O_A}.
+\end{proof}
+\leanline{\lean{existsunitmemfloorValues}}
+
+\begin{lemma}[non-orthogonal vectors are close]\label{l:close}
+In Setting~\ref{s:Z}, let $\Gamma$ be a gauge of~$\cL$ and \m{x,y\in\GT{T}} with
+\m{\langle\bvec{Z}{x},\bvec{Z}{y}\rangle\ne0}. Then there are \m{u,v\in\UT{T}} with \m{ux\in\BoxL{\cL}},
+\m{vy\in\BoxL{\cL}} and \m{\szl{\Gamma}{\gL{\cL}^{-1}(vy-ux)}{2}}.
+\end{lemma}
+\begin{proof}
+Take $u$, $v$ from Lemma~\ref{l:inner}. Then $ux\in\uLev{1}{T}=\BoxL{\cL}$, and $k=(ux)^{-1}(vy)$ lies in
+\m{\cgp{\cL}}, so that $vy=(ux)k\in\uLev{1}{T}$. Further $g^{-1}(vy-ux)=(ux)\cdot g^{-1}(k-1)$ is a product of integral matrices; its
+columns lie in the ball, whose elements have size at most~$1$ in every gauge (Input~\ref{i:3}(e)).
+\end{proof}
+\leanline{\lean{existscloseofinnernezero}}
+
+\begin{proposition}[a gauge adapted to two heads]\label{p:depth}
+In Setting~\ref{s:Z}, let \m{j\le\rh{\fs}}, let $K$ be a natural number and $p$, $q$ sequences of units of~$A$,
+and suppose that \m{\fmaj{\cL}{j}{p}{q}{\bvec{Z}{\cdot}}{\bvec{Z}{\cdot}}{x}\ne0} for some \m{x\in\GT{T}}. Then there is
+a unit $\alpha$ of $A$ with \m{\alpha\in O_A} and \m{\bar\alpha=\alpha} such that, for the gauge
+\m{\Gamma=\stdg{\cL}{\alpha}}:
+\begin{enumerate}[label=\textup{(\roman*)},leftmargin=2.3em,itemsep=1pt]
+\item \m{\Hd{\Gamma}{j}{p}} and \m{\Hd{\Gamma}{j}{q}}, and if \m{j\ne0} then \m{\szl{\Gamma}{\gL{\cL}^{-1}}{1}};
+\item \m{\szl{\Gamma}{p_i^{-1}-q_i^{-1}}{1}} for all \m{i<j};
+\item \m{\Lam{\Gamma}^{E}\le\bigl(2/\modA(\gL{\cL})\bigr)^{K}\cdot\fhw{K}{j}{p}\cdot\fhw{K}{j}{q}} for every natural
+number $E$ with \m{4E\le K}.
+\end{enumerate}
+\end{proposition}
+\begin{proof}
+Write \m{P_l=p_0\cdots p_{l-1}} and \m{Q_l=q_0\cdots q_{l-1}}. Since the majorant at $x$ is not zero, there is a point
+$y$ in the support of \m{\stk{\cL}{0}{j}} at which both pivot moduli of its integrand are not zero, hence
+(Input~\ref{i:2}(b)) \m{\sigma,\tau\in\Hl{j}{T}} with \m{\langle W(\sigma y),W(\sigma yx)\rangle\ne0} and
+\m{\langle W(\tau\weyl{j}{p}^{-1}y),W(\weyl{j}{q}^{-1}\weyl{j}{p}\tau\weyl{j}{p}^{-1}yx)\rangle\ne0}. As $\tau$ commutes
+with the Weyl elements (Input~\ref{i:1}(d)), $W$ does not vanish at \m{\sigma y}, \m{\tau\weyl{j}{p}^{-1}y},
+\m{\sigma yx} and \m{\tau\weyl{j}{q}^{-1}yx}. By Input~\ref{i:2}(d), with Lemma~\ref{l:cut}, the points $y$ and
+\m{\weyl{j}{p}^{-1}y} are near at~$j$, and so are $yx$ and \m{\weyl{j}{q}^{-1}yx}; hence, for the gauge of depth~$1$,
+all \m{P_l} and \m{Q_l} with \m{l\le j} lie in~$O_A$. Put \m{\beta=\prod_{l\le j}P_l} and \m{\gamma=\prod_{l\le j}Q_l}.
+Then \m{\beta\in O_A}, \m{\beta/P_l\in O_A} for \m{l\le j}, \m{\beta/p_i=P_i\cdot(\beta/P_{i+1})\in O_A} for \m{i<j}, and
+\m{\fhw{K}{j}{p}=\gix{\beta}^{K/2}} by the multiplicativity of the index; likewise for $\gamma$ and~$q$. Let
+\[\alpha=g\cdot\overline{\beta\gamma}\cdot\beta\gamma,\]
+a unit in $O_A$ with \m{\bar\alpha=\alpha} (Input~\ref{i:3}(a)). Then \m{\alpha P_l^{-1}}, \m{\alpha Q_l^{-1}} (\m{l\le j}),
+\m{\alpha g^{-1}} and \m{\alpha(p_i^{-1}-q_i^{-1})} (\m{i<j}) lie in~$O_A$, which is (i) and~(ii). For (iii),
+$\Lam{\Gamma}=2\gix{\alpha}=2\gix{g}\,\gix{\beta}^2\gix{\gamma}^2$, and the three indices are at least~$1$; so for
+\m{4E\le K}, $\Lam{\Gamma}^E\le2^K\gix{g}^K(\gix{\beta}\gix{\gamma})^{K/2}$.
+\end{proof}
+\leanline{\lean{existsgaugedepthofnezero}}
+
+\begin{proposition}[the shell bound]\label{p:shells}
+In Setting~\ref{s:Z}, let \m{j\le\rh{\fs}}, let $t$ be a natural number with \m{t+10^{8}\nn{\fs}^4\le\kk{\fs}}, let
+$\alpha$ be a unit of $A$ with \m{\alpha\in O_A} and \m{\bar\alpha=\alpha}, and let $\Gamma$ be the gauge
+\m{\Gamma=\stdg{\cL}{\alpha}}. Let $p$, $q$ be sequences of units of $A$ with \m{\Hd{\Gamma}{j}{p}}, \m{\Hd{\Gamma}{j}{q}}
+and, if \m{j\ne0}, \m{\szl{\Gamma}{\gL{\cL}^{-1}}{1}}. Let \m{f\colon\GT{T}\to[0,\infty]} and \m{e\in[0,\infty]} be such
+that \m{f(x)\le\fmaj{\cL}{j}{p}{q}{\bvec{Z}{\cdot}}{\bvec{Z}{\cdot}}{x}} for all~$x$ and such that, if \m{e<1}, then
+\m{f(x)^2\le\bigl(e^{\vexp{\cL}}\bigr)^2\cdot\snp{\Gamma}{j}{p}{q}{\bvec{Z}{\cdot}}{\bvec{Z}{\cdot}}{x}} for all
+\m{x\in\Posn{\cL}}. Then
+\[\hdens{\cL}{j}{p}{q}\cdot\int f\,d\gM{\cL}\ \le\ \min(1,e)^{t}\cdot\mr{Z}\cdot\Lam{\Gamma}^{10^{9}\nn{\fs}^4}.\]
+\end{proposition}
+\begin{proof}
+Write \m{\Lambda=\Lam{\Gamma}}, \m{s=\vexp{\cL}}. By Input~\ref{i:3}(b) and the hypothesis on~$t$,
+\begin{equation}\label{e:s}s=\kk{\fs}-3m-3n-5\ \ge\ 8\cdot10^{7}n^4+t .\end{equation}
+
+\emph{Step 1: $f$ lives on the positions.} If \m{f(x)\ne0}, the majorant at $x$ is not zero; as in the proof of
+Proposition~\ref{p:depth} there is $y'$ with $\langle W(y'),W(y'x)\rangle\ne0$, and Lemma~\ref{l:inner} gives
+\m{u,v\in\UT{T}} with \m{(uy')^{-1}(vy'x)\in\cgp{\cL}}, that is, $x\in y'^{-1}(v^{-1}u)y'\cdot\cgp{\cL}\subseteq\Posn{\cL}$
+(Input~\ref{i:3}(a)).
+
+\emph{Step 2: shells.} For a position $x$ let $I(x)$ be the set of the \m{\varepsilon\in A} that multiply $1$ and
+all entries of \m{g^{-1}(x-1)} into~$O_A$. By Input~\ref{i:5}(b), \m{I(x)=cO_A} for a unit \m{c=c(x)\in O_A}, an
+ideal of index \m{\gix{c}}. For an ideal $I$ let $S(I)$ be the set of the positions with \m{I(x)=I}. By
+Input~\ref{i:5}(a) for the measure \m{f\,d\gM{\cL}}, the constant function \m{\hdens{\cL}{j}{p}{q}} and the
+exponent~$m$ (recall \m{\zetaA{m}\le2}), the claim follows, with \m{2\cdot2^{10^5n^2}\le\Lambda^{10^8n^4}}, once we
+show for every position $x$, with \m{c=c(x)} and \m{S=S(cO_A)}:
+\begin{equation}\label{e:shell}\gix{c}^{m}\cdot\hdens{\cL}{j}{p}{q}\cdot\int_{S}f\,d\gM{\cL}\ \le\ \min(1,e)^{t}\cdot\mr{Z}\cdot\Lambda^{9\cdot10^{8}n^4}\cdot2^{10^{5}n^2}.\end{equation}
+
+\emph{Step 3: one shell.} Let \m{\Gamma'=\stdg{\cL}{\bar cc}}, so \m{\Lam{\Gamma'}=2\gix{c}^2}, and let
+\m{\varsigma\in[0,\infty]} be the number with
+\[\varsigma^{400n^2}=\modA(c)\cdot\Lambda^{(10n+1)\cdot99n}.\]
+For \m{x'\in S} the matrix $\bar cc\cdot g^{-1}(x'-1)$ is integral, so $S$ consists of positions $x'$ with
+$\szl{\Gamma'}{g^{-1}(x'-1)}{1}$. Put
+\[\epsilon=\min(\varsigma,1,e)^{s}\cdot\Lambda^{9999n}.\]
+We show in Step~4 that $f(x')^2\le\epsilon^2\cdot\snp{\Gamma}{j}{p}{q}{W}{W}{x'}$ for all \m{x'\in S}. Then Input~\ref{i:4}(a), with
+Lemma~\ref{l:cut} and Proposition~\ref{p:pn}, gives
+\[\hdens{\cL}{j}{p}{q}\cdot\int_Sf\,d\gM{\cL}\ \le\ \epsilon\cdot\mr{Z}\cdot\Lambda^{1500000n^3+1}\cdot\bigl(2\gix{c}^2\bigr)^{50000n^2}.\]
+By \eqref{e:s},
+\begin{align*}\min(\varsigma,1,e)^{s}&\le\varsigma^{400n^2\cdot200000n^2}\cdot\min(1,e)^{t}\\
+&=\modA(c)^{200000n^2}\cdot\Lambda^{(10n+1)99n\cdot200000n^2}\cdot\min(1,e)^t.\end{align*}
+The powers of \m{\gix{c}=\modA(c)^{-1}} are
+\m{m+100000n^2-200000n^2\le0}, as \m{m<9n}; they are at most~$1$. The exponent of $\Lambda$ is
+\[9999n+1500000n^3+1+(10n+1)\cdot99n\cdot200000n^2\ \le\ 9\cdot10^8n^4.\]
+This is \eqref{e:shell}.
+
+\emph{Step 4: the bound on a shell.} Let \m{x'\in S}. If \m{e<\min(\varsigma,1)}, then \m{e<1} and the hypothesis
+gives \m{f(x')^2\le(e^s)^2\,\snp{\Gamma}{j}{p}{q}{W}{W}{x'}\le\epsilon^2\,\snp{\Gamma}{j}{p}{q}{W}{W}{x'}}. Otherwise
+\m{\min(\varsigma,1,e)=\min(\varsigma,1)}, and by \m{f\le\fmaj{\cL}{j}{p}{q}{W}{W}{\cdot}} and Input~\ref{i:4}(b)
+for \m{\varsigma_0=\min(\varsigma,1)^2}, with \m{V_0^2\le\Lambda^{2\cdot9999n}}, it suffices to verify the hypothesis of that
+input. So let \m{\varsigma<1}, and let $y$ be such that \m{\langle W(y),W(yx')\rangle\ne0} and \m{\weyl{j}{p}^{-1}y},
+\m{\weyl{j}{q}^{-1}yx'} are near at~$j$; suppose, for a contradiction, that
+\m{\vol(\Val{\cL}{a}{y}{x'})>\varsigma^2} for all $a$ with \m{j\le a<\varrho}. By Lemma~\ref{l:val} there are units
+\m{d_a\in O_A} with \m{d_a\in\Val{\cL}{a}{y}{x'}} and \m{\vol(\Val{\cL}{a}{y}{x'})\le\modA(d_a)}. Let
+\m{C=\prod_{j\le a<\varrho}d_a} and let $\Gamma''$ be the gauge of depth \m{\alpha^{10n+1}\bar CC}. Then
+\m{C/d_a\in O_A}, so \m{d_a^{-1}} has size at most $1$ for~$\Gamma''$; if \m{j\ne0} and $c'$ has size at most
+\m{10n} for~$\Gamma$, then \m{\alpha^{10n+1}g^{-1}c'\in O_A}, so \m{g^{-1}c'} has size at most $1$ for~$\Gamma''$; and
+Lemma~\ref{l:close} provides the two unipotent elements. Input~\ref{i:4}(d), for the pair \m{(y,x')}, shows that
+\m{\varepsilon=(\alpha^{10n+1}\bar CC)^{99n}} multiplies \m{g^{-1}(x'-1)} into~$O_A$; it also lies in~$O_A$. So
+\m{\varepsilon\in I(x')=cO_A}, whence \m{\modA(\varepsilon)\le\modA(c)}, that is,
+\[\modA(C)^{198n}\ \le\ \modA(c)\cdot\modA(\alpha)^{-(10n+1)99n}\ \le\ \modA(c)\cdot\Lambda^{(10n+1)99n}=\varsigma^{400n^2}.\]
+On the other hand \m{\modA(C)=\prod_a\modA(d_a)>\varsigma^{2(\varrho-j)}}, or \m{\modA(C)=1} if \m{j=\varrho}; as
+\m{\varsigma<1} and \m{396n(\varrho-j)\le400n^2}, this gives \m{\modA(C)^{198n}>\varsigma^{400n^2}}, a contradiction.
+\end{proof}
+\leanline{\lean{lintegralshellsle}}
+
+\begin{corollary}[the majorant is integrable]\label{c:finite}
+In Setting~\ref{s:Z}, let \m{j\le\rh{\fs}}, let $r$ be a natural number with \m{r+10^{8}\nn{\fs}^4\le\kk{\fs}}, and
+let $p$, $q$ be sequences of units of~$A$. Then
+\m{\int\fmaj{\cL}{j}{p}{q}{\bvec{Z}{\cdot}}{\bvec{Z}{\cdot}}{x}\,d\gM{\cL}(x)\ne\infty}.
+\end{corollary}
+\begin{proof}
+If the integral is infinite, the majorant is not identically zero; Proposition~\ref{p:depth}, with \m{K=0},
+gives a gauge \m{\Gamma=\stdg{\cL}{\alpha}} that satisfies the hypotheses of Proposition~\ref{p:shells}, which we
+apply to $f$ the majorant, \m{e=1} and \m{t=r}. The right side is finite (Lemma~\ref{l:int}(f)) and
+\m{\hdens{\cL}{j}{p}{q}\ne0}; a contradiction.
+\end{proof}
+\leanline{\lean{lintegralformMajorantnetop}}
+
+\begin{proof}[Proof of Theorem A]
+The function $\omega$ has modulus at most~$1$, so by Input~\ref{i:2}(c)
+\begin{equation}\label{e:A}\begin{gathered}|\fform{\cL}{j}{p}{q}{W}{\omega}|\le\hdens{\cL}{j}{p}{q}\cdot\int f\,d\gM{\cL},\\
+f(x)=\fmodu{\cL}{j}{p}{q}{W}{x}{\omega}\le\fmaj{\cL}{j}{p}{q}{W}{W}{x}.\end{gathered}\end{equation}
+If the majorant vanishes identically, the form is zero. Otherwise let \m{\Gamma=\stdg{\cL}{\alpha}} be the gauge of
+Proposition~\ref{p:depth}, \m{\Lambda=\Lam{\Gamma}}, and \m{\beta=\alpha^{200n^2}}.
+
+\emph{A unit $\eta$.} We claim that there are units $\eta$, $w$ of $A$ with
+\begin{equation}\label{e:eta}w\in O_A,\quad\xi w\in O_A,\quad\xi\eta^{-1}\in O_A,\quad\min(1,\gix{\eta})\le\modA(w)\cdot\modA(\beta)^{-1},\end{equation}
+such that \m{f(x)^2\le\gix{\eta}^{\#\iota}\cdot\snp{\Gamma}{j}{p}{q}{W}{W}{x}} for all positions~$x$. In the second case
+of the theorem (\m{j=i+1}, \m{\omega=1}), take \m{\eta=\xi} and \m{w=\beta}: by (i) and (ii) of
+Proposition~\ref{p:depth}, $\xi$ has size at most $2$ for~$\Gamma$, so \m{\xi\beta\in O_A}, and the bound is the
+second part of Input~\ref{i:4}(c). In the first case, Input~\ref{i:5}(c) gives a unit $\eta$ and \m{x_0,c\in O_A}
+with \m{\eta=\xi+c\beta}, \m{\xi=x_0\eta} and \m{\beta\in\eta O_A}; put \m{w=\eta^{-1}\beta}. Then \m{w\in O_A},
+\m{\xi w=x_0\beta\in O_A}, \m{\xi\eta^{-1}=x_0}, and \m{\modA(w)\modA(\beta)^{-1}=\gix{\eta}}. For every $c'$ of size at
+most \m{200n^2} for~$\Gamma$, \m{(\eta-\xi)c'=c\,\beta c'\in O_A}, so \m{\psi_A(\eta c')=\psi_A(\xi c')}, and the bound is
+the first part of Input~\ref{i:4}(c).
+
+\emph{The shell bound.} We apply Proposition~\ref{p:shells} to $f$, the number \m{e=\gix{\eta}^{1/2}} and
+\m{t+12} in the place of~$t$; note \m{t+12+10^8n^4\le\kk{\fs}}. Its second hypothesis holds: if \m{e<1}, then
+\m{\gix{\eta}^{\#\iota}\le\gix{\eta}^{\vexp{\cL}}=(e^{\vexp{\cL}})^2}, because \m{\vexp{\cL}\le\#\iota}. With \eqref{e:A} we get
+\[|\fform{\cL}{j}{p}{q}{W}{\omega}|\ \le\ \min(1,e)^{t}\cdot\min(1,\gix{\eta})^{6}\cdot\mr{Z}\cdot\Lambda^{10^9n^4}.\]
+Now $\gix{\eta}\le\gix{\xi\eta^{-1}}\gix{\eta}=\gix{\xi}$, as \m{\xi\eta^{-1}\in O_A}; so \m{\min(1,e)^t\le\gix{\xi}^{t/2}}.
+By \eqref{e:eta}, $\min(1,\gix{\eta})^6\le\modA(w)^6\modA(\beta)^{-6}$; here $\modA(\beta)^{-6}\le\Lambda^{1200n^2}$
+(Input~\ref{i:3}(e), as \m{\beta^{-1}} has size at most \m{200n^2}), and
+$\modA(w)=\vol(wO_A)\le\vol(O_A\cap\xi^{-1}O_A)=\den{\xi}^{-1}$ by Input~\ref{i:5}(e), since \m{wO_A} is contained
+in \m{O_A\cap\xi^{-1}O_A}. Finally $\Lambda^{10^9n^4+1200n^2}\le\Lambda^{2\cdot10^9n^4}\le(2/\modA(g))^K\fhw{K}{j}{p}\fhw{K}{j}{q}$
+by Proposition~\ref{p:depth}(iii), as \m{8\cdot10^9n^4\le K}. This is the bound of Theorem~A.
+\end{proof}
+
+\begin{proof}[Proof of Theorem B]
+Let \m{\Gamma=\stdg{\cL}{1}}, so \m{\Lam{\Gamma}=2}, and \m{\epsilon_0=\min\bigl(\vol(O_A\setminus O_A^{\times}),\tfrac12\bigr)}.
+Split the outer integral of \m{\fzf{\cL}{Z}} over \m{\cgp{\cL}} and its complement. The first part is
+\m{\gM{\cL}(Z)^2\gM{\cL}(\cgp{\cL})} by Lemma~\ref{l:cong}. In the second, by Lemma~\ref{l:avg} and
+Input~\ref{i:2}(b) (with Lemma~\ref{l:cut}), the integrand is at most \m{\umass{\cL}^2\cdot f(x)}, where
+\[f(x)=\mathbf 1[x\notin\cgp{\cL}]\cdot\Pv{\cL}{0}{\pk{Z}}{1}{x}^2=\mathbf 1[x\notin\cgp{\cL}]\cdot\fmaj{\cL}{0}{1}{1}{W}{W}{x}\]
+(Input~\ref{i:4}(e)). We apply Proposition~\ref{p:shells} with \m{j=0}, \m{p=q=1}, \m{e=\epsilon_0} and
+\m{t+1+n+10^9n^4} in the place of~$t$; the sequence $1$ is a head of length~$0$, and
+\m{t+1+n+10^9n^4+10^8n^4\le\kk{\fs}}. Granting its second hypothesis, and since \m{\hdens{\cL}{0}{1}{1}=1},
+\begin{align*}\umass{\cL}^2\int f\,d\gM{\cL}\ &\le\ \umass{\cL}^2\,\mr{Z}\cdot\epsilon_0^{\,t+1}\cdot\epsilon_0^{\,n}\cdot(2\epsilon_0)^{10^9n^4}\\
+&\le\ \gM{\cL}(Z)\,\gM{\cL}\bigl(\cgp{\cL}\bigr)\cdot\vol\bigl(O_A\setminus O_A^{\times}\bigr)^{t+1}\cdot2^{-n},\end{align*}
+which with the first part is the claim.
+
+It remains to show \m{f(x)^2\le(\epsilon_0^{\vexp{\cL}})^2\cdot\snp{\Gamma}{0}{1}{1}{W}{W}{x}} for a position
+\m{x\notin\cgp{\cL}}. By Input~\ref{i:4}(e), and since \m{2\cdot10^4n\varrho\le3\cdot10^6n^3}, this follows once
+we show: for every $\sigma$ with \m{\pk{Z}(\sigma,\sigma x)\ne0} there is \m{a<\varrho} with
+\m{\vol(\Val{\cL}{a}{\sigma}{x})\le\epsilon_0}. By Lemma~\ref{l:val} there are units \m{u_a\in O_A} with
+\m{u_a\in\Val{\cL}{a}{\sigma}{x}} and \m{\vol(\Val{\cL}{a}{\sigma}{x})\le\modA(u_a)}. If some $u_a$ is not a unit
+of~$O_A$, then \m{u_aO_A} is a proper ideal contained in \m{O_A\setminus O_A^{\times}}, so
+\m{\modA(u_a)=\vol(u_aO_A)\le\epsilon_0}, and $a$ is the floor we want. Otherwise all \m{u_a^{-1}} are integral. Then
+Input~\ref{i:4}(d), for \m{\Gamma''=\Gamma}, \m{j=0} and the pair \m{(\sigma,x)}, applies: the unipotent elements come
+from Lemma~\ref{l:close}, and every point is near at~$0$, because \m{\Ql{0}{T}=\GT{T}}. It shows that
+\m{g^{-1}(x-1)} is integral, so \m{x\in\cgp{\cL}} by Inputs \ref{i:1}(c) and \ref{i:3}(a), against the choice of~$x$.
+\end{proof}
+
+\sect{The top floor}{s:top}
+Again \m{n=\nn{\fs}}, \m{\varrho=\rh{\fs}}, \m{g=\gL{\cL}} and \m{W=\bvec{Z}{\cdot}}.
+
+\begin{lemma}[one gauge for two sequences]\label{l:heads}
+In Setting~\ref{s:L}, suppose \m{\IsStd{\cL}}, and let $p$, $q$ be sequences of units of~$A$. Then there is a
+gauge \m{\Gamma\in\Gauges{\cL}} such that all sequences $r$ of units in a neighbourhood of~$p$, and all sequences
+$r$ in a neighbourhood of~$q$, are heads of length \m{\rh{\fs}} for~$\Gamma$.
+\end{lemma}
+\begin{proof}
+For \m{l\le\varrho} the map \m{(c,r)\mapsto\bar cc\cdot(r_0\cdots r_{l-1})^{-1}} from pairs of an element of $A$ and a
+sequence of units to $A$ is continuous and sends \m{(0,p)} and \m{(0,q)} to \m{0\in O_A}, and $O_A$ is open. So there
+are a neighbourhood $N$ of $0$ and neighbourhoods of $p$ and of $q$ on whose products with $N$ all these maps
+have values in~$O_A$. Almost every element of $A$ is a unit (Input~\ref{i:5}(e)), so $N$ contains a unit~$c$,
+and \m{\Gamma=\stdg{\cL}{\bar cc}} has the property; note \m{\bar cc\in O_A}, the case \m{l=0}.
+\end{proof}
+\leanline{\lean{existsgaugeisHead}}
+
+\begin{proposition}[the correlations are locally constant]\label{p:const}
+In Setting~\ref{s:Z}, let $p$ be a sequence of units of~$A$. Then there is a neighbourhood of \m{(p,1)} in the
+product of the space of sequences of units with \m{\GT{T}} such that for every \m{(p',l')} in it with
+\m{l'\in\Hl{\varrho}{T}} and every \m{l\in\Hl{\varrho}{T}}: \m{\corr{Z}{p'}{ll'}=\corr{Z}{p}{l}}.
+\end{proposition}
+\begin{proof}
+Let $\Gamma$ be the gauge of Lemma~\ref{l:heads} for $p$ and~$1$, and $C$ the set of the \m{y\in\GT{T}} with
+\m{\szl{\Gamma}{y}{60n^2}}, a compact set (Input~\ref{i:2}(e)). The neighbourhood consists of the \m{(p',l')} such that
+$p'$ is a head of length $\varrho$ for~$\Gamma$, \m{p_a^{-1}p'_a\in O_A^{\times}} for \m{a<\varrho}, and
+\begin{equation}\label{e:k}k_y=y^{-1}\,\weyl{\varrho}{p}\,l'\,\weyl{\varrho}{p'}^{-1}\,y\in\cgp{\cL}\qquad\text{for all }y\in C .\end{equation}
+These are neighbourhood conditions: \m{O_A^{\times}} and \m{\cgp{\cL}} are open, the expression in \eqref{e:k} is
+continuous in \m{(p',l',y)} and equal to $1$ at \m{(p,1,y)}, and $C$ is compact. Let \m{(p',l')} be such a pair with
+\m{l'\in\Hl{\varrho}{T}}, and \m{l\in\Hl{\varrho}{T}}. First, \m{\modA(p'_a)=\modA(p_a)} for \m{a<\varrho}, so
+\m{\hdens{\cL}{\varrho}{p'}{1}=\hdens{\cL}{\varrho}{p}{1}}. Secondly, we show for every \m{y\in\GT{T}}
+\[W(y)=0\qquad\text{or}\qquad W\bigl(ll'\,\weyl{\varrho}{p'}^{-1}y\bigr)=W\bigl(l\,\weyl{\varrho}{p}^{-1}y\bigr),\]
+which gives the equality of the two Bessel correlations. Suppose \m{W(y)\ne0} and one of the two values on the
+right is not zero. By Input~\ref{i:2}(e), for the head $p'$ and \m{(ll')^{-1}}, or for the head $p$ and
+\m{l^{-1}}, we get \m{y\in C}. Then \m{ll'\weyl{\varrho}{p'}^{-1}y=l\,\weyl{\varrho}{p}^{-1}y\cdot k_y} with
+\m{k_y\in\cgp{\cL}}, and for every coset $c$ the element \m{a_ck_ya_c^{-1}} lies in \m{\cgp{\cL}} too, so the
+coordinates at $c$ of the two vectors agree by Lemma~\ref{l:phase}(e).
+\end{proof}
+\leanline{\lean{eventuallycorrelationeq}}
+
+\begin{proof}[Proof of Theorem C]
+\emph{(i)} Let $\Gamma$ be the gauge of Lemma~\ref{l:heads} for $p$ and~$q$, so that $p$ and $q$ are heads of
+length~$\varrho$. For \m{l\in\Hl{\varrho}{T}}, Input~\ref{i:2}(e) with \m{x=l^{-1}} and \m{\mu=\gM{\cL}}
+(Lemma~\ref{l:cut}, Input~\ref{i:3}(c)) gives
+\begin{align*}&\bigl\langle\corr{Z}{p}{l},\corr{Z}{q}{l}\bigr\rangle\\
+&\quad=\hdens{\cL}{\varrho}{p}{q}\int\!\!\int\langle W(x),W(y)\rangle\\
+&\qquad\qquad\cdot\bigl\langle W(l\,\weyl{\varrho}{q}^{-1}y),W(l\,\weyl{\varrho}{p}^{-1}x)\bigr\rangle\,d\gM{\cL}(x)\,d\gM{\cL}(y),\end{align*}
+because \m{\hdens{\cL}{\varrho}{p}{1}\hdens{\cL}{\varrho}{q}{1}=\hdens{\cL}{\varrho}{p}{q}}. Let \m{\mathcal A(l,x,y)} be
+\m{\varphi_\xi(l^{-1})} times the integrand on the right. It is integrable for
+\m{\stk{\cL}{\varrho}{2}\times\gM{\cL}\times\gM{\cL}}: it vanishes unless $x$ and $y$ lie in the compact set of
+Input~\ref{i:2}(e), and for fixed $x$, $y$ the integral of its modulus over $l$ is bounded, by the bound for
+pairing kernels of Input~\ref{i:2}(b), since
+\m{|\langle W(lw_1),W(lw_2)\rangle|=|k^{1}_{W,W}(lw_1,lw_2)|}. So $F_\xi$ is integrable, and
+\m{\int F_\xi\,d\stk{\cL}{\varrho}{2}=\hdens{\cL}{\varrho}{p}{q}\int\mathcal A}. We transform \m{\int\mathcal A}. Replace
+$y$ by $xx'$ (left invariance of \m{\gM{\cL}}); write \m{x=sy'} with \m{s=h\sigma}, where
+\m{(h,\sigma,y')} has the law \m{\mH{\cL}\times\flm{\cL}{\varrho}\times\stk{\cL}{0}{\varrho}} (Input~\ref{i:2}(a)); and
+replace $l$ by \m{l's^{-1}}, \m{l'=k\tau} with \m{(k,\tau)} of law \m{\mH{\cL}\times\flm{\cL}{\varrho}}, which is allowed
+since \m{s\in\Hl{\varrho}{T}} almost surely and \m{\stk{\cL}{\varrho}{2}} is invariant under right translation by it.
+As the Weyl elements commute with \m{\Hl{\varrho}{T}} (Input~\ref{i:1}(d)),
+\begin{gather*}l\,\weyl{\varrho}{p}^{-1}x=k\tau\,\weyl{\varrho}{p}^{-1}y'=:z_0,\qquad
+l\,\weyl{\varrho}{q}^{-1}xx'=\weyl{\varrho}{q}^{-1}\weyl{\varrho}{p}\,z_0\,x',\\
+\varphi_\xi(l^{-1})=\varphi_\xi(h\sigma\tau^{-1}k^{-1})=\varphi_\xi(\sigma\tau^{-1}),\end{gather*}
+the last by Input~\ref{i:1}(d). Hence, with \m{d=\weyl{\varrho}{q}^{-1}\weyl{\varrho}{p}},
+\[\int\mathcal A=\int\varphi_\xi(\sigma\tau^{-1})\cdot\langle W(h\sigma y'),W(h\sigma y'x')\rangle\cdot
+\overline{\bigl\langle W(z_0),W(d\,z_0x')\bigr\rangle},\]
+the integral over \m{(k,\tau,h,\sigma,x',y')}. Integrating first over $h$ and over $k$ turns the two inner
+products into \m{\Av{\cL}{\varrho+1}{k^{1}_{W,W}}{\sigma y'}{\sigma y'x'}} and the conjugate of
+\m{\Av{\cL}{\varrho+1}{k^{d}_{W,W}}{\tau\weyl{\varrho}{p}^{-1}y'}{\tau\weyl{\varrho}{p}^{-1}y'x'}}; integrating then over $\sigma$
+and $\tau$ gives \m{\Phi_\varrho(x',y')} for \m{\omega=\varphi_\xi}, and the integral over \m{(x',y')} for
+\m{\gM{\cL}\times\stk{\cL}{0}{\varrho}}, times the head density, is the floor form.
+
+\emph{(ii)} Let \m{(p_0,q_0)} be a pair of sequences. By Proposition~\ref{p:const} with \m{l'=1}, for \m{(p,q)}
+near \m{(p_0,q_0)} the correlations \m{\corr{Z}{p}{l}=\corr{Z}{p_0}{l}} and \m{\corr{Z}{q}{l}=\corr{Z}{q_0}{l}} agree
+for all \m{l\in\Hl{\varrho}{T}}, which carries the measure; and \m{p_\varrho-(p_0)_\varrho\in L} for $p$ near~$p_0$,
+because $L$ is open, so the domain of integration is the same, $L$ being a subgroup. The kernel is locally
+constant.
+\end{proof}
+
+\begin{proof}[Proof of Theorem D]
+\emph{(i)} For \m{l\in\GT{T}} and \m{x\in\Cos{Z}\times\Cos{Z}} let \m{v(l,x)} be the vector with the coordinates
+\m{\corr{Z}{\omega_i}{l}_x}, \m{i\in\mathcal C}. Then
+\[\sum_{i,i'}R_{ii'}\bigl\langle\corr{Z}{\omega_i}{l},\corr{Z}{\omega_{i'}}{l}\bigr\rangle=\sum_xv(l,x)^{*}R\,v(l,x)\ \ge0,\]
+as $R$ is positive semidefinite. Each summand of $\mathcal Q$ is an integral of an integrable function
+(Theorem~C(i) for \m{\xi=0}), over the same set \m{D=\{l:\ h(z,l^{-1}z)-t\in L\}} because \m{(\omega_i)_\varrho=t}. So
+\m{\mathcal Q=\int_D\sum_xv(l,x)^*Rv(l,x)\,d\stk{\cL}{\varrho}{2}(l)} is real and \m{\ge0}, and equals the integral of
+\m{G(l)=\sum_x(\rePart\,v(l,x)^*Rv(l,x))^{+}} over~$D$. By \m{\stk{\cL}{\varrho}{2}=\mH{\cL}*\flm{\cL}{\varrho}}, and
+since \m{(h\sigma)^{-1}z=\sigma^{-1}z} for \m{h\in\HT{T}},
+\begin{align*}\mathcal Q&=\int\mathbf 1\bigl[h(z,\sigma^{-1}z)-t\in L\bigr]\int G(h\sigma)\,d\mH{\cL}(h)\,d\flm{\cL}{\varrho}(\sigma)\\
+&\ge\int\mathbf 1\bigl[h(z,\sigma^{-1}z)-t\in L\bigr]\cdot\lenergy{Z}{R}{\omega}{\sigma^{-1}z}\,d\flm{\cL}{\varrho}(\sigma),\end{align*}
+because \m{\sigma\in\Hl{\varrho}{T}} almost surely and the energy at \m{\sigma^{-1}z} is an infimum over a set that
+contains \m{l=\sigma}. The right side is at least the integral of the theorem: \m{\quadric{\cL}{\varrho}} is the
+image of \m{\flm{\cL}{\varrho}} under \m{\sigma\mapsto\sigma^{-1}z}, and \m{h(z,e)=(\JT{T}e)_z}; the integral of a function
+for an image measure is at most the integral of its composite, with equality for measurable functions, so no
+measurability of the energy is needed.
+
+\emph{(ii)} Fix \m{o\in\Theta_0}; then \m{l_oe=z}. Let $u_0$ be the vector of Input~\ref{i:3}(a) and
+\m{\mathrm E} the Eichler elements of Input~\ref{i:5}(f). For a vector $x$ put
+\m{m(x)=l_o^{-1}\,\mathrm E(l_ox)\,l_o}. The $z$-coordinate of \m{l_ox} is $1$ at \m{x=e}; as the units are open and
+inversion is continuous at~$1$, for $x$ near $e$ this coordinate is a unit and \m{m(x)} is close to
+\m{m(e)=1}. By Proposition~\ref{p:const}, applied to each of the finitely many \m{\omega_i}, there is a neighbourhood
+$N$ of $e$ such that for \m{x\in N}: the $z$-coordinate of $l_ox$ is a unit, and
+\begin{equation}\label{e:m}\corr{Z}{\omega_i}{l\,m(x)}=\corr{Z}{\omega_i}{l}\qquad\text{for all }i\in\mathcal C\text{ and }
+l\in\Hl{\varrho}{T},\text{ if }m(x)\in\Hl{\varrho}{T}.\end{equation}
+Let \m{x\in N}, \m{k\in\HT{T}\cap\cgp{\cL}} and $y$ with \m{ky=x}, and let \m{l\in\Hl{\varrho}{T}} with \m{l^{-1}z=y};
+we must show \m{\mH{\cL}(\cgp{\cL})\sum_\theta c_\theta\le\int\sum_{x'}G_{x'}(hl)\,d\mH{\cL}(h)}, where
+\m{G_{x'}(l')=(\rePart\,v^*Rv)^{+}} for the vector \m{v_i=\corr{Z}{\omega_i}{l'}_{x'}} and \m{c_\theta=G_{n_\theta}(l_\theta)}.
+
+The vector \m{l_ox=l_ok\,l^{-1}z} has vanishing coordinates at all $e_a$, $e^*_a$ and satisfies
+\m{h(l_ox,l_ox)=h(z,z)}; so \m{m=m(x)\in\Hl{\varrho}{T}} and \m{\mathrm E(l_ox)^{-1}z=l_ox}, that is,
+\m{m\,x=e}. For \m{\theta\in\Theta_0} the elements $l$ and \m{l_\theta mk} of \m{\Hl{\varrho}{T}} satisfy
+$(l_\theta mk)^{-1}z=k^{-1}m^{-1}e=y=l^{-1}z$, so $b_\theta=l\,(l_\theta mk)^{-1}\in\HT{T}$ by Input~\ref{i:1}(d). Thus
+\begin{equation}\label{e:l}l=b_\theta\,l_\theta\,m\,k\qquad(\theta\in\Theta_0).\end{equation}
+Two invariances of the correlations: for \m{k'\in\HT{T}\cap\cgp{\cL}}, \m{l'\in\GT{T}} and a sequence $p$,
+\m{\corr{Z}{p}{k'l'}=\corr{Z}{p}{l'}=\corr{Z}{p}{l'k'}}. Indeed \m{W(k'y')=W(y')} for all~$y'$, by
+Lemma~\ref{l:phase}(d) with \m{u=1} and \m{\sd{1}=0}; this gives the first equality in the definition, and the
+second after the substitution \m{y'\mapsto k'^{-1}y'}, since $k'$ commutes with \m{\weyl{\varrho}{p}} and
+\m{\gM{\cL}} is left invariant.
+
+Now let \m{h\in\HT{T}}, which carries \m{\mH{\cL}}, and let $\theta$ be such that \m{hb_\theta\in\cgp{\cL}}. By
+\eqref{e:l}, the two invariances and \eqref{e:m},
+\m{\corr{Z}{\omega_i}{hl}=\corr{Z}{\omega_i}{(hb_\theta)\,l_\theta\,m\,k}=\corr{Z}{\omega_i}{l_\theta}} for all~$i$, so
+\m{G_{n_\theta}(hl)=c_\theta}. If also \m{hb_{\theta'}\in\cgp{\cL}}, then
+\m{l_\theta l_{\theta'}^{-1}=b_\theta^{-1}b_{\theta'}\in\cgp{\cL}} by \eqref{e:l}; so \m{\theta\mapsto n_\theta} is injective
+on the set of these~$\theta$, by the hypothesis. Hence
+\[\sum_\theta\mathbf 1\bigl[hb_\theta\in\cgp{\cL}\bigr]\cdot c_\theta\ \le\ \sum_{x'}G_{x'}(hl).\]
+Integrating over $h$ and using the invariance of \m{\mH{\cL}} under right translation by \m{b_\theta\in\HT{T}}, the
+left side becomes \m{\mH{\cL}(\cgp{\cL})\sum_\theta c_\theta}.
+\end{proof}
+
+\sect{Where the results are used}{s:used}
+All results are used inside the unit. Note~F (\emph{Translates of Poincaré series fill the rows}) quotes them
+as its Input~5, for the form \m{T} in the lattice basis of the filling data over the product of the completions
+at a finite set of places: Lemma~\ref{l:phase}(a), (c), (e) and Lemma~\ref{l:int}(c) (its part~(a)); Theorem~B and
+Lemma~\ref{l:cong}~(b); Lemma~\ref{l:mass} and Lemma~\ref{l:int}(f)~(c); Theorem~A and Lemma~\ref{l:avg}~(d);
+Theorem~C~(e); Theorem~D(i)~(f); Theorem~D(ii)~(g). Note~G (\emph{From amplitude sums to local correlations})
+uses Definition~\ref{d:phase}, Lemma~\ref{l:phase}, the finite Bessel vector and the correlations in its
+unfolding theorem, Lemma~\ref{l:int}(a) and Lemma~\ref{l:int}(e), and the notion of an intermediate group.
+
+\sect{Notes on the formal text}{s:notes}
+\begin{enumerate}[leftmargin=1.6em,itemsep=3pt]
+\item \emph{Arguments that the census reads differently from Lean; to be settled by} \texttt{\#check} \emph{on a
+build.} The census reads the arguments from the text, and counts a variable of the file as an argument when
+its name occurs in a declaration. For the energy (Definition~\ref{d:top}(c)) it lists five explicit arguments,
+among them a sequence~$p$; in the definition $p$ is the index of the family, bound inside, and both uses of the
+energy in the Lean text (the two statements of Theorem~D) apply it to four arguments: $Z$, $R$, $\omega$ and the
+vector. The note writes these four. The same happens with the letter $r$ in Lemma~\ref{l:heads}, with $p$ in both
+parts of Theorem~D, and with $u$ in Definition~\ref{d:phase}: each is bound in the statement and has no
+counterpart as an argument. In the other direction, the census does not list $Z$, $p$, $q$ for Theorem~C(i),
+nor $Z$ for Theorem~D(i), although the statements name these variables of the file; the note states them.
+Implicit elements $x$, $y$, $k$, $g$ that the census lists for many statements are bound variables, or parts
+of other names, and have no counterpart either.
+\item \emph{Generality.} The form \m{\fzf{\cL}{Z}} is defined for every subgroup~$Z$ and every level; the
+theorems take an intermediate group of a standard level. Lemma~\ref{l:phase} is stated in the formal text
+without the hypothesis that the split Gram matrix is a hermitian unit.
+\item \emph{The bound for the Bessel vector.} In Lemma~\ref{l:cut} the bound of the norm is \m{\sqrt{\#\Cos{Z}}},
+from coordinates of modulus at most~$1$; the dossier's first reading said that the norm is at most~$1$, and
+the second reader corrected it. Nothing depends on the value of the bound.
+\item \emph{Arguments that a conclusion does not name.} In Corollary~\ref{c:finite} the number $r$ occurs only
+in the hypothesis \m{r+10^8\nn{\fs}^4\le\kk{\fs}}, which thus says \m{10^8\nn{\fs}^4\le\kk{\fs}}. In Theorem~B the
+number $t$ is free, so the bound holds with the largest $t$ allowed. In Proposition~\ref{p:depth} the
+hypothesis is the existence of one point where the majorant does not vanish; it is used only to see that the
+partial products of $p$ and $q$ are integral.
+\item \emph{Hypotheses on the ring.} Theorem~D(ii) assumes that the units of $A$ form an open set and that
+inversion is continuous at~$1$. Both hold for a finite product of local fields; they are hypotheses here
+because the formal notion of a semilocal field is axiomatic. In Theorem~D(ii) the matrix $R$ is arbitrary.
+\item \emph{Forms of the formal statements.} Proposition~\ref{p:shells} is stated in the formal text for a
+gauge $\Gamma$ together with an equation that identifies it with a gauge of some depth; \m{\gix{\xi}^{t/2}} in
+Theorem~A is written as a power of \m{\sqrt{\gix{\xi}}}, and the denominator index enters through its inverse;
+the inequality \m{j\le\rh{\fs}} is needed to name the diagonal entry \m{\ZT{T}{x}_{jj}}. Differences of natural
+numbers (the volume exponent, the exponents of the floor moduli) are truncated at~$0$ in the formal text. In
+Theorem~D(i) the formal statement says \m{0\le\mathcal Q} for the order of the complex numbers, and bounds the
+integral by the real part of~$\mathcal Q$.
+\item \emph{Constants.} The exponents \m{10^8}, \m{10^9}, \m{10^{10}} are those of the formal text; the proofs
+above show which smaller numbers are used: Proposition~\ref{p:shells} needs
+\m{\vexp{\cL}\ge8\cdot10^7\nn{\fs}^4+t}, and Theorem~A applies it with \m{t+12}, which gives the sixth power of the
+denominator index.
+\item \emph{What was not re-derived.} The statements of Inputs 2 and~4 are the results of the tower method; this
+note uses them as stated. The formal proof of Theorem~C(i) verifies the change of variables as an equality of
+the laws of two functions on product spaces; the text above gives the substitutions. The measurability of the
+functions that are integrated is checked in the formal text and not discussed here.
+\end{enumerate}
+
+\subhead{How this note was written.} From the structured proofs of the module on the top floor in the third
+chunk of the unit's dossier, all of whose statements and claims a second reader had re-read; her remarks were
+taken into account. I read the module in the Lean text line by line and compared every statement of this note
+with it argument by argument; I read in the Lean text the definitions of the unit on the real place and of the
+note on standard levels that are recalled in §\ref{s:setting}, and the statements of Inputs 2 to~4. Inputs 1
+and~5 are stated from the dossier's readings and from the way the formal proofs use them; of these I read in the
+Lean text the statements on primitive matrices, on Eichler elements, on the summation over ideals and the
+definition of a valuation pair. Arguments that are mine and replace computations of the formal text: the proof
+of Lemma~\ref{l:val} in terms of the lattice of the vectors $w$ with $Xw$ integral, the bookkeeping of the
+exponents in Proposition~\ref{p:shells}, and the description of the change of variables in Theorem~C(i).
+Nothing was compiled for this note. The program check of the unit's dossier covered \UnitSteps{} leaf steps of
+\UnitProofs{} proofs.
+
+\head{Appendix A. Concordance with the Lean artifact}
+{\raggedright The formal names of the objects and the letters of this note: \texttt{phase} is \m{\phs{g}{z}};
+\texttt{unitaryLevel}, \texttt{congGroup} are \m{\uLev{g}{T}}, \m{\cgp{\cL}}; \texttt{besselU}, \texttt{besselH},
+\texttt{besselS}, \texttt{GT}, \texttt{unitriGroup} are \m{\UT{T}}, \m{\HT{T}}, \m{\ST{T}}, \m{\Hl{l}{T}},
+\m{\Ql{l}{T}}; \texttt{simpleRootSum}, \texttt{frameGram}, \texttt{weylElem} are \m{\sd{u}}, \m{\ZT{T}{x}},
+\m{\weyl{l}{p}}; \texttt{md}, \texttt{genIndex}, \texttt{denomIndex}, \texttt{idealZeta} are \m{\modA},
+\m{\gix{u}}, \m{\den{\xi}}, \m{\zetaA{s}}; \texttt{groupMeasure}, \texttt{upperMeasure}, \texttt{floorMeasure},
+\texttt{measureH}, \texttt{stackMeasure}, \texttt{floorQuadric} are \m{\gM{\cL}}, \m{\gMu{\cL}}, \m{\flm{\cL}{l}},
+\m{\mH{\cL}}, \m{\stk{\cL}{l}{i}}, \m{\quadric{\cL}{\varrho}}; \texttt{ascConv heisenbergMeasure} is \m{\etab{j}};
+\texttt{floorModulus}, \texttt{headDensity}, \texttt{volumeExponent}, \texttt{floorValues} are
+\m{\fmod{\cL}{l}{g}}, \m{\hdens{\cL}{j}{p}{q}}, \m{\vexp{\cL}}, \m{\Val{\cL}{a}{x}{y}}; \texttt{upperPairing},
+\texttt{pivotModulus}, \texttt{pairingNorm} are \m{\Av{\cL}{j}{k}{g}{y}}, \m{\Pv{\cL}{j}{k}{g}{y}}, \m{\PN{\cL}{W}{W'}};
+\texttt{floorForm}, \texttt{formModulus}, \texttt{formMajorant}, \texttt{selfNormProduct} are
+$\fform{\cL}{j}{p}{q}{W}{\omega}$ and its modulus, majorant and self-norm product; \texttt{besselCorrelation},
+\texttt{finHeadWeight} are \m{\bcorr{\mu}{W}{\gamma}}, \m{\fhw{K}{j}{p}}; \texttt{IsStdLevel.gauge},
+\texttt{Gauge.Λ}, \texttt{IsHead} are \m{\stdg{\cL}{\alpha}}, \m{\Lam{\Gamma}}, \m{\Hd{\Gamma}{j}{p}}; the level
+\texttt{F} is~$\cL$, the index set \texttt{j} of Theorem~D is~$\mathcal C$, and \texttt{Level.energy} is
+\m{\lenergy{Z}{R}{\omega}{e}}. Three statements as the artifact has them:\par}
+\quoted{enormfloorFormle}
+\quoted{floorZeroFormlemainterm}
+\quoted{eventuallysumpacketsleenergy}
+{\fontsize{8.6}{11.6}\selectfont\renewcommand{\leanfont}{\ttfamily\fontsize{7.7}{10}\selectfont\color{leancol}}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{\fill}\setlength{\tabcolsep}{0pt}
+\begin{longtable}{@{}p{27mm}>{\raggedright\arraybackslash}p{68mm}p{34mm}r@{}}
+\textbf{In this note} & \textbf{Lean declaration} & \textbf{File} & \textbf{Lines}\\\midrule\endhead
+\ConcordanceRows
+\end{longtable}}
+
+\head{Notation}
+\begingroup\fontsize{8.6}{10.9}\selectfont\raggedright
+\setlength{\columnsep}{9mm}\setlength{\parskip}{0pt}
+\begin{multicols}{2}
+\nt{$A$, \m{x\mapsto\bar x}, $O_A$, \m{O_A^{\times}}, $\psi_A$, \m{\modA}, \m{\vol}}{a semilocal field with
+involution, its integers, their units, the character, the modulus, Haar measure}
+\nt{\m{\gix{u}}, \m{\den{\xi}}, \m{\zetaA{s}}, $I$, $I(x)$, $S(I)$}{generalised index, denominator index, ideal
+zeta function; an ideal, the content ideal of a position, its shell}
+\nt{\m{\fs=(\varrho,\kappa,k_0)}, \m{\rh{\fs}}, \m{\kk{\fs}}, \m{\nn{\fs}}, $n$}{a shape and its numbers; in proofs
+$n$, $\varrho$ abbreviate \m{\nn{\fs}}, \m{\rh{\fs}}}
+\nt{\m{\Ix{\fs}}, $e_a$, $e^*_a$, $z$, \m{\mathfrak f_a}, $h$}{index set, basis vectors, the frame, the hermitian
+form}
+\nt{$T$, \m{\JT{T}}, \m{\GT{T}}, \m{\ZT{T}{x}}}{an $\fs$-form, its split Gram matrix, unitary group, frame Gram
+matrix}
+\nt{\m{\UT{T}}, \m{\HT{T}}, \m{\ST{T}}, \m{\Hl{l}{T}}, \m{\Ql{l}{T}}}{Bessel unipotent subgroup, the subgroup
+fixing the frame and its dual, Bessel subgroup, floor groups, unitriangular groups}
+\nt{\m{\sd{u}}, \m{\weyl{l}{p}}, \m{\uLev{g}{T}}}{sum of the entries above the diagonal, Weyl element, congruence
+subgroup modulo~$g$}
+\nt{$\iota$, $m$, $\cL$, \m{\Levels{\iota}{T}{m+1}}, \m{\gL{\cL}}, \m{\cgp{\cL}}}{index set of the orthonormal
+part, number of further pairs, a level, the levels, its unit, its congruence subgroup}
+\nt{\m{\BoxL{\cL}}, \m{\Posn{\cL}}, \m{\IsStd{\cL}}}{box, positions, standard levels}
+\nt{$\eta_l$, \m{\etab{j}}, \m{\flm{\cL}{l}}, \m{\mH{\cL}}, \m{\stk{\cL}{l}{i}}, \m{\gM{\cL}}, \m{\gMu{\cL}},
+\m{\quadric{\cL}{\varrho}}}{Heisenberg, floor, stack and group measures, the quadric measure; $\mu$, $\nu$, $\rho$,
+$\theta$ measures}
+\nt{\m{\fmod{\cL}{l}{g}}, \m{\hdens{\cL}{j}{p}{q}}, \m{\vexp{\cL}}, $s$, \m{\Val{\cL}{a}{x}{y}}}{floor modulus, head
+density, volume exponent, floor values}
+\nt{\m{\Av{\cL}{j}{k}{g}{y}}, \m{\Pv{\cL}{j}{k}{g}{y}}, \m{k^{d}_{W,W'}}, \m{\PN{\cL}{W}{W'}}}{averaged kernel,
+pivot modulus, the kernel of two functions, pairing norm}
+\nt{\m{\fform{\cL}{j}{p}{q}{W}{\omega}}, \m{\Phi_j}, \m{\fmodu{\cL}{j}{p}{q}{W}{x}{\omega}},
+\m{\fmaj{\cL}{j}{p}{q}{W}{W'}{x}}}{floor form, its integrand, modulus, majorant}
+\nt{$\Gamma$, $\Gamma'$, $\Gamma''$, \m{\Gauges{\cL}}, \m{\szl{\Gamma}{x}{i}}, \m{\Lam{\Gamma}}, $\Lambda$,
+\m{\Hd{\Gamma}{j}{p}}, \m{\stdg{\cL}{\alpha}}}{gauges, size, the constant, heads, gauge of depth~$\alpha$}
+\nt{\m{\snp{\Gamma}{j}{p}{q}{W}{W'}{x}}, \m{\Sigma_0}, $V_0$}{self-norm product, its factor at floor~$0$, the
+floor-mass constant}
+\nt{\m{\fhw{K}{j}{p}}, \m{\bcorr{\mu}{W}{\gamma}}, \m{\ell^2(X)}}{head weight, Bessel correlation, the space \m{\CC^X} with its inner product}
+\nt{\m{\phs{g}{z}}, \m{\IntG{\cL}}, $Z$, \m{\Cos{Z}}, $a_c$, \m{\umass{\cL}}, $\mathsf v$, \m{\mr{Z}}}{finite
+Bessel function, intermediate groups, cosets, representatives, unipotent mass, mass ratio}
+\nt{\m{\fzf{\cL}{Z}}, \m{\bvec{Z}{y}}, $W$, \m{\pk{Z}}}{the form at the bottom, finite Bessel vector, its kernel}
+\nt{\m{\corr{Z}{p}{l}}, \m{\topK{L}{Z}{p}{q}}, \m{\lenergy{Z}{R}{\omega}{e}}, $G$, $G_{x'}$}{correlation, top
+kernel, energy, the integrands of the energy}
+\nt{$p$, $q$, $r$, $P_l$, $Q_l$, $\omega_i$, $\mathcal C$, $R$, $\mathcal Q$}{sequences of units, partial
+products, a family, its index set, a matrix, the kernel sum}
+\nt{$\xi$, $\eta$, $\alpha$, $\beta$, $\gamma$, $\varsigma$, $\varsigma_0$, $\epsilon$, $\epsilon_0$,
+$\varepsilon$}{units and real numbers of the proofs (frequency, its modification, depths, products, thresholds)}
+\nt{$\omega$, \m{\varphi_\xi}, $F_\xi$, $\mathcal A$, $f$, $e$, $E$, $K$, $t$, $B$, $V$, $C$, $D$, $N$, $L$}{functions
+and numbers of the statements; $C$ also a product of floor values or a compact set, $D$ a domain, $N$ a
+neighbourhood, $L$ a subset of~$A$}
+\nt{$x$, $y$, $u$, $v$, $k$, $l$, $b$, $\sigma$, $\tau$, $w$, $d$, $c$, $X$, $Y_x$, $i$, $j$, $a$}{elements of
+\m{\GT{T}}, vectors, matrices, units, indices, as said at each place}
+\nt{$\Theta_0$, $\theta$, $l_\theta$, $n_\theta$, $v_\theta$, $c_\theta$, $b_\theta$, $o$, $m(x)$, $\mathrm E$,
+$u_0$}{packets and the objects of the proof of Theorem~D}
+\end{multicols}
+\endgroup
+
+\end{document}
