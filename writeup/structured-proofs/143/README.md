@@ -1,6 +1,6 @@
 # Unit 143: The rows: target forms on an indefinite U(r), the volume of the chain of lifts as a product of lift volumes, and the height of each lift volume
 
-Merged from the chunks 143-a, 143-b by `book/plan/merge_chunks.py` (2026-11-26 19:36 UTC). Each chunk was read by its own reader (`book/plan/SPLIT.md`); their notes follow.
+Merged from the chunks 143-a, 143-b by `book/plan/merge_chunks.py` (2026-11-27 03:56 UTC). Each chunk was read by its own reader (`book/plan/SPLIT.md`); their notes follow.
 
 ## Chunk 143-a
 
