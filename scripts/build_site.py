@@ -117,18 +117,9 @@ def home(has_book: bool) -> str:
                              "theorem, the steps, and why each idea calls for the next. Every symbol is defined.",
          "guide/proof-guide.pdf", "Read the guide (PDF)"),
     ]
-    n_digest = len(load("digests/tower-bound/concordance.json")["declarations"])
-    cards.append(("arith", "Deformalization 1", "Twisted cokernels in a cyclotomic tower: one cluster of the archive "
-                  f"rewritten as ordinary mathematics, with complete proofs of its algebra and a concordance of "
-                  f"{n_digest} Lean declarations.", "digests/tower-bound.pdf", "Read the note (PDF)"))
-    n_second = len(load("digests/local-nilpotence/concordance.json")["declarations"])
-    cards.append(("arith", "Deformalization 2", "Local nilpotence over a cyclotomic tower: an input of the first note "
-                  "proved in full, written from the structured proofs of the Lean text, with a concordance of "
-                  f"{n_second} Lean declarations.", "digests/local-nilpotence.pdf", "Read the note (PDF)"))
-    n_third = len(load("digests/layer-descent/concordance.json")["declarations"])
-    cards.append(("arith", "Deformalization 3", "Descent to a layer of the cyclotomic tower: the two inputs of the first "
-                  "note on the invariants and on the classes over a layer, from a whole unit of the archive, with a "
-                  f"concordance of {n_third} Lean declarations.", "digests/layer-descent.pdf", "Read the note (PDF)"))
+    # The three deformalization notes of the original long proof (tower-bound, local-nilpotence, layer-descent) are no
+    # longer shown on the site's pages (owner, 27 Nov 2026); their PDFs and reader indexes are still copied below, so
+    # that their URLs, which the embedding atlas uses, keep working.
     if has_book:
         cards.append(("ana", "The book", f"{chapters} chapters with formulas, figures and computations that are "
                                          "executed every time the site is built.", "book/", "Open the book"))

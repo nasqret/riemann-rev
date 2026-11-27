@@ -720,31 +720,13 @@ def build() -> str:
     add("</details>\n")
 
     # ------------------------------------------------------------------ contents
-    n_digest = len(load("digests/tower-bound/concordance.json")["declarations"])
-    n_second = len(load("digests/local-nilpotence/concordance.json")["declarations"])
-    n_third = len(load("digests/layer-descent/concordance.json")["declarations"])
+    # the deformalization notes of the original long proof are no longer listed (owner, 27 Nov 2026)
     add("## What is in this repository\n")
     add(table(["", "What", "Where"], [
         ["📄", "**The guide.** The whole argument in standard mathematical terminology: flow diagram, the theorem, the "
                "seven steps, and why each idea calls for the next. Every symbol is defined, and there is a page of notation.",
          f"[**read online**]({SITE}/guide/proof-guide.pdf) · [`guide/proof-guide.pdf`](guide/proof-guide.pdf) · "
          "[animated preview](guide/proof-guide.gif)"],
-        ["🔬", f"**Deformalization 1: twisted cokernels in a cyclotomic tower.** One cluster of the archive rewritten as "
-               f"ordinary mathematics: the statements in standard terms, complete proofs of the algebra, a concordance of "
-               f"{n_digest} Lean declarations with their source lines, and computed examples.",
-         f"[**read online**]({SITE}/digests/tower-bound.pdf) · "
-         "[`digests/tower-bound/tower-bound.pdf`](digests/tower-bound/tower-bound.pdf)"],
-        ["🔬", f"**Deformalization 2: local nilpotence over a cyclotomic tower.** An input of the first note proved in "
-               f"full: every character of the cyclotomic kernel is killed by a power of γ − 1. Written from structured "
-               f"proofs of the Lean text, with a concordance of {n_second} Lean declarations.",
-         f"[**read online**]({SITE}/digests/local-nilpotence.pdf) · "
-         "[`digests/local-nilpotence/local-nilpotence.pdf`](digests/local-nilpotence/local-nilpotence.pdf)"],
-        ["🔬", f"**Deformalization 3: descent to a layer of the cyclotomic tower.** The two inputs of the first note on "
-               f"the invariants under a generator and on the classes over a layer, from one whole unit of the archive; "
-               f"the cohomological inputs are stated and taken from other units. A concordance of {n_third} Lean "
-               f"declarations.",
-         f"[**read online**]({SITE}/digests/layer-descent.pdf) · "
-         "[`digests/layer-descent/layer-descent.pdf`](digests/layer-descent/layer-descent.pdf)"],
         ["🗺️", f"**The atlas.** An interactive map: the {len(comps)} components, a guided tour, the blueprint graph of "
                f"{n_decl} declarations with their dependencies, illustrated ideas and the verification ledger. One "
                "self-contained HTML file.",
