@@ -142,6 +142,24 @@ estimate; the choice of $\eta$ keeps that secondary cost at $x^{O(\varepsilon)}$
 the negative part and the prime $2$ are then evaluated on the same field at the same $x$, and an
 elementary comparison absorbs their sum into $\sqrt{\exp(x^\varepsilon)}$.
 
+### The arithmetic assembly
+
+The reference-layer bound spends $\varepsilon/2$ on exceptional twists and
+$\varepsilon/4$ on the discriminant. The resulting pointwise bound has exponential
+scale $x^{3\varepsilon/4}$, leaving room to sum over the twists within
+$\exp(x^{4\varepsilon/5})$. At odd coefficient primes the character counts are
+organized differently: Case I bounds arbitrary finite prime sets through a
+common nonzero integer made from Frobenius trace differences; the remaining
+cases either restrict the coefficient prime or use a fixed reference layer.
+The negative-part estimate and the conductor bound absorb the remaining terms
+into the requested $\exp(x^\varepsilon/2)$.
+
+For the detailed inequalities and the order of the uniform choices, see
+{doc}`cohomological-window`. Its Case I calculation uses a cotangent-length
+estimate from graded commutative algebra; {doc}`deformation-length` develops
+the saturated cotangent comparison, Lemma M, and the Euler-characteristic
+rules used there.
+
 ### Where the bound itself comes from
 
 The window is produced through the call `vwin_of_row` from the Galois row of {ref}`comp-galois`.
