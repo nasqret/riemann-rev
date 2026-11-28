@@ -255,7 +255,7 @@ def writeup_page() -> str:
                                                      "into another part opens that part at the right page.",
                       [("#chapters", "Choose a chapter")], st("writeup/chapters")))
     if reading:
-        cards.append(("est", "The reading edition", "The same text without the links to the Lean source, for reading "
+        cards.append(("est", "The reading edition", ("The same mathematics in lighter notation: each short symbol is introduced by a numbered convention that writes its full form, and every use links to it. No links to the Lean source, no remarks on how the notes were made. " if reading.get("light") else "The same text without the links to the Lean source. ") + "For reading "
                                                     f"from beginning to end. {reading['pages']:,} pages, "
                                                     f"{mb(reading['bytes'])}.",
                       [(reading["file"], "Read the reading edition (PDF)")], st("writeup/reading")))
@@ -468,7 +468,7 @@ def home(has_book: bool) -> str:
                   [("writeup/handout.pdf", "Read the handout (PDF)"), ("#chapters", "Chapter by chapter")],
                   st("writeup/handout.pdf")))
     if reading:
-        cards.append(("est", "The reading edition", f"The same text, light: no links to the Lean source, "
+        cards.append(("est", "The reading edition", ("The same mathematics in lighter notation: each short symbol is introduced by a numbered convention that writes its full form, and every use links to it. No links to the Lean source, no remarks on how the notes were made. " if reading.get("light") else "The same text without the links to the Lean source. ") +
                       f"{reading['pages']:,} pages, {mb(reading['bytes'])}. For reading from beginning to end.",
                       [("writeup/" + reading["file"], "Read the reading edition (PDF)")], st("writeup/reading")))
     cards.append(("ok", "The summary and the overview", f"The handout's front matter, {front['pages']} pages: the title "

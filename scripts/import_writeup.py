@@ -354,13 +354,17 @@ def split_pdf(src: Path, dest: Path, url: str, strict: bool = True) -> tuple[lis
 # ------------------------------------------------------------------------------------- the reading edition, browse
 def import_reading(ws: Path) -> dict | None:
     src = ws / "book" / "reading"
-    pdf = src / "reading-handout.pdf"
+    # since 28 Nov 2026 the reading edition is the light edition (owner's decisions on notation and terminology): light
+    # notation licensed by numbered conventions, no Lean links, no process paragraphs; the plain reading edition is the
+    # fallback while the light one is not built
+    light = src / "light" / "reading-handout-light.pdf"
+    pdf = light if light.is_file() else src / "reading-handout.pdf"
     if not pdf.is_file():
         print("reading edition: not built in the workspace yet (book/reading/reading-handout.pdf); not imported")
         return None
     dst = OUT / "reading"
     copy_pdf(pdf, dst / "reading-handout.pdf")
-    info = {"file": "reading/reading-handout.pdf", **pdf_facts(dst / "reading-handout.pdf"),
+    info = {"file": "reading/reading-handout.pdf", "light": pdf == light, **pdf_facts(dst / "reading-handout.pdf"),
             "links_to_lean": sum(u.startswith(ARTIFACT) for v in urls_by_page(dst / "reading-handout.pdf").values()
                                  for u in v)}
     cut = split_pdf(dst / "reading-handout.pdf", dst / "chapters", f"{SITE}/writeup/reading/chapters/", strict=False)
