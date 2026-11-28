@@ -1,6 +1,6 @@
 # grh-compact: the reading site
 
-Built 2026-11-28T11:53Z by `rb.py site` (readback 0.9.0); artifact commit 72fead102f66, toolchain leanprover/lean4:v4.35.0.
+Built 2026-11-28T12:42Z by `rb.py site` (readback 0.9.0); artifact commit 72fead102f66, toolchain leanprover/lean4:v4.35.0.
 
 Open `index.html` through a web server, not as a file. The reading mode needs http: PDF.js draws the pages of
 each note (a browser runs it only over http), and the column beside the pages reads each structured proof and
