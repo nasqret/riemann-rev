@@ -16,6 +16,8 @@ final theorems down through every unit of the argument, with classical results q
 - **[`handout.pdf`](handout.pdf)**: the whole reading in one PDF. The overview of the argument (Theorems A, B, C and
   how they give GRH), then Chapters I–VIII in the order of the argument, the catalogue of quoted results and the
   record of checks. Every `LEAN` line under a statement is a link to the Lean source it renders.
+- **[The write-up page](https://nasqret.github.io/riemann-rev/writeup/)**: the current edition, the handout chapter
+  by chapter ([`chapters/`](chapters/)), and every edition since the first, each with its handout at its commit.
 - [`catalogue-full.pdf`](catalogue-full.pdf): every background result the argument uses, classified (definition,
   elementary lemma, named theorem, substantial result), with references and, for named theorems, how the formal
   statement compares with the published one.
@@ -27,7 +29,9 @@ final theorems down through every unit of the argument, with classical results q
 | path | what |
 |---|---|
 | `handout.pdf` | overview, the notes in the order of the argument, condensed catalogue, record of checks |
+| `chapters/` | the handout cut at its chapters: `front-matter.pdf` (title page, summary, contents, overview), `chapter-1.pdf` … `chapter-8.pdf`, `back-matter.pdf` (catalogue and record of checks); the pages keep the handout's numbers and every link, and a link into another part leads to that part on the site |
 | `catalogue-full.pdf` | the complete catalogue of quoted results |
+| `editions.json` | every published edition (number, date, what changed, commit, the SHA-256 of its handout), derived from the history of this repository; the handout of an edition stays at its commit |
 | `overview.tex` | the overview's LaTeX source |
 | `notes/<slug>/` | every note's LaTeX source (`<slug>.tex`, `data.tex`), its account of declarations (`spec.json`), its concordance with the Lean (`concordance.json`) and its reader index (`reader.json`). Seven notes also load a macro file of their own from the same folder (`macros148.tex` for four Filling notes, `othermacros.tex` for the three RealPlace notes); with it, each note's source builds alone with LuaLaTeX (`latexmk -lualatex <slug>.tex` in its folder). |
 | `structured-proofs/<unit>/` | for every unit of the formal text: `unit.json` (every declaration, its statement in words, its arguments), `proofs/*.json` (each proof as a tree of small steps, each quoting the exact Lean lines it renders), `check.json` (the program check), `CORRECTIONS.md` (what the second reading changed) |

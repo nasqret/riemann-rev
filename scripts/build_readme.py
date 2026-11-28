@@ -311,7 +311,9 @@ def build() -> str:
     add(" ".join(row1) + "\n")
     add(" ".join(row2) + "\n")
     wm = load("writeup/MANIFEST.json")              # scripts/import_writeup.py: the edition of the write-up
-    add(f"**New:** [the write-up of the condensed proof, a working draft (PDF)]({SITE}/writeup/handout.pdf) · "
+    wed = load("writeup/editions.json")             # every published edition, from the public history
+    add(f"**New:** [the write-up of the condensed proof, a working draft]({SITE}/writeup/) "
+        f"([handout, PDF]({SITE}/writeup/handout.pdf)) · "
         f"[for AI agents](writeup/AGENTS.md) · [the condensed proof, our note (PDF)]({SITE}/summary/grh-condensed-summary.pdf) · "
         f"[lsernau/grh-lean](https://github.com/{cond['repo']}/tree/{cond['commit']})\n")
     add(f"**Read it online:** [site]({SITE}/) · [atlas]({SITE}/atlas/) · [proof atlas]({PROOF_ATLAS}) · "
@@ -344,9 +346,15 @@ def build() -> str:
         "their published statements). Every statement links to the Lean lines it renders, at the pinned commit. "
         "Made by AI agents and checked by programs, read again by an independent AI reader and by AI referees; "
         "**not yet refereed by a human**, and it does not say that RH is proved.\n>\n"
-        f"> **[Read the handout (PDF)]({SITE}/writeup/handout.pdf)** · [catalogue of quoted results (PDF)]"
-        f"({SITE}/writeup/catalogue-full.pdf) · [the folder: structured proofs, LaTeX sources, catalogue](writeup/) · "
-        "**[guide for AI agents](writeup/AGENTS.md)**\n")
+        f"> **[Read the handout (PDF)]({SITE}/writeup/handout.pdf)** · [chapter by chapter]({SITE}/writeup/#chapters)"
+        + (f" · [the reading edition, without the Lean links (PDF)]({SITE}/writeup/{wm['reading']['file']})"
+           if wm.get("reading") else "")
+        + (f" · [the annotated version in the browser]({SITE}/writeup/browse/)" if wm.get("browse") else "")
+        + f" · [catalogue of quoted results (PDF)]({SITE}/writeup/catalogue-full.pdf) · "
+        "[the folder: structured proofs, LaTeX sources, catalogue](writeup/) · **[guide for AI agents](writeup/AGENTS.md)**"
+        f"\n>\n> **[The write-up page]({SITE}/writeup/)**: the current edition (edition {wed['current']['edition']}, "
+        f"{wed['current']['date'][:10]}) and [every edition]({SITE}/writeup/#editions) since the first, each with its "
+        "handout at its commit and the handout's SHA-256.\n")
     add("What it is for: to be read, checked and rewritten, by people and by their agents. The structured proofs give "
         "every proof as a tree of small steps, each quoting the exact Lean lines it renders; a program checks every "
         "quotation against the source. [`writeup/README.md`](writeup/README.md) says how it was made and what that does "
