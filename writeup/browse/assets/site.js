@@ -819,6 +819,24 @@
     };
   }
 
+  // ---------------------------------------------------------------- edition stamp (stamp.json at the site root; absent in a local preview)
+  (function stamp() {
+    const box = doc.getElementById('stamp');
+    if (!box || !window.fetch) { return; }
+    fetch(new URL('../stamp.json', ASSETS).href, { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : null)).then((d) => {
+      if (!d || d.edition == null) { return; }
+      const link = (text, href) => { if (!href) { const s = doc.createElement('span'); s.textContent = text; return s; }
+        const a = doc.createElement('a'); a.href = href; a.textContent = text; return a; };
+      const bits = [link('Edition ' + d.edition, d.editions_url)];
+      if (d.date) { const m = /^(\d{4})-(\d\d)-(\d\d)/.exec(d.date);
+        const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const t = doc.createElement('span'); t.textContent = m ? (+m[3]) + ' ' + mo[+m[2] - 1] + ' ' + m[1] : d.date; bits.push(t); }
+      if (d.commit) { const c = link('commit ' + String(d.commit).slice(0, 7), d.commit_url); c.className = 'stamp-commit'; bits.push(c); }
+      bits.forEach((b, i) => { if (i && !b.classList.contains('stamp-commit')) { box.appendChild(doc.createTextNode(' · ')); } box.appendChild(b); });
+      box.classList.add('on');
+    }).catch(() => { /* no stamp: show nothing */ });
+  })();
+
   // formulas last: the reading mode has shown what it shows first
   boxButtons(doc);
   mathSoon(doc.body);

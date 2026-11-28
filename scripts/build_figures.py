@@ -611,11 +611,100 @@ def fig_choreography() -> None:
     save("choreography", s)
 
 
+# 0. Hero background: the curve t -> zeta(1/2 + it) through the origin at every zero
+def _rdp(pts: np.ndarray, eps: float) -> np.ndarray:
+    """Ramer-Douglas-Peucker simplification (iterative); returns the kept indices."""
+    keep = np.zeros(len(pts), dtype=bool)
+    keep[0] = keep[-1] = True
+    stack = [(0, len(pts) - 1)]
+    while stack:
+        a, b = stack.pop()
+        if b <= a + 1:
+            continue
+        d = pts[b] - pts[a]
+        n = math.hypot(d[0], d[1])
+        seg = pts[a + 1:b] - pts[a]
+        dist = np.hypot(seg[:, 0], seg[:, 1]) if n == 0 else np.abs(d[0] * seg[:, 1] - d[1] * seg[:, 0]) / n
+        i = int(np.argmax(dist))
+        if dist[i] > eps:
+            keep[a + 1 + i] = True
+            stack += [(a, a + 1 + i), (a + 1 + i, b)]
+    return np.nonzero(keep)[0]
+
+
+def fig_hero_zeta(t_max: float = 80.0, chunks: int = 28) -> None:
+    dt = 0.005
+    ts = np.arange(0.0, t_max + dt / 2, dt)
+    zs = np.array([rhlib.zeta_em(complex(0.5, float(t))) for t in ts])
+    # rs_theta is an asymptotic series, valid for t >= 10; zeta_zeros also starts at t0 = 10 (no zero lies below 14)
+    i10 = int(round(10.0 / dt))
+    hz = np.array([rhlib.hardy_z(float(t)) for t in ts[i10:]])
+    changes = np.nonzero(hz[:-1] * hz[1:] < 0)[0] + i10 - 1
+    n_grid = len(changes)
+    allz = rhlib.zeta_zeros(n_grid + 3)
+    zeros = [g for g in allz if g <= t_max]
+    if len(zeros) != n_grid:
+        raise SystemExit(f"hero_zeta: zero count mismatch: sign changes {n_grid}, zeta_zeros {len(zeros)}")
+    for g, i in zip(zeros, changes):   # each bisected zero lies in its grid cell
+        if not (ts[1 + i] - 1e-9 <= g <= ts[2 + i] + 1e-9):
+            raise SystemExit(f"hero_zeta: zero {g} outside its grid cell")
+    if min(abs(rhlib.zeta_em(complex(0.5, g))) for g in zeros) > 1e-6 or \
+            max(abs(rhlib.zeta_em(complex(0.5, g))) for g in zeros) > 1e-6:
+        raise SystemExit("hero_zeta: curve does not pass through 0 at the zeros")
+    if abs(zeros[0] - 14.134725) >= 1e-5:
+        raise SystemExit(f"hero_zeta: first zero {zeros[0]} is not 14.134725")
+    # frame: equal scale, curve centred in a 1400 x 600 box
+    W, H = 1400, 600
+    re_, im_ = zs.real, zs.imag
+    cx, cy = (re_.max() + re_.min()) / 2, (im_.max() + im_.min()) / 2
+    sc = min(0.94 * W / (re_.max() - re_.min()), 0.94 * H / (im_.max() - im_.min()))
+    P = np.column_stack([W / 2 + (re_ - cx) * sc, H / 2 - (im_ - cy) * sc])
+    keep = _rdp(P, 0.12)
+    Q = P[keep]
+    K = np.array_split(np.arange(len(Q) - 1), chunks)
+    s = SVG(W, H, "The curve t -> zeta(1/2 + it)",
+            f"Computed curve of zeta(1/2 + it) for 0 <= t <= {t_max:g} in the complex plane; it passes through the "
+            f"origin at each of the {len(zeros)} zeros on the critical line in that range.", bg=None)
+    lo, hi = np.array([0x64, 0x74, 0x8b]), np.array([0x7d, 0xb4, 0xff])   # slate -> blue
+    for j, idx in enumerate(K):
+        if len(idx) == 0:
+            continue
+        u = j / max(chunks - 1, 1)
+        col = "#%02x%02x%02x" % tuple(int(round(v)) for v in lo + (hi - lo) * u)
+        seg = Q[idx[0]:idx[-1] + 2]
+        d = "M" + " L".join(f"{f(x)},{f(y)}" for x, y in seg)
+        s.path(d, stroke=col, sw=0.8, opacity=0.35 + 0.6 * u)
+    ox, oy = W / 2 - cx * sc, H / 2 + cy * sc
+    s.circle(ox, oy, 3.2, fill="#e2e8f0", opacity=0.95)
+    save("hero-zeta", s)
+    size = (OUT / "hero-zeta.svg").stat().st_size
+    if size > 150_000:
+        raise SystemExit(f"hero_zeta: {size} bytes exceeds 150 KB")
+    FACTS["hero_zeta"] = {"t_max": t_max, "n_zeros": len(zeros), "zeros": [round(g, 6) for g in zeros],
+                          "samples": int(len(ts)),
+                          "method": f"zeta(1/2+it) by Euler-Maclaurin on a grid of step {dt:g}, simplified to "
+                                    f"{len(Q)} points (Douglas-Peucker, 0.12 px); zeros from sign changes of "
+                                    f"Hardy's Z for t >= 10, refined by bisection and checked against zeta_zeros",
+                          "svg_bytes": size}
+
+
 def main() -> int:
+    args = sys.argv[1:]
+    only = args[args.index("--only") + 1] if "--only" in args else None
+    t_max = float(args[args.index("--tmax") + 1]) if "--tmax" in args else 80.0
+    if only == "hero_zeta":
+        fp = OUT / "facts.json"
+        if fp.exists():
+            FACTS.update(json.loads(fp.read_text(encoding="utf-8")))
+        fig_hero_zeta(t_max)
+        fp.write_text(json.dumps(FACTS, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        print(f"hero_zeta: T={t_max:g}, {FACTS['hero_zeta']['n_zeros']} zeros, {FACTS['hero_zeta']['svg_bytes']} bytes")
+        return 0
     ps = rhlib.PrimeSums.build(10_000_000)
     zeros = rhlib.zeta_zeros(100)
     assert abs(zeros[0] - 14.134725) < 1e-5 and abs(zeros[99] - 236.524230) < 1e-5
     FACTS["zeros"] = {"count": len(zeros), "first": round(zeros[0], 6), "hundredth": round(zeros[99], 6)}
+    fig_hero_zeta(t_max)
     fig_hero(ps)
     fig_explicit(ps, zeros)
     fig_strip(zeros)

@@ -312,12 +312,18 @@ def build() -> str:
     add(" ".join(row2) + "\n")
     wm = load("writeup/MANIFEST.json")              # scripts/import_writeup.py: the edition of the write-up
     wed = load("writeup/editions.json")             # every published edition, from the public history
-    add(f"**New:** [the write-up of the condensed proof, a working draft]({SITE}/writeup/) "
-        f"([handout, PDF]({SITE}/writeup/handout.pdf)) · "
-        f"[for AI agents](writeup/AGENTS.md) · [the condensed proof, our note (PDF)]({SITE}/summary/grh-condensed-summary.pdf) · "
-        f"[lsernau/grh-lean](https://github.com/{cond['repo']}/tree/{cond['commit']})\n")
-    add(f"**Read it online:** [site]({SITE}/) · [atlas]({SITE}/atlas/) · [proof atlas]({PROOF_ATLAS}) · "
-        f"[guide]({SITE}/guide/proof-guide.pdf) · [book]({SITE}/book/) · [blueprint]({SITE}/blueprint/atlas-blueprint.pdf)\n")
+    add("**The write-up of the condensed proof, a working draft:** "
+        + (f"[the browsable proof]({SITE}/writeup/browse/) · " if wm.get("browse") else "")
+        + f"[the handout (PDF)]({SITE}/writeup/handout.pdf) · "
+        + (f"[the reading edition, without the Lean links (PDF)]({SITE}/writeup/{wm['reading']['file']}) · "
+           if wm.get("reading") else "")
+        + f"[every edition]({SITE}/writeup/#editions) (now edition {wed['current']['edition']}) · "
+        f"[for AI agents](writeup/AGENTS.md) · [lsernau/grh-lean](https://github.com/{cond['repo']}/tree/{cond['commit']}) · "
+        f"[the site]({SITE}/) · [the proof atlas]({PROOF_ATLAS})\n")
+    add(f"**Earlier materials**, made for the original announcement and superseded by the write-up: "
+        f"[atlas]({SITE}/atlas/) · [guide]({SITE}/guide/proof-guide.pdf) · "
+        f"[the condensed-proof note of 25 November]({SITE}/summary/grh-condensed-summary.pdf) · "
+        f"[book]({SITE}/book/) · [blueprint]({SITE}/blueprint/atlas-blueprint.pdf)\n")
     add("[The write-up](#the-write-up-a-working-draft-26-november-2026) · [The condensed proof](#the-condensed-proof-25-november-2026) · [Status](#status-dashboard) · [The theorem](#the-theorem) · [New here?](#new-here-start-here) · "
         "[Route of the proof](#the-route-of-the-proof) · [Contents](#what-is-in-this-repository) · "
         "[Check it yourself](#check-it-yourself) · [Transparency](#transparency) · [FAQ](#questions-and-answers)\n")
@@ -346,11 +352,11 @@ def build() -> str:
         "their published statements). Every statement links to the Lean lines it renders, at the pinned commit. "
         "Made by AI agents and checked by programs, read again by an independent AI reader and by AI referees; "
         "**not yet refereed by a human**, and it does not say that RH is proved.\n>\n"
-        f"> **[Read the handout (PDF)]({SITE}/writeup/handout.pdf)** · [chapter by chapter]({SITE}/writeup/#chapters)"
+        + (f"> **[Browse the proof]({SITE}/writeup/browse/)** · " if wm.get("browse") else "> ")
+        + f"**[Read the handout (PDF)]({SITE}/writeup/handout.pdf)** · [chapter by chapter]({SITE}/writeup/#chapters)"
         + (f" · [the reading edition, without the Lean links (PDF)]({SITE}/writeup/{wm['reading']['file']})"
            if wm.get("reading") else "")
-        + (f" · [the annotated version in the browser]({SITE}/writeup/browse/)" if wm.get("browse") else "")
-        + f" · [catalogue of quoted results (PDF)]({SITE}/writeup/catalogue-full.pdf) · "
+        + f" · [every edition]({SITE}/writeup/#editions) · [catalogue of quoted results (PDF)]({SITE}/writeup/catalogue-full.pdf) · "
         "[the folder: structured proofs, LaTeX sources, catalogue](writeup/) · **[guide for AI agents](writeup/AGENTS.md)**"
         f"\n>\n> **[The write-up page]({SITE}/writeup/)**: the current edition (edition {wed['current']['edition']}, "
         f"{wed['current']['date'][:10]}) and [every edition]({SITE}/writeup/#editions) since the first, each with its "
@@ -730,19 +736,21 @@ def build() -> str:
     # ------------------------------------------------------------------ contents
     # the deformalization notes of the original long proof are no longer listed (owner, 27 Nov 2026)
     add("## What is in this repository\n")
+    add("The guide, the atlas, the blueprint and the book were made for the original announcement; the "
+        "[write-up](#the-write-up-a-working-draft-26-november-2026) supersedes them, and they stay at their addresses.\n")
     add(table(["", "What", "Where"], [
-        ["📄", "**The guide.** The whole argument in standard mathematical terminology: flow diagram, the theorem, the "
+        ["📄", "**The guide (earlier material).** The whole argument in standard mathematical terminology: flow diagram, the theorem, the "
                "seven steps, and why each idea calls for the next. Every symbol is defined, and there is a page of notation.",
          f"[**read online**]({SITE}/guide/proof-guide.pdf) · [`guide/proof-guide.pdf`](guide/proof-guide.pdf) · "
          "[animated preview](guide/proof-guide.gif)"],
-        ["🗺️", f"**The atlas.** An interactive map: the {len(comps)} components, a guided tour, the blueprint graph of "
+        ["🗺️", f"**The atlas (earlier material).** An interactive map: the {len(comps)} components, a guided tour, the blueprint graph of "
                f"{n_decl} declarations with their dependencies, illustrated ideas and the verification ledger. One "
                "self-contained HTML file.",
          f"[**open the atlas**]({SITE}/atlas/) · [`atlas/index.html`](atlas/index.html)"],
-        ["📘", "**The illustrated blueprint.** The same map as a PDF, with every declaration linked to its source line.",
+        ["📘", "**The illustrated blueprint (earlier material).** The same map as a PDF, with every declaration linked to its source line.",
          f"[**read online**]({SITE}/blueprint/atlas-blueprint.pdf) · "
          "[`blueprint/atlas-blueprint.pdf`](blueprint/atlas-blueprint.pdf)"],
-        ["📓", "**The book.** Chapters with formulas, figures and computations that are executed at every build.",
+        ["📓", "**The book (earlier material).** Chapters with formulas, figures and computations that are executed at every build.",
          f"[**read the book**]({SITE}/book/) · sources in [`book/`](book/)"],
         ["🧩", "**A Lean skeleton of the argument.** Every component as an explicit hypothesis, and the proof that they "
                "compose; no imports, no axioms.",

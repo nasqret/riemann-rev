@@ -26,16 +26,18 @@ from __future__ import annotations
 import argparse
 import datetime
 import html
+import json
 import os
 import re
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from build_guide import GUIDE_PAGES  # noqa: E402
-from build_readme import REPO, SITE, STEPS, load, utc  # noqa: E402
+from build_readme import REPO, SITE, load, utc  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "_site"
@@ -52,9 +54,17 @@ body { margin:0; font-family:var(--sans); color:var(--text); background:var(--bg
 a { color:var(--accent); text-decoration:none; } a:hover { text-decoration:underline; }
 .wrap { max-width:1120px; margin:0 auto; padding:0 28px; }
 .hero { position:relative; overflow:hidden; background:var(--night); color:#e2e8f0; }
-.hero-bg { position:absolute; inset:0 0 0 auto; width:70%; height:100%; opacity:.9; }
+.hero-bg { position:absolute; inset:0; opacity:.3; }
 .hero-bg svg { width:100%; height:100%; display:block; }
-.hero-content { position:relative; z-index:2; max-width:720px; padding:76px 28px 72px 48px; }
+.hero-grid { position:relative; z-index:2; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.08fr); gap:48px;
+  align-items:center; padding-top:64px; padding-bottom:64px; }
+.hero h1 { font-size:clamp(1.9rem,3.3vw,2.7rem); }
+.shot { margin:0; }
+.shot > a { display:block; border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,.22); background:#fff;
+  box-shadow:0 18px 50px rgba(0,0,0,.45); }
+.shot img { display:block; width:100%; height:auto; }
+.shot figcaption { margin-top:10px; font-size:.82rem; color:#94a3b8; line-height:1.45; }
+.shot figcaption a { color:#c7d2fe; }
 .label { font-size:.72rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:#a5b4fc;
   margin-bottom:18px; }
 h1 { color:#fff; font-size:clamp(2rem,4.2vw,3.1rem); font-weight:800; letter-spacing:-.02em; line-height:1.15;
@@ -72,21 +82,36 @@ h1 em { font-style:normal; background:linear-gradient(90deg,#fde68a,#fbbf24 55%,
 .btn:hover { text-decoration:none; filter:brightness(1.1); }
 .note { margin:34px 0 8px; padding:16px 20px; border-left:4px solid var(--est); background:#f5f3ff;
   border-radius:0 12px 12px 0; color:#2e1065; font-size:.96rem; }
-h2 { color:var(--heading); font-size:1.35rem; margin:38px 0 16px; letter-spacing:-.01em; }
-.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:18px; }
-.card { display:block; background:var(--surface); border:1px solid var(--border); border-top:4px solid var(--c);
-  border-radius:14px; padding:20px 22px 18px; color:var(--text);
-  box-shadow:0 1px 3px rgba(15,23,42,.06),0 6px 16px rgba(15,23,42,.06); transition:transform .15s,box-shadow .15s; }
-.card:hover { text-decoration:none; transform:translateY(-2px);
-  box-shadow:0 4px 12px rgba(15,23,42,.08),0 14px 32px rgba(15,23,42,.12); }
+h2 { color:var(--heading); font-size:1.35rem; margin:44px 0 8px; letter-spacing:-.01em; }
+.stampline { margin:0 0 16px; color:var(--muted); font-size:.84rem; }
+.stampline code, .stamp code { color:inherit; }
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:18px; }
+.card { display:flex; flex-direction:column; background:var(--surface); border:1px solid var(--border);
+  border-top:4px solid var(--c); border-radius:14px; padding:20px 22px 16px; color:var(--text);
+  box-shadow:0 1px 3px rgba(15,23,42,.06); }
 .card h3 { margin:0 0 6px; color:var(--heading); font-size:1.08rem; }
+.card h3 a { color:inherit; }
 .card p { margin:0 0 12px; font-size:.93rem; color:#475569; }
-.card .go { font-weight:600; font-size:.88rem; color:var(--c); }
+.card .go { margin-top:auto; font-weight:600; font-size:.88rem; display:flex; flex-wrap:wrap; gap:4px 16px; }
+.card .go a { color:var(--c); }
+.card .stamp { margin:12px 0 0; padding-top:9px; border-top:1px solid var(--border); font-size:.78rem; color:var(--muted); }
+.list { margin:0; padding:0; list-style:none; }
+.list li { padding:11px 0; border-bottom:1px solid var(--border); }
+.list li:last-child { border-bottom:none; }
+.list b { color:var(--heading); }
+.list .stamp { display:block; color:var(--muted); font-size:.8rem; }
+.earlier { margin-top:56px; padding:6px 24px 8px; border-radius:14px; background:#f1f5f9; color:#64748b; }
+.earlier h2 { color:#475569; font-size:1.1rem; }
+.earlier a { color:#475569; text-decoration:underline; text-decoration-color:#cbd5e1; }
+.earlier p { font-size:.9rem; }
+.earlier .list li { padding:8px 0; }
+.earlier .list b a { font-weight:600; }
 footer { margin-top:44px; padding:26px 0 54px; border-top:1px solid var(--border); color:var(--muted);
   font-size:.86rem; }
 footer p { margin:0 0 6px; }
-@media (max-width:760px) { .hero-bg { width:100%; opacity:.4; } .hero-content { padding:48px 20px 52px; } }
-@media (prefers-reduced-motion:reduce) { .card { transition:none; } }
+footer code { color:inherit; }
+@media (max-width:900px) { .hero-grid { grid-template-columns:minmax(0,1fr); gap:30px; padding-top:44px; padding-bottom:44px; } }
+@media (max-width:760px) { .wrap { padding:0 20px; } .grid { grid-template-columns:minmax(0,1fr); } }
 """
 
 # the write-up page: a band instead of the hero, and tables for the chapters and the editions
@@ -116,6 +141,17 @@ a code { color:inherit; }
 .tag { display:inline-block; margin-left:6px; padding:1px 8px; border-radius:999px; background:#dcfce7; color:#166534;
   font-size:.7rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; vertical-align:2px; }
 .dim { color:var(--muted); }
+.chap td.part { width:1%; }
+@media (max-width:760px) {
+  .chap thead { display:none; }
+  .chap, .chap tbody, .chap tr, .chap td { display:block; width:auto; }
+  .chap tr { padding:12px 14px; border-bottom:1px solid var(--border); }
+  .chap td { border:none; padding:2px 0; text-align:left; }
+  .chap td.num { text-align:left; }
+  .chap td.part::before { content:'Chapter '; }
+  .chap td.num::after { content:' pages'; color:var(--muted); }
+  .chap tbody tr:hover td { background:none; }
+}
 .fine { margin:14px 0 0; color:var(--muted); font-size:.88rem; max-width:900px; }
 """
 
@@ -135,6 +171,61 @@ def day(stamp: str) -> str:
     return f"{d.day}&nbsp;{d:%B}&nbsp;{d:%Y}"
 
 
+REPO_URL = f"https://github.com/{REPO}"
+# Hashes of the private working copy do not exist publicly: a commit is linked only when the site is built in the
+# public repository (on GitHub's runner); a local build shows the date and "local build".
+PUBLIC = os.environ.get("GITHUB_REPOSITORY") == REPO
+
+
+def last_commit(*paths: str) -> tuple[str | None, str | None]:
+    """(sha, date) of the last commit that touched the paths: git log -1 --format=%H%x09%cs -- <paths>."""
+    try:
+        out = subprocess.run(["git", "log", "-1", "--format=%H%x09%cs", "--", *paths], cwd=ROOT, capture_output=True,
+                             text=True, check=True).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        return None, None
+    if "\t" not in out:
+        return None, None
+    sha, date = out.split("\t")
+    return sha, date
+
+
+def short_date(iso: str) -> str:
+    """'2026-11-28' or '2026-11-28T11:30Z' -> '28 Nov 2026'."""
+    d = datetime.date.fromisoformat(iso[:10])
+    return f"{d.day}&nbsp;{d:%b}&nbsp;{d:%Y}"
+
+
+def commit_ref(sha: str | None) -> str:
+    """A linked short hash in the public build; 'local build' otherwise."""
+    if PUBLIC and sha:
+        return f'commit <a href="{REPO_URL}/commit/{sha}"><code>{sha[:7]}</code></a>'
+    return "" if PUBLIC else "local build"
+
+
+def stamp(*paths: str, edition: int | None = None, date: str | None = None, prefix: str = "") -> str:
+    """The stamp of a section: [edition N ·] date · commit (the last commit touching the paths). For a section of the
+    write-up the edition and its date are those of writeup/editions.json; otherwise the date is the commit's."""
+    sha, cdate = last_commit(*paths)
+    parts = [prefix] if prefix else []
+    if edition is not None:
+        parts.append(f"edition {edition}")
+    if date or cdate:
+        parts.append(short_date(date or cdate))
+    ref = commit_ref(sha)
+    if ref:
+        parts.append(ref)
+    return " · ".join(parts)
+
+
+def card(colour: str, title: str, text: str, links: list[tuple[str, str]], stamp_html: str) -> str:
+    """A card: the title links to the first link; the others stand in the bottom row; the stamp closes the card."""
+    first = esc(links[0][0])
+    go = "".join(f'<a href="{esc(h)}">{esc(t)} →</a>' for h, t in links)
+    return (f'<div class="card" style="--c:var(--{colour})"><h3><a href="{first}">{esc(title)}</a></h3><p>{esc(text)}</p>'
+            f'<div class="go">{go}</div><p class="stamp">{stamp_html}</p></div>')
+
+
 def writeup_page() -> str:
     """The write-up: the current edition first (the handout, its chapters, the reading edition, the annotated version
     in the browser, the catalogue), then every published edition with links pinned to its commit."""
@@ -151,37 +242,38 @@ def writeup_page() -> str:
     pin = cur.get("commit") or (built if re.fullmatch(r"[0-9a-f]{40}", built) else None)
     h, cat = docs["handout.pdf"], docs["catalogue-full.pdf"]
 
+    ed, eday = cur["edition"], cur["date"]
+    st = lambda *paths, **kw: stamp(*paths, edition=ed, date=eday, **kw)                                   # noqa: E731
     cards = [("accent", "The handout", "The whole reading in one PDF: the summary, the overview of the argument, "
                                        "Chapters I–VIII, the catalogue of quoted results and the record of checks. "
                                        "Every statement and every step links to the Lean lines it renders. "
-                                       f"{h['pages']:,} pages, {mb(h['bytes'])}.", "handout.pdf", "Read the handout (PDF)")]
+                                       f"{h['pages']:,} pages, {mb(h['bytes'])}.",
+              [("handout.pdf", "Read the handout (PDF)")], st("writeup/handout.pdf"))]
     if parts:
         cards.append(("arith", "Chapter by chapter", f"The same pages in {len(parts)} PDFs: the front matter, one PDF "
                                                      "per chapter, and the catalogue with the record of checks. A link "
                                                      "into another part opens that part at the right page.",
-                      "#chapters", "Choose a chapter"))
+                      [("#chapters", "Choose a chapter")], st("writeup/chapters")))
     if reading:
         cards.append(("est", "The reading edition", "The same text without the links to the Lean source, for reading "
                                                     f"from beginning to end. {reading['pages']:,} pages, "
-                                                    f"{mb(reading['bytes'])}.", reading["file"],
-                      "Read the reading edition (PDF)"))
+                                                    f"{mb(reading['bytes'])}.",
+                      [(reading["file"], "Read the reading edition (PDF)")], st("writeup/reading")))
     if browse:
-        cards.append(("ana", "The annotated version, in the browser", "Each note in the browser, beside the structured "
-                                                                      "proofs and the Lean lines of its statements.",
-                      "browse/", "Open the annotated version"))
+        cards.append(("ana", "The browsable proof", "Each note in the browser, beside the structured proofs and the "
+                                                    "Lean lines of its statements, with a page for every chapter.",
+                      [("browse/", "Open the browsable proof")], st("writeup/browse")))
     cards += [("dest", "The catalogue of quoted results", "Every background result that the argument uses, classified as "
                                                          "a definition, an elementary lemma, a named theorem or a "
                                                          "substantial result, with references; for a named theorem, how "
                                                          "the formal statement compares with the published one. "
-                                                         f"{cat['pages']:,} pages.", "catalogue-full.pdf",
-               "Read the catalogue (PDF)"),
+                                                         f"{cat['pages']:,} pages.",
+               [("catalogue-full.pdf", "Read the catalogue (PDF)")], st("writeup/catalogue-full.pdf")),
               ("ok", "For AI agents, and for checking", "The structured proofs (every proof a tree of small steps, each "
                                                         "quoting the Lean lines it renders), the LaTeX source of every "
                                                         "note, the catalogue as data, and a guide for AI agents.",
-               f"{repo}/tree/main/writeup", "Open the folder")]
-    card_html = "\n".join(
-        f'<a class="card" style="--c:var(--{c})" href="{esc(href)}"><h3>{esc(title)}</h3><p>{esc(text)}</p>'
-        f'<span class="go">{esc(go)} →</span></a>' for c, title, text, href, go in cards)
+               [(f"{repo}/tree/main/writeup", "Open the folder")], st("writeup"))]
+    card_html = "\n".join(card(*c) for c in cards)
 
     by_name = {Path(p["file"]).name: p for p in (reading or {}).get("chapters") or []}
     rows = []
@@ -201,10 +293,11 @@ def writeup_page() -> str:
     if parts:
         chapters_html = f"""
   <h2 id="chapters">Chapter by chapter</h2>
+  <p class="stampline">{st("writeup/chapters")}</p>
   <p class="what">The pages of the handout cut at its chapters; the pages keep the handout's numbers, and every link is
   kept: a link into another part opens that part at the right page{', and the reading edition is cut the same way' if by_name else ''}.</p>
   <div class="scroll"><table>
-   <thead><tr><th>part</th><th>contents</th><th>handout pages</th><th>annotated</th>{'<th>reading edition</th>' if by_name else ''}</tr></thead>
+   <thead><tr><th>part</th><th>contents</th><th>handout pages</th><th>handout, with Lean links</th>{'<th>reading edition</th>' if by_name else ''}</tr></thead>
    <tbody>
 {chr(10).join(rows)}
    </tbody>
@@ -234,7 +327,7 @@ def writeup_page() -> str:
     buttons = ['<a class="btn" href="handout.pdf">The handout (PDF)</a>']
     buttons += ['<a class="btn ghost" href="#chapters">Chapter by chapter</a>'] if parts else []
     buttons += ['<a class="btn ghost" href="' + esc(reading["file"]) + '">The reading edition</a>'] if reading else []
-    buttons += ['<a class="btn ghost" href="browse/">The annotated version</a>'] if browse else []
+    buttons += ['<a class="btn ghost" href="browse/">The browsable proof</a>'] if browse else []
     buttons += ['<a class="btn ghost" href="#editions">Every edition</a>']
     return f"""<!doctype html>
 <html lang="en">
@@ -264,12 +357,14 @@ def writeup_page() -> str:
   refereed by a human. The formal proof it reads is a claim: its authors report that Lean's kernel accepts the five
   final theorems with the three standard axioms. Nothing here says that the Riemann hypothesis is proved.</p>
   <h2 id="current">The current edition <span class="sub">edition {cur['edition']} of {day(cur['date'])}</span></h2>
+  <p class="stampline">{st("writeup")}</p>
   {f'<p class="what">What changed: {esc(cur["description"])}.</p>' if cur.get('description') else ''}
   <div class="grid">
 {card_html}
   </div>
 {chapters_html}
   <h2 id="editions">Every edition <span class="sub">{len(ed_rows)} editions since {day(first)}</span></h2>
+  <p class="stampline">{st("writeup/editions.json")}</p>
   <p class="what">Each edition is a commit of the public repository, and its handout stays at that commit: the links
   below are pinned to it (<em>view</em> shows the PDF on GitHub, <em>PDF</em> downloads it). The SHA-256 identifies the
   file: compare it with <code>shasum -a 256 handout.pdf</code>. Times are UTC.</p>
@@ -295,113 +390,233 @@ def writeup_page() -> str:
 """
 
 
-def hero_svg() -> str:
-    svg = (ROOT / "assets" / "figures" / "hero.svg").read_text(encoding="utf-8")
+SCREEN = ROOT / "assets" / "screens" / "reading-mode.webp"      # taken by a script outside the build (Chrome, DevTools)
+SCREEN_JSON = ROOT / "assets" / "screens" / "reading-mode.json"
+
+
+def hero_curve() -> tuple[str, str]:
+    """(inline SVG, caption) of the hero's background. The computed curve of the zeta function when the figures have
+    it (assets/figures/hero-zeta.svg with the key "hero_zeta" in facts.json); the older figure and caption otherwise."""
+    facts = load("assets/figures/facts.json")
+    zeta = facts.get("hero_zeta")
+    if zeta and (ROOT / "assets" / "figures" / "hero-zeta.svg").is_file():
+        name = "hero-zeta.svg"
+        cap = (f"The curve behind the title is computed: t ↦ ζ(½ + it) in the complex plane for 0 ≤ t ≤ "
+               f"{zeta['t_max']:g}, from {zeta['samples']:,} samples; it passes through the origin at each of the "
+               f"{zeta['n_zeros']} zeros on the critical line in that range.")
+    else:
+        name = "hero.svg"
+        h = facts["hero"]
+        cap = (f"The curve behind the title is computed: the centred prime sum, normalized, for arguments up to "
+               f"{h['y_max']:,}.")
+    svg = (ROOT / "assets" / "figures" / name).read_text(encoding="utf-8")
     svg = re.sub(r"^<\?xml[^>]*\?>\s*", "", svg)
-    return svg.replace('width="', 'data-w="', 1).replace('height="', 'data-h="', 1).replace(
+    svg = svg.replace('width="', 'data-w="', 1).replace('height="', 'data-h="', 1).replace(
         "<svg ", '<svg preserveAspectRatio="xMidYMid slice" ', 1)
+    return svg, cap
+
+
+def roman_pages(manifest: dict) -> list[tuple[int, dict]]:
+    """The chapters proper (those with a numeral), numbered 1, 2, ... as the pages chapter-N.html of the browsable proof."""
+    return list(enumerate([c for c in manifest.get("chapters") or [] if c.get("numeral")], start=1))
+
+
+def stamp_json(man: dict, eds: dict) -> dict:
+    """What the browsable pages display: the edition, its date and the commit of the browsable proof."""
+    cur = eds["current"]
+    sha, _ = last_commit("writeup/browse")
+    sha = sha if PUBLIC else None
+    return {"edition": cur["edition"], "date": cur["date"][:10], "commit": sha,
+            "commit_url": f"{REPO_URL}/commit/{sha}" if sha else None, "editions_url": "../index.html#editions"}
 
 
 def home(has_book: bool) -> str:
     model = load("data/model.json")
-    st = model["status"]
-    comps = model["components"]
-    n_decl = sum(1 for n in model["nodes"] if n["kind"] != "motivation")
-    chapters = len(re.findall(r"^\s*-?\s*(?:file|root):", (ROOT / "book" / "_toc.yml").read_text(encoding="utf-8"), flags=re.M))
-    repo = f"https://github.com/{REPO}"
-    wm = load("writeup/MANIFEST.json")              # scripts/import_writeup.py: the edition of the write-up
-    cur = load("writeup/editions.json")["current"]
-    extra = "".join(s for s, on in ((", a reading edition without the Lean links", wm.get("reading")),
-                                    (", the annotated version in the browser", wm.get("browse"))) if on)
-    cards = [
-        ("ok", "The write-up (working draft)", f"A complete reading of the condensed proof as mathematics: "
-                                               f"{len(wm['notes'])} notes on all {len(wm['units'])} units, from the five "
-                                               "theorems down, each statement linked to its Lean lines: the handout whole "
-                                               f"and chapter by chapter{extra}, and every edition. Read by AI agents and "
-                                               "checked by programs; not yet refereed by a human.",
-         "writeup/", "Open the write-up"),
-        ("ok", "The condensed proof", "25 November 2026: the same five theorems in 112,827 lines instead of 17.4 million, "
-                                      "24,850 of them for the argument itself. What happened, how the argument goes, "
-                                      "and what has been checked, with links into the Lean source.",
-         "summary/grh-condensed-summary.pdf", "Read the note (PDF)"),
-        ("arith", "The atlas", f"An interactive map: the {len(comps)} components, a guided tour, the graph of "
-                               f"{n_decl} declarations with links to their Lean source, illustrated ideas and the "
-                               "verification ledger.", "atlas/", "Open the atlas"),
-        ("est", "The guide", f"The whole argument in standard mathematical terminology, {GUIDE_PAGES} pages: the "
-                             "theorem, the steps, and why each idea calls for the next. Every symbol is defined.",
-         "guide/proof-guide.pdf", "Read the guide (PDF)"),
+    ms = model["status"]
+    man = load("writeup/MANIFEST.json")                 # scripts/import_writeup.py: the edition of the write-up
+    eds = load("writeup/editions.json")
+    cur, docs = eds["current"], man["documents"]
+    reading, browse = man.get("reading"), man.get("browse")
+    ed, eday = cur["edition"], cur["date"]
+    st = lambda *paths: stamp(*paths, edition=ed, date=eday)                                               # noqa: E731
+    curve, curve_caption = hero_curve()
+    n_eds = len(eds["editions"]) + (0 if cur.get("commit") else 1)
+    first = eds["editions"][0]["date"] if eds["editions"] else eday
+    parts = roman_pages(man)
+    front = next(c for c in man["chapters"] if c["part"] == "Front matter")
+    lfront = next((c for c in (reading or {}).get("chapters") or [] if c["part"] == "Front matter"), None)
+    by_light = {Path(c["file"]).name: c for c in (reading or {}).get("chapters") or []}
+
+    # ---------------------------------------------------------------- the screenshot of the browsable proof
+    shot = ""
+    if SCREEN.is_file() and SCREEN_JSON.is_file():
+        sj = json.loads(SCREEN_JSON.read_text(encoding="utf-8"))
+        shot = (f'<figure class="shot"><a href="writeup/browse/{esc(sj["page"])}"><img src="assets/screens/{esc(SCREEN.name)}" '
+                f'width="{sj["width"]}" height="{sj["height"]}" alt="A note of the browsable proof in reading mode: its '
+                f'PDF pages on the left, the structured proof and the Lean text of the chosen statement on the right"></a>'
+                f'<figcaption>The browsable proof in reading mode: {esc(sj["page_title"])}. Edition {sj["edition"]}, '
+                f'{short_date(sj["date"])}. <a href="writeup/browse/{esc(sj["page"])}">Open this page →</a></figcaption></figure>')
+
+    # ---------------------------------------------------------------- read the proof
+    cards = []
+    if browse:
+        cards.append(("ana", "The browsable proof", f"All {len(man['notes'])} notes in the browser, each beside its "
+                      "structured proofs and the Lean lines of its statements, with a page for every chapter.",
+                      [("writeup/browse/", "Browse the proof")], st("writeup/browse")))
+    cards.append(("accent", "The handout", f"The whole reading in one PDF: {docs['handout.pdf']['pages']:,} pages, "
+                  f"{mb(docs['handout.pdf']['bytes'])}. Every statement links to the Lean lines it renders.",
+                  [("writeup/handout.pdf", "Read the handout (PDF)"), ("#chapters", "Chapter by chapter")],
+                  st("writeup/handout.pdf")))
+    if reading:
+        cards.append(("est", "The reading edition", f"The same text, light: no links to the Lean source, "
+                      f"{reading['pages']:,} pages, {mb(reading['bytes'])}. For reading from beginning to end.",
+                      [("writeup/" + reading["file"], "Read the reading edition (PDF)")], st("writeup/reading")))
+    cards.append(("ok", "The summary and the overview", f"The handout's front matter, {front['pages']} pages: the title "
+                  "page, the summary, the contents and the overview of the argument. Read it before a chapter. "
+                  "It replaces the condensed-proof note of 25 November.",
+                  [("writeup/" + front["file"], "Summary and overview (PDF)")]
+                  + ([("writeup/" + lfront["file"], "Light version (PDF)")] if lfront else []),
+                  st("writeup/chapters/front-matter.pdf")))
+    cards.append(("dest", "The catalogue of quoted results", f"{man['catalogue_entries']:,} background results that the "
+                  f"argument uses, classified and referenced; {docs['catalogue-full.pdf']['pages']} pages.",
+                  [("writeup/catalogue-full.pdf", "Read the catalogue (PDF)")], st("writeup/catalogue-full.pdf")))
+    cards.append(("arith", "Every edition", f"{n_eds} editions since {short_date(first).replace('&nbsp;', ' ')}. Each handout stays at its "
+                  "commit, with its SHA-256, so that a change can be traced.",
+                  [("writeup/#editions", "See the editions")], st("writeup/editions.json")))
+    card_html = "\n".join(card(*c) for c in cards)
+
+    # ---------------------------------------------------------------- the eight chapters
+    rows = []
+    for n, c in parts:
+        notes = [s for s in c.get("sections") or [] if s.get("note")]
+        lst = "".join(f'<li><a href="writeup/browse/note-{esc(s["note"])}.html">{esc(s["title"])}</a></li>' for s in notes)
+        det = (f'<details><summary>{len(notes)} note{"s" if len(notes) != 1 else ""}</summary><ul>{lst}</ul></details>'
+               if notes else "")
+        light = by_light.get(Path(c["file"]).name)
+        rows.append(
+            f'<tr><td class="part">{esc(c["numeral"])}</td>'
+            f'<td><a href="writeup/browse/chapter-{n}.html"><b>{esc(c["title"])}</b></a>{det}</td>'
+            f'<td class="num">{c["pages"]}' + (f' <span class="dim">/ {light["pages"]}</span>' if light else "") + "</td>"
+            f'<td class="links"><a href="writeup/browse/chapter-{n}.html">Browse</a> · '
+            f'<a href="writeup/{esc(c["file"])}">PDF</a>'
+            + (f' · <a href="writeup/{esc(light["file"])}">Light PDF</a>' if light else "") + "</td></tr>")
+    chapters_html = f"""
+  <h2 id="chapters">The argument in eight chapters</h2>
+  <p class="stampline">{st("writeup/chapters", "writeup/browse")}</p>
+  <div class="scroll"><table class="chap">
+   <thead><tr><th>chapter</th><th>title and notes</th><th>pages (handout / reading edition)</th><th>read</th></tr></thead>
+   <tbody>
+{chr(10).join(rows)}
+   </tbody>
+  </table></div>"""
+
+    # ---------------------------------------------------------------- sources
+    art = man["artifact"]
+    art_ref = (f'edition {esc(art["edition"])}, <a href="{esc(art["repository"])}/commit/{esc(art["commit"])}">commit '
+               f'<code>{esc(art["commit"][:7])}</code></a> (the commit that the notes were read from)')
+    head_sha, _ = last_commit()
+    sources = [
+        (f"{REPO_URL}#readme", "The status dashboard", "Who has checked what, with sources, and the theorem in full.",
+         stamp("README.md")),
+        (REPO_URL, "The repository", "The scripts that generate every page of this site, the data, and the Lean skeleton.",
+         stamp(prefix="latest change")),
+        (f"{REPO_URL}/tree/main/writeup", "The write-up on GitHub, for agents", "The structured proofs, the LaTeX sources "
+         "of every note, the catalogue as data, and a guide.", st("writeup")),
+        ("https://github.com/lsernau/grh-lean", "The condensed Lean proof", "The Lean repository that the write-up reads.",
+         art_ref),
+        ("https://nasqret.github.io/riemann-proof-atlas/", "The proof atlas", "The declarations of the Lean archive placed "
+         "on a map of the literature; kept at its own address and versioned there.", ""),
     ]
-    # The three deformalization notes of the original long proof (tower-bound, local-nilpotence, layer-descent) are no
-    # longer shown on the site's pages (owner, 27 Nov 2026); their PDFs and reader indexes are still copied below, so
-    # that their URLs, which the embedding atlas uses, keep working.
+    src_html = "\n".join(
+        f'<li><b><a href="{esc(h)}">{esc(t)}</a></b> · {esc(d)}' + (f'<span class="stamp">{s}</span>' if s else "") + "</li>"
+        for h, t, d, s in sources)
+
+    # ---------------------------------------------------------------- earlier materials
+    def last_changed(*paths: str) -> str:
+        sha, date = last_commit(*paths)
+        ref = commit_ref(sha)
+        return "last changed " + (short_date(date) if date else "date unknown") + (f" · {ref}" if ref else "")
+
+    earlier = [("atlas/", "The atlas", "an interactive map of the argument of the original announcement",
+                last_changed("atlas/index.html")),
+               ("guide/proof-guide.pdf", "The guide (PDF)", "the argument in standard terminology, "
+                f"{GUIDE_PAGES} pages; also <a href=\"guide/proof-guide.gif\">as an animated GIF</a>",
+                last_changed("guide/proof-guide.pdf", "guide/proof-guide.gif")),
+               ("summary/grh-condensed-summary.pdf", "The condensed-proof note of 25 November (PDF)",
+                "our first note on the condensed proof", last_changed("summary/grh-condensed-summary.pdf")),
+               ("blueprint/atlas-blueprint.pdf", "The illustrated blueprint (PDF)",
+                "the map as a document, with a link to the source line of every declaration",
+                last_changed("blueprint/atlas-blueprint.pdf"))]
     if has_book:
-        cards.append(("ana", "The book", f"{chapters} chapters with formulas, figures and computations that are "
-                                         "executed every time the site is built.", "book/", "Open the book"))
-    cards += [
-        ("dest", "The illustrated blueprint", "The map as a document: every declaration with its statement in words "
-                                              "and a link to its source line.", "blueprint/atlas-blueprint.pdf",
-         "Read the blueprint (PDF)"),
-        ("ok", "The status dashboard", f"Who has checked what, with sources; the theorem in full; the route of the "
-                                       f"proof in {len(STEPS)} steps with links to the formal proofs.",
-         f"{repo}#readme", "Open the dashboard"),
-        ("accent", "The sources", "The Lean skeleton of the argument, the data with their provenance, the logs, and "
-                                  "the scripts that generate every page of this site.", repo, "Open the repository"),
-    ]
-    card_html = "\n".join(
-        f'<a class="card" style="--c:var(--{c})" href="{esc(href)}"><h3>{esc(title)}</h3><p>{esc(text)}</p>'
-        f'<span class="go">{esc(go)} →</span></a>' for c, title, text, href, go in cards)
+        earlier.append(("book/", "The book", "chapters with formulas, figures and computations", last_changed("book")))
+    earlier_html = "\n".join(
+        f'<li><b><a href="{esc(h)}">{esc(t)}</a></b> · {d}<span class="stamp">{s}</span></li>'
+        for h, t, d, s in earlier)
+
+    sha = os.environ.get("GITHUB_SHA", "") if PUBLIC else ""
+    sha = sha if re.fullmatch(r"[0-9a-f]{40}", sha) else (head_sha if PUBLIC else None)
+    _, head_date = last_commit()
+    built = (f'Built from commit <a href="{REPO_URL}/commit/{sha}"><code>{sha[:7]}</code></a>' if sha
+             else "Local build of the working copy" + (f", last commit of {short_date(head_date)}" if head_date else ""))
     return f"""<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The announced proof of the Riemann hypothesis: map, guide and record of checks</title>
-<meta name="description" content="A map, a guide and a verification dashboard for the formal proof of the Riemann hypothesis announced by Levent Alpöge on 20 November 2026. An independent reading aid.">
+<title>The announced proof of the Riemann hypothesis, read as mathematics</title>
+<meta name="description" content="A reading of the condensed Lean proof announced as a proof of the Riemann hypothesis, written as mathematics: the browsable proof, the handout and every edition. A working draft, not refereed by a human; it does not settle correctness.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style>{CSS}</style>
+<style>{CSS}{WRITEUP_CSS}</style>
 </head>
 <body>
 <header class="hero">
-  <div class="hero-bg" aria-hidden="true">{hero_svg()}</div>
-  <div class="hero-content">
-    <div class="label">A map · a guide · a record of checks</div>
-    <h1>The announced proof of the <em>Riemann hypothesis</em></h1>
-    <p class="lead">On 20&nbsp;November&nbsp;2026 Levent Alpöge announced a proof of the Riemann hypothesis and of its
-    analogue for Dirichlet L-functions, published as a formal proof in Lean. These pages map the argument, explain it
-    in standard mathematical language, and record who has checked what.</p>
-    <p class="status"><b>{esc(st["headline"])}</b><br><span>Record of {esc(utc(st["as_of"]))}; the mathematics has not
-    yet been refereed.</span></p>
-    <div class="cta"><a class="btn" href="writeup/">The write-up</a><a class="btn ghost" href="summary/grh-condensed-summary.pdf">The condensed proof (note)</a><a class="btn ghost" href="atlas/">Open the atlas</a><a class="btn ghost" href="guide/proof-guide.pdf">Read the guide</a>
-    <a class="btn ghost" href="{repo}#readme">Status dashboard</a></div>
+  <div class="hero-bg" aria-hidden="true">{curve}</div>
+  <div class="wrap hero-grid">
+    <div>
+      <div class="label">A reading of an announced proof · a working draft</div>
+      <h1>The announced proof of the <em>Riemann hypothesis</em>, read as mathematics</h1>
+      <p class="lead">A proof was announced on 20&nbsp;November&nbsp;2026, as a formal proof in Lean; a condensed
+      version appeared on 25&nbsp;November. This site reads the condensed proof into mathematics, note by note, and
+      records who has checked what. It does not settle whether the proof is correct.</p>
+      <p class="status"><b>{esc(ms["headline"])}</b><br><span>Record of {esc(utc(ms["as_of"]))}; the mathematics has not
+      yet been refereed.</span></p>
+      <div class="cta"><a class="btn" href="writeup/browse/">Browse the proof</a>
+      <a class="btn ghost" href="writeup/handout.pdf">The handout (PDF)</a>
+      {'<a class="btn ghost" href="writeup/' + esc(reading["file"]) + '">The reading edition (PDF)</a>' if reading else ''}
+      <a class="btn ghost" href="writeup/#editions">Every edition</a></div>
+    </div>
+    {shot}
   </div>
 </header>
 <main class="wrap">
-  <p class="note"><b>What this site is.</b> A map of an announced proof and a record of who has checked what. It is not
-  a proof, not a referee report and not an endorsement, and it is not an official companion to the announcement.</p>
-  <p class="note"><b>Since 26&nbsp;November&nbsp;2026: the write-up, a working draft</b> (now
-  <a href="writeup/#editions">edition {cur['edition']}</a>). The condensed proof read as mathematics, unit by unit:
-  <a href="writeup/handout.pdf">the handout (PDF)</a>, in which every statement links to the Lean lines it renders, also
-  <a href="writeup/#chapters">chapter by chapter</a>{'; <a href="writeup/' + esc(wm['reading']['file']) + '">a reading edition</a> without the Lean links' if wm.get('reading') else ''}{'; <a href="writeup/browse/">the annotated version in the browser</a>' if wm.get('browse') else ''};
-  <a href="writeup/catalogue-full.pdf">the catalogue of quoted results</a>; <a href="writeup/#editions">every edition</a>; and,
-  for AI agents, <a href="{repo}/tree/main/writeup">the structured proofs, the LaTeX sources and a guide</a>. Read by AI
-  agents and checked by programs; not yet refereed by a human. It does not say that RH is proved.</p>
-  <p class="note"><b>25&nbsp;November&nbsp;2026: a condensed proof.</b> A rewriting of the proof by Luke Sernau,
-  colleagues at Anthropic and Claude states the same five theorems in 112,827 lines of Lean instead of 17.4 million;
-  the argument itself takes 24,850 lines of code, the background is separated and referenced. Machines have checked it;
-  no mathematician has read it yet. <a href="summary/grh-condensed-summary.pdf">Read our note</a> ·
-  <a href="https://github.com/lsernau/grh-lean">the repository</a> ·
-  <a href="https://nasqret.github.io/riemann-proof-atlas/">the proof atlas</a></p>
-  <h2>Where to go</h2>
+  <p class="note"><b>What this is.</b> A working draft, read by AI agents and checked by programs; no mathematician has
+  refereed it. The formal proof it reads is a claim: its authors report that Lean's kernel accepts the five final
+  theorems with the three standard axioms. Nothing here says that the Riemann hypothesis is proved, and this is not an
+  official companion to the announcement.</p>
+  <h2 id="read">Read the proof</h2>
+  <p class="stampline">{st("writeup")}</p>
   <div class="grid">
 {card_html}
   </div>
+{chapters_html}
+  <h2 id="sources">Sources</h2>
+  <ul class="list">
+{src_html}
+  </ul>
+  <section class="earlier">
+    <h2 id="earlier">Earlier materials</h2>
+    <p>These were made for the original announcement. They are kept at their addresses and are superseded by the
+    write-up above.</p>
+    <ul class="list">
+{earlier_html}
+    </ul>
+  </section>
 </main>
 <footer><div class="wrap">
-  <p>Built from <a href="{repo}">{esc(REPO)}</a>; the record shown is as of {esc(utc(st["as_of"]))}. The curve above is
-  computed: the centred prime sum, normalized, for arguments up to ten million.</p>
+  <p>{built}. {esc(curve_caption)}</p>
   <p>The announcement and the Lean archive belong to their author. Everything original on this site may be used for
-  any purpose (<a href="{repo}/blob/main/LICENSE">licence</a>).</p>
+  any purpose (<a href="{REPO_URL}/blob/main/LICENSE">licence</a>).</p>
 </div></footer>
 </body>
 </html>
@@ -414,6 +629,13 @@ def site_atlas() -> str:
     marker = "<!--site-links-->"
     if text.count(marker) != 1:
         raise SystemExit("site: the atlas has no place for the links of the site (marker missing)")
+    banner = ('<div style="background:#fef3c7;color:#78350f;padding:10px 20px;font:500 14px/1.5 Inter,Helvetica,Arial,sans-serif;'
+              'text-align:center">An earlier map, made for the original archive and kept at this address. The current '
+              'material is the write-up of the condensed proof: <a href="../index.html" style="color:#78350f">the home '
+              'page</a> · <a href="../writeup/index.html" style="color:#78350f">the write-up</a>.</div>')
+    if text.count("<body>") != 1:
+        raise SystemExit("site: the atlas has no single <body> tag for its banner")
+    text = text.replace("<body>", "<body>\n" + banner, 1)
     text = text.replace(marker, '<a href="../index.html">Home of this site</a><br><a href="../book/index.html">The book</a><br>')
     text = text.replace('href="../README.md"', f'href="https://github.com/{REPO}#readme"')
     return re.sub(r'href="\.\./((?:lean|lean-mathlib|scripts|data|verification|references)/[^"#]+)',
@@ -464,6 +686,13 @@ def main() -> int:
         if (ROOT / "writeup" / sub).is_dir():
             shutil.copytree(ROOT / "writeup" / sub, OUT / "writeup" / sub)
     (OUT / "writeup" / "index.html").write_text(writeup_page(), encoding="utf-8")
+    if (OUT / "writeup" / "browse").is_dir():           # read by the pages of the browsable proof
+        (OUT / "writeup" / "browse" / "stamp.json").write_text(
+            json.dumps(stamp_json(load("writeup/MANIFEST.json"), load("writeup/editions.json")), indent=1) + "\n",
+            encoding="utf-8")
+    if SCREEN.is_file():
+        (OUT / "assets" / "screens").mkdir(parents=True)
+        shutil.copy2(SCREEN, OUT / "assets" / "screens" / SCREEN.name)
     (OUT / "digests" / "editions").mkdir(exist_ok=True)
     for slug in ("tower-bound", "local-nilpotence", "layer-descent"):
         shutil.copy2(ROOT / f"digests/{slug}/{slug}.pdf", OUT / "digests" / f"{slug}.pdf")
