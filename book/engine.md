@@ -262,6 +262,8 @@ with the sum over prime powers, and ends with the archive's reflection step `For
 turns a zero-free right half-plane into RH. So it rests on the engine of this chapter. We have not built the
 repository or checked its proof.
 
+Crossley gives the same criterion in [Theorem 3.2 of *The Crossley Criteria*](https://github.com/leecrossley/crossley-criteria-riemann-hypothesis/releases/download/v1.0/crossley-criteria-riemann-hypothesis.pdf#page=7) ([archived edition](https://doi.org/10.5281/zenodo.24466908)).
+
 (comp-choreography)=
 ## 7 · The order of choices
 
